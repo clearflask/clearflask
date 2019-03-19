@@ -1,0 +1,484 @@
+openapi: 3.0.0
+info:
+  title: ClearFlask API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://client.api.clearflask.com/client/v1/project/{projectId}/
+    description: Production server
+    variables:
+      projectId:
+        description: Project ID of the customer
+        default: demo
+
+externalDocs:
+  url: https://clearflask.com/docs
+
+components:
+  schemas:
+    Conf: # TODO
+      properties:
+        name:
+          type: string
+        ideaGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfIdeaGroup'
+        ideaStatuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfIdeaStatus'
+        ideaTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfIdeaTag'
+        supportType:
+          description: Can be overriden inside IdeaGroup
+          $ref: '#/components/schemas/ConfSupportType'
+      required:
+        - name
+        - ideaGroups
+        - ideaStatuses
+        - supportType
+    ConfIdeaGroup:
+      properties:
+        id:
+          type: string
+        parentIdeaGroupId:
+          type: string
+        name:
+          type: string
+        color:
+          $ref: '#/components/schemas/Color'
+        supportType:
+          description: If set, overrides project level support type
+          $ref: '#/components/schemas/ConfSupportType'
+        settableIdeaTagsOnCreate:
+          description: These tags can be set by user when creating an idea.
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfIdeaTag'
+      required:
+        - id
+        - name
+    ConfIdeaStatus:
+      properties:
+        id:
+          type: string
+        nextTagIds:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        color:
+          $ref: '#/components/schemas/Color'
+        allowFunding:
+          type: boolean
+        allowVoting:
+          type: boolean
+        allowIdeaEdits:
+          type: boolean
+        allowComments:
+          type: boolean
+        allowPublicVisible:
+          type: boolean
+      required:
+        - id
+        - name
+    ConfIdeaTag:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        color:
+          $ref: '#/components/schemas/Color'
+      required:  
+        - id
+        - name
+    Color:
+      type: string
+      pattern: '#([0-9a-f]{3}){1,2}'
+    ConfMainPagePanel:
+      properties:
+        id:
+          type: string
+        displayOrder:
+          type: integer
+        sortBy:
+          $ref: '#/components/schemas/SortBy'
+        filterIdeaGroupIds:
+          type: array
+          items:
+            type: string
+        filterIdeaStatusIds:
+          type: array
+          items:
+            type: string
+        filterIdeaTagIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - displayOrder
+        - sortBy
+    ConfSupportType:
+      type: string
+      enum:
+        - FundingOnly
+        - VotingOnly
+        - FundingVoting
+        - None
+      default: None
+    SortBy:
+      type: string
+      enum: 
+        - Trending
+        - Top
+        - New
+    IdeaBasic:
+      properties:
+        id:
+          type: string
+          readOnly: true
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+        descriptionShort:
+          type: string
+        credits:
+          type: number
+          readOnly: true
+        creditGoal:
+          type: number
+          readOnly: true
+        funderCount:
+          type: integer
+          readOnly: true
+        supporterCount:
+          type: integer
+          readOnly: true
+      required:
+        - id
+        - authorUserId
+        - created
+        - title
+        - descriptionShort
+    Idea:
+      allOf:
+        - $ref: '#/components/schemas/IdeaBasic'
+        - properties:
+            description:
+              type: string
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+              readOnly: true
+            myCredits:
+              type: number
+            mySupport:
+              type: boolean
+          required:
+            - description
+    Comment:
+      properties:
+        id:
+          type: string
+        parentCommentId:
+          type: string
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        comment:
+          type: string
+      required:
+        - id
+        - authorUserId
+        - created
+        - comment
+    User:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isAdmin:
+          type: boolean
+        avatar:
+          type: string
+      required:
+        - id
+        - name
+    Transaction:
+      properties:
+        id:
+          type: string
+        created:
+          type: string
+          format: date-time
+        amount:
+          type: string
+        transactionType:
+          type: string
+          enum:
+            - VoteIdea
+            - RefundIdea
+            - Purchase
+            - Refund
+        targetId:
+          description: Only set if an Idea is involved
+          type: string
+        extraDescription:
+          type: string
+      required:
+        - id
+        - created
+        - amount
+        - transactionType
+    ErrorResponse:
+      type: object
+      properties:
+        userFacingMessage:
+          type: string
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  /config:
+    get:
+      operationId: getConfig
+      tags:
+        - Config
+      summary: Get configuration
+      description: Fetches complete configuration for this app/widget.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conf'
+  /ideas:
+    get:
+      operationId: getIdeas
+      tags:
+        - Idea
+      summary: Fetch list of ideas based on criteria
+      description: >-
+        Fetch list of ideas based on following criteria.
+        Sorted by `sortBy` and filtered by `filterGroup`,
+        `filterStatus`, `filterTags`, and/or `search`.
+      parameters:
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/SortBy'
+          required: true
+          description: Sort order
+        - in: query
+          name: filterStatus
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filters by status
+        - in: query
+          name: filterBoard
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filters by board
+        - in: query
+          name: filterTags
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filters by tags
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Cursor to fetch next set of results
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  ideas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IdeaBasic'
+                  cursor:
+                    type: string
+                required:
+                  - ideas
+  /idea:
+    get:
+      operationId: getIdea
+      tags:
+        - Idea
+      summary: Get Idea
+      parameters:
+        - in: query
+          name: ideaId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Idea'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createIdea
+      tags:
+        - Idea
+      summary: Submit new idea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/Idea'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Idea'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteIdea
+      tags:
+        - Idea
+      summary: Delete idea
+      parameters:
+        - in: query
+          name: ideaId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vote:
+    post:
+      operationId: voteIdea
+      tags:
+        - Credit
+      summary: Vote Idea
+      description: Submit credits or support for idea
+      parameters:
+        - in: query
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+        - in: query
+          name: creditAmountOpt
+          schema:
+            type: integer
+          description: Amount of credits to fund. If not set, only support is given.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /user:
+    get:
+      operationId: getUser
+      tags:
+        - User
+      summary: Get user
+      description: Fetches user information.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: The ID of the user to return.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /transactions:
+    get:
+      operationId: getTransactions
+      tags:
+        - Credit
+      summary: Get transaction history
+      description: Get detailed history of all transactions for user
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: ID of the user
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Cursor to fetch next set of results
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'

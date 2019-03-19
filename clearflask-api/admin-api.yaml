@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: ClearFlask Admin API
+  description: ClearFlask Admin API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://admin.api.clearflask.com/client/v1/project/{projectId}/
+    description: Production server
+    variables:
+      projectId:
+        description: Project ID of the customer
+        default: demo
+
+components:
+  schemas:
+    Conf:
+      properties:
+        creditIntake:
+          description: Can be overriden on individual UserGroup.
+          $ref: '#/components/schemas/ConfIncomeType'
+    ConfUserGroup:
+      properties:
+        id:
+          type: string
+        creditIntake:
+          description: If set, overrides values on project level.
+          $ref: '#/components/schemas/ConfIncomeType'
+      required:
+        - id
+    ConfIncomeType:
+      properties:
+        creditsOnFirstSeen:
+          description: Amount of credits to give each user when first seen.
+          type: integer
+        creditsPerPeriod:
+          description: >-
+            Amount of credits to give each user per period of time.
+            Starting time is either first seen, or registration time
+            if supplied.
+          type: integer
+        creditsPeriodInDays:
+          type: integer
+          default: 30
+    ConfAppleReceiptValidation:
+      properties:
+        allowedBundleIdentifiers:
+          type: array
+          items:
+            type: string
+        purchaseToCreditMapping:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - allowedBundleIdentifiers
+        - purchaseToCreditMapping
+
+### TODOTODOTODOTODOTODO ###
