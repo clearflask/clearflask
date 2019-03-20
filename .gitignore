@@ -1,0 +1,55 @@
+.DS_Store
+target
+nb-configuration.xml
+.settings
+.classpath
+.project
+.externalToolBuilders
+.idea
+*.iml
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.mvn/wrapper/maven-wrapper.jar
+.vscode
+
+### MAVEN ###
+target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+### Node.js
+node_modules/
+node/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+### Reverse SSL proxy for development
+.nginx
+
+### Generated API
+clearflask-frontend/src/api/client

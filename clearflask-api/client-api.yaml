@@ -5,22 +5,27 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://client.api.clearflask.com/client/v1/project/{projectId}/
+  - url: https://client.api.clearflask.com/v1/project/{projectId}
     description: Production server
     variables:
       projectId:
         description: Project ID of the customer
-        default: demo
+        default: projectId
 
 externalDocs:
   url: https://clearflask.com/docs
 
 components:
   schemas:
-    Conf: # TODO
+    Conf:
       properties:
         name:
           type: string
+        logoUrl:
+          description: Location of the logo to display.
+          type: string
+        pages:
+          $ref: '#/components/schemas/ConfViewPages'
         ideaGroups:
           type: array
           items:
@@ -33,11 +38,47 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ConfIdeaTag'
+        defaultIdeaStatusId:
+          description: >-
+            Idea status to assign if any on newly created ideas.
+            Can be overriden in group.
+          type: string
+        settableIdeaTagIdsOnCreate:
+          description: >-
+            In addition to group level idea tags,
+            these tags can also be added by user
+            when creating an idea.
+          type: array
+          items:
+            type: string
         supportType:
           description: Can be overriden inside IdeaGroup
           $ref: '#/components/schemas/ConfSupportType'
+        creditType:
+          type: object
+          properties:
+            prefix:
+              type: string
+            suffix:
+              type: string
+            minUnit:
+              type: number
+            significantDigits:
+              type: integer
+          required:
+            - minUnit
+            - significantDigits
+        defaultIdeaTagIds:
+          type: array
+          items:
+            type: string
+        defaultIdeaVisibility:
+          $ref: '#/components/schemas/ConfIdeaVisibility'
+        settableIdeaVisibility:
+          type: boolean
       required:
         - name
+        - pages
         - ideaGroups
         - ideaStatuses
         - supportType
@@ -54,22 +95,50 @@ components:
         supportType:
           description: If set, overrides project level support type
           $ref: '#/components/schemas/ConfSupportType'
-        settableIdeaTagsOnCreate:
-          description: These tags can be set by user when creating an idea.
+        defaultIdeaStatusId:
+          description: >-
+            Idea status to assign on newly created ideas.
+            If not set, project level default applies.
+          type: string
+        defaultIdeaTagIds:
           type: array
           items:
-            $ref: '#/components/schemas/ConfIdeaTag'
+            type: string
+        defaultIdeaVisibility:
+          $ref: '#/components/schemas/ConfIdeaVisibility'
+        settableIdeaVisibility:
+          type: boolean
+        settableIdeaTagIdsOnCreate:
+          description: >-
+            In addition to project level idea tags,
+            these tags can also be added by user
+            when creating an idea.
+          type: array
+          items:
+            type: string
       required:
         - id
         - name
+    ConfIdeaVisibility:
+      type: string
+      enum:
+        - Public
+        - Private
     ConfIdeaStatus:
       properties:
         id:
           type: string
-        nextTagIds:
+        nextStatusIds:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              nextStatusId:
+                type: string
+              transitionText:
+                type: string
+            required:
+              - nextStatusId
         name:
           type: string
         color:
@@ -81,8 +150,6 @@ components:
         allowIdeaEdits:
           type: boolean
         allowComments:
-          type: boolean
-        allowPublicVisible:
           type: boolean
       required:
         - id
@@ -101,12 +168,73 @@ components:
     Color:
       type: string
       pattern: '#([0-9a-f]{3}){1,2}'
-    ConfMainPagePanel:
+    ConfViewPages:
+      type: array
+      items:
+        $ref: '#/components/schemas/ConfViewPage'
+    ConfViewPage:
+      description: Defines page content. All parts are optional.
       properties:
-        id:
+        urlName:
+          description: >-
+            Url path of page. Leave empty for main page.
           type: string
-        displayOrder:
+        name:
+          description: >-
+            Page name visible in menu and in url path.
+          type: string
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfViewPanel'
+        board:
+          $ref: '#/components/schemas/ConfViewBoard'
+        explorer:
+          $ref: '#/components/schemas/ConfViewIdeaExplorer'
+      required:
+        - urlName
+        - name
+    ConfViewBoard:
+      properties:
+        titleOpt:
+          type: string
+        panels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfViewIdeaList'
+      required:
+        - panels
+    ConfViewPanel:
+      properties:
+        titleOpt:
+          type: string
+        hideIfEmpty:
+          type: boolean
+        ideaLimit:
+          description: >-
+            Optionally set a limit on how many ideas to display.
+            Otherwise panel will have infinite scroll.
           type: integer
+        ideaList:
+          $ref: '#/components/schemas/ConfViewIdeaList'
+        enableSearchByGroup:
+          type: boolean
+        enableSearchByStatus:
+          type: boolean
+        enableSearchByTag:
+          type: boolean
+      required:
+        - ideaList
+    ConfViewIdeaExplorer:
+      properties:
+        titleOpt:
+          type: string
+        ideaList:
+          $ref: '#/components/schemas/ConfViewIdeaList'
+      required:
+        - ideaList
+    ConfViewIdeaList:
+      properties:
         sortBy:
           $ref: '#/components/schemas/SortBy'
         filterIdeaGroupIds:
@@ -123,7 +251,6 @@ components:
             type: string
       required:
         - id
-        - displayOrder
         - sortBy
     ConfSupportType:
       type: string
@@ -139,56 +266,63 @@ components:
         - Trending
         - Top
         - New
-    IdeaBasic:
+    IdeaSubmission:
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        groupId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - description
+        - groupId
+    Idea:
       properties:
         id:
           type: string
-          readOnly: true
         authorUserId:
           type: string
         created:
           type: string
           format: date-time
-          readOnly: true
         title:
           type: string
-        descriptionShort:
+        description:
           type: string
+        groupId:
+          type: string
+        statusId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
         credits:
           type: number
-          readOnly: true
         creditGoal:
           type: number
-          readOnly: true
         funderCount:
           type: integer
-          readOnly: true
         supporterCount:
           type: integer
-          readOnly: true
+        myCredits:
+          type: number
+        mySupport:
+          type: boolean
       required:
         - id
         - authorUserId
         - created
         - title
-        - descriptionShort
-    Idea:
-      allOf:
-        - $ref: '#/components/schemas/IdeaBasic'
-        - properties:
-            description:
-              type: string
-            comments:
-              type: array
-              items:
-                $ref: '#/components/schemas/Comment'
-              readOnly: true
-            myCredits:
-              type: number
-            mySupport:
-              type: boolean
-          required:
-            - description
+        - description
+        - groupId
+        - statusId
     Comment:
       properties:
         id:
@@ -246,6 +380,15 @@ components:
         - created
         - amount
         - transactionType
+    VoteIdeaResult:
+      type: object
+      properties:
+        idea:
+          $ref: '#/components/schemas/Idea'
+        transaction:
+          $ref: '#/components/schemas/Transaction'
+      required:
+        - idea
     ErrorResponse:
       type: object
       properties:
@@ -292,6 +435,12 @@ paths:
         `filterStatus`, `filterTags`, and/or `search`.
       parameters:
         - in: query
+          name: limit
+          schema:
+            type: integer
+          required: true
+          description: Limit number of ideas to retrieve. Max 50
+        - in: query
           name: sortBy
           schema:
             $ref: '#/components/schemas/SortBy'
@@ -334,12 +483,13 @@ paths:
           content:
             application/json:
               schema: 
+                title: Ideas
                 type: object
                 properties:
                   ideas:
                     type: array
                     items:
-                      $ref: '#/components/schemas/IdeaBasic'
+                      $ref: '#/components/schemas/Idea'
                   cursor:
                     type: string
                 required:
@@ -374,8 +524,16 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-                $ref: '#/components/schemas/Idea'
+              schema:
+                title: CreateIdeaBody
+                type: object
+                properties:
+                  idea:
+                    $ref: '#/components/schemas/IdeaSubmission'
+                  creditsToFund:
+                    type: integer
+                required:
+                  - idea
       responses:
         '200':
           description: OK
@@ -399,6 +557,29 @@ paths:
       responses:
         '200':
           description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /comment:
+    get:
+      operationId: getComments
+      tags:
+        - Comment
+      summary: Get Comments
+      parameters:
+        - in: query
+          name: ideaId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
         '404':
           $ref: '#/components/responses/NotFound'
   /vote:
@@ -425,8 +606,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: 
-                $ref: '#/components/schemas/Transaction'
+              schema:
+                $ref: '#/components/schemas/VoteIdeaResult'
         '404':
           $ref: '#/components/responses/NotFound'
   /user:

@@ -1,0 +1,24 @@
+
+import { Configuration } from '../runtime';
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+import { {{ classFilename }}Interface, {{ classFilename }} } from './{{ classFilename }}';
+export * from './{{ classFilename }}';
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+export interface ApiInterface extends {{#apiInfo}}{{#apis}}{{#operations}}{{ classFilename }}Interface{{^-last}}, {{/-last}}{{/operations}}{{/apis}}{{/apiInfo}} {};
+export class Api {
+    apis
+
+    constructor(configuration?:Configuration, apiOverride?:ApiInterface) {
+        this.apis = {};{{#apiInfo}}{{#apis}}{{#operations}}
+        this.apis.{{ classFilename }} = apiOverride || new {{ classFilename }}(configuration);{{/operations}}{{/apis}}{{/apiInfo}}
+    }{{#apiInfo}}{{#apis}}{{#operations}}
+
+    get{{ classFilename }}():{{ classFilename }} {
+        return this.apis.{{ classFilename }};
+    }{{/operations}}{{/apis}}{{/apiInfo}}
+};
