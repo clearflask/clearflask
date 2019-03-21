@@ -1,9 +1,5 @@
 import {
-  CommentApiInterface,
-  ConfigApiInterface,
-  CreditApiInterface,
-  IdeaApiInterface,
-  UserApiInterface,
+  ApiInterface,
   GetCommentsRequest,
   GetTransactionsRequest,
   Transaction,
@@ -30,7 +26,7 @@ import {
 } from './client';
 import randomUuid from '../util/uuid';
 
-class ServerMock implements CommentApiInterface, ConfigApiInterface, CreditApiInterface, IdeaApiInterface, UserApiInterface {
+class ServerMock implements ApiInterface {
   readonly LATENCY = 300;
 
   conf:Conf;
@@ -229,22 +225,22 @@ class ServerMock implements CommentApiInterface, ConfigApiInterface, CreditApiIn
 
     var result:Array<Idea> = [];
     for(var idea of Object.values(this.ideas)) {
-      if(requestParameters.filterStatus
-        && requestParameters.filterStatus.length > 0
-        && requestParameters.filterStatus.indexOf(idea.groupId) < 0) {
+      if(requestParameters.filterIdeaStatusIds
+        && requestParameters.filterIdeaStatusIds.length > 0
+        && requestParameters.filterIdeaStatusIds.indexOf(idea.groupId) < 0) {
         continue;
       }
 
-      if(requestParameters.filterBoard
-        && requestParameters.filterBoard.length > 0
-        && requestParameters.filterBoard.indexOf(idea.statusId) < 0) {
+      if(requestParameters.filterIdeaGroupIds
+        && requestParameters.filterIdeaGroupIds.length > 0
+        && requestParameters.filterIdeaGroupIds.indexOf(idea.statusId) < 0) {
         continue;
       }
 
-      if(requestParameters.filterTags
-        && requestParameters.filterTags.length > 0
+      if(requestParameters.filterIdeaTagIds
+        && requestParameters.filterIdeaTagIds.length > 0
         && (!idea.tagIds
-        || requestParameters.filterTags.filter(tagId =>
+        || requestParameters.filterIdeaTagIds.filter(tagId =>
             idea.tagIds && idea.tagIds.indexOf(tagId) >= 0
           ).length > 0)) {
         continue;

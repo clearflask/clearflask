@@ -431,8 +431,7 @@ paths:
       summary: Fetch list of ideas based on criteria
       description: >-
         Fetch list of ideas based on following criteria.
-        Sorted by `sortBy` and filtered by `filterGroup`,
-        `filterStatus`, `filterTags`, and/or `search`.
+        Supports sorting, tag filtering and search.
       parameters:
         - in: query
           name: limit
@@ -447,21 +446,21 @@ paths:
           required: true
           description: Sort order
         - in: query
-          name: filterStatus
+          name: filterIdeaStatusIds
           schema:
             type: array
             items:
               type: string
           description: Filters by status
         - in: query
-          name: filterBoard
+          name: filterIdeaGroupIds
           schema:
             type: array
             items:
               type: string
           description: Filters by board
         - in: query
-          name: filterTags
+          name: filterIdeaTagIds
           schema:
             type: array
             items:

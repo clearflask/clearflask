@@ -82,7 +82,7 @@ class DataMock {
         }),
         ConfViewPageFromJSON({
           urlName: 'security-privacy',
-          name: 'Security/Privacy',
+          name: 'Security Privacy',
           explorer: ConfViewIdeaExplorerFromJSON({
             ideaList: ConfViewIdeaListFromJSON({
               sortBy: SortBy.Trending,

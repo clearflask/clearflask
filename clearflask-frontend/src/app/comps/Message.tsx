@@ -10,6 +10,7 @@ import SnackbarContent from '@material-ui/core/SnackbarContent';
 import WarningIcon from '@material-ui/icons/Warning';
 
 interface Props {
+  innerStyle:React.CSSProperties;
   message:React.ReactNode|string,
   onClose?:()=>{},
   variant:'success'|'warning'|'error'|'info',
@@ -52,7 +53,7 @@ class Message extends Component<Props> {
     const Icon = this.variantIcon[this.props.variant];
     return (
       <SnackbarContent
-        style={this.styles[this.props.variant]}
+        style={{...this.styles[this.props.variant], ...this.props.innerStyle}}
         aria-describedby="client-snackbar"
         message={
           <span id="client-snackbar">
