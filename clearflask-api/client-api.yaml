@@ -201,7 +201,7 @@ components:
         panels:
           type: array
           items:
-            $ref: '#/components/schemas/ConfViewIdeaList'
+            $ref: '#/components/schemas/ConfViewPanel'
       required:
         - panels
     ConfViewPanel:
@@ -210,13 +210,8 @@ components:
           type: string
         hideIfEmpty:
           type: boolean
-        ideaLimit:
-          description: >-
-            Optionally set a limit on how many ideas to display.
-            Otherwise panel will have infinite scroll.
-          type: integer
         ideaList:
-          $ref: '#/components/schemas/ConfViewIdeaList'
+          $ref: '#/components/schemas/ConfViewIdeaSearchQuery'
         enableSearchByGroup:
           type: boolean
         enableSearchByStatus:
@@ -230,11 +225,16 @@ components:
         titleOpt:
           type: string
         ideaList:
-          $ref: '#/components/schemas/ConfViewIdeaList'
+          $ref: '#/components/schemas/ConfViewIdeaSearchQuery'
       required:
         - ideaList
-    ConfViewIdeaList:
+    ConfViewIdeaSearchQuery:
       properties:
+        searchKey:
+          type: string
+          description: >-
+            Unique key describing this specific search query.
+            Used for deduping requests, caching.
         sortBy:
           $ref: '#/components/schemas/SortBy'
         filterIdeaGroupIds:
@@ -249,8 +249,14 @@ components:
           type: array
           items:
             type: string
+        searchText:
+          type: string
+        limit:
+          description: >-
+            Optionally set a limit on how many results to return.
+          type: integer
       required:
-        - id
+        - searchKey
         - sortBy
     ConfSupportType:
       type: string
@@ -354,6 +360,12 @@ components:
       required:
         - id
         - name
+    Credit:
+      properties:
+        creditAmount:
+          type: number
+      required:
+        - creditAmount
     Transaction:
       properties:
         id:
@@ -362,7 +374,7 @@ components:
           type: string
           format: date-time
         amount:
-          type: string
+          type: number
         transactionType:
           type: string
           enum:
@@ -387,8 +399,18 @@ components:
           $ref: '#/components/schemas/Idea'
         transaction:
           $ref: '#/components/schemas/Transaction'
+        availableCredit:
+          $ref: '#/components/schemas/Credit'
       required:
         - idea
+    AuthSuccessResult:
+      properties:
+        userId:
+          $ref: '#/components/schemas/User'
+        availableCredit:
+          $ref: '#/components/schemas/Credit'
+      required:
+        - user
     ErrorResponse:
       type: object
       properties:
@@ -396,13 +418,38 @@ components:
           type: string
   responses:
     NotFound:
-      description: The specified resource was not found
+      description: >-
+        HTTP 404 Not Found
+        The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: >-
+        HTTP 403 Forbidden
+        Use when access is not allowed to a particular resource
+        NotFound is also acceptable when the existence of a
+        resource must be protected.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
-      description: Unauthorized
+      description: >-
+        HTTP 401 Unauthorized
+        Used during login/bind to indicate the authentication was
+        not successful.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConfigChanged:
+      description: >-
+        HTTP 412 Precondition Failed
+        Use only when client needs to reload the App Configuration.
+        In a case where a request does not make sense based on App
+        Configuration. Client is expected to reload immediately.
       content:
         application/json:
           schema:
@@ -423,7 +470,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conf'
-  /ideas:
+  /idea:
     get:
       operationId: getIdeas
       tags:
@@ -434,43 +481,11 @@ paths:
         Supports sorting, tag filtering and search.
       parameters:
         - in: query
-          name: limit
-          schema:
-            type: integer
+          name: searchQuery
           required: true
-          description: Limit number of ideas to retrieve. Max 50
-        - in: query
-          name: sortBy
           schema:
-            $ref: '#/components/schemas/SortBy'
-          required: true
-          description: Sort order
-        - in: query
-          name: filterIdeaStatusIds
-          schema:
-            type: array
-            items:
-              type: string
-          description: Filters by status
-        - in: query
-          name: filterIdeaGroupIds
-          schema:
-            type: array
-            items:
-              type: string
-          description: Filters by board
-        - in: query
-          name: filterIdeaTagIds
-          schema:
-            type: array
-            items:
-              type: string
-          description: Filters by tags
-        - in: query
-          name: search
-          schema:
-            type: string
-          description: Search string
+            $ref: '#/components/schemas/ConfViewIdeaSearchQuery'
+          description: Cursor to fetch next set of results
         - in: query
           name: cursor
           schema:
@@ -493,14 +508,53 @@ paths:
                     type: string
                 required:
                   - ideas
-  /idea:
+    post:
+      operationId: createIdea
+      tags:
+        - Idea
+      summary: Submit new idea
+      parameters:
+        - in: query
+          name: groupId
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: title
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: description
+          schema:
+            type: string
+        - in: query
+          name: creditsToFund
+          schema:
+            type: number
+        - in: query
+          name: tagIds
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Idea'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /idea/{ideaId}:
     get:
       operationId: getIdea
       tags:
         - Idea
       summary: Get Idea
       parameters:
-        - in: query
+        - in: path
           name: ideaId
           schema:
             type: string
@@ -514,32 +568,28 @@ paths:
                 $ref: '#/components/schemas/Idea'
         '404':
           $ref: '#/components/responses/NotFound'
-    post:
-      operationId: createIdea
+    patch:
+      operationId: updateIdea
       tags:
         - Idea
-      summary: Submit new idea
-      requestBody:
-        required: true
-        content:
-          application/json:
-              schema:
-                title: CreateIdeaBody
-                type: object
-                properties:
-                  idea:
-                    $ref: '#/components/schemas/IdeaSubmission'
-                  creditsToFund:
-                    type: integer
-                required:
-                  - idea
+      summary: Delete idea
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: description
+          schema:
+            type: string
       responses:
         '200':
           description: OK
-          content:
-            application/json:
-              schema: 
-                $ref: '#/components/schemas/Idea'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
@@ -548,7 +598,7 @@ paths:
         - Idea
       summary: Delete idea
       parameters:
-        - in: query
+        - in: path
           name: ideaId
           schema:
             type: string
@@ -581,7 +631,7 @@ paths:
                   $ref: '#/components/schemas/Comment'
         '404':
           $ref: '#/components/responses/NotFound'
-  /vote:
+  /vote/{ideaId}:
     post:
       operationId: voteIdea
       tags:
@@ -589,14 +639,14 @@ paths:
       summary: Vote Idea
       description: Submit credits or support for idea
       parameters:
-        - in: query
+        - in: path
           name: ideaId
           schema:
             type: string
           required: true
           description: ID of the idea
         - in: query
-          name: creditAmountOpt
+          name: creditAmount
           schema:
             type: integer
           description: Amount of credits to fund. If not set, only support is given.
@@ -609,7 +659,61 @@ paths:
                 $ref: '#/components/schemas/VoteIdeaResult'
         '404':
           $ref: '#/components/responses/NotFound'
-  /user:
+    patch:
+      operationId: changeVoteIdea
+      tags:
+        - Credit
+      summary: Change Vote Idea
+      description: Remove support for idea
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+        - in: query
+          name: support
+          schema:
+            type: boolean
+          description: Change support vote. If empty, remains unchanged.
+        - in: query
+          name: creditAmount
+          schema:
+            type: boolean
+          description: Change funding vote. If empty, remains unchanged.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteIdeaResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: unvoteIdea
+      tags:
+        - Credit
+      summary: Unvote Idea
+      description: Remove support for idea
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteIdeaResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /user/{userId}:
     get:
       operationId: getUser
       tags:
@@ -618,7 +722,7 @@ paths:
       description: Fetches user information.
       parameters:
         - name: userId
-          in: query
+          in: path
           required: true
           description: The ID of the user to return.
           schema:
@@ -632,6 +736,120 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateUser
+      tags:
+        - User
+      summary: Update user account information
+      parameters:
+        - name: userId
+          in: path
+          description: User ID.
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Name of the user to be visible by others.
+          schema:
+            type: string
+        - name: avatar
+          in: query
+          description: Url of the avatar to use
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: Email address of the user
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /user:
+    post:
+      operationId: registerUser
+      tags:
+        - User
+      summary: Register new user
+      parameters:
+        - name: name
+          in: query
+          description: Name of the user to be visible by others.
+          schema:
+            type: string
+        - name: avatar
+          in: query
+          description: Url of the avatar to use
+          schema:
+            type: string
+        - name: email
+          in: query
+          required: true
+          description: Email address of the user
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResult'
+  /user/login:
+    post:
+      operationId: loginUser
+      tags:
+        - User
+      summary: Login user
+      parameters:
+        - name: email
+          in: query
+          required: true
+          description: Email
+          schema:
+            type: string
+        - name: email
+          in: query
+          required: true
+          description: Password
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResult'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
+  /user/bind:
+    post:
+      operationId: bindUser
+      tags:
+        - User
+      summary: >-
+        Bind already logged in user either with
+          - Existing server side cookie token
+          - Authentication token supplied externally
+      parameters:
+        - name: token
+          in: query
+          description: Token supplied externally
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResult'
+        '401':
+          $ref: '#/components/schemas/Unauthorized'
   /transactions:
     get:
       operationId: getTransactions

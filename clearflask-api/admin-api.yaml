@@ -5,55 +5,176 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://admin.api.clearflask.com/client/v1/project/{projectId}/
+  - url: https://admin.api.clearflask.com/v1/project/{projectId}
     description: Production server
     variables:
       projectId:
         description: Project ID of the customer
-        default: demo
+        default: projectId
 
 components:
   schemas:
-    Conf:
-      properties:
-        creditIntake:
-          description: Can be overriden on individual UserGroup.
-          $ref: '#/components/schemas/ConfIncomeType'
-    ConfUserGroup:
+    # Conf:
+    #   properties:
+    #     creditIntake:
+    #       description: Can be overriden on individual UserGroup.
+    #       $ref: '#/components/schemas/ConfIncomeType'
+    # ConfUserGroup:
+    #   properties:
+    #     id:
+    #       type: string
+    #     creditIntake:
+    #       description: If set, overrides values on project level.
+    #       $ref: '#/components/schemas/ConfIncomeType'
+    #   required:
+    #     - id
+    # ConfIncomeType:
+    #   properties:
+    #     creditsOnFirstSeen:
+    #       description: Amount of credits to give each user when first seen.
+    #       type: integer
+    #     creditsPerPeriod:
+    #       description: >-
+    #         Amount of credits to give each user per period of time.
+    #         Starting time is either first seen, or registration time
+    #         if supplied.
+    #       type: integer
+    #     creditsPeriodInDays:
+    #       type: integer
+    #       default: 30
+    # ConfAppleReceiptValidation:
+    #   properties:
+    #     allowedBundleIdentifiers:
+    #       type: array
+    #       items:
+    #         type: string
+    #     purchaseToCreditMapping:
+    #       type: object
+    #       additionalProperties:
+    #         type: integer
+    #   required:
+    #     - allowedBundleIdentifiers
+    #     - purchaseToCreditMapping
+    User:
       properties:
         id:
           type: string
-        creditIntake:
-          description: If set, overrides values on project level.
-          $ref: '#/components/schemas/ConfIncomeType'
+        name:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        avatar:
+          type: string
       required:
         - id
-    ConfIncomeType:
+        - name
+        - email
+    ErrorResponse:
+      type: object
       properties:
-        creditsOnFirstSeen:
-          description: Amount of credits to give each user when first seen.
-          type: integer
-        creditsPerPeriod:
-          description: >-
-            Amount of credits to give each user per period of time.
-            Starting time is either first seen, or registration time
-            if supplied.
-          type: integer
-        creditsPeriodInDays:
-          type: integer
-          default: 30
-    ConfAppleReceiptValidation:
-      properties:
-        allowedBundleIdentifiers:
-          type: array
-          items:
+        userFacingMessage:
+          type: string
+  responses:
+    NotFound:
+      description: >-
+        HTTP 404 Not Found
+        The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  # TODO /config:
+  # TODO /idea:
+  # TODO /comment:
+  # TODO /vote:
+  /user:
+    post:
+      operationId: registerUserAdmin
+      tags:
+        - User
+      summary: Register a new user
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: OK
+  /user/{userId}:
+    get:
+      operationId: getUserAdmin
+      tags:
+        - User
+      summary: Get a new user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
             type: string
-        purchaseToCreditMapping:
-          type: object
-          additionalProperties:
-            type: integer
-      required:
-        - allowedBundleIdentifiers
-        - purchaseToCreditMapping
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateUserAdmin
+      tags:
+        - User
+      summary: Delete a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: email
+          in: query
+          schema:
+            type: string
+        - name: isAdmin
+          in: query
+          schema:
+            type: boolean
+        - name: avatar
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteUserAdmin
+      tags:
+        - User
+      summary: Delete a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  # TODO /transactions:
 
 ### TODOTODOTODOTODOTODO ###

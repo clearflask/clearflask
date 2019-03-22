@@ -1,17 +1,16 @@
 import React, { Component } from 'react';
-import { Api, Conf, ConfViewPage, ConfViewIdeaList, Idea, ApiInterface } from '../api/client';
+import { Conf, ConfViewPage, Idea, ApiInterface, ConfViewIdeaSearchQuery } from '../api/client';
 import Loading from './comps/Loading';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { StateIdeas, Status } from '../api/server';
-import { mapIdeaListToRequest, getSearchKey } from '../api/dataUtil';
+import { StateIdeas, State } from '../api/server';
+import Panel, { Direction } from './comps/Panel';
 
-interface Props {
+interface Props extends StateIdeas{
   api:ApiInterface;
   conf?:Conf;
   pageConf?:ConfViewPage;
-  stateIdeas:StateIdeas;
 }
 
 class Page extends Component<Props> {
@@ -45,17 +44,13 @@ class Page extends Component<Props> {
 
     // ### PANELS
     var panelsCmpt:any = [];
-    for(var panel of this.props.pageConf.panels || []) {
-      const ideaWrapper = this.getIdeaList(
-        panel.ideaList,
-        panel.ideaLimit
-      );
+    for(let panel of this.props.pageConf.panels || []) {
       panelsCmpt.push(
-        <div>
+        <div key={panel.ideaList.searchKey}>
           <Typography variant='overline'>
             {panel.titleOpt}
           </Typography>
-          {JSON.stringify(ideaWrapper)}
+          <Panel direction={Direction.Horizontal} {...this.props} searchKey={panel.ideaList.searchKey} />
         </div>
       );
       // TODO
@@ -65,11 +60,27 @@ class Page extends Component<Props> {
     var boardCmpt;
     if(this.props.pageConf.board) {
       const board = this.props.pageConf.board;
+      var panels:any = [];
+      for(let panel of board.panels) {
+        panels.push(
+          <div key={panel.ideaList.searchKey}>
+            <Typography variant='overline'>
+              {panel.titleOpt}
+            </Typography>
+            <Panel direction={Direction.Vertical} {...this.props} searchKey={panel.ideaList.searchKey} />
+          </div>
+        );
+      }
       boardCmpt = (
         <div>
           <Typography variant='overline'>
             {board.titleOpt}
           </Typography>
+          <div style={{
+            display: 'flex',
+          }}>
+            {panels}
+          </div>
         </div>
       );
       // TODO
@@ -84,6 +95,7 @@ class Page extends Component<Props> {
           <Typography variant='overline'>
             {explorer.titleOpt}
           </Typography>
+          <Panel direction={Direction.Wrap} {...this.props} searchKey={explorer.ideaList.searchKey} />
         </div>
       );
       // TODO
@@ -97,46 +109,35 @@ class Page extends Component<Props> {
       </div>
     );
   }
-
-  getIdeaList(
-    ideaList:ConfViewIdeaList,
-    limit?:number,
-    search?:string,
-  ):{
-    status:Status;
-    ideas:{
-      status:Status;
-      idea?:Idea;
-    }[],
-    cursor?:string
-  }|undefined {
-    const ideaRequest = mapIdeaListToRequest(
-      ideaList,
-      limit,
-      search,
-    );
-    const searchKey = getSearchKey(ideaRequest);
-    const ideas = this.props.stateIdeas.bySearch[searchKey];
-    if(!ideas) {
-      this.props.api.getIdeas(ideaRequest);
-    }
-    return {
-      status: ideas && ideas.status || Status.PENDING,
-      cursor: ideas && ideas.cursor,
-      ideas: (ideas && ideas.ideaIds || []).map((ideaId) => {
-        const idea = this.props.stateIdeas.byId[ideaId];
-        if(!idea) {
-          this.props.api.getIdea({ideaId: ideaId});
-        }
-        return {
-          status: idea && idea.status || Status.PENDING,
-          idea: idea && idea.idea,
-        }
-      }),
-    };
-  }
 }
 
-export default connect<any,any,any,any>((state, ownProps) => {
-  return{ stateIdeas: state.ideas }
+export default connect<any,any,any,any>((state:State, ownProps:Props) => {
+  var newProps = {
+    byId: {},
+    bySearch: {},
+  };
+
+  if(!ownProps.pageConf) {
+    return newProps;
+  }
+
+  const searchQueries:ConfViewIdeaSearchQuery[] = [
+    ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.ideaList) || []),
+    ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.ideaList) || []),
+    ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.ideaList] || []),
+  ];
+
+  for(let searchQuery of searchQueries) {
+    const bySearch = state.ideas.bySearch[searchQuery.searchKey];
+    if(!bySearch) {
+      ownProps.api.getIdeas({searchQuery: searchQuery});
+      continue;
+    }
+    newProps.bySearch[searchQuery.searchKey] = bySearch;
+    (bySearch.ideaIds || []).forEach(ideaId => {
+      newProps.byId[ideaId] = state.ideas.byId[ideaId];
+    })
+  }
+
+  return newProps;
 })(Page);

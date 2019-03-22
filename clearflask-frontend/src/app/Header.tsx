@@ -30,7 +30,7 @@ class Header extends Component<Props> {
         ? this.props.pageConf.urlName
         : undefined;
       tabs = this.props.conf.pages.map(p => 
-        (<Tab disableRipple label={p.name} value={p.urlName} />));
+        (<Tab key={p.urlName} disableRipple label={p.name} value={p.urlName} />));
     }
 
     return (
@@ -67,10 +67,10 @@ class Header extends Component<Props> {
                 position: 'absolute',
                 zIndex: 1000,
                 height: '48px',
-                webkitScrollbar: 'none',
+                WebkitScrollbar: 'none',
                 right: props.direction === 'right' ? '0px' : '',
-                background: `radial-gradient(ellipse at ${props.direction}, #fafafa 50%, rgba(255,255,255,0) 70%),
-                             radial-gradient(ellipse at center, #fafafa 50%, rgba(255,255,255,0) 70%)`,
+                background: `radial-gradient(ellipse at ${props.direction}, #fafafa 60%, rgba(255,255,255,0) 70%),
+                             radial-gradient(ellipse at center, #fafafa 60%, rgba(255,255,255,0) 70%)`,
               }}
               onClick={props.onClick.bind()}
             >
@@ -83,7 +83,6 @@ class Header extends Component<Props> {
           onChange={(event, value) => this.props.pageChanged(value)}
           indicatorColor="primary"
           textColor="primary"
-          centered
         >
           {tabs}
         </Tabs>

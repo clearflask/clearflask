@@ -1,28 +1,8 @@
 import React from 'react';
 import { combineReducers, Store } from "redux";
-import {
-  Api,
-  BASE_PATH,
-  Configuration,
-  ApiInterface,
-  Conf,
-  GetCommentsRequest,
-  GetTransactionsRequest,
-  Transaction,
-  VoteIdeaResult,
-  VoteIdeaRequest,
-  CreateIdeaRequest,
-  DeleteIdeaRequest,
-  GetIdeaRequest,
-  GetIdeasRequest,
-  GetUserRequest,
-  User,
-  Ideas,
-  Idea,
-  Comment,
-} from './client';
+import * as Client from './client';
 import DataMock from './dataMock';
-import { getSearchKey } from './dataUtil';
+import { ApiInterface } from './client';
 
 export enum Action {
   // ConfigApi
@@ -51,9 +31,9 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
-export class Server implements ApiInterface {
+export class Server implements Client.ApiInterface {
   apis: any;
-  readonly apiDelegate:Api;
+  readonly apiDelegate:Client.Api;
   readonly store:Store
 
   constructor(store:Store, projectName) {
@@ -62,11 +42,11 @@ export class Server implements ApiInterface {
     if(projectName === 'demo') {
       // In-memory demo
       const mockServer = new DataMock().mockServerData();
-      this.apiDelegate = new Api(new Configuration(), mockServer);
+      this.apiDelegate = new Client.Api(new Client.Configuration(), mockServer);
     } else {
       // Production
-      this.apiDelegate = new Api(new Configuration({
-        basePath: BASE_PATH.replace(/projectId/, projectName),
+      this.apiDelegate = new Client.Api(new Client.Configuration({
+        basePath: Client.BASE_PATH.replace(/projectId/, projectName),
       }));
     }
   }
@@ -84,42 +64,63 @@ export class Server implements ApiInterface {
     // return reducers(undefined, initialAuthAction);
   }
 
-  getComments(requestParameters: GetCommentsRequest): Promise<Array<Comment>> {
+  changeVoteIdea(requestParameters: Client.ChangeVoteIdeaRequest): Promise<Client.VoteIdeaResult> {
     throw new Error("Method not implemented.");
   }
-  getConfig(): Promise<Conf> {
+  unvoteIdea(requestParameters: Client.UnvoteIdeaRequest): Promise<Client.VoteIdeaResult> {
+    throw new Error("Method not implemented.");
+  }
+  bindUser(requestParameters: Client.BindUserRequest): Promise<Client.AuthSuccessResult> {
+    throw new Error("Method not implemented.");
+  }
+  loginUser(requestParameters: Client.LoginUserRequest): Promise<Client.AuthSuccessResult> {
+    throw new Error("Method not implemented.");
+  }
+  registerUser(requestParameters: Client.RegisterUserRequest): Promise<Client.AuthSuccessResult> {
+    throw new Error("Method not implemented.");
+  }
+  updateUser(requestParameters: Client.UpdateUserRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  getComments(requestParameters: Client.GetCommentsRequest): Promise<Array<Client.Comment>> {
+    throw new Error("Method not implemented.");
+  }
+  getConfig(): Promise<Client.Conf> {
     return this._dispatch({
       type: Action.getConfig,
       payload: this.apiDelegate.getConfigApi().getConfig(),
     });
   }
-  getTransactions(requestParameters: GetTransactionsRequest): Promise<Array<Transaction>> {
+  getTransactions(requestParameters: Client.GetTransactionsRequest): Promise<Array<Client.Transaction>> {
     throw new Error("Method not implemented.");
   }
-  voteIdea(requestParameters: VoteIdeaRequest): Promise<VoteIdeaResult> {
+  voteIdea(requestParameters: Client.VoteIdeaRequest): Promise<Client.VoteIdeaResult> {
     throw new Error("Method not implemented.");
   }
-  createIdea(requestParameters: CreateIdeaRequest): Promise<Idea> {
+  createIdea(requestParameters: Client.CreateIdeaRequest): Promise<Client.Idea> {
     throw new Error("Method not implemented.");
   }
-  deleteIdea(requestParameters: DeleteIdeaRequest): Promise<void> {
+  deleteIdea(requestParameters: Client.DeleteIdeaRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  getIdea(requestParameters: GetIdeaRequest): Promise<Idea> {
+  updateIdea(requestParameters: Client.UpdateIdeaRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  getIdea(requestParameters: Client.GetIdeaRequest): Promise<Client.Idea> {
     return this._dispatch({
       type: Action.getIdea,
       meta: { ideaId: requestParameters.ideaId },
       payload: this.apiDelegate.getIdeaApi().getIdea(requestParameters),
     });
   }
-  getIdeas(requestParameters: GetIdeasRequest): Promise<Ideas> {
+  getIdeas(requestParameters: Client.GetIdeasRequest): Promise<Client.Ideas> {
     return this._dispatch({
       type: Action.getIdeas,
-      meta: { searchKey: getSearchKey(requestParameters) },
+      meta: { searchKey: requestParameters.searchQuery.searchKey },
       payload: this.apiDelegate.getIdeaApi().getIdeas(requestParameters),
     });
   }
-  getUser(requestParameters: GetUserRequest): Promise<User> {
+  getUser(requestParameters: Client.GetUserRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
   }
 
@@ -131,7 +132,7 @@ export class Server implements ApiInterface {
 
 export interface StateConf {
   status?:Status;
-  conf?:Conf;
+  conf?:Client.Conf;
 }
 function reducerConf(state:StateConf = {}, action):StateConf {
   switch (action.type) {
@@ -152,7 +153,7 @@ function reducerConf(state:StateConf = {}, action):StateConf {
 export interface StateIdeas {
   byId:{[ideaId:string]:{
     status:Status;
-    idea:Idea;
+    idea:Client.Idea;
   }};
   bySearch:{[searchKey:string]:{
     status: Status,
@@ -160,10 +161,11 @@ export interface StateIdeas {
     cursor?: string,
   }};
 }
-function reducerIdeas(state:StateIdeas = {
+const stateIdeasDefault = {
   byId: {},
   bySearch: {},
-}, action):StateIdeas {
+};
+function reducerIdeas(state:StateIdeas = stateIdeasDefault, action):StateIdeas {
   switch (action.type) {
     case `${Action.getIdea}_${Status.PENDING}`:
       return {

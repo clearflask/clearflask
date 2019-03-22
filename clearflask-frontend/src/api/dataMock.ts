@@ -7,10 +7,10 @@ import {
   ConfIdeaStatusFromJSON,
   ConfViewPageFromJSON,
   ConfViewIdeaExplorerFromJSON,
-  ConfViewIdeaListFromJSON,
   SortBy,
   ConfViewPanelFromJSON,
   ConfViewBoardFromJSON,
+  ConfViewIdeaSearchQueryFromJSON,
 } from "./client";
 import randomUuid from "../util/uuid";
 import { ConfIdeaVisibility } from "./client/models/ConfIdeaVisibility";
@@ -34,17 +34,29 @@ class DataMock {
           board: ConfViewBoardFromJSON({
             titleOpt: 'Roadmap',
             panels: [
-              ConfViewIdeaListFromJSON({
-                sortBy: SortBy.New,
-                filterIdeaStatusIds: ['statusPlanned'],
+              ConfViewPanelFromJSON({
+                titleOpt: 'Planned',
+                ideaList: ConfViewIdeaSearchQueryFromJSON({
+                  searchKey: randomUuid(),
+                  sortBy: SortBy.New,
+                  filterIdeaStatusIds: ['statusPlanned'],
+                }),
               }),
-              ConfViewIdeaListFromJSON({
-                sortBy: SortBy.New,
-                filterIdeaStatusIds: ['statusInProgress'],
+              ConfViewPanelFromJSON({
+                titleOpt: 'In progress',
+                ideaList: ConfViewIdeaSearchQueryFromJSON({
+                  searchKey: randomUuid(),
+                  sortBy: SortBy.New,
+                  filterIdeaStatusIds: ['statusInProgress'],
+                }),
               }),
-              ConfViewIdeaListFromJSON({
-                sortBy: SortBy.New,
-                filterIdeaStatusIds: ['statusResolved'],
+              ConfViewPanelFromJSON({
+                titleOpt: 'Completed',
+                ideaList: ConfViewIdeaSearchQueryFromJSON({
+                  searchKey: randomUuid(),
+                  sortBy: SortBy.New,
+                  filterIdeaStatusIds: ['statusResolved'],
+                }),
               }),
             ],
           }),
@@ -56,7 +68,8 @@ class DataMock {
             ConfViewPanelFromJSON({
               titleOpt: 'Support needed',
               hideIfEmpty: true,
-              ideaList: ConfViewIdeaListFromJSON({
+              ideaList: ConfViewIdeaSearchQueryFromJSON({
+                searchKey: randomUuid(),
                 sortBy: SortBy.Top,
                 filterIdeaGroupIds: ['idea-group-feature-request'],
                 filterIdeaStatusIds: ['statusGatherFeedback'],
@@ -64,7 +77,8 @@ class DataMock {
             }),
           ],
           explorer: ConfViewIdeaExplorerFromJSON({
-            ideaList: ConfViewIdeaListFromJSON({
+            ideaList: ConfViewIdeaSearchQueryFromJSON({
+              searchKey: randomUuid(),
               sortBy: SortBy.Trending,
               filterIdeaGroupIds: ['idea-group-feature-request'],
             }),
@@ -74,7 +88,8 @@ class DataMock {
           urlName: 'bug',
           name: 'Bug',
           explorer: ConfViewIdeaExplorerFromJSON({
-            ideaList: ConfViewIdeaListFromJSON({
+            ideaList: ConfViewIdeaSearchQueryFromJSON({
+              searchKey: randomUuid(),
               sortBy: SortBy.Trending,
               filterIdeaGroupIds: ['idea-group-bug']
             }),
@@ -84,7 +99,8 @@ class DataMock {
           urlName: 'security-privacy',
           name: 'Security Privacy',
           explorer: ConfViewIdeaExplorerFromJSON({
-            ideaList: ConfViewIdeaListFromJSON({
+            ideaList: ConfViewIdeaSearchQueryFromJSON({
+              searchKey: randomUuid(),
               sortBy: SortBy.Trending,
               filterIdeaGroupIds: ['idea-group-security-privacy']
             }),
@@ -226,7 +242,35 @@ class DataMock {
   }
 
   mockServerData():ServerMock {
-    return new ServerMock(this.conf);
+    const serverMock = new ServerMock(this.conf);
+    this.conf.ideaGroups.forEach(ideaGroup => {
+      const settableIdeaTagIdsOnCreate = [
+        ...(ideaGroup.settableIdeaTagIdsOnCreate || []),
+        ...(this.conf.settableIdeaTagIdsOnCreate || []),
+      ];
+      const isFunded = [ConfSupportType.FundingOnly, ConfSupportType.FundingVoting]
+        .includes(ideaGroup.supportType || this.conf.supportType)
+      
+      for(var i=0; i<Math.random()*100; i++){
+        serverMock.registerUser({
+          email: 'loremipsum@example.com',
+          name: 'Lorem ipsum',
+          avatar: undefined,
+        });
+        serverMock.createIdea({
+          groupId: ideaGroup.id,
+          title: 'Lorem ipsum lorem ipsum lorem ipsum',
+          description: 'Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum',
+          creditsToFund: isFunded
+            ? Math.ceil(Math.random() * 100)
+            : undefined,
+          tagIds: Math.random() < 0.2
+            ? [settableIdeaTagIdsOnCreate[Math.floor(Math.random() * settableIdeaTagIdsOnCreate.length)]]
+            : [],
+        });
+      }
+    });
+    return serverMock;
   }
 }
 

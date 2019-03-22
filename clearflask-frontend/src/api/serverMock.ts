@@ -23,8 +23,17 @@ import {
   TransactionTransactionTypeEnum,
   TransactionFromJSON,
   IdeasFromJSON,
+  ChangeVoteIdeaRequest,
+  UnvoteIdeaRequest,
+  UpdateUserRequest,
+  RegisterUserRequest,
+  LoginUserRequest,
+  BindUserRequest,
+  UpdateIdeaRequest,
+  UserFromJSON,
 } from './client';
 import randomUuid from '../util/uuid';
+import { AuthSuccessResult } from './client/models/AuthSuccessResult';
 
 class ServerMock implements ApiInterface {
   readonly LATENCY = 300;
@@ -41,6 +50,7 @@ class ServerMock implements ApiInterface {
   userIdToCredits:{[ideaId:string]:number} = {};
 
   constructor(conf:Conf, loggedInUser?:User) {
+    console.log("Server CREATED: ", conf, loggedInUser);
     this.conf = conf;
     if(loggedInUser) {
       this.loggedInUser = loggedInUser
@@ -50,18 +60,21 @@ class ServerMock implements ApiInterface {
 
   // ### CommentApiInterface
   getComments(requestParameters: GetCommentsRequest): Promise<Array<Comment>> {
+    console.log("Server RECV: getComments", requestParameters);
     return this.returnLater(this.ideaIdToComments[requestParameters.ideaId] || []);
   }
 
   // ### ConfigApiInterface
 
   getConfig(): Promise<Conf> {
+    console.log("Server RECV: getConfig");
     return this.returnLater(this.conf);
   }
 
   // ### CreditApiInterface
 
   getTransactions(requestParameters: GetTransactionsRequest): Promise<Array<Transaction>> {
+    console.log("Server RECV: getTransactions", requestParameters);
     if(!this.loggedInUser || requestParameters.userId !== this.loggedInUser.id) {
       return this.throwLater(403, 'Cannot get transaction for other users');
     }
@@ -70,6 +83,7 @@ class ServerMock implements ApiInterface {
   }
 
   voteIdea(requestParameters: VoteIdeaRequest): Promise<VoteIdeaResult> {
+    console.log("Server RECV: voteIdea", requestParameters);
     const idea = this.ideas[requestParameters.ideaId];
     if(!this.loggedInUser) {
       return this.throwLater(403, 'Need to be logged in');
@@ -85,7 +99,7 @@ class ServerMock implements ApiInterface {
       return this.throwLater(400, 'Invalid request: idea does not support voting nor funding');
     }
 
-    var creditAmount = requestParameters.creditAmountOpt || 0 > 0 ? requestParameters.creditAmountOpt || 0 : 0;
+    var creditAmount = requestParameters.creditAmount || 0 > 0 ? requestParameters.creditAmount || 0 : 0;
     if(creditAmount > 0) {
       if(supportType === ConfSupportType.VotingOnly) {
         return this.throwLater(400, 'Invalid request: idea does not support funding');
@@ -127,21 +141,31 @@ class ServerMock implements ApiInterface {
     }));
   }
 
+  changeVoteIdea(requestParameters: ChangeVoteIdeaRequest): Promise<VoteIdeaResult> {
+    console.log("Server RECV: changeVoteIdea", requestParameters);
+    throw new Error("Method not implemented.");
+  }
+
+  unvoteIdea(requestParameters: UnvoteIdeaRequest): Promise<VoteIdeaResult> {
+    console.log("Server RECV: unvoteIdea", requestParameters);
+    throw new Error("Method not implemented.");
+  }
+
   // ### IdeaApiInterface
 
   createIdea(requestParameters: CreateIdeaRequest): Promise<Idea> {
+    console.log("Server RECV: createIdea", requestParameters);
     if(!this.loggedInUser) {
       return this.throwLater(403, 'Need to be logged in');
     }
 
-    requestParameters.createIdeaBody.idea.groupId
-    const group = this.conf.ideaGroups[requestParameters.createIdeaBody.idea.groupId];
+    const group = this.conf.ideaGroups.find(g => g.id === requestParameters.groupId);
     if(!group) {
       return this.throwLater(400, 'Invalid request: Unknown group');
     }
 
     const supportType = group.supportType || this.conf.supportType;
-    const isIdeaFunding = requestParameters.createIdeaBody.creditsToFund && requestParameters.createIdeaBody.creditsToFund > 0;
+    const isIdeaFunding = requestParameters.creditsToFund && requestParameters.creditsToFund > 0;
     if(supportType === ConfSupportType.None) {
       return this.throwLater(400, 'Invalid request: Voting not allowed');
     }
@@ -156,16 +180,19 @@ class ServerMock implements ApiInterface {
       || supportType === ConfSupportType.VotingOnly;
 
     const idea = IdeaFromJSON({
-      ...requestParameters.createIdeaBody.idea,
       id: this.generateId(),
       authorUserId: this.loggedInUser,
       created: new Date(),
+      title: requestParameters.title,
+      description: requestParameters.description,
+      groupId: requestParameters.groupId,
       statusId: group.defaultIdeaStatusId || this.conf.defaultIdeaStatusId,
-      credits: requestParameters.createIdeaBody.creditsToFund || 0,
+      tagIds: requestParameters.tagIds,
+      credits: requestParameters.creditsToFund || 0,
       creditGoal: 0,
       funderCount: isIdeaFunding ? 1 : 0,
       supporterCount: addVote ? 1 : 0,
-      myCredits: requestParameters.createIdeaBody.creditsToFund,
+      myCredits: requestParameters.creditsToFund,
       mySupport: addVote,
     });
 
@@ -193,6 +220,7 @@ class ServerMock implements ApiInterface {
   }
 
   deleteIdea(requestParameters: DeleteIdeaRequest): Promise<void> {
+    console.log("Server RECV: deleteIdea", requestParameters);
     if(!this.loggedInUser) {
       return this.throwLater(403, 'You need to login first to delete an idea');
     }
@@ -211,6 +239,7 @@ class ServerMock implements ApiInterface {
   }
 
   getIdea(requestParameters: GetIdeaRequest): Promise<Idea> {
+    console.log("Server RECV: getIdea", requestParameters);
     const idea = this.ideas[requestParameters.ideaId];
     if(!idea) {
       return this.throwLater(404, 'Idea does not exist anymore');
@@ -219,53 +248,55 @@ class ServerMock implements ApiInterface {
   }
 
   getIdeas(requestParameters: GetIdeasRequest): Promise<Ideas> {
-    if(requestParameters.limit < 0 && requestParameters.limit > 50) {
+    console.log("Server RECV: getIdeas", requestParameters);
+    const limit = requestParameters.searchQuery.limit || 10;
+    if(limit < 0 || limit > 50) {
       return this.throwLater(400, 'Invalid request: limit is out of bounds');
     }
 
     var result:Array<Idea> = [];
     for(var idea of Object.values(this.ideas)) {
-      if(requestParameters.filterIdeaStatusIds
-        && requestParameters.filterIdeaStatusIds.length > 0
-        && requestParameters.filterIdeaStatusIds.indexOf(idea.groupId) < 0) {
+      if(requestParameters.searchQuery.filterIdeaStatusIds
+        && requestParameters.searchQuery.filterIdeaStatusIds.length > 0
+        && !requestParameters.searchQuery.filterIdeaStatusIds.includes(idea.statusId)) {
         continue;
       }
 
-      if(requestParameters.filterIdeaGroupIds
-        && requestParameters.filterIdeaGroupIds.length > 0
-        && requestParameters.filterIdeaGroupIds.indexOf(idea.statusId) < 0) {
+      if(requestParameters.searchQuery.filterIdeaGroupIds
+        && requestParameters.searchQuery.filterIdeaGroupIds.length > 0
+        && !requestParameters.searchQuery.filterIdeaGroupIds.includes(idea.groupId)) {
         continue;
       }
 
-      if(requestParameters.filterIdeaTagIds
-        && requestParameters.filterIdeaTagIds.length > 0
+      if(requestParameters.searchQuery.filterIdeaTagIds
+        && requestParameters.searchQuery.filterIdeaTagIds.length > 0
         && (!idea.tagIds
-        || requestParameters.filterIdeaTagIds.filter(tagId =>
-            idea.tagIds && idea.tagIds.indexOf(tagId) >= 0
+        || requestParameters.searchQuery.filterIdeaTagIds.filter(tagId =>
+            idea.tagIds && idea.tagIds.includes(tagId)
           ).length > 0)) {
         continue;
       }
 
 
-      if(requestParameters.search
-        && idea.title.indexOf(requestParameters.search) < 0
-        && idea.description.indexOf(requestParameters.search) < 0) {
+      if(requestParameters.searchQuery.searchText
+        && idea.title.indexOf(requestParameters.searchQuery.searchText) < 0
+        && idea.description.indexOf(requestParameters.searchQuery.searchText) < 0) {
         continue;
       }
 
       result.push(idea);
     }
 
-    if(requestParameters.sortBy === SortBy.Top) {
+    if(requestParameters.searchQuery.sortBy === SortBy.Top) {
       result.sort((l, r) => 
         (r.credits || r.supporterCount || 0)
         - (l.credits || l.supporterCount || 0)
       );
-    } else if(requestParameters.sortBy === SortBy.New) {
+    } else if(requestParameters.searchQuery.sortBy === SortBy.New) {
       result.sort((l, r) => 
         r.created.getTime() - l.created.getTime()
       );
-    } else if(requestParameters.sortBy === SortBy.Trending) {
+    } else if(requestParameters.searchQuery.sortBy === SortBy.Trending) {
       result.sort((l, r) => 
         this.calcTrendingScore(r) - this.calcTrendingScore(l)
       );
@@ -277,11 +308,11 @@ class ServerMock implements ApiInterface {
     }
 
     var nextCursor:string|undefined = undefined;
-    if(result.length <= currentCursor + requestParameters.limit) {
-      nextCursor = currentCursor + requestParameters.limit + '';
+    if(result.length >= currentCursor + limit) {
+      nextCursor = currentCursor + limit + '';
     }
 
-    result.slice(currentCursor, Math.min(result.length, currentCursor + requestParameters.limit));
+    result.slice(currentCursor, Math.min(result.length, currentCursor + limit));
 
     return this.returnLater(IdeasFromJSON({
       ideas: result,
@@ -289,14 +320,48 @@ class ServerMock implements ApiInterface {
     }));
   }
 
+  updateIdea(requestParameters: UpdateIdeaRequest): Promise<void> {
+    console.log("Server RECV: updateIdea", requestParameters);
+    throw new Error("Method not implemented.");
+  }
+
   // ### UserApiInterface
 
   getUser(requestParameters: GetUserRequest): Promise<User> {
+    console.log("Server RECV: getUser", requestParameters);
     const user = this.users[requestParameters.userId];
     if(!user) {
       return this.throwLater(404, 'User does not exist anymore');
     }
     return this.returnLater(user);
+  }
+
+  bindUser(requestParameters: BindUserRequest): Promise<AuthSuccessResult> {
+    console.log("Server RECV: bindUser", requestParameters);
+    throw new Error("Method not implemented.");
+  }
+
+  loginUser(requestParameters: LoginUserRequest): Promise<AuthSuccessResult> {
+    console.log("Server RECV: loginUser", requestParameters);
+    throw new Error("Method not implemented.");
+  }
+
+  registerUser(requestParameters: RegisterUserRequest): Promise<AuthSuccessResult> {
+    console.log("Server RECV: registerUser", requestParameters);
+    const newUser = UserFromJSON({
+      'id': randomUuid(),
+      'name': requestParameters.name || 'Anonymous',
+      'isAdmin': false,
+      'avatar': requestParameters.avatar,
+    });
+    this.users[newUser.id] = newUser;
+    this.loggedInUser = newUser;
+    return this.returnLater(newUser);
+  }
+
+  updateUser(requestParameters: UpdateUserRequest): Promise<void> {
+    console.log("Server RECV : updateUser", requestParameters);
+    throw new Error("Method not implemented.");
   }
 
   // ### Private methods
@@ -318,11 +383,13 @@ class ServerMock implements ApiInterface {
   }
 
   async returnLater(returnValue?:any) {
+    console.log('Server SEND:', returnValue);
     await new Promise(resolve => setTimeout(resolve, this.LATENCY));
     return returnValue;
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {
+    console.log('Server THROW:', httpStatus, userFacingMessage);
     await new Promise(resolve => setTimeout(resolve, this.LATENCY));
     throw {
       status: httpStatus,
