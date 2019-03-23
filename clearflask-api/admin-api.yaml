@@ -55,6 +55,82 @@ components:
     #   required:
     #     - allowedBundleIdentifiers
     #     - purchaseToCreditMapping
+    IdeaSubmission:
+      properties:
+        id:
+          type: string
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        title:
+          type: string
+        description:
+          type: string
+        groupId:
+          type: string
+        statusId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+        creditGoal:
+          type: number
+      required:
+        - id
+        - authorUserId
+        - created
+        - title
+        - description
+        - groupId
+        - statusId
+    Idea:
+      properties:
+        id:
+          type: string
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        title:
+          type: string
+        description:
+          type: string
+        groupId:
+          type: string
+        statusId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+        creditGoal:
+          type: number
+        credits:
+          type: number
+        funderCount:
+          type: integer
+        funders:
+          $ref: '#/components/schemas/UserSearchResult'
+        supporterCount:
+          type: integer
+        supporters:
+          $ref: '#/components/schemas/UserSearchResult'
+      required:
+        - id
+        - authorUserId
+        - created
+        - title
+        - description
+        - groupId
+        - statusId
+        - funderCount
+        - funders
+        - supporterCount
+        - supporters
     User:
       properties:
         id:
@@ -71,6 +147,54 @@ components:
         - id
         - name
         - email
+    Transaction:
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        amount:
+          type: number
+        transactionType:
+          type: string
+          enum:
+            - VoteIdea
+            - RefundIdea
+            - Purchase
+            - Refund
+        targetId:
+          description: Only set if an Idea is involved
+          type: string
+        extraDescription:
+          type: string
+      required:
+        - id
+        - userId
+        - created
+        - amount
+        - transactionType
+    TransactionsResult:
+      type: object
+      properties:
+        transactions:
+          $ref: '#/components/schemas/Transaction'
+        cursor:
+          type: string
+      required:
+        - transactions
+    UserSearchResult:
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        cursor:
+          type: string
+      required:
+        - users
     ErrorResponse:
       type: object
       properties:
@@ -88,10 +212,233 @@ components:
 
 paths:
   # TODO /config:
-  # TODO /idea:
   # TODO /comment:
-  # TODO /vote:
+  /idea:
+    post:
+      operationId: createIdeaAdmin
+      tags:
+        - Idea
+      parameters:
+        - name: idea
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdeaSubmission'
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /idea/{ideaId}:
+    get:
+      operationId: getIdeaAdmin
+      tags:
+        - Idea
+      parameters:
+        - name: ideaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Idea'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateIdeaAdmin
+      tags:
+        - Idea
+      parameters:
+        - name: ideaId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: authorUserId
+          in: query
+          schema:
+            type: string
+        - name: created
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: description
+          in: query
+          schema:
+            type: string
+        - name: groupId
+          in: query
+          schema:
+            type: string
+        - name: statusId
+          in: query
+          schema:
+            type: string
+        - name: tagIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: creditGoal
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteIdeaAdmin
+      tags:
+        - Idea
+      parameters:
+        - name: ideaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vote/{ideaId}:
+    post:
+      operationId: createVoteAdmin
+      tags:
+        - Credit
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+        - in: query
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User to vote
+        - in: query
+          name: creditAmount
+          schema:
+            type: integer
+          description: Amount of credits to fund. If not set, only support is given.
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: changeVoteAdmin
+      tags:
+        - Credit
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+        - in: query
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User to change vote for
+        - in: query
+          name: support
+          schema:
+            type: boolean
+          description: Change support vote. If empty, remains unchanged.
+        - in: query
+          name: creditAmount
+          schema:
+            type: boolean
+          description: Change funding vote. If empty, remains unchanged.
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteVoteAdmin
+      tags:
+        - Credit
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+          description: ID of the idea
+        - in: query
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User to delete vote for
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
   /user:
+    get:
+      operationId: searchUserAdmin
+      tags:
+        - User
+      summary: Search users
+      parameters:
+        - name: sortBy
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - Created
+              - AvailableFunds
+              - SupportVotes
+              - FundingVotes
+              - FundedAmount
+              - LastActive
+        - name: sortOrder
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - Asc
+              - Desc
+        - name: filterAdminOnly
+          in: query
+          schema:
+            type: boolean
+        - name: searchQuery
+          in: query
+          description: Searches name and email for a match.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSearchResult'
     post:
       operationId: registerUserAdmin
       tags:
@@ -175,6 +522,52 @@ paths:
           description: OK
         '404':
           $ref: '#/components/responses/NotFound'
-  # TODO /transactions:
-
-### TODOTODOTODOTODOTODO ###
+  /transactions/{userId}:
+    get:
+      operationId: searchTransactionsAdmin
+      tags:
+        - Credit
+      summary: Get transaction history
+      description: Get detailed history of all transactions for user
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          description: Optionally filter 
+        - in: query
+          name: startTime
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Search start time. Results after this will be returned.
+        - in: query
+          name: endTime
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Search end time. Results prior to this will be returned.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: >-
+            Optionally set a limit on how many results to return.
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Cursor to fetch next set of results
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionsResult'
+        '404':
+          $ref: '#/components/responses/NotFound'

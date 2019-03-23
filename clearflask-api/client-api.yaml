@@ -254,6 +254,7 @@ components:
         limit:
           description: >-
             Optionally set a limit on how many results to return.
+            Between 10 and 50.
           type: integer
       required:
         - searchKey
@@ -329,6 +330,16 @@ components:
         - description
         - groupId
         - statusId
+    CommentSubmission:
+      properties:
+        parentCommentId:
+          type: string
+        content:
+          type: string
+      required:
+        - authorUserId
+        - created
+        - comment
     Comment:
       properties:
         id:
@@ -340,7 +351,7 @@ components:
         created:
           type: string
           format: date-time
-        comment:
+        content:
           type: string
       required:
         - id
@@ -392,6 +403,15 @@ components:
         - created
         - amount
         - transactionType
+    TransactionsResult:
+      type: object
+      properties:
+        transactions:
+          $ref: '#/components/schemas/Transaction'
+        cursor:
+          type: string
+      required:
+        - transactions
     VoteIdeaResult:
       type: object
       properties:
@@ -608,14 +628,13 @@ paths:
           description: OK
         '404':
           $ref: '#/components/responses/NotFound'
-  /comment:
+  /idea/{ideaId}/comment:
     get:
       operationId: getComments
       tags:
         - Comment
-      summary: Get Comments
       parameters:
-        - in: query
+        - in: path
           name: ideaId
           schema:
             type: string
@@ -631,9 +650,87 @@ paths:
                   $ref: '#/components/schemas/Comment'
         '404':
           $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createComment
+      tags:
+        - Comment
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: comment
+          schema:
+            $ref: '#/components/schemas/CommentSubmission'
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /idea/{ideaId}/comment/{commentId}:
+    patch:
+      operationId: updateComment
+      tags:
+        - Comment
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: content
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteComment
+      tags:
+        - Comment
+      parameters:
+        - in: path
+          name: ideaId
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
   /vote/{ideaId}:
     post:
-      operationId: voteIdea
+      operationId: createVote
       tags:
         - Credit
       summary: Vote Idea
@@ -660,7 +757,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     patch:
-      operationId: changeVoteIdea
+      operationId: changeVote
       tags:
         - Credit
       summary: Change Vote Idea
@@ -692,7 +789,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
-      operationId: unvoteIdea
+      operationId: deleteVote
       tags:
         - Credit
       summary: Unvote Idea
@@ -850,7 +947,7 @@ paths:
                 $ref: '#/components/schemas/AuthSuccessResult'
         '401':
           $ref: '#/components/schemas/Unauthorized'
-  /transactions:
+  /transactions/{userId}:
     get:
       operationId: getTransactions
       tags:
@@ -858,12 +955,19 @@ paths:
       summary: Get transaction history
       description: Get detailed history of all transactions for user
       parameters:
-        - in: query
+        - in: path
           name: userId
           schema:
             type: string
           required: true
           description: ID of the user
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: >-
+            Optionally set a limit on how many results to return.
+            Between 10 and 50.
         - in: query
           name: cursor
           schema:
