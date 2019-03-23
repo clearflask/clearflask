@@ -1,0 +1,339 @@
+
+components:
+  schemas:
+    UserLogin:
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    UserSearchAdmin:
+      properties:
+        sortBy:
+          type: string
+          enum:
+            - Created
+            - LastActive
+            - FundedIdeas
+            - SupportedIdeas
+            - FundedAmount
+            - FundsAvailable
+        sortOrder:
+          type: string
+          enum:
+            - Asc
+            - Desc
+        searchText:
+          type: string
+          description: Search by name and email.
+      required:
+    UserReadPublic:
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+      required:
+        - userId
+        - name
+    UserReadAdmin:
+      allOf:
+        - $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+        - properties:
+            email:
+              type: string
+          required:
+    UserCreatePublic:
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+    UserCreateAdmin:
+      allOf:
+        - $ref: 'api-user.yaml#/components/schemas/UserCreatePublic'
+        - properties:
+          required:
+    UserUpdatePublic:
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+    UserUpdateAdmin:
+      allOf:
+        - $ref: 'api-user.yaml#/components/schemas/UserCreatePublic'
+        - properties:
+
+/project/{projectId}/login:
+  post:
+    operationId: userLogin
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: create
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserLogin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+/project/{projectId}/user:
+  post:
+    operationId: userCreate
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: create
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+/project/{projectId}/user/{userId}:
+  get:
+    operationId: userGet
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  patch:
+    operationId: userUpdate
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: update
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: userDelete
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/admin/login:
+  post:
+    operationId: userLoginAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: credentials
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserLogin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+/project/{projectId}/admin/user:
+  get:
+    operationId: userSearchAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+  post:
+    operationId: userCreateAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: create
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+  delete:
+    operationId: userDeleteBulkAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserSearchAdmin'
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/project/{projectId}/admin/user/{userId}:
+  get:
+    operationId: userGetAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  patch:
+    operationId: userUpdateAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: updates
+        in: query
+        required: true
+        schema:
+          $ref: 'api-user.yaml#/components/schemas/UserUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: userDeleteAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'

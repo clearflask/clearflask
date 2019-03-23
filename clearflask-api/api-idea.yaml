@@ -1,0 +1,395 @@
+
+components:
+  schemas:
+    IdeaSearchPublic:
+      properties:
+        searchKey:
+          type: string
+          description: >-
+            Unique key describing this specific search query.
+            Used for deduping requests, caching.
+        sortBy:
+          type: string
+          enum: 
+            - Trending
+            - Top
+            - New
+        filterIdeaGroupIds:
+          type: array
+          items:
+            type: string
+        filterIdeaStatusIds:
+          type: array
+          items:
+            type: string
+        filterIdeaTagIds:
+          type: array
+          items:
+            type: string
+        searchText:
+          type: string
+        limit:
+          description: >-
+            Optionally set a limit on how many results to return.
+            Between 10 and 50.
+          type: integer
+      required:
+        - searchKey
+        - sortBy
+    IdeaSearchAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaSearchPublic'
+        - properties:
+          required:
+    IdeaReadPublic:
+      properties:
+        ideaId:
+          type: string
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        title:
+          type: string
+        description:
+          type: string
+        groupId:
+          type: string
+        statusId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+        creditGoal:
+          type: number
+        funderCount:
+          type: integer
+        supporterCount:
+          type: integer
+      required:
+        - ideaId
+        - authorUserId
+        - created
+        - title
+        - description
+        - groupId
+        - tagIds
+    IdeaReadAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+        - properties:
+          required:
+    IdeaCreatePublic:
+      properties:
+        authorUserId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        groupId:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+      required:
+        - authorUserId
+        - title
+        - groupId
+        - tagIds
+    IdeaCreateAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreatePublic'
+        - properties:
+            created:
+              type: string
+              format: date-time
+            statusId:
+              type: string
+            creditGoal:
+              type: number
+          required:
+    IdeaUpdatePublic:
+      properties:
+        description:
+          type: string
+        tagIds:
+          type: array
+          items:
+            type: string
+    IdeaUpdateAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreatePublic'
+        - properties:
+            title:
+              type: string
+            groupId:
+              type: string
+            tagIds:
+              type: array
+              items:
+                type: string
+            creditGoal:
+              type: number
+
+/project/{projectId}/idea:
+  get:
+    operationId: ideaSearch
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchPublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+              required:
+                - results
+  post:
+    operationId: ideaCreate
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: create
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+/project/{projectId}/idea/{ideaId}:
+  get:
+    operationId: ideaGet
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  patch:
+    operationId: ideaUpdate
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: update
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: ideaDelete
+    tags: [Idea]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/project/{projectId}/admin/idea:
+  get:
+    operationId: ideaSearchAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+  post:
+    operationId: ideaCreateAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: idea
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+  delete:
+    operationId: ideaDeleteBulkAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/project/{projectId}/admin/idea/{ideaId}:
+  get:
+    operationId: ideaGetAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  patch:
+    operationId: ideaUpdateAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: update
+        in: query
+        required: true
+        schema:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: ideaDeleteAdmin
+    tags: [IdeaAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'

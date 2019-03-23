@@ -1,0 +1,290 @@
+
+components:
+  schemas:
+    CommentSearchPublic:
+      properties:
+      required:
+        - searchKey
+        - sortBy
+    CommentSearchAdmin:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentSearchPublic'
+        - properties:
+          required:
+    CommentReadPublic:
+      properties:
+        commentId:
+          type: string
+        authorUserId:
+          type: string
+        created:
+          type: string
+          format: date-time
+      required:
+        - commentId
+        - authorUserId
+        - created
+    CommentReadAdmin:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentReadPublic'
+        - properties:
+          required:
+    CommentCreatePublic:
+      properties:
+      required:
+        - authorUserId
+        - title
+        - groupId
+        - tagIds
+    CommentCreateAdmin:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentCreatePublic'
+        - properties:
+          required:
+    CommentUpdatePublic:
+      properties:
+    CommentUpdateAdmin:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentCreatePublic'
+        - properties:
+
+/project/{projectId}/idea/{ideaId}/comment:
+  get:
+    operationId: commentList
+    tags: [Comment]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api.yaml#/components/schemas/cursor'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CommentSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-comment.yaml#/components/schemas/CommentReadPublic'
+              required:
+                - results
+  post:
+    operationId: commentCreate
+    tags: [Comment]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: create
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/CommentReadPublic'
+/project/{projectId}/idea/{ideaId}/comment/{commentId}:
+  patch:
+    operationId: commentUpdate
+    tags: [Comment]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: update
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentUpdatePublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/CommentReadPublic'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: commentDelete
+    tags: [Comment]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/project/{projectId}/admin/comment:
+  get:
+    operationId: commentSearchAdmin
+    tags: [CommentAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: 'api-comment.yaml#/components/schemas/CommentReadAdmin'
+  delete:
+    operationId: commentDeleteBulkAdmin
+    tags: [CommentAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'
+/project/{projectId}/admin/idea/{ideaId}/comment:
+  post:
+    operationId: commentCreateAdmin
+    tags: [CommentAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: comment
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/CommentReadAdmin'
+/project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
+  patch:
+    operationId: commentUpdateAdmin
+    tags: [CommentAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: update
+        in: query
+        required: true
+        schema:
+          $ref: 'api-comment.yaml#/components/schemas/CommentUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/CommentReadAdmin'
+      '404':
+        $ref: '#/components/responses/NotFound'
+  delete:
+    operationId: commentDeleteAdmin
+    tags: [CommentAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: '#/components/responses/Ok'
+      '404':
+        $ref: '#/components/responses/NotFound'

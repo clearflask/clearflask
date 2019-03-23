@@ -1,0 +1,34 @@
+openapi: 3.0.0
+info:
+  title: ClearFlask Admin API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+  - url: https://client.api.clearflask.com/v1
+    description: Production server
+    variables:
+      projectId:
+        description: Project ID of the customer
+        default: projectId
+
+externalDocs:
+  url: https://clearflask.com/docs
+
+paths:
+  /project/{projectId}/admin/idea:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
+  /project/{projectId}/admin/idea/{ideaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /admin/login:
+    $ref: 'api-user.yaml#/~1admin~1login'
+  /project/{projectId}/admin/user:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user'
+  /project/{projectId}/admin/user/{userId}:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user~1{userId}'
+  /project/{projectId}/admin/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1comment'
+  /project/{projectId}/admin/idea/{ideaId}/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
+  /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
