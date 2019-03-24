@@ -40,6 +40,18 @@ components:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaSearchPublic'
         - properties:
+            filterCreatedStart:
+              type: string
+              format: date-time
+            filterCreatedEnd:
+              type: string
+              format: date-time
+            filterLastActivityStart:
+              type: string
+              format: date-time
+            filterLastActivityEnd:
+              type: string
+              format: date-time
           required:
     IdeaReadPublic:
       properties:
@@ -148,7 +160,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/cursor'
       - name: search
         in: query
         required: true
@@ -162,7 +174,7 @@ components:
               title: IdeaSearchResponse
               properties:
                 cursor:
-                  $ref: 'api.yaml#/components/schemas/cursor'
+                  $ref: 'api-client.yaml#/components/schemas/cursor'
                 results:
                   type: array
                   items:
@@ -271,7 +283,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/cursor'
       - name: search
         in: query
         required: true

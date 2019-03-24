@@ -5,12 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://client.api.clearflask.com/v1
-    description: Production server
-    variables:
-      projectId:
-        description: Project ID of the customer
-        default: projectId
+  - url: https://api.clearflask.com/v1
 
 externalDocs:
   url: https://clearflask.com/docs
@@ -32,3 +27,7 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
+  /project/{projectId}/admin/user/{userId}/credit:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1credit'
+  /project/{projectId}/admin/credit:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1credit'

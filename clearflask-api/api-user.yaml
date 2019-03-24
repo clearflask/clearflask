@@ -215,7 +215,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/cursor'
       - name: search
         in: query
         required: true

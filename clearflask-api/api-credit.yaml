@@ -1,0 +1,185 @@
+
+components:
+  schemas:
+    CreditSearchPublic:
+      properties:
+        filterTransactionTypes:
+          type: array
+          items:
+            type: string
+        filterAmountMin:
+          type: number
+        filterAmountMax:
+          type: number
+        filterCreatedStart:
+          type: string
+          format: date-time
+        filterCreatedEnd:
+          type: string
+          format: date-time
+      required:
+    CreditSearchAdmin:
+      allOf:
+        - $ref: 'api-credit.yaml#/components/schemas/CreditSearchPublic'
+        - properties:
+            filterUserIds:
+              type: array
+              items:
+                type: string
+            filterTargetId:
+              type: string
+          required:
+    CreditReadPublic:
+      properties:
+        transactionId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        amount:
+          type: number
+        balance:
+          type: number
+        transactionType:
+          type: string
+          enum:
+            - IdeaVoteCreate
+            - IdeaVoteUpdate
+            - IdeaVoteDelete
+            - Income
+            - Adjustment
+            - Other
+          description: >-
+            Transaction type
+            * IdeaVote... - Balance changes due to funding an idea
+            * Income - Income based on project settings.
+            * Adjustment - Typically Admin initiaited change in credit.
+        targetId:
+          description: >-
+            Optional resource ID involved in this transaction.
+            Resource type depends on the transactionType.
+            Ex, for IdeaVoteCreate type, this resource id is of the voted Idea.
+            For Adjustment type, resource id is user id of the admin that
+            initiated the adjustment.
+          type: string
+        summary:
+          description: Optional user facing explanation of the transaction.
+          type: string
+      required:
+        - transactionId
+        - created
+        - amount
+        - balance
+        - transactionType
+    CreditReadAdmin:
+      allOf:
+        - $ref: 'api-credit.yaml#/components/schemas/CreditReadPublic'
+        - properties:
+          required:
+    CreditCreateAdmin:
+      properties:
+        amount:
+          type: number
+        summary:
+          description: Optional user facing explanation of the transaction.
+          type: string
+      required:
+        - transactionId
+        - created
+        - amount
+        - balance
+        - transactionType
+      required:
+
+/project/{projectId}/user/{userId}/credit:
+  get:
+    operationId: creditSearch
+    tags: [Credit]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-credit.yaml#/components/schemas/CreditSearchPublic'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CreditSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-credit.yaml#/components/schemas/CreditReadPublic'
+              required:
+                - results
+/project/{projectId}/admin/user/{userId}/credit:
+  post:
+    operationId: creditCreateAdmin
+    tags: [CreditAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: credit
+        in: query
+        required: true
+        schema:
+          $ref: 'api-credit.yaml#/components/schemas/CreditCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-credit.yaml#/components/schemas/CreditReadAdmin'
+/project/{projectId}/admin/credit:
+  get:
+    operationId: creditSearchAdmin
+    tags: [CreditAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/cursor'
+      - name: search
+        in: query
+        required: true
+        schema:
+          $ref: 'api-credit.yaml#/components/schemas/CreditSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: 'api-credit.yaml#/components/schemas/CreditReadAdmin'

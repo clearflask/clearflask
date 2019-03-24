@@ -1,74 +1,17 @@
 openapi: 3.0.0
 info:
-  title: ClearFlask Client API
+  title: ClearFlask API
   description: ClearFlask API documentation.
   version: 1.0.0
 
 servers:
-  - url: https://client.api.clearflask.com/v1
-    description: Production server
-    variables:
-      projectId:
-        description: Project ID of the customer
-        default: projectId
+  - url: https://api.clearflask.com/v1
 
 externalDocs:
   url: https://clearflask.com/docs
 
-components:
-  schemas:
-    cursor:
-      description: Cursor to fetch next set of results.
-      type: string
-    ErrorResponse:
-      type: object
-      properties:
-        userFacingMessage:
-          type: string
-  responses:
-    Ok:
-      description: >-
-        HTTP 200 Ok
-        Request was successful. No response value supplied.
-    NotFound:
-      description: >-
-        HTTP 404 Not Found
-        The specified resource was not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: >-
-        HTTP 403 Forbidden
-        Use when access is not allowed to a particular resource
-        NotFound is also acceptable when the existence of a
-        resource must be protected.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: >-
-        HTTP 401 Unauthorized
-        Used during login/bind to indicate the authentication was
-        not successful.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    ConfigChanged:
-      description: >-
-        HTTP 412 Precondition Failed
-        Use only when client needs to reload the App Configuration.
-        In a case where a request does not make sense based on App
-        Configuration. Client is expected to reload immediately.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
 paths:
+  # api-client.yaml
   /project/{projectId}/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea'
   /project/{projectId}/idea/{ideaId}:
@@ -83,3 +26,38 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment'
   /project/{projectId}/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
+  /project/{projectId}/user/{userId}/credit:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1credit'
+  # api-admin.yaml
+  /project/{projectId}/admin/idea:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
+  /project/{projectId}/admin/idea/{ideaId}:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /admin/login:
+    $ref: 'api-user.yaml#/~1admin~1login'
+  /project/{projectId}/admin/user:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user'
+  /project/{projectId}/admin/user/{userId}:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user~1{userId}'
+  /project/{projectId}/admin/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1comment'
+  /project/{projectId}/admin/idea/{ideaId}/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
+  /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
+  /project/{projectId}/admin/user/{userId}/credit:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1credit'
+  /project/{projectId}/admin/credit:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1credit'
+
+
+# TODO implement these:
+
+# api-project
+#  init:conf,user,credit
+#  confGet
+
+# api-vote
+#  voteCreate
+#  voteUpdate
+#  voteDelete

@@ -53,6 +53,5 @@ yarn-error.log*
 
 ### Generated API
 clearflask-frontend/src/api/client
-clearflask-frontend/src/docs/client
 clearflask-frontend/src/api/admin
-clearflask-frontend/src/docs/admin
+clearflask-frontend/src/docs/api
