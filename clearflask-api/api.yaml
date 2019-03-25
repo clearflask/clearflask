@@ -28,6 +28,10 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/user/{userId}/credit:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1credit'
+  /project/{projectId}/idea/{ideaId}/vote:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
+  /project/{projectId}/idea/{ideaId}/vote/{voteId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1{voteId}'
   # api-admin.yaml
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
@@ -49,6 +53,12 @@ paths:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1credit'
   /project/{projectId}/admin/credit:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1credit'
+  /project/{projectId}/admin/vote:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote'
+  /project/{projectId}/admin/idea/{ideaId}/vote:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1vote'
+  /project/{projectId}/admin/idea/{ideaId}/vote/{voteId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1vote~1{voteId}'
 
 
 # TODO implement these:
@@ -57,7 +67,3 @@ paths:
 #  init:conf,user,credit
 #  confGet
 
-# api-vote
-#  voteCreate
-#  voteUpdate
-#  voteDelete

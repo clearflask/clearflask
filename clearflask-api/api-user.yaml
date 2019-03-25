@@ -30,7 +30,7 @@ components:
           type: string
           description: Search by name and email.
       required:
-    UserReadPublic:
+    UserRead:
       properties:
         userId:
           type: string
@@ -41,12 +41,12 @@ components:
         - name
     UserReadAdmin:
       allOf:
-        - $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+        - $ref: 'api-user.yaml#/components/schemas/UserRead'
         - properties:
             email:
               type: string
           required:
-    UserCreatePublic:
+    UserCreate:
       properties:
         name:
           type: string
@@ -59,10 +59,10 @@ components:
         - email
     UserCreateAdmin:
       allOf:
-        - $ref: 'api-user.yaml#/components/schemas/UserCreatePublic'
+        - $ref: 'api-user.yaml#/components/schemas/UserCreate'
         - properties:
           required:
-    UserUpdatePublic:
+    UserUpdate:
       properties:
         name:
           type: string
@@ -72,7 +72,7 @@ components:
           type: string
     UserUpdateAdmin:
       allOf:
-        - $ref: 'api-user.yaml#/components/schemas/UserCreatePublic'
+        - $ref: 'api-user.yaml#/components/schemas/UserCreate'
         - properties:
 
 /project/{projectId}/login:
@@ -95,7 +95,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+              $ref: 'api-user.yaml#/components/schemas/UserRead'
 /project/{projectId}/user:
   post:
     operationId: userCreate
@@ -110,13 +110,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-user.yaml#/components/schemas/UserUpdatePublic'
+          $ref: 'api-user.yaml#/components/schemas/UserUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+              $ref: 'api-user.yaml#/components/schemas/UserRead'
 /project/{projectId}/user/{userId}:
   get:
     operationId: userGet
@@ -137,7 +137,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+              $ref: 'api-user.yaml#/components/schemas/UserRead'
       '404':
         $ref: '#/components/responses/NotFound'
   patch:
@@ -158,13 +158,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-user.yaml#/components/schemas/UserUpdatePublic'
+          $ref: 'api-user.yaml#/components/schemas/UserUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+              $ref: 'api-user.yaml#/components/schemas/UserRead'
       '404':
         $ref: '#/components/responses/NotFound'
   delete:
@@ -201,7 +201,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadPublic'
+              $ref: 'api-user.yaml#/components/schemas/UserRead'
 /project/{projectId}/admin/user:
   get:
     operationId: userSearchAdmin
@@ -226,9 +226,16 @@ components:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+              title: UserSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+              required:
+                - results
   post:
     operationId: userCreateAdmin
     tags: [UserAdmin]

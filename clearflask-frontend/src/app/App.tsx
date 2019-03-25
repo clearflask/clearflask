@@ -10,6 +10,7 @@ import { Provider } from 'react-redux';
 import { isProd } from '../util/detectEnv';
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core';
 
 interface Props {
   // Router matching
@@ -51,6 +52,7 @@ class App extends Component<Props, State> {
 
     return (
       <div>
+        <MuiThemeProvider theme={createMuiTheme(/** TODO this.state.conf && this.state.conf.theme */)}>
         <Provider store={this.store}>
           <Header
             api={this.api}
@@ -64,6 +66,7 @@ class App extends Component<Props, State> {
             pageConf={page}
           />
         </Provider>
+        </MuiThemeProvider>
       </div>
     );
   }

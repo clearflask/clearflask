@@ -1,7 +1,7 @@
 
 components:
   schemas:
-    CreditSearchPublic:
+    CreditSearch:
       properties:
         filterTransactionTypes:
           type: array
@@ -20,7 +20,7 @@ components:
       required:
     CreditSearchAdmin:
       allOf:
-        - $ref: 'api-credit.yaml#/components/schemas/CreditSearchPublic'
+        - $ref: 'api-credit.yaml#/components/schemas/CreditSearch'
         - properties:
             filterUserIds:
               type: array
@@ -29,7 +29,7 @@ components:
             filterTargetId:
               type: string
           required:
-    CreditReadPublic:
+    CreditRead:
       properties:
         transactionId:
           type: string
@@ -43,15 +43,13 @@ components:
         transactionType:
           type: string
           enum:
-            - IdeaVoteCreate
-            - IdeaVoteUpdate
-            - IdeaVoteDelete
+            - Vote
             - Income
             - Adjustment
             - Other
           description: >-
             Transaction type
-            * IdeaVote... - Balance changes due to funding an idea
+            * Vote - Balance changes due to funding an idea
             * Income - Income based on project settings.
             * Adjustment - Typically Admin initiaited change in credit.
         targetId:
@@ -73,7 +71,7 @@ components:
         - transactionType
     CreditReadAdmin:
       allOf:
-        - $ref: 'api-credit.yaml#/components/schemas/CreditReadPublic'
+        - $ref: 'api-credit.yaml#/components/schemas/CreditRead'
         - properties:
           required:
     CreditCreateAdmin:
@@ -114,7 +112,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-credit.yaml#/components/schemas/CreditSearchPublic'
+          $ref: 'api-credit.yaml#/components/schemas/CreditSearch'
     responses:
       '200':
         content:
@@ -127,7 +125,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-credit.yaml#/components/schemas/CreditReadPublic'
+                    $ref: 'api-credit.yaml#/components/schemas/CreditRead'
               required:
                 - results
 /project/{projectId}/admin/user/{userId}/credit:
@@ -180,6 +178,13 @@ components:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: 'api-credit.yaml#/components/schemas/CreditReadAdmin'
+              title: CreditSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-credit.yaml#/components/schemas/CreditReadAdmin'
+              required:
+                - results

@@ -1,96 +1,66 @@
 
 components:
   schemas:
-    CommentSearchAdmin:
+    VoteSearchAdmin:
       properties:
+        filterIdeaIds:
+          type: array
+          items:
+            type: string
         filterUserIds:
           type: array
           items:
             type: string
-    CommentRead:
-      properties:
-        commentId:
+        sortBy:
           type: string
-        parentCommentId:
-          type: string
-        authorUserId:
-          description: Author of the comment. If null, comment is deleted
-          type: string
-        created:
-          type: string
-          format: date-time
-        edited:
-          description: If set, comment was last edited at this time.
-          type: string
-          format: date-time
-        content:
-          type: string
+          enum: 
+            - Recent
       required:
-        - commentId
-        - created
-        - text
-    CommentCreate:
+        - sortBy
+    VoteRead:
       properties:
-        parentCommentId:
+        voterName:
+          description: >-
+            For privacy, name may not be present.
+            If so, assume user is anonymous.
           type: string
-        authorUserId:
-          type: string
-        content:
-          type: string
-      required:
-        - parentCommentId
-        - authorUserId
-        - content
-    CommentCreateAdmin:
+    VoteReadAdmin:
       allOf:
-        - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
+        - $ref: 'api-vote.yaml#/components/schemas/VoteRead'
         - properties:
-            created:
+            voterUserId:
               type: string
-              format: date-time
           required:
-    CommentUpdate:
+            - voterUserId
+    VoteCreate:
       properties:
-        content:
-          type: string
+        fundAmount:
+          description: Optional amount of credits to fund.
+          type: number
+        supportTypeIds:
+          description: Optional support type given.
+          type: array
+          items:
+            type: string
+    VoteUpdate:
+      properties:
+        fundAmount:
+          type: number
+        supportTypeIds:
+          properties:
+            add:
+              type: array
+              items:
+                type: string
+            remove:
+              type: array
+              items:
+                type: string
 
-/project/{projectId}/idea/{ideaId}/comment:
-  get:
-    operationId: commentList
-    tags: [Comment]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/cursor'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              title: CommentSearchResponse
-              properties:
-                cursor:
-                  $ref: 'api-client.yaml#/components/schemas/cursor'
-                results:
-                  type: array
-                  items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentRead'
-              required:
-                - results
+/project/{projectId}/idea/{ideaId}/vote:
   post:
-    operationId: commentCreate
-    tags: [Comment]
+    operationId: voteCreate
+    tags: [Vote]
     parameters:
       - name: projectId
         in: path
@@ -106,17 +76,17 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+          $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
-/project/{projectId}/idea/{ideaId}/comment/{commentId}:
+              $ref: 'api-vote.yaml#/components/schemas/VoteRead'
+/project/{projectId}/idea/{ideaId}/vote/{voteId}:
   patch:
-    operationId: commentUpdate
-    tags: [Comment]
+    operationId: voteUpdate
+    tags: [Vote]
     parameters:
       - name: projectId
         in: path
@@ -128,7 +98,7 @@ components:
         required: true
         schema:
           type: string
-      - name: commentId
+      - name: voteId
         in: path
         required: true
         schema:
@@ -137,18 +107,18 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+          $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-vote.yaml#/components/schemas/VoteRead'
       '404':
         $ref: '#/components/responses/NotFound'
   delete:
-    operationId: commentDelete
-    tags: [Comment]
+    operationId: voteDelete
+    tags: [Vote]
     parameters:
       - name: projectId
         in: path
@@ -160,7 +130,7 @@ components:
         required: true
         schema:
           type: string
-      - name: commentId
+      - name: voteId
         in: path
         required: true
         schema:
@@ -170,10 +140,10 @@ components:
         $ref: '#/components/responses/Ok'
       '404':
         $ref: '#/components/responses/NotFound'
-/project/{projectId}/admin/comment:
+/project/{projectId}/admin/vote:
   get:
-    operationId: commentSearchAdmin
-    tags: [CommentAdmin]
+    operationId: voteSearchAdmin
+    tags: [VoteAdmin]
     parameters:
       - name: projectId
         in: path
@@ -188,25 +158,25 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+          $ref: 'api-vote.yaml#/components/schemas/VoteSearchAdmin'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: CommentSearchResponse
+              title: VoteSearchResponse
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/cursor'
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+                    $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
               required:
                 - results
   delete:
-    operationId: commentDeleteBulkAdmin
-    tags: [CommentAdmin]
+    operationId: voteDeleteBulkAdmin
+    tags: [VoteAdmin]
     parameters:
       - name: projectId
         in: path
@@ -217,16 +187,16 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+          $ref: 'api-vote.yaml#/components/schemas/VoteSearchAdmin'
     responses:
       '200':
         $ref: '#/components/responses/Ok'
       '404':
         $ref: '#/components/responses/NotFound'
-/project/{projectId}/admin/idea/{ideaId}/comment:
+/project/{projectId}/admin/idea/{ideaId}/vote:
   post:
-    operationId: commentCreateAdmin
-    tags: [CommentAdmin]
+    operationId: voteCreateAdmin
+    tags: [VoteAdmin]
     parameters:
       - name: projectId
         in: path
@@ -238,21 +208,21 @@ components:
         required: true
         schema:
           type: string
-      - name: comment
+      - name: vote
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
+          $ref: 'api-vote.yaml#/components/schemas/VoteCreate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
-/project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
+              $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
+/project/{projectId}/admin/idea/{ideaId}/vote/{voteId}:
   patch:
-    operationId: commentUpdateAdmin
-    tags: [CommentAdmin]
+    operationId: voteUpdateAdmin
+    tags: [VoteAdmin]
     parameters:
       - name: projectId
         in: path
@@ -264,7 +234,7 @@ components:
         required: true
         schema:
           type: string
-      - name: commentId
+      - name: voteId
         in: path
         required: true
         schema:
@@ -273,25 +243,30 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+          $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
       '404':
         $ref: '#/components/responses/NotFound'
   delete:
-    operationId: commentDeleteAdmin
-    tags: [CommentAdmin]
+    operationId: voteDeleteAdmin
+    tags: [VoteAdmin]
     parameters:
       - name: projectId
         in: path
         required: true
         schema:
           type: string
-      - name: commentId
+      - name: ideaId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: voteId
         in: path
         required: true
         schema:

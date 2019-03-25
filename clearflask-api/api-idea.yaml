@@ -1,7 +1,7 @@
 
 components:
   schemas:
-    IdeaSearchPublic:
+    IdeaSearch:
       properties:
         searchKey:
           type: string
@@ -38,7 +38,7 @@ components:
         - sortBy
     IdeaSearchAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaSearchPublic'
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
         - properties:
             filterCreatedStart:
               type: string
@@ -53,7 +53,7 @@ components:
               type: string
               format: date-time
           required:
-    IdeaReadPublic:
+    IdeaRead:
       properties:
         ideaId:
           type: string
@@ -90,10 +90,10 @@ components:
         - tagIds
     IdeaReadAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
         - properties:
           required:
-    IdeaCreatePublic:
+    IdeaCreate:
       properties:
         authorUserId:
           type: string
@@ -114,7 +114,7 @@ components:
         - tagIds
     IdeaCreateAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreatePublic'
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
         - properties:
             created:
               type: string
@@ -124,7 +124,7 @@ components:
             creditGoal:
               type: number
           required:
-    IdeaUpdatePublic:
+    IdeaUpdate:
       properties:
         description:
           type: string
@@ -134,7 +134,7 @@ components:
             type: string
     IdeaUpdateAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreatePublic'
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
         - properties:
             title:
               type: string
@@ -165,7 +165,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchPublic'
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
     responses:
       '200':
         content:
@@ -178,7 +178,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
               required:
                 - results
   post:
@@ -194,13 +194,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdatePublic'
+          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
 /project/{projectId}/idea/{ideaId}:
   get:
     operationId: ideaGet
@@ -221,7 +221,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
       '404':
         $ref: '#/components/responses/NotFound'
   patch:
@@ -242,13 +242,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdatePublic'
+          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadPublic'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
       '404':
         $ref: '#/components/responses/NotFound'
   delete:
@@ -294,9 +294,16 @@ components:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+              title: IdeaSearchResponse
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+              required:
+                - results
   post:
     operationId: ideaCreateAdmin
     tags: [IdeaAdmin]
