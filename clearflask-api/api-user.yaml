@@ -2,6 +2,7 @@
 components:
   schemas:
     UserLogin:
+      type: object
       properties:
         email:
           type: string
@@ -11,6 +12,7 @@ components:
         - email
         - password
     UserSearchAdmin:
+      type: object
       properties:
         sortBy:
           type: string
@@ -31,6 +33,7 @@ components:
           description: Search by name and email.
       required:
     UserRead:
+      type: object
       properties:
         userId:
           type: string
@@ -42,11 +45,13 @@ components:
     UserReadAdmin:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserRead'
-        - properties:
+        - type: object
+          properties:
             email:
               type: string
           required:
     UserCreate:
+      type: object
       properties:
         name:
           type: string
@@ -60,9 +65,11 @@ components:
     UserCreateAdmin:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserCreate'
-        - properties:
+        - type: object
+          properties:
           required:
     UserUpdate:
+      type: object
       properties:
         name:
           type: string
@@ -70,10 +77,6 @@ components:
           type: string
         password:
           type: string
-    UserUpdateAdmin:
-      allOf:
-        - $ref: 'api-user.yaml#/components/schemas/UserCreate'
-        - properties:
 
 /project/{projectId}/login:
   post:
@@ -139,7 +142,7 @@ components:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: userUpdate
     tags: [User]
@@ -166,7 +169,7 @@ components:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: userDelete
     tags: [User]
@@ -183,9 +186,9 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /admin/login:
   post:
     operationId: userLoginAdmin
@@ -227,6 +230,7 @@ components:
           application/json:
             schema:
               title: UserSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -272,9 +276,9 @@ components:
           $ref: 'api-user.yaml#/components/schemas/UserSearchAdmin'
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/user/{userId}:
   get:
     operationId: userGetAdmin
@@ -297,7 +301,7 @@ components:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: userUpdateAdmin
     tags: [UserAdmin]
@@ -316,7 +320,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-user.yaml#/components/schemas/UserUpdateAdmin'
+          $ref: 'api-user.yaml#/components/schemas/UserUpdate'
     responses:
       '200':
         content:
@@ -324,7 +328,7 @@ components:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: userDeleteAdmin
     tags: [UserAdmin]
@@ -341,6 +345,6 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'

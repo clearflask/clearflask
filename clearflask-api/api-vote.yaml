@@ -2,6 +2,7 @@
 components:
   schemas:
     VoteSearchAdmin:
+      type: object
       properties:
         filterIdeaIds:
           type: array
@@ -18,6 +19,7 @@ components:
       required:
         - sortBy
     VoteRead:
+      type: object
       properties:
         voterName:
           description: >-
@@ -27,12 +29,14 @@ components:
     VoteReadAdmin:
       allOf:
         - $ref: 'api-vote.yaml#/components/schemas/VoteRead'
-        - properties:
+        - type: object
+          properties:
             voterUserId:
               type: string
           required:
             - voterUserId
     VoteCreate:
+      type: object
       properties:
         fundAmount:
           description: Optional amount of credits to fund.
@@ -43,10 +47,12 @@ components:
           items:
             type: string
     VoteUpdate:
+      type: object
       properties:
         fundAmount:
           type: number
         supportTypeIds:
+          type: object
           properties:
             add:
               type: array
@@ -115,7 +121,7 @@ components:
             schema:
               $ref: 'api-vote.yaml#/components/schemas/VoteRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: voteDelete
     tags: [Vote]
@@ -137,9 +143,9 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/vote:
   get:
     operationId: voteSearchAdmin
@@ -165,6 +171,7 @@ components:
           application/json:
             schema:
               title: VoteSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -190,9 +197,9 @@ components:
           $ref: 'api-vote.yaml#/components/schemas/VoteSearchAdmin'
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea/{ideaId}/vote:
   post:
     operationId: voteCreateAdmin
@@ -251,7 +258,7 @@ components:
             schema:
               $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: voteDeleteAdmin
     tags: [VoteAdmin]
@@ -273,6 +280,6 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'

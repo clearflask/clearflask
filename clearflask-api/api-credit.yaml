@@ -2,6 +2,7 @@
 components:
   schemas:
     CreditSearch:
+      type: object
       properties:
         filterTransactionTypes:
           type: array
@@ -21,7 +22,8 @@ components:
     CreditSearchAdmin:
       allOf:
         - $ref: 'api-credit.yaml#/components/schemas/CreditSearch'
-        - properties:
+        - type: object
+          properties:
             filterUserIds:
               type: array
               items:
@@ -30,6 +32,7 @@ components:
               type: string
           required:
     CreditRead:
+      type: object
       properties:
         transactionId:
           type: string
@@ -72,9 +75,11 @@ components:
     CreditReadAdmin:
       allOf:
         - $ref: 'api-credit.yaml#/components/schemas/CreditRead'
-        - properties:
+        - type: object
+          properties:
           required:
     CreditCreateAdmin:
+      type: object
       properties:
         amount:
           type: number
@@ -87,7 +92,6 @@ components:
         - amount
         - balance
         - transactionType
-      required:
 
 /project/{projectId}/user/{userId}/credit:
   get:
@@ -119,6 +123,7 @@ components:
           application/json:
             schema:
               title: CreditSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -179,6 +184,7 @@ components:
           application/json:
             schema:
               title: CreditSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'

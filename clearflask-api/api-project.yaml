@@ -3,6 +3,7 @@ components:
   schemas:
     Config:
       description: Config properties visible both to client app and admins.
+      type: object
       properties:
         name:
           type: string
@@ -13,6 +14,7 @@ components:
           type: array
           items:
             title: Page
+            type: object
             properties:
               name:
                 type: string
@@ -23,11 +25,11 @@ components:
               panels:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PagePanel'
+                  $ref: 'api-project.yaml#/components/schemas/PagePanel'
               board:
-                $ref: '#/components/schemas/PageBoard'
+                $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
-                $ref: '#/components/schemas/PageExplorer'
+                $ref: 'api-project.yaml#/components/schemas/PageExplorer'
             required:
               - name
         creditFormatter:
@@ -38,6 +40,7 @@ components:
             matching greaterThan and lessThan value that
             matches the current value will be concatenated
             with the given separator.
+          type: object
           properties:
             separator:
               type: string
@@ -45,6 +48,7 @@ components:
               type: array
               items:
                 title: CreditFormatterEntry
+                type: object
                 properties:
                   greaterThan:
                     type: number
@@ -66,11 +70,13 @@ components:
           $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
         ideaSettings:
           title: IdeaSettings
+          type: object
           properties:
             statuses:
               type: array
               items:
                 title: IdeaStatus
+                type: object
                 properties:
                   statusId:
                     type: string
@@ -80,6 +86,7 @@ components:
                     type: array
                     items:
                       title: NextStatusLink
+                      type: object
                       properties:
                         nextStatusId:
                           type: string
@@ -88,7 +95,7 @@ components:
                       required:
                         - nextStatusId
                   color:
-                    $ref: '#/components/schemas/Color'
+                    $ref: 'api-client.yaml#/components/schemas/Color'
                   allowFunding:
                     type: boolean
                   allowVoting:
@@ -104,6 +111,7 @@ components:
               type: array
               items:
                 title: IdeaTag
+                type: object
                 properties:
                   tagId:
                     type: string
@@ -118,6 +126,7 @@ components:
               type: array
               items:
                 title: IdeaGroup
+                type: object
                 properties:
                   groupId:
                     type: string
@@ -131,9 +140,6 @@ components:
                     $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
                   voteSettingsOverride:
                     $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
-                  supportType:
-                    description: If set, overrides project level support type
-                    $ref: '#/components/schemas/ConfSupportType'
                   defaultIdeaStatusId:
                     description: >-
                       Idea status to assign on newly created ideas.
@@ -168,12 +174,14 @@ components:
         Used for both reading and writing.
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/Config'
-        - properties:
+        - type: object
+          properties:
         # TODO OAuth
         # TODO Email/Push notifications
         # TODO Credit income
         # TODO Trusted public keys
     PageBoard:
+      type: object
       properties:
         title:
           type: string
@@ -184,6 +192,7 @@ components:
       required:
         - panels
     PagePanel:
+      type: object
       properties:
         title:
           type: string
@@ -200,6 +209,7 @@ components:
       required:
         - ideaList
     PageExplorer:
+      type: object
       properties:
         title:
           type: string
@@ -210,6 +220,7 @@ components:
     VoteSettingsCommon:
       description: >-
         Can be overriden inside IdeaGroup.
+      type: object
       properties:
         allowFunding:
           type: boolean
@@ -217,6 +228,7 @@ components:
           type: boolean
     IdeaSettingsCommon:
       description: Idea settings common between project and group levels.
+      type: object
       properties:
         defaultStatusId:
           description: >-
@@ -242,6 +254,7 @@ components:
           type: array
           items:
             title: TagGroupings
+            type: object
             properties:
               minRequired:
                 type: number
@@ -286,6 +299,7 @@ components:
           application/json:
             schema:
               title: NewProjectResult
+              type: object
               properties:
                 projectId:
                   type: string
@@ -334,6 +348,7 @@ components:
           application/json:
             schema:
               title: NewConfigResult
+              type: object
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'

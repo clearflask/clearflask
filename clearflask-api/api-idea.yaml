@@ -2,6 +2,7 @@
 components:
   schemas:
     IdeaSearch:
+      type: object
       properties:
         searchKey:
           type: string
@@ -39,7 +40,8 @@ components:
     IdeaSearchAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
-        - properties:
+        - type: object
+          properties:
             filterCreatedStart:
               type: string
               format: date-time
@@ -54,6 +56,7 @@ components:
               format: date-time
           required:
     IdeaRead:
+      type: object
       properties:
         ideaId:
           type: string
@@ -91,9 +94,11 @@ components:
     IdeaReadAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
-        - properties:
+        - type: object
+          properties:
           required:
     IdeaCreate:
+      type: object
       properties:
         authorUserId:
           type: string
@@ -115,7 +120,8 @@ components:
     IdeaCreateAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
-        - properties:
+        - type: object
+          properties:
             created:
               type: string
               format: date-time
@@ -125,6 +131,7 @@ components:
               type: number
           required:
     IdeaUpdate:
+      type: object
       properties:
         description:
           type: string
@@ -135,7 +142,8 @@ components:
     IdeaUpdateAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
-        - properties:
+        - type: object
+          properties:
             title:
               type: string
             groupId:
@@ -172,6 +180,7 @@ components:
           application/json:
             schema:
               title: IdeaSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -223,7 +232,7 @@ components:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: ideaUpdate
     tags: [Idea]
@@ -250,7 +259,7 @@ components:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: ideaDelete
     tags: [Idea]
@@ -267,9 +276,9 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea:
   get:
     operationId: ideaSearchAdmin
@@ -295,6 +304,7 @@ components:
           application/json:
             schema:
               title: IdeaSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -340,9 +350,9 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea/{ideaId}:
   get:
     operationId: ideaGetAdmin
@@ -365,7 +375,7 @@ components:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: ideaUpdateAdmin
     tags: [IdeaAdmin]
@@ -392,7 +402,7 @@ components:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: ideaDeleteAdmin
     tags: [IdeaAdmin]
@@ -409,6 +419,6 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'

@@ -35,7 +35,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: 'api-client.yaml#/components/schemas/ErrorResponse'
     Forbidden:
       description: >-
         HTTP 403 Forbidden
@@ -45,7 +45,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: 'api-client.yaml#/components/schemas/ErrorResponse'
     Unauthorized:
       description: >-
         HTTP 401 Unauthorized
@@ -54,7 +54,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: 'api-client.yaml#/components/schemas/ErrorResponse'
     ConfigChanged:
       description: >-
         HTTP 412 Precondition Failed
@@ -64,7 +64,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: 'api-client.yaml#/components/schemas/ErrorResponse'
 
 paths:
   /project/{projectId}/idea:

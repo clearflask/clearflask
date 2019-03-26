@@ -2,12 +2,14 @@
 components:
   schemas:
     CommentSearchAdmin:
+      type: object
       properties:
         filterUserIds:
           type: array
           items:
             type: string
     CommentRead:
+      type: object
       properties:
         commentId:
           type: string
@@ -30,6 +32,7 @@ components:
         - created
         - text
     CommentCreate:
+      type: object
       properties:
         parentCommentId:
           type: string
@@ -44,12 +47,14 @@ components:
     CommentCreateAdmin:
       allOf:
         - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
-        - properties:
+        - type: object
+          properties:
             created:
               type: string
               format: date-time
           required:
     CommentUpdate:
+      type: object
       properties:
         content:
           type: string
@@ -79,6 +84,7 @@ components:
           application/json:
             schema:
               title: CommentSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -145,7 +151,7 @@ components:
             schema:
               $ref: 'api-comment.yaml#/components/schemas/CommentRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: commentDelete
     tags: [Comment]
@@ -167,9 +173,9 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/comment:
   get:
     operationId: commentSearchAdmin
@@ -195,6 +201,7 @@ components:
           application/json:
             schema:
               title: CommentSearchResponse
+              type: object
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -220,9 +227,9 @@ components:
           $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea/{ideaId}/comment:
   post:
     operationId: commentCreateAdmin
@@ -281,7 +288,7 @@ components:
             schema:
               $ref: 'api-comment.yaml#/components/schemas/CommentRead'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: commentDeleteAdmin
     tags: [CommentAdmin]
@@ -298,6 +305,6 @@ components:
           type: string
     responses:
       '200':
-        $ref: '#/components/responses/Ok'
+        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: 'api-client.yaml#/components/responses/NotFound'

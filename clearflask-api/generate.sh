@@ -21,3 +21,5 @@ openapi-generator generate \
     -i api.yaml \
     -g html \
     -o ../clearflask-frontend/src/docs/api
+
+node createConfig.js
