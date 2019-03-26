@@ -72,7 +72,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api-client.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     responses:
       '200':
         content:
@@ -81,7 +81,7 @@ components:
               title: CommentSearchResponse
               properties:
                 cursor:
-                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
                 results:
                   type: array
                   items:
@@ -183,7 +183,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api-client.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
       - name: search
         in: query
         required: true
@@ -197,7 +197,7 @@ components:
               title: CommentSearchResponse
               properties:
                 cursor:
-                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
                 results:
                   type: array
                   items:

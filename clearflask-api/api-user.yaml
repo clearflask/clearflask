@@ -215,7 +215,7 @@ components:
       - name: cursor
         in: query
         schema:
-          $ref: 'api-client.yaml#/components/schemas/cursor'
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
       - name: search
         in: query
         required: true
@@ -229,7 +229,7 @@ components:
               title: UserSearchResponse
               properties:
                 cursor:
-                  $ref: 'api-client.yaml#/components/schemas/cursor'
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
                 results:
                   type: array
                   items:

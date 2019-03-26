@@ -1,0 +1,346 @@
+
+components:
+  schemas:
+    Config:
+      description: Config properties visible both to client app and admins.
+      properties:
+        name:
+          type: string
+        logoUrl:
+          description: Location of the logo to display.
+          type: string
+        pages:
+          type: array
+          items:
+            title: Page
+            properties:
+              name:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              panels:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PagePanel'
+              board:
+                $ref: '#/components/schemas/PageBoard'
+              explorer:
+                $ref: '#/components/schemas/PageExplorer'
+            required:
+              - name
+        creditFormatter:
+          title: CreditFormatter
+          description: >-
+            Defines a format for credit.
+            Entries are evaluated in order. Each entry
+            matching greaterThan and lessThan value that
+            matches the current value will be concatenated
+            with the given separator.
+          properties:
+            separator:
+              type: string
+            formats:
+              type: array
+              items:
+                title: CreditFormatterEntry
+                properties:
+                  greaterThan:
+                    type: number
+                  lessThan:
+                    type: number
+                  multiplier:
+                    type: number
+                  insignificant:
+                    type: integer
+                  significant:
+                    type: integer
+                  prefix:
+                    type: string
+                  suffix:
+                    type: string
+        ideaSettingsParent:
+          $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
+        voteSettingsParent:
+          $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
+        ideaSettings:
+          title: IdeaSettings
+          properties:
+            statuses:
+              type: array
+              items:
+                title: IdeaStatus
+                properties:
+                  statusId:
+                    type: string
+                  name:
+                    type: string
+                  nextStatusIds:
+                    type: array
+                    items:
+                      title: NextStatusLink
+                      properties:
+                        nextStatusId:
+                          type: string
+                        transitionText:
+                          type: string
+                      required:
+                        - nextStatusId
+                  color:
+                    $ref: '#/components/schemas/Color'
+                  allowFunding:
+                    type: boolean
+                  allowVoting:
+                    type: boolean
+                  allowIdeaEdits:
+                    type: boolean
+                  allowComments:
+                    type: boolean
+                required:
+                  - statusId
+                  - name
+            tags:
+              type: array
+              items:
+                title: IdeaTag
+                properties:
+                  tagId:
+                    type: string
+                  name:
+                    type: string
+                  color:
+                    $ref: 'api-client.yaml#/components/schemas/Color'
+                required:
+                  - tagId
+                  - name
+            groups:
+              type: array
+              items:
+                title: IdeaGroup
+                properties:
+                  groupId:
+                    type: string
+                  parentIdeaGroupId:
+                    type: string
+                  name:
+                    type: string
+                  color:
+                    $ref: 'api-client.yaml#/components/schemas/Color'
+                  ideaSettingsOverride:
+                    $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
+                  voteSettingsOverride:
+                    $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
+                  supportType:
+                    description: If set, overrides project level support type
+                    $ref: '#/components/schemas/ConfSupportType'
+                  defaultIdeaStatusId:
+                    description: >-
+                      Idea status to assign on newly created ideas.
+                      If not set, project level default applies.
+                    type: string
+                  defaultIdeaTagIds:
+                    type: array
+                    items:
+                      type: string
+                  settableIdeaVisibility:
+                    type: boolean
+                  settableIdeaTagIdsOnCreate:
+                    description: >-
+                      In addition to project level idea tags,
+                      these tags can also be added by user
+                      when creating an idea.
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - groupId
+                  - name
+      required:
+        - name
+        - pages
+        - ideaGroups
+        - ideaStatuses
+        - supportType
+    ConfigAdmin:
+      description: >-
+        All Config properties available for admins.
+        Used for both reading and writing.
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/Config'
+        - properties:
+        # TODO OAuth
+        # TODO Email/Push notifications
+        # TODO Credit income
+        # TODO Trusted public keys
+    PageBoard:
+      properties:
+        title:
+          type: string
+        panels:
+          type: array
+          items:
+            $ref: 'api-project.yaml#/components/schemas/PagePanel'
+      required:
+        - panels
+    PagePanel:
+      properties:
+        title:
+          type: string
+        hideIfEmpty:
+          type: boolean
+        ideaList:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+        enableSearchByGroup:
+          type: boolean
+        enableSearchByStatus:
+          type: boolean
+        enableSearchByTag:
+          type: boolean
+      required:
+        - ideaList
+    PageExplorer:
+      properties:
+        title:
+          type: string
+        ideaList:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+      required:
+        - ideaList
+    VoteSettingsCommon:
+      description: >-
+        Can be overriden inside IdeaGroup.
+      properties:
+        allowFunding:
+          type: boolean
+        allowSupport:
+          type: boolean
+    IdeaSettingsCommon:
+      description: Idea settings common between project and group levels.
+      properties:
+        defaultStatusId:
+          description: >-
+            Idea status to assign if any on newly created ideas.
+            Can be overriden in group.
+          type: string
+        defaultIdeaTagIds:
+          type: array
+          items:
+            type: string
+        defaultIdeaVisibility:
+          type: string
+          enum:
+            - Public
+            - Private
+        settableIdeaVisibility:
+          type: boolean
+        tagsOnCreate:
+          description: >-
+            These tags can be added by user when creating
+            a new idea.
+            Will be merged with configuration inside IdeaGroup.
+          type: array
+          items:
+            title: TagGroupings
+            properties:
+              minRequired:
+                type: number
+              maxRequired:
+                type: number
+              tagIds:
+                type: array
+                items:
+                  type: string
+
+/project/{projectId}/config:
+  get:
+    operationId: configGet
+    tags: [Project]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/Config'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/admin:
+  post:
+    operationId: projectCreateAdmin
+    tags: [Project]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: NewProjectResult
+              properties:
+                projectId:
+                  type: string
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+/project/{projectId}/admin/config:
+  get:
+    operationId: configGetAdmin
+    tags: [Project]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: configSetAdmin
+    tags: [Project]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionLast
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: config
+        in: query
+        required: true
+        schema:
+          $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: NewConfigResult
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+                version:
+                  type: string
+              required:
+                - config
+                - version
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'

@@ -12,9 +12,12 @@ externalDocs:
 
 components:
   schemas:
-    cursor:
+    Cursor:
       description: Cursor to fetch next set of results.
       type: string
+    Color:
+      type: string
+      pattern: '#([0-9a-f]{3}){1,2}'
     ErrorResponse:
       type: object
       properties:
@@ -84,3 +87,5 @@ paths:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
   /project/{projectId}/idea/{ideaId}/vote/{voteId}:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1{voteId}'
+  /project/{projectId}/config:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
