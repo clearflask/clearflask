@@ -2,17 +2,21 @@
 components:
   schemas:
     Config:
+      x-clearflask-page: { name: 'Main' }
       description: Config properties visible both to client app and admins.
       type: object
       properties:
         name:
           type: string
         logoUrl:
+          x-clearflask-prop: { name: 'Logo' }
           description: Location of the logo to display.
           type: string
         pages:
+          x-clearflask-page-group: { name: 'Pages' }
           type: array
           items:
+            x-clearflask-page: { name: 'Page' }
             title: Page
             type: object
             properties:
