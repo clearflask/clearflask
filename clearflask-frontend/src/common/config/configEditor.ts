@@ -28,6 +28,13 @@ export interface xCfProp {
   title?:string;
   description?:string;
   placeholder?:string;
+  /**
+   * Default value to set for newly created property.
+   * Must be set when non-array non-object property is set as required
+   * For array and object properties, value must be an array and object
+   * respecitvely with proper children property types. Default values
+   * are overriden if an array or object does not set a required property.
+   */
   defaultValue?:any;
 }
 
@@ -63,71 +70,73 @@ export type Property =
   |BooleanProperty
   |EnumProperty
   |ArrayProperty
-  |ObjectProperty
+  |ObjectProperty;
 
-interface PropertyBase extends xCfProp{
+interface PropertyBase<T> extends xCfProp{
   type:string;
-  value?:any;
-  defaultValue?:any;
   path:Path;
   required:boolean;
+  value?:T;
+  set(val:T):void;
+  setDefault():void;
 }
 
-export interface StringProperty extends PropertyBase {
+export interface StringProperty extends PropertyBase<string> {
   type:'string';
-  value?:string;
-  defaultValue?:string;
   minLength?:number;
   maxLength?:number;
   validation?:RegExp;
   format?:StringFormat|string;
 }
 
-export interface NumberProperty extends PropertyBase {
+export interface NumberProperty extends PropertyBase<number> {
   type:'number';
-  value?:number;
-  defaultValue?:number;
   multipleOf?:number;
 }
 
-export interface IntegerProperty extends PropertyBase {
+export interface IntegerProperty extends PropertyBase<number> {
   type:'integer';
-  value?:number;
-  defaultValue?:number;
   multipleOf?:number;
 }
 
-export interface BooleanProperty extends PropertyBase {
+export interface BooleanProperty extends PropertyBase<boolean> {
   type:'boolean';
-  value?:boolean;
-  defaultValue?:boolean;
 }
 
-export interface EnumProperty extends PropertyBase {
+export interface EnumProperty extends PropertyBase<string> {
   type:'enum';
-  value?:string;
-  defaultValue?:string;
   enumValues:string[];
   enumNames:string[];
 }
 
-export interface ArrayProperty extends PropertyBase {
+/**
+ * Array 
+ * If isRequired is false, value determines whether the object is undefined
+ * or set. If set, default values are set
+ * 
+ * TODO add support for uniqueItems
+ */
+export interface ArrayProperty extends PropertyBase<true|undefined> {
   type:'array';
-  value:Property[];
-  defaultValue?:void; // Use create instead
   minItems?:number;
   maxItems?:number;
-  uniqueItems?:boolean;
-  /** Use this method to create a new entry, then call propertyArrayInsert to commit. */
-  create:()=>Property;
+  childProperties?:Property[];
+  /** Creates a new entry. Index is location where to insert otherwise at the end. */
+  insert(index?:number):void;
+  /** Deletes entry at specified location */
+  delete(index:number):void;
 }
 
-export interface ObjectProperty extends PropertyBase {
+/**
+ * Object has two functionalities:
+ * - If isRequired is true, value is always true and this simply functions
+ *   as a grouping of other properties.
+ * - If isRequired is false, value determines whether the object is undefined
+ *   or set. If set, all 'properties' become visible.
+ */
+export interface ObjectProperty extends PropertyBase<true|undefined> {
   type:'object';
-  value?:any;
-  defaultValue:void; // Use create instead
-  properties:Property[];
-  create:()=>Property[];
+  childProperties?:Property[];
 }
 
 /**
@@ -166,11 +175,12 @@ interface ConfigEditor {
   getPageGroup(path:Path, depth?:ResolveDepth):PageGroup;
   getProperty(path:Path):Property;
 
-  propertySet<P extends Property>(prop:P, value:P['value']):void;
-  propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void;
-  propertyArrayDelete(prop:ArrayProperty, index:number):void;
-  groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void;
-  groupPageDelete(group:PageGroup, index:number):void;
+  setValue(path:Path, value:any):void;
+  // propertySet<P extends Property>(prop:P, value:P['value']):void;
+  // propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void;
+  // propertyArrayDelete(prop:ArrayProperty, index:number):void;
+  // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void;
+  // groupPageDelete(group:PageGroup, index:number):void;
 }
 
 export class ConfigEditorImpl implements ConfigEditor {
@@ -233,7 +243,7 @@ export class ConfigEditorImpl implements ConfigEditor {
       subConfig || this.config);
   }
 
-  setValue(path:Path, value:any):any {
+  setValue(path:Path, value:any):void {
     if(path.length === 0) {
       this.config = value;
       return;
@@ -241,46 +251,46 @@ export class ConfigEditorImpl implements ConfigEditor {
     this.getValue(path.slice(0, -1))[path[path.length - 1]] = value;
   }
 
-  propertySet<P extends Property>(prop:P, value:P['value']):void {
-    if(prop.required && value === undefined) {
-      throw Error(`Cannot assign undefined value to required property ${prop.path}`);
-    }
-    this.setValue(prop.path, value);
-    prop.value = value;
-  }
+  // propertySet<P extends Property>(prop:P, value:P['value']):void {
+  //   if(prop.required && value === undefined) {
+  //     throw Error(`Cannot assign undefined value to required property ${prop.path}`);
+  //   }
+  //   this.setValue(prop.path, value);
+  //   prop.value = value;
+  // }
 
-  propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void {
-    const arr = this.getValue(prop.path);
-    if(index) {
-      arr.splice(index, 0, valueProp.value);
-      prop.value.splice(index, 0, valueProp);
-    } else {
-      arr.push(valueProp.value);
-      prop.value.push(valueProp);
-    }
-  }
+  // propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void {
+  //   const arr = this.getValue(prop.path);
+  //   if(index) {
+  //     arr.splice(index, 0, valueProp.value);
+  //     prop.value.splice(index, 0, valueProp);
+  //   } else {
+  //     arr.push(valueProp.value);
+  //     prop.value.push(valueProp);
+  //   }
+  // }
 
-  propertyArrayDelete(prop:ArrayProperty, index:number):void {
-    const arr = this.getValue(prop.path);
-    arr.splice(index, 1);
-    prop.value.splice(index, 1);
-  }
+  // propertyArrayDelete(prop:ArrayProperty, index:number):void {
+  //   const arr = this.getValue(prop.path);
+  //   arr.splice(index, 1);
+  //   prop.value.splice(index, 1);
+  // }
 
-  groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void {
-    const arr = this.getValue(group.path);
-    if(index) {
-      arr.splice(index, 0, valuePage.value);
-      group.getPages().splice(index, 0, valuePage.value);
-    } else {
-      arr.push(valuePage.value);
-      group.getPages().push(valuePage);
-    }
-  }
-  groupPageDelete(group:PageGroup, index:number):void {
-    const arr = this.getValue(group.path);
-    arr.splice(index, 1);
-    group.getPages().splice(index, 1);
-  }
+  // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void {
+  //   const arr = this.getValue(group.path);
+  //   if(index) {
+  //     arr.splice(index, 0, valuePage.value);
+  //     group.getPages().splice(index, 0, valuePage.value);
+  //   } else {
+  //     arr.push(valuePage.value);
+  //     group.getPages().push(valuePage);
+  //   }
+  // }
+  // groupPageDelete(group:PageGroup, index:number):void {
+  //   const arr = this.getValue(group.path);
+  //   arr.splice(index, 1);
+  //   group.getPages().splice(index, 1);
+  // }
 
   getCacheKey(path:Path):string {
     return path.map(k => typeof k === 'string' ? k : '[]').join(':');
@@ -331,32 +341,23 @@ export class ConfigEditorImpl implements ConfigEditor {
           if(propSchema[OpenApiTags.Page]) {
             pages.push(this.getPage(
               propPath,
-              depth === ResolveDepth.Deep ? depth : ResolveDepth.None,
+              depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
               propSchema));
           } else if(propSchema[OpenApiTags.PageGroup]) {
-            this.getValue(propPath).forEach(item => {
-              // TODO
-            });
-
-            const group:PageGroup = {
-              prop: { // TODO
-              },
-              page: this.getPage(
-                propPath,
-                depth === ResolveDepth.Deep ? depth : ResolveDepth.None,
-                propSchema),
-            };
-
-            // TODO
-            groups.push(group);
+            groups.push(this.getPageGroup(
+              propPath,
+              depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+              propSchema));
           } else {
-            // TODO insert properties based on order. Here and in parseProperty too
             props.push(this.getProperty(
               propPath,
               !!requiredProps[propName],
               propsSchema));
           }
         });
+        pages.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
+        groups.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
+        props.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
         getPages = () => pages;
         getPageGroups = () => groups;
         getProperties = () => props;
@@ -398,6 +399,7 @@ export class ConfigEditorImpl implements ConfigEditor {
         for(let i = 0; i < count; i++) {
           pages.push(this.getPage([...path, i], depth, pageGroupSchema.items));
         }
+        pages.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
         getPages = () => pages;
         break;
       default:
@@ -435,23 +437,31 @@ export class ConfigEditorImpl implements ConfigEditor {
     if(propSchema[OpenApiTags.Page]) {
       throw Error(`Page found instead of property on path ${path}`);
     }
+    var property:Property;
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
-
-    const base:PropertyBase = {
+    const setFun = (val:any):void => {
+      this.setValue(path, val);
+      property.value = val;
+    };
+    const setDefaultFun = ():void => {
+      this.setValue(path, property.defaultValue);
+      property.value = property.defaultValue;
+    }
+    const base:PropertyBase<any> = {
       ...xProp,
       type: 'unknown',
       path: path,
       required: isRequired,
+      set: setFun,
+      setDefault: setDefaultFun,
     };
     const value = valueOverride == null ? this.getValue(path) : valueOverride;
-    var property:Property;
     switch(propSchema.type || 'object') {
       case 'string':
         property = {
           ...base,
           type: 'string',
           value: value,
-          defaultValue: xProp.defaultValue || (isRequired ? '' : undefined),
           minLength: propSchema.minLength,
           maxLength: propSchema.maxLength,
           validation: propSchema.pattern && new RegExp(propSchema.pattern),
@@ -464,7 +474,6 @@ export class ConfigEditorImpl implements ConfigEditor {
           ...base,
           type: propSchema.type,
           value: value,
-          defaultValue: xProp.defaultValue || (isRequired ? 0 : undefined),
           multipleOf: propSchema.multipleOf,
         };
         break;
@@ -473,22 +482,71 @@ export class ConfigEditorImpl implements ConfigEditor {
           ...base,
           type: 'boolean',
           value: value,
-          defaultValue: xProp.defaultValue || (isRequired ? false : undefined),
         };
         break;
       case 'array':
-        const create = () => {
-          // TODO
-        };
+        const readChildProperties = ():Property[]|undefined => {
+          const arr = this.getValue(path);
+          var childProperties:Property[]|undefined;
+          if(arr) {
+            childProperties = [];
+            for(let i = 0; i < arr.length; i++) {
+              // TODO should this really be set to required by default?
+              childProperties.push(this.getProperty([...path, i], true, propSchema.items));
+              // TODO
+            }
+          }
+          return childProperties;
+        }
         property = {
           ...base,
           type: 'array',
           value: value,
-          defaultValue: xProp.defaultValue || (isRequired ? [] : undefined), // TODO fill in minimum number of items
           minItems: propSchema.minItems,
           maxItems: propSchema.maxItems,
-          uniqueItems: propSchema.uniqueItems,
-          create: create,
+          childProperties: readChildProperties(),
+          set: (val:true|undefined):void => {
+            setFun(val);
+            const arrayProperty = property as ArrayProperty;
+            var newChildProperties;
+            if(val) {
+              newChildProperties = [];
+              if(arrayProperty.minItems && arrayProperty.minItems > 0) {
+                for(let i = 0; i < arrayProperty.minItems; i++) newChildProperties.push(undefined);
+              }
+            } else {
+              newChildProperties = undefined;
+            }
+            this.setValue(path, undefined);
+            arrayProperty.childProperties = readChildProperties();
+            arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
+          },
+          setDefault: ():void => {
+            setDefaultFun();
+            const newChildProperties = readChildProperties();
+            (property as ArrayProperty).childProperties = newChildProperties;
+            newChildProperties && newChildProperties.forEach(p => p.setDefault());
+          },
+          insert: (index?:number):Property => {
+            if(!property.value) throw Error(`Cannot insert to array property when disabled for path ${path}`);
+            const arr = this.getValue(path);
+            if(index) {
+              arr.splice(index, 0, undefined);
+            } else {
+              arr.push(undefined);
+            }
+            const newChildProperties = readChildProperties();
+            (property as ArrayProperty).childProperties = newChildProperties;
+            var newChildProperty = newChildProperties![index !== undefined ? index : (arrayProperty.childProperties.length - 1)]
+            newChildProperty.setDefault();
+            return newChildProperty;
+          },
+          delete: (index:number):void => {
+            if(!property.value) throw Error(`Cannot delete in array property when disabled for path ${path}`);
+            const arr = this.getValue(path);
+            arr.splice(index, 1);
+            (property as ArrayProperty).childProperties = readChildProperties();
+          },
         };
         break;
       case 'object':
@@ -499,14 +557,19 @@ export class ConfigEditorImpl implements ConfigEditor {
           this.getProperty([...path, propName], !!requiredProps[propName], propsSchema));
         const create = () => props.map(prop => {})
           // TODO
-        ;
+        // TODO sort below
+        // groups.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
         property = {
           ...base,
           type: 'object',
           value: value,
-          defaultValue: xProp.defaultValue || (isRequired ? {} : undefined), // TODO fill in required keys
-          properties: props, // TODO
-          create: create,
+          childProperties: props, // TODO
+          set: (val:true|undefined):void => {
+            // TODO
+          },
+          setDefault: ():void => {
+            // TODO
+          },
         };
         break;
       default:
