@@ -15,12 +15,14 @@ export interface xCfPage {
   order?:number;
   title?:string;
   description?:string;
+  defaultValue?:true|undefined;
 }
 export interface xCfPageGroup {
   name?:string;
   order?:number;
   title?:string;
   description?:string;
+  defaultValue?:true|undefined;
 }
 export interface xCfProp {
   name?:string;
@@ -28,41 +30,45 @@ export interface xCfProp {
   title?:string;
   description?:string;
   placeholder?:string;
-  /**
-   * Default value to set for newly created property.
-   * Must be set when non-array non-object property is set as required
-   * For array and object properties, value must be an array and object
-   * respecitvely with proper children property types. Default values
-   * are overriden if an array or object does not set a required property.
-   */
   defaultValue?:any;
+  enumNames?:string[] // EnumProperty only
 }
 
 /**
  * Settings objects
  */
 
-export interface Page extends xCfPage {
-  type:'Page';
-  value?:any;
+export interface Setting<T> {
+  type:string;
   path:Path;
-  depth:ResolveDepth;
-  getPages():Page[];
-  getPageGroups():PageGroup[];
-  getProperties():Property[];
+  required:boolean;
+  value?:T;
+  set(val:T):void;
+  setDefault():void;
 }
 
-export interface PageGroup extends xCfPageGroup {
+export interface Page extends Setting<true|undefined>, xCfPage {
+  type:'Page';
+  depth:ResolveDepth;
+  getChildren():PageChildren;
+}
+export interface PageChildren {
+  pages: Page[];
+  groups: PageGroup[];
+  props: Property[];
+}
+
+export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
   type:'PageGroup';
-  path:Path;
   depth:ResolveDepth;
   minItems?:number;
   maxItems?:number;
-  getPages():Page[];
-  /** Use this method to create a new entry, then call groupPageInsert to commit. */
-  create:()=>Property;
+  getChildPages():Page[];
+  insertChildPage(index?:number):void;
+  deleteChildPage (index:number):void;
 }
 
+interface PropertyBase<T> extends Setting<T>, xCfProp {}
 export type Property =
   StringProperty
   |NumberProperty
@@ -71,15 +77,6 @@ export type Property =
   |EnumProperty
   |ArrayProperty
   |ObjectProperty;
-
-interface PropertyBase<T> extends xCfProp{
-  type:string;
-  path:Path;
-  required:boolean;
-  value?:T;
-  set(val:T):void;
-  setDefault():void;
-}
 
 export interface StringProperty extends PropertyBase<string> {
   type:'string';
@@ -121,9 +118,7 @@ export interface ArrayProperty extends PropertyBase<true|undefined> {
   minItems?:number;
   maxItems?:number;
   childProperties?:Property[];
-  /** Creates a new entry. Index is location where to insert otherwise at the end. */
   insert(index?:number):void;
-  /** Deletes entry at specified location */
   delete(index:number):void;
 }
 
@@ -176,9 +171,6 @@ interface ConfigEditor {
   getProperty(path:Path):Property;
 
   setValue(path:Path, value:any):void;
-  // propertySet<P extends Property>(prop:P, value:P['value']):void;
-  // propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void;
-  // propertyArrayDelete(prop:ArrayProperty, index:number):void;
   // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void;
   // groupPageDelete(group:PageGroup, index:number):void;
 }
@@ -229,7 +221,7 @@ export class ConfigEditorImpl implements ConfigEditor {
   getFromCache(path:Path, loader:()=>Page|PageGroup|Property, minDepth:ResolveDepth = ResolveDepth.None):Page|PageGroup|Property {
     const key = this.getCacheKey(path);
     var result:Page|PageGroup|Property = this.cache[key];
-    if(!result || ((result.type === 'Page' || result.type === 'PageGroup') && result.depth < depth)) {
+    if(!result || ((result.type === 'Page' || result.type === 'PageGroup') && result.depth < minDepth)) {
       result = loader();
       this.cache[key] = result;
     }
@@ -251,31 +243,6 @@ export class ConfigEditorImpl implements ConfigEditor {
     this.getValue(path.slice(0, -1))[path[path.length - 1]] = value;
   }
 
-  // propertySet<P extends Property>(prop:P, value:P['value']):void {
-  //   if(prop.required && value === undefined) {
-  //     throw Error(`Cannot assign undefined value to required property ${prop.path}`);
-  //   }
-  //   this.setValue(prop.path, value);
-  //   prop.value = value;
-  // }
-
-  // propertyArrayInsert<P extends ArrayProperty>(prop:P, valueProp:ReturnType<P['create']>, index?:number):void {
-  //   const arr = this.getValue(prop.path);
-  //   if(index) {
-  //     arr.splice(index, 0, valueProp.value);
-  //     prop.value.splice(index, 0, valueProp);
-  //   } else {
-  //     arr.push(valueProp.value);
-  //     prop.value.push(valueProp);
-  //   }
-  // }
-
-  // propertyArrayDelete(prop:ArrayProperty, index:number):void {
-  //   const arr = this.getValue(prop.path);
-  //   arr.splice(index, 1);
-  //   prop.value.splice(index, 1);
-  // }
-
   // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void {
   //   const arr = this.getValue(group.path);
   //   if(index) {
@@ -291,6 +258,11 @@ export class ConfigEditorImpl implements ConfigEditor {
   //   arr.splice(index, 1);
   //   group.getPages().splice(index, 1);
   // }
+
+  sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property) {
+    return ((l.order || l.name) + '')
+      .localeCompare(((r.order || r.name) + ''));
+  }
 
   getCacheKey(path:Path):string {
     return path.map(k => typeof k === 'string' ? k : '[]').join(':');
@@ -314,108 +286,165 @@ export class ConfigEditorImpl implements ConfigEditor {
     return schema;
   }
 
-  parsePage(path:Path, depth:ResolveDepth, subSchema?:any):Page {
-    const pageSchema = subSchema || this.getSubSchema(path);
+  parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
     if(!xPage) {
       throw Error(`No page found on path ${path}`);
     }
 
-    var getPages:()=>Page[];
-    var getPageGroups:()=>PageGroup[];
-    var getProperties:()=>Property[];
-
-    switch(depth) {
-      case ResolveDepth.Deep:
-      case ResolveDepth.Shallow:
-        const pages:Page[] = [];
-        const groups:PageGroup[] = [];
-        const props:Property[] = [];
-        const objSchema = this.skipPaths(pageSchema, ['allOf']);
-        const propsSchema = objSchema.properties
-          || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
-        const requiredProps = objSchema.required || {};
-        Object.keys(propsSchema).forEach(propName => {
-          const propPath = [...path, propName];
-          const propSchema = this.getSubSchema([propName], propsSchema);
-          if(propSchema[OpenApiTags.Page]) {
-            pages.push(this.getPage(
-              propPath,
-              depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
-              propSchema));
-          } else if(propSchema[OpenApiTags.PageGroup]) {
-            groups.push(this.getPageGroup(
-              propPath,
-              depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
-              propSchema));
-          } else {
-            props.push(this.getProperty(
-              propPath,
-              !!requiredProps[propName],
-              propsSchema));
-          }
-        });
-        pages.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
-        groups.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
-        props.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
-        getPages = () => pages;
-        getPageGroups = () => groups;
-        getProperties = () => props;
-        break;
-      default:
-      case ResolveDepth.None:
-        getPages = () => this.getPage(path, ResolveDepth.Shallow, pageSchema).getPages();
-        getPageGroups = () => this.getPage(path, ResolveDepth.Shallow, pageSchema).getPageGroups();
-        getProperties = () => this.getPage(path, ResolveDepth.Shallow, pageSchema).getProperties();
-      break;
+    var pageSchema;
+    if(isRequired !== undefined && subSchema !== undefined) {
+      pageSchema = subSchema;
+    } else {
+      pageSchema = this.getSubSchema(path);
+      if(path.length === 0) {
+        isRequired = true;
+      } else {
+        const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
+        const propName = path[path.length - 1];
+        isRequired = !!(parentSchema.required && parentSchema.required[propName]);
+      }
     }
 
+    const fetchChildren = ():PageChildren => {
+      const children:PageChildren = {
+        pages: [],
+        groups: [],
+        props: [],
+      };
+      const objSchema = this.skipPaths(pageSchema, ['allOf']);
+      const propsSchema = objSchema.properties
+        || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
+      const requiredProps = objSchema.required || {};
+      Object.keys(propsSchema).forEach(propName => {
+        const propPath = [...path, propName];
+        const propSchema = this.getSubSchema([propName], propsSchema);
+        if(propSchema[OpenApiTags.Page]) {
+          children.pages.push(this.getPage(
+            propPath,
+            depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+            propSchema));
+        } else if(propSchema[OpenApiTags.PageGroup]) {
+          children.groups.push(this.getPageGroup(
+            propPath,
+            depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+            propSchema));
+        } else {
+          children.props.push(this.getProperty(
+            propPath,
+            !!requiredProps[propName],
+            propsSchema));
+        }
+      });
+      children.pages.sort(this.sortPagesProps);
+      children.groups.sort(this.sortPagesProps);
+      children.props.sort(this.sortPagesProps);
+      return children;
+    };
+    var cachedChildren:PageChildren|undefined = depth === ResolveDepth.None ? undefined : fetchChildren();
+    const getChildren = ():PageChildren => (cachedChildren === undefined && (cachedChildren = fetchChildren()), cachedChildren);
+
     const page:Page = {
+      defaultValue: isRequired ? true : undefined,
       ...xPage,
       type: 'Page',
+      value: this.getValue(path) === undefined ? undefined : true,
       path: path,
+      required: isRequired,
       depth: depth,
-      getPages: getPages,
-      getPageGroups: getPageGroups,
-      getProperties: getProperties,
+      getChildren: getChildren,
+      set: (val:true|undefined):void => {
+        if(!val && isRequired) throw Error(`Cannot unset a required page for path ${path}`)
+        this.setValue(path, val === true ? {} : undefined);
+        cachedChildren = fetchChildren();
+        cachedChildren.pages.forEach(childProp => childProp.setDefault());
+        cachedChildren.groups.forEach(childProp => childProp.setDefault());
+        cachedChildren.props.forEach(childProp => childProp.setDefault());
+        page.value = val;
+      },
+      setDefault: ():void => {
+        page.set(page.defaultValue);
+      },
     };
     return page;
   }
 
-  parsePageGroup(path:Path, depth:ResolveDepth, subSchema?:any):PageGroup {
-    const pageGroupSchema = subSchema || this.getSubSchema(path);
+  parsePageGroup(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):PageGroup {
     const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
     if(!xPageGroup) {
       throw Error(`No page group found on path ${path}`);
     }
 
-    var getPages:()=>Page[];
-
-    switch(depth) {
-      case ResolveDepth.Deep:
-      case ResolveDepth.Shallow:
-        const count = this.getValue(path).length;
-        const pages:Page[] = [];
-        for(let i = 0; i < count; i++) {
-          pages.push(this.getPage([...path, i], depth, pageGroupSchema.items));
-        }
-        pages.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
-        getPages = () => pages;
-        break;
-      default:
-      case ResolveDepth.None:
-        getPages = () => this.getPageGroup(path, ResolveDepth.Shallow, pageGroupSchema).getPages();
-      break;
+    var pageGroupSchema;
+    if(isRequired !== undefined && subSchema !== undefined) {
+      pageGroupSchema = subSchema;
+    } else {
+      pageGroupSchema = this.getSubSchema(path);
+      if(path.length === 0) {
+        isRequired = true;
+      } else {
+        const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
+        const propName = path[path.length - 1];
+        isRequired = !!(parentSchema.required && parentSchema.required[propName]);
+      }
     }
+
+    const fetchChildPages = ():Page[] => {
+      const count = this.getValue(path).length;
+      const pages:Page[] = [];
+      for(let i = 0; i < count; i++) {
+        pages.push(this.getPage(
+          [...path, i],
+          depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+          pageGroupSchema.items));
+      }
+      pages.sort(this.sortPagesProps);
+      return pages;
+    };
+    var cachedPages: Page[]|undefined = depth === ResolveDepth.None ? undefined : fetchChildPages();
+    const getPages = ():Page[] => (cachedPages === undefined && (cachedPages = fetchChildPages()), cachedPages);
 
     const pageGroup:PageGroup = {
       ...xPageGroup,
       type: 'PageGroup',
+      value: this.getValue(path) === undefined ? undefined : true,
       path: path,
+      required: isRequired,
       depth: depth,
       minItems: pageGroupSchema.minItems,
       maxItems: pageGroupSchema.maxItems,
-      getPages: getPages,
+      getChildPages: getPages,
+      insertChildPage: (index?:number):void => {
+        const arr = this.getValue(path);
+        if(index) {
+          arr.splice(index, 0, undefined);
+        } else {
+          arr.push(undefined);
+        }
+        cachedPages = fetchChildPages()
+        cachedPages[
+          index !== undefined
+            ? index
+            : cachedPages.length - 1]
+              .setDefault();
+      },
+      deleteChildPage: (index:number):void => {
+        const arr = this.getValue(path);
+        arr.splice(index, 1);
+        cachedPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
+      },
+      set: (val:true|undefined):void => {
+        if(!val && isRequired) throw Error(`Cannot unset a required page group for path ${path}`)
+        this.setValue(path, val === true
+          ? new Array(pageGroup.minItems ? pageGroup.minItems : 0)
+          : undefined);
+          cachedPages = fetchChildPages();
+        cachedPages.forEach(childProp => childProp.setDefault());
+        pageGroup.value = val;
+      },
+      setDefault: ():void => {
+        pageGroup.set(pageGroup.defaultValue);
+      },
     };
     return pageGroup;
   }
@@ -444,33 +473,47 @@ export class ConfigEditorImpl implements ConfigEditor {
       property.value = val;
     };
     const setDefaultFun = ():void => {
-      this.setValue(path, property.defaultValue);
-      property.value = property.defaultValue;
+      setFun(property.defaultValue);
     }
     const base:PropertyBase<any> = {
       ...xProp,
-      type: 'unknown',
+      type: 'unknown', // Will be overriden by subclass
       path: path,
       required: isRequired,
       set: setFun,
       setDefault: setDefaultFun,
     };
-    const value = valueOverride == null ? this.getValue(path) : valueOverride;
+    const value = valueOverride === null ? this.getValue(path) : valueOverride;
     switch(propSchema.type || 'object') {
       case 'string':
-        property = {
-          ...base,
-          type: 'string',
-          value: value,
-          minLength: propSchema.minLength,
-          maxLength: propSchema.maxLength,
-          validation: propSchema.pattern && new RegExp(propSchema.pattern),
-          format: propSchema.format,
-        };
+        if(propSchema.enum){
+          if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value on path ${path}`);
+          if(xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values on path ${path}`);
+          property = {
+            defaultValue: isRequired ? propSchema.enum[0] : undefined,
+            ...base,
+            type: 'enum',
+            value: value,
+            enumValues: propSchema.enum,
+            enumNames: xProp.enumNames || propSchema.enum,
+          };
+        } else {
+          property = {
+            defaultValue: isRequired ? '' : undefined,
+            ...base,
+            type: 'string',
+            value: value,
+            minLength: propSchema.minLength,
+            maxLength: propSchema.maxLength,
+            validation: propSchema.pattern && new RegExp(propSchema.pattern),
+            format: propSchema.format,
+          };
+        }
         break;
       case 'number':
       case 'integer':
         property = {
+          defaultValue: isRequired ? 0 : undefined,
           ...base,
           type: propSchema.type,
           value: value,
@@ -479,55 +522,44 @@ export class ConfigEditorImpl implements ConfigEditor {
         break;
       case 'boolean':
         property = {
+          defaultValue: isRequired ? false : undefined,
           ...base,
           type: 'boolean',
           value: value,
         };
         break;
       case 'array':
-        const readChildProperties = ():Property[]|undefined => {
+        const fetchChildPropertiesArray = ():Property[]|undefined => {
           const arr = this.getValue(path);
           var childProperties:Property[]|undefined;
           if(arr) {
             childProperties = [];
             for(let i = 0; i < arr.length; i++) {
-              // TODO should this really be set to required by default?
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
-              // TODO
             }
+            childProperties.sort(this.sortPagesProps);
           }
           return childProperties;
         }
         property = {
+          defaultValue: isRequired ? true : undefined,
           ...base,
           type: 'array',
-          value: value,
+          value: value === undefined ? undefined : true,
           minItems: propSchema.minItems,
           maxItems: propSchema.maxItems,
-          childProperties: readChildProperties(),
+          childProperties: fetchChildPropertiesArray(),
           set: (val:true|undefined):void => {
-            setFun(val);
+            if(!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
             const arrayProperty = property as ArrayProperty;
-            var newChildProperties;
-            if(val) {
-              newChildProperties = [];
-              if(arrayProperty.minItems && arrayProperty.minItems > 0) {
-                for(let i = 0; i < arrayProperty.minItems; i++) newChildProperties.push(undefined);
-              }
-            } else {
-              newChildProperties = undefined;
-            }
-            this.setValue(path, undefined);
-            arrayProperty.childProperties = readChildProperties();
+            this.setValue(path, val === true
+              ? new Array(arrayProperty.minItems ? arrayProperty.minItems : 0)
+              : undefined);
+            arrayProperty.childProperties = fetchChildPropertiesArray();
             arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
+            arrayProperty.value = val;
           },
-          setDefault: ():void => {
-            setDefaultFun();
-            const newChildProperties = readChildProperties();
-            (property as ArrayProperty).childProperties = newChildProperties;
-            newChildProperties && newChildProperties.forEach(p => p.setDefault());
-          },
-          insert: (index?:number):Property => {
+          insert: (index?:number):void => {
             if(!property.value) throw Error(`Cannot insert to array property when disabled for path ${path}`);
             const arr = this.getValue(path);
             if(index) {
@@ -535,40 +567,58 @@ export class ConfigEditorImpl implements ConfigEditor {
             } else {
               arr.push(undefined);
             }
-            const newChildProperties = readChildProperties();
-            (property as ArrayProperty).childProperties = newChildProperties;
-            var newChildProperty = newChildProperties![index !== undefined ? index : (arrayProperty.childProperties.length - 1)]
-            newChildProperty.setDefault();
-            return newChildProperty;
+            const newChildProperties = fetchChildPropertiesArray();
+            const arrayProperty:ArrayProperty = (property as ArrayProperty);
+            arrayProperty.childProperties = newChildProperties;
+            newChildProperties![
+              index !== undefined
+                ? index
+                : arrayProperty.childProperties!.length - 1]
+                  .setDefault();
           },
           delete: (index:number):void => {
             if(!property.value) throw Error(`Cannot delete in array property when disabled for path ${path}`);
             const arr = this.getValue(path);
             arr.splice(index, 1);
-            (property as ArrayProperty).childProperties = readChildProperties();
+            (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
           },
         };
         break;
       case 'object':
-        const propsSchema = propSchema.properties
-          || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
-        const requiredProps = propSchema.required || {};
-        const props:Property[] = Object.keys(propSchema.properties).map(propName =>
-          this.getProperty([...path, propName], !!requiredProps[propName], propsSchema));
-        const create = () => props.map(prop => {})
-          // TODO
-        // TODO sort below
-        // groups.sort((l,r) => ((l.order || l.name) + '').localeCompare(((l.order || l.name) + '')));
+        const fetchChildPropertiesObject = ():Property[]|undefined => {
+          const obj = this.getValue(path);
+          var childProperties:Property[]|undefined;
+          if(obj) {
+            childProperties = [];
+            const childPropsSchema = propSchema.properties
+              || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
+            const requiredProps = propSchema.required || {};
+            Object.keys(childPropsSchema).forEach(propName => {
+              const propSchema = 
+              childProperties!.push(this.getProperty(
+                [...path, propName],
+                !!requiredProps[propName],
+                this.getSubSchema([propName], childPropsSchema)));
+            });
+            childProperties.sort(this.sortPagesProps);
+          }
+          return childProperties;
+        }
         property = {
+          defaultValue: isRequired ? {} : undefined,
           ...base,
           type: 'object',
-          value: value,
-          childProperties: props, // TODO
+          value: value === undefined ? undefined : true,
+          childProperties: fetchChildPropertiesObject(),
           set: (val:true|undefined):void => {
-            // TODO
-          },
-          setDefault: ():void => {
-            // TODO
+            if(!val && isRequired) throw Error(`Cannot unset a required object prop for path ${path}`)
+            const objectProperty = property as ObjectProperty;
+            this.setValue(path, val === true
+              ? {}
+              : undefined);
+            objectProperty.childProperties = fetchChildPropertiesObject();
+            objectProperty.childProperties && objectProperty.childProperties.forEach(childProp => childProp.setDefault());
+            objectProperty.value = val;
           },
         };
         break;
