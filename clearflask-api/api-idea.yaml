@@ -55,7 +55,7 @@ components:
               type: string
               format: date-time
           required:
-    IdeaRead:
+    Idea:
       type: object
       properties:
         ideaId:
@@ -77,11 +77,13 @@ components:
           type: array
           items:
             type: string
-        creditGoal:
+        funded:
           type: number
-        funderCount:
+        fundGoal:
+          type: number
+        fundersCount:
           type: integer
-        supporterCount:
+        supportersCount:
           type: integer
       required:
         - ideaId
@@ -91,9 +93,9 @@ components:
         - description
         - groupId
         - tagIds
-    IdeaReadAdmin:
+    IdeaAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
+        - $ref: 'api-idea.yaml#/components/schemas/Idea'
         - type: object
           properties:
           required:
@@ -187,7 +189,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
+                    $ref: 'api-idea.yaml#/components/schemas/Idea'
               required:
                 - results
   post:
@@ -209,7 +211,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
+              $ref: 'api-idea.yaml#/components/schemas/Idea'
 /project/{projectId}/idea/{ideaId}:
   get:
     operationId: ideaGet
@@ -230,7 +232,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
+              $ref: 'api-idea.yaml#/components/schemas/Idea'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -257,7 +259,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaRead'
+              $ref: 'api-idea.yaml#/components/schemas/Idea'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -311,7 +313,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
               required:
                 - results
   post:
@@ -333,7 +335,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
   delete:
     operationId: ideaDeleteBulkAdmin
     tags: [IdeaAdmin]
@@ -373,7 +375,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -400,7 +402,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaReadAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

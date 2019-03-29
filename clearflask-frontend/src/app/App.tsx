@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Api, Conf, ConfViewPage, ApiInterface } from '../api/client';
+import * as Client from '../api/client';
 import { Server, reducers } from '../api/server';
 import { match } from 'react-router';
 import Header from './Header';
@@ -7,7 +7,7 @@ import { History } from 'react-router-dom';
 import Page from './Page';
 import { Store, createStore, compose, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
-import { isProd } from '../util/detectEnv';
+import { isProd } from '../common/util/detectEnv';
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core';
@@ -19,20 +19,23 @@ interface Props {
 }
 
 interface State {
-  conf?:Conf;
+  config?:Client.Config;
 }
 
 class App extends Component<Props, State> {
-  readonly api:ApiInterface;
+  readonly server:Server;
   readonly store:Store;
+  readonly projectId;
 
   constructor(props) {
     super(props);
     this.state = {};
 
+    this.projectId = this.props.match.params.projectName;
+
     this.store = createStore(
       reducers,
-      Server.initialState(),(
+      Server.initialState(this.projectId),(
         // Use Redux dev tools in development
         (isProd()
           ? compose
@@ -40,34 +43,32 @@ class App extends Component<Props, State> {
       )(applyMiddleware(thunk, reduxPromiseMiddleware)
     ));
 
-    this.api = new Server(this.store, this.props.match.params.projectName);
-    this.api.getConfig().then(conf => {
-      this.setState({conf: conf});
+    this.server = new Server(this.store, this.props.match.params.projectName);
+    this.server.dispatch().configGet({projectId: this.projectId}).then(conf => {
+      this.setState({config: conf});
     });
   }
 
   render() {
-    const page:ConfViewPage|undefined = this.state.conf
-      && this.state.conf.pages.find(p => p.urlName === (this.props.match.params.pageUrlName || ''));
+    const page:Client.Page|undefined = this.state.config
+      && this.state.config.pages.find(p => p.slug === (this.props.match.params.pageUrlName || ''));
 
     return (
-      <div>
-        <MuiThemeProvider theme={createMuiTheme(/** TODO this.state.conf && this.state.conf.theme */)}>
-        <Provider store={this.store}>
-          <Header
-            api={this.api}
-            conf={this.state.conf}
-            pageConf={page}
-            pageChanged={this.pageChanged.bind(this)}
-          />
-          <Page
-            api={this.api}
-            conf={this.state.conf}
-            pageConf={page}
-          />
-        </Provider>
-        </MuiThemeProvider>
-      </div>
+      <Provider store={this.store}>
+      <MuiThemeProvider theme={createMuiTheme(/** TODO this.state.conf && this.state.conf.theme */)}>
+        <Header
+          server={this.server}
+          conf={this.state.config}
+          page={page}
+          pageChanged={this.pageChanged.bind(this)}
+        />
+        <Page
+          server={this.server}
+          conf={this.state.config}
+          pageConf={page}
+        />
+      </MuiThemeProvider>
+      </Provider>
     );
   }
 

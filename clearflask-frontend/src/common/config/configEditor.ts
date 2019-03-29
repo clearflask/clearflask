@@ -1,5 +1,6 @@
-import * as Schema from '../../api/schema/schema-1.0.0.json';
+import Schema from '../../api/schema/schema-1.0.0.json';
 import { Config } from '../../api/admin/models/Config.js';
+import { any } from 'prop-types';
 
 /**
  * OpenApi vendor properties.
@@ -16,6 +17,7 @@ export interface xCfPage {
   title?:string;
   description?:string;
   defaultValue?:true|undefined;
+  menuDefaultExpanded?:boolean;
 }
 export interface xCfPageGroup {
   name?:string;
@@ -23,6 +25,7 @@ export interface xCfPageGroup {
   title?:string;
   description?:string;
   defaultValue?:true|undefined;
+  menuDefaultExpanded?:boolean;
 }
 export interface xCfProp {
   name?:string;
@@ -48,7 +51,7 @@ export interface Setting<T> {
 }
 
 export interface Page extends Setting<true|undefined>, xCfPage {
-  type:'Page';
+  type:'page';
   depth:ResolveDepth;
   getChildren():PageChildren;
 }
@@ -59,7 +62,7 @@ export interface PageChildren {
 }
 
 export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
-  type:'PageGroup';
+  type:'pagegroup';
   depth:ResolveDepth;
   minItems?:number;
   maxItems?:number;
@@ -161,9 +164,9 @@ export enum StringFormat {
  */
 export type Path = (string|number)[];
 
-interface ConfigEditor {
+export default interface Editor {
 
-  clone():ConfigEditor;
+  clone():Editor;
   getConfig():Config;
 
   getPage(path:Path, depth?:ResolveDepth):Page;
@@ -175,7 +178,7 @@ interface ConfigEditor {
   // groupPageDelete(group:PageGroup, index:number):void;
 }
 
-export class ConfigEditorImpl implements ConfigEditor {
+export class EditorImpl implements Editor {
   config:Config;
   cache:{[path: string]: Page|PageGroup|Property} = {};
 
@@ -183,8 +186,8 @@ export class ConfigEditorImpl implements ConfigEditor {
     this.config = config;
   }
 
-  clone():ConfigEditor {
-    return new ConfigEditorImpl(
+  clone():Editor {
+    return new EditorImpl(
       JSON.parse(
         JSON.stringify(
           this.config)));
@@ -196,7 +199,7 @@ export class ConfigEditorImpl implements ConfigEditor {
 
   getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page {
     var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePage(path, depth, subSchema), depth);
-    if(result.type !== 'Page') {
+    if(result.type !== 'page') {
       throw Error(`Expecting page type but found ${result.type} on path ${path}`);
     }
     return result;
@@ -204,7 +207,7 @@ export class ConfigEditorImpl implements ConfigEditor {
 
   getPageGroup(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):PageGroup {
     var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePageGroup(path, depth, subSchema), depth);
-    if(result.type !== 'PageGroup') {
+    if(result.type !== 'pagegroup') {
       throw Error(`Expecting page group type but found ${result.type} on path ${path}`);
     }
     return result;
@@ -212,7 +215,7 @@ export class ConfigEditorImpl implements ConfigEditor {
 
   getProperty(path:Path, isRequired?:boolean, subSchema?:any):Property {
     var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parseProperty(path, isRequired, subSchema));
-    if(result.type === 'Page' || result.type === 'PageGroup') {
+    if(result.type === 'page' || result.type === 'pagegroup') {
       throw Error(`Expecting property type but found ${result.type} on path ${path}`);
     }
     return result;
@@ -221,7 +224,7 @@ export class ConfigEditorImpl implements ConfigEditor {
   getFromCache(path:Path, loader:()=>Page|PageGroup|Property, minDepth:ResolveDepth = ResolveDepth.None):Page|PageGroup|Property {
     const key = this.getCacheKey(path);
     var result:Page|PageGroup|Property = this.cache[key];
-    if(!result || ((result.type === 'Page' || result.type === 'PageGroup') && result.depth < minDepth)) {
+    if(!result || ((result.type === 'page' || result.type === 'pagegroup') && result.depth < minDepth)) {
       result = loader();
       this.cache[key] = result;
     }
@@ -230,8 +233,7 @@ export class ConfigEditorImpl implements ConfigEditor {
 
   getValue(path:Path, subConfig?:any):any {
     return path.reduce(
-      (subConfig, nextKey) => subConfig[nextKey]
-          || (() => {throw Error(`Cannot find ${subConfig && 'sub'}config value for key ${nextKey} in path ${path}`)})(),
+      (subConfig, nextKey) => subConfig && subConfig[nextKey],
       subConfig || this.config);
   }
 
@@ -243,22 +245,6 @@ export class ConfigEditorImpl implements ConfigEditor {
     this.getValue(path.slice(0, -1))[path[path.length - 1]] = value;
   }
 
-  // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void {
-  //   const arr = this.getValue(group.path);
-  //   if(index) {
-  //     arr.splice(index, 0, valuePage.value);
-  //     group.getPages().splice(index, 0, valuePage.value);
-  //   } else {
-  //     arr.push(valuePage.value);
-  //     group.getPages().push(valuePage);
-  //   }
-  // }
-  // groupPageDelete(group:PageGroup, index:number):void {
-  //   const arr = this.getValue(group.path);
-  //   arr.splice(index, 1);
-  //   group.getPages().splice(index, 1);
-  // }
-
   sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property) {
     return ((l.order || l.name) + '')
       .localeCompare(((r.order || r.name) + ''));
@@ -269,29 +255,34 @@ export class ConfigEditorImpl implements ConfigEditor {
   }
 
   getSubSchema(path:Path, schema:any = Schema):any {
-    return path.reduce(
+    return this.mergeAllOf(path.reduce(
       (subSchema, nextKey) =>
-        this.skipPaths(subSchema, ['allOf', 'properties'])
+        this.skipPaths(this.mergeAllOf(subSchema), ['properties'])
           [typeof nextKey === 'number' ? 'items' : nextKey]
             || (() => {throw Error(`Cannot find ${nextKey} in path ${path}`)})(),
-      schema);
+      schema));
+  }
+
+  mergeAllOf(schema:any):any {
+    return schema['allOf'] !== undefined
+      ? {
+        ...schema['allOf'].reduce((result, next) => Object.assign(result, next), {}),
+        properties: schema['allOf'].reduce((result, next) => Object.assign(result, next['properties']), {}),
+        required: schema['allOf'].reduce((result, next) => Object.assign(result, next['required']), {}),
+      }
+      : schema;
   }
 
   skipPaths(schema:any, pathsToSkip:string[]):any {
     pathsToSkip.forEach(pathToSkip => {
       if(schema[pathToSkip]) {
-        schema = [pathToSkip]
+        schema = schema[pathToSkip]
       };
     });
     return schema;
   }
 
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
-    const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
-    if(!xPage) {
-      throw Error(`No page found on path ${path}`);
-    }
-
     var pageSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
       pageSchema = subSchema;
@@ -304,6 +295,11 @@ export class ConfigEditorImpl implements ConfigEditor {
         const propName = path[path.length - 1];
         isRequired = !!(parentSchema.required && parentSchema.required[propName]);
       }
+    }
+
+    const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
+    if(!xPage) {
+      throw Error(`No page found on path ${path}`);
     }
 
     const fetchChildren = ():PageChildren => {
@@ -333,7 +329,7 @@ export class ConfigEditorImpl implements ConfigEditor {
           children.props.push(this.getProperty(
             propPath,
             !!requiredProps[propName],
-            propsSchema));
+            propSchema));
         }
       });
       children.pages.sort(this.sortPagesProps);
@@ -347,7 +343,7 @@ export class ConfigEditorImpl implements ConfigEditor {
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
       ...xPage,
-      type: 'Page',
+      type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
       path: path,
       required: isRequired,
@@ -357,8 +353,8 @@ export class ConfigEditorImpl implements ConfigEditor {
         if(!val && isRequired) throw Error(`Cannot unset a required page for path ${path}`)
         this.setValue(path, val === true ? {} : undefined);
         cachedChildren = fetchChildren();
-        cachedChildren.pages.forEach(childProp => childProp.setDefault());
-        cachedChildren.groups.forEach(childProp => childProp.setDefault());
+        cachedChildren.pages.forEach(childPage => childPage.setDefault());
+        cachedChildren.groups.forEach(childPageGroup => childPageGroup.setDefault());
         cachedChildren.props.forEach(childProp => childProp.setDefault());
         page.value = val;
       },
@@ -370,11 +366,6 @@ export class ConfigEditorImpl implements ConfigEditor {
   }
 
   parsePageGroup(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):PageGroup {
-    const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
-    if(!xPageGroup) {
-      throw Error(`No page group found on path ${path}`);
-    }
-
     var pageGroupSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
       pageGroupSchema = subSchema;
@@ -387,6 +378,11 @@ export class ConfigEditorImpl implements ConfigEditor {
         const propName = path[path.length - 1];
         isRequired = !!(parentSchema.required && parentSchema.required[propName]);
       }
+    }
+
+    const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
+    if(!xPageGroup) {
+      throw Error(`No page group found on path ${path}`);
     }
 
     const fetchChildPages = ():Page[] => {
@@ -406,7 +402,7 @@ export class ConfigEditorImpl implements ConfigEditor {
 
     const pageGroup:PageGroup = {
       ...xPageGroup,
-      type: 'PageGroup',
+      type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
       path: path,
       required: isRequired,
@@ -438,8 +434,8 @@ export class ConfigEditorImpl implements ConfigEditor {
         this.setValue(path, val === true
           ? new Array(pageGroup.minItems ? pageGroup.minItems : 0)
           : undefined);
-          cachedPages = fetchChildPages();
-        cachedPages.forEach(childProp => childProp.setDefault());
+        cachedPages = fetchChildPages();
+        cachedPages.forEach(childPage => childPage.setDefault());
         pageGroup.value = val;
       },
       setDefault: ():void => {
@@ -463,11 +459,13 @@ export class ConfigEditorImpl implements ConfigEditor {
         || (() => {throw Error(`Cannot find property on path ${path}`)})();
       isRequired = !!(parentSchema.required && parentSchema.required[propName]);
     }
-    if(propSchema[OpenApiTags.Page]) {
-      throw Error(`Page found instead of property on path ${path}`);
+    if(propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
+      throw Error(`Page or pagegroup found instead of property on path ${path}`);
     }
+
     var property:Property;
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
+
     const setFun = (val:any):void => {
       this.setValue(path, val);
       property.value = val;
@@ -488,14 +486,14 @@ export class ConfigEditorImpl implements ConfigEditor {
       case 'string':
         if(propSchema.enum){
           if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value on path ${path}`);
-          if(xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values on path ${path}`);
+          if(xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values on path ${path}`);
           property = {
             defaultValue: isRequired ? propSchema.enum[0] : undefined,
             ...base,
             type: 'enum',
             value: value,
             enumValues: propSchema.enum,
-            enumNames: xProp.enumNames || propSchema.enum,
+            enumNames: xProp && xProp.enumNames || propSchema.enum,
           };
         } else {
           property = {
@@ -559,6 +557,10 @@ export class ConfigEditorImpl implements ConfigEditor {
             arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
             arrayProperty.value = val;
           },
+          setDefault: ():void => {
+            const arrayProperty = property as ArrayProperty;
+            arrayProperty.set(arrayProperty.defaultValue);
+          },
           insert: (index?:number):void => {
             if(!property.value) throw Error(`Cannot insert to array property when disabled for path ${path}`);
             const arr = this.getValue(path);
@@ -619,6 +621,10 @@ export class ConfigEditorImpl implements ConfigEditor {
             objectProperty.childProperties = fetchChildPropertiesObject();
             objectProperty.childProperties && objectProperty.childProperties.forEach(childProp => childProp.setDefault());
             objectProperty.value = val;
+          },
+          setDefault: ():void => {
+            const objectProperty = property as ObjectProperty;
+            objectProperty.set(objectProperty.defaultValue);
           },
         };
         break;

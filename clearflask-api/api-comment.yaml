@@ -8,7 +8,7 @@ components:
           type: array
           items:
             type: string
-    CommentRead:
+    Comment:
       type: object
       properties:
         commentId:
@@ -91,7 +91,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+                    $ref: 'api-comment.yaml#/components/schemas/Comment'
               required:
                 - results
   post:
@@ -118,7 +118,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
 /project/{projectId}/idea/{ideaId}/comment/{commentId}:
   patch:
     operationId: commentUpdate
@@ -149,7 +149,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -208,7 +208,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+                    $ref: 'api-comment.yaml#/components/schemas/Comment'
               required:
                 - results
   delete:
@@ -255,7 +255,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
   patch:
     operationId: commentUpdateAdmin
@@ -286,7 +286,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentRead'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

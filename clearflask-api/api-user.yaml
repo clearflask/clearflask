@@ -32,7 +32,7 @@ components:
           type: string
           description: Search by name and email.
       required:
-    UserRead:
+    User:
       type: object
       properties:
         userId:
@@ -42,9 +42,9 @@ components:
       required:
         - userId
         - name
-    UserReadAdmin:
+    UserAdmin:
       allOf:
-        - $ref: 'api-user.yaml#/components/schemas/UserRead'
+        - $ref: 'api-user.yaml#/components/schemas/User'
         - type: object
           properties:
             email:
@@ -98,7 +98,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserRead'
+              $ref: 'api-user.yaml#/components/schemas/User'
 /project/{projectId}/user:
   post:
     operationId: userCreate
@@ -119,7 +119,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserRead'
+              $ref: 'api-user.yaml#/components/schemas/User'
 /project/{projectId}/user/{userId}:
   get:
     operationId: userGet
@@ -140,7 +140,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserRead'
+              $ref: 'api-user.yaml#/components/schemas/User'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -167,7 +167,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserRead'
+              $ref: 'api-user.yaml#/components/schemas/User'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -204,7 +204,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserRead'
+              $ref: 'api-user.yaml#/components/schemas/User'
 /project/{projectId}/admin/user:
   get:
     operationId: userSearchAdmin
@@ -237,7 +237,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+                    $ref: 'api-user.yaml#/components/schemas/UserAdmin'
               required:
                 - results
   post:
@@ -259,7 +259,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+              $ref: 'api-user.yaml#/components/schemas/UserAdmin'
   delete:
     operationId: userDeleteBulkAdmin
     tags: [UserAdmin]
@@ -299,7 +299,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+              $ref: 'api-user.yaml#/components/schemas/UserAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -326,7 +326,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserReadAdmin'
+              $ref: 'api-user.yaml#/components/schemas/UserAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

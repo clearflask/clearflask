@@ -2,11 +2,12 @@
 components:
   schemas:
     Config:
-      x-clearflask-page: { name: 'Main' }
+      x-clearflask-page: { name: 'Project', menuDefaultExpanded: true }
       description: Config properties visible both to client app and admins.
       type: object
       properties:
         name:
+          x-clearflask-prop: { name: 'Project name' }
           type: string
         logoUrl:
           x-clearflask-prop: { name: 'Logo' }
@@ -21,10 +22,16 @@ components:
             type: object
             properties:
               name:
+                x-clearflask-prop: { name: 'Page name' }
+                type: string
+              slug:
+                x-clearflask-prop: { name: 'Url' }
                 type: string
               title:
+                x-clearflask-prop: { name: 'Title' }
                 type: string
               description:
+                x-clearflask-prop: { name: 'Description' }
                 type: string
               panels:
                 type: array
@@ -36,7 +43,9 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/PageExplorer'
             required:
               - name
+              - slug
         creditFormatter:
+          x-clearflask-page: { name: 'Credits' }
           title: CreditFormatter
           description: >-
             Defines a format for credit.
@@ -127,6 +136,7 @@ components:
                   - tagId
                   - name
             groups:
+              x-clearflask-page-group: { name: 'Pages' }
               type: array
               items:
                 title: IdeaGroup
@@ -222,6 +232,7 @@ components:
       required:
         - ideaList
     VoteSettingsCommon:
+      x-clearflask-page: { name: 'Voting' }
       description: >-
         Can be overriden inside IdeaGroup.
       type: object
@@ -231,6 +242,7 @@ components:
         allowSupport:
           type: boolean
     IdeaSettingsCommon:
+      x-clearflask-page: { name: 'Idea settings' }
       description: Idea settings common between project and group levels.
       type: object
       properties:
@@ -290,7 +302,7 @@ components:
 /project/admin:
   post:
     operationId: projectCreateAdmin
-    tags: [Project]
+    tags: [ProjectAdmin]
     parameters:
       - name: projectId
         in: path
@@ -312,7 +324,7 @@ components:
 /project/{projectId}/admin/config:
   get:
     operationId: configGetAdmin
-    tags: [Project]
+    tags: [ProjectAdmin]
     parameters:
       - name: projectId
         in: path
@@ -329,7 +341,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/NotFound'
   put:
     operationId: configSetAdmin
-    tags: [Project]
+    tags: [ProjectAdmin]
     parameters:
       - name: projectId
         in: path

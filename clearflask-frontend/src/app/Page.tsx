@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Conf, ConfViewPage, Idea, ApiInterface, ConfViewIdeaSearchQuery } from '../api/client';
+import * as Client from '../api/client';
 import Loading from './comps/Loading';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
@@ -8,9 +8,9 @@ import { StateIdeas, State } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 
 interface Props extends StateIdeas{
-  api:ApiInterface;
-  conf?:Conf;
-  pageConf?:ConfViewPage;
+  api:Client.ApiInterface;
+  conf?:Client.Config;
+  pageConf?:Client.Page;
 }
 
 class Page extends Component<Props> {
@@ -48,7 +48,7 @@ class Page extends Component<Props> {
       panelsCmpt.push(
         <div key={panel.ideaList.searchKey}>
           <Typography variant='overline'>
-            {panel.titleOpt}
+            {panel.title}
           </Typography>
           <Panel direction={Direction.Horizontal} {...this.props} searchKey={panel.ideaList.searchKey} />
         </div>
@@ -65,7 +65,7 @@ class Page extends Component<Props> {
         panels.push(
           <div key={panel.ideaList.searchKey}>
             <Typography variant='overline'>
-              {panel.titleOpt}
+              {panel.title}
             </Typography>
             <Panel direction={Direction.Vertical} {...this.props} searchKey={panel.ideaList.searchKey} />
           </div>
@@ -74,7 +74,7 @@ class Page extends Component<Props> {
       boardCmpt = (
         <div>
           <Typography variant='overline'>
-            {board.titleOpt}
+            {board.title}
           </Typography>
           <div style={{
             display: 'flex',
@@ -93,7 +93,7 @@ class Page extends Component<Props> {
       explorerCmpt = (
         <div>
           <Typography variant='overline'>
-            {explorer.titleOpt}
+            {explorer.title}
           </Typography>
           <Panel direction={Direction.Wrap} {...this.props} searchKey={explorer.ideaList.searchKey} />
         </div>
@@ -121,7 +121,7 @@ export default connect<any,any,any,any>((state:State, ownProps:Props) => {
     return newProps;
   }
 
-  const searchQueries:ConfViewIdeaSearchQuery[] = [
+  const searchQueries:Client.IdeaSearch[] = [
     ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.ideaList) || []),
     ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.ideaList) || []),
     ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.ideaList] || []),
@@ -130,7 +130,10 @@ export default connect<any,any,any,any>((state:State, ownProps:Props) => {
   for(let searchQuery of searchQueries) {
     const bySearch = state.ideas.bySearch[searchQuery.searchKey];
     if(!bySearch) {
-      ownProps.api.getIdeas({searchQuery: searchQuery});
+      ownProps.api.ideaSearch({
+        projectId: state.projectId,
+        search: searchQuery
+      });
       continue;
     }
     newProps.bySearch[searchQuery.searchKey] = bySearch;

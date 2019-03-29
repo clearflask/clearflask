@@ -1,29 +1,10 @@
 import React from 'react';
 import { combineReducers, Store } from "redux";
-import * as Client from './client';
 import DataMock from './dataMock';
-import { ApiInterface } from './client';
-
-export enum Action {
-  // ConfigApi
-  getConfig = 'getConfig',
-
-  // IdeaApi
-  createIdea = 'createIdea',
-  deleteIdea = 'deleteIdea',
-  getIdea = 'getIdea',
-  getIdeas = 'getIdeas',
-
-  // CommentApi
-  getComments = 'getComments',
-  
-  // CreditApi
-  getTransactions = 'getTransactions',
-  voteIdea = 'voteIdea',
-
-  // getUserApi
-  getUser = 'getUser',
-}
+import * as Client from './client';
+import * as Admin from './admin';
+import ServerMock from './serverMock';
+import Editor from '../common/config/configEditor';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -31,27 +12,42 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
-export class Server implements Client.ApiInterface {
+export class Server {
   apis: any;
-  readonly apiDelegate:Client.Api;
-  readonly store:Store
+  readonly store:Store;
+  readonly mockServer:ServerMock|undefined;
+  readonly dispatcherClient:Client.Dispatcher;
+  readonly dispatcherAdmin:Admin.Dispatcher;
 
-  constructor(store:Store, projectName) {
+  constructor(store:Store, projectName:string, configEditor?:Editor) {
     this.store = store;
 
-    if(projectName === 'demo') {
+    var apiDelegateClient;
+    var apiDelegateAdmin;
+    if(configEditor) {
       // In-memory demo
-      const mockServer = new DataMock().mockServerData();
-      this.apiDelegate = new Client.Api(new Client.Configuration(), mockServer);
+      this.mockServer = new ServerMock(configEditor);
+      apiDelegateClient = new Client.Api(new Client.Configuration(), this.mockServer);
+      apiDelegateAdmin = new Admin.Api(new Admin.Configuration(), this.mockServer);
     } else {
       // Production
-      this.apiDelegate = new Client.Api(new Client.Configuration({
+      const conf = {
         basePath: Client.BASE_PATH.replace(/projectId/, projectName),
-      }));
+      };
+      apiDelegateClient = new Client.Api(new Client.Configuration(conf));
+      apiDelegateAdmin = new Admin.Api(new Admin.Configuration(conf));
     }
+    this.dispatcherClient = new Client.Dispatcher(this._dispatch.bind(this), apiDelegateClient);
+    this.dispatcherAdmin = new Admin.Dispatcher(this._dispatch.bind(this), apiDelegateAdmin);
   }
 
-  static initialState():any {
+  static initialState(projectId:string):any {
+    const state:State = {
+      projectId: projectId,
+      conf: {},
+      ideas: stateIdeasDefault,
+    };
+    return state;
     // TODO
     // var accountInfo = TokenManager.getInstance().getAccountInfo();
     // if(!accountInfo) {
@@ -64,64 +60,21 @@ export class Server implements Client.ApiInterface {
     // return reducers(undefined, initialAuthAction);
   }
 
-  changeVoteIdea(requestParameters: Client.ChangeVoteIdeaRequest): Promise<Client.VoteIdeaResult> {
-    throw new Error("Method not implemented.");
+  dispatch():Client.Dispatcher {
+    return this.dispatcherClient;
   }
-  unvoteIdea(requestParameters: Client.UnvoteIdeaRequest): Promise<Client.VoteIdeaResult> {
-    throw new Error("Method not implemented.");
+
+  async dispatchAdmin():Promise<Admin.Dispatcher> {
+    // TODO load as async webpack here. remove all references to Admin.*
+    return this.dispatcherAdmin;
   }
-  bindUser(requestParameters: Client.BindUserRequest): Promise<Client.AuthSuccessResult> {
-    throw new Error("Method not implemented.");
+
+  previewConfig(config:any):void {
+    // TODO Will be used as Settings Preview to overwrite config while using production endpoint
   }
-  loginUser(requestParameters: Client.LoginUserRequest): Promise<Client.AuthSuccessResult> {
-    throw new Error("Method not implemented.");
-  }
-  registerUser(requestParameters: Client.RegisterUserRequest): Promise<Client.AuthSuccessResult> {
-    throw new Error("Method not implemented.");
-  }
-  updateUser(requestParameters: Client.UpdateUserRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  getComments(requestParameters: Client.GetCommentsRequest): Promise<Array<Client.Comment>> {
-    throw new Error("Method not implemented.");
-  }
-  getConfig(): Promise<Client.Conf> {
-    return this._dispatch({
-      type: Action.getConfig,
-      payload: this.apiDelegate.getConfigApi().getConfig(),
-    });
-  }
-  getTransactions(requestParameters: Client.GetTransactionsRequest): Promise<Array<Client.Transaction>> {
-    throw new Error("Method not implemented.");
-  }
-  voteIdea(requestParameters: Client.VoteIdeaRequest): Promise<Client.VoteIdeaResult> {
-    throw new Error("Method not implemented.");
-  }
-  createIdea(requestParameters: Client.CreateIdeaRequest): Promise<Client.Idea> {
-    throw new Error("Method not implemented.");
-  }
-  deleteIdea(requestParameters: Client.DeleteIdeaRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  updateIdea(requestParameters: Client.UpdateIdeaRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  getIdea(requestParameters: Client.GetIdeaRequest): Promise<Client.Idea> {
-    return this._dispatch({
-      type: Action.getIdea,
-      meta: { ideaId: requestParameters.ideaId },
-      payload: this.apiDelegate.getIdeaApi().getIdea(requestParameters),
-    });
-  }
-  getIdeas(requestParameters: Client.GetIdeasRequest): Promise<Client.Ideas> {
-    return this._dispatch({
-      type: Action.getIdeas,
-      meta: { searchKey: requestParameters.searchQuery.searchKey },
-      payload: this.apiDelegate.getIdeaApi().getIdeas(requestParameters),
-    });
-  }
-  getUser(requestParameters: Client.GetUserRequest): Promise<Client.User> {
-    throw new Error("Method not implemented.");
+
+  mockData():void {
+    // TODO Will be used to inject data into mock in-memory client-side "server"
   }
 
   async _dispatch(msg:any):Promise<any>{
@@ -132,18 +85,18 @@ export class Server implements Client.ApiInterface {
 
 export interface StateConf {
   status?:Status;
-  conf?:Client.Conf;
+  conf?:Client.Config;
 }
-function reducerConf(state:StateConf = {}, action):StateConf {
+function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
   switch (action.type) {
-    case `${Action.getConfig}_${Status.PENDING}`:
+    case Client.configGetActionStatus.Pending:
       return { status: Status.PENDING };
-    case `${Action.getConfig}_${Status.FULFILLED}`:
+    case Client.configGetActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
         conf: action.payload,
       };
-    case `${Action.getConfig}_${Status.REJECTED}`:
+    case Client.configGetActionStatus.Rejected:
       return { status: Status.REJECTED };
     default:
       return state;
@@ -153,7 +106,7 @@ function reducerConf(state:StateConf = {}, action):StateConf {
 export interface StateIdeas {
   byId:{[ideaId:string]:{
     status:Status;
-    idea:Client.Idea;
+    idea?:Client.Idea;
   }};
   bySearch:{[searchKey:string]:{
     status: Status,
@@ -165,65 +118,65 @@ const stateIdeasDefault = {
   byId: {},
   bySearch: {},
 };
-function reducerIdeas(state:StateIdeas = stateIdeasDefault, action):StateIdeas {
+function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions):StateIdeas {
   switch (action.type) {
-    case `${Action.getIdea}_${Status.PENDING}`:
+    case Client.ideaGetActionStatus.Pending:
       return {
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.ideaId]: { status: Status.PENDING }
+          [action.meta.request.ideaId]: { status: Status.PENDING }
         }
       };
-    case `${Action.getIdea}_${Status.REJECTED}`:
+    case Client.ideaGetActionStatus.Rejected:
       return {
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.ideaId]: { status: Status.REJECTED }
+          [action.meta.request.ideaId]: { status: Status.REJECTED }
         }
       };
-    case `${Action.getIdea}_${Status.FULFILLED}`:
+    case Client.ideaGetActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.ideaId]: {
+          [action.meta.request.ideaId]: {
             idea: action.payload,
             status: Status.FULFILLED,
           }
         }
       };
-    case `${Action.getIdeas}_${Status.PENDING}`:
+    case Client.ideaSearchActionStatus.Pending:
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.searchKey]: {
-            ...state.bySearch[action.meta.searchKey],
+          [action.meta.request.search.searchKey]: {
+            ...state.bySearch[action.meta.request.search.searchKey],
             status: Status.PENDING,
           }
         }
       };
-    case `${Action.getIdeas}_${Status.REJECTED}`:
+    case Client.ideaSearchActionStatus.Rejected:
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.searchKey]: {
-            ...state.bySearch[action.meta.searchKey],
+          [action.meta.request.search.searchKey]: {
+            ...state.bySearch[action.meta.request.search.searchKey],
             status: Status.REJECTED,
           }
         }
       };
-    case `${Action.getIdeas}_${Status.FULFILLED}`:
+    case Client.ideaSearchActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
           ...state.byId,
-          ...action.payload.ideas.reduce(
+          ...action.payload.results.reduce(
             (ideasById, idea) => {
-              ideasById[idea.id] = {
+              ideasById[idea.ideaId] = {
                 idea: idea,
                 status: Status.FULFILLED,
               };
@@ -232,12 +185,12 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action):StateIdeas {
         },
         bySearch: {
           ...state.bySearch,
-          [action.meta.searchKey]: {
+          [action.meta.request.search.searchKey]: {
             status: Status.FULFILLED,
             // Append results to existing idea ids
             ideaIds: [
-              ...(state.bySearch[action.meta.searchKey].ideaIds || []),
-              ...action.payload.ideas.map(idea => idea.id),
+              ...(state.bySearch[action.meta.request.search.searchKey].ideaIds || []),
+              ...action.payload.results.map(idea => idea.ideaId),
             ],
             cursor: action.payload.cursor,
           }
@@ -249,10 +202,12 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action):StateIdeas {
 }
 
 export interface State {
+  projectId:string;
   conf:StateConf;
   ideas:StateIdeas;
 }
 export const reducers = combineReducers({
+  projectId: (state = null) => state,
   conf: reducerConf,
   ideas: reducerIdeas,
 });

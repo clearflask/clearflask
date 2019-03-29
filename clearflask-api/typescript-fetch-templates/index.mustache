@@ -1,3 +1,99 @@
 export * from './runtime';
 export * from './apis';
 export * from './models';
+
+import { Api, ApiInterface } from './apis';
+import * as Model from './models';
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+import * as {{ classname }} from './apis/{{ classFilename }}';
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+export enum Action {
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+  {{nickname}} = '{{nickname}}',
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+}
+
+
+export type Actions = 
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+  {{^-first}}| {{/-first}}{{#operation}}{{^-first}}  | {{/-first}}{{nickname}}ActionFulfilled
+  | {{nickname}}ActionPending
+  | {{nickname}}ActionRejected
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}};
+
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+
+export enum {{nickname}}ActionStatus {
+  Pending = '{{nickname}}_PENDING',
+  Fulfilled = '{{nickname}}_FULFILLED',
+  Rejected = '{{nickname}}_REJECTED',
+}
+export interface {{nickname}}ActionFulfilled {
+  type: {{nickname}}ActionStatus;
+  meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
+  payload: {{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}};
+}
+export interface {{nickname}}ActionPending {
+  type: {{nickname}}ActionStatus.Pending;
+  meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
+}
+export interface {{nickname}}ActionRejected {
+  type: {{nickname}}ActionStatus.Pending;
+  meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
+  error: true;
+  payload: {
+    userFacingMessage?:string
+  };
+}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+export class Dispatcher implements ApiInterface {
+  readonly apiDelegate:Api;
+  readonly dispatcherDelegate:(msg:any)=>Promise<any>;
+  constructor(dispatcherDelegate:(msg:any)=>Promise<any>, apiDelegate:Api) {
+    this.dispatcherDelegate = dispatcherDelegate;
+    this.apiDelegate = apiDelegate || Api;
+  }
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+
+  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}): Promise<{{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    return this.dispatcherDelegate({
+      type: Action.{{nickname}},
+      meta: {
+        action: Action.{{nickname}},
+        request: request,
+      },
+      payload: this.apiDelegate.get{{classname}}().{{nickname}}(request),
+    });
+  }
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+}

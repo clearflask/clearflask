@@ -18,7 +18,7 @@ components:
             - Recent
       required:
         - sortBy
-    VoteRead:
+    Vote:
       type: object
       properties:
         voterName:
@@ -26,9 +26,9 @@ components:
             For privacy, name may not be present.
             If so, assume user is anonymous.
           type: string
-    VoteReadAdmin:
+    VoteAdmin:
       allOf:
-        - $ref: 'api-vote.yaml#/components/schemas/VoteRead'
+        - $ref: 'api-vote.yaml#/components/schemas/Vote'
         - type: object
           properties:
             voterUserId:
@@ -88,7 +88,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteRead'
+              $ref: 'api-vote.yaml#/components/schemas/Vote'
 /project/{projectId}/idea/{ideaId}/vote/{voteId}:
   patch:
     operationId: voteUpdate
@@ -119,7 +119,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteRead'
+              $ref: 'api-vote.yaml#/components/schemas/Vote'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -178,7 +178,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
+                    $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
               required:
                 - results
   delete:
@@ -225,7 +225,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
+              $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
 /project/{projectId}/admin/idea/{ideaId}/vote/{voteId}:
   patch:
     operationId: voteUpdateAdmin
@@ -256,7 +256,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteReadAdmin'
+              $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

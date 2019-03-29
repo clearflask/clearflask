@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
-import { Api, Conf, ConfViewPage, ApiInterface } from '../api/client';
+import * as Client from '../api/client';
 import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider } from '@material-ui/core';
 import ArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import ArrowRight from '@material-ui/icons/KeyboardArrowRight';
+import { Server } from '../api/server';
 
 interface Props {
-  api:ApiInterface;
-  conf?:Conf;
-  pageConf?:ConfViewPage;
+  server:Server;
+  conf?:Client.Config;
+  page?:Client.Page;
   pageChanged:(pageUrlName:string)=>void;
 }
 
@@ -26,11 +27,11 @@ class Header extends Component<Props> {
       currentTabValue = undefined;
       tabs = undefined;
     } else {
-      currentTabValue = this.props.pageConf
-        ? this.props.pageConf.urlName
+      currentTabValue = this.props.page
+        ? this.props.page.slug
         : undefined;
       tabs = this.props.conf.pages.map(p => 
-        (<Tab key={p.urlName} disableRipple label={p.name} value={p.urlName} />));
+        (<Tab key={p.slug} disableRipple label={p.name} value={p.slug} />));
     }
 
     return (
