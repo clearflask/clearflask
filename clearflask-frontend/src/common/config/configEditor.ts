@@ -1,6 +1,5 @@
 import Schema from '../../api/schema/schema-1.0.0.json';
 import { Config } from '../../api/admin/models/Config.js';
-import { any } from 'prop-types';
 
 /**
  * OpenApi vendor properties.
@@ -14,7 +13,6 @@ export enum OpenApiTags {
 export interface xCfPage {
   name?:string;
   order?:number;
-  title?:string;
   description?:string;
   defaultValue?:true|undefined;
   menuDefaultExpanded?:boolean;
@@ -22,19 +20,20 @@ export interface xCfPage {
 export interface xCfPageGroup {
   name?:string;
   order?:number;
-  title?:string;
   description?:string;
   defaultValue?:true|undefined;
   menuDefaultExpanded?:boolean;
+  /** Properties to show on main PageGroup page inside table */
+  tablePropertyNames:string[] 
 }
 export interface xCfProp {
   name?:string;
   order?:number;
-  title?:string;
   description?:string;
   placeholder?:string;
   defaultValue?:any;
-  enumNames?:string[] // EnumProperty only
+  /** EnumProperty only */
+  enumNames?:string[]
 }
 
 /**
@@ -42,7 +41,7 @@ export interface xCfProp {
  */
 
 export interface Setting<T> {
-  type:string;
+  type:PageType|PageGroupType|PropertyType;
   path:Path;
   required:boolean;
   value?:T;
@@ -50,10 +49,13 @@ export interface Setting<T> {
   setDefault():void;
 }
 
+export type PageType = 'page';
 export interface Page extends Setting<true|undefined>, xCfPage {
-  type:'page';
+  type:PageType;
+  name:string;
   depth:ResolveDepth;
   getChildren():PageChildren;
+  cachedChildren?:PageChildren; // Internal use only
 }
 export interface PageChildren {
   pages: Page[];
@@ -61,17 +63,31 @@ export interface PageChildren {
   props: Property[];
 }
 
+export type PageGroupType = 'pagegroup';
 export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
-  type:'pagegroup';
+  type:PageGroupType;
+  name:string;
   depth:ResolveDepth;
   minItems?:number;
   maxItems?:number;
   getChildPages():Page[];
-  insertChildPage(index?:number):void;
-  deleteChildPage (index:number):void;
+  insert(index?:number):void;
+  delete(index:number):void;
+  cachedChildPages?:Page[]; // Internal use only
 }
 
-interface PropertyBase<T> extends Setting<T>, xCfProp {}
+interface PropertyBase<T> extends Setting<T>, xCfProp {
+  name:string;
+}
+export enum PropertyType {
+  String = 'string',
+  Number = 'number',
+  Integer = 'integer',
+  Boolean = 'boolean',
+  Enum = 'enum',
+  Array = 'array',
+  Object = 'object'
+}
 export type Property =
   StringProperty
   |NumberProperty
@@ -82,7 +98,7 @@ export type Property =
   |ObjectProperty;
 
 export interface StringProperty extends PropertyBase<string> {
-  type:'string';
+  type:PropertyType.String;
   minLength?:number;
   maxLength?:number;
   validation?:RegExp;
@@ -90,23 +106,26 @@ export interface StringProperty extends PropertyBase<string> {
 }
 
 export interface NumberProperty extends PropertyBase<number> {
-  type:'number';
+  type:PropertyType.Number;
   multipleOf?:number;
 }
 
 export interface IntegerProperty extends PropertyBase<number> {
-  type:'integer';
+  type:PropertyType.Integer;
   multipleOf?:number;
 }
 
 export interface BooleanProperty extends PropertyBase<boolean> {
-  type:'boolean';
+  type:PropertyType.Boolean;
 }
 
 export interface EnumProperty extends PropertyBase<string> {
-  type:'enum';
-  enumValues:string[];
-  enumNames:string[];
+  type:PropertyType.Enum;
+  items:EnumItem[];
+}
+export interface EnumItem {
+  name:string;
+  value:string;
 }
 
 /**
@@ -117,9 +136,10 @@ export interface EnumProperty extends PropertyBase<string> {
  * TODO add support for uniqueItems
  */
 export interface ArrayProperty extends PropertyBase<true|undefined> {
-  type:'array';
+  type:PropertyType.Array;
   minItems?:number;
   maxItems?:number;
+  childType:PropertyType;
   childProperties?:Property[];
   insert(index?:number):void;
   delete(index:number):void;
@@ -133,7 +153,7 @@ export interface ArrayProperty extends PropertyBase<true|undefined> {
  *   or set. If set, all 'properties' become visible.
  */
 export interface ObjectProperty extends PropertyBase<true|undefined> {
-  type:'object';
+  type:PropertyType.Object;
   childProperties?:Property[];
 }
 
@@ -171,19 +191,26 @@ export default interface Editor {
 
   getPage(path:Path, depth?:ResolveDepth):Page;
   getPageGroup(path:Path, depth?:ResolveDepth):PageGroup;
+  getPageOrPageGroup(path:Path, depth?:ResolveDepth):Page|PageGroup;
   getProperty(path:Path):Property;
 
   setValue(path:Path, value:any):void;
-  // groupPageInsert(group:PageGroup, valuePage:Page, index?:number):void;
-  // groupPageDelete(group:PageGroup, index:number):void;
+
+  subscribe(id:string, callback:()=>void);
+  unsubscribe(id:string);
 }
 
 export class EditorImpl implements Editor {
   config:Config;
   cache:{[path: string]: Page|PageGroup|Property} = {};
+  subscribers:{[id:string]: ()=>void} = {};
 
-  constructor(config:Config) {
-    this.config = config;
+  constructor(config?:Config) {
+    this.config = config as Config;
+    // TODO initialize empty config
+    if(!this.config) {
+      this.getPage([]).setDefault();
+    }
   }
 
   clone():Editor {
@@ -195,6 +222,17 @@ export class EditorImpl implements Editor {
 
   getConfig():Config {
     return this.config;
+  }
+
+  subscribe(id: string, callback: () => void) {
+    this.subscribers[id] = callback;
+  }
+
+  unsubscribe(id: string) {
+    delete this.subscribers[id];
+  }
+  notify() {
+    Object.values(this.subscribers).forEach(s => s());
   }
 
   getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page {
@@ -209,6 +247,14 @@ export class EditorImpl implements Editor {
     var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePageGroup(path, depth, subSchema), depth);
     if(result.type !== 'pagegroup') {
       throw Error(`Expecting page group type but found ${result.type} on path ${path}`);
+    }
+    return result;
+  }
+
+  getPageOrPageGroup(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page|PageGroup {
+    var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePageOrPageGroup(path, depth, subSchema), depth);
+    if(result.type !== 'page' && result.type !== 'pagegroup' ) {
+      throw Error(`Expecting page or page group type but found ${result.type} on path ${path}`);
     }
     return result;
   }
@@ -240,9 +286,18 @@ export class EditorImpl implements Editor {
   setValue(path:Path, value:any):void {
     if(path.length === 0) {
       this.config = value;
-      return;
+    } else {
+      const parent = this.getValue(path.slice(0, -1));
+      if(value === undefined) {
+        if(typeof path[path.length - 1] === 'number') {
+          parent.splice(path[path.length - 1], 1);
+        } else {
+          delete parent[path[path.length - 1]];
+        }
+      } else {
+        parent[path[path.length - 1]] = value;
+      }
     }
-    this.getValue(path.slice(0, -1))[path[path.length - 1]] = value;
   }
 
   sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property) {
@@ -251,7 +306,7 @@ export class EditorImpl implements Editor {
   }
 
   getCacheKey(path:Path):string {
-    return path.map(k => typeof k === 'string' ? k : '[]').join(':');
+    return path.join(':');
   }
 
   getSubSchema(path:Path, schema:any = Schema):any {
@@ -268,7 +323,7 @@ export class EditorImpl implements Editor {
       ? {
         ...schema['allOf'].reduce((result, next) => Object.assign(result, next), {}),
         properties: schema['allOf'].reduce((result, next) => Object.assign(result, next['properties']), {}),
-        required: schema['allOf'].reduce((result, next) => Object.assign(result, next['required']), {}),
+        required: schema['allOf'].reduce((result, next) => result.concat(next['required'] || []), []),
       }
       : schema;
   }
@@ -282,6 +337,30 @@ export class EditorImpl implements Editor {
     return schema;
   }
 
+  parsePageOrPageGroup(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page|PageGroup {
+    var schema;
+    if(isRequired !== undefined && subSchema !== undefined) {
+      schema = subSchema;
+    } else {
+      schema = this.getSubSchema(path);
+      if(path.length === 0) {
+        isRequired = true;
+      } else {
+        const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
+        const propName = path[path.length - 1];
+        isRequired = !!(parentSchema.required && parentSchema.required.includes(propName));
+      }
+    }
+
+    if(schema[OpenApiTags.Page]) {
+      return this.parsePage(path, depth, isRequired, schema);
+    } else if(schema[OpenApiTags.PageGroup]) {
+      return this.parsePageGroup(path, depth, isRequired, schema);
+    } else {
+      throw Error(`Found neither age nor page group on path ${path}`);
+    }
+  }
+
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     var pageSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
@@ -293,7 +372,7 @@ export class EditorImpl implements Editor {
       } else {
         const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
         const propName = path[path.length - 1];
-        isRequired = !!(parentSchema.required && parentSchema.required[propName]);
+        isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
     }
 
@@ -311,7 +390,7 @@ export class EditorImpl implements Editor {
       const objSchema = this.skipPaths(pageSchema, ['allOf']);
       const propsSchema = objSchema.properties
         || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
-      const requiredProps = objSchema.required || {};
+      const requiredProps = objSchema.required || [];
       Object.keys(propsSchema).forEach(propName => {
         const propPath = [...path, propName];
         const propSchema = this.getSubSchema([propName], propsSchema);
@@ -328,7 +407,7 @@ export class EditorImpl implements Editor {
         } else {
           children.props.push(this.getProperty(
             propPath,
-            !!requiredProps[propName],
+            requiredProps.includes(propName),
             propSchema));
         }
       });
@@ -337,11 +416,11 @@ export class EditorImpl implements Editor {
       children.props.sort(this.sortPagesProps);
       return children;
     };
-    var cachedChildren:PageChildren|undefined = depth === ResolveDepth.None ? undefined : fetchChildren();
-    const getChildren = ():PageChildren => (cachedChildren === undefined && (cachedChildren = fetchChildren()), cachedChildren);
+    const getChildren = ():PageChildren => (page.cachedChildren === undefined && (page.cachedChildren = fetchChildren()), page.cachedChildren);
 
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
+      name: path.join('.'),
       ...xPage,
       type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -352,15 +431,25 @@ export class EditorImpl implements Editor {
       set: (val:true|undefined):void => {
         if(!val && isRequired) throw Error(`Cannot unset a required page for path ${path}`)
         this.setValue(path, val === true ? {} : undefined);
-        cachedChildren = fetchChildren();
-        cachedChildren.pages.forEach(childPage => childPage.setDefault());
-        cachedChildren.groups.forEach(childPageGroup => childPageGroup.setDefault());
-        cachedChildren.props.forEach(childProp => childProp.setDefault());
+        if(val) {
+          page.cachedChildren = fetchChildren();
+          page.cachedChildren.pages.forEach(childPage => childPage.setDefault());
+          page.cachedChildren.groups.forEach(childPageGroup => childPageGroup.setDefault());
+          page.cachedChildren.props.forEach(childProp => childProp.setDefault());
+        } else {
+          page.cachedChildren = {
+            pages: [],
+            groups: [],
+            props: [],
+          };
+        }
         page.value = val;
+        this.notify();
       },
       setDefault: ():void => {
         page.set(page.defaultValue);
       },
+      cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
     };
     return page;
   }
@@ -376,7 +465,7 @@ export class EditorImpl implements Editor {
       } else {
         const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
         const propName = path[path.length - 1];
-        isRequired = !!(parentSchema.required && parentSchema.required[propName]);
+        isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
     }
 
@@ -386,7 +475,8 @@ export class EditorImpl implements Editor {
     }
 
     const fetchChildPages = ():Page[] => {
-      const count = this.getValue(path).length;
+      const value = this.getValue(path);
+      const count = value && value.length;
       const pages:Page[] = [];
       for(let i = 0; i < count; i++) {
         pages.push(this.getPage(
@@ -397,10 +487,11 @@ export class EditorImpl implements Editor {
       pages.sort(this.sortPagesProps);
       return pages;
     };
-    var cachedPages: Page[]|undefined = depth === ResolveDepth.None ? undefined : fetchChildPages();
-    const getPages = ():Page[] => (cachedPages === undefined && (cachedPages = fetchChildPages()), cachedPages);
+    const getPages = ():Page[] => (pageGroup.cachedChildPages === undefined && (pageGroup.cachedChildPages = fetchChildPages()), pageGroup.cachedChildPages);
 
     const pageGroup:PageGroup = {
+      defaultValue: isRequired ? true : undefined,
+      name: path.join('.'),
       ...xPageGroup,
       type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
@@ -410,37 +501,45 @@ export class EditorImpl implements Editor {
       minItems: pageGroupSchema.minItems,
       maxItems: pageGroupSchema.maxItems,
       getChildPages: getPages,
-      insertChildPage: (index?:number):void => {
+      insert: (index?:number):void => {
         const arr = this.getValue(path);
         if(index) {
           arr.splice(index, 0, undefined);
         } else {
-          arr.push(undefined);
+          arr.push({});
         }
-        cachedPages = fetchChildPages()
-        cachedPages[
+        pageGroup.cachedChildPages = fetchChildPages()
+        pageGroup.cachedChildPages[
           index !== undefined
             ? index
-            : cachedPages.length - 1]
+            : pageGroup.cachedChildPages.length - 1]
               .setDefault();
+        this.notify();
       },
-      deleteChildPage: (index:number):void => {
+      delete: (index:number):void => {
         const arr = this.getValue(path);
         arr.splice(index, 1);
-        cachedPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
+        pageGroup.cachedChildPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
+        this.notify();
       },
       set: (val:true|undefined):void => {
         if(!val && isRequired) throw Error(`Cannot unset a required page group for path ${path}`)
         this.setValue(path, val === true
           ? new Array(pageGroup.minItems ? pageGroup.minItems : 0)
           : undefined);
-        cachedPages = fetchChildPages();
-        cachedPages.forEach(childPage => childPage.setDefault());
+        if(val) {
+          pageGroup.cachedChildPages = fetchChildPages();
+          pageGroup.cachedChildPages.forEach(childPage => childPage.setDefault());
+        } else {
+          pageGroup.cachedChildPages = [];
+        }
         pageGroup.value = val;
+        this.notify();
       },
       setDefault: ():void => {
         pageGroup.set(pageGroup.defaultValue);
       },
+      cachedChildPages: depth === ResolveDepth.None ? undefined : fetchChildPages(),
     };
     return pageGroup;
   }
@@ -457,7 +556,7 @@ export class EditorImpl implements Editor {
       const propName = path[path.length - 1];
       propSchema = parentSchema.properties && parentSchema.properties[propName]
         || (() => {throw Error(`Cannot find property on path ${path}`)})();
-      isRequired = !!(parentSchema.required && parentSchema.required[propName]);
+      isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
     }
     if(propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
       throw Error(`Page or pagegroup found instead of property on path ${path}`);
@@ -469,11 +568,13 @@ export class EditorImpl implements Editor {
     const setFun = (val:any):void => {
       this.setValue(path, val);
       property.value = val;
+      this.notify();
     };
     const setDefaultFun = ():void => {
       setFun(property.defaultValue);
     }
-    const base:PropertyBase<any> = {
+    const base = {
+      name: path.join('.'),
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
       path: path,
@@ -487,19 +588,25 @@ export class EditorImpl implements Editor {
         if(propSchema.enum){
           if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value on path ${path}`);
           if(xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values on path ${path}`);
+          const items:EnumItem[] = new Array(propSchema.enum.length);
+          for (let i = 0; i < propSchema.enum.length; i++) {
+            items[i] = {
+              name: xProp && xProp.enumNames || propSchema.enum,
+              value: propSchema.enum,
+            };
+          }
           property = {
             defaultValue: isRequired ? propSchema.enum[0] : undefined,
             ...base,
-            type: 'enum',
+            type: PropertyType.Enum,
             value: value,
-            enumValues: propSchema.enum,
-            enumNames: xProp && xProp.enumNames || propSchema.enum,
+            items: items,
           };
         } else {
           property = {
             defaultValue: isRequired ? '' : undefined,
             ...base,
-            type: 'string',
+            type: PropertyType.String,
             value: value,
             minLength: propSchema.minLength,
             maxLength: propSchema.maxLength,
@@ -522,7 +629,7 @@ export class EditorImpl implements Editor {
         property = {
           defaultValue: isRequired ? false : undefined,
           ...base,
-          type: 'boolean',
+          type: PropertyType.Boolean,
           value: value,
         };
         break;
@@ -542,20 +649,25 @@ export class EditorImpl implements Editor {
         property = {
           defaultValue: isRequired ? true : undefined,
           ...base,
-          type: 'array',
+          type: PropertyType.Array,
           value: value === undefined ? undefined : true,
           minItems: propSchema.minItems,
           maxItems: propSchema.maxItems,
+          childType: propSchema.items.type || 'object',
           childProperties: fetchChildPropertiesArray(),
           set: (val:true|undefined):void => {
             if(!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
             const arrayProperty = property as ArrayProperty;
-            this.setValue(path, val === true
-              ? new Array(arrayProperty.minItems ? arrayProperty.minItems : 0)
-              : undefined);
-            arrayProperty.childProperties = fetchChildPropertiesArray();
-            arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
+            if(val) {
+              this.setValue(path, new Array(arrayProperty.minItems ? arrayProperty.minItems : 0));
+              arrayProperty.childProperties = fetchChildPropertiesArray();
+              arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
+            } else {
+              this.setValue(path, undefined);
+              arrayProperty.childProperties = undefined;
+            }
             arrayProperty.value = val;
+            this.notify();
           },
           setDefault: ():void => {
             const arrayProperty = property as ArrayProperty;
@@ -577,12 +689,14 @@ export class EditorImpl implements Editor {
                 ? index
                 : arrayProperty.childProperties!.length - 1]
                   .setDefault();
+            this.notify();
           },
           delete: (index:number):void => {
             if(!property.value) throw Error(`Cannot delete in array property when disabled for path ${path}`);
             const arr = this.getValue(path);
             arr.splice(index, 1);
             (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
+            this.notify();
           },
         };
         break;
@@ -594,12 +708,11 @@ export class EditorImpl implements Editor {
             childProperties = [];
             const childPropsSchema = propSchema.properties
               || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
-            const requiredProps = propSchema.required || {};
+            const requiredProps = propSchema.required || [];
             Object.keys(childPropsSchema).forEach(propName => {
-              const propSchema = 
               childProperties!.push(this.getProperty(
                 [...path, propName],
-                !!requiredProps[propName],
+                requiredProps.includes(propName),
                 this.getSubSchema([propName], childPropsSchema)));
             });
             childProperties.sort(this.sortPagesProps);
@@ -609,18 +722,25 @@ export class EditorImpl implements Editor {
         property = {
           defaultValue: isRequired ? {} : undefined,
           ...base,
-          type: 'object',
+          type: PropertyType.Object,
           value: value === undefined ? undefined : true,
           childProperties: fetchChildPropertiesObject(),
           set: (val:true|undefined):void => {
             if(!val && isRequired) throw Error(`Cannot unset a required object prop for path ${path}`)
             const objectProperty = property as ObjectProperty;
+            if(val) {
+              this.setValue(path, {});
+              objectProperty.childProperties = fetchChildPropertiesObject();
+              objectProperty.childProperties && objectProperty.childProperties.forEach(childProp => childProp.setDefault());
+            } else {
+              this.setValue(path, undefined);
+              objectProperty.childProperties = undefined;
+            }
             this.setValue(path, val === true
               ? {}
               : undefined);
-            objectProperty.childProperties = fetchChildPropertiesObject();
-            objectProperty.childProperties && objectProperty.childProperties.forEach(childProp => childProp.setDefault());
             objectProperty.value = val;
+            this.notify();
           },
           setDefault: ():void => {
             const objectProperty = property as ObjectProperty;

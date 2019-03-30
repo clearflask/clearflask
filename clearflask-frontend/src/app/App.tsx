@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { Server, reducers } from '../api/server';
-import { match } from 'react-router';
+import { match, withRouter } from 'react-router';
 import Header from './Header';
 import { History } from 'react-router-dom';
 import Page from './Page';
@@ -13,6 +13,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core';
 
 interface Props {
+  configOverride?:Client.Config;
   // Router matching
   match:match;
   history:History;
@@ -31,7 +32,7 @@ class App extends Component<Props, State> {
     super(props);
     this.state = {};
 
-    this.projectId = this.props.match.params.projectName;
+    this.projectId = this.props.match.params.projectId;
 
     this.store = createStore(
       reducers,
@@ -43,28 +44,30 @@ class App extends Component<Props, State> {
       )(applyMiddleware(thunk, reduxPromiseMiddleware)
     ));
 
-    this.server = new Server(this.store, this.props.match.params.projectName);
+    this.server = new Server(this.store, this.projectId);
     this.server.dispatch().configGet({projectId: this.projectId}).then(conf => {
       this.setState({config: conf});
     });
   }
 
   render() {
-    const page:Client.Page|undefined = this.state.config
-      && this.state.config.pages.find(p => p.slug === (this.props.match.params.pageUrlName || ''));
+    const config = this.props.configOverride || this.state.config;
+
+    const page:Client.Page|undefined = config
+      && config.pages.find(p => p.slug === (this.props.match.params.pageUrlName || ''));
 
     return (
       <Provider store={this.store}>
       <MuiThemeProvider theme={createMuiTheme(/** TODO this.state.conf && this.state.conf.theme */)}>
         <Header
           server={this.server}
-          conf={this.state.config}
+          conf={config}
           page={page}
           pageChanged={this.pageChanged.bind(this)}
         />
         <Page
           server={this.server}
-          conf={this.state.config}
+          conf={config}
           pageConf={page}
         />
       </MuiThemeProvider>
@@ -78,4 +81,4 @@ class App extends Component<Props, State> {
   }
 }
 
-export default App;
+export default withRouter(App);

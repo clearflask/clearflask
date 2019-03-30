@@ -18,7 +18,7 @@ class Main extends Component {
           <Route path="/" exact render={props => (
             <Site {...props} />
           )} />
-          <Route path="/:projectName/:pageUrlName?" render={props => (
+          <Route path="/:projectId/:pageUrlName?" render={props => (
             <App {...props} />
           )} />
         </Switch>

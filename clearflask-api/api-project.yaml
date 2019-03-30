@@ -7,33 +7,35 @@ components:
       type: object
       properties:
         name:
-          x-clearflask-prop: { name: 'Project name' }
+          x-clearflask-prop: { name: 'Name', description: 'Project name visible on your page' }
           type: string
         logoUrl:
-          x-clearflask-prop: { name: 'Logo' }
+          x-clearflask-prop: { name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
         pages:
-          x-clearflask-page-group: { name: 'Pages' }
+          x-clearflask-page-group: { name: 'Pages', tablePropertyNames:['name', 'slug', 'title'] }
           type: array
+          minItems: 1
           items:
             x-clearflask-page: { name: 'Page' }
             title: Page
             type: object
             properties:
               name:
-                x-clearflask-prop: { name: 'Page name' }
+                x-clearflask-prop: { name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests' }
                 type: string
               slug:
-                x-clearflask-prop: { name: 'Url' }
+                x-clearflask-prop: { name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
                 type: string
               title:
-                x-clearflask-prop: { name: 'Title' }
+                x-clearflask-prop: { name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
                 type: string
               description:
-                x-clearflask-prop: { name: 'Description' }
+                x-clearflask-prop: { name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
               panels:
+                x-clearflask-page-group: { name: 'Panels', tablePropertyNames:['title'] }
                 type: array
                 items:
                   $ref: 'api-project.yaml#/components/schemas/PagePanel'
@@ -82,12 +84,15 @@ components:
         voteSettingsParent:
           $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
         ideaSettings:
+          x-clearflask-page: { name: 'Ideas', menuDefaultExpanded: true }
           title: IdeaSettings
           type: object
           properties:
             statuses:
+              x-clearflask-page-group: { name: 'Statuses', tablePropertyNames:['name', 'color'] }
               type: array
               items:
+                x-clearflask-page: { name: 'Status' }
                 title: IdeaStatus
                 type: object
                 properties:
@@ -121,8 +126,10 @@ components:
                   - statusId
                   - name
             tags:
+              x-clearflask-page-group: { name: 'Tags', tablePropertyNames:['name', 'color'] }
               type: array
               items:
+                x-clearflask-page: { name: 'Tag' }
                 title: IdeaTag
                 type: object
                 properties:
@@ -136,9 +143,10 @@ components:
                   - tagId
                   - name
             groups:
-              x-clearflask-page-group: { name: 'Pages' }
+              x-clearflask-page-group: { name: 'Groups', tablePropertyNames:['name', 'color'] }
               type: array
               items:
+                x-clearflask-page: { name: 'Group' }
                 title: IdeaGroup
                 type: object
                 properties:
@@ -179,6 +187,8 @@ components:
       required:
         - name
         - pages
+        - ideaSettingsParent
+        - voteSettingsParent
         - ideaGroups
         - ideaStatuses
         - supportType
@@ -195,6 +205,7 @@ components:
         # TODO Credit income
         # TODO Trusted public keys
     PageBoard:
+      x-clearflask-page: { name: 'Board' }
       type: object
       properties:
         title:
@@ -206,6 +217,7 @@ components:
       required:
         - panels
     PagePanel:
+      x-clearflask-page: { name: 'Panel' }
       type: object
       properties:
         title:
@@ -223,6 +235,7 @@ components:
       required:
         - ideaList
     PageExplorer:
+      x-clearflask-page: { name: 'Explorer' }
       type: object
       properties:
         title:

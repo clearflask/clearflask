@@ -9,7 +9,7 @@ import ListSubheader from '@material-ui/core/ListSubheader';
 
 interface Props extends ListProps {
   page:ConfigEditor.Page;
-  pageClicked:(page:ConfigEditor.Page)=>void;
+  pageClicked:(page:ConfigEditor.Page|ConfigEditor.PageGroup)=>void;
 }
 
 interface State {
@@ -21,7 +21,6 @@ export default class Menu extends Component<Props, State> {
   constructor(props:Props) {
     super(props);
 
-    console.log("Whaaat", props.page);
     this.state = {
       expanded: {},
     };
@@ -44,16 +43,17 @@ export default class Menu extends Component<Props, State> {
         {this.renderPages(childPages)}
         {childPageGroups.map(childPageGroup => {
           const key = childPageGroup.path.join('.');
+          const grandChildPages = childPageGroup.getChildPages();
           return [
             <ListItem button onClick={() => {
               this.setState({expanded: {
                 ...this.state.expanded,
                 [key]: !this.state.expanded[key],
               }});
+              this.props.pageClicked(childPageGroup);
             }}>
-              <ListSubheader component="div">{this.props.page.name}</ListSubheader>
-              <ListItemText secondary={this.props.page.name} />
-              {(childPages.length > 0 || childPageGroups.length > 0)
+              <ListItemText primary={childPageGroup.name}/>
+              {(grandChildPages.length > 0 || grandChildPages.length > 0)
                 && (this.state.expanded ? <ExpandLess /> : <ExpandMore />)}
             </ListItem>,
             <Collapse in={this.state.expanded[key]} timeout="auto" unmountOnExit>

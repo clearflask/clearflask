@@ -19,9 +19,17 @@ class Settings extends Component<Props, State> {
   this.state = {currentPagePath: []}
   }
 
+  componentDidMount() {
+    this.props.editor.subscribe('settings', this.forceUpdate.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.props.editor.unsubscribe('settings');
+  }
+
   render() {
     const rootPage = this.props.editor.getPage([]);
-    const page = this.props.editor.getPage(this.state.currentPagePath);
+    const page = this.props.editor.getPageOrPageGroup(this.state.currentPagePath);
     return (
       <div>
         Settings
@@ -49,7 +57,7 @@ class Settings extends Component<Props, State> {
     );
   }
 
-  pageClicked(page:ConfigEditor.Page) {
+  pageClicked(page:ConfigEditor.Page|ConfigEditor.PageGroup) {
     this.setState({currentPagePath: page.path});
   }
 }
