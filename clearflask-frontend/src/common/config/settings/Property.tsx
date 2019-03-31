@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TextField, RadioGroup, FormControlLabel, Radio } from '@material-ui/core';
+import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText } from '@material-ui/core';
+import TableProp from './TableProp';
 
 interface Props {
   prop:ConfigEditor.Property;
@@ -28,9 +29,9 @@ export default class Property extends Component<Props, State> {
     var propertySetter;
     switch(prop.type) {
       default:
-      case 'string':
-      case 'number':
-      case 'integer':
+      case ConfigEditor.PropertyType.String:
+      case ConfigEditor.PropertyType.Number:
+      case ConfigEditor.PropertyType.Integer:
         propertySetter = (
           <TextField
             id={prop.path.join('.')}
@@ -45,9 +46,23 @@ export default class Property extends Component<Props, State> {
           />
         );
         break;
-      case 'boolean':
+      case ConfigEditor.PropertyType.Boolean:
+        propertySetter = (
+          <div>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={!!prop.value}
+                  onChange={this.handlePropChange.bind(this)}
+                />
+              )}
+              label={!this.props.bare && name}
+            />
+            <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
+          </div>
+        );
         break;
-      case 'enum':
+      case ConfigEditor.PropertyType.Enum:
         propertySetter = (
           <RadioGroup
             name={name}
@@ -57,30 +72,76 @@ export default class Property extends Component<Props, State> {
             {prop.items.map(item => (
               <FormControlLabel
                 label={item.name}
-                value={item.value}
+                checked={prop.value === item.value}
                 control={<Radio />}
+                value={item.value}
+                onChange={this.handlePropChange.bind(this)}
               />
             ))}
+            <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
           </RadioGroup>
         );
         break;
-      case 'array':
+      case ConfigEditor.PropertyType.Array:
+        propertySetter = (
+          <TableProp data={prop} />
+        );
         break;
-      case 'object':
+      case ConfigEditor.PropertyType.Object:
+        const subProps = prop.childProperties && prop.childProperties.map(childProp => (
+          <Property {...this.props} prop={childProp} />
+        ));
+        propertySetter = (
+          <div>
+            <Typography variant='subtitle1'>{name}</Typography>
+            <FormHelperText>{prop.description}</FormHelperText>
+            {prop.required && (
+              <div>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={!!prop.value}
+                      onChange={this.handlePropChange.bind(this)}
+                    />
+                  )}
+                  label={!this.props.bare && name}
+                />
+                <FormHelperText>{prop.description}</FormHelperText>
+              </div>
+            )}
+            {(prop.required || prop.value) && (
+            <div style={{marginLeft: '25px'}}>
+              {subProps}
+            </div>
+          )}
+          </div>
+        );
         break;
     }
 
     return (
       <div>
+        <div>
+          {/* PROP: {JSON.stringify(prop)} */}
+        </div>
         {propertySetter}
       </div>
     );
   }
 
   handlePropChange(event) {
-    const newValue = event.target.value;
-
     const prop = this.props.prop;
+
+    var newValue;
+    switch(prop.type) {
+      case ConfigEditor.PropertyType.Boolean:
+        newValue = event.target.checked;
+        break;
+      default:
+        newValue = event.target.value;
+        break;
+    }
+
     if(!newValue && prop.required) {
       this.setState({
         value: newValue,

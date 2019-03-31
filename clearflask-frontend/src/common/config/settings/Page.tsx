@@ -14,21 +14,18 @@ class Page extends Component<Props> {
     var content;
     if(this.props.page.type === 'page') {
       const childProps = this.props.page.getChildren().props;
-      content = (
-        <div>
-          {childProps.map(childProp => (<Property prop={childProp} />))}
-        </div>
-      );
+      content = childProps.map(childProp => (<Property prop={childProp} />));
     } else {
       content = (
-        <div>
-          <TableProp data={this.props.page} />
-        </div>
+        <TableProp data={this.props.page} />
       );
     }
 
     return (
       <div>
+        <Typography variant='h4'>{this.props.page.name}</Typography>
+        <Typography variant='body1'>{this.props.page.description}</Typography>
+        PAGE: {JSON.stringify(this.props.page)}
         {content}
       </div>
     );

@@ -9,6 +9,7 @@ import ListSubheader from '@material-ui/core/ListSubheader';
 
 interface Props extends ListProps {
   page:ConfigEditor.Page;
+  level?:number;
   pageClicked:(page:ConfigEditor.Page|ConfigEditor.PageGroup)=>void;
 }
 
@@ -17,6 +18,7 @@ interface State {
 }
 
 export default class Menu extends Component<Props, State> {
+  readonly paddingPerLevel = 10;
 
   constructor(props:Props) {
     super(props);
@@ -38,9 +40,9 @@ export default class Menu extends Component<Props, State> {
         <ListItem button onClick={() => {
           this.props.pageClicked(this.props.page);
         }}>
-          <ListItemText primary={this.props.page.name} />
+          <ListItemText style={this.paddingForLevel(this.props.level)} primary={this.props.page.name} />
         </ListItem>
-        {this.renderPages(childPages)}
+        {this.renderPages(childPages, (this.props.level || 0) + 1)}
         {childPageGroups.map(childPageGroup => {
           const key = childPageGroup.path.join('.');
           const grandChildPages = childPageGroup.getChildPages();
@@ -52,12 +54,14 @@ export default class Menu extends Component<Props, State> {
               }});
               this.props.pageClicked(childPageGroup);
             }}>
-              <ListItemText primary={childPageGroup.name}/>
+              <ListItemText style={this.paddingForLevel(this.props.level, 1)} primary={childPageGroup.name}/>
               {(grandChildPages.length > 0 || grandChildPages.length > 0)
                 && (this.state.expanded ? <ExpandLess /> : <ExpandMore />)}
             </ListItem>,
             <Collapse in={this.state.expanded[key]} timeout="auto" unmountOnExit>
-              {this.renderPages(childPageGroup.getChildPages())}
+              <div>
+                {this.renderPages(childPageGroup.getChildPages(), (this.props.level || 0) + 2)}
+              </div>
             </Collapse>,
           ];
         })}
@@ -65,14 +69,20 @@ export default class Menu extends Component<Props, State> {
     );
   }
 
-  renderPages(childPages:ConfigEditor.Page[]) {
+  renderPages(childPages:ConfigEditor.Page[], level?:number) {
     return childPages.map(childPage =>
       <Menu
+        level={level}
         page={childPage}
         pageClicked={this.props.pageClicked}
         // TODO component='div'
         disablePadding
       />
     );
+  }
+
+  paddingForLevel(currentLevel?:number, addLevel?:number):React.CSSProperties {
+    const level = (currentLevel || 0) + (addLevel || 0);
+    return { paddingLeft: (level * this.paddingPerLevel) + 'px' };
   }
 }

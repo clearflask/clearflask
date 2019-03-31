@@ -277,6 +277,21 @@ export class EditorImpl implements Editor {
     return result;
   }
 
+  getOrDefaultValue(path:Path, defaultValue:any, subConfig?:any):any {
+    if(path.length === 0) {
+      if(this.config === undefined) {
+        this.config = defaultValue;
+      }
+      return this.config;
+    } else {
+      const parent = this.getValue(path.slice(0, -1));
+      if(parent[path[path.length - 1]] === undefined) {
+        parent[path[path.length - 1]] = defaultValue;
+      }
+      return parent[path[path.length - 1]];
+    }
+  }
+
   getValue(path:Path, subConfig?:any):any {
     return path.reduce(
       (subConfig, nextKey) => subConfig && subConfig[nextKey],
@@ -502,7 +517,7 @@ export class EditorImpl implements Editor {
       maxItems: pageGroupSchema.maxItems,
       getChildPages: getPages,
       insert: (index?:number):void => {
-        const arr = this.getValue(path);
+        const arr = this.getOrDefaultValue(path, []);
         if(index) {
           arr.splice(index, 0, undefined);
         } else {
@@ -514,6 +529,7 @@ export class EditorImpl implements Editor {
             ? index
             : pageGroup.cachedChildPages.length - 1]
               .setDefault();
+        pageGroup.value = true;
         this.notify();
       },
       delete: (index:number):void => {
@@ -591,8 +607,8 @@ export class EditorImpl implements Editor {
           const items:EnumItem[] = new Array(propSchema.enum.length);
           for (let i = 0; i < propSchema.enum.length; i++) {
             items[i] = {
-              name: xProp && xProp.enumNames || propSchema.enum,
-              value: propSchema.enum,
+              name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
+              value: propSchema.enum[i],
             };
           }
           property = {
@@ -674,8 +690,7 @@ export class EditorImpl implements Editor {
             arrayProperty.set(arrayProperty.defaultValue);
           },
           insert: (index?:number):void => {
-            if(!property.value) throw Error(`Cannot insert to array property when disabled for path ${path}`);
-            const arr = this.getValue(path);
+            const arr = this.getOrDefaultValue(path, []);
             if(index) {
               arr.splice(index, 0, undefined);
             } else {
@@ -689,10 +704,11 @@ export class EditorImpl implements Editor {
                 ? index
                 : arrayProperty.childProperties!.length - 1]
                   .setDefault();
+            property.value = true;
             this.notify();
           },
           delete: (index:number):void => {
-            if(!property.value) throw Error(`Cannot delete in array property when disabled for path ${path}`);
+            if(!property.value) return;
             const arr = this.getValue(path);
             arr.splice(index, 1);
             (property as ArrayProperty).childProperties = fetchChildPropertiesArray();

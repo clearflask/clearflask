@@ -1,9 +1,12 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
-import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider } from '@material-ui/core';
+import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton } from '@material-ui/core';
 import ArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import ArrowRight from '@material-ui/icons/KeyboardArrowRight';
+import Balance from '@material-ui/icons/AccountBalance';
+import Notifications from '@material-ui/icons/Notifications';
 import { Server } from '../api/server';
+
 
 interface Props {
   server:Server;
@@ -45,12 +48,37 @@ class Header extends Component<Props> {
           spacing={16}
         >
           <Grid item xs={6}>
-            <Typography variant='h6'>
-              ClearFlask
-            </Typography>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              {this.props.conf && this.props.conf.logoUrl && (
+                <img src={this.props.conf.logoUrl} style={{maxHeight: '48px'}} />
+              )}
+              <Typography variant='h6'>
+                {this.props.conf && this.props.conf.name || 'ClearFlask'}
+              </Typography>
+            </div>
           </Grid>
           <Grid item xs={6}>
-              <Avatar style={{marginLeft: 'auto'}}>W</Avatar>
+            <div style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+            }}>
+              <IconButton aria-label="Notifications">
+                <Badge badgeContent={1} color='secondary'>
+                  <Notifications />
+                </Badge>
+              </IconButton>
+              <IconButton aria-label="Account balance">
+                <Badge badgeContent='2k' color='primary'>
+                  <Balance />
+                </Badge>
+              </IconButton>
+              <Avatar>W</Avatar>
+            </div>
           </Grid>
         </Grid>
         <Tabs

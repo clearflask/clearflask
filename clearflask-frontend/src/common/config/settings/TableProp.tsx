@@ -26,7 +26,6 @@ export default class TableProp extends Component<Props, State> {
     if(this.props.data.type === 'pagegroup') {
       const pageGroup:ConfigEditor.PageGroup = this.props.data;
       pageGroup.getChildPages().forEach((childPage, childPageIndex) => {
-        console.log('whoa', childPage.path);
         const row:React.ReactNode[] = [];
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
           const prop = childPage.getChildren().props.find(childPageProp => propName === childPageProp.path[childPageProp.path.length - 1])!;
