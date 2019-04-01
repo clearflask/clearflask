@@ -8,6 +8,7 @@ import {
 import App from './app/App';
 import Site from './site/Site';
 import CssBaseline from '@material-ui/core/CssBaseline';
+import Admin from './site/Admin';
 
 class Main extends Component {
   render() {
@@ -17,6 +18,9 @@ class Main extends Component {
         <Switch>
           <Route path="/" exact render={props => (
             <Site {...props} />
+          )} />
+          <Route path="/admin" render={props => (
+            <Admin {...props} />
           )} />
           <Route path="/:projectId/:pageUrlName?" render={props => (
             <App {...props} />

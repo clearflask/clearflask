@@ -1,17 +1,34 @@
 import Schema from '../../api/schema/schema-1.0.0.json';
 import { Config } from '../../api/admin/models/Config.js';
+import randomUuid from '../util/uuid';
 
 /**
  * OpenApi vendor properties.
  */
 
 export enum OpenApiTags {
-  Page = 'x-clearflask-page', // Single page
-  PageGroup = 'x-clearflask-page-group', // Dynamic group of pages
-  Prop = 'x-clearflask-prop', // Property
+  /**
+   * Single page
+   * Must either be root, or parent must be another Page or PageGroup.
+   */
+  Page = 'x-clearflask-page',
+  /**
+   * Dynamic group of pages
+   * Must either be root, or parent must be another Page or PageGroup.
+   */
+  PageGroup = 'x-clearflask-page-group',
+  /** Property */
+  Prop = 'x-clearflask-prop',
+  /**
+   * Property Link
+   * Links value of a string to an id of another array item.
+   * Can be on a string property or array of string property.
+   */
+  PropLink = 'x-clearflask-prop-link',
 }
 export interface xCfPage {
   name?:string;
+  nameFromProp?:string;
   order?:number;
   description?:string;
   defaultValue?:true|undefined;
@@ -32,8 +49,29 @@ export interface xCfProp {
   description?:string;
   placeholder?:string;
   defaultValue?:any;
+  subType?:PropSubType
   /** EnumProperty only */
   enumNames?:string[]
+}
+export enum PropSubType {
+  /**
+   * A string property hidden from user and auto filled with unique value.
+   * Used inside an array of objects with a property link.
+   */
+  Id = 'id',
+  Color = 'color',
+}
+export interface xCfPropLink {
+  /**
+   * Path to array.
+   * '<>' will be replaced by current path entry,
+   * useful when crossing another array.
+   */
+  linkPath:string[];
+  /** If set, links to this prop name. Otherwise links to the array index */
+  idPropName:string;
+  /** List of child properties to display */
+  showPropNames?:string[];
 }
 
 /**
@@ -81,6 +119,7 @@ interface PropertyBase<T> extends Setting<T>, xCfProp {
 }
 export enum PropertyType {
   String = 'string',
+  Link = 'link',
   Number = 'number',
   Integer = 'integer',
   Boolean = 'boolean',
@@ -90,6 +129,7 @@ export enum PropertyType {
 }
 export type Property =
   StringProperty
+  |LinkProperty
   |NumberProperty
   |IntegerProperty
   |BooleanProperty
@@ -103,6 +143,16 @@ export interface StringProperty extends PropertyBase<string> {
   maxLength?:number;
   validation?:RegExp;
   format?:StringFormat|string;
+}
+
+export interface LinkProperty extends PropertyBase<string>, xCfPropLink {
+  type:PropertyType.Link;
+  /** Shows current options and list of properties to show for readonly */
+  getOptions():LinkPropertyOption[];
+}
+export interface LinkPropertyOption {
+  id:string;
+  readonlyProps: Property[];
 }
 
 export interface NumberProperty extends PropertyBase<number> {
@@ -168,7 +218,6 @@ export enum ResolveDepth {
 }
 
 export enum StringFormat {
-  'Link' = 'link',
   'Date' = 'date',
   'DateTime' = 'date-time',
   'Password' = 'password',
@@ -183,6 +232,17 @@ export enum StringFormat {
  * Ex: ['ideaSettings', 'tags', 3, 'color']
  */
 export type Path = (string|number)[];
+export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[.\/]/):Path => {
+  if(!pathStr) {
+    return [];
+  }
+  return pathStr
+    .split(delimiter)
+    .map(pStr => {
+      const pNum = +pStr;
+      return isNaN(pNum) ? pStr : pNum;
+    });
+}
 
 export default interface Editor {
 
@@ -235,16 +295,16 @@ export class EditorImpl implements Editor {
     Object.values(this.subscribers).forEach(s => s());
   }
 
-  getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page {
-    var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePage(path, depth, subSchema), depth);
+  getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):Page {
+    var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePage(path, depth, isRequired, subSchema), depth);
     if(result.type !== 'page') {
       throw Error(`Expecting page type but found ${result.type} on path ${path}`);
     }
     return result;
   }
 
-  getPageGroup(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):PageGroup {
-    var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePageGroup(path, depth, subSchema), depth);
+  getPageGroup(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):PageGroup {
+    var result:Page|PageGroup|Property = this.getFromCache(path, () => this.parsePageGroup(path, depth, isRequired, subSchema), depth);
     if(result.type !== 'pagegroup') {
       throw Error(`Expecting page group type but found ${result.type} on path ${path}`);
     }
@@ -315,9 +375,8 @@ export class EditorImpl implements Editor {
     }
   }
 
-  sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property) {
-    return ((l.order || l.name) + '')
-      .localeCompare(((r.order || r.name) + ''));
+  sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property):number {
+    return (l.order || l.name) > (r.order || r.name) ? 1 : -1;
   }
 
   getCacheKey(path:Path):string {
@@ -413,11 +472,13 @@ export class EditorImpl implements Editor {
           children.pages.push(this.getPage(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+            requiredProps.includes(propName),
             propSchema));
         } else if(propSchema[OpenApiTags.PageGroup]) {
           children.groups.push(this.getPageGroup(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+            requiredProps.includes(propName),
             propSchema));
         } else {
           children.props.push(this.getProperty(
@@ -431,7 +492,12 @@ export class EditorImpl implements Editor {
       children.props.sort(this.sortPagesProps);
       return children;
     };
-    const getChildren = ():PageChildren => (page.cachedChildren === undefined && (page.cachedChildren = fetchChildren()), page.cachedChildren);
+    const getChildren = ():PageChildren => {
+      if(!page.cachedChildren || page.cachedChildren === undefined) {
+        page.cachedChildren = fetchChildren();
+      }
+      return page.cachedChildren;
+    };
 
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
@@ -497,12 +563,18 @@ export class EditorImpl implements Editor {
         pages.push(this.getPage(
           [...path, i],
           depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
+          true,
           pageGroupSchema.items));
       }
       pages.sort(this.sortPagesProps);
       return pages;
     };
-    const getPages = ():Page[] => (pageGroup.cachedChildPages === undefined && (pageGroup.cachedChildPages = fetchChildPages()), pageGroup.cachedChildPages);
+    const getPages = ():Page[] => {
+      if(pageGroup.cachedChildPages === undefined) {
+        pageGroup.cachedChildPages = fetchChildPages();
+      }
+      return pageGroup.cachedChildPages;
+    };
 
     const pageGroup:PageGroup = {
       defaultValue: isRequired ? true : undefined,
@@ -618,9 +690,61 @@ export class EditorImpl implements Editor {
             value: value,
             items: items,
           };
-        } else {
+        } else if(propSchema[OpenApiTags.PropLink]) {
+          const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
           property = {
-            defaultValue: isRequired ? '' : undefined,
+            defaultValue: isRequired ? [xPropLink.linkPath] : undefined,
+            ...xPropLink,
+            ...base,
+            type: PropertyType.String,
+            value: value,
+            getOptions: ():LinkPropertyOption[] => {
+              const targetLink = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
+              const targetProp = this.getProperty(targetLink);
+              if(targetProp.type !== PropertyType.Array) {
+                throw Error(`Link property ${path} pointing to non-array on path ${targetLink}`);
+              }
+              if(targetProp.childType !== PropertyType.Object) {
+                throw Error(`Link property ${path} pointing to array of non-objects on path ${targetLink}`);
+              }
+              if(!targetProp.childProperties) {
+                return [];
+              }
+              return targetProp.childProperties.map(option => {
+                const optionObj = option as ObjectProperty;
+                var id:any = undefined;
+                const readonlyProps:Property[] = [];
+                optionObj.childProperties && optionObj.childProperties.forEach(childProp => {
+                  if(childProp.name === xPropLink.idPropName) {
+                    id = childProp.value;
+                  }
+                  if(xPropLink.showPropNames && xPropLink.showPropNames.includes(childProp.name)) {
+                    readonlyProps.push(childProp);
+                  }
+                });
+                if(id === undefined) {
+                  throw Error(`Link property ${path} idPropName points to non-existent property on path ${targetLink}`);
+                }
+                if(xPropLink.showPropNames && xPropLink.showPropNames.length !== readonlyProps.length) {
+                  throw Error(`Link property ${path} showPropNames includes properties that do not exist on path ${targetLink}`);
+                }
+                return {
+                  id: id,
+                  readonlyProps: readonlyProps,
+                };
+              });
+            },
+          };
+          break;
+        } else {
+          var defaultValue;
+          if(xProp && xProp.subType === PropSubType.Id) {
+            defaultValue = randomUuid();
+          } else {
+            defaultValue = isRequired ? '' : undefined;
+          }
+          property = {
+            defaultValue: defaultValue,
             ...base,
             type: PropertyType.String,
             value: value,

@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { Server, reducers } from '../api/server';
-import { match, withRouter } from 'react-router';
+import { match } from 'react-router';
 import Header from './Header';
-import { History } from 'react-router-dom';
+import { History, Location } from 'history';
 import Page from './Page';
 import { Store, createStore, compose, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
@@ -17,6 +17,7 @@ interface Props {
   // Router matching
   match:match;
   history:History;
+  location:Location;
 }
 
 interface State {
@@ -32,7 +33,7 @@ class App extends Component<Props, State> {
     super(props);
     this.state = {};
 
-    this.projectId = this.props.match.params.projectId;
+    this.projectId = this.props.match.params['projectId'];
 
     this.store = createStore(
       reducers,
@@ -54,7 +55,7 @@ class App extends Component<Props, State> {
     const config = this.props.configOverride || this.state.config;
 
     const page:Client.Page|undefined = config
-      && config.pages.find(p => p.slug === (this.props.match.params.pageUrlName || ''));
+      && config.pages.find(p => p.slug === (this.props.match.params['pageUrlName'] || ''));
 
     return (
       <Provider store={this.store}>
@@ -77,8 +78,8 @@ class App extends Component<Props, State> {
 
   pageChanged(pageUrlName:string) {
     pageUrlName = pageUrlName === '' ? pageUrlName : '/' + pageUrlName
-    this.props.history.push(`/${this.props.match.params.projectName}${pageUrlName}`);
+    this.props.history.push(`/${this.props.match.params['projectName']}${pageUrlName}`);
   }
 }
 
-export default withRouter(App);
+export default App;

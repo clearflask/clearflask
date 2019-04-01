@@ -3,9 +3,16 @@ import Editor, * as ConfigEditor from '../configEditor';
 import { Grid } from '@material-ui/core';
 import Menu from './Menu';
 import Page from './Page';
+import { match, withRouter } from 'react-router';
+import { History, Location, parsePath } from 'history';
+import Message from '../../../app/comps/Message';
 
 interface Props {
   editor:Editor;
+  // Router matching
+  match:match;
+  history:History;
+  location:Location;
 }
 
 interface State {
@@ -28,8 +35,19 @@ class Settings extends Component<Props, State> {
   }
 
   render() {
+    const activePath = ConfigEditor.parsePath(this.props.match.params['path'], '/');
     const rootPage = this.props.editor.getPage([]);
-    const page = this.props.editor.getPageOrPageGroup(this.state.currentPagePath);
+    var currentPage:ConfigEditor.Page|ConfigEditor.PageGroup;
+    try {
+      currentPage = this.props.editor.getPageOrPageGroup(activePath);
+    } catch(ex) {
+      return (
+        <Message innerStyle={{margin: '40px auto'}}
+          message='Oops, page failed to load'
+          variant='error'
+        />
+      );
+    }
     return (
       <div>
         Settings
@@ -44,22 +62,22 @@ class Settings extends Component<Props, State> {
           <Grid item xs={2}>
             <Menu
               page={rootPage}
-              pageClicked={this.pageClicked.bind(this)}
+              activePath={activePath}
+              pageClicked={path => {
+                this.props.history.push(`/admin/${path.join('/')}`);
+              }}
             />
           </Grid>
           <Grid item xs={10}>
-            <Page
-              page={page}
-            />
+            <Page page={currentPage} />
           </Grid>
         </Grid>
+        <pre>
+          {JSON.stringify(rootPage, null, 2)}
+        </pre>
       </div>
     );
   }
-
-  pageClicked(page:ConfigEditor.Page|ConfigEditor.PageGroup) {
-    this.setState({currentPagePath: page.path});
-  }
 }
 
-export default Settings;
+export default withRouter(Settings);

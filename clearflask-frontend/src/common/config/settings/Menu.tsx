@@ -3,21 +3,14 @@ import * as ConfigEditor from '../configEditor';
 import { ListItem, ListItemIcon, ListItemText } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
-import ExpandLess from '@material-ui/icons/ExpandLess';
-import ExpandMore from '@material-ui/icons/ExpandMore';
-import ListSubheader from '@material-ui/core/ListSubheader';
 
 interface Props extends ListProps {
+  activePath:ConfigEditor.Path;
   page:ConfigEditor.Page;
-  level?:number;
-  pageClicked:(page:ConfigEditor.Page|ConfigEditor.PageGroup)=>void;
+  pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
-interface State {
-  expanded:{[groupKey:string]:boolean};
-}
-
-export default class Menu extends Component<Props, State> {
+export default class Menu extends Component<Props> {
   readonly paddingPerLevel = 10;
 
   constructor(props:Props) {
@@ -29,60 +22,62 @@ export default class Menu extends Component<Props, State> {
   }
 
   render() {
-    var childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
-    var childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
-
+    const childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
+    const childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
+    var name:any = this.props.page.name || 'Unnamed';
+    if(this.props.page.nameFromProp) {
+      const nameProp = this.props.page.getChildren().props.find(p => p.path[p.path.length - 1] === this.props.page.nameFromProp);
+      if(nameProp && nameProp.value) {
+        name = nameProp.value;
+      }
+    }
+    const expanded = this.isExpanded(this.props.page.path);
     return (
-      <List
-        component='nav'
-        {...this.props}
-      >
+      <List component='nav' style={{padding: '0px'}}>
         <ListItem button onClick={() => {
-          this.props.pageClicked(this.props.page);
+          this.props.pageClicked(this.props.page.path);
         }}>
-          <ListItemText style={this.paddingForLevel(this.props.level)} primary={this.props.page.name} />
+          <ListItemText style={this.paddingForLevel(this.props.page.path)} primary={name} />
         </ListItem>
-        {this.renderPages(childPages, (this.props.level || 0) + 1)}
-        {childPageGroups.map(childPageGroup => {
-          const key = childPageGroup.path.join('.');
-          const grandChildPages = childPageGroup.getChildPages();
-          return [
-            <ListItem button onClick={() => {
-              this.setState({expanded: {
-                ...this.state.expanded,
-                [key]: !this.state.expanded[key],
-              }});
-              this.props.pageClicked(childPageGroup);
-            }}>
-              <ListItemText style={this.paddingForLevel(this.props.level, 1)} primary={childPageGroup.name}/>
-              {(grandChildPages.length > 0 || grandChildPages.length > 0)
-                && (this.state.expanded ? <ExpandLess /> : <ExpandMore />)}
-            </ListItem>,
-            <Collapse in={this.state.expanded[key]} timeout="auto" unmountOnExit>
-              <div>
-                {this.renderPages(childPageGroup.getChildPages(), (this.props.level || 0) + 2)}
-              </div>
-            </Collapse>,
-          ];
-        })}
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          {childPages.map(childPage =>
+            <Menu {...this.props} page={childPage} />
+          )}
+          {childPageGroups.map(childPageGroup => {
+            const pageGroupExpanded = this.isExpanded(childPageGroup.path);
+            return [
+              <ListItem button onClick={() => {
+                this.props.pageClicked(childPageGroup.path);
+              }}>
+                <ListItemText style={this.paddingForLevel(childPageGroup.path)} primary={childPageGroup.name}/>
+              </ListItem>,
+              <Collapse in={pageGroupExpanded} timeout="auto" unmountOnExit>
+                <div>
+                  {childPageGroup.getChildPages().map(childPage =>
+                    <Menu {...this.props} page={childPage} />
+                  )}
+                </div>
+              </Collapse>,
+            ];
+          })}
+        </Collapse>
       </List>
     );
   }
 
-  renderPages(childPages:ConfigEditor.Page[], level?:number) {
-    return childPages.map(childPage =>
-      <Menu
-        level={level}
-        page={childPage}
-        pageClicked={this.props.pageClicked}
-        // TODO component='div'
-        disablePadding
-      />
-    );
+  isExpanded(path:ConfigEditor.Path):boolean {
+    if(this.props.activePath.length < path.length) {
+      return false;
+    }
+    for (let i = 0; i < path.length; i++) {
+      if(path[i] !== this.props.activePath[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  paddingForLevel(currentLevel?:number, addLevel?:number):React.CSSProperties {
-    const level = (currentLevel || 0) + (addLevel || 0);
-    return { paddingLeft: (level * this.paddingPerLevel) + 'px' };
+  paddingForLevel(path:ConfigEditor.Path):React.CSSProperties {
+    return { paddingLeft: (path.length * this.paddingPerLevel) + 'px' };
   }
 }

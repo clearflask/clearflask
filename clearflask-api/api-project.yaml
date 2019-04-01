@@ -7,10 +7,10 @@ components:
       type: object
       properties:
         name:
-          x-clearflask-prop: { name: 'Name', description: 'Project name visible on your page' }
+          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
           type: string
         logoUrl:
-          x-clearflask-prop: { name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
+          x-clearflask-prop: { order: 2, name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
         pages:
@@ -18,7 +18,7 @@ components:
           type: array
           minItems: 1
           items:
-            x-clearflask-page: { name: 'Page' }
+            x-clearflask-page: { name: 'Page', nameFromProp: 'name' }
             title: Page
             type: object
             properties:
@@ -35,7 +35,7 @@ components:
                 x-clearflask-prop: { name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
               panels:
-                x-clearflask-page-group: { name: 'Panels', tablePropertyNames:['title'] }
+                x-clearflask-page-group: { name: 'Panels', nameFromProp: 'title', tablePropertyNames:['title'] }
                 type: array
                 items:
                   $ref: 'api-project.yaml#/components/schemas/PagePanel'
@@ -98,13 +98,15 @@ components:
               x-clearflask-page-group: { order: 1, name: 'Statuses', tablePropertyNames:['name', 'color'] }
               type: array
               items:
-                x-clearflask-page: { name: 'Status' }
+                x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
                 title: IdeaStatus
                 type: object
                 properties:
                   statusId:
+                    x-clearflask-prop: { subType: 'id' }
                     type: string
                   name:
+                    x-clearflask-prop: { name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
                     type: string
                   nextStatusIds:
                     type: array
@@ -113,20 +115,26 @@ components:
                       type: object
                       properties:
                         nextStatusId:
+                          x-clearflask-prop-link: { linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
                           type: string
                         transitionText:
                           type: string
                       required:
                         - nextStatusId
                   color:
-                    $ref: 'api-client.yaml#/components/schemas/Color'
+                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
+                    type: string
                   allowFunding:
+                    x-clearflask-prop: { name: 'Allow Funding', description: 'Overrides parent settings to allow funding during this status' }
                     type: boolean
-                  allowVoting:
+                  allowSupport:
+                    x-clearflask-prop: { name: 'Allow Support', description: 'Overrides parent settings to allow support during this status' }
                     type: boolean
                   allowIdeaEdits:
+                    x-clearflask-prop: { name: 'Allow Editing', description: 'Overrides parent settings to allow editing of the idea during this status' }
                     type: boolean
                   allowComments:
+                    x-clearflask-prop: { name: 'Allow Comments', description: 'Overrides parent settings to allow commenting during this status' }
                     type: boolean
                 required:
                   - statusId
@@ -135,7 +143,7 @@ components:
               x-clearflask-page-group: { order: 3, name: 'Tags', tablePropertyNames:['name', 'color'] }
               type: array
               items:
-                x-clearflask-page: { name: 'Tag' }
+                x-clearflask-page: { name: 'Tag', nameFromProp: 'name' }
                 title: IdeaTag
                 type: object
                 properties:
@@ -144,7 +152,8 @@ components:
                   name:
                     type: string
                   color:
-                    $ref: 'api-client.yaml#/components/schemas/Color'
+                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
+                    type: string
                 required:
                   - tagId
                   - name
@@ -152,7 +161,7 @@ components:
               x-clearflask-page-group: { order: 2, name: 'Groups', tablePropertyNames:['name', 'color'] }
               type: array
               items:
-                x-clearflask-page: { name: 'Group' }
+                x-clearflask-page: { name: 'Group', nameFromProp: 'name' }
                 title: IdeaGroup
                 type: object
                 properties:
@@ -163,7 +172,8 @@ components:
                   name:
                     type: string
                   color:
-                    $ref: 'api-client.yaml#/components/schemas/Color'
+                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
+                    type: string
                   ideaSettingsOverride:
                     $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
                   voteSettingsOverride:
@@ -190,11 +200,16 @@ components:
                 required:
                   - groupId
                   - name
+          required:
+            - statuses
+            - tags
+            - groups
       required:
         - name
         - pages
         - creditFormatter
         - ideaSettingsParent
+        - ideaSettings
         - voteSettingsParent
         - ideaGroups
         - ideaStatuses
@@ -268,6 +283,7 @@ components:
       properties:
         defaultStatusId:
           x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
+          x-clearflask-prop-link: { linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
           type: string
         defaultIdeaTagIds:
           x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }

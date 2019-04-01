@@ -1,40 +1,22 @@
 import React, { Component } from 'react';
-import Settings from '../common/config/settings/Settings';
-import Editor, * as ConfigEditor from '../common/config/configEditor';
-import { ConfigFromJSON } from '../api/admin';
-import App from '../app/App';
-import {
-  MemoryRouter,
-  Route,
-} from 'react-router-dom'
+import { match } from 'react-router';
+import { History, Location } from 'history';
 
-export default class Site extends Component {
-  readonly editor:Editor = new ConfigEditor.EditorImpl();
+interface Props {
+  // Router matching
+  match:match;
+  history:History;
+  location:Location;
+}
 
-  componentDidMount() {
-    this.editor.subscribe('settings', this.forceUpdate.bind(this));
-  }
-
-  componentWillUnmount() {
-    this.editor.unsubscribe('settings');
-  }
+export default class Site extends Component<Props> {
 
   render() {
-    const rootPage = this.editor.getPage([]);
-
     return (
       <div>
         <h1>
-          This is a landing page
+          This is suppose to be a landing page
         </h1>
-        <Settings editor={this.editor} />
-        {/* // TODO */}
-        <MemoryRouter initialEntries={['/demo']}>
-
-          <Route path="/:projectId/:pageUrlName?" render={props => (
-            <App configOverride={this.editor.getConfig()} />
-          )} />
-        </MemoryRouter>
       </div>
     );
   }

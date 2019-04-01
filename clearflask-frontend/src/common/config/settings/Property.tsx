@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText } from '@material-ui/core';
+import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input } from '@material-ui/core';
 import TableProp from './TableProp';
+import ColorPicker from 'material-ui-color-picker'
 
 interface Props {
   prop:ConfigEditor.Property;
@@ -27,9 +28,37 @@ export default class Property extends Component<Props, State> {
     const prop = this.props.prop;
     const name = prop.name || prop.path.join('.');
     var propertySetter;
-    switch(prop.type) {
+    OUTER: switch(prop.type) {
       default:
       case ConfigEditor.PropertyType.String:
+        switch(prop.subType) {
+          case ConfigEditor.PropSubType.Id:
+            // ID is an invisible field
+            propertySetter = null;
+            break OUTER;
+          case ConfigEditor.PropSubType.Color:
+            propertySetter = (
+              <div>
+                <ColorPicker
+                  label={!this.props.bare && name}
+                  name='color'
+                  placeholder='#000'
+                  defaultValue={prop.defaultValue}
+                  value={this.state.value}
+                  onChange={this.handlePropChange.bind(this)}
+                  TextFieldProps={{
+                    InputLabelProps:{
+                      shrink: (this.state.value !== undefined && this.state.value !== '') ? true : undefined
+                    }
+                  }}
+                />
+                <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
+              </div>
+            );
+            break OUTER;
+          default:
+            // Fall through to below
+        }
       case ConfigEditor.PropertyType.Number:
       case ConfigEditor.PropertyType.Integer:
         propertySetter = (
@@ -47,39 +76,50 @@ export default class Property extends Component<Props, State> {
         );
         break;
       case ConfigEditor.PropertyType.Boolean:
-        propertySetter = (
-          <div>
-            <FormControlLabel
-              control={(
-                <Switch
-                  checked={!!prop.value}
-                  onChange={this.handlePropChange.bind(this)}
-                />
-              )}
-              label={!this.props.bare && name}
-            />
-            <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
-          </div>
-        );
-        break;
       case ConfigEditor.PropertyType.Enum:
-        propertySetter = (
-          <RadioGroup
-            name={name}
-            value={this.state.value}
-            onChange={this.handlePropChange.bind(this)}
-          >
-            {prop.items.map(item => (
+        if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
+          propertySetter = (
+            <div>
               <FormControlLabel
-                label={item.name}
-                checked={prop.value === item.value}
-                control={<Radio />}
-                value={item.value}
-                onChange={this.handlePropChange.bind(this)}
+                control={(
+                  <Switch
+                    checked={!!prop.value}
+                    onChange={this.handlePropChange.bind(this)}
+                  />
+                )}
+                label={!this.props.bare && name}
               />
-            ))}
+              <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
+            </div>
+          );
+          break;
+        }
+        const items:{
+          name:string;
+          value:any;
+        }[] = prop.type === ConfigEditor.PropertyType.Boolean
+          ? [{name: 'Not set', value: undefined},
+            {name: 'Enabled', value: true},
+            {name: 'Disabled', value: false}]
+          : prop.items;
+        const currentItem = items.find(item => item.value === this.state.value);
+        const shrink = !!(this.state.value !== undefined && currentItem && currentItem.name);
+        propertySetter = (
+          <FormControl>
+            <InputLabel shrink={shrink}>{!this.props.bare && name}</InputLabel>
+            <Select
+              value={this.state.value}
+              onChange={this.handlePropChange.bind(this)}
+            >
+              {items.map(item => (
+                <MenuItem value={item.value}>{item.value === undefined
+                  ? (<em>{item.name}</em>)
+                  : item.name
+                }</MenuItem>
+              ))}
+            </Select>
             <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
-          </RadioGroup>
+          </FormControl>
         );
         break;
       case ConfigEditor.PropertyType.Array:
@@ -120,10 +160,7 @@ export default class Property extends Component<Props, State> {
     }
 
     return (
-      <div>
-        <div>
-          {/* PROP: {JSON.stringify(prop)} */}
-        </div>
+      <div style={{marginTop: '20px'}}>
         {propertySetter}
       </div>
     );
@@ -133,13 +170,12 @@ export default class Property extends Component<Props, State> {
     const prop = this.props.prop;
 
     var newValue;
-    switch(prop.type) {
-      case ConfigEditor.PropertyType.Boolean:
-        newValue = event.target.checked;
-        break;
-      default:
-        newValue = event.target.value;
-        break;
+    if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
+      newValue = event.target.checked;
+    } else if(prop.subType === ConfigEditor.PropSubType.Color) {
+      newValue = event;
+    } else {
+      newValue = event.target.value;
     }
 
     if(!newValue && prop.required) {

@@ -15,9 +15,6 @@ components:
     Cursor:
       description: Cursor to fetch next set of results.
       type: string
-    Color:
-      type: string
-      pattern: '#([0-9a-f]{3}){1,2}'
     ErrorResponse:
       type: object
       properties:

@@ -25,7 +25,6 @@ class Page extends Component<Props> {
       <div>
         <Typography variant='h4'>{this.props.page.name}</Typography>
         <Typography variant='body1'>{this.props.page.description}</Typography>
-        PAGE: {JSON.stringify(this.props.page)}
         {content}
       </div>
     );
