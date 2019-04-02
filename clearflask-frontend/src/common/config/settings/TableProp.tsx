@@ -13,11 +13,20 @@ interface State {
 }
 
 export default class TableProp extends Component<Props, State> {
+  unsubscribe?:()=>void;
 
   constructor(props:Props) {
     super(props);
     this.state = {
     };
+  }
+
+  componentDidMount() {
+    this.unsubscribe = this.props.data.subscribe(this.forceUpdate.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
   }
 
   render() {

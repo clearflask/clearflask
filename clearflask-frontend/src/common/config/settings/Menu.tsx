@@ -11,67 +11,88 @@ interface Props extends ListProps {
 }
 
 export default class Menu extends Component<Props> {
-  readonly paddingPerLevel = 10;
+  unsubscribe?:()=>void;
 
-  constructor(props:Props) {
-    super(props);
+  componentDidMount() {
+    this.unsubscribe = this.props.page.subscribe(this.forceUpdate.bind(this));
+  }
 
-    this.state = {
-      expanded: {},
-    };
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
   }
 
   render() {
     const childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
     const childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
-    const expanded = this.isExpanded(this.props.page.path);
-    const name = this.props.page.getDynamicName();
+    const expanded = Menu.isExpanded(this.props.activePath, this.props.page.path);
     return (
       <List component='nav' style={{padding: '0px'}}>
         <ListItem button onClick={() => {
           this.props.pageClicked(this.props.page.path);
         }}>
-          <ListItemText style={this.paddingForLevel(this.props.page.path)} primary={name} />
+          <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
         </ListItem>
         <Collapse in={expanded} timeout="auto" unmountOnExit>
           {childPages.map(childPage =>
             <Menu {...this.props} page={childPage} />
           )}
-          {childPageGroups.map(childPageGroup => {
-            const pageGroupExpanded = this.isExpanded(childPageGroup.path);
-            return [
-              <ListItem button onClick={() => {
-                this.props.pageClicked(childPageGroup.path);
-              }}>
-                <ListItemText style={this.paddingForLevel(childPageGroup.path)} primary={childPageGroup.name}/>
-              </ListItem>,
-              <Collapse in={pageGroupExpanded} timeout="auto" unmountOnExit>
-                <div>
-                  {childPageGroup.getChildPages().map(childPage =>
-                    <Menu {...this.props} page={childPage} />
-                  )}
-                </div>
-              </Collapse>,
-            ];
-          })}
+          {childPageGroups.map(childPageGroup => (
+            <MenuPageGroup {...this.props} pageGroup={childPageGroup} />
+          ))}
         </Collapse>
       </List>
     );
   }
 
-  isExpanded(path:ConfigEditor.Path):boolean {
-    if(this.props.activePath.length < path.length) {
+  static isExpanded(activePath:ConfigEditor.Path, path:ConfigEditor.Path):boolean {
+    if(activePath.length < path.length) {
       return false;
     }
     for (let i = 0; i < path.length; i++) {
-      if(path[i] !== this.props.activePath[i]) {
+      if(path[i] !== activePath[i]) {
         return false;
       }
     }
     return true;
   }
 
-  paddingForLevel(path:ConfigEditor.Path):React.CSSProperties {
-    return { paddingLeft: (path.length * this.paddingPerLevel) + 'px' };
+  static paddingForLevel(path:ConfigEditor.Path):React.CSSProperties {
+    return { paddingLeft: (path.length * 10) + 'px' };
+  }
+}
+
+interface PropsPageGroup extends ListProps {
+  activePath:ConfigEditor.Path;
+  pageGroup:ConfigEditor.PageGroup;
+  pageClicked:(path:ConfigEditor.Path)=>void;
+}
+
+class MenuPageGroup extends Component<PropsPageGroup> {
+  unsubscribe?:()=>void;
+
+  componentDidMount() {
+    this.unsubscribe = this.props.pageGroup.subscribe(this.forceUpdate.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
+  }
+
+  render() {
+    const pageGroupExpanded = Menu.isExpanded(this.props.activePath, this.props.pageGroup.path);
+    return [
+      <ListItem button onClick={() => {
+        this.props.pageClicked(this.props.pageGroup.path);
+      }}>
+        <ListItemText style={Menu.paddingForLevel(this.props.pageGroup.path)} primary={this.props.pageGroup.name}/>
+      </ListItem>,
+      <Collapse in={pageGroupExpanded} timeout="auto" unmountOnExit>
+        <div>
+          {this.props.pageGroup.getChildPages().map(childPage =>
+            <Menu {...this.props} page={childPage} />
+          )}
+        </div>
+      </Collapse>,
+    ];
   }
 }

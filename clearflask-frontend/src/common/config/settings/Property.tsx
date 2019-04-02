@@ -3,25 +3,22 @@ import * as ConfigEditor from '../configEditor';
 import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input } from '@material-ui/core';
 import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
+import randomUuid from '../../util/uuid';
 
 interface Props {
   prop:ConfigEditor.Property;
   bare?:boolean;
 }
 
-interface State {
-  invalidValue:boolean;
-  value?:any;
-}
+export default class Property extends Component<Props> {
+  unsubscribe?:()=>void;
 
-export default class Property extends Component<Props, State> {
+  componentDidMount() {
+    this.unsubscribe = this.props.prop.subscribe(this.forceUpdate.bind(this));
+  }
 
-  constructor(props:Props) {
-    super(props);
-    this.state = {
-      invalidValue: false,
-      value: props.prop.value,
-    };
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
   }
 
   render() {
@@ -44,11 +41,11 @@ export default class Property extends Component<Props, State> {
                   name='color'
                   placeholder='#000'
                   defaultValue={prop.defaultValue}
-                  value={this.state.value}
+                  value={prop.value}
                   onChange={this.handlePropChange.bind(this)}
                   TextFieldProps={{
                     InputLabelProps:{
-                      shrink: (this.state.value !== undefined && this.state.value !== '') ? true : undefined
+                      shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined
                     }
                   }}
                 />
@@ -65,9 +62,9 @@ export default class Property extends Component<Props, State> {
           <TextField
             id={prop.pathStr}
             label={!this.props.bare && name}
-            value={this.state.value}
+            value={prop.value}
             onChange={this.handlePropChange.bind(this)}
-            error={this.state.invalidValue}
+            error={!!prop.errorMsg}
             placeholder={prop.placeholder}
             helperText={!this.props.bare && prop.description}
             margin='normal'
@@ -102,13 +99,13 @@ export default class Property extends Component<Props, State> {
             {name: 'Enabled', value: true},
             {name: 'Disabled', value: false}]
           : prop.items;
-        const currentItem = items.find(item => item.value === this.state.value);
-        const shrink = !!(this.state.value !== undefined && currentItem && currentItem.name);
+        const currentItem = items.find(item => item.value === prop.value);
+        const shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl>
             <InputLabel shrink={shrink}>{!this.props.bare && name}</InputLabel>
             <Select
-              value={this.state.value}
+              value={prop.value}
               onChange={this.handlePropChange.bind(this)}
             >
               {items.map(item => (

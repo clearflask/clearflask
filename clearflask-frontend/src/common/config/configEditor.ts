@@ -78,6 +78,7 @@ export interface xCfPropLink {
  * Settings objects
  */
 
+export type Unsubscribe = () => void;
 export interface Setting<T> {
   type:PageType|PageGroupType|PropertyType;
   path:Path;
@@ -86,7 +87,8 @@ export interface Setting<T> {
   value?:T;
   set(val:T):void;
   setDefault():void;
-  subscribe(callback:()=>string):Unsubscribe;
+  /** Subscribe to updates on this path only */
+  subscribe(callback:()=>void):Unsubscribe;
 }
 
 export type PageType = 'page';
@@ -249,9 +251,7 @@ export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[
     });
 }
 
-export type Unsubscribe = ()=>void;
-
-export default interface Editor {
+export interface Editor {
 
   clone():Editor;
   getConfig():Config;
@@ -262,13 +262,15 @@ export default interface Editor {
   getProperty(path:Path):Property;
 
   setValue(path:Path, value:any):void;
+
+  /** Subscribe to all updates in config */
+  subscribe(callback:()=>void):Unsubscribe;
 }
 
 export class EditorImpl implements Editor {
   config:Config;
   cache:{[path: string]: Page|PageGroup|Property} = {};
-  readonly subscribers:any = {};
-  readonly subscriberKey = '<s>';
+  globalSubscribers:{[subscriberId:string]:()=>void} = {};
 
   constructor(config?:Config) {
     this.config = config as Config;
@@ -285,58 +287,26 @@ export class EditorImpl implements Editor {
           this.config)));
   }
 
+  subscribe(callback: () => void):Unsubscribe {
+    const subscriberId = randomUuid();
+    this.globalSubscribers[subscriberId] = callback;
+    return () => delete this.globalSubscribers[subscriberId];
+  }
+
+  _subscribe(callback: () => void, subscribers:{[subscriberId:string]:()=>void}):Unsubscribe {
+    const subscriberId = randomUuid();
+    subscribers[subscriberId] = callback;
+    return () => delete subscribers[subscriberId];
+  }
+
+  notify(localSubscribers:{[subscriberId:string]:()=>void}):void {
+    Object.values(localSubscribers).forEach(notify => notify());
+    Object.values(this.globalSubscribers).forEach(notify => notify());
+    console.log(`DEBUG Notified ${Object.keys(localSubscribers).length} locals and ${Object.keys(this.globalSubscribers).length} globals`)
+  }
+
   getConfig():Config {
     return this.config;
-  }
-
-  subscribe(path:Path, callback: () => string):Unsubscribe {
-    const subscribePath = [...path, this.subscriberKey];
-    var pointer = this.subscribers;
-    for (let i = 0; i < subscribePath.length; i++) {
-      var nextPointer = pointer[subscribePath[i]];
-      if(!nextPointer) {
-        nextPointer = {};
-        pointer[subscribePath[i]] = nextPointer;
-      }
-      pointer = pointer[subscribePath[i]];
-    }
-    const id = randomUuid();
-    pointer[id] = callback;
-    console.log('subscribed', id, JSON.stringify(path));
-    return () => this.unsubscribe(path, id);
-  }
-
-  unsubscribe(path:Path, id:string):void {
-    console.log('unsubscribe', id, JSON.stringify(path));
-    const deletePath = [...path, this.subscriberKey, id];
-    var pointer:any = this.subscribers;
-    var deletePointer:any = pointer;
-    var deleteKey:string|number = deletePath[0];
-    for (let i = 0; i < deletePath.length; i++) {
-      if(Object.keys(pointer).length > 1) {
-        deletePointer = pointer;
-        deleteKey = deletePath[i];
-      }
-      const nextPointer = pointer[deletePath[i]];
-      if(!nextPointer) return;
-      pointer = nextPointer;
-    }
-
-    console.log('unsubscribed', id, JSON.stringify(path));
-    delete deletePointer[deleteKey];
-  }
-
-  notify(path:Path) {
-    console.log('notify', JSON.stringify(path));
-    const notifyPath = [...path, this.subscriberKey];
-    var pointer = this.subscribers;
-    for (let i = 0; i < notifyPath.length; i++) {
-      const nextPointer = pointer[notifyPath[i]];
-      if(!nextPointer) return;
-      pointer = pointer[notifyPath[i]];
-    }
-    Object.values(this.subscribers).forEach((s:any) => s());
-    console.log('notified', Object.values.length);
   }
 
   getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):Page {
@@ -543,7 +513,8 @@ export class EditorImpl implements Editor {
       return page.cachedChildren;
     };
     const pathStr = path.join('.');
-    const subscribers:{[subscriberId:string]:()=>string} = {};
+    const localSubscribers:{[subscriberId:string]:()=>void} = {};
+    var dynamicNameUnsubscribe:(()=>void)|undefined = undefined;
 
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
@@ -572,8 +543,7 @@ export class EditorImpl implements Editor {
           };
         }
         page.value = val;
-        this.notify(path);
-        Object.values(subscribers).forEach(s => s());
+        this.notify(localSubscribers);
       },
       setDefault: ():void => {
         page.set(page.defaultValue);
@@ -583,14 +553,15 @@ export class EditorImpl implements Editor {
           return page.name;
         }
         const nameProp = page.getChildren().props.find(p => p.path[p.path.length - 1] === xPage.nameFromProp);
+        if(dynamicNameUnsubscribe === undefined && nameProp) {
+          dynamicNameUnsubscribe = nameProp.subscribe(() => this.notify(localSubscribers));
+        }
         return (nameProp && nameProp.value)
           ? nameProp.value + '' : page.name;
       },
-      subscribe: (path:Path, callback: () => string):Unsubscribe => {
-        const subscriberId = randomUuid();
-        subscribers[subscriberId] = callback;
-        return () => delete subscribers[subscriberId];
-      }
+      subscribe: (callback: () => void):Unsubscribe => {
+        return this._subscribe(callback, localSubscribers);
+      },
       cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
     };
     return page;
@@ -627,7 +598,6 @@ export class EditorImpl implements Editor {
           true,
           pageGroupSchema.items));
       }
-      pages.sort(this.sortPagesProps);
       return pages;
     };
     const getPages = ():Page[] => {
@@ -637,6 +607,7 @@ export class EditorImpl implements Editor {
       return pageGroup.cachedChildPages;
     };
     const pathStr = path.join('.');
+    const localSubscribers:{[subscriberId:string]:()=>void} = {};
 
     const pageGroup:PageGroup = {
       defaultValue: isRequired ? true : undefined,
@@ -653,7 +624,7 @@ export class EditorImpl implements Editor {
       getChildPages: getPages,
       insert: (index?:number):void => {
         const arr = this.getOrDefaultValue(path, []);
-        if(index) {
+        if(index !== undefined) {
           arr.splice(index, 0, undefined);
         } else {
           arr.push({});
@@ -665,13 +636,14 @@ export class EditorImpl implements Editor {
             : pageGroup.cachedChildPages.length - 1]
               .setDefault();
         pageGroup.value = true;
-        this.notify();
+        console.log('DEBUG notifying for path ', pathStr);
+        this.notify(localSubscribers);
       },
       delete: (index:number):void => {
         const arr = this.getValue(path);
         arr.splice(index, 1);
         pageGroup.cachedChildPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
-        this.notify();
+        this.notify(localSubscribers);
       },
       set: (val:true|undefined):void => {
         if(!val && isRequired) throw Error(`Cannot unset a required page group for path ${path}`)
@@ -685,10 +657,13 @@ export class EditorImpl implements Editor {
           pageGroup.cachedChildPages = [];
         }
         pageGroup.value = val;
-        this.notify();
+        this.notify(localSubscribers);
       },
       setDefault: ():void => {
         pageGroup.set(pageGroup.defaultValue);
+      },
+      subscribe: (callback: () => void):Unsubscribe => {
+        return this._subscribe(callback, localSubscribers);
       },
       cachedChildPages: depth === ResolveDepth.None ? undefined : fetchChildPages(),
     };
@@ -716,10 +691,11 @@ export class EditorImpl implements Editor {
     var property:Property;
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
 
+    const localSubscribers:{[subscriberId:string]:()=>void} = {};
     const setFun = (val:any):void => {
       this.setValue(path, val);
       property.value = val;
-      this.notify();
+      this.notify(localSubscribers);
     };
     const setDefaultFun = ():void => {
       setFun(property.defaultValue);
@@ -734,6 +710,9 @@ export class EditorImpl implements Editor {
       required: isRequired,
       set: setFun,
       setDefault: setDefaultFun,
+      subscribe: (callback: () => void):Unsubscribe => {
+        return this._subscribe(callback, localSubscribers);
+      },
     };
     const value = valueOverride === null ? this.getValue(path) : valueOverride;
     switch(propSchema.type || 'object') {
@@ -847,7 +826,6 @@ export class EditorImpl implements Editor {
             for(let i = 0; i < arr.length; i++) {
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
             }
-            childProperties.sort(this.sortPagesProps);
           }
           return childProperties;
         }
@@ -872,7 +850,7 @@ export class EditorImpl implements Editor {
               arrayProperty.childProperties = undefined;
             }
             arrayProperty.value = val;
-            this.notify();
+            this.notify(localSubscribers);
           },
           setDefault: ():void => {
             const arrayProperty = property as ArrayProperty;
@@ -880,7 +858,7 @@ export class EditorImpl implements Editor {
           },
           insert: (index?:number):void => {
             const arr = this.getOrDefaultValue(path, []);
-            if(index) {
+            if(index !== undefined) {
               arr.splice(index, 0, undefined);
             } else {
               arr.push(undefined);
@@ -894,14 +872,14 @@ export class EditorImpl implements Editor {
                 : arrayProperty.childProperties!.length - 1]
                   .setDefault();
             property.value = true;
-            this.notify();
+            this.notify(localSubscribers);
           },
           delete: (index:number):void => {
             if(!property.value) return;
             const arr = this.getValue(path);
             arr.splice(index, 1);
             (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
-            this.notify();
+            this.notify(localSubscribers);
           },
         };
         break;
@@ -945,7 +923,7 @@ export class EditorImpl implements Editor {
               ? {}
               : undefined);
             objectProperty.value = val;
-            this.notify();
+            this.notify(localSubscribers);
           },
           setDefault: ():void => {
             const objectProperty = property as ObjectProperty;

@@ -4,7 +4,7 @@ import DataMock from './dataMock';
 import * as Client from './client';
 import * as Admin from './admin';
 import ServerMock from './serverMock';
-import Editor from '../common/config/configEditor';
+import * as ConfigEditor from '../common/config/configEditor';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -19,7 +19,7 @@ export class Server {
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Admin.Dispatcher;
 
-  constructor(store:Store, projectName:string, configEditor?:Editor) {
+  constructor(store:Store, projectName:string, configEditor?:ConfigEditor.Editor) {
     this.store = store;
 
     var apiDelegateClient;

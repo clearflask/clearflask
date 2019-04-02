@@ -9,6 +9,15 @@ interface Props {
 }
 
 class Page extends Component<Props> {
+  unsubscribe?:()=>void;
+
+  componentDidMount() {
+    this.unsubscribe = this.props.page.subscribe(this.forceUpdate.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
+  }
 
   render() {
     var content;

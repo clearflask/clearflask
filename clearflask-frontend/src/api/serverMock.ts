@@ -1,7 +1,7 @@
 import * as Client from './client';
 import * as Admin from './admin';
 import randomUuid from '../common/util/uuid';
-import Editor, * as ConfigEditor from '../common/config/configEditor';
+import * as ConfigEditor from '../common/config/configEditor';
 
 interface Id {
   id:string;
@@ -21,9 +21,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly users:Admin.UserAdmin[] = [];
   readonly votes:Admin.VoteAdmin[] = [];
 
-  readonly editor:Editor;
+  readonly editor:ConfigEditor.Editor;
 
-  constructor(editor:Editor) {
+  constructor(editor:ConfigEditor.Editor) {
     this.editor = editor;
   }
 

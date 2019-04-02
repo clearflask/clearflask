@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
-import Editor, * as ConfigEditor from '../configEditor';
+import * as ConfigEditor from '../configEditor';
 import { Grid } from '@material-ui/core';
 import Menu from './Menu';
 import Page from './Page';
 import { match, withRouter } from 'react-router';
 import { History, Location, parsePath } from 'history';
 import Message from '../../../app/comps/Message';
+import randomUuid from '../../util/uuid';
 
 interface Props {
-  editor:Editor;
+  editor:ConfigEditor.Editor;
   // Router matching
   match:match;
   history:History;
@@ -24,14 +25,6 @@ class Settings extends Component<Props, State> {
   constructor(props) {
     super(props);
   this.state = {currentPagePath: []}
-  }
-
-  componentDidMount() {
-    this.props.editor.subscribe('settings', this.forceUpdate.bind(this));
-  }
-
-  componentWillUnmount() {
-    this.props.editor.unsubscribe('settings');
   }
 
   render() {
