@@ -5,7 +5,7 @@ import Property from './Property';
 import TableProp from './TableProp';
 
 interface Props {
-  page:ConfigEditor.Page|ConfigEditor.PageGroup;
+  page:ConfigEditor.Page;
 }
 
 class Page extends Component<Props> {
@@ -20,25 +20,19 @@ class Page extends Component<Props> {
   }
 
   render() {
-    var content;
-    if(this.props.page.type === 'page') {
-      const childProps = this.props.page.getChildren().props;
-      content = childProps.map(childProp => (<Property key={childProp.pathStr} prop={childProp} />));
-    } else {
-      content = (
-        <TableProp data={this.props.page} />
-      );
-    }
-
-    const name = this.props.page.type === 'page'
-      ? this.props.page.getDynamicName()
-      : this.props.page.name;
-
     return (
       <div>
-        <Typography variant='h4'>{name}</Typography>
+        <Typography variant='h4'>{this.props.page.getDynamicName()}</Typography>
         <Typography variant='body1'>{this.props.page.description}</Typography>
-        {content}
+        {this.props.page.getChildren().props
+          .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
+          .map(childProp => (
+            <Property key={childProp.pathStr} prop={childProp} />
+          ))}
+        {this.props.page.getChildren().groups
+          .map(childPageGroup => (
+            <Property key={childPageGroup.pathStr} prop={childPageGroup} />
+          ))}
       </div>
     );
   }

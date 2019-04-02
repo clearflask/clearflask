@@ -302,7 +302,6 @@ export class EditorImpl implements Editor {
   notify(localSubscribers:{[subscriberId:string]:()=>void}):void {
     Object.values(localSubscribers).forEach(notify => notify());
     Object.values(this.globalSubscribers).forEach(notify => notify());
-    console.log(`DEBUG Notified ${Object.keys(localSubscribers).length} locals and ${Object.keys(this.globalSubscribers).length} globals`)
   }
 
   getConfig():Config {
@@ -476,8 +475,9 @@ export class EditorImpl implements Editor {
         props: [],
       };
       const objSchema = this.skipPaths(pageSchema, ['allOf']);
+      console.log('debug', JSON.stringify(path), JSON.stringify(Object.keys(pageSchema), null, 2), JSON.stringify(Object.keys(objSchema), null, 2));
       const propsSchema = objSchema.properties
-        || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
+        || (() => {throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`)})();
       const requiredProps = objSchema.required || [];
       Object.keys(propsSchema).forEach(propName => {
         const propPath = [...path, propName];
@@ -636,7 +636,6 @@ export class EditorImpl implements Editor {
             : pageGroup.cachedChildPages.length - 1]
               .setDefault();
         pageGroup.value = true;
-        console.log('DEBUG notifying for path ', pathStr);
         this.notify(localSubscribers);
       },
       delete: (index:number):void => {

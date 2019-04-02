@@ -12,7 +12,7 @@ import WarningIcon from '@material-ui/icons/Warning';
 interface Props {
   innerStyle:React.CSSProperties;
   message:React.ReactNode|string,
-  onClose?:()=>{},
+  onClose?:()=>void,
   variant:'success'|'warning'|'error'|'info',
 }
 

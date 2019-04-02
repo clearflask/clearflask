@@ -9,6 +9,7 @@ import {
 import { match } from 'react-router';
 import { History, Location } from 'history';
 import ConfigView from '../common/config/settings/ConfigView';
+import DemoApp from './DemoApp';
 
 interface Props {
   // Router matching
@@ -31,13 +32,9 @@ export default class Admin extends Component<Props> {
           </div>
           {/* // TODO */}
           <ConfigView editor={this.editor} />
-          </div>
-        <MemoryRouter initialEntries={['/demo']}>
-        <Route path="/:projectId/:pageUrlName?" render={props => (
-          <App {...props} configOverride={this.editor.getConfig()} />
-        )} />
-      </MemoryRouter>
-    </div>
+        </div>
+        <DemoApp editor={this.editor} />
+      </div>
     );
   }
 }

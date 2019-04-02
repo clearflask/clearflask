@@ -70,6 +70,7 @@ class App extends Component<Props, State> {
           server={this.server}
           conf={config}
           pageConf={page}
+          pageChanged={this.pageChanged.bind(this)}
         />
       </MuiThemeProvider>
       </Provider>

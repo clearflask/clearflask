@@ -1,12 +1,11 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input } from '@material-ui/core';
+import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse } from '@material-ui/core';
 import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
-import randomUuid from '../../util/uuid';
 
 interface Props {
-  prop:ConfigEditor.Property;
+  prop:ConfigEditor.Property|ConfigEditor.PageGroup;
   bare?:boolean;
 }
 
@@ -24,14 +23,14 @@ export default class Property extends Component<Props> {
   render() {
     const prop = this.props.prop;
     const name = prop.name || prop.pathStr;
+    var marginTop = 30;
     var propertySetter;
     OUTER: switch(prop.type) {
-      default:
       case ConfigEditor.PropertyType.String:
         switch(prop.subType) {
           case ConfigEditor.PropSubType.Id:
             // ID is an invisible field
-            propertySetter = null;
+            propertySetter = undefined;
             break OUTER;
           case ConfigEditor.PropSubType.Color:
             propertySetter = (
@@ -45,11 +44,19 @@ export default class Property extends Component<Props> {
                   onChange={this.handlePropChange.bind(this)}
                   TextFieldProps={{
                     InputLabelProps:{
-                      shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined
+                      shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined,
+                    },
+                    InputProps: {
+                      inputProps: {
+                        autocomplete: 'off',
+                      },
+                      style: {
+                        color: prop.value,
+                      },
                     }
                   }}
                 />
-                <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
+                {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
               </div>
             );
             break OUTER;
@@ -67,7 +74,7 @@ export default class Property extends Component<Props> {
             error={!!prop.errorMsg}
             placeholder={prop.placeholder}
             helperText={!this.props.bare && prop.description}
-            margin='normal'
+            margin='none'
             type={prop.type === 'string' ? 'text' : 'number'}
           />
         );
@@ -75,18 +82,22 @@ export default class Property extends Component<Props> {
       case ConfigEditor.PropertyType.Boolean:
       case ConfigEditor.PropertyType.Enum:
         if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
+          marginTop += 16;
           propertySetter = (
             <div>
+              {!this.props.bare && (<InputLabel>{name}</InputLabel>)}
+              {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
               <FormControlLabel
                 control={(
                   <Switch
                     checked={!!prop.value}
                     onChange={this.handlePropChange.bind(this)}
+                    color="default"
                   />
                 )}
-                label={!this.props.bare && name}
+                label={!!prop.value ? 'Enabled' : 'Disabled'}
+                style={{ marginBottom: '-10px'}}
               />
-              <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
             </div>
           );
           break;
@@ -103,7 +114,7 @@ export default class Property extends Component<Props> {
         const shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl>
-            <InputLabel shrink={shrink}>{!this.props.bare && name}</InputLabel>
+            {!this.props.bare && (<InputLabel shrink={shrink}>{name}</InputLabel>)}
             <Select
               value={prop.value}
               onChange={this.handlePropChange.bind(this)}
@@ -115,49 +126,60 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            <FormHelperText>{!this.props.bare && prop.description}</FormHelperText>
+            {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
           </FormControl>
         );
         break;
+      case 'pagegroup':
       case ConfigEditor.PropertyType.Array:
         propertySetter = (
-          <TableProp data={prop} />
+          <TableProp
+            data={prop}
+            label={!this.props.bare && name}
+            helperText={!this.props.bare && prop.description}
+          />
         );
         break;
       case ConfigEditor.PropertyType.Object:
-        const subProps = prop.childProperties && prop.childProperties.map(childProp => (
-          <Property {...this.props} prop={childProp} />
-        ));
-        propertySetter = (
-          <div>
-            <Typography variant='subtitle1'>{name}</Typography>
-            <FormHelperText>{prop.description}</FormHelperText>
-            {prop.required && (
-              <div>
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      checked={!!prop.value}
-                      onChange={this.handlePropChange.bind(this)}
-                    />
-                  )}
-                  label={!this.props.bare && name}
-                />
-                <FormHelperText>{prop.description}</FormHelperText>
-              </div>
+        const subProps = (
+          <Collapse in={prop.value} style={{marginLeft: '30px'}}>
+            {prop.childProperties && prop.childProperties
+              .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
+              .map(childProp => (
+                <Property {...this.props} prop={childProp} />
+              ))
+            }
+          </Collapse>
+        );
+        const enableObject = !prop.required && (
+          <FormControlLabel
+            control={(
+              <Switch
+                checked={!!prop.value}
+                onChange={this.handlePropChange.bind(this)}
+                color="default"
+              />
             )}
-            {(prop.required || prop.value) && (
-            <div style={{marginLeft: '25px'}}>
-              {subProps}
-            </div>
-          )}
+            label={!!prop.value ? 'Enabled' : 'Disabled'}
+            style={{ marginBottom: '-10px'}}
+          />
+        );
+        marginTop += 16;
+        propertySetter = (
+          <div style={{marginBottom: '10px'}}>
+            {!this.props.bare && (<InputLabel>{name}</InputLabel>)}
+            {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
+            {enableObject}
+            {subProps}
           </div>
         );
         break;
+      default:
+        throw Error(`Unknown property type ${prop.type}`);
     }
 
-    return (
-      <div style={{marginTop: '20px'}}>
+    return propertySetter && (
+      <div style={{marginTop: this.props.bare ? undefined : marginTop + 'px'}}>
         {propertySetter}
       </div>
     );
@@ -167,49 +189,15 @@ export default class Property extends Component<Props> {
     const prop = this.props.prop;
 
     var newValue;
-    if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
+    if((prop.required && prop.type === ConfigEditor.PropertyType.Boolean)
+      || prop.type === ConfigEditor.PropertyType.Object) {
       newValue = event.target.checked;
-    } else if(prop.subType === ConfigEditor.PropSubType.Color) {
+    } else if(prop.type !== 'pagegroup' && prop.subType === ConfigEditor.PropSubType.Color) {
       newValue = event;
     } else {
       newValue = event.target.value;
     }
 
-    if(!newValue && prop.required) {
-      this.setState({
-        value: newValue,
-        invalidValue: true,
-      });
-      return;
-    }
-    // TODO input validation
-    switch(prop.type) {
-      default:
-      case ConfigEditor.PropertyType.String:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Number:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Integer:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Boolean:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Enum:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Array:
-        prop.set(newValue);
-        break;
-      case ConfigEditor.PropertyType.Object:
-        prop.set(newValue);
-        break;
-    }
-    this.setState({
-      value: newValue,
-      invalidValue: false,
-    });
+    prop.set(newValue as never);
   }
 }

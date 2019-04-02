@@ -6,6 +6,9 @@ components:
       description: Config properties visible both to client app and admins.
       type: object
       properties:
+        test:
+          # TODO remove test page
+          $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         name:
           x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
           type: string
@@ -90,6 +93,7 @@ components:
         ideaSettings:
           $ref: 'api-project.yaml#/components/schemas/ideaSettings'
       required:
+        - test
         - name
         - pages
         - creditFormatter
@@ -107,7 +111,7 @@ components:
           type: object
           properties:
             statuses:
-              x-clearflask-page-group: { order: 1, name: 'Statuses', tablePropertyNames:['name', 'color'] }
+              x-clearflask-page-group: { order: 1, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color'] }
               type: array
               items:
                 x-clearflask-page: { name: 'Status', nameFromProp: 'name' }

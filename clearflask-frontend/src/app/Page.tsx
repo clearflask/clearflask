@@ -11,6 +11,7 @@ interface Props extends StateIdeas{
   api:Client.ApiInterface;
   conf?:Client.Config;
   pageConf?:Client.Page;
+  pageChanged:(pageUrlName:string)=>void;
 }
 
 class Page extends Component<Props> {
@@ -37,6 +38,7 @@ class Page extends Component<Props> {
           <Message  innerStyle={{margin: '40px auto'}}
             message='Oops, page not found'
             variant='error'
+            onClose={() => this.props.pageChanged('')}
           />
         </div>
       );

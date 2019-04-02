@@ -1,0 +1,405 @@
+
+components:
+  schemas:
+    ConfigTest:
+      x-clearflask-page: { order: 0, name: 'Test' }
+      title: Test
+      type: object
+      required:
+        - stringReq
+        - idReq
+        - numberReq
+        - integerReq
+        - enumReq
+        - booleanReq
+        - colorReq
+        - arrayOfStringReq
+        - arrayOfObjectReq
+        - linkReq
+        - objectReq
+        - objectNestedReq
+        - groupReq
+      properties:
+        stringReq:
+          x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+        stringOpt:
+          x-clearflask-prop: { order: 1, name: 'String optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+        idReq:
+          x-clearflask-prop: { order: 2, subType: 'id' }
+          type: string
+        idOpt:
+          x-clearflask-prop: { order: 2, subType: 'id' }
+          type: string
+        numberReq:
+          x-clearflask-prop: { order: 3, name: 'Number required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: number
+        numberOpt:
+          x-clearflask-prop: { order: 3, name: 'Number optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: number
+        integerReq:
+          x-clearflask-prop: { order: 4, name: 'Integer required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: integer
+        integerOpt:
+          x-clearflask-prop: { order: 4, name: 'Integer optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: integer
+        enumReq:
+          x-clearflask-prop: { order: 4.5, name: 'Enum required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          enum: [enumOne, enumTwo]
+        enumOpt:
+          x-clearflask-prop: { order: 4.5, name: 'Enum optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          enum: [enumOne, enumTwo]
+        booleanReq:
+          x-clearflask-prop: { order: 5, name: 'Boolean required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: boolean
+        booleanOpt:
+          x-clearflask-prop: { order: 5, name: 'Boolean optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: boolean
+        colorReq:
+          x-clearflask-prop: { order: 6, subType: 'color', name: 'Color required', description: 'Display color' }
+          type: string
+        colorOpt:
+          x-clearflask-prop: { order: 6, subType: 'color', name: 'Color optional', description: 'Display color' }
+          type: string
+        arrayOfStringReq:
+          x-clearflask-prop: { order: 7, name: 'ArrayOfString required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: array
+          items:
+            x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
+            type: string
+        arrayOfStringOpt:
+          x-clearflask-prop: { order: 7, name: 'ArrayOfString optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: array
+          items:
+            x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
+            type: string
+        arrayOfObjectReq:
+          x-clearflask-prop: { order: 8, name: 'ArrayOfObject required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: array
+          items:
+            x-clearflask-prop: { name: 'Object', description: 'Description description description.', placeholder: 'Placeholder' }
+            type: object
+            properties:
+              id:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              string:
+                x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              string2:
+                x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+        arrayOfObjectOpt:
+          x-clearflask-prop: { order: 8, name: 'ArrayOfObject optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: array
+          items:
+            x-clearflask-prop: { name: 'Object', description: 'Description description description.', placeholder: 'Placeholder' }
+            type: object
+            properties:
+              id:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              string:
+                x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              string2:
+                x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+        linkReq:
+          x-clearflask-prop: { order: 9, name: 'Link required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+        linkOpt:
+          x-clearflask-prop: { order: 9, name: 'Link optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+        objectReq:
+          x-clearflask-prop: { order: 10, name: 'Object required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: object
+          properties:
+            string:
+              x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: string
+            string2:
+              x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: string
+        objectOpt:
+          x-clearflask-prop: { order: 10, name: 'Object optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: object
+          properties:
+            string:
+              x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: string
+            string2:
+              x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: string
+        objectNestedReq:
+          x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: object
+          required:
+            - objectNestedReq
+          properties:
+            objectNestedReq:
+              x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: object
+              required:
+                - objectNestedReq
+              properties:
+                objectNestedReq:
+                  x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: object
+                  required:
+                    - objectNestedReq
+                  properties:
+                    objectNestedReq:
+                      x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: object
+                      required:
+                        - objectNestedReq
+                      properties:
+                        objectNestedReq:
+                          x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                          type: object
+                          required:
+                            - stringReq
+                          properties:
+                            stringReq:
+                              x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+                              type: string
+        objectNestedOpt:
+          x-clearflask-prop: { order: 10, name: 'ObjectNested optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: object
+          properties:
+            objectNestedReq:
+              x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+              type: object
+              properties:
+                objectNestedReq:
+                  x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: object
+                  properties:
+                    objectNestedReq:
+                      x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: object
+                      properties:
+                        objectNestedReq:
+                          x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                          type: object
+                          properties:
+                            stringReq:
+                              x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+                              type: string
+        groupReq:
+          x-clearflask-page-group: { order: 12, name: 'Group required', description: 'Description description description.', tablePropertyNames:['name'] }
+          title: Group
+          type: array
+          items:
+            x-clearflask-page: { name: 'Group Item', nameFromProp: 'string' }
+            title: Group Item
+            type: object
+            properties:
+              string:
+                x-clearflask-prop: { name: 'String', description: 'Description description description', placeholder: 'Placeholder' }
+                type: string
+        groupOpt:
+          x-clearflask-page-group: { order: 12, name: 'Group optional', description: 'Description description description.', tablePropertyNames:['name'] }
+          title: Group
+          type: array
+          items:
+            x-clearflask-page: { name: 'Group Item', nameFromProp: 'string' }
+            title: Group Item
+            type: object
+            properties:
+              string:
+                x-clearflask-prop: { name: 'String', description: 'Description description description', placeholder: 'Placeholder' }
+                type: string
+        arrayOfAll:
+          x-clearflask-prop: { order: 8, name: 'ArrayOfAll required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: array
+          items:
+            type: object
+            required:
+              - stringReq
+              - idReq
+              - numberReq
+              - integerReq
+              - enumReq
+              - booleanReq
+              - colorReq
+              - arrayOfStringReq
+              - arrayOfObjectReq
+              - linkReq
+              - objectReq
+              - objectNestedReq
+            properties:
+              stringReq:
+                x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              stringOpt:
+                x-clearflask-prop: { order: 1, name: 'String optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              idReq:
+                x-clearflask-prop: { order: 2, subType: 'id' }
+                type: string
+              idOpt:
+                x-clearflask-prop: { order: 2, subType: 'id' }
+                type: string
+              numberReq:
+                x-clearflask-prop: { order: 3, name: 'Number required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: number
+              numberOpt:
+                x-clearflask-prop: { order: 3, name: 'Number optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: number
+              integerReq:
+                x-clearflask-prop: { order: 4, name: 'Integer required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: integer
+              integerOpt:
+                x-clearflask-prop: { order: 4, name: 'Integer optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: integer
+              enumReq:
+                x-clearflask-prop: { order: 4.5, name: 'Enum required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                enum: [enumOne, enumTwo]
+              enumOpt:
+                x-clearflask-prop: { order: 4.5, name: 'Enum optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                enum: [enumOne, enumTwo]
+              booleanReq:
+                x-clearflask-prop: { order: 5, name: 'Boolean required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: boolean
+              booleanOpt:
+                x-clearflask-prop: { order: 5, name: 'Boolean optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: boolean
+              colorReq:
+                x-clearflask-prop: { order: 6, subType: 'color', name: 'Color required', description: 'Display color' }
+                type: string
+              colorOpt:
+                x-clearflask-prop: { order: 6, subType: 'color', name: 'Color optional', description: 'Display color' }
+                type: string
+              arrayOfStringReq:
+                x-clearflask-prop: { order: 7, name: 'ArrayOfString required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: array
+                items:
+                  x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: string
+              arrayOfStringOpt:
+                x-clearflask-prop: { order: 7, name: 'ArrayOfString optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: array
+                items:
+                  x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: string
+              arrayOfObjectReq:
+                x-clearflask-prop: { order: 8, name: 'ArrayOfObject required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: array
+                items:
+                  x-clearflask-prop: { name: 'Object', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: object
+                  properties:
+                    id:
+                      x-clearflask-prop: { subType: 'id' }
+                      type: string
+                    string:
+                      x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: string
+                    string2:
+                      x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: string
+              arrayOfObjectOpt:
+                x-clearflask-prop: { order: 8, name: 'ArrayOfObject optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: array
+                items:
+                  x-clearflask-prop: { name: 'Object', description: 'Description description description.', placeholder: 'Placeholder' }
+                  type: object
+                  properties:
+                    id:
+                      x-clearflask-prop: { subType: 'id' }
+                      type: string
+                    string:
+                      x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: string
+                    string2:
+                      x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: string
+              linkReq:
+                x-clearflask-prop: { order: 9, name: 'Link required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              linkOpt:
+                x-clearflask-prop: { order: 9, name: 'Link optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+              objectReq:
+                x-clearflask-prop: { order: 10, name: 'Object required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: object
+                properties:
+                  string:
+                    x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: string
+                  string2:
+                    x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: string
+              objectOpt:
+                x-clearflask-prop: { order: 10, name: 'Object optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: object
+                properties:
+                  string:
+                    x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: string
+                  string2:
+                    x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: string
+              objectNestedReq:
+                x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: object
+                required:
+                  - objectNestedReq
+                properties:
+                  objectNestedReq:
+                    x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: object
+                    required:
+                      - objectNestedReq
+                    properties:
+                      objectNestedReq:
+                        x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                        type: object
+                        required:
+                          - objectNestedReq
+                        properties:
+                          objectNestedReq:
+                            x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                            type: object
+                            required:
+                              - objectNestedReq
+                            properties:
+                              objectNestedReq:
+                                x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                                type: object
+                                required:
+                                  - stringReq
+                                properties:
+                                  stringReq:
+                                    x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+                                    type: string
+              objectNestedOpt:
+                x-clearflask-prop: { order: 10, name: 'ObjectNested optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: object
+                properties:
+                  objectNestedReq:
+                    x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                    type: object
+                    properties:
+                      objectNestedReq:
+                        x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                        type: object
+                        properties:
+                          objectNestedReq:
+                            x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                            type: object
+                            properties:
+                              objectNestedReq:
+                                x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
+                                type: object
+                                properties:
+                                  stringReq:
+                                    x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
+                                    type: string

@@ -30,9 +30,9 @@ class Settings extends Component<Props, State> {
   render() {
     const activePath = ConfigEditor.parsePath(this.props.match.params['path'], '/');
     const rootPage = this.props.editor.getPage([]);
-    var currentPage:ConfigEditor.Page|ConfigEditor.PageGroup;
+    var currentPage:ConfigEditor.Page;
     try {
-      currentPage = this.props.editor.getPageOrPageGroup(activePath);
+      currentPage = this.props.editor.getPage(activePath);
     } catch(ex) {
       return (
         <Message innerStyle={{margin: '40px auto'}}

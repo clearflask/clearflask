@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton } from '@material-ui/core';
+import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton, InputLabel, FormHelperText } from '@material-ui/core';
 import Property from './Property';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AddIcon from '@material-ui/icons/AddRounded';
 
 interface Props {
+  styleOuter?:React.CSSProperties;
   data:ConfigEditor.PageGroup|ConfigEditor.ArrayProperty;
+  label?:React.ReactNode;
+  helperText?:React.ReactNode;
 }
 
 interface State {
@@ -68,44 +71,52 @@ export default class TableProp extends Component<Props, State> {
       });
     } else {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
-      arrayProp.childProperties && arrayProp.childProperties.forEach((childProp, childPropIndex) => {
-        const row = [(
-          <TableCell key='0' align='center'>
-            <Property prop={childProp} />
-          </TableCell>
-        )];
-        rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
-        if(childPropIndex === 0) {
-          header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
-        }
-      });
+      arrayProp.childProperties && arrayProp.childProperties
+        .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
+        .forEach((childProp, childPropIndex) => {
+          const row = [(
+            <TableCell key='0' align='center'>
+              <Property bare prop={childProp} />
+            </TableCell>
+          )];
+          rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
+          if(childPropIndex === 0) {
+            header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
+          }
+        });
     }
 
     return (
-      <Paper>
-        <Table>
-          {header.length > 0 && (
-            <TableHead>
-              <TableRow key='header'>
-                {header}
-                <TableCell key='delete' align='center'></TableCell>
-              </TableRow>
-            </TableHead>
-          )}
-          <TableBody>
-            {rows}
-            <TableRow key='add'>
-              <TableCell key='add' align='center'>
-                <IconButton aria-label="Add" onClick={() => {
-                  this.props.data.insert();
-                }}>
-                  <AddIcon />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      <div>
+        <InputLabel shrink={false}>{this.props.label}</InputLabel>
+        <div><div style={{
+          display: 'inline-flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <FormHelperText>{this.props.helperText}</FormHelperText>
+          <IconButton aria-label="Add" onClick={() => {
+            this.props.data.insert();
+          }}>
+            <AddIcon />
+          </IconButton>
+        </div></div>
+        <Paper style={{display: 'inline-block', marginTop: '15px'}}>
+          <Table style ={{width: 'inherit'}}>
+            {header.length > 0 && (
+              <TableHead>
+                <TableRow key='header'>
+                  {header}
+                  <TableCell key='delete' align='center'></TableCell>
+                </TableRow>
+              </TableHead>
+            )}
+            <TableBody>
+              {rows}
+            </TableBody>
+          </Table>
+        </Paper>
+      </div>
     );
   }
 

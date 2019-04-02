@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { ListItem, ListItemIcon, ListItemText } from '@material-ui/core';
+import { ListItem, ListItemIcon, ListItemText, ListSubheader } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
 
 interface Props extends ListProps {
-  activePath:ConfigEditor.Path;
   page:ConfigEditor.Page;
+  activePath:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
@@ -24,7 +24,7 @@ export default class Menu extends Component<Props> {
   render() {
     const childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
     const childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
-    const expanded = Menu.isExpanded(this.props.activePath, this.props.page.path);
+    const expanded = this.isExpanded(this.props.page.path);
     return (
       <List component='nav' style={{padding: '0px'}}>
         <ListItem button onClick={() => {
@@ -44,26 +44,26 @@ export default class Menu extends Component<Props> {
     );
   }
 
-  static isExpanded(activePath:ConfigEditor.Path, path:ConfigEditor.Path):boolean {
-    if(activePath.length < path.length) {
+  isExpanded(path:ConfigEditor.Path):boolean {
+    if(this.props.activePath.length < path.length) {
       return false;
     }
     for (let i = 0; i < path.length; i++) {
-      if(path[i] !== activePath[i]) {
+      if(path[i] !== this.props.activePath[i]) {
         return false;
       }
     }
     return true;
   }
 
-  static paddingForLevel(path:ConfigEditor.Path):React.CSSProperties {
-    return { paddingLeft: (path.length * 10) + 'px' };
+  static paddingForLevel(path:ConfigEditor.Path, offset:number = 0):React.CSSProperties {
+    return { paddingLeft: ((path.length + offset) * 10) + 'px' };
   }
 }
 
 interface PropsPageGroup extends ListProps {
-  activePath:ConfigEditor.Path;
   pageGroup:ConfigEditor.PageGroup;
+  activePath:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
@@ -79,20 +79,18 @@ class MenuPageGroup extends Component<PropsPageGroup> {
   }
 
   render() {
-    const pageGroupExpanded = Menu.isExpanded(this.props.activePath, this.props.pageGroup.path);
-    return [
-      <ListItem button onClick={() => {
-        this.props.pageClicked(this.props.pageGroup.path);
-      }}>
-        <ListItemText style={Menu.paddingForLevel(this.props.pageGroup.path)} primary={this.props.pageGroup.name}/>
-      </ListItem>,
-      <Collapse in={pageGroupExpanded} timeout="auto" unmountOnExit>
+    const childPages = this.props.pageGroup.getChildPages();
+    return (
+      <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
         <div>
-          {this.props.pageGroup.getChildPages().map(childPage =>
+          <ListSubheader style={Menu.paddingForLevel(this.props.pageGroup.path, 1)}>
+            {this.props.pageGroup.name}
+          </ListSubheader>
+          {childPages.map(childPage =>
             <Menu {...this.props} page={childPage} />
           )}
         </div>
-      </Collapse>,
-    ];
+      </Collapse>
+    );
   }
 }
