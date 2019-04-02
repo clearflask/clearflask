@@ -14,16 +14,20 @@ class Page extends Component<Props> {
     var content;
     if(this.props.page.type === 'page') {
       const childProps = this.props.page.getChildren().props;
-      content = childProps.map(childProp => (<Property prop={childProp} />));
+      content = childProps.map(childProp => (<Property key={childProp.pathStr} prop={childProp} />));
     } else {
       content = (
         <TableProp data={this.props.page} />
       );
     }
 
+    const name = this.props.page.type === 'page'
+      ? this.props.page.getDynamicName()
+      : this.props.page.name;
+
     return (
       <div>
-        <Typography variant='h4'>{this.props.page.name}</Typography>
+        <Typography variant='h4'>{name}</Typography>
         <Typography variant='body1'>{this.props.page.description}</Typography>
         {content}
       </div>

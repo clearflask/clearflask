@@ -72,9 +72,6 @@ class Settings extends Component<Props, State> {
             <Page page={currentPage} />
           </Grid>
         </Grid>
-        <pre>
-          {JSON.stringify(rootPage, null, 2)}
-        </pre>
       </div>
     );
   }

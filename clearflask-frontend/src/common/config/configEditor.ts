@@ -81,6 +81,7 @@ export interface xCfPropLink {
 export interface Setting<T> {
   type:PageType|PageGroupType|PropertyType;
   path:Path;
+  pathStr:string;
   required:boolean;
   value?:T;
   set(val:T):void;
@@ -91,6 +92,8 @@ export type PageType = 'page';
 export interface Page extends Setting<true|undefined>, xCfPage {
   type:PageType;
   name:string;
+  /** Name potentially derived from a property */
+  getDynamicName:()=>string;
   depth:ResolveDepth;
   getChildren():PageChildren;
   cachedChildren?:PageChildren; // Internal use only
@@ -498,14 +501,16 @@ export class EditorImpl implements Editor {
       }
       return page.cachedChildren;
     };
+    const pathStr = path.join('.');
 
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
-      name: path.join('.'),
+      name: pathStr,
       ...xPage,
       type: 'page',
       value: this.getValue(path) === undefined ? undefined : true,
       path: path,
+      pathStr: pathStr,
       required: isRequired,
       depth: depth,
       getChildren: getChildren,
@@ -529,6 +534,14 @@ export class EditorImpl implements Editor {
       },
       setDefault: ():void => {
         page.set(page.defaultValue);
+      },
+      getDynamicName: ():string => {
+        if(!xPage.nameFromProp) {
+          return page.name;
+        }
+        const nameProp = page.getChildren().props.find(p => p.path[p.path.length - 1] === xPage.nameFromProp);
+        return (nameProp && nameProp.value)
+          ? nameProp.value + '' : page.name;
       },
       cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
     };
@@ -575,14 +588,16 @@ export class EditorImpl implements Editor {
       }
       return pageGroup.cachedChildPages;
     };
+    const pathStr = path.join('.');
 
     const pageGroup:PageGroup = {
       defaultValue: isRequired ? true : undefined,
-      name: path.join('.'),
+      name: pathStr,
       ...xPageGroup,
       type: 'pagegroup',
       value: this.getValue(path) === undefined ? undefined : true,
       path: path,
+      pathStr: pathStr,
       required: isRequired,
       depth: depth,
       minItems: pageGroupSchema.minItems,
@@ -661,11 +676,13 @@ export class EditorImpl implements Editor {
     const setDefaultFun = ():void => {
       setFun(property.defaultValue);
     }
+    const pathStr = path.join('.');
     const base = {
-      name: path.join('.'),
+      name: pathStr,
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
       path: path,
+      pathStr: pathStr,
       required: isRequired,
       set: setFun,
       setDefault: setDefaultFun,

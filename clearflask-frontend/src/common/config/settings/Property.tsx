@@ -26,7 +26,7 @@ export default class Property extends Component<Props, State> {
 
   render() {
     const prop = this.props.prop;
-    const name = prop.name || prop.path.join('.');
+    const name = prop.name || prop.pathStr;
     var propertySetter;
     OUTER: switch(prop.type) {
       default:
@@ -63,7 +63,7 @@ export default class Property extends Component<Props, State> {
       case ConfigEditor.PropertyType.Integer:
         propertySetter = (
           <TextField
-            id={prop.path.join('.')}
+            id={prop.pathStr}
             label={!this.props.bare && name}
             value={this.state.value}
             onChange={this.handlePropChange.bind(this)}

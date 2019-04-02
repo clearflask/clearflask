@@ -22,7 +22,7 @@ export default class TableProp extends Component<Props, State> {
 
   render() {
     const header:React.ReactNode[] = [];
-    const rows:React.ReactNode[][] = [];
+    const rows:React.ReactNode[] = [];
     if(this.props.data.type === 'pagegroup') {
       const pageGroup:ConfigEditor.PageGroup = this.props.data;
       pageGroup.getChildPages().forEach((childPage, childPageIndex) => {
@@ -30,7 +30,7 @@ export default class TableProp extends Component<Props, State> {
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
           const prop = childPage.getChildren().props.find(childPageProp => propName === childPageProp.path[childPageProp.path.length - 1])!;
           row.push(
-            <TableCell key={propNameIndex} align='center'>
+            <TableCell key={prop.pathStr} align='center'>
               <Property bare prop={prop} />
             </TableCell>
           );
@@ -38,7 +38,7 @@ export default class TableProp extends Component<Props, State> {
             header.push(this.renderHeaderCell(propNameIndex, prop.name, prop.description));
           }
         });
-        rows.push(row);
+        rows.push(this.renderRow(row, childPage.pathStr, childPageIndex));
       });
     } else if(this.props.data.childType === ConfigEditor.PropertyType.Object) {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
@@ -47,7 +47,7 @@ export default class TableProp extends Component<Props, State> {
         const row:React.ReactNode[] = [];
         childPropObject.childProperties && childPropObject.childProperties.forEach((grandchildProp, grandchildPropIndex) => {
           row.push(
-            <TableCell key={grandchildPropIndex} align='center'>
+            <TableCell key={childPropObject.pathStr} align='center'>
               <Property bare prop={grandchildProp} />
             </TableCell>
           );
@@ -55,16 +55,17 @@ export default class TableProp extends Component<Props, State> {
             header.push(this.renderHeaderCell(grandchildPropIndex, grandchildProp.name, grandchildProp.description));
           }
         });
-        rows.push(row);
+        rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
       });
     } else {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
       arrayProp.childProperties && arrayProp.childProperties.forEach((childProp, childPropIndex) => {
-        rows.push([(
+        const row = [(
           <TableCell key='0' align='center'>
             <Property prop={childProp} />
           </TableCell>
-        )]);
+        )];
+        rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
         if(childPropIndex === 0) {
           header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
         }
@@ -83,18 +84,7 @@ export default class TableProp extends Component<Props, State> {
             </TableHead>
           )}
           <TableBody>
-            {rows.map((row, index) => (
-              <TableRow key={index}>
-                {row}
-                <TableCell key='delete' align='left'>
-                  <IconButton aria-label="Delete" onClick={() => {
-                    this.props.data.delete(index);
-                  }}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+            {rows}
             <TableRow key='add'>
               <TableCell key='add' align='center'>
                 <IconButton aria-label="Add" onClick={() => {
@@ -108,6 +98,21 @@ export default class TableProp extends Component<Props, State> {
         </Table>
       </Paper>
     );
+  }
+
+  renderRow(rowCells, key:string, index:number) {
+    return (
+      <TableRow key={key}>
+        {rowCells}
+        <TableCell key='delete' align='left'>
+          <IconButton aria-label="Delete" onClick={() => {
+            this.props.data.delete(index);
+          }}>
+            <DeleteIcon />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    )
   }
 
   renderHeaderCell(key, name, description) {

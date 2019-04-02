@@ -24,14 +24,8 @@ export default class Menu extends Component<Props> {
   render() {
     const childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
     const childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
-    var name:any = this.props.page.name || 'Unnamed';
-    if(this.props.page.nameFromProp) {
-      const nameProp = this.props.page.getChildren().props.find(p => p.path[p.path.length - 1] === this.props.page.nameFromProp);
-      if(nameProp && nameProp.value) {
-        name = nameProp.value;
-      }
-    }
     const expanded = this.isExpanded(this.props.page.path);
+    const name = this.props.page.getDynamicName();
     return (
       <List component='nav' style={{padding: '0px'}}>
         <ListItem button onClick={() => {

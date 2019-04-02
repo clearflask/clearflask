@@ -85,12 +85,24 @@ components:
                   suffix:
                     x-clearflask-prop: { name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
                     type: string
-        ideaSettingsParent:
-          $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
         voteSettingsParent:
           $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
         ideaSettings:
-          x-clearflask-page: { order: 1, name: 'Ideas', menuDefaultExpanded: true }
+          $ref: 'api-project.yaml#/components/schemas/ideaSettings'
+      required:
+        - name
+        - pages
+        - creditFormatter
+        - ideaSettingsParent
+        - ideaSettings
+        - voteSettingsParent
+        - ideaGroups
+        - ideaStatuses
+        - supportType
+    ideaSettings:
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
+        - x-clearflask-page: { order: 1, name: 'Ideas', menuDefaultExpanded: true }
           title: IdeaSettings
           type: object
           properties:
@@ -204,16 +216,6 @@ components:
             - statuses
             - tags
             - groups
-      required:
-        - name
-        - pages
-        - creditFormatter
-        - ideaSettingsParent
-        - ideaSettings
-        - voteSettingsParent
-        - ideaGroups
-        - ideaStatuses
-        - supportType
     ConfigAdmin:
       description: >-
         All Config properties available for admins.
