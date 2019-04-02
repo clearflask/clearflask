@@ -86,6 +86,7 @@ export interface Setting<T> {
   value?:T;
   set(val:T):void;
   setDefault():void;
+  subscribe(callback:()=>string):Unsubscribe;
 }
 
 export type PageType = 'page';
@@ -119,6 +120,7 @@ export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
 
 interface PropertyBase<T> extends Setting<T>, xCfProp {
   name:string;
+  errorMsg?:string // TODO populate when setting wrong value
 }
 export enum PropertyType {
   String = 'string',
@@ -247,6 +249,8 @@ export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[
     });
 }
 
+export type Unsubscribe = ()=>void;
+
 export default interface Editor {
 
   clone():Editor;
@@ -258,15 +262,13 @@ export default interface Editor {
   getProperty(path:Path):Property;
 
   setValue(path:Path, value:any):void;
-
-  subscribe(id:string, callback:()=>void);
-  unsubscribe(id:string);
 }
 
 export class EditorImpl implements Editor {
   config:Config;
   cache:{[path: string]: Page|PageGroup|Property} = {};
-  subscribers:{[id:string]: ()=>void} = {};
+  readonly subscribers:any = {};
+  readonly subscriberKey = '<s>';
 
   constructor(config?:Config) {
     this.config = config as Config;
@@ -287,15 +289,54 @@ export class EditorImpl implements Editor {
     return this.config;
   }
 
-  subscribe(id: string, callback: () => void) {
-    this.subscribers[id] = callback;
+  subscribe(path:Path, callback: () => string):Unsubscribe {
+    const subscribePath = [...path, this.subscriberKey];
+    var pointer = this.subscribers;
+    for (let i = 0; i < subscribePath.length; i++) {
+      var nextPointer = pointer[subscribePath[i]];
+      if(!nextPointer) {
+        nextPointer = {};
+        pointer[subscribePath[i]] = nextPointer;
+      }
+      pointer = pointer[subscribePath[i]];
+    }
+    const id = randomUuid();
+    pointer[id] = callback;
+    console.log('subscribed', id, JSON.stringify(path));
+    return () => this.unsubscribe(path, id);
   }
 
-  unsubscribe(id: string) {
-    delete this.subscribers[id];
+  unsubscribe(path:Path, id:string):void {
+    console.log('unsubscribe', id, JSON.stringify(path));
+    const deletePath = [...path, this.subscriberKey, id];
+    var pointer:any = this.subscribers;
+    var deletePointer:any = pointer;
+    var deleteKey:string|number = deletePath[0];
+    for (let i = 0; i < deletePath.length; i++) {
+      if(Object.keys(pointer).length > 1) {
+        deletePointer = pointer;
+        deleteKey = deletePath[i];
+      }
+      const nextPointer = pointer[deletePath[i]];
+      if(!nextPointer) return;
+      pointer = nextPointer;
+    }
+
+    console.log('unsubscribed', id, JSON.stringify(path));
+    delete deletePointer[deleteKey];
   }
-  notify() {
-    Object.values(this.subscribers).forEach(s => s());
+
+  notify(path:Path) {
+    console.log('notify', JSON.stringify(path));
+    const notifyPath = [...path, this.subscriberKey];
+    var pointer = this.subscribers;
+    for (let i = 0; i < notifyPath.length; i++) {
+      const nextPointer = pointer[notifyPath[i]];
+      if(!nextPointer) return;
+      pointer = pointer[notifyPath[i]];
+    }
+    Object.values(this.subscribers).forEach((s:any) => s());
+    console.log('notified', Object.values.length);
   }
 
   getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):Page {
@@ -502,6 +543,7 @@ export class EditorImpl implements Editor {
       return page.cachedChildren;
     };
     const pathStr = path.join('.');
+    const subscribers:{[subscriberId:string]:()=>string} = {};
 
     const page:Page = {
       defaultValue: isRequired ? true : undefined,
@@ -530,7 +572,8 @@ export class EditorImpl implements Editor {
           };
         }
         page.value = val;
-        this.notify();
+        this.notify(path);
+        Object.values(subscribers).forEach(s => s());
       },
       setDefault: ():void => {
         page.set(page.defaultValue);
@@ -543,6 +586,11 @@ export class EditorImpl implements Editor {
         return (nameProp && nameProp.value)
           ? nameProp.value + '' : page.name;
       },
+      subscribe: (path:Path, callback: () => string):Unsubscribe => {
+        const subscriberId = randomUuid();
+        subscribers[subscriberId] = callback;
+        return () => delete subscribers[subscriberId];
+      }
       cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
     };
     return page;
