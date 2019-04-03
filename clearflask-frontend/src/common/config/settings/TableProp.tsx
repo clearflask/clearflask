@@ -10,6 +10,7 @@ interface Props {
   data:ConfigEditor.PageGroup|ConfigEditor.ArrayProperty;
   label?:React.ReactNode;
   helperText?:React.ReactNode;
+  errorMsg?:string;
 }
 
 interface State {
@@ -37,64 +38,67 @@ export default class TableProp extends Component<Props, State> {
     const rows:React.ReactNode[] = [];
     if(this.props.data.type === 'pagegroup') {
       const pageGroup:ConfigEditor.PageGroup = this.props.data;
-      pageGroup.getChildPages().forEach((childPage, childPageIndex) => {
+      pageGroup.getChildPages().forEach((childPage, childPageIndex, arr) => {
         const row:React.ReactNode[] = [];
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
           const prop = childPage.getChildren().props.find(childPageProp => propName === childPageProp.path[childPageProp.path.length - 1])!;
-          row.push(
-            <TableCell key={prop.pathStr} align='center'>
-              <Property bare prop={prop} />
-            </TableCell>
-          );
           if(childPageIndex === 0) {
             header.push(this.renderHeaderCell(propNameIndex, prop.name, prop.description));
           }
+          row.push(
+            <TableCell align='center'>
+              <Property bare prop={prop} />
+            </TableCell>
+          );
         });
-        rows.push(this.renderRow(row, childPage.pathStr, childPageIndex));
+        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex));
       });
     } else if(this.props.data.childType === ConfigEditor.PropertyType.Object) {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
-      arrayProp.childProperties && arrayProp.childProperties.forEach((childProp, childPropIndex) => {
-        const childPropObject = childProp as ConfigEditor.ObjectProperty;
-        const row:React.ReactNode[] = [];
-        childPropObject.childProperties && childPropObject.childProperties.forEach((grandchildProp, grandchildPropIndex) => {
-          row.push(
-            <TableCell key={childPropObject.pathStr} align='center'>
-              <Property bare prop={grandchildProp} />
-            </TableCell>
-          );
-          if(childPropIndex === 0) {
-            header.push(this.renderHeaderCell(grandchildPropIndex, grandchildProp.name, grandchildProp.description));
-          }
+      arrayProp.childProperties && arrayProp.childProperties
+        .forEach((childProp, childPropIndex, arr) => {
+          const childPropObject = childProp as ConfigEditor.ObjectProperty;
+          const row:React.ReactNode[] = [];
+          childPropObject.childProperties && childPropObject.childProperties
+            .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
+            .forEach((grandchildProp, grandchildPropIndex) => {
+              if(childPropIndex === 0) {
+                header.push(this.renderHeaderCell(grandchildPropIndex, grandchildProp.name, grandchildProp.description));
+              }
+              row.push(
+                <TableCell align='center'>
+                  <Property bare prop={grandchildProp} />
+                </TableCell>
+              );
+            });
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
         });
-        rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
-      });
     } else {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
       arrayProp.childProperties && arrayProp.childProperties
         .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
-        .forEach((childProp, childPropIndex) => {
-          const row = [(
-            <TableCell key='0' align='center'>
-              <Property bare prop={childProp} />
-            </TableCell>
-          )];
-          rows.push(this.renderRow(row, arrayProp.pathStr, childPropIndex));
+        .forEach((childProp, childPropIndex, arr) => {
           if(childPropIndex === 0) {
             header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
           }
+          const row = [(
+            <TableCell align='center'>
+              <Property bare prop={childProp} />
+            </TableCell>
+          )];
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
         });
     }
 
     return (
       <div>
-        <InputLabel shrink={false}>{this.props.label}</InputLabel>
+        <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>
         <div><div style={{
           display: 'inline-flex',
           flexDirection: 'column',
           alignItems: 'center',
         }}>
-          <FormHelperText>{this.props.helperText}</FormHelperText>
+          <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
           <IconButton aria-label="Add" onClick={() => {
             this.props.data.insert();
           }}>
@@ -124,7 +128,7 @@ export default class TableProp extends Component<Props, State> {
     return (
       <TableRow key={key}>
         {rowCells}
-        <TableCell key='delete' align='left'>
+        <TableCell key={'delete' + key} align='left'>
           <IconButton aria-label="Delete" onClick={() => {
             this.props.data.delete(index);
           }}>
@@ -138,8 +142,9 @@ export default class TableProp extends Component<Props, State> {
   renderHeaderCell(key, name, description) {
     // TODO display description somewhere
     return (
-      <TableCell key={key} align='center'>
-        {name}
+      <TableCell key={key} align='center' style={{fontWeight: 'normal'}}>
+        <InputLabel shrink={false}>{name}</InputLabel>
+        <FormHelperText >{description}</FormHelperText>
       </TableCell>
     );
   }

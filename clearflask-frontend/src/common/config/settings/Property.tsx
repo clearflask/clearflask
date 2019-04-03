@@ -7,9 +7,12 @@ import ColorPicker from 'material-ui-color-picker'
 interface Props {
   prop:ConfigEditor.Property|ConfigEditor.PageGroup;
   bare?:boolean;
+  width?:string
 }
 
 export default class Property extends Component<Props> {
+  readonly inputMinWidth = '150px';
+  readonly colorRef = React.createRef<HTMLDivElement>();
   unsubscribe?:()=>void;
 
   componentDidMount() {
@@ -26,6 +29,8 @@ export default class Property extends Component<Props> {
     var marginTop = 30;
     var propertySetter;
     OUTER: switch(prop.type) {
+      case ConfigEditor.PropertyType.Number:
+      case ConfigEditor.PropertyType.Integer:
       case ConfigEditor.PropertyType.String:
         switch(prop.subType) {
           case ConfigEditor.PropSubType.Id:
@@ -34,37 +39,73 @@ export default class Property extends Component<Props> {
             break OUTER;
           case ConfigEditor.PropSubType.Color:
             propertySetter = (
-              <div>
-                <ColorPicker
-                  label={!this.props.bare && name}
-                  name='color'
-                  placeholder='#000'
-                  defaultValue={prop.defaultValue}
-                  value={prop.value}
-                  onChange={this.handlePropChange.bind(this)}
-                  TextFieldProps={{
-                    InputLabelProps:{
-                      shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined,
-                    },
-                    InputProps: {
-                      inputProps: {
-                        autocomplete: 'off',
+              <div style={{
+                display: 'inline-flex',
+                flexDirection: 'column',
+              }}>
+                <div ref={this.colorRef} > {/* Div-wrapped so the absolutely positioned picker shows up in the right place */}
+                  <ColorPicker
+                    label={!this.props.bare && name}
+                    name='color'
+                    placeholder='#000'
+                    defaultValue={prop.defaultValue}
+                    value={prop.value}
+                    onChange={this.handlePropChange.bind(this)}
+                    TextFieldProps={{
+                      // Hack to modify material-ui-color-picker to fix bug
+                      // where a click inside the empty space inside the
+                      // picker would dismiss the picker.
+                      onFocus: () => setTimeout(() => {
+                        var ptr:any = this.colorRef;
+                        ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
+                        ptr && (ptr.position = 'relative');
+                      },500),
+                      InputLabelProps:{
+                        shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined,
+                        error: !!prop.errorMsg,
                       },
-                      style: {
-                        color: prop.value,
-                      },
-                    }
-                  }}
-                />
-                {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
+                      InputProps: {
+                        inputProps: {
+                          autocomplete: 'off',
+                        },
+                        style: {
+                          color: prop.value,
+                          minWidth: this.inputMinWidth,
+                          width: this.props.width,
+                        },
+                        error: !!prop.errorMsg,
+                      }
+                    }}
+                    error={!!prop.errorMsg}
+                  />
+                </div>
+                {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
               </div>
             );
             break OUTER;
           default:
             // Fall through to below
         }
-      case ConfigEditor.PropertyType.Number:
-      case ConfigEditor.PropertyType.Integer:
+        var fieldType;
+        var shrinkString:any = undefined;
+        if(prop.type === ConfigEditor.PropertyType.String) {
+          switch(prop.format) {
+            case ConfigEditor.StringFormat.DateTime:
+              fieldType = 'datetime-local';
+              shrinkString = true;
+              break;
+            case ConfigEditor.StringFormat.Date:
+            case ConfigEditor.StringFormat.Time:
+              fieldType = prop.format;
+              shrinkString = true;
+              break;
+            default:
+              fieldType = 'text';
+              break;
+          }
+        } else {
+          fieldType = 'number';
+        }
         propertySetter = (
           <TextField
             id={prop.pathStr}
@@ -73,9 +114,25 @@ export default class Property extends Component<Props> {
             onChange={this.handlePropChange.bind(this)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder}
-            helperText={!this.props.bare && prop.description}
+            helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
-            type={prop.type === 'string' ? 'text' : 'number'}
+            type={fieldType}
+            InputLabelProps={{
+              shrink: shrinkString,
+              error: !!prop.errorMsg,
+            }}
+            InputProps={{
+              style: {
+                minWidth: this.inputMinWidth,
+                width: this.props.width,
+              },
+            }}
+            FormHelperTextProps={{
+              style: {
+                minWidth: this.inputMinWidth,
+                width: this.props.width,
+              },
+            }}
           />
         );
         break;
@@ -85,19 +142,21 @@ export default class Property extends Component<Props> {
           marginTop += 16;
           propertySetter = (
             <div>
-              {!this.props.bare && (<InputLabel>{name}</InputLabel>)}
-              {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
-              <FormControlLabel
-                control={(
-                  <Switch
-                    checked={!!prop.value}
-                    onChange={this.handlePropChange.bind(this)}
-                    color="default"
-                  />
-                )}
-                label={!!prop.value ? 'Enabled' : 'Disabled'}
-                style={{ marginBottom: '-10px'}}
-              />
+              {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
+              <div>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={!!prop.value}
+                      onChange={this.handlePropChange.bind(this)}
+                      color="default"
+                    />
+                  )}
+                  label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+                  style={{ marginTop: '-10px', marginBottom: '-10px'}}
+                />
+              </div>
+              {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             </div>
           );
           break;
@@ -113,11 +172,17 @@ export default class Property extends Component<Props> {
         const currentItem = items.find(item => item.value === prop.value);
         const shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
-          <FormControl>
-            {!this.props.bare && (<InputLabel shrink={shrink}>{name}</InputLabel>)}
+          <FormControl
+            style={{
+              minWidth: this.inputMinWidth,
+              width: this.props.width,
+            }}
+          >
+            {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
               value={prop.value}
               onChange={this.handlePropChange.bind(this)}
+              error={!!prop.errorMsg}
             >
               {items.map(item => (
                 <MenuItem value={item.value}>{item.value === undefined
@@ -126,7 +191,7 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
+            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
           </FormControl>
         );
         break;
@@ -135,6 +200,7 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <TableProp
             data={prop}
+            errorMsg={prop.errorMsg}
             label={!this.props.bare && name}
             helperText={!this.props.bare && prop.description}
           />
@@ -146,7 +212,7 @@ export default class Property extends Component<Props> {
             {prop.childProperties && prop.childProperties
               .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
               .map(childProp => (
-                <Property {...this.props} prop={childProp} />
+                <Property {...this.props} bare={false} prop={childProp} />
               ))
             }
           </Collapse>
@@ -158,17 +224,18 @@ export default class Property extends Component<Props> {
                 checked={!!prop.value}
                 onChange={this.handlePropChange.bind(this)}
                 color="default"
+                
               />
             )}
-            label={!!prop.value ? 'Enabled' : 'Disabled'}
+            label={!this.props.bare && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
             style={{ marginBottom: '-10px'}}
           />
         );
         marginTop += 16;
         propertySetter = (
           <div style={{marginBottom: '10px'}}>
-            {!this.props.bare && (<InputLabel>{name}</InputLabel>)}
-            {!this.props.bare && (<FormHelperText>{prop.description}</FormHelperText>)}
+            {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
+            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>
@@ -178,11 +245,12 @@ export default class Property extends Component<Props> {
         throw Error(`Unknown property type ${prop.type}`);
     }
 
-    return propertySetter && (
-      <div style={{marginTop: this.props.bare ? undefined : marginTop + 'px'}}>
-        {propertySetter}
-      </div>
-    );
+    return propertySetter
+      ? (
+        <div style={{marginTop: this.props.bare ? undefined : marginTop + 'px'}}>
+          {propertySetter}
+        </div>
+      ) : null;
   }
 
   handlePropChange(event) {

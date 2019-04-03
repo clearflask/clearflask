@@ -7,6 +7,9 @@ components:
       type: object
       required:
         - stringReq
+        - datetimeReq
+        - timeReq
+        - dateReq
         - idReq
         - numberReq
         - integerReq
@@ -26,6 +29,39 @@ components:
         stringOpt:
           x-clearflask-prop: { order: 1, name: 'String optional', description: 'Description description description.', placeholder: 'Placeholder' }
           type: string
+        stringAzOnly:
+          x-clearflask-prop: { order: 1, name: 'String A-Z regex', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          pattern: '^[a-zA-Z]+$'
+        string25Only:
+          x-clearflask-prop: { order: 1, name: 'String 2-5 length', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          minLength: 2
+          maxLength: 5
+        datetimeReq:
+          x-clearflask-prop: { order: 2, name: 'DateTime required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: date-time
+        datetimeOpt:
+          x-clearflask-prop: { order: 2, name: 'DateTime optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: date-time
+        timeReq:
+          x-clearflask-prop: { order: 2, name: 'Time required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: time
+        timeOpt:
+          x-clearflask-prop: { order: 2, name: 'Time optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: time
+        dateReq:
+          x-clearflask-prop: { order: 2, name: 'Date required', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: date
+        dateOpt:
+          x-clearflask-prop: { order: 2, name: 'Date optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          type: string
+          format: date
         idReq:
           x-clearflask-prop: { order: 2, subType: 'id' }
           type: string
@@ -67,6 +103,8 @@ components:
         arrayOfStringReq:
           x-clearflask-prop: { order: 7, name: 'ArrayOfString required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: array
+          minItems: 2
+          maxItems: 4
           items:
             x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
             type: string
@@ -221,6 +259,9 @@ components:
             type: object
             required:
               - stringReq
+              - datetimeReq
+              - timeReq
+              - dateReq
               - idReq
               - numberReq
               - integerReq
@@ -239,6 +280,39 @@ components:
               stringOpt:
                 x-clearflask-prop: { order: 1, name: 'String optional', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: string
+              stringAzOnly:
+                x-clearflask-prop: { order: 1, name: 'String A-Z regex', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                pattern: '^[a-zA-Z]$'
+              string25Only:
+                x-clearflask-prop: { order: 1, name: 'String 2-5 length', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                minLength: 2
+                maxLength: 5
+              datetimeReq:
+                x-clearflask-prop: { order: 2, name: 'DateTime required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: date-time
+              datetimeOpt:
+                x-clearflask-prop: { order: 2, name: 'DateTime optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: date-time
+              timeReq:
+                x-clearflask-prop: { order: 2, name: 'Time required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: time
+              timeOpt:
+                x-clearflask-prop: { order: 2, name: 'Time optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: time
+              dateReq:
+                x-clearflask-prop: { order: 2, name: 'Date required', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: date
+              dateOpt:
+                x-clearflask-prop: { order: 2, name: 'Date optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                type: string
+                format: date
               idReq:
                 x-clearflask-prop: { order: 2, subType: 'id' }
                 type: string
