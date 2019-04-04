@@ -17,7 +17,7 @@ components:
           description: Location of the logo to display.
           type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug', 'title'] }
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'] }
           type: array
           minItems: 1
           items:

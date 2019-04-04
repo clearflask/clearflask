@@ -4,11 +4,11 @@ import Loading from './comps/Loading';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { StateIdeas, State } from '../api/server';
+import { StateIdeas, State, Server } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 
 interface Props extends StateIdeas{
-  api:Client.ApiInterface;
+  server:Server;
   conf?:Client.Config;
   pageConf?:Client.Page;
   pageChanged:(pageUrlName:string)=>void;
@@ -132,7 +132,7 @@ export default connect<any,any,any,any>((state:State, ownProps:Props) => {
   for(let searchQuery of searchQueries) {
     const bySearch = state.ideas.bySearch[searchQuery.searchKey];
     if(!bySearch) {
-      ownProps.api.ideaSearch({
+      ownProps.server.dispatch().ideaSearch({
         projectId: state.projectId,
         search: searchQuery
       });

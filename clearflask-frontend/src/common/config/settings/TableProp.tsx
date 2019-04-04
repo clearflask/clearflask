@@ -3,6 +3,7 @@ import * as ConfigEditor from '../configEditor';
 import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton, InputLabel, FormHelperText } from '@material-ui/core';
 import Property from './Property';
 import DeleteIcon from '@material-ui/icons/Delete';
+import MoreIcon from '@material-ui/icons/MoreHoriz';
 import AddIcon from '@material-ui/icons/AddRounded';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   label?:React.ReactNode;
   helperText?:React.ReactNode;
   errorMsg?:string;
+  pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
 interface State {
@@ -47,11 +49,11 @@ export default class TableProp extends Component<Props, State> {
           }
           row.push(
             <TableCell align='center'>
-              <Property bare prop={prop} />
+              <Property bare prop={prop} pageClicked={this.props.pageClicked} />
             </TableCell>
           );
         });
-        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex));
+        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, true));
       });
     } else if(this.props.data.childType === ConfigEditor.PropertyType.Object) {
       const arrayProp:ConfigEditor.ArrayProperty = this.props.data;
@@ -67,7 +69,7 @@ export default class TableProp extends Component<Props, State> {
               }
               row.push(
                 <TableCell align='center'>
-                  <Property bare prop={grandchildProp} />
+                  <Property bare prop={grandchildProp} pageClicked={this.props.pageClicked} />
                 </TableCell>
               );
             });
@@ -83,7 +85,7 @@ export default class TableProp extends Component<Props, State> {
           }
           const row = [(
             <TableCell align='center'>
-              <Property bare prop={childProp} />
+              <Property bare prop={childProp} pageClicked={this.props.pageClicked} />
             </TableCell>
           )];
           rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
@@ -124,16 +126,27 @@ export default class TableProp extends Component<Props, State> {
     );
   }
 
-  renderRow(rowCells, key:string, index:number) {
+  renderRow(rowCells, key:string, index:number, showLink:boolean = false) {
     return (
       <TableRow key={key}>
         {rowCells}
         <TableCell key={'delete' + key} align='left'>
-          <IconButton aria-label="Delete" onClick={() => {
-            this.props.data.delete(index);
+          <div style={{
+            display: 'flex',
           }}>
-            <DeleteIcon />
-          </IconButton>
+            {showLink && (
+              <IconButton aria-label="More" onClick={() => {
+                this.props.pageClicked([...this.props.data.path, index]);
+              }}>
+                <MoreIcon />
+              </IconButton>
+            )}
+            <IconButton aria-label="Delete" onClick={() => {
+              this.props.data.delete(index);
+            }}>
+              <DeleteIcon />
+            </IconButton>
+          </div>
         </TableCell>
       </TableRow>
     )

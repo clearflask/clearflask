@@ -7,13 +7,23 @@ import {
   Route,
 } from 'react-router-dom'
 import ConfigView from '../common/config/settings/ConfigView';
+import { Server } from '../api/server';
 
 interface Props {
+  projectId?:string;
   editor:ConfigEditor.Editor;
 }
 
 export default class DemoApp extends Component<Props> {
+  readonly server:Server;
   unsubscribe?:()=>void;
+
+  constructor(props) {
+    super(props);
+    this.state = {};
+
+    this.server = new Server(props.projectId || 'demo', props.editor);
+  }
 
   componentDidMount() {
     this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
@@ -25,9 +35,9 @@ export default class DemoApp extends Component<Props> {
 
   render() {
     return (
-      <MemoryRouter initialEntries={['/demo']}>
+      <MemoryRouter initialEntries={[`/${this.server.getProjectId()}`]}>
         <Route path="/:projectId/:pageUrlName?" render={props => (
-          <App {...props} configOverride={this.props.editor.getConfig()} />
+          <App {...props} serverOverride={this.server} />
         )} />
       </MemoryRouter>
     );

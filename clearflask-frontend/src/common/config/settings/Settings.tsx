@@ -56,17 +56,22 @@ class Settings extends Component<Props, State> {
             <Menu
               page={rootPage}
               activePath={activePath}
-              pageClicked={path => {
-                this.props.history.push(`/admin/${path.join('/')}`);
-              }}
+              pageClicked={this.pageClicked.bind(this)}
             />
           </Grid>
           <Grid item xs={10}>
-            <Page page={currentPage} />
+            <Page
+              page={currentPage}
+              pageClicked={this.pageClicked.bind(this)}
+            />
           </Grid>
         </Grid>
       </div>
     );
+  }
+
+  pageClicked(path:ConfigEditor.Path):void {
+    this.props.history.push(`/admin/${path.join('/')}`);
   }
 }
 

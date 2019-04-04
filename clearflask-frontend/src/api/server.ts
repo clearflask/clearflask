@@ -1,10 +1,13 @@
 import React from 'react';
-import { combineReducers, Store } from "redux";
 import DataMock from './dataMock';
 import * as Client from './client';
 import * as Admin from './admin';
 import ServerMock from './serverMock';
 import * as ConfigEditor from '../common/config/configEditor';
+import { isProd } from '../common/util/detectEnv';
+import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
+import thunk from 'redux-thunk';
+import reduxPromiseMiddleware from 'redux-promise-middleware';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -14,13 +17,24 @@ export enum Status {
 
 export class Server {
   apis: any;
+  readonly projectId:string;
   readonly store:Store;
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Admin.Dispatcher;
 
-  constructor(store:Store, projectName:string, configEditor?:ConfigEditor.Editor) {
-    this.store = store;
+  constructor(projectId:string, configEditor?:ConfigEditor.Editor) {
+    this.projectId = projectId;
+
+    this.store = createStore(
+      reducers,
+      Server.initialState(this.projectId),(
+        // Use Redux dev tools in development
+        (isProd()
+          ? compose
+          : (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose)
+      )(applyMiddleware(thunk, reduxPromiseMiddleware)
+    ));
 
     var apiDelegateClient;
     var apiDelegateAdmin;
@@ -32,7 +46,7 @@ export class Server {
     } else {
       // Production
       const conf = {
-        basePath: Client.BASE_PATH.replace(/projectId/, projectName),
+        basePath: Client.BASE_PATH.replace(/projectId/, projectId),
       };
       apiDelegateClient = new Client.Api(new Client.Configuration(conf));
       apiDelegateAdmin = new Admin.Api(new Admin.Configuration(conf));
@@ -58,6 +72,14 @@ export class Server {
     //   payload: accountInfo,
     // };
     // return reducers(undefined, initialAuthAction);
+  }
+
+  getProjectId():string {
+    return this.projectId;
+  }
+
+  getStore():Store {
+    return this.store;
   }
 
   dispatch():Client.Dispatcher {

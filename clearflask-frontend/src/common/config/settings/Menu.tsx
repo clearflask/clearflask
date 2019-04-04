@@ -83,7 +83,7 @@ class MenuPageGroup extends Component<PropsPageGroup> {
     return (
       <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
         <div>
-          <ListSubheader style={Menu.paddingForLevel(this.props.pageGroup.path, 1)}>
+          <ListSubheader disableSticky style={Menu.paddingForLevel(this.props.pageGroup.path, 2)}>
             {this.props.pageGroup.name}
           </ListSubheader>
           {childPages.map(childPage =>

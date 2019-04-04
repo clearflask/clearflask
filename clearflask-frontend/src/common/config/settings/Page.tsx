@@ -6,6 +6,7 @@ import TableProp from './TableProp';
 
 interface Props {
   page:ConfigEditor.Page;
+  pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
 class Page extends Component<Props> {
@@ -27,11 +28,11 @@ class Page extends Component<Props> {
         {this.props.page.getChildren().props
           .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
           .map(childProp => (
-            <Property key={childProp.pathStr} prop={childProp} />
+            <Property key={childProp.pathStr} prop={childProp} pageClicked={this.props.pageClicked} />
           ))}
         {this.props.page.getChildren().groups
           .map(childPageGroup => (
-            <Property key={childPageGroup.pathStr} prop={childPageGroup} />
+            <Property key={childPageGroup.pathStr} prop={childPageGroup} pageClicked={this.props.pageClicked} />
           ))}
       </div>
     );

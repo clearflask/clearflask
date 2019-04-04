@@ -8,6 +8,7 @@ interface Props {
   prop:ConfigEditor.Property|ConfigEditor.PageGroup;
   bare?:boolean;
   width?:string
+  pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
 export default class Property extends Component<Props> {
@@ -203,6 +204,7 @@ export default class Property extends Component<Props> {
             errorMsg={prop.errorMsg}
             label={!this.props.bare && name}
             helperText={!this.props.bare && prop.description}
+            pageClicked={this.props.pageClicked}
           />
         );
         break;
