@@ -131,7 +131,7 @@ components:
                       type: object
                       properties:
                         nextStatusId:
-                          x-clearflask-prop-link: { linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
+                          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
                           type: string
                         transitionText:
                           type: string
@@ -289,7 +289,7 @@ components:
       properties:
         defaultStatusId:
           x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
-          x-clearflask-prop-link: { linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
           type: string
         defaultIdeaTagIds:
           x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }

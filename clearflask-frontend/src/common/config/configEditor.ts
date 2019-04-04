@@ -70,8 +70,10 @@ export interface xCfPropLink {
   linkPath:string[];
   /** If set, links to this prop name. Otherwise links to the array index */
   idPropName:string;
-  /** List of child properties to display */
-  showPropNames?:string[];
+  /** If set, displays the prop value as the name */
+  displayPropName?:string;
+  /** If set, use this color from the prop value */
+  colorPropName?:string;
 }
 
 /**
@@ -130,6 +132,7 @@ interface PropertyBase<T> extends Setting<T>, xCfProp {
 export enum PropertyType {
   String = 'string',
   Link = 'link',
+  LinkMulti = 'linkmulti',
   Number = 'number',
   Integer = 'integer',
   Boolean = 'boolean',
@@ -140,6 +143,7 @@ export enum PropertyType {
 export type Property =
   StringProperty
   |LinkProperty
+  |LinkMultiProperty
   |NumberProperty
   |IntegerProperty
   |BooleanProperty
@@ -155,14 +159,15 @@ export interface StringProperty extends PropertyBase<string> {
   format?:StringFormat|string;
 }
 
-export interface LinkProperty extends PropertyBase<string>, xCfPropLink {
+export interface LinkProperty extends PropertyBase<string|undefined>, xCfPropLink {
   type:PropertyType.Link;
-  /** Shows current options and list of properties to show for readonly */
   getOptions():LinkPropertyOption[];
+  cachedOptions?:LinkPropertyOption[] // Internal use only
 }
 export interface LinkPropertyOption {
   id:string;
-  readonlyProps: Property[];
+  name:string;
+  color?:string;
 }
 
 export interface NumberProperty extends PropertyBase<number> {
@@ -205,6 +210,16 @@ export interface ArrayProperty extends PropertyBase<true|undefined> {
   childProperties?:Property[];
   insert(index?:number):void;
   delete(index:number):void;
+}
+
+export interface LinkMultiProperty extends PropertyBase<Set<string>|undefined>, xCfPropLink {
+  type:PropertyType.LinkMulti;
+  minItems?:number;
+  maxItems?:number;
+  insert(linkId:string):void;
+  delete(linkId:string):void;
+  getOptions():LinkPropertyOption[];
+  cachedOptions?:LinkPropertyOption[] // Internal use only
 }
 
 /**
@@ -469,6 +484,71 @@ export class EditorImpl implements Editor {
       return this.parseProperty(path, isRequired, schema);
     }
   }
+
+  getLinkOptions(linkProp:LinkProperty|LinkMultiProperty, localSubscribers:{[subscriberId:string]:()=>void}):LinkPropertyOption[] {
+    if(linkProp.cachedOptions !== undefined) return linkProp.cachedOptions;
+    const targetPath = linkProp.linkPath.map((pathStep, index) => pathStep === '<>' ? linkProp.path[index] : pathStep);
+    const target:Page|PageGroup|Property = this.get(targetPath);
+    if(target.type !== PropertyType.Array && target.type !== PageGroupType) {
+      throw Error(`Link property ${linkProp.path} pointing to non-array non-page-group on path ${targetPath}`);
+    }
+    if(target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
+      throw Error(`Link property ${linkProp.path} pointing to array of non-objects on path ${targetPath}`);
+    }
+    const unsubscribes:(()=>void)[] = [];
+    const subscribe = p => unsubscribes.push(p.subscribe(() => {
+      linkProp.cachedOptions = undefined;
+      unsubscribes.forEach(u => u());
+      this.notify(localSubscribers);
+    }));
+    subscribe(target);
+    const options:(Page|ObjectProperty)[] = (target.type === PageGroupType
+      ? target.getChildPages()
+      : (target.childProperties as ObjectProperty[]) || []);
+    const linkPropertyOptions = options.map((option:Page|ObjectProperty) => {
+      var id:string|undefined = undefined;
+      var name:string|undefined = undefined;
+      var color:string|undefined = undefined;
+      const props:Property[] = (option.type === PageType
+        ? option.getChildren().props
+        : option.childProperties || []);
+      props.forEach((childProp:Property) => {
+        if(childProp.type !== PropertyType.String) {
+          return;
+        }
+        const childPropName = childProp.path[childProp.path.length - 1];
+        if(linkProp.displayPropName !== undefined
+          && childPropName === linkProp.displayPropName) {
+          name = childProp.value;
+          subscribe(childProp);
+        }
+        if(childProp.subType === PropSubType.Id
+          && childPropName === linkProp.idPropName) {
+          id = childProp.value;
+          subscribe(childProp);
+          return;
+        }
+        if(linkProp.colorPropName !== undefined
+          && childProp.subType === PropSubType.Color
+          && childPropName === linkProp.colorPropName) {
+          color = childProp.value;
+          subscribe(childProp);
+          return;
+        }
+      });
+      if(id === undefined) {
+        throw Error(`Link property ${targetPath} idPropName '${linkProp.idPropName}' points to non-existent property on path ${targetPath}`);
+      }
+      const linkPropertyOption:LinkPropertyOption = {
+        id: id,
+        name: name || id,
+        color: color,
+      };
+      return linkPropertyOption;
+    });
+    linkProp.cachedOptions = linkPropertyOptions;
+    return linkPropertyOptions;
+  };
 
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     var pageSchema;
@@ -784,65 +864,24 @@ export class EditorImpl implements Editor {
           };
         } else if(propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
-          var cachedOptions:LinkPropertyOption[]|undefined = undefined;
-          const getOptions = ():LinkPropertyOption[] => {
-            const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
-            const target:Page|PageGroup|Property = this.get(targetPath);
-            if(target.type !== PropertyType.Array && target.type !== PageGroupType) {
-              throw Error(`Link property ${path} pointing to non-array non-page-group on path ${targetPath}`);
-            }
-            if(target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
-              throw Error(`Link property ${path} pointing to array of non-objects on path ${targetPath}`);
-            }
-            const unsubscribe = target.subscribe(() => {
-              cachedOptions = undefined;
-              unsubscribe();
-              this.notify(localSubscribers);
-            });
-            const options:(Page|ObjectProperty)[] = (target.type === PageGroupType
-              ? target.getChildPages()
-              : (target.childProperties as ObjectProperty[]) || []);
-            return options.map((option:Page|ObjectProperty) => {
-              var id:any = undefined;
-              const readonlyProps:Property[] = [];
-              const props:Property[] = (option.type === PageType
-                ? option.getChildren().props
-                : option.childProperties || []);
-              props.forEach((childProp:Property) => {
-                if(childProp.name === xPropLink.idPropName) {
-                  id = childProp.value;
-                }
-                if(!xPropLink.showPropNames || xPropLink.showPropNames.includes(childProp.name)) {
-                  readonlyProps.push(childProp);
-                }
-              });
-              if(id === undefined) {
-                throw Error(`Link property ${path} idPropName points to non-existent property on path ${targetPath}`);
-              }
-              if(xPropLink.showPropNames && xPropLink.showPropNames.length !== readonlyProps.length) {
-                throw Error(`Link property ${path} showPropNames includes properties that do not exist on path ${targetPath}`);
-              }
-              return {
-                id: id,
-                readonlyProps: readonlyProps,
-              };
-            });
-          };
-
+          const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
+          this.get(targetPath).subscribe(() => {
+            const linkProperty = property as LinkProperty;
+            linkProperty.cachedOptions = undefined;
+            linkProperty.errorMsg = linkProperty.validateValue(linkProperty.value)
+            this.notify(localSubscribers);
+          });
           property = {
-            defaultValue: isRequired ? [xPropLink.linkPath] : undefined,
+            defaultValue: isRequired ? [...xPropLink.linkPath, 0] : undefined,
             ...xPropLink,
             ...base,
-            type: PropertyType.String,
+            type: PropertyType.Link,
             value: value,
-            getOptions: ():LinkPropertyOption[] => {
-              if(cachedOptions === undefined) cachedOptions = getOptions();
-              return cachedOptions;
-            },
+            getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
             validateValue: (val:string|undefined):string|undefined => {
               if(val === undefined) return validateRequiredFun(val);
-              if(cachedOptions === undefined) cachedOptions = getOptions();
-              return cachedOptions.find(o => o.id === val) === undefined
+              const linkProperty = property as LinkProperty;
+              return linkProperty.getOptions().find(o => o.id === val) === undefined
                 ? "Invalid reference"
                 : undefined;
             },
@@ -901,6 +940,66 @@ export class EditorImpl implements Editor {
         };
         break;
       case 'array':
+        if(propSchema[OpenApiTags.PropLink]) {
+          if(!propSchema.items || propSchema.items.type !== 'string') {
+            throw Error(`Multi Link must be an array of strings on path ${path}`);
+          }
+          const xPropLink = propSchema[OpenApiTags.PropLink];
+          const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
+          this.get(targetPath).subscribe(() => {
+            const linkMultiProperty = property as LinkMultiProperty;
+            linkMultiProperty.cachedOptions = undefined;
+            linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value)
+            this.notify(localSubscribers);
+          });
+          property = {
+            defaultValue: isRequired ? new Set<string>() : undefined,
+            ...xPropLink,
+            ...base,
+            type: PropertyType.LinkMulti,
+            value: value === undefined ? undefined : new Set<string>(value),
+            minItems: propSchema.minItems,
+            maxItems: propSchema.maxItems,
+            set: (val:Set<string>) => {
+              const linkMultiProperty = property as LinkMultiProperty;
+              linkMultiProperty.value = new Set<string>(val);
+              this.setValue(path, [...linkMultiProperty.value]);
+              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              this.notify(localSubscribers);
+            },
+            insert: (linkId:string):void => {
+              const linkMultiProperty = property as LinkMultiProperty;
+              if(linkMultiProperty.value === undefined) linkMultiProperty.value = new Set<string>();
+              linkMultiProperty.value.add(linkId);
+              this.setValue(path, [...linkMultiProperty.value]);
+              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              this.notify(localSubscribers);
+            },
+            delete: (linkId:string):void => {
+              const linkMultiProperty = property as LinkMultiProperty;
+              if(linkMultiProperty.value === undefined) return;
+              linkMultiProperty.value.delete(linkId);
+              this.setValue(path, [...linkMultiProperty.value]);
+              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              this.notify(localSubscribers);
+            },
+            validateValue: (val:Set<string>|undefined):string|undefined => {
+              if(val === undefined) return validateRequiredFun(val);
+              const linkMultiProperty = property as LinkMultiProperty;
+              const count = val ? val.size : 0;
+              if(linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) return `Must have at least ${linkMultiProperty.minItems} entries`;
+              if(linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) return `Must have at most ${linkMultiProperty.maxItems} entries`;
+              const linkProperty = property as LinkProperty;
+              const options = linkProperty.getOptions();
+              for(let valItem in val) {
+                if(options.find(o => o.id === valItem) === undefined)return "Option no longer exists";
+              }
+              return undefined;
+            },
+            getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
+          }
+          break;
+        }
         const fetchChildPropertiesArray = ():Property[]|undefined => {
           const arr = this.getValue(path);
           var childProperties:Property[]|undefined;

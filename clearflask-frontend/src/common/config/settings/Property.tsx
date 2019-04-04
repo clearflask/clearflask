@@ -3,6 +3,7 @@ import * as ConfigEditor from '../configEditor';
 import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse } from '@material-ui/core';
 import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
+import SelectionPicker from './property/SelectionPicker';
 
 interface Props {
   prop:ConfigEditor.Property|ConfigEditor.PageGroup;
@@ -12,7 +13,7 @@ interface Props {
 }
 
 export default class Property extends Component<Props> {
-  readonly inputMinWidth = '150px';
+  static inputMinWidth = '150px';
   readonly colorRef = React.createRef<HTMLDivElement>();
   unsubscribe?:()=>void;
 
@@ -71,7 +72,7 @@ export default class Property extends Component<Props> {
                         },
                         style: {
                           color: prop.value,
-                          minWidth: this.inputMinWidth,
+                          minWidth: Property.inputMinWidth,
                           width: this.props.width,
                         },
                         error: !!prop.errorMsg,
@@ -80,7 +81,7 @@ export default class Property extends Component<Props> {
                     error={!!prop.errorMsg}
                   />
                 </div>
-                {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+                {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
               </div>
             );
             break OUTER;
@@ -124,13 +125,13 @@ export default class Property extends Component<Props> {
             }}
             InputProps={{
               style: {
-                minWidth: this.inputMinWidth,
+                minWidth: Property.inputMinWidth,
                 width: this.props.width,
               },
             }}
             FormHelperTextProps={{
               style: {
-                minWidth: this.inputMinWidth,
+                minWidth: Property.inputMinWidth,
                 width: this.props.width,
               },
             }}
@@ -157,7 +158,7 @@ export default class Property extends Component<Props> {
                   style={{ marginTop: '-10px', marginBottom: '-10px'}}
                 />
               </div>
-              {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+              {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             </div>
           );
           break;
@@ -175,7 +176,7 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <FormControl
             style={{
-              minWidth: this.inputMinWidth,
+              minWidth: Property.inputMinWidth,
               width: this.props.width,
             }}
           >
@@ -192,7 +193,7 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
           </FormControl>
         );
         break;
@@ -229,7 +230,7 @@ export default class Property extends Component<Props> {
                 
               />
             )}
-            label={!this.props.bare && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+            label={!this.props.bare && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
             style={{ marginBottom: '-10px'}}
           />
         );
@@ -237,14 +238,24 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <div style={{marginBottom: '10px'}}>
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>
         );
         break;
+      case ConfigEditor.PropertyType.Link:
+      case ConfigEditor.PropertyType.LinkMulti:
+        propertySetter = (
+          <SelectionPicker
+            {...this.props}
+            prop={prop}
+            inputMinWidth={Property.inputMinWidth}
+          />
+        );
+        break;
       default:
-        throw Error(`Unknown property type ${prop.type}`);
+        throw Error(`Unknown property type ${prop['type']}`);
     }
 
     return propertySetter

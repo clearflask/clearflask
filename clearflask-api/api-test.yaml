@@ -19,6 +19,7 @@ components:
         - arrayOfStringReq
         - arrayOfObjectReq
         - linkReq
+        - linkMultiReq
         - objectReq
         - objectNestedReq
         - groupReq
@@ -115,8 +116,9 @@ components:
             x-clearflask-prop: { order: 1, name: 'String', description: 'Description description description.', placeholder: 'Placeholder' }
             type: string
         arrayOfObjectReq:
-          x-clearflask-prop: { order: 8, name: 'ArrayOfObject required', description: 'Description description description.', placeholder: 'Placeholder' }
+          x-clearflask-prop: { order: 8, name: 'ArrayOfObject required (Link target)', description: 'Description description description.', placeholder: 'Placeholder' }
           type: array
+          minItems: 5
           items:
             x-clearflask-prop: { name: 'Object', description: 'Description description description.', placeholder: 'Placeholder' }
             type: object
@@ -124,10 +126,10 @@ components:
               id:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
-              string:
-                x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
+              name:
+                x-clearflask-prop: { order: 1, name: 'name', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: string
-              string2:
+              color:
                 x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: string
         arrayOfObjectOpt:
@@ -148,10 +150,26 @@ components:
                 type: string
         linkReq:
           x-clearflask-prop: { order: 9, name: 'Link required', description: 'Description description description.', placeholder: 'Placeholder' }
+          x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
           type: string
         linkOpt:
           x-clearflask-prop: { order: 9, name: 'Link optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
           type: string
+        linkMultiReq:
+          x-clearflask-prop: { order: 9, name: 'LinkMulti required', description: 'Description description description.', placeholder: 'Placeholder' }
+          x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
+          type: array
+          minItems: 2
+          maxItems: 4
+          items:
+            type: string
+        linkMultiOpt:
+          x-clearflask-prop: { order: 9, name: 'LinkMulti optional', description: 'Description description description.', placeholder: 'Placeholder' }
+          x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
+          type: array
+          items:
+            type: string
         objectReq:
           x-clearflask-prop: { order: 10, name: 'Object required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: object
@@ -271,6 +289,7 @@ components:
               - arrayOfStringReq
               - arrayOfObjectReq
               - linkReq
+              - linkMultiReq
               - objectReq
               - objectNestedReq
             properties:
@@ -377,7 +396,10 @@ components:
                       x-clearflask-prop: { order: 1, name: 'string', description: 'Description description description.', placeholder: 'Placeholder' }
                       type: string
                     string2:
-                      x-clearflask-prop: { order: 1, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                      x-clearflask-prop: { order: 3, name: 'string2', description: 'Description description description.', placeholder: 'Placeholder' }
+                      type: string
+                    color:
+                      x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
                       type: string
               arrayOfObjectOpt:
                 x-clearflask-prop: { order: 8, name: 'ArrayOfObject optional', description: 'Description description description.', placeholder: 'Placeholder' }
@@ -397,10 +419,24 @@ components:
                       type: string
               linkReq:
                 x-clearflask-prop: { order: 9, name: 'Link required', description: 'Description description description.', placeholder: 'Placeholder' }
+                x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
                 type: string
               linkOpt:
                 x-clearflask-prop: { order: 9, name: 'Link optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
                 type: string
+              linkMultiReq:
+                x-clearflask-prop: { order: 9, name: 'LinkMulti required', description: 'Description description description.', placeholder: 'Placeholder' }
+                x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
+                type: array
+                items:
+                  type: string
+              linkMultiOpt:
+                x-clearflask-prop: { order: 9, name: 'LinkMulti optional', description: 'Description description description.', placeholder: 'Placeholder' }
+                x-clearflask-prop-link: { idPropName: 'id', linkPath: ['test', 'arrayOfObjectReq'], displayPropName: 'name', colorPropName: 'color'}
+                type: array
+                items:
+                  type: string
               objectReq:
                 x-clearflask-prop: { order: 10, name: 'Object required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: object
