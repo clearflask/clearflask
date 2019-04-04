@@ -71,9 +71,11 @@ export interface xCfPropLink {
   /** If set, links to this prop name. Otherwise links to the array index */
   idPropName:string;
   /** If set, displays the prop value as the name */
-  displayPropName?:string;
+  displayPropName:string;
   /** If set, use this color from the prop value */
   colorPropName?:string;
+  /** If set, cannot create a new item in place */
+  disallowCreate?:boolean;
 }
 
 /**
@@ -121,7 +123,7 @@ export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
   minItems?:number;
   maxItems?:number;
   getChildPages():Page[];
-  insert(index?:number):void;
+  insert(index?:number):Page;
   delete(index:number):void;
   cachedChildPages?:Page[]; // Internal use only
 }
@@ -161,6 +163,8 @@ export interface StringProperty extends PropertyBase<string> {
 
 export interface LinkProperty extends PropertyBase<string|undefined>, xCfPropLink {
   type:PropertyType.Link;
+  allowCreate:boolean;
+  create(name:string):void;
   getOptions():LinkPropertyOption[];
   cachedOptions?:LinkPropertyOption[] // Internal use only
 }
@@ -208,7 +212,7 @@ export interface ArrayProperty extends PropertyBase<true|undefined> {
   maxItems?:number;
   childType:PropertyType;
   childProperties?:Property[];
-  insert(index?:number):void;
+  insert(index?:number):Property;
   delete(index:number):void;
 }
 
@@ -216,6 +220,8 @@ export interface LinkMultiProperty extends PropertyBase<Set<string>|undefined>, 
   type:PropertyType.LinkMulti;
   minItems?:number;
   maxItems?:number;
+  allowCreate:boolean;
+  create(name:string):void;
   insert(linkId:string):void;
   delete(linkId:string):void;
   getOptions():LinkPropertyOption[];
@@ -517,8 +523,7 @@ export class EditorImpl implements Editor {
           return;
         }
         const childPropName = childProp.path[childProp.path.length - 1];
-        if(linkProp.displayPropName !== undefined
-          && childPropName === linkProp.displayPropName) {
+        if(childPropName === linkProp.displayPropName) {
           name = childProp.value;
           subscribe(childProp);
         }
@@ -526,14 +531,12 @@ export class EditorImpl implements Editor {
           && childPropName === linkProp.idPropName) {
           id = childProp.value;
           subscribe(childProp);
-          return;
         }
         if(linkProp.colorPropName !== undefined
           && childProp.subType === PropSubType.Color
           && childPropName === linkProp.colorPropName) {
           color = childProp.value;
           subscribe(childProp);
-          return;
         }
       });
       if(id === undefined) {
@@ -728,7 +731,7 @@ export class EditorImpl implements Editor {
       minItems: pageGroupSchema.minItems,
       maxItems: pageGroupSchema.maxItems,
       getChildPages: getPages,
-      insert: (index?:number):void => {
+      insert: (index?:number):Page => {
         const arr = this.getOrDefaultValue(path, []);
         if(index !== undefined) {
           arr.splice(index, 0, undefined);
@@ -737,13 +740,14 @@ export class EditorImpl implements Editor {
           arr.push({});
         }
         pageGroup.cachedChildPages = fetchChildPages()
-        pageGroup.cachedChildPages[
+        const newPage = pageGroup.cachedChildPages[
           index !== undefined
             ? index
-            : pageGroup.cachedChildPages.length - 1]
-              .setDefault();
+            : pageGroup.cachedChildPages.length - 1];
+        newPage.setDefault();
         pageGroup.value = true;
         this.notify(localSubscribers);
+        return newPage;
       },
       delete: (index:number):void => {
         const arr = this.getValue(path);
@@ -865,7 +869,9 @@ export class EditorImpl implements Editor {
         } else if(propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
           const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
-          this.get(targetPath).subscribe(() => {
+          const target = this.get(targetPath);
+          if(target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
+          target.subscribe(() => {
             const linkProperty = property as LinkProperty;
             linkProperty.cachedOptions = undefined;
             linkProperty.errorMsg = linkProperty.validateValue(linkProperty.value)
@@ -877,6 +883,33 @@ export class EditorImpl implements Editor {
             ...base,
             type: PropertyType.Link,
             value: value,
+            allowCreate: !xPropLink.disallowCreate,
+            set: (val:string|undefined):void => {
+              (property as LinkProperty).cachedOptions = undefined;
+              setFun(val);
+            },
+            create: (name:string):void => {
+              const newItem:Page|Property = target.insert();
+              var newItemProps;
+              if(newItem.type === PageType) {
+                newItemProps = newItem.getChildren().props;
+              } else if(newItem.type === PropertyType.Object){
+                newItemProps = newItem.childProperties || []
+              } else {
+                throw Error(`Link property ${path} pointing to array of non-objects on path ${targetPath}`);
+              }
+              const displayProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.displayPropName);
+              if(displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
+              if(displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
+              displayProp.set(name);
+
+              const idProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.idPropName);
+              if(idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
+              if(idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
+              if(idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
+
+              property.set(idProp.value as never);
+            },
             getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
             validateValue: (val:string|undefined):string|undefined => {
               if(val === undefined) return validateRequiredFun(val);
@@ -946,7 +979,9 @@ export class EditorImpl implements Editor {
           }
           const xPropLink = propSchema[OpenApiTags.PropLink];
           const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
-          this.get(targetPath).subscribe(() => {
+          const target = this.get(targetPath);
+          if(target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
+          target.subscribe(() => {
             const linkMultiProperty = property as LinkMultiProperty;
             linkMultiProperty.cachedOptions = undefined;
             linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value)
@@ -958,20 +993,45 @@ export class EditorImpl implements Editor {
             ...base,
             type: PropertyType.LinkMulti,
             value: value === undefined ? undefined : new Set<string>(value),
+            allowCreate: !xPropLink.disallowCreate,
             minItems: propSchema.minItems,
             maxItems: propSchema.maxItems,
             set: (val:Set<string>) => {
               const linkMultiProperty = property as LinkMultiProperty;
               linkMultiProperty.value = new Set<string>(val);
               this.setValue(path, [...linkMultiProperty.value]);
+              (property as LinkMultiProperty).cachedOptions = undefined;
               linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
+            },
+            create: (name:string):void => {
+              const newItem:Page|Property = target.insert();
+              var newItemProps;
+              if(newItem.type === PageType) {
+                newItemProps = newItem.getChildren().props;
+              } else if(newItem.type === PropertyType.Object){
+                newItemProps = newItem.childProperties || []
+              } else {
+                throw Error(`Link property ${path} pointing to array of non-objects on path ${targetPath}`);
+              }
+              const displayProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.displayPropName);
+              if(displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
+              if(displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
+              displayProp.set(name);
+
+              const idProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.idPropName);
+              if(idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
+              if(idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
+              if(idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
+
+              (property as LinkMultiProperty).insert(idProp.value);
             },
             insert: (linkId:string):void => {
               const linkMultiProperty = property as LinkMultiProperty;
               if(linkMultiProperty.value === undefined) linkMultiProperty.value = new Set<string>();
               linkMultiProperty.value.add(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
+              (property as LinkMultiProperty).cachedOptions = undefined;
               linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
@@ -980,6 +1040,7 @@ export class EditorImpl implements Editor {
               if(linkMultiProperty.value === undefined) return;
               linkMultiProperty.value.delete(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
+              (property as LinkMultiProperty).cachedOptions = undefined;
               linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
@@ -1039,7 +1100,7 @@ export class EditorImpl implements Editor {
             const arrayProperty = property as ArrayProperty;
             arrayProperty.set(arrayProperty.defaultValue);
           },
-          insert: (index?:number):void => {
+          insert: (index?:number):Property => {
             const arr = this.getOrDefaultValue(path, []);
             if(index !== undefined) {
               arr.splice(index, 0, undefined);
@@ -1050,14 +1111,15 @@ export class EditorImpl implements Editor {
             const newChildProperties = fetchChildPropertiesArray();
             const arrayProperty:ArrayProperty = (property as ArrayProperty);
             arrayProperty.childProperties = newChildProperties;
-            arrayProperty.childProperties![
+            const newProperty = arrayProperty.childProperties![
               index !== undefined
                 ? index
-                : arrayProperty.childProperties!.length - 1]
-                  .setDefault();
+                : arrayProperty.childProperties!.length - 1];
+            newProperty.setDefault();
             property.value = true;
             arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
+            return newProperty;
           },
           delete: (index:number):void => {
             if(!property.value) return;

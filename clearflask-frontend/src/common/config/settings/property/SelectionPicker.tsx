@@ -3,6 +3,7 @@ import * as ConfigEditor from '../../configEditor';
 import { ListProps } from '@material-ui/core/List';
 import classNames from 'classnames';
 import Select from 'react-select';
+import CreatableSelect from 'react-select/lib/Creatable';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import { emphasize } from '@material-ui/core/styles/colorManipulator';
@@ -13,6 +14,12 @@ import CancelIcon from '@material-ui/icons/Cancel';
 import { ActionMeta } from 'react-select/lib/types';
 import { FormHelperText } from '@material-ui/core';
 import Property from '../Property';
+
+/** Label type used by react-select */
+interface Label {
+  label: string;
+  value: string;
+}
 
 interface Props extends ListProps {
   prop:ConfigEditor.LinkProperty|ConfigEditor.LinkMultiProperty;
@@ -35,42 +42,47 @@ export default class SelectionPicker extends Component<Props> {
 
   render() {
     const prop = this.props.prop;
+    const selectComponentProps = {
+      textFieldProps: {
+        label: !this.props.bare && prop.name,
+        InputLabelProps: {
+          shrink: (prop.value !== undefined && prop.value['size'] !== 0) ? true : undefined,
+        },
+        error: !!prop.errorMsg,
+      },
+      options: this.mapOptionToLabel(prop.getOptions()),
+      components: {
+        Control,
+        Menu,
+        MultiValue,
+        NoOptionsMessage,
+        Option,
+        Placeholder,
+        SingleValue,
+        ValueContainer,
+      },
+      value: this.mapOptionToLabel(this.getValueOptions()),
+      onChange: this.onChange.bind(this),
+      placeholder: '',
+      isMulti: prop.type === ConfigEditor.PropertyType.LinkMulti,
+      isClearable: true,
+      error: !!prop.errorMsg,
+      onCreateOption: prop.allowCreate ? this.onCreate.bind(this) : undefined,
+    };
     return (
       <div>
-        <Select<ConfigEditor.LinkPropertyOption>
-          getOptionLabel={(o:ConfigEditor.LinkPropertyOption) => o.name}
-          getOptionValue={(o:ConfigEditor.LinkPropertyOption) => o.id}
-          textFieldProps={{
-            label: !this.props.bare && prop.name,
-            InputLabelProps: {
-              shrink: (prop.value !== undefined && prop.value['size'] !== 0) ? true : undefined,
-            },
-            error: !!prop.errorMsg,
-          }}
-          options={prop.getOptions()}
-          components={{
-            Control,
-            Menu,
-            MultiValue,
-            NoOptionsMessage,
-            Option,
-            Placeholder,
-            SingleValue,
-            ValueContainer,
-          }}
-          value={this.getValueOptions()}
-          onChange={this.onChange.bind(this)}
-          placeholder={''}
-          // placeholder={this.props.prop.placeholder}
-          isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
-          isClearable
-          error={!!prop.errorMsg}
-        />
+        {prop.allowCreate
+          ? (<CreatableSelect<Label> {...selectComponentProps} />)
+          : (<Select<Label> {...selectComponentProps} />)}
         {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
       </div>
     );
   }
-  
+
+  mapOptionToLabel(options:ConfigEditor.LinkPropertyOption[]):Label[] {
+    return options.map(o => {return {label: o.name, value: o.id}});
+  }
+
   getValueOptions():ConfigEditor.LinkPropertyOption[] {
     if(this.props.prop.value === undefined) {
       return [];
@@ -85,14 +97,18 @@ export default class SelectionPicker extends Component<Props> {
     }
   }
 
+  onCreate(inputValue:string):void {
+    this.props.prop.create(inputValue);
+  }
+
   onChange(value, action) {
     console.log('debugdebug', JSON.stringify(value), JSON.stringify(action));
     if(this.props.prop.type === ConfigEditor.PropertyType.LinkMulti) {
-      const optionValues = (value as ConfigEditor.LinkPropertyOption[]);
-      this.props.prop.set(new Set<string>(optionValues.map(o => o.id)));
+      const optionValues = (value as Label[]);
+      this.props.prop.set(new Set<string>(optionValues.map(o => o.value)));
     } else {
-      const optionValue = (value as ConfigEditor.LinkPropertyOption|null);
-      this.props.prop.set(optionValue === null ? undefined : optionValue.id);
+      const optionValue = (value as Label|null);
+      this.props.prop.set(optionValue === null ? undefined : optionValue.value);
     }
   }
 }

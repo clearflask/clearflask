@@ -6,7 +6,7 @@ import ColorPicker from 'material-ui-color-picker'
 import SelectionPicker from './property/SelectionPicker';
 
 interface Props {
-  prop:ConfigEditor.Property|ConfigEditor.PageGroup;
+  prop:ConfigEditor.PageGroup|ConfigEditor.Property;
   bare?:boolean;
   width?:string
   pageClicked:(path:ConfigEditor.Path)=>void;

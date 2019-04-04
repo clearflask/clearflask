@@ -46,7 +46,7 @@ class Page extends Component<Props> {
 
     // ### PANELS
     var panelsCmpt:any = [];
-    for(let panel of this.props.pageConf.panels || []) {
+    for(let panel of this.props.pageConf.components.panels || []) {
       panelsCmpt.push(
         <div key={panel.ideaList.searchKey}>
           <Typography variant='overline'>
@@ -60,8 +60,8 @@ class Page extends Component<Props> {
 
     // ### BOARD
     var boardCmpt;
-    if(this.props.pageConf.board) {
-      const board = this.props.pageConf.board;
+    if(this.props.pageConf.components.board) {
+      const board = this.props.pageConf.components.board;
       var panels:any = [];
       for(let panel of board.panels) {
         panels.push(
@@ -90,8 +90,8 @@ class Page extends Component<Props> {
 
     // ### EXPLORER
     var explorerCmpt;
-    if(this.props.pageConf.explorer) {
-      const explorer = this.props.pageConf.explorer;
+    if(this.props.pageConf.components.explorer) {
+      const explorer = this.props.pageConf.components.explorer;
       explorerCmpt = (
         <div>
           <Typography variant='overline'>
@@ -124,9 +124,9 @@ export default connect<any,any,any,any>((state:State, ownProps:Props) => {
   }
 
   const searchQueries:Client.IdeaSearch[] = [
-    ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.ideaList) || []),
-    ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.ideaList) || []),
-    ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.ideaList] || []),
+    ...(ownProps.pageConf.components.panels && ownProps.pageConf.components.panels.map(p => p.ideaList) || []),
+    ...(ownProps.pageConf.components.board && ownProps.pageConf.components.board.panels.map(p => p.ideaList) || []),
+    ...(ownProps.pageConf.components.explorer && [ownProps.pageConf.components.explorer.ideaList] || []),
   ];
 
   for(let searchQuery of searchQueries) {

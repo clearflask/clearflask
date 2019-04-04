@@ -6,9 +6,9 @@ components:
       description: Config properties visible both to client app and admins.
       type: object
       properties:
-        test:
-          # TODO remove test page
-          $ref: 'api-test.yaml#/components/schemas/ConfigTest'
+        # TODO remove test page
+        # test:
+        #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         name:
           x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
           type: string
@@ -26,29 +26,34 @@ components:
             type: object
             properties:
               name:
-                x-clearflask-prop: { name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests' }
+                x-clearflask-prop: { order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests' }
                 type: string
               slug:
-                x-clearflask-prop: { name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
+                x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
                 type: string
               title:
-                x-clearflask-prop: { name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
+                x-clearflask-prop: { order: 3, name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
                 type: string
               description:
-                x-clearflask-prop: { name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
+                x-clearflask-prop: { order: 4, name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
-              panels:
-                x-clearflask-page-group: { name: 'Panels', nameFromProp: 'title', tablePropertyNames:['title'] }
-                type: array
-                items:
-                  $ref: 'api-project.yaml#/components/schemas/PagePanel'
-              board:
-                $ref: 'api-project.yaml#/components/schemas/PageBoard'
-              explorer:
-                $ref: 'api-project.yaml#/components/schemas/PageExplorer'
+              components:
+                x-clearflask-prop: { order: 5, name: 'UI Components', description: 'Various components you can add onto your page' }
+                type: object
+                properties:
+                  panels:
+                    x-clearflask-prop: { name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas.' }
+                    type: array
+                    items:
+                      $ref: 'api-project.yaml#/components/schemas/PagePanel'
+                  board:
+                    $ref: 'api-project.yaml#/components/schemas/PageBoard'
+                  explorer:
+                    $ref: 'api-project.yaml#/components/schemas/PageExplorer'
             required:
               - name
               - slug
+              - components
         creditFormatter:
           x-clearflask-page: { order: 2, name: 'Credits' }
           title: CreditFormatter
@@ -131,7 +136,7 @@ components:
                       type: object
                       properties:
                         nextStatusId:
-                          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
+                          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                           type: string
                         transitionText:
                           type: string
@@ -233,7 +238,7 @@ components:
         # TODO Credit income
         # TODO Trusted public keys
     PageBoard:
-      x-clearflask-page: { name: 'Board' }
+      x-clearflask-prop: { order: 2, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object
       properties:
         title:
@@ -245,7 +250,7 @@ components:
       required:
         - panels
     PagePanel:
-      x-clearflask-page: { name: 'Panel' }
+      x-clearflask-prop: { name: 'Panel' }
       type: object
       properties:
         title:
@@ -263,7 +268,7 @@ components:
       required:
         - ideaList
     PageExplorer:
-      x-clearflask-page: { name: 'Explorer' }
+      x-clearflask-prop: { order: 3, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
       properties:
         title:
@@ -289,7 +294,7 @@ components:
       properties:
         defaultStatusId:
           x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], showPropNames: ['name']}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
           type: string
         defaultIdeaTagIds:
           x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }

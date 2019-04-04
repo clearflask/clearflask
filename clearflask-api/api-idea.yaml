@@ -2,28 +2,37 @@
 components:
   schemas:
     IdeaSearch:
+      x-clearflask-prop: { name: 'Filter', description: 'Custom filter to limit the ideas shown to the user' }
       type: object
       properties:
         searchKey:
+          x-clearflask-prop: { name: 'Search text', description: 'Text to use for searching idea title, description and other information' }
           type: string
           description: >-
             Unique key describing this specific search query.
             Used for deduping requests, caching.
         sortBy:
+          x-clearflask-prop: { name: 'Sort', description: 'Display ideas sorted' }
           type: string
           enum: 
             - Trending
             - Top
             - New
         filterIdeaGroupIds:
+          x-clearflask-prop: { name: 'Group', description: 'Display only ideas from these groups' }
+          x-clearflask-prop-link: { idPropName: 'groupId', linkPath: ['ideaSettings', 'groups'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
         filterIdeaStatusIds:
+          x-clearflask-prop: { name: 'Status', description: 'Display only ideas having these statuses' }
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
         filterIdeaTagIds:
+          x-clearflask-prop: { name: 'Tag', description: 'Display only ideas having these tags' }
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['ideaSettings', 'tags'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
