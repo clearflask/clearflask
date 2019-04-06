@@ -45,7 +45,6 @@ class App extends Component<Props, State> {
 
     return (
       <Provider store={this.server.getStore()}>
-      <MuiThemeProvider theme={createMuiTheme(/** TODO this.state.conf && this.state.conf.theme */)}>
         <Header
           server={this.server}
           conf={this.state.config}
@@ -58,7 +57,6 @@ class App extends Component<Props, State> {
           pageConf={page}
           pageChanged={this.pageChanged.bind(this)}
         />
-      </MuiThemeProvider>
       </Provider>
     );
   }

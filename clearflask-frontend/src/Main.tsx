@@ -8,25 +8,34 @@ import {
 import App from './app/App';
 import Site from './site/Site';
 import CssBaseline from '@material-ui/core/CssBaseline';
+import { MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
 import Admin from './site/Admin';
+
+const theme:Theme = createMuiTheme({
+  palette: {
+    type: 'dark',
+  },
+});
 
 class Main extends Component {
   render() {
     return (
-      <Router>
+      <MuiThemeProvider theme={theme}>
         <CssBaseline />
-        <Switch>
-          <Route path="/" exact render={props => (
-            <Site {...props} />
-          )} />
-          <Route path="/admin" render={props => (
-            <Admin {...props} />
-          )} />
-          <Route path="/:projectId/:pageUrlName?" render={props => (
-            <App {...props} />
-          )} />
-        </Switch>
-      </Router>
+        <Router>
+          <Switch>
+            <Route path="/" exact render={props => (
+              <Site {...props} />
+            )} />
+            <Route path="/admin/:path*" render={props => (
+              <Admin {...props} />
+            )} />
+            <Route path="/:projectId/:pageUrlName?" render={props => (
+              <App {...props} />
+            )} />
+          </Switch>
+        </Router>
+      </MuiThemeProvider>
     );
   }
 }

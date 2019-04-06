@@ -102,7 +102,6 @@ export default class SelectionPicker extends Component<Props> {
   }
 
   onChange(value, action) {
-    console.log('debugdebug', JSON.stringify(value), JSON.stringify(action));
     if(this.props.prop.type === ConfigEditor.PropertyType.LinkMulti) {
       const optionValues = (value as Label[]);
       this.props.prop.set(new Set<string>(optionValues.map(o => o.value)));

@@ -27,7 +27,7 @@ export default class Menu extends Component<Props> {
     const expanded = this.isExpanded(this.props.page.path);
     return (
       <List component='nav' style={{padding: '0px'}}>
-        <ListItem button onClick={() => {
+        <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
           this.props.pageClicked(this.props.page.path);
         }}>
           <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
@@ -46,6 +46,18 @@ export default class Menu extends Component<Props> {
 
   isExpanded(path:ConfigEditor.Path):boolean {
     if(this.props.activePath.length < path.length) {
+      return false;
+    }
+    for (let i = 0; i < path.length; i++) {
+      if(path[i] !== this.props.activePath[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  isSelected(path:ConfigEditor.Path) {
+    if(this.props.activePath.length !== path.length) {
       return false;
     }
     for (let i = 0; i < path.length; i++) {
