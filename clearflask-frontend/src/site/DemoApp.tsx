@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import Settings from '../common/config/settings/Settings';
+import Admin from './Admin';
 import * as ConfigEditor from '../common/config/configEditor';
 import App from '../app/App';
 import {

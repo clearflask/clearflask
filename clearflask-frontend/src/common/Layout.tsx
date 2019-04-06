@@ -6,16 +6,24 @@ import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
 import { withStyles, StyledComponentProps } from '@material-ui/core/styles';
 
-const drawerWidth = 140;
 const styles = theme => ({
   root: {
     display: 'flex',
   },
   drawer: {
     [theme.breakpoints.up('sm')]: {
-      width: drawerWidth,
+      width: '140px',
       flexShrink: 0,
     },
+  },
+  drawerPaper: {
+    width: '140px',
+  },
+  previewPaper: {
+    width: '50%',
+  },
+  previewMobilePaper: {
+    width: '100%',
   },
   appBar: {
     zIndex: theme.zIndex.modal + 1,
@@ -27,15 +35,11 @@ const styles = theme => ({
     },
   },
   previewButton: {
-    marginRight: 20,
     [theme.breakpoints.up('md')]: {
       display: 'none',
     },
   },
   toolbar: theme.mixins.toolbar,
-  drawerPaper: {
-    width: drawerWidth,
-  },
   content: {
     flexGrow: 1,
     padding: theme.spacing.unit * 3,
@@ -75,14 +79,6 @@ class Layout extends Component<Props, State> {
   render() {
     const { classes, theme } = this.props;
 
-    const drawer = (
-      <div>
-        <div className={classes.toolbar} />
-        <Divider />
-        {this.props.menu}
-      </div>
-    );
-
     return (
       <div className={classes.root}>
         <AppBar elevation={0} color='default' position="fixed" className={classes.appBar}>
@@ -95,14 +91,12 @@ class Layout extends Component<Props, State> {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" color="inherit" noWrap>
-              {this.props.topbar} 
-            </Typography>
+            {this.props.toolbarLeft} 
             <div className={classes.grow} />
             {this.props.preview && (
               <IconButton
                 color="inherit"
-                aria-label="Open drawer"
+                aria-label="Preview changes"
                 onClick={this.handlePreviewToggle.bind(this)}
                 className={classes.previewButton}
               >
@@ -113,20 +107,21 @@ class Layout extends Component<Props, State> {
           <Divider /> 
         </AppBar>
         <nav className={classes.drawer}>
-          <Hidden smUp implementation="js">
+          <Hidden smUp implementation='css'>
             <Drawer
               variant="temporary"
-              anchor={theme.direction === 'rtl' ? 'right' : 'left'}
               open={this.state.mobileMenuOpen}
               onClose={this.handleDrawerToggle.bind(this)}
               classes={{
                 paper: classes.drawerPaper,
               }}
             >
-              {drawer}
+              <div className={classes.toolbar} />
+              <Divider />
+              {this.props.menu}
             </Drawer>
           </Hidden>
-          <Hidden xsDown implementation="js">
+          <Hidden xsDown implementation='css'>
             <Drawer
               classes={{
                 paper: classes.drawerPaper,
@@ -134,7 +129,9 @@ class Layout extends Component<Props, State> {
               variant="permanent"
               open
             >
-              {drawer}
+              <div className={classes.toolbar} />
+              <Divider />
+              {this.props.menu}
             </Drawer>
           </Hidden>
         </nav>
@@ -142,6 +139,39 @@ class Layout extends Component<Props, State> {
           <div className={classes.toolbar} />
           {this.props.children}
         </main>
+        {this.props.preview && (
+          <div>
+            <Hidden mdUp implementation='css'>
+              <Drawer
+                variant="temporary"
+                anchor='right'
+                open={this.state.mobilePreviewOpen}
+                onClose={this.handleDrawerToggle.bind(this)}
+                classes={{
+                  paper: classes.previewMobilePaper,
+                }}
+              >
+                <div className={classes.toolbar} />
+                <Divider />
+                {this.props.preview}
+              </Drawer>
+            </Hidden>
+            <Hidden smDown implementation='css'>
+              <Drawer
+                classes={{
+                  paper: classes.previewPaper,
+                }}
+                anchor='right'
+                variant="permanent"
+                open
+              >
+                <div className={classes.toolbar} />
+                <Divider />
+                {this.props.preview}
+              </Drawer>
+            </Hidden>
+          </div>
+        )}
       </div>
     );
   }
