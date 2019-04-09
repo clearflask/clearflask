@@ -2,20 +2,109 @@
 components:
   schemas:
     Config:
-      x-clearflask-page: { name: 'Project', menuDefaultExpanded: true }
+      x-clearflask-page: { name: 'Project' }
       description: Config properties visible both to client app and admins.
       type: object
       properties:
         # TODO remove test page
         # test:
         #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
+        website:
+          x-clearflask-prop: { order: 1, name: 'Website', description: 'Your external website', placeholder: 'https://' }
+          type: string
         name:
-          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
+          x-clearflask-prop: { order: 2, name: 'Name', description: 'Project name visible on your page' }
           type: string
         logoUrl:
-          x-clearflask-prop: { order: 2, name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
+          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
+        credits:
+          $ref: 'api-project.yaml#/components/schemas/credits'
+        expression:
+          $ref: 'api-project.yaml#/components/schemas/expression'
+        layout:
+          $ref: 'api-project.yaml#/components/schemas/layout'
+        grouping:
+          $ref: 'api-project.yaml#/components/schemas/grouping'
+        tagging:
+          $ref: 'api-project.yaml#/components/schemas/tagging'
+        workflow:
+          $ref: 'api-project.yaml#/components/schemas/workflow'
+        style:
+          $ref: 'api-project.yaml#/components/schemas/style'
+      required:
+        - test
+        - name
+        - credits
+        - expression
+        - layout
+        - grouping
+        - tagging
+        - workflow
+        - style
+    credits:
+      x-clearflask-page: { order: 3, name: 'Credits' }
+      title: CreditFormatter
+      description: >-
+        Defines a format for credit.
+        Entries are evaluated in order. Each entry
+        matching greaterThan and lessThan value that
+        matches the current value will be concatenated
+        with the given separator.
+      type: object
+      properties:
+        formats:
+          x-clearflask-prop: { name: 'Formats', description: 'Formats to apply' }
+          type: array
+          items:
+            title: CreditFormatterEntry
+            type: object
+            properties:
+              greaterThan:
+                x-clearflask-prop: { name: 'Greater than', description: 'Applies this format only if credit value is greater than', placeholder: '0' }
+                type: number
+              lessThan:
+                x-clearflask-prop: { name: 'Less than', description: 'Applies this format only if credit value is less than', placeholder: '100' }
+                type: number
+              multiplier:
+                x-clearflask-prop: { name: 'Multiplier', description: 'Multiply value before displaying', placeholder: '0.01' }
+                type: number
+              insignificant:
+                x-clearflask-prop: { name: 'Insignificant digits', description: 'Minimum amount of digits to display regardless of value', placeholder: '2' }
+                type: integer
+              significant:
+                x-clearflask-prop: { name: 'Significant digits', description: 'Maximum amount of digits to display regardless of value', placeholder: '0' }
+                type: integer
+              prefix:
+                x-clearflask-prop: { name: 'Prefix', description: 'Text to prepend before the value', placeholder: '$' }
+                type: string
+              suffix:
+                x-clearflask-prop: { name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
+                type: string
+    style:
+      x-clearflask-page: { order: 7, name: 'Style' }
+      title: Style
+      type: object
+      required:
+      properties:
+        placeholderProperty:
+          type: string
+    expression:
+      x-clearflask-page: { order: 4, name: 'Expression' }
+      title: Expression
+      type: object
+      required:
+      properties:
+        placeholderProperty:
+          type: string
+    layout:
+      x-clearflask-page: { order: 1, name: 'Layout' }
+      title: Layout
+      type: object
+      required:
+        - pages
+      properties:
         pages:
           x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'] }
           type: array
@@ -26,7 +115,7 @@ components:
             type: object
             properties:
               name:
-                x-clearflask-prop: { order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests' }
+                x-clearflask-prop: { defaultValue: 'Page<>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:['layout','pages','<>', 'slug'] }
                 type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
@@ -54,177 +143,140 @@ components:
               - name
               - slug
               - components
-        creditFormatter:
-          x-clearflask-page: { order: 2, name: 'Credits' }
-          title: CreditFormatter
-          description: >-
-            Defines a format for credit.
-            Entries are evaluated in order. Each entry
-            matching greaterThan and lessThan value that
-            matches the current value will be concatenated
-            with the given separator.
-          type: object
-          properties:
-            formats:
-              x-clearflask-prop: { name: 'Formats', description: 'Formats to apply' }
-              type: array
-              items:
-                title: CreditFormatterEntry
-                type: object
-                properties:
-                  greaterThan:
-                    x-clearflask-prop: { name: 'Greater than', description: 'Applies this format only if credit value is greater than', placeholder: '0' }
-                    type: number
-                  lessThan:
-                    x-clearflask-prop: { name: 'Less than', description: 'Applies this format only if credit value is less than', placeholder: '100' }
-                    type: number
-                  multiplier:
-                    x-clearflask-prop: { name: 'Multiplier', description: 'Multiply value before displaying', placeholder: '0.01' }
-                    type: number
-                  insignificant:
-                    x-clearflask-prop: { name: 'Insignificant digits', description: 'Minimum amount of digits to display regardless of value', placeholder: '2' }
-                    type: integer
-                  significant:
-                    x-clearflask-prop: { name: 'Significant digits', description: 'Maximum amount of digits to display regardless of value', placeholder: '0' }
-                    type: integer
-                  prefix:
-                    x-clearflask-prop: { name: 'Prefix', description: 'Text to prepend before the value', placeholder: '$' }
-                    type: string
-                  suffix:
-                    x-clearflask-prop: { name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
-                    type: string
-        voteSettingsParent:
-          $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
-        ideaSettings:
-          $ref: 'api-project.yaml#/components/schemas/ideaSettings'
+    workflow:
+      x-clearflask-page: { order: 5, name: 'Workflow' }
+      title: Workflow
+      type: object
       required:
-        - test
-        - name
-        - pages
-        - creditFormatter
-        - ideaSettingsParent
-        - ideaSettings
-        - voteSettingsParent
-        - ideaGroups
-        - ideaStatuses
-        - supportType
-    ideaSettings:
-      allOf:
-        - $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
-        - x-clearflask-page: { order: 1, name: 'Ideas', menuDefaultExpanded: true }
-          title: IdeaSettings
-          type: object
-          properties:
-            statuses:
-              x-clearflask-page-group: { order: 1, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color'] }
-              type: array
-              items:
-                x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
-                title: IdeaStatus
-                type: object
-                properties:
-                  statusId:
-                    x-clearflask-prop: { subType: 'id' }
-                    type: string
-                  name:
-                    x-clearflask-prop: { name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
-                    type: string
-                  nextStatusIds:
-                    type: array
-                    items:
-                      title: NextStatusLink
-                      type: object
-                      properties:
-                        nextStatusId:
-                          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
-                          type: string
-                        transitionText:
-                          type: string
-                      required:
-                        - nextStatusId
-                  color:
-                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
-                    type: string
-                  allowFunding:
-                    x-clearflask-prop: { name: 'Allow Funding', description: 'Overrides parent settings to allow funding during this status' }
-                    type: boolean
-                  allowSupport:
-                    x-clearflask-prop: { name: 'Allow Support', description: 'Overrides parent settings to allow support during this status' }
-                    type: boolean
-                  allowIdeaEdits:
-                    x-clearflask-prop: { name: 'Allow Editing', description: 'Overrides parent settings to allow editing of the idea during this status' }
-                    type: boolean
-                  allowComments:
-                    x-clearflask-prop: { name: 'Allow Comments', description: 'Overrides parent settings to allow commenting during this status' }
-                    type: boolean
-                required:
-                  - statusId
-                  - name
-            tags:
-              x-clearflask-page-group: { order: 3, name: 'Tags', tablePropertyNames:['name', 'color'] }
-              type: array
-              items:
-                x-clearflask-page: { name: 'Tag', nameFromProp: 'name' }
-                title: IdeaTag
-                type: object
-                properties:
-                  tagId:
-                    type: string
-                  name:
-                    type: string
-                  color:
-                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
-                    type: string
-                required:
-                  - tagId
-                  - name
-            groups:
-              x-clearflask-page-group: { order: 2, name: 'Groups', tablePropertyNames:['name', 'color'] }
-              type: array
-              items:
-                x-clearflask-page: { name: 'Group', nameFromProp: 'name' }
-                title: IdeaGroup
-                type: object
-                properties:
-                  groupId:
-                    type: string
-                  parentIdeaGroupId:
-                    type: string
-                  name:
-                    type: string
-                  color:
-                    x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
-                    type: string
-                  ideaSettingsOverride:
-                    $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
-                  voteSettingsOverride:
-                    $ref: 'api-project.yaml#/components/schemas/VoteSettingsCommon'
-                  defaultIdeaStatusId:
-                    description: >-
-                      Idea status to assign on newly created ideas.
-                      If not set, project level default applies.
-                    type: string
-                  defaultIdeaTagIds:
-                    type: array
-                    items:
+        - statuses
+      properties:
+        statuses:
+          x-clearflask-page-group: { order: 1, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color'] }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
+            title: IdeaStatus
+            type: object
+            properties:
+              statusId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Status<>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
+                type: string
+              nextStatusIds:
+                type: array
+                items:
+                  title: NextStatusLink
+                  type: object
+                  properties:
+                    nextStatusId:
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                       type: string
-                  settableIdeaVisibility:
-                    type: boolean
-                  settableIdeaTagIdsOnCreate:
-                    description: >-
-                      In addition to project level idea tags,
-                      these tags can also be added by user
-                      when creating an idea.
-                    type: array
-                    items:
+                    transitionText:
                       type: string
-                required:
-                  - groupId
-                  - name
-          required:
-            - statuses
-            - tags
-            - groups
+                  required:
+                    - nextStatusId
+              color:
+                x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
+                type: string
+              allowFunding:
+                x-clearflask-prop: { name: 'Allow Funding', description: 'Overrides parent settings to allow funding during this status' }
+                type: boolean
+              allowSupport:
+                x-clearflask-prop: { name: 'Allow Support', description: 'Overrides parent settings to allow support during this status' }
+                type: boolean
+              allowIdeaEdits:
+                x-clearflask-prop: { name: 'Allow Editing', description: 'Overrides parent settings to allow editing of the idea during this status' }
+                type: boolean
+              allowComments:
+                x-clearflask-prop: { name: 'Allow Comments', description: 'Overrides parent settings to allow commenting during this status' }
+                type: boolean
+            required:
+              - statusId
+              - name
+    tagging:
+      x-clearflask-page: { order: 6, name: 'Tagging' }
+      title: Tagging
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          x-clearflask-page-group: { order: 3, name: 'Tags', tablePropertyNames:['name', 'color'] }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Tag', nameFromProp: 'name' }
+            title: IdeaTag
+            type: object
+            properties:
+              tagId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Tag<>', order: 1, name: 'Name', description: 'Tag Name' }
+                type: string
+              color:
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                type: string
+            required:
+              - tagId
+              - name
+    grouping:
+      x-clearflask-page: { order: 2, name: 'Feedback' }
+      title: Feedback
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          x-clearflask-page-group: { order: 2, name: 'Groups', tablePropertyNames:['name', 'color'] }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Group', nameFromProp: 'name' }
+            title: IdeaGroup
+            type: object
+            properties:
+              groupId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Group<>', order: 1, name: 'Name', description: 'Group Name' }
+                type: string
+              parentIdeaGroupId:
+                x-clearflask-prop-link: { idPropName: 'groupId', linkPath: ['grouping', 'groups'], displayPropName: 'name', colorPropName: 'color'}
+                type: string
+              color:
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                type: string
+              ideaSettings:
+                $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
+              allowFunding:
+                x-clearflask-prop: { name: 'Allow Funding', description: 'Allows users to use their credits for posts in this group.' }
+                type: boolean
+              allowSupport:
+                x-clearflask-prop: { name: 'Allow Support', description: 'Allows users to show support for posts in this group.' }
+                type: boolean
+              defaultIdeaStatusId:
+                x-clearflask-prop: { name: 'Allow Comments', description: 'Idea status to assign on newly created ideas' }
+                type: string
+              defaultIdeaTagIds:
+                type: array
+                items:
+                  type: string
+              settableIdeaVisibility:
+                type: boolean
+              settableIdeaTagIdsOnCreate:
+                description: >-
+                  In addition to project level idea tags,
+                  these tags can also be added by user
+                  when creating an idea.
+                type: array
+                items:
+                  type: string
+            required:
+              - groupId
+              - name
     ConfigAdmin:
       description: >-
         All Config properties available for admins.
@@ -278,18 +330,8 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
       required:
         - ideaList
-    VoteSettingsCommon:
-      x-clearflask-page: { order: 2, name: 'Voting', description: 'Can be overriden inside IdeaGroup.' }
-      type: object
-      properties:
-        allowFunding:
-          x-clearflask-prop: { name: 'Allow Funding', description: 'Allows users to use their credits for posts in this group.' }
-          type: boolean
-        allowSupport:
-          x-clearflask-prop: { name: 'Allow Support', description: 'Allows users to show support for posts in this group.' }
-          type: boolean
     IdeaSettingsCommon:
-      x-clearflask-page: { order: 1, name: 'Idea settings', description: 'Idea settings common between project and group levels.' }
+      x-clearflask-page: { order: 1, name: 'Idea settings', descripton: 'Idea settings common between project and group levels.' }
       type: object
       properties:
         defaultStatusId:

@@ -18,45 +18,47 @@ export enum Status {
 export class Server {
   apis: any;
   readonly projectId:string;
-  readonly store:Store;
+  readonly store:Store<ReduxState>;
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Admin.Dispatcher;
 
-  constructor(projectId:string, configEditor?:ConfigEditor.Editor) {
+  constructor(projectId:string, mockServer:boolean = false) {
     this.projectId = projectId;
 
-    this.store = createStore(
-      reducers,
-      Server.initialState(this.projectId),(
-        // Use Redux dev tools in development
-        (isProd()
-          ? compose
-          : (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose)
-      )(applyMiddleware(thunk, reduxPromiseMiddleware)
-    ));
-
-    var apiDelegateClient;
-    var apiDelegateAdmin;
-    if(configEditor) {
-      // In-memory demo
-      this.mockServer = new ServerMock(configEditor);
-      apiDelegateClient = new Client.Api(new Client.Configuration(), this.mockServer);
-      apiDelegateAdmin = new Admin.Api(new Admin.Configuration(), this.mockServer);
+    if(isProd()) {
+      this.store = createStore(
+        reducers,
+        Server.initialState(this.projectId),
+        applyMiddleware(thunk, reduxPromiseMiddleware));
     } else {
-      // Production
-      const conf = {
-        basePath: Client.BASE_PATH.replace(/projectId/, projectId),
-      };
-      apiDelegateClient = new Client.Api(new Client.Configuration(conf));
-      apiDelegateAdmin = new Admin.Api(new Admin.Configuration(conf));
+      const composeEnhancers =
+        typeof window === 'object' &&
+        window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */})
+          : compose;
+      const enhancer = composeEnhancers(
+        applyMiddleware(thunk, reduxPromiseMiddleware),
+      );
+      this.store = createStore(reducers, enhancer);
     }
+
+    if(mockServer) {
+      this.mockServer = new ServerMock();
+    }
+    const apiConf = {
+      basePath: Client.BASE_PATH.replace(/projectId/, projectId),
+    };
+    const apiDelegateClient = new Client.Api(new Client.Configuration(apiConf), this.mockServer);
+    const apiDelegateAdmin = new Admin.Api(new Admin.Configuration(apiConf), this.mockServer);
+
     this.dispatcherClient = new Client.Dispatcher(this._dispatch.bind(this), apiDelegateClient);
     this.dispatcherAdmin = new Admin.Dispatcher(this._dispatch.bind(this), apiDelegateAdmin);
+
   }
 
   static initialState(projectId:string):any {
-    const state:State = {
+    const state:ReduxState = {
       projectId: projectId,
       conf: {},
       ideas: stateIdeasDefault,
@@ -78,7 +80,7 @@ export class Server {
     return this.projectId;
   }
 
-  getStore():Store {
+  getStore():Store<ReduxState> {
     return this.store;
   }
 
@@ -91,8 +93,19 @@ export class Server {
     return this.dispatcherAdmin;
   }
 
-  previewConfig(config:any):void {
-    // TODO Will be used as Settings Preview to overwrite config while using production endpoint
+  /** Override config. Used for config change preview and demos */
+  overrideConfig(config:Admin.Config):void {
+    const msg:Admin.configGetAdminActionFulfilled = {
+      type: Admin.configGetAdminActionStatus.Fulfilled,
+      meta: {
+        action: Admin.Action.configGetAdmin,
+        request: {
+          projectId: this.projectId
+        },
+      },
+      payload: config,
+    };
+    this._dispatch(msg);
   }
 
   mockData():void {
@@ -113,6 +126,8 @@ function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
   switch (action.type) {
     case Client.configGetActionStatus.Pending:
       return { status: Status.PENDING };
+    // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
+    case 'configGetAdmin_FULFILLED' as Client.configGetActionStatus.Fulfilled:
     case Client.configGetActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
@@ -223,13 +238,13 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
   }
 }
 
-export interface State {
+export interface ReduxState {
   projectId:string;
   conf:StateConf;
   ideas:StateIdeas;
 }
 export const reducers = combineReducers({
-  projectId: (state = null) => state,
+  projectId: (state) => ((!state || state.projectId === null) ? { projectId: 'unknown' } : state),
   conf: reducerConf,
   ideas: reducerIdeas,
 });

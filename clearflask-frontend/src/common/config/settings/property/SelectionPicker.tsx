@@ -61,6 +61,7 @@ export default class SelectionPicker extends Component<Props> {
         SingleValue,
         ValueContainer,
       },
+      commonProps: this.props,
       value: this.mapOptionToLabel(this.getValueOptions()),
       onChange: this.onChange.bind(this),
       placeholder: '',
@@ -127,15 +128,17 @@ const inputComponent = ({ inputRef, ...props }) => {
 }
 
 const Control = (props) => {
+  const propsOuter:Props = props.selectProps.commonProps;
   return (
     <TextField
-      fullWidth
       InputProps={{
         inputComponent,
         inputProps: {
           style: {
             display: 'flex',
             padding: 0,
+            minWidth: propsOuter.inputMinWidth,
+            width: propsOuter.width,
           },
           inputRef: props.innerRef,
           children: props.children,

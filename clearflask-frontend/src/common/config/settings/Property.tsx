@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default class Property extends Component<Props> {
-  static inputMinWidth = '150px';
+  static inputMinWidth = '224px';
   readonly colorRef = React.createRef<HTMLDivElement>();
   unsubscribe?:()=>void;
 

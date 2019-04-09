@@ -4,9 +4,9 @@ import { Toolbar, IconButton, Typography, Drawer, Divider, AppBar, Hidden } from
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
-import { withStyles, StyledComponentProps } from '@material-ui/core/styles';
+import { withStyles, StyledComponentProps, Theme } from '@material-ui/core/styles';
 
-const styles = theme => ({
+const styles = (theme:Theme) => ({
   root: {
     display: 'flex',
   },
@@ -20,10 +20,12 @@ const styles = theme => ({
     width: '140px',
   },
   previewPaper: {
-    width: '50%',
+    width: '40%',
+    background: theme.palette.background.default,
   },
   previewMobilePaper: {
     width: '100%',
+    background: theme.palette.background.default,
   },
   appBar: {
     zIndex: theme.zIndex.modal + 1,
@@ -41,8 +43,12 @@ const styles = theme => ({
   },
   toolbar: theme.mixins.toolbar,
   content: {
+    overflow: 'scroll',
     flexGrow: 1,
     padding: theme.spacing.unit * 3,
+    [theme.breakpoints.up('md')]: {
+      marginRight: '40%',
+    },
   },
   grow: {
     flexGrow: 1,
@@ -153,7 +159,9 @@ class Layout extends Component<Props, State> {
               >
                 <div className={classes.toolbar} />
                 <Divider />
-                {this.props.preview}
+                <div>
+                  {this.props.preview}
+                </div>
               </Drawer>
             </Hidden>
             <Hidden smDown implementation='css'>
@@ -167,7 +175,9 @@ class Layout extends Component<Props, State> {
               >
                 <div className={classes.toolbar} />
                 <Divider />
-                {this.props.preview}
+                <div>
+                  {this.props.preview}
+                </div>
               </Drawer>
             </Hidden>
           </div>

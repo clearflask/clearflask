@@ -33,7 +33,7 @@ class Header extends Component<Props> {
       currentTabValue = this.props.page
         ? this.props.page.slug
         : undefined;
-      tabs = this.props.conf.pages.map(p => 
+      tabs = this.props.conf.layout.pages.map(p => 
         (<Tab key={p.slug} disableRipple label={p.name} value={p.slug} />));
     }
 

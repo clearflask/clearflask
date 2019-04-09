@@ -8,6 +8,9 @@ import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
 import { Divider, Typography } from '@material-ui/core';
+import { Server } from '../api/server';
+import * as AdminClient from '../api/admin';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 
 interface Props {
   // Router matching
@@ -21,28 +24,61 @@ interface State {
 }
 
 export default class Admin extends Component<Props, State> {
-  readonly editor:ConfigEditor.Editor = new ConfigEditor.EditorImpl();
-
-  constructor(props) {
+  readonly server:Server;
+  editor:ConfigEditor.Editor|undefined;
+  
+  constructor(props:Props) {
     super(props);
+
     this.state = {currentPagePath: []}
+
+    const projectId = this.props.match.params['projectId'];
+    this.server = new Server(
+      projectId,
+      detectEnv() === Environment.DEVELOPMENT_FRONTEND);
+    if(detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
+      this.server.dispatchAdmin().then(d => d.configGetAdmin({projectId: projectId}).then((conf:AdminClient.ConfigAdmin) => {
+        this.editor = new ConfigEditor.EditorImpl(conf);
+      }));
+    } else {
+      this.editor = new ConfigEditor.EditorImpl();
+      this.server.overrideConfig(this.editor.getConfig());
+    }
   }
 
   render() {
     const activePath = ConfigEditor.parsePath(this.props.match.params['path'], '/');
-    const rootPage = this.editor.getPage([]);
-    var currentPage:ConfigEditor.Page;
-    try {
-      currentPage = this.editor.getPage(activePath);
-    } catch(ex) {
-      return (
-        <Message innerStyle={{margin: '40px auto'}}
-          message='Oops, page failed to load'
-          variant='error'
+    var menu;
+    var page;
+    var preview;
+    if(this.editor) {
+      menu = (
+        <Menu
+          page={this.editor.getPage([])}
+          activePath={activePath}
+          pageClicked={this.pageClicked.bind(this)}
         />
       );
+      try {
+        var currentPage = this.editor.getPage(activePath);
+      } catch(ex) {
+        return (
+          <Message innerStyle={{margin: '40px auto'}}
+            message='Oops, page failed to load'
+            variant='error'
+          />
+        );
+      }
+      page = (
+        <Page
+          page={currentPage}
+          pageClicked={this.pageClicked.bind(this)}
+        />
+      );
+      preview = (
+        <DemoApp editor={this.editor} server={this.server} />
+      );
     }
-
     return (
       <Layout
         toolbarLeft={(
@@ -50,26 +86,15 @@ export default class Admin extends Component<Props, State> {
             Admin
           </Typography>
         )}
-        preview={(
-          <DemoApp editor={this.editor} />
-        )}
-        menu={(
-          <Menu
-            page={rootPage}
-            activePath={activePath}
-            pageClicked={this.pageClicked.bind(this)}
-          />
-        )}
+        preview={preview}
+        menu={menu}
       >
-          <Page
-            page={currentPage}
-            pageClicked={this.pageClicked.bind(this)}
-          />
+        {page}
       </Layout>
     );
   }
 
   pageClicked(path:ConfigEditor.Path):void {
-    this.props.history.push(`/admin/${path.join('/')}`);
+    this.props.history.push(`/admin/${this.server.getProjectId()}/${path.join('/')}`);
   }
 }

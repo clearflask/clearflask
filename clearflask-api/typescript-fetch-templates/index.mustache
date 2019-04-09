@@ -49,7 +49,7 @@ export enum {{nickname}}ActionStatus {
   Rejected = '{{nickname}}_REJECTED',
 }
 export interface {{nickname}}ActionFulfilled {
-  type: {{nickname}}ActionStatus;
+  type: {{nickname}}ActionStatus.Fulfilled;
   meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
   payload: {{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}};
 }
@@ -58,7 +58,7 @@ export interface {{nickname}}ActionPending {
   meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
 }
 export interface {{nickname}}ActionRejected {
-  type: {{nickname}}ActionStatus.Pending;
+  type: {{nickname}}ActionStatus.Rejected;
   meta: { action: Action.{{nickname}}; request: {{#allParams.0}}{{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}; };
   error: true;
   payload: {

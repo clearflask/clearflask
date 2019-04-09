@@ -101,12 +101,14 @@ export default class TableProp extends Component<Props, State> {
           alignItems: 'center',
         }}>
           <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
+        </div></div>
+        <div>
           <IconButton aria-label="Add" onClick={() => {
             this.props.data.insert();
           }}>
             <AddIcon />
           </IconButton>
-        </div></div>
+        </div>
         <Paper style={{display: 'inline-block', marginTop: '15px'}}>
           <Table style ={{width: 'inherit'}}>
             {header.length > 0 && (

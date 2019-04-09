@@ -21,12 +21,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly users:Admin.UserAdmin[] = [];
   readonly votes:Admin.VoteAdmin[] = [];
 
-  readonly editor:ConfigEditor.Editor;
-
-  constructor(editor:ConfigEditor.Editor) {
-    this.editor = editor;
-  }
-
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     throw new Error("Method not implemented.");
   }
@@ -79,7 +73,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   configGet(request: Client.ConfigGetRequest): Promise<Client.Config> {
-    return this.returnLater(this.editor.getConfig());
+    throw new Error('Use config override in Server instead.');
   }
   userCreate(request: Client.UserCreateRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");

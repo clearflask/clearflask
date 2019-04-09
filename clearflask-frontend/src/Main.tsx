@@ -13,7 +13,7 @@ import Admin from './site/Admin';
 
 const theme:Theme = createMuiTheme({
   palette: {
-    type: 'dark',
+    // type: 'dark',
   },
 });
 
@@ -27,7 +27,7 @@ class Main extends Component {
             <Route path="/" exact render={props => (
               <Site {...props} />
             )} />
-            <Route path="/admin/:path*" render={props => (
+            <Route path="/admin/:projectId?/:path*" render={props => (
               <Admin {...props} />
             )} />
             <Route path="/:projectId/:pageUrlName?" render={props => (

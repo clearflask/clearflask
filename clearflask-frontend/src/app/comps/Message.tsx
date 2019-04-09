@@ -61,7 +61,7 @@ class Message extends Component<Props> {
             {this.props.message}
           </span>
         }
-        action={[
+        action={!!this.props.onClose && [
           <IconButton
             key="close"
             aria-label="Close"

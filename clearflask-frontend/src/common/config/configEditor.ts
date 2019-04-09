@@ -1,6 +1,7 @@
 import Schema from '../../api/schema/schema-1.0.0.json';
 import { Config } from '../../api/admin/models/Config.js';
 import randomUuid from '../util/uuid';
+import { ConfigAdmin } from '../../api/admin/index.js';
 
 /**
  * OpenApi vendor properties.
@@ -32,14 +33,12 @@ export interface xCfPage {
   order?:number;
   description?:string;
   defaultValue?:true|undefined;
-  menuDefaultExpanded?:boolean;
 }
 export interface xCfPageGroup {
   name?:string;
   order?:number;
   description?:string;
   defaultValue?:true|undefined;
-  menuDefaultExpanded?:boolean;
   /** Properties to show on main PageGroup page inside table */
   tablePropertyNames:string[] 
 }
@@ -48,10 +47,21 @@ export interface xCfProp {
   order?:number;
   description?:string;
   placeholder?:string;
+  /**
+   * Default value to set on new properties. Use the following for dynamic names:
+   * '<>' replaced with parent path name (used when inside an array)
+   */
   defaultValue?:any;
-  subType?:PropSubType
+  subType?:PropSubType;
   /** EnumProperty only */
-  enumNames?:string[]
+  enumNames?:string[];
+  /**
+   * Will autocomplete slug properties with current value.
+   * '<>' will be replaced by current path entry.
+   * Example: if you set this property to 'Feature Requests',
+   * the supplied path will become something like 'feature-requests'.
+   */
+  slugAutoComplete?:Path;
 }
 export enum PropSubType {
   /**
@@ -278,7 +288,7 @@ export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[
 export interface Editor {
 
   clone():Editor;
-  getConfig():Config;
+  getConfig():ConfigAdmin;
 
   get(path:Path, depth?:ResolveDepth):Page|PageGroup|Property;
   getPage(path:Path, depth?:ResolveDepth):Page;
@@ -292,14 +302,15 @@ export interface Editor {
 }
 
 export class EditorImpl implements Editor {
-  config:Config;
+  config:ConfigAdmin;
   cache:any = {};
   globalSubscribers:{[subscriberId:string]:()=>void} = {};
 
-  constructor(config?:Config) {
-    this.config = config as Config;
-    // TODO initialize empty config
-    if(!this.config) {
+  constructor(config?:ConfigAdmin) {
+    if(config !== undefined) {
+      this.config = config;
+    } else {
+      this.config = {} as ConfigAdmin;
       this.getPage([]).setDefault();
     }
   }
@@ -328,7 +339,7 @@ export class EditorImpl implements Editor {
     Object.values(this.globalSubscribers).forEach(notify => notify());
   }
 
-  getConfig():Config {
+  getConfig():ConfigAdmin {
     return this.config;
   }
 
@@ -927,6 +938,27 @@ export class EditorImpl implements Editor {
           } else {
             defaultValue = isRequired ? '' : undefined;
           }
+          var setDefaultStringFun = setDefaultFun;
+          var setStringFun = setFun;
+          if(base.defaultValue && base.defaultValue.includes('<>')) {
+            setDefaultStringFun = ():void => {
+              setStringFun(base.defaultValue
+                .replace(/\<\>/g, path[path.length - 2]));
+            }
+          }
+          if(xProp && xProp.slugAutoComplete !== undefined) {
+            setStringFun = (val:string|undefined):void => {
+              setFun(val);
+                setTimeout(() => {
+                const slugProp = this.getProperty(xProp.slugAutoComplete!
+                  .map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep));
+                const slugName = val && val
+                  .toLowerCase()
+                  .replace(/[^0-9a-z]+/g,'-')
+                slugProp.set(slugName as never);
+              }, 1);
+            };
+          }
           property = {
             defaultValue: defaultValue,
             ...base,
@@ -936,6 +968,8 @@ export class EditorImpl implements Editor {
             maxLength: propSchema.maxLength,
             validation: propSchema.pattern && new RegExp(propSchema.pattern),
             format: propSchema.format,
+            set: setStringFun,
+            setDefault: setDefaultStringFun,
             validateValue: (val:string|undefined):string|undefined => {
               if(val === undefined) return validateRequiredFun(val);
               const stringProperty = property as StringProperty;

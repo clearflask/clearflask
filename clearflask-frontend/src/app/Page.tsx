@@ -4,10 +4,10 @@ import Loading from './comps/Loading';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { StateIdeas, State, Server } from '../api/server';
+import { StateIdeas, ReduxState as ReduxState, Server } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 
-interface Props extends StateIdeas{
+interface Props extends StateIdeas {
   server:Server;
   conf?:Client.Config;
   pageConf?:Client.Page;
@@ -113,8 +113,8 @@ class Page extends Component<Props> {
   }
 }
 
-export default connect<any,any,any,any>((state:State, ownProps:Props) => {
-  var newProps = {
+export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
+  var newProps:StateIdeas = {
     byId: {},
     bySearch: {},
   };

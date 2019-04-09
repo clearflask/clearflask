@@ -10,23 +10,15 @@ import ConfigView from '../common/config/settings/ConfigView';
 import { Server } from '../api/server';
 
 interface Props {
-  projectId?:string;
-  editor:ConfigEditor.Editor;
+  server:Server;
+  editor:ConfigEditor.Editor|undefined;
 }
 
 export default class DemoApp extends Component<Props> {
-  readonly server:Server;
   unsubscribe?:()=>void;
 
-  constructor(props) {
-    super(props);
-    this.state = {};
-
-    this.server = new Server(props.projectId || 'demo', props.editor);
-  }
-
   componentDidMount() {
-    this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
+    this.unsubscribe = this.props.editor && this.props.editor.subscribe(this.forceUpdate.bind(this));
   }
 
   componentWillUnmount() {
@@ -34,10 +26,13 @@ export default class DemoApp extends Component<Props> {
   }
 
   render() {
+    if(this.unsubscribe === undefined && this.props.editor !== undefined) {
+      this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
+    }
     return (
-      <MemoryRouter initialEntries={[`/${this.server.getProjectId()}`]}>
+      <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}`]}>
         <Route path="/:projectId/:pageUrlName?" render={props => (
-          <App {...props} serverOverride={this.server} />
+          <App {...props} supressConfigGet serverOverride={this.props.server} />
         )} />
       </MemoryRouter>
     );
