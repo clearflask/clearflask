@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TableHead, TableRow, TableCell, Checkbox } from '@material-ui/core';
+import { Typography, TableHead, TableRow, TableCell, Checkbox, withStyles } from '@material-ui/core';
 import Property from './Property';
-import TableProp from './TableProp';
+import PresetWidget from './PresetWidget';
 
 interface Props {
   page:ConfigEditor.Page;
+  editor:ConfigEditor.Editor;
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
@@ -25,6 +26,7 @@ class Page extends Component<Props> {
       <div>
         <Typography variant='h4'>{this.props.page.getDynamicName()}</Typography>
         <Typography variant='body1'>{this.props.page.description}</Typography>
+        <PresetWidget page={this.props.page} editor={this.props.editor} />
         {this.props.page.getChildren().props
           .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
           .map(childProp => (

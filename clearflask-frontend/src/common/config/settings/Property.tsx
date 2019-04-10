@@ -30,6 +30,7 @@ export default class Property extends Component<Props> {
     const name = prop.name || prop.pathStr;
     var marginTop = 30;
     var propertySetter;
+    var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
     OUTER: switch(prop.type) {
       case ConfigEditor.PropertyType.Number:
       case ConfigEditor.PropertyType.Integer:
@@ -63,7 +64,7 @@ export default class Property extends Component<Props> {
                         ptr && (ptr.position = 'relative');
                       },500),
                       InputLabelProps:{
-                        shrink: (prop.value !== undefined && prop.value !== '') ? true : undefined,
+                        shrink: shrink,
                         error: !!prop.errorMsg,
                       },
                       InputProps: {
@@ -89,17 +90,16 @@ export default class Property extends Component<Props> {
             // Fall through to below
         }
         var fieldType;
-        var shrinkString:any = undefined;
         if(prop.type === ConfigEditor.PropertyType.String) {
           switch(prop.format) {
             case ConfigEditor.StringFormat.DateTime:
               fieldType = 'datetime-local';
-              shrinkString = true;
+              shrink = true;
               break;
             case ConfigEditor.StringFormat.Date:
             case ConfigEditor.StringFormat.Time:
               fieldType = prop.format;
-              shrinkString = true;
+              shrink = true;
               break;
             default:
               fieldType = 'text';
@@ -120,7 +120,7 @@ export default class Property extends Component<Props> {
             margin='none'
             type={fieldType}
             InputLabelProps={{
-              shrink: shrinkString,
+              shrink: shrink,
               error: !!prop.errorMsg,
             }}
             InputProps={{
@@ -172,7 +172,7 @@ export default class Property extends Component<Props> {
             {name: 'Disabled', value: false}]
           : prop.items;
         const currentItem = items.find(item => item.value === prop.value);
-        const shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
+        shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl
             style={{
@@ -237,7 +237,7 @@ export default class Property extends Component<Props> {
         marginTop += 16;
         propertySetter = (
           <div style={{marginBottom: '10px'}}>
-            {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
+            {!this.props.bare && (<InputLabel shrink={shrink} error={!!prop.errorMsg}>{name}</InputLabel>)}
             {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}

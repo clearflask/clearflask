@@ -93,24 +93,23 @@ export interface xCfPropLink {
  */
 
 export type Unsubscribe = () => void;
-export interface Setting<T> {
-  type:PageType|PageGroupType|PropertyType;
+export interface Setting<T extends PageType|PageGroupType|PropertyType, R> {
+  type:T;
   path:Path;
   pathStr:string;
   required:boolean;
-  value?:T;
-  set(val:T):void;
+  value?:R|undefined;
+  set(val:R|undefined):void;
   setDefault():void;
   errorMsg?:string;
-  validateValue(val:T):string|undefined;
+  validateValue(val:R|undefined):string|undefined;
   /** Subscribe to updates on this path only */
   subscribe(callback:()=>void):Unsubscribe;
 }
 
 export type PageType = 'page';
 export const PageType:PageType = 'page';
-export interface Page extends Setting<true|undefined>, xCfPage {
-  type:PageType;
+export interface Page extends Setting<PageType, true|undefined>, xCfPage {
   name:string;
   /** Name potentially derived from a property */
   getDynamicName:()=>string;
@@ -126,8 +125,7 @@ export interface PageChildren {
 
 export type PageGroupType = 'pagegroup';
 export const PageGroupType:PageGroupType = 'pagegroup';
-export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
-  type:PageGroupType;
+export interface PageGroup extends Setting<PageGroupType, true|undefined>, xCfPageGroup {
   name:string;
   depth:ResolveDepth;
   minItems?:number;
@@ -138,7 +136,7 @@ export interface PageGroup extends Setting<true|undefined>, xCfPageGroup {
   cachedChildPages?:Page[]; // Internal use only
 }
 
-interface PropertyBase<T> extends Setting<T>, xCfProp {
+interface PropertyBase<T extends PageType|PageGroupType|PropertyType, R> extends Setting<T, R>, xCfProp {
   name:string;
 }
 export enum PropertyType {
@@ -163,16 +161,14 @@ export type Property =
   |ArrayProperty
   |ObjectProperty;
 
-export interface StringProperty extends PropertyBase<string> {
-  type:PropertyType.String;
+export interface StringProperty extends PropertyBase<PropertyType.String, string> {
   minLength?:number;
   maxLength?:number;
   validation?:RegExp;
   format?:StringFormat|string;
 }
 
-export interface LinkProperty extends PropertyBase<string|undefined>, xCfPropLink {
-  type:PropertyType.Link;
+export interface LinkProperty extends PropertyBase<PropertyType.Link, string>, xCfPropLink {
   allowCreate:boolean;
   create(name:string):void;
   getOptions():LinkPropertyOption[];
@@ -184,24 +180,20 @@ export interface LinkPropertyOption {
   color?:string;
 }
 
-export interface NumberProperty extends PropertyBase<number> {
-  type:PropertyType.Number;
+export interface NumberProperty extends PropertyBase<PropertyType.Number, number> {
   minimum?:number;
   maximum?:number;
 }
 
-export interface IntegerProperty extends PropertyBase<number> {
-  type:PropertyType.Integer;
+export interface IntegerProperty extends PropertyBase<PropertyType.Integer, number> {
   minimum?:number;
   maximum?:number;
 }
 
-export interface BooleanProperty extends PropertyBase<boolean> {
-  type:PropertyType.Boolean;
+export interface BooleanProperty extends PropertyBase<PropertyType.Boolean, boolean> {
 }
 
-export interface EnumProperty extends PropertyBase<string> {
-  type:PropertyType.Enum;
+export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
   items:EnumItem[];
 }
 export interface EnumItem {
@@ -216,18 +208,17 @@ export interface EnumItem {
  * 
  * TODO add support for uniqueItems
  */
-export interface ArrayProperty extends PropertyBase<true|undefined> {
-  type:PropertyType.Array;
+export interface ArrayProperty extends PropertyBase<PropertyType.Array, true> {
   minItems?:number;
   maxItems?:number;
   childType:PropertyType;
   childProperties?:Property[];
   insert(index?:number):Property;
   delete(index:number):void;
+  setRaw(val:Array<any>|undefined):void;
 }
 
-export interface LinkMultiProperty extends PropertyBase<Set<string>|undefined>, xCfPropLink {
-  type:PropertyType.LinkMulti;
+export interface LinkMultiProperty extends PropertyBase<PropertyType.LinkMulti, Set<string>>, xCfPropLink {
   minItems?:number;
   maxItems?:number;
   allowCreate:boolean;
@@ -245,9 +236,9 @@ export interface LinkMultiProperty extends PropertyBase<Set<string>|undefined>, 
  * - If isRequired is false, value determines whether the object is undefined
  *   or set. If set, all 'properties' become visible.
  */
-export interface ObjectProperty extends PropertyBase<true|undefined> {
-  type:PropertyType.Object;
+export interface ObjectProperty extends PropertyBase<PropertyType.Object, true> {
   childProperties?:Property[];
+  setRaw(val:object|undefined):void;
 }
 
 /**
@@ -402,6 +393,22 @@ export class EditorImpl implements Editor {
       }
     }
     delete pointer[path[path.length - 1]];
+  }
+
+  cacheInvalidateChildren(path:Path):void {
+    var pointer = this.cache;
+    for (let i = 0; i < path.length - 1; i++) {
+      pointer = pointer[path[i]];
+      if(pointer === undefined) {
+        return;
+      }
+    }
+    const cacheNode =pointer[path[path.length - 1]];
+    if(cacheNode._) {
+      pointer[path[path.length - 1]] = {_: cacheNode._};
+    } else {
+      delete pointer[path[path.length - 1]];
+    }
   }
 
   getOrDefaultValue(path:Path, defaultValue:any, subConfig?:any):any {
@@ -746,7 +753,7 @@ export class EditorImpl implements Editor {
         const arr = this.getOrDefaultValue(path, []);
         if(index !== undefined) {
           arr.splice(index, 0, undefined);
-          this.cacheInvalidate(path);
+          this.cacheInvalidateChildren(path);
         } else {
           arr.push({});
         }
@@ -763,7 +770,7 @@ export class EditorImpl implements Editor {
       delete: (index:number):void => {
         const arr = this.getValue(path);
         arr.splice(index, 1);
-        this.cacheInvalidate(path);
+        this.cacheInvalidateChildren(path);
         pageGroup.cachedChildPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
         this.notify(localSubscribers);
       },
@@ -1118,7 +1125,7 @@ export class EditorImpl implements Editor {
           set: (val:true|undefined):void => {
             if(!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
             const arrayProperty = property as ArrayProperty;
-            if(val) {
+            if(val !== undefined) {
               this.setValue(path, new Array(arrayProperty.minItems ? arrayProperty.minItems : 0));
               arrayProperty.childProperties = fetchChildPropertiesArray();
               arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
@@ -1130,6 +1137,20 @@ export class EditorImpl implements Editor {
             arrayProperty.errorMsg = arrayProperty.validateValue(val);
             this.notify(localSubscribers);
           },
+          setRaw: (val:Array<any>|undefined):void => {
+            this.setValue(path, val);
+            this.cacheInvalidateChildren(path);
+            const arrayProperty = property as ArrayProperty;
+            if(val !== undefined) {
+              arrayProperty.value = true;
+              arrayProperty.childProperties = fetchChildPropertiesArray();
+            } else {
+              arrayProperty.value = undefined;
+              arrayProperty.childProperties = undefined;
+            }
+            arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
+            this.notify(localSubscribers);
+          },
           setDefault: ():void => {
             const arrayProperty = property as ArrayProperty;
             arrayProperty.set(arrayProperty.defaultValue);
@@ -1138,7 +1159,7 @@ export class EditorImpl implements Editor {
             const arr = this.getOrDefaultValue(path, []);
             if(index !== undefined) {
               arr.splice(index, 0, undefined);
-              this.cacheInvalidate(path);
+              this.cacheInvalidateChildren(path);
             } else {
               arr.push(undefined);
             }
@@ -1160,7 +1181,7 @@ export class EditorImpl implements Editor {
             const arrayProperty = property as ArrayProperty;
             const arr = this.getValue(path);
             arr.splice(index, 1);
-            this.cacheInvalidate(path);
+            this.cacheInvalidateChildren(path);
             arrayProperty.childProperties = fetchChildPropertiesArray();
             arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
@@ -1213,6 +1234,20 @@ export class EditorImpl implements Editor {
             }
             objectProperty.value = val;
             objectProperty.errorMsg = objectProperty.validateValue(val);
+            this.notify(localSubscribers);
+          },
+          setRaw: (val:object|undefined):void => {
+            this.setValue(path, val);
+            this.cacheInvalidateChildren(path);
+            const objectProperty = property as ObjectProperty;
+            if(val !== undefined) {
+              objectProperty.value = true;
+              objectProperty.childProperties = fetchChildPropertiesArray();
+            } else {
+              objectProperty.value = undefined;
+              objectProperty.childProperties = undefined;
+            }
+            objectProperty.errorMsg = objectProperty.validateValue(objectProperty.value);
             this.notify(localSubscribers);
           },
           setDefault: ():void => {

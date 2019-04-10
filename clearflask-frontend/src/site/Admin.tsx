@@ -72,6 +72,7 @@ export default class Admin extends Component<Props, State> {
       page = (
         <Page
           page={currentPage}
+          editor={this.editor}
           pageClicked={this.pageClicked.bind(this)}
         />
       );

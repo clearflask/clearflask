@@ -49,11 +49,17 @@ components:
       description: >-
         Defines a format for credit.
         Entries are evaluated in order. Each entry
-        matching greaterThan and lessThan value that
+        matching greaterOrEqual and lessOrEqual value that
         matches the current value will be concatenated
         with the given separator.
       type: object
       properties:
+        minUnit:
+          x-clearflask-prop: { name: 'Minimum unit', description: 'Minimum possible unit of value. For example 0.01 for cents, 1 for hours. By default it is set to 1', placeholder: '0' }
+          type: number
+        increments:
+          x-clearflask-prop: { name: 'Increments', description: 'Values can only exist at minimum unit or increasing increments', placeholder: '0' }
+          type: number
         formats:
           x-clearflask-prop: { name: 'Formats', description: 'Formats to apply' }
           type: array
@@ -61,26 +67,26 @@ components:
             title: CreditFormatterEntry
             type: object
             properties:
-              greaterThan:
-                x-clearflask-prop: { name: 'Greater than', description: 'Applies this format only if credit value is greater than', placeholder: '0' }
+              greaterOrEqual:
+                x-clearflask-prop: { order: 3, name: 'Greater than or equal', description: 'Applies this format only if credit value is greater than or equal to this value', placeholder: '0' }
                 type: number
-              lessThan:
-                x-clearflask-prop: { name: 'Less than', description: 'Applies this format only if credit value is less than', placeholder: '100' }
+              lessOrEqual:
+                x-clearflask-prop: { order: 4, name: 'Less than or equal', description: 'Applies this format only if credit value is less than or equal to this value', placeholder: '100' }
                 type: number
               multiplier:
-                x-clearflask-prop: { name: 'Multiplier', description: 'Multiply value before displaying', placeholder: '0.01' }
+                x-clearflask-prop: { order: 5, name: 'Multiplier', description: 'Multiply value before displaying', placeholder: '0.01' }
                 type: number
               insignificant:
-                x-clearflask-prop: { name: 'Insignificant digits', description: 'Minimum amount of digits to display regardless of value', placeholder: '2' }
+                x-clearflask-prop: { order: 6, name: 'Insignificant digits', description: 'Minimum amount of digits to display regardless of value', placeholder: '2' }
                 type: integer
               significant:
-                x-clearflask-prop: { name: 'Significant digits', description: 'Maximum amount of digits to display regardless of value', placeholder: '0' }
+                x-clearflask-prop: { order: 7, name: 'Significant digits', description: 'Maximum amount of digits to display regardless of value', placeholder: '0' }
                 type: integer
               prefix:
-                x-clearflask-prop: { name: 'Prefix', description: 'Text to prepend before the value', placeholder: '$' }
+                x-clearflask-prop: { order: 1, name: 'Prefix', description: 'Text to prepend before the value', placeholder: '$' }
                 type: string
               suffix:
-                x-clearflask-prop: { name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
+                x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
                 type: string
     style:
       x-clearflask-page: { order: 7, name: 'Style' }
@@ -151,7 +157,7 @@ components:
         - statuses
       properties:
         statuses:
-          x-clearflask-page-group: { order: 1, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color'] }
+          x-clearflask-page-group: { order: 1, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color', 'nextStatusIds'] }
           type: array
           items:
             x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
@@ -162,39 +168,36 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Status<>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
+                x-clearflask-prop: { order: 1, defaultValue: 'Status<>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
                 type: string
               nextStatusIds:
+                x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
-                  title: NextStatusLink
-                  type: object
-                  properties:
-                    nextStatusId:
-                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
-                      type: string
-                    transitionText:
-                      type: string
-                  required:
-                    - nextStatusId
+                  type: string
               color:
-                x-clearflask-prop: { subType: 'color', name: 'Color', description: 'Display color' }
+                x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
                 type: string
-              allowFunding:
-                x-clearflask-prop: { name: 'Allow Funding', description: 'Overrides parent settings to allow funding during this status' }
+              disableFunding:
+                x-clearflask-prop: { order: 4, name: 'Disable Funding', description: 'Overrides parent settings to disable funding during this status' }
                 type: boolean
-              allowSupport:
-                x-clearflask-prop: { name: 'Allow Support', description: 'Overrides parent settings to allow support during this status' }
+              disableSupport:
+                x-clearflask-prop: { order: 5, name: 'Disable Support', description: 'Overrides parent settings to disable support during this status' }
                 type: boolean
-              allowIdeaEdits:
-                x-clearflask-prop: { name: 'Allow Editing', description: 'Overrides parent settings to allow editing of the idea during this status' }
+              disableIdeaEdits:
+                x-clearflask-prop: { order: 6, name: 'Disable Editing', description: 'Overrides parent settings to disable editing of the idea during this status' }
                 type: boolean
-              allowComments:
-                x-clearflask-prop: { name: 'Allow Comments', description: 'Overrides parent settings to allow commenting during this status' }
+              disableComments:
+                x-clearflask-prop: { order: 7, name: 'Disable Commenting', description: 'Overrides parent settings to disable commenting during this status' }
                 type: boolean
             required:
               - statusId
               - name
+              - disableFunding
+              - disableSupport
+              - disableIdeaEdits
+              - disableComments
     tagging:
       x-clearflask-page: { order: 6, name: 'Tagging' }
       title: Tagging
