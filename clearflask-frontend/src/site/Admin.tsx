@@ -11,6 +11,7 @@ import { Divider, Typography } from '@material-ui/core';
 import { Server } from '../api/server';
 import * as AdminClient from '../api/admin';
 import { detectEnv, Environment } from '../common/util/detectEnv';
+import ConfigView from '../common/config/settings/ConfigView';
 
 interface Props {
   // Router matching
@@ -91,6 +92,7 @@ export default class Admin extends Component<Props, State> {
         menu={menu}
       >
         {page}
+        {/* TODO remove <ConfigView editor={this.editor} /> */}
       </Layout>
     );
   }

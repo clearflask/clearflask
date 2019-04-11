@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
-import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton } from '@material-ui/core';
+import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input } from '@material-ui/core';
 import ArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import ArrowRight from '@material-ui/icons/KeyboardArrowRight';
 import Balance from '@material-ui/icons/AccountBalance';
 import Notifications from '@material-ui/icons/Notifications';
 import { Server } from '../api/server';
+import DropdownTab from '../common/DropdownTab';
+import RegularTab from '../common/RegularTab';
 
 
 interface Props {
@@ -33,8 +35,38 @@ class Header extends Component<Props> {
       currentTabValue = this.props.page
         ? this.props.page.slug
         : undefined;
-      tabs = this.props.conf.layout.pages.map(p => 
-        (<Tab key={p.slug} disableRipple label={p.name} value={p.slug} />));
+      tabs = this.props.conf.layout.menu.map(menu => {
+        if(!menu.pageIds || menu.pageIds.length === 0) return null;
+        if(menu.pageIds.length === 1) {
+          const page = this.props.conf!.layout.pages.find(p => p.pageId === menu.pageIds[0]);
+          if(page === undefined) return null;
+          return (
+            <RegularTab
+              key={page.slug}
+              value={page.slug}
+              disableRipple
+              label={menu.name || page.name}
+            />
+          );
+        }
+        const dropdownItems = menu.pageIds.map(pageId => {
+          const page = this.props.conf!.layout.pages.find(p => p.pageId === pageId)!;
+          if(this.props.page && this.props.page.pageId === page.pageId) {
+            currentTabValue = menu.menuId;
+          }
+          return { name: page.name, val: page.slug };
+        });
+        return (
+          <DropdownTab
+            key={menu.menuId}
+            value={menu.menuId}
+            selectedValue={this.props.page && this.props.page.slug}
+            label={menu.name}
+            links={dropdownItems}
+            onDropdownTabSelect={value => this.props.pageChanged(value)}
+          />
+        );
+      });
     }
 
     return (
@@ -121,6 +153,10 @@ class Header extends Component<Props> {
         }} />
       </div>
     );
+  }
+
+  menuSelected(menuId:string) {
+
   }
 }
 

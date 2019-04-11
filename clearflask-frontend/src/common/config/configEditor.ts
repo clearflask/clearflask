@@ -838,7 +838,7 @@ export class EditorImpl implements Editor {
       this.notify(localSubscribers);
     };
     const setDefaultFun = ():void => {
-      setFun(property.defaultValue);
+      property.set(property.defaultValue);
     };
     const validateRequiredFun = (val:any):string|undefined => {
       if(val === undefined && isRequired) return 'Required value';
@@ -956,7 +956,7 @@ export class EditorImpl implements Editor {
           if(xProp && xProp.slugAutoComplete !== undefined) {
             setStringFun = (val:string|undefined):void => {
               setFun(val);
-                setTimeout(() => {
+              setTimeout(() => {
                 const slugProp = this.getProperty(xProp.slugAutoComplete!
                   .map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep));
                 const slugName = val && val

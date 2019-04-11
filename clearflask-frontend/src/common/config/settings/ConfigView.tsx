@@ -3,14 +3,14 @@ import * as ConfigEditor from '../configEditor';
 
 
 interface Props {
-  editor:ConfigEditor.Editor;
+  editor:ConfigEditor.Editor|undefined;
 }
 
 export default class ConfigView extends Component<Props> {
   unsubscribe?:()=>void;
 
   componentDidMount() {
-    this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
+    this.unsubscribe = this.props.editor && this.props.editor.subscribe(this.forceUpdate.bind(this));
   }
 
   componentWillUnmount() {
@@ -18,9 +18,12 @@ export default class ConfigView extends Component<Props> {
   }
 
   render() {
+    if(this.unsubscribe === undefined && this.props.editor !== undefined) {
+      this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
+    }
     return (
       <pre>
-        {JSON.stringify(this.props.editor.getConfig(), null, 2)}
+        {JSON.stringify(this.props.editor && this.props.editor.getConfig(), null, 2)}
       </pre>
     )
   }

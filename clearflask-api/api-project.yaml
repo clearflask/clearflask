@@ -44,49 +44,44 @@ components:
         - workflow
         - style
     credits:
-      x-clearflask-page: { order: 3, name: 'Credits' }
+      x-clearflask-page: { order: 3, name: 'Credits', description: 'Define a currency for your users.' }
       title: CreditFormatter
-      description: >-
-        Defines a format for credit.
-        Entries are evaluated in order. Each entry
-        matching greaterOrEqual and lessOrEqual value that
-        matches the current value will be concatenated
-        with the given separator.
       type: object
       properties:
-        minUnit:
-          x-clearflask-prop: { name: 'Minimum unit', description: 'Minimum possible unit of value. For example 0.01 for cents, 1 for hours. By default it is set to 1', placeholder: '0' }
-          type: number
-        increments:
-          x-clearflask-prop: { name: 'Increments', description: 'Values can only exist at minimum unit or increasing increments', placeholder: '0' }
+        increment:
+          x-clearflask-prop: { order: 1, name: 'Increments', description: 'Minimum increment to consider significant.', placeholder: '0' }
           type: number
         formats:
-          x-clearflask-prop: { name: 'Formats', description: 'Formats to apply' }
+          x-clearflask-prop: { order: 2, name: 'Display rules', description: '
+            Your base currency value will be displayed to your users based on the following rules.
+            Rules are evaluated in order, the first rule matching a range will take effect.
+            The credits will be multiplied by the multiplier, rounded based on significant digits,
+            and finally prefixed and suffixed.' }
           type: array
           items:
             title: CreditFormatterEntry
             type: object
             properties:
               greaterOrEqual:
-                x-clearflask-prop: { order: 3, name: 'Greater than or equal', description: 'Applies this format only if credit value is greater than or equal to this value', placeholder: '0' }
+                x-clearflask-prop: { order: 3, name: 'Range: Greater than or equal', description: 'Applies this format only if credit value is greater than or equal to this value' }
                 type: number
               lessOrEqual:
-                x-clearflask-prop: { order: 4, name: 'Less than or equal', description: 'Applies this format only if credit value is less than or equal to this value', placeholder: '100' }
+                x-clearflask-prop: { order: 4, name: 'Range: Less than or equal', description: 'Applies this format only if credit value is less than or equal to this value' }
                 type: number
               multiplier:
-                x-clearflask-prop: { order: 5, name: 'Multiplier', description: 'Multiply value before displaying', placeholder: '0.01' }
+                x-clearflask-prop: { order: 5, name: 'Multiplier', description: 'Multiply value before displaying' }
                 type: number
-              insignificant:
-                x-clearflask-prop: { order: 6, name: 'Insignificant digits', description: 'Minimum amount of digits to display regardless of value', placeholder: '2' }
+              minimumFractionDigits:
+                x-clearflask-prop: { order: 6, name: 'Min decimals', description: 'Minimum amount of decimals to display regardless of value' }
                 type: integer
-              significant:
-                x-clearflask-prop: { order: 7, name: 'Significant digits', description: 'Maximum amount of digits to display regardless of value', placeholder: '0' }
+              maximumFractionDigits:
+                x-clearflask-prop: { order: 7, name: 'Max decimals', description: 'Maximum amount of decimals to display regardless of value' }
                 type: integer
               prefix:
-                x-clearflask-prop: { order: 1, name: 'Prefix', description: 'Text to prepend before the value', placeholder: '$' }
+                x-clearflask-prop: { order: 1, name: 'Prefix', description: 'Text to prepend before the value' }
                 type: string
               suffix:
-                x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value', placeholder: '%' }
+                x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
     style:
       x-clearflask-page: { order: 7, name: 'Style' }
@@ -110,16 +105,46 @@ components:
       type: object
       required:
         - pages
+        - menu
       properties:
+        menu:
+          x-clearflask-prop: { name: 'Menu', description: 'Customize App Menu with buttons and dropdowns' }
+          type: array
+          items:
+            title: Menu
+            type: object
+            required:
+              - menuId
+              - pageIds
+            properties:
+              menuId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              pageIds:
+                x-clearflask-prop: { order: 1, name: 'Pages', description: 'Pages to link to. If more than one, a dropdown will display.' }
+                x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
+                type: array
+                items:
+                  type: string
+              name:
+                x-clearflask-prop: { order: 2, name: 'Name Override', description: 'Menu title to show. Not necessary when a single page is displayed', placeholder: 'Home' }
+                type: string
         pages:
           x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'] }
           type: array
-          minItems: 1
           items:
             x-clearflask-page: { name: 'Page', nameFromProp: 'name' }
             title: Page
             type: object
+            required:
+              - pageId
+              - name
+              - slug
+              - components
             properties:
+              pageId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
               name:
                 x-clearflask-prop: { defaultValue: 'Page<>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:['layout','pages','<>', 'slug'] }
                 type: string
@@ -145,10 +170,6 @@ components:
                     $ref: 'api-project.yaml#/components/schemas/PageBoard'
                   explorer:
                     $ref: 'api-project.yaml#/components/schemas/PageExplorer'
-            required:
-              - name
-              - slug
-              - components
     workflow:
       x-clearflask-page: { order: 5, name: 'Workflow' }
       title: Workflow
@@ -246,40 +267,77 @@ components:
               name:
                 x-clearflask-prop: { defaultValue: 'Group<>', order: 1, name: 'Name', description: 'Group Name' }
                 type: string
-              parentIdeaGroupId:
-                x-clearflask-prop-link: { idPropName: 'groupId', linkPath: ['grouping', 'groups'], displayPropName: 'name', colorPropName: 'color'}
-                type: string
               color:
                 x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
                 type: string
-              ideaSettings:
-                $ref: 'api-project.yaml#/components/schemas/IdeaSettingsCommon'
               allowFunding:
-                x-clearflask-prop: { name: 'Allow Funding', description: 'Allows users to use their credits for posts in this group.' }
+                x-clearflask-prop: { name: 'Allow Funding', description: 'Allows users to use their credits' }
                 type: boolean
               allowSupport:
-                x-clearflask-prop: { name: 'Allow Support', description: 'Allows users to show support for posts in this group.' }
+                x-clearflask-prop: { name: 'Allow Support', description: 'Allows users to show support' }
                 type: boolean
-              defaultIdeaStatusId:
-                x-clearflask-prop: { name: 'Allow Comments', description: 'Idea status to assign on newly created ideas' }
+              allowEdits:
+                x-clearflask-prop: { name: 'Allow Edits', description: 'Allows users to edit submitted posts' }
+                type: boolean
+              allowComments:
+                x-clearflask-prop: { name: 'Allow Comments', description: 'Allows users to comment on posts' }
+                type: boolean
+              defaultStatusId:
+                x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                 type: string
-              defaultIdeaTagIds:
-                type: array
-                items:
-                  type: string
-              settableIdeaVisibility:
-                type: boolean
-              settableIdeaTagIdsOnCreate:
-                description: >-
-                  In addition to project level idea tags,
-                  these tags can also be added by user
-                  when creating an idea.
-                type: array
-                items:
-                  type: string
+              tag:
+                type: object
+                properties:
+                  defaultIdeaTagIds:
+                    x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }
+                    type: array
+                    items:
+                      type: string
+                  settableIdeaTagIdsOnCreate:
+                    x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
+                    description: >-
+                      In addition to project level idea tags,
+                      these tags can also be added by user
+                      when creating an idea.
+                    type: array
+                    items:
+                      type: string
+                  tagsOnCreate:
+                    x-clearflask-prop: { name: 'Settable Tag Id groups', description: 'These tags can be added by user when creating a new idea. Will be merged with configuration inside IdeaGroup.' }
+                    type: array
+                    items:
+                      title: TagGroupings
+                      type: object
+                      properties:
+                        minRequired:
+                          x-clearflask-prop: { name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user.' }
+                          type: number
+                        maxRequired:
+                          x-clearflask-prop: { name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user.' }
+                          type: number
+                        tagIds:
+                          x-clearflask-prop: { name: 'Tags', description: 'List of tags for this group.' }
+                          type: array
+                          items:
+                            type: string
+              visibility:
+                type: object
+                properties:
+                  defaultIdeaVisibility:
+                    x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users.' }
+                    type: string
+                    enum:
+                      - Public
+                      - Private
+                  settableIdeaVisibility:
+                    x-clearflask-prop: { name: 'Settable Visibility', description: 'User can toggle whether a post is visible publicly by other users or privately only by you.' }
+                    type: boolean
             required:
               - groupId
               - name
+              - tag
+              - visibility
     ConfigAdmin:
       description: >-
         All Config properties available for admins.
@@ -333,46 +391,6 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
       required:
         - ideaList
-    IdeaSettingsCommon:
-      x-clearflask-page: { order: 1, name: 'Idea settings', descripton: 'Idea settings common between project and group levels.' }
-      type: object
-      properties:
-        defaultStatusId:
-          x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['ideaSettings', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
-          type: string
-        defaultIdeaTagIds:
-          x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }
-          type: array
-          items:
-            type: string
-        defaultIdeaVisibility:
-          x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users.' }
-          type: string
-          enum:
-            - Public
-            - Private
-        settableIdeaVisibility:
-          x-clearflask-prop: { name: 'Settable Visibility', description: 'User can toggle whether a post is visible publicly by other users or privately only by you.' }
-          type: boolean
-        tagsOnCreate:
-          x-clearflask-prop: { name: 'Settable Tag Id groups', description: 'These tags can be added by user when creating a new idea. Will be merged with configuration inside IdeaGroup.' }
-          type: array
-          items:
-            title: TagGroupings
-            type: object
-            properties:
-              minRequired:
-                x-clearflask-prop: { name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user.' }
-                type: number
-              maxRequired:
-                x-clearflask-prop: { name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user.' }
-                type: number
-              tagIds:
-                x-clearflask-prop: { name: 'Tags', description: 'List of tags for this group.' }
-                type: array
-                items:
-                  type: string
 
 /project/{projectId}/config:
   get:
