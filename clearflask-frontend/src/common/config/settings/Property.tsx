@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse } from '@material-ui/core';
+import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse, IconButton } from '@material-ui/core';
 import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
 import SelectionPicker from './property/SelectionPicker';
+import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
 
 interface Props {
-  prop:ConfigEditor.PageGroup|ConfigEditor.Property;
+  prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property;
   bare?:boolean;
   width?:string
   pageClicked:(path:ConfigEditor.Path)=>void;
@@ -138,10 +139,38 @@ export default class Property extends Component<Props> {
           />
         );
         break;
+      case ConfigEditor.PageType:
+        if(prop.required) return null;
+        marginTop += 16;
+        propertySetter = (
+          <div>
+            {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
+            <div>
+              <FormControlLabel
+                control={(
+                  <Switch
+                    checked={!!prop.value}
+                    onChange={this.handlePropChange.bind(this)}
+                    color="default"
+                  />
+                )}
+                label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+              />
+            </div>
+            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            <Collapse in={prop.value} style={{marginLeft: '30px'}}>
+              <IconButton aria-label="Open" onClick={() => {
+                this.props.pageClicked(prop.path);
+              }}>
+                <VisitPageIcon />
+              </IconButton>
+            </Collapse>
+          </div>
+        );
+        break;
       case ConfigEditor.PropertyType.Boolean:
       case ConfigEditor.PropertyType.Enum:
         if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
-          marginTop += 16;
           propertySetter = (
             <div>
               {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
@@ -155,7 +184,6 @@ export default class Property extends Component<Props> {
                     />
                   )}
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
-                  style={{ marginTop: '-10px', marginBottom: '-10px'}}
                 />
               </div>
               {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
@@ -197,7 +225,7 @@ export default class Property extends Component<Props> {
           </FormControl>
         );
         break;
-      case 'pagegroup':
+      case ConfigEditor.PageGroupType:
       case ConfigEditor.PropertyType.Array:
         propertySetter = (
           <TableProp
@@ -271,9 +299,11 @@ export default class Property extends Component<Props> {
 
     var newValue;
     if((prop.required && prop.type === ConfigEditor.PropertyType.Boolean)
-      || prop.type === ConfigEditor.PropertyType.Object) {
+      || prop.type === ConfigEditor.PropertyType.Object
+      || prop.type === ConfigEditor.PageType) {
       newValue = event.target.checked;
-    } else if(prop.type !== 'pagegroup' && prop.subType === ConfigEditor.PropSubType.Color) {
+    } else if(prop.type !== ConfigEditor.PageGroupType
+      && prop.subType === ConfigEditor.PropSubType.Color) {
       newValue = event;
     } else {
       newValue = event.target.value;

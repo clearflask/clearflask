@@ -255,7 +255,7 @@ components:
             title: Group Item
             type: object
             properties:
-              string:
+              name:
                 x-clearflask-prop: { name: 'String', description: 'Description description description', placeholder: 'Placeholder' }
                 type: string
         groupOpt:
@@ -267,7 +267,7 @@ components:
             title: Group Item
             type: object
             properties:
-              string:
+              name:
                 x-clearflask-prop: { name: 'String', description: 'Description description description', placeholder: 'Placeholder' }
                 type: string
         arrayOfAll:

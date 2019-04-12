@@ -108,7 +108,7 @@ components:
         - menu
       properties:
         menu:
-          x-clearflask-prop: { name: 'Menu', description: 'Customize App Menu with buttons and dropdowns' }
+          x-clearflask-prop: { order: 1, name: 'Menu', description: 'Customize App Menu with buttons and dropdowns' }
           type: array
           items:
             title: Menu
@@ -130,8 +130,9 @@ components:
                 x-clearflask-prop: { order: 2, name: 'Name Override', description: 'Menu title to show. Not necessary when a single page is displayed', placeholder: 'Home' }
                 type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'] }
+          x-clearflask-page-group: { order: 2, name: 'Pages', tablePropertyNames:['name', 'slug'] }
           type: array
+          minItems: 1
           items:
             x-clearflask-page: { name: 'Page', nameFromProp: 'name' }
             title: Page
@@ -141,6 +142,7 @@ components:
               - name
               - slug
               - components
+              - panels
             properties:
               pageId:
                 x-clearflask-prop: { subType: 'id' }
@@ -157,19 +159,15 @@ components:
               description:
                 x-clearflask-prop: { order: 4, name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
-              components:
-                x-clearflask-prop: { order: 5, name: 'UI Components', description: 'Various components you can add onto your page' }
-                type: object
-                properties:
-                  panels:
-                    x-clearflask-prop: { name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas.' }
-                    type: array
-                    items:
-                      $ref: 'api-project.yaml#/components/schemas/PagePanel'
-                  board:
-                    $ref: 'api-project.yaml#/components/schemas/PageBoard'
-                  explorer:
-                    $ref: 'api-project.yaml#/components/schemas/PageExplorer'
+              panels:
+                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
+                type: array
+                items:
+                  $ref: 'api-project.yaml#/components/schemas/PagePanel'
+              board:
+                $ref: 'api-project.yaml#/components/schemas/PageBoard'
+              explorer:
+                $ref: 'api-project.yaml#/components/schemas/PageExplorer'
     workflow:
       x-clearflask-page: { order: 5, name: 'Workflow' }
       title: Workflow
@@ -351,7 +349,7 @@ components:
         # TODO Credit income
         # TODO Trusted public keys
     PageBoard:
-      x-clearflask-prop: { order: 2, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
+      x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object
       properties:
         title:
@@ -363,7 +361,7 @@ components:
       required:
         - panels
     PagePanel:
-      x-clearflask-prop: { name: 'Panel' }
+      x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object
       properties:
         title:
@@ -381,11 +379,11 @@ components:
       required:
         - ideaList
     PageExplorer:
-      x-clearflask-prop: { order: 3, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
+      x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
       properties:
         title:
-          x-clearflask-prop: { name: 'Title', description: 'Title to display above the explorer.' }
+          x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above the explorer.' }
           type: string
         ideaList:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'

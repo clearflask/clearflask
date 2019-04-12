@@ -44,6 +44,7 @@ export default class TableProp extends Component<Props, State> {
         const row:React.ReactNode[] = [];
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
           const prop = childPage.getChildren().props.find(childPageProp => propName === childPageProp.path[childPageProp.path.length - 1])!;
+          if(prop === undefined) throw Error(`PageGroup's tablePropertyNames contains invalid prop name ${propName} on path ${pageGroup.path}`);
           if(childPageIndex === 0) {
             header.push(this.renderHeaderCell(propNameIndex, prop.name, prop.description));
           }
@@ -102,14 +103,14 @@ export default class TableProp extends Component<Props, State> {
         }}>
           <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
         </div></div>
-        <div>
+        <div style={{marginLeft: '30px'}}>
           <IconButton aria-label="Add" onClick={() => {
             this.props.data.insert();
           }}>
             <AddIcon />
           </IconButton>
         </div>
-        <Paper style={{display: 'inline-block', marginTop: '15px'}}>
+        <Paper style={{display: 'inline-block', marginLeft: '30px', marginTop: '15px'}}>
           <Table style ={{width: 'inherit'}}>
             {header.length > 0 && (
               <TableHead>
@@ -155,11 +156,10 @@ export default class TableProp extends Component<Props, State> {
   }
 
   renderHeaderCell(key, name, description) {
-    // TODO display description somewhere
     return (
       <TableCell key={key} align='center' style={{fontWeight: 'normal'}}>
         <InputLabel shrink={false}>{name}</InputLabel>
-        <FormHelperText >{description}</FormHelperText>
+        <FormHelperText>{description}</FormHelperText>
       </TableCell>
     );
   }

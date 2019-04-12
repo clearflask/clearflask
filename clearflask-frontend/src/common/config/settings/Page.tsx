@@ -25,19 +25,15 @@ class Page extends Component<Props> {
   render() {
     return (
       <div>
-        <Typography variant='h4'>{this.props.page.getDynamicName()}</Typography>
-        <Typography variant='body1'>{this.props.page.description}</Typography>
+        <Typography variant='h4' component='h1'>{this.props.page.getDynamicName()}</Typography>
+        <Typography variant='body1' component='p'>{this.props.page.description}</Typography>
         <PresetWidget page={this.props.page} editor={this.props.editor} />
         {this.props.page.pathStr === 'credits'
           && (<CreditPreview editor={this.props.editor} />)}
-        {this.props.page.getChildren().props
-          .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
-          .map(childProp => (
-            <Property key={childProp.pathStr} prop={childProp} pageClicked={this.props.pageClicked} />
-          ))}
-        {this.props.page.getChildren().groups
-          .map(childPageGroup => (
-            <Property key={childPageGroup.pathStr} prop={childPageGroup} pageClicked={this.props.pageClicked} />
+        {this.props.page.getChildren().all
+          .filter(child => (child as ConfigEditor.Property).subType !== ConfigEditor.PropSubType.Id)
+          .map(child => (
+            <Property key={child.pathStr} prop={child} pageClicked={this.props.pageClicked} />
           ))}
       </div>
     );

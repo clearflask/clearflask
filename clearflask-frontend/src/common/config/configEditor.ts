@@ -118,6 +118,7 @@ export interface Page extends Setting<PageType, true|undefined>, xCfPage {
   cachedChildren?:PageChildren; // Internal use only
 }
 export interface PageChildren {
+  all: (Page|PageGroup|Property)[]
   pages: Page[];
   groups: PageGroup[];
   props: Property[];
@@ -261,7 +262,7 @@ export enum StringFormat {
  * Universal path used for both schema and config instance.
  * String parts correspond to object values; numbers correpsond to array indices.
  * 
- * Ex: ['ideaSettings', 'tags', 3, 'color']
+ * Ex: ['tags', 3, 'color']
  */
 export type Path = (string|number)[];
 export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[.\/]/):Path => {
@@ -593,6 +594,7 @@ export class EditorImpl implements Editor {
 
     const fetchChildren = ():PageChildren => {
       const children:PageChildren = {
+        all: [],
         pages: [],
         groups: [],
         props: [],
@@ -605,24 +607,31 @@ export class EditorImpl implements Editor {
         const propPath = [...path, propName];
         const propSchema = this.getSubSchema([propName], propsSchema);
         if(propSchema[OpenApiTags.Page]) {
-          children.pages.push(this.getPage(
+          const childPage = this.getPage(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
             requiredProps.includes(propName),
-            propSchema));
+            propSchema);
+          children.all.push(childPage);
+          children.pages.push(childPage);
         } else if(propSchema[OpenApiTags.PageGroup]) {
-          children.groups.push(this.getPageGroup(
+          const childGroup = this.getPageGroup(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
             requiredProps.includes(propName),
-            propSchema));
+            propSchema);
+          children.all.push(childGroup);
+          children.groups.push(childGroup);
         } else {
-          children.props.push(this.getProperty(
+          const childProp = this.getProperty(
             propPath,
             requiredProps.includes(propName),
-            propSchema));
+            propSchema);
+          children.all.push(childProp);
+          children.props.push(childProp);
         }
       });
+      children.all.sort(this.sortPagesProps);
       children.pages.sort(this.sortPagesProps);
       children.groups.sort(this.sortPagesProps);
       children.props.sort(this.sortPagesProps);
@@ -659,6 +668,7 @@ export class EditorImpl implements Editor {
           page.cachedChildren.props.forEach(childProp => childProp.setDefault());
         } else {
           page.cachedChildren = {
+            all: [],
             pages: [],
             groups: [],
             props: [],

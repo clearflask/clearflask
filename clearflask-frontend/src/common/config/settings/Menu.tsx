@@ -22,25 +22,30 @@ export default class Menu extends Component<Props> {
   }
 
   render() {
-    const childPages:ConfigEditor.Page[] = this.props.page.getChildren().pages;
-    const childPageGroups:ConfigEditor.PageGroup[] = this.props.page.getChildren().groups;
     const expanded = this.isExpanded(this.props.page.path);
     return (
-      <List component='nav' style={{padding: '0px'}}>
-        <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
-          this.props.pageClicked(this.props.page.path);
-        }}>
-          <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
-        </ListItem>
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          {childPages.map(childPage =>
-            <Menu {...this.props} page={childPage} />
-          )}
-          {childPageGroups.map(childPageGroup => (
-            <MenuPageGroup {...this.props} pageGroup={childPageGroup} />
-          ))}
-        </Collapse>
-      </List>
+      <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
+        <List component='nav' style={{padding: '0px'}}>
+          <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
+            this.props.pageClicked(this.props.page.path);
+          }}>
+            <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
+          </ListItem>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            {this.props.page.getChildren().all
+              .map(child => {
+                switch(child.type) {
+                  case ConfigEditor.PageType:
+                    return ( <Menu {...this.props} page={child} /> );
+                  case ConfigEditor.PageGroupType:
+                    return ( <MenuPageGroup {...this.props} pageGroup={child} /> );
+                  default:
+                    return null;
+                }
+            })}
+          </Collapse>
+        </List>
+      </Collapse>
     );
   }
 
@@ -97,7 +102,7 @@ class MenuPageGroup extends Component<PropsPageGroup> {
         <div>
           <ListItem disabled>
             <ListItemText
-              style={Menu.paddingForLevel(this.props.pageGroup.path, 0.5)}
+              style={Menu.paddingForLevel(this.props.pageGroup.path)}
               primary={this.props.pageGroup.name} />
           </ListItem>
           {childPages.map(childPage =>
