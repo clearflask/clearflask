@@ -29,6 +29,12 @@ interface Preset {
 
 class PresetWidget extends Component<Props> {
   static presets:{[pathStr:string]:Array<Preset>} = {
+    'workflows': [
+      { title: 'Features', body: 'Typical workflow for a software feature. Under review -> Planned -> In progress -> Completed. Also includes Funding and Closed statuses.',
+        actionTitle: 'Add', action: (templater:Templater) => templater.workflowFeatures() },
+      { title: 'Bugs', body: 'Bug workflow.',
+        actionTitle: 'Add', action: (templater:Templater) => templater.workflowBug() },
+    ],
     'credits': [
       { title: 'Time', body: 'Structure your work based on how long it\'ll take. Recommended for transparency. Also ideal if your hourly rate may change in the future.',
         actionTitle: 'Set', action: (templater:Templater) => templater.creditsTime() },

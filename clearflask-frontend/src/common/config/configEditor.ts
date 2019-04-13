@@ -102,7 +102,8 @@ export interface Setting<T extends PageType|PageGroupType|PropertyType, R> {
   set(val:R|undefined):void;
   setDefault():void;
   errorMsg?:string;
-  validateValue(val:R|undefined):string|undefined;
+  /** Validates value and sets the errorMsg accordingly */
+  validateValue(val:R|undefined);
   /** Subscribe to updates on this path only */
   subscribe(callback:()=>void):Unsubscribe;
 }
@@ -115,6 +116,7 @@ export interface Page extends Setting<PageType, true|undefined>, xCfPage {
   getDynamicName:()=>string;
   depth:ResolveDepth;
   getChildren():PageChildren;
+  setRaw(val:object|undefined):void;
   cachedChildren?:PageChildren; // Internal use only
 }
 export interface PageChildren {
@@ -134,6 +136,7 @@ export interface PageGroup extends Setting<PageGroupType, true|undefined>, xCfPa
   getChildPages():Page[];
   insert(index?:number):Page;
   delete(index:number):void;
+  setRaw(val:Array<any>|undefined):void;
   cachedChildPages?:Page[]; // Internal use only
 }
 
@@ -287,6 +290,8 @@ export interface Editor {
   getPageGroup(path:Path, depth?:ResolveDepth):PageGroup;
   getProperty(path:Path):Property;
 
+  getValue(path:Path):any;
+  getOrDefaultValue(path:Path, defaultValue:any):any;
   setValue(path:Path, value:any):void;
 
   /** Subscribe to all updates in config */
@@ -355,12 +360,12 @@ export class EditorImpl implements Editor {
     return result;
   }
 
-  getProperty(path:Path, isRequired?:boolean, subSchema?:any):Property {
+  getProperty<T extends Property>(path:Path, isRequired?:boolean, subSchema?:any):T {
     var result:Page|PageGroup|Property = this.cacheGet(path, () => this.parseProperty(path, isRequired, subSchema));
     if(result.type === 'page' || result.type === 'pagegroup') {
       throw Error(`Expecting property type but found ${result.type} on path ${path}`);
     }
-    return result;
+    return result as T;
   }
 
   cacheGet(path:Path, loader:()=>Page|PageGroup|Property, minDepth:ResolveDepth = ResolveDepth.None):Page|PageGroup|Property {
@@ -542,7 +547,6 @@ export class EditorImpl implements Editor {
         ? option.getChildren().props
         : option.childProperties || []);
       props.forEach((childProp:Property) => {
-        console.log('debugdebug', JSON.stringify(childProp, null, 2));
         if(childProp.type !== PropertyType.String) {
           return;
         }
@@ -685,6 +689,23 @@ export class EditorImpl implements Editor {
       setDefault: ():void => {
         page.set(page.defaultValue);
       },
+      setRaw: (val:object|undefined):void => {
+        this.setValue(path, val);
+        this.cacheInvalidateChildren(path);
+        if(val !== undefined) {
+          page.value = true;
+          page.cachedChildren = fetchChildren();
+        } else {
+          page.value = undefined;
+          page.cachedChildren = {
+            all: [],
+            pages: [],
+            groups: [],
+            props: [],
+          };
+        }
+        this.notify(localSubscribers);
+      },
       getDynamicName: ():string => {
         if(!xPage.nameFromProp) {
           return page.name;
@@ -696,16 +717,19 @@ export class EditorImpl implements Editor {
         return (nameProp && nameProp.value)
           ? nameProp.value + '' : page.name;
       },
-      validateValue: (val:true|undefined):string|undefined => {
-        if(val === undefined && isRequired) return 'Required value';
-        return undefined;
+      validateValue: (val:true|undefined):void => {
+        if(val === undefined && isRequired) {
+          page.errorMsg = 'Required value';
+        } else {
+          page.errorMsg = undefined;
+        }
       },
       subscribe: (callback: () => void):Unsubscribe => {
         return this._subscribe(callback, localSubscribers);
       },
       cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
     };
-    page.errorMsg = page.validateValue(page.value);
+    page.validateValue(page.value);
     return page;
   }
 
@@ -772,7 +796,7 @@ export class EditorImpl implements Editor {
         } else {
           arr.push({});
         }
-        pageGroup.cachedChildPages = fetchChildPages()
+        pageGroup.cachedChildPages = fetchChildPages();
         const newPage = pageGroup.cachedChildPages[
           index !== undefined
             ? index
@@ -806,15 +830,32 @@ export class EditorImpl implements Editor {
       setDefault: ():void => {
         pageGroup.set(pageGroup.defaultValue);
       },
-      validateValue: (val:true|undefined):string|undefined => {
-        if(val === undefined && isRequired) return 'Required value';
-        if(val === true) {
+      setRaw: (val:Array<any>|undefined):void => {
+        this.setValue(path, val);
+        this.cacheInvalidateChildren(path);
+        if(val !== undefined) {
+          pageGroup.value = true;
+          pageGroup.cachedChildPages = fetchChildPages();
+        } else {
+          pageGroup.value = undefined;
+          pageGroup.cachedChildPages = undefined;
+        }
+        this.notify(localSubscribers);
+      },
+      validateValue: (val:true|undefined):void => {
+        if(val === undefined && isRequired) {
+          pageGroup.errorMsg = 'Required value';
+        } else if(val === true) {
           const rawValue = this.getValue(path);
           const count = rawValue === undefined ? 0 : rawValue.length;
-          if(pageGroup.minItems !== undefined && count < pageGroup.minItems) return `Must have at least ${pageGroup.minItems} entries`;
-          if(pageGroup.maxItems !== undefined && count > pageGroup.maxItems) return `Must have at most ${pageGroup.maxItems} entries`;
+          if(pageGroup.minItems !== undefined && count < pageGroup.minItems) {
+            pageGroup.errorMsg = `Must have at least ${pageGroup.minItems} entries`;
+          } else if(pageGroup.maxItems !== undefined && count > pageGroup.maxItems) {
+            pageGroup.errorMsg = `Must have at most ${pageGroup.maxItems} entries`;
+          }
+        } else {
+          pageGroup.errorMsg = undefined;
         }
-        return undefined;
       },
       subscribe: (callback: () => void):Unsubscribe => {
         return this._subscribe(callback, localSubscribers);
@@ -849,15 +890,18 @@ export class EditorImpl implements Editor {
     const setFun = (val:any):void => {
       this.setValue(path, val);
       property.value = val;
-      property.errorMsg = property.validateValue(val as never);
+      property.validateValue(val as never);
       this.notify(localSubscribers);
     };
     const setDefaultFun = ():void => {
       property.set(property.defaultValue);
     };
-    const validateRequiredFun = (val:any):string|undefined => {
-      if(val === undefined && isRequired) return 'Required value';
-      return undefined;
+    const validateRequiredFun = (val:any):void => {
+      if(val === undefined && isRequired) {
+        property.errorMsg = 'Required value';
+      } else {
+        property.errorMsg = undefined;
+      }
     };
     const pathStr = path.join('.');
     const base = {
@@ -893,10 +937,14 @@ export class EditorImpl implements Editor {
             type: PropertyType.Enum,
             value: value,
             items: items,
-            validateValue: (val:string|undefined):string|undefined => {
-              if(val === undefined) return validateRequiredFun(val);
-              if(!propSchema.enum.includes(val)) return `Can only be one of: ${JSON.stringify(propSchema.enum)}`;
-              return undefined;
+            validateValue: (val:string|undefined):void => {
+              if(val === undefined) {
+                validateRequiredFun(val);
+              } else if(!propSchema.enum.includes(val)) {
+                property.errorMsg = `Can only be one of: ${JSON.stringify(propSchema.enum)}`;
+              } else {
+                property.errorMsg = undefined;
+              }
             },
           };
         } else if(propSchema[OpenApiTags.PropLink]) {
@@ -907,7 +955,7 @@ export class EditorImpl implements Editor {
           target.subscribe(() => {
             const linkProperty = property as LinkProperty;
             linkProperty.cachedOptions = undefined;
-            linkProperty.errorMsg = linkProperty.validateValue(linkProperty.value)
+            linkProperty.validateValue(linkProperty.value)
             this.notify(localSubscribers);
           });
           property = {
@@ -944,12 +992,24 @@ export class EditorImpl implements Editor {
               property.set(idProp.value as never);
             },
             getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
-            validateValue: (val:string|undefined):string|undefined => {
-              if(val === undefined) return validateRequiredFun(val);
-              const linkProperty = property as LinkProperty;
-              return linkProperty.getOptions().find(o => o.id === val) === undefined
-                ? "Invalid reference"
-                : undefined;
+            validateValue: (val:string|undefined):void => {
+              if(val === undefined) {
+                validateRequiredFun(val);
+              } else {
+                // Since link validation requires another property,
+                // potentially itself, do this later after property
+                // is fully initialized to prevent a stack overflow
+                setTimeout(() => {
+                  const linkProperty = property as LinkProperty;
+                  const newErrorMsg = linkProperty.getOptions().find(o => o.id === val) === undefined
+                    ? "Invalid reference"
+                    : undefined;
+                  if(newErrorMsg !== property.errorMsg) {
+                    property.errorMsg = newErrorMsg;
+                    this.notify(localSubscribers);
+                  }
+                },1);
+              }
             },
           };
           break;
@@ -992,13 +1052,19 @@ export class EditorImpl implements Editor {
             format: propSchema.format,
             set: setStringFun,
             setDefault: setDefaultStringFun,
-            validateValue: (val:string|undefined):string|undefined => {
-              if(val === undefined) return validateRequiredFun(val);
+            validateValue: (val:string|undefined):void => {
               const stringProperty = property as StringProperty;
-              if(stringProperty.validation !== undefined && !stringProperty.validation.test(val)) return `Invalid value (Requires ${stringProperty.validation})`;
-              if(stringProperty.minLength !== undefined && val.length < stringProperty.minLength) return `Must be at least ${stringProperty.minLength} characters`;
-              if(stringProperty.maxLength !== undefined && val.length > stringProperty.maxLength) return `Must be at most ${stringProperty.maxLength} characters`;
-              return undefined;
+              if(val === undefined) {
+                validateRequiredFun(val);
+              } else if(stringProperty.validation !== undefined && !stringProperty.validation.test(val)) {
+                property.errorMsg = `Invalid value (Requires ${stringProperty.validation})`;
+              } else if(stringProperty.minLength !== undefined && val.length < stringProperty.minLength) {
+                property.errorMsg = `Must be at least ${stringProperty.minLength} characters`;
+              } else if(stringProperty.maxLength !== undefined && val.length > stringProperty.maxLength) {
+                property.errorMsg = `Must be at most ${stringProperty.maxLength} characters`;
+              } else {
+                property.errorMsg = undefined;
+              }
             },
           };
         }
@@ -1010,13 +1076,19 @@ export class EditorImpl implements Editor {
           ...base,
           type: propSchema.type,
           value: value,
-          validateValue: (val:number|undefined):string|undefined => {
+          validateValue: (val:number|undefined):void => {
             const numericProperty = property as IntegerProperty|NumberProperty;
-            if(val === undefined) return validateRequiredFun(val);
-            if(property.type === PropertyType.Integer && val % 1 > 0) return `Must be a whole number`;
-            if(numericProperty.minimum !== undefined && val < numericProperty.minimum) return `Must be a minimum of ${numericProperty.minimum}`;
-            if(numericProperty.maximum !== undefined && val > numericProperty.maximum) return `Must be a maximum of ${numericProperty.maximum}`;
-            return undefined;
+            if(val === undefined) {
+              validateRequiredFun(val);
+            } else if(property.type === PropertyType.Integer && val % 1 > 0) {
+              property.errorMsg = `Must be a whole number`;
+            } else if(numericProperty.minimum !== undefined && val < numericProperty.minimum) {
+              property.errorMsg = `Must be a minimum of ${numericProperty.minimum}`;
+            } else if(numericProperty.maximum !== undefined && val > numericProperty.maximum) {
+              property.errorMsg = `Must be a maximum of ${numericProperty.maximum}`;
+            } else {
+              property.errorMsg = undefined;
+            }
           },
         };
         break;
@@ -1040,7 +1112,7 @@ export class EditorImpl implements Editor {
           target.subscribe(() => {
             const linkMultiProperty = property as LinkMultiProperty;
             linkMultiProperty.cachedOptions = undefined;
-            linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value)
+            linkMultiProperty.validateValue(linkMultiProperty.value)
             this.notify(localSubscribers);
           });
           property = {
@@ -1057,7 +1129,7 @@ export class EditorImpl implements Editor {
               linkMultiProperty.value = new Set<string>(val);
               this.setValue(path, [...linkMultiProperty.value]);
               (property as LinkMultiProperty).cachedOptions = undefined;
-              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
             create: (name:string):void => {
@@ -1088,7 +1160,7 @@ export class EditorImpl implements Editor {
               linkMultiProperty.value.add(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
               (property as LinkMultiProperty).cachedOptions = undefined;
-              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
             delete: (linkId:string):void => {
@@ -1097,21 +1169,40 @@ export class EditorImpl implements Editor {
               linkMultiProperty.value.delete(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
               (property as LinkMultiProperty).cachedOptions = undefined;
-              linkMultiProperty.errorMsg = linkMultiProperty.validateValue(linkMultiProperty.value);
+              linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
-            validateValue: (val:Set<string>|undefined):string|undefined => {
-              if(val === undefined) return validateRequiredFun(val);
-              const linkMultiProperty = property as LinkMultiProperty;
-              const count = val ? val.size : 0;
-              if(linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) return `Must have at least ${linkMultiProperty.minItems} entries`;
-              if(linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) return `Must have at most ${linkMultiProperty.maxItems} entries`;
-              const linkProperty = property as LinkProperty;
-              const options = linkProperty.getOptions();
-              for(let valItem in val) {
-                if(options.find(o => o.id === valItem) === undefined)return "Option no longer exists";
+            validateValue: (val:Set<string>|undefined):void => {
+              if(val === undefined) {
+                validateRequiredFun(val);
+              } else {
+                const linkMultiProperty = property as LinkMultiProperty;
+                const count = val ? val.size : 0;
+                if(linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) {
+                  property.errorMsg = `Must have at least ${linkMultiProperty.minItems} entries`;
+                } else if(linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) {
+                  property.errorMsg = `Must have at most ${linkMultiProperty.maxItems} entries`;
+                } else {
+                  property.errorMsg = undefined;
+                  // Since link validation requires another property,
+                  // potentially itself, do this later after property
+                  // is fully initialized to prevent a stack overflow
+                  setTimeout(() => {
+                    const options = linkMultiProperty.getOptions();
+                    var newErrorMsg:string|undefined = undefined;
+                    for(let valItem in val) {
+                      if(options.find(o => o.id === valItem) === undefined) {
+                        newErrorMsg = "Option no longer exists";
+                        break;
+                      }
+                    }
+                    if(newErrorMsg !== property.errorMsg) {
+                      property.errorMsg = newErrorMsg;
+                      this.notify(localSubscribers);
+                    }
+                  },1);
+                }
               }
-              return undefined;
             },
             getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
           }
@@ -1149,7 +1240,7 @@ export class EditorImpl implements Editor {
               arrayProperty.childProperties = undefined;
             }
             arrayProperty.value = val;
-            arrayProperty.errorMsg = arrayProperty.validateValue(val);
+            arrayProperty.validateValue(val);
             this.notify(localSubscribers);
           },
           setRaw: (val:Array<any>|undefined):void => {
@@ -1163,7 +1254,7 @@ export class EditorImpl implements Editor {
               arrayProperty.value = undefined;
               arrayProperty.childProperties = undefined;
             }
-            arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
+            arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
           },
           setDefault: ():void => {
@@ -1187,7 +1278,7 @@ export class EditorImpl implements Editor {
                 : arrayProperty.childProperties!.length - 1];
             newProperty.setDefault();
             property.value = true;
-            arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
+            arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
             return newProperty;
           },
@@ -1198,16 +1289,23 @@ export class EditorImpl implements Editor {
             arr.splice(index, 1);
             this.cacheInvalidateChildren(path);
             arrayProperty.childProperties = fetchChildPropertiesArray();
-            arrayProperty.errorMsg = arrayProperty.validateValue(arrayProperty.value);
+            arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
           },
-          validateValue: (val:true|undefined):string|undefined => {
-            if(val === undefined) return validateRequiredFun(val);
-            const arrayProperty = property as ArrayProperty;
-            const count = arrayProperty.childProperties ? arrayProperty.childProperties.length : 0;
-            if(arrayProperty.minItems !== undefined && count < arrayProperty.minItems) return `Must have at least ${arrayProperty.minItems} entries`;
-            if(arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) return `Must have at most ${arrayProperty.maxItems} entries`;
-            return undefined;
+          validateValue: (val:true|undefined):void => {
+            if(val === undefined) {
+              validateRequiredFun(val);
+            } else {
+              const arrayProperty = property as ArrayProperty;
+              const count = arrayProperty.childProperties ? arrayProperty.childProperties.length : 0;
+              if(arrayProperty.minItems !== undefined && count < arrayProperty.minItems) {
+                property.errorMsg = `Must have at least ${arrayProperty.minItems} entries`;
+              } else if(arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) {
+                property.errorMsg = `Must have at most ${arrayProperty.maxItems} entries`;
+              } else {
+                property.errorMsg = undefined;
+              }
+            }
           },
         };
         break;
@@ -1248,7 +1346,7 @@ export class EditorImpl implements Editor {
               objectProperty.childProperties = undefined;
             }
             objectProperty.value = val;
-            objectProperty.errorMsg = objectProperty.validateValue(val);
+            objectProperty.validateValue(val);
             this.notify(localSubscribers);
           },
           setRaw: (val:object|undefined):void => {
@@ -1262,7 +1360,7 @@ export class EditorImpl implements Editor {
               objectProperty.value = undefined;
               objectProperty.childProperties = undefined;
             }
-            objectProperty.errorMsg = objectProperty.validateValue(objectProperty.value);
+            objectProperty.validateValue(objectProperty.value);
             this.notify(localSubscribers);
           },
           setDefault: ():void => {
@@ -1274,7 +1372,7 @@ export class EditorImpl implements Editor {
       default:
         throw Error(`Unknown type ${propSchema.type} in path ${path}`);
     }
-    property.errorMsg = property.validateValue(property.value as never);
+    property.validateValue(property.value as never);
     return property;
   }
 }
