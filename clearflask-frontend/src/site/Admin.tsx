@@ -1,17 +1,24 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../common/config/configEditor';
-import Menu from '../common/config/settings/Menu';
+import Menu, { MenuProject, MenuDivider, MenuItem } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import { match } from 'react-router';
 import { History, Location } from 'history';
 import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
-import { Divider, Typography } from '@material-ui/core';
+import { Divider, Typography, ListItem } from '@material-ui/core';
 import { Server } from '../api/server';
 import * as AdminClient from '../api/admin';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import ConfigView from '../common/config/settings/ConfigView';
+import ServerAdmin from '../api/serverAdmin';
+import Crumbs from '../common/config/settings/Crumbs';
+
+export interface Project {
+  editor:ConfigEditor.Editor;
+  server:Server;
+}
 
 interface Props {
   // Router matching
@@ -25,43 +32,64 @@ interface State {
 }
 
 export default class Admin extends Component<Props, State> {
-  readonly server:Server;
-  editor:ConfigEditor.Editor|undefined;
+  readonly serverAdmin:ServerAdmin;
+  readonly menuItems:{[slug:string]:(MenuItem&{content:()=>React.ReactNode})} = {
+    '': {
+      slug: '',
+      type: 'item',
+      name: 'Home',
+      content: () => (<div>This is home</div>),
+    }
+  };
+  projects:{[projectId:string]: Project} = {};
   
   constructor(props:Props) {
     super(props);
 
     this.state = {currentPagePath: []}
 
-    const projectId = this.props.match.params['projectId'];
-    this.server = new Server(
-      projectId,
-      detectEnv() === Environment.DEVELOPMENT_FRONTEND);
-    if(detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
-      this.server.dispatchAdmin().then(d => d.configGetAdmin({projectId: projectId}).then((conf:AdminClient.ConfigAdmin) => {
-        this.editor = new ConfigEditor.EditorImpl(conf);
-      }));
+    this.serverAdmin = new ServerAdmin();
+
+    if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      this.loadProjects({
+        configs: [
+          new ConfigEditor.EditorImpl().getConfig(),
+          new ConfigEditor.EditorImpl().getConfig(),
+          new ConfigEditor.EditorImpl().getConfig(),
+          new ConfigEditor.EditorImpl().getConfig(),
+          new ConfigEditor.EditorImpl().getConfig(),
+        ]
+      });
     } else {
-      this.editor = new ConfigEditor.EditorImpl();
-      this.server.overrideConfig(this.editor.getConfig());
+      this.serverAdmin.dispatchAdmin().then(d => d.configGetAllAdmin().then(this.loadProjects.bind(this)));
     }
   }
 
+  loadProjects(projects:AdminClient.Projects) {
+    projects.configs.forEach(config => {
+      const editor = new ConfigEditor.EditorImpl(config);
+      const server = new Server(config.projectId);
+      server.subscribeToChanges(editor);
+      this.projects[config.projectId] = {
+        editor: editor,
+        server: server,
+      };
+    });
+    this.forceUpdate();
+  }
+
   render() {
-    const activePath = ConfigEditor.parsePath(this.props.match.params['path'], '/');
-    var menu;
+    const activePath = this.props.match.params['path'] || '';
+    const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
+    const activeMenuItem = this.menuItems[activePath];
+    const activeProject = this.projects[activePath];
     var page;
     var preview;
-    if(this.editor) {
-      menu = (
-        <Menu
-          page={this.editor.getPage([])}
-          activePath={activePath}
-          pageClicked={this.pageClicked.bind(this)}
-        />
-      );
+    if(activeMenuItem) {
+      page = activeMenuItem.content();
+    } else if(activeProject) {
       try {
-        var currentPage = this.editor.getPage(activePath);
+        var currentPage = activeProject.editor.getPage(activeSubPath);
       } catch(ex) {
         return (
           <Message innerStyle={{margin: '40px auto'}}
@@ -72,32 +100,63 @@ export default class Admin extends Component<Props, State> {
       }
       page = (
         <Page
+          key={activePath}
           page={currentPage}
-          editor={this.editor}
-          pageClicked={this.pageClicked.bind(this)}
+          editor={activeProject.editor}
+          pageClicked={path => this.pageClicked(activePath, path)}
         />
       );
       preview = (
-        <DemoApp editor={this.editor} server={this.server} />
+        <DemoApp
+          key={activePath}
+          editor={activeProject.editor}
+          server={activeProject.server} />
       );
     }
     return (
       <Layout
-        toolbarLeft={(
+        toolbarLeft={
           <Typography variant="h6" color="inherit" noWrap>
             Admin
           </Typography>
-        )}
+        }
         preview={preview}
-        menu={menu}
+        menu={(
+          <Menu
+            items={[
+              ...(Object.values(this.menuItems)),
+              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider'} as MenuDivider] : []),
+              ...(Object.keys(this.projects).map(projectId => {
+                const project = this.projects[projectId];
+                const menuProject:MenuProject = {
+                  type: 'project',
+                  projectId: project.server.getProjectId(),
+                  page: project.editor.getPage([]),
+                };
+                return menuProject;
+              })),
+            ]}
+            activePath={activePath}
+            activeSubPath={activeSubPath}
+            pageClicked={this.pageClicked.bind(this)}
+          />
+        )}
       >
-        {page}
+        {[
+          <Crumbs
+            activeItem={activeMenuItem}
+            activeProject={activeProject}
+            activeSubPath={activeSubPath}
+            pageClicked={this.pageClicked.bind(this)}
+          />,
+          page,
+        ]}
         {/* TODO remove <ConfigView editor={this.editor} /> */}
       </Layout>
     );
   }
 
-  pageClicked(path:ConfigEditor.Path):void {
-    this.props.history.push(`/admin/${this.server.getProjectId()}/${path.join('/')}`);
+  pageClicked(path:string, subPath:ConfigEditor.Path = []):void {
+    this.props.history.push(`/admin/${[path, ...subPath].join('/')}`);
   }
 }

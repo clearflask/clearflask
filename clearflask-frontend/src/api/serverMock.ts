@@ -8,6 +8,8 @@ interface Id {
 }
 
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
+  static instance:ServerMock|undefined;
+
   readonly LATENCY = 300;
   readonly DEFAULT_LIMIT = 10;
 
@@ -20,6 +22,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly ideas:Admin.IdeaAdmin[] = [];
   readonly users:Admin.UserAdmin[] = [];
   readonly votes:Admin.VoteAdmin[] = [];
+
+  static get():ServerMock {
+    if(ServerMock.instance === undefined) ServerMock.instance = new ServerMock();
+    return ServerMock.instance;
+  }
 
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     throw new Error("Method not implemented.");
@@ -139,6 +146,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   configGetAdmin(requestParameters: Admin.ConfigGetAdminRequest): Promise<Admin.ConfigAdmin> {
+    throw new Error("Method not implemented.");
+  }
+  configGetAllAdmin(): Promise<Admin.Projects> {
     throw new Error("Method not implemented.");
   }
   configSetAdmin(requestParameters: Admin.ConfigSetAdminRequest): Promise<Admin.NewConfigResult> {

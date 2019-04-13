@@ -1,10 +1,9 @@
 import React from 'react';
-import DataMock from './dataMock';
 import * as Client from './client';
 import * as Admin from './admin';
-import ServerMock from './serverMock';
 import * as ConfigEditor from '../common/config/configEditor';
-import { isProd } from '../common/util/detectEnv';
+import ServerMock from './serverMock';
+import { isProd, detectEnv, Environment } from '../common/util/detectEnv';
 import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
@@ -16,14 +15,13 @@ export enum Status {
 }
 
 export class Server {
-  apis: any;
   readonly projectId:string;
   readonly store:Store<ReduxState>;
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
-  readonly dispatcherAdmin:Admin.Dispatcher;
+  readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
 
-  constructor(projectId:string, mockServer:boolean = false) {
+  constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     this.projectId = projectId;
 
     if(isProd()) {
@@ -43,18 +41,30 @@ export class Server {
       this.store = createStore(reducers, enhancer);
     }
 
-    if(mockServer) {
-      this.mockServer = new ServerMock();
+    const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
+    this.dispatcherClient = dispatchers.client;
+    this.dispatcherAdmin = dispatchers.adminPromise;
+  }
+
+  static getDispatchers(
+    dispatcherDelegate:(msg:any)=>Promise<any>,
+    apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
+
+    const apiConf:Client.ConfigurationParameters = {};
+    if(!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      apiOverride = ServerMock.get();
+    } else if(detectEnv() === Environment.DEVELOPMENT_LOCAL) {
+      apiConf.basePath = Client.BASE_PATH.replace(/api\.clearflask\.com/, 'localhost');
     }
-    const apiConf = {
-      basePath: Client.BASE_PATH.replace(/projectId/, projectId),
+
+    const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
+      new Client.Api(new Client.Configuration(apiConf), apiOverride));
+    const dispatcherAdminPromise = Promise.resolve(new Admin.Dispatcher(dispatcherDelegate,
+      new Admin.Api(new Admin.Configuration(apiConf), apiOverride)));
+    return {
+      client: dispatcherClient,
+      adminPromise: dispatcherAdminPromise,
     };
-    const apiDelegateClient = new Client.Api(new Client.Configuration(apiConf), this.mockServer);
-    const apiDelegateAdmin = new Admin.Api(new Admin.Configuration(apiConf), this.mockServer);
-
-    this.dispatcherClient = new Client.Dispatcher(this._dispatch.bind(this), apiDelegateClient);
-    this.dispatcherAdmin = new Admin.Dispatcher(this._dispatch.bind(this), apiDelegateAdmin);
-
   }
 
   static initialState(projectId:string):any {
@@ -93,7 +103,10 @@ export class Server {
     return this.dispatcherAdmin;
   }
 
-  /** Override config. Used for config change preview and demos */
+  subscribeToChanges(editor:ConfigEditor.Editor) {
+    editor.subscribe(() => this.overrideConfig(editor.getConfig()));
+  }
+
   overrideConfig(config:Admin.Config):void {
     const msg:Admin.configGetAdminActionFulfilled = {
       type: Admin.configGetAdminActionStatus.Fulfilled,

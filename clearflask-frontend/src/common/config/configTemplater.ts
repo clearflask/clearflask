@@ -45,13 +45,13 @@ export default class Templater {
   creditsBeer() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' 🍺', lessOrEqual: 999}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({suffix: '🍺', lessOrEqual: 999}),
     ]);
   }
 

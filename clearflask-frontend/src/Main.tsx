@@ -27,7 +27,7 @@ class Main extends Component {
             <Route path="/" exact render={props => (
               <Site {...props} />
             )} />
-            <Route path="/admin/:projectId?/:path*" render={props => (
+            <Route path="/admin/:path?/:subPath*" render={props => (
               <Admin {...props} />
             )} />
             <Route path="/:projectId/:pageUrlName?" render={props => (

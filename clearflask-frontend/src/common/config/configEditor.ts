@@ -451,7 +451,11 @@ export class EditorImpl implements Editor {
   }
 
   sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property):number {
-    return (l.order || l.name) > (r.order || r.name) ? 1 : -1;
+    // id subtype needs to initialize first in case a subsequent link points to itself
+    return (l['subType'] === 'id' ? -1 : l.order || l.name)
+      > (r['subType'] === 'id' ? -1 : r.order || r.name)
+        ? 1
+        : -1;
   }
 
   getCacheKey(path:Path):string {
@@ -538,6 +542,7 @@ export class EditorImpl implements Editor {
         ? option.getChildren().props
         : option.childProperties || []);
       props.forEach((childProp:Property) => {
+        console.log('debugdebug', JSON.stringify(childProp, null, 2));
         if(childProp.type !== PropertyType.String) {
           return;
         }
@@ -559,7 +564,7 @@ export class EditorImpl implements Editor {
         }
       });
       if(id === undefined) {
-        throw Error(`Link property ${targetPath} idPropName '${linkProp.idPropName}' points to non-existent property on path ${targetPath}`);
+        throw Error(`Link property ${linkProp.path} idPropName '${linkProp.idPropName}' points to non-existent property on path ${targetPath}`);
       }
       const linkPropertyOption:LinkPropertyOption = {
         id: id,

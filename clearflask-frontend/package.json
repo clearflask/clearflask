@@ -6,6 +6,7 @@
   "dependencies": {
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
+    "@material-ui/lab": "^3.0.0-alpha.30",
     "@types/jest": "24.0.11",
     "@types/node": "11.11.3",
     "@types/react": "16.8.8",

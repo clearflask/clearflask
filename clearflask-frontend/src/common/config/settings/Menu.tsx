@@ -1,16 +1,79 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { ListItem, ListItemIcon, ListItemText, ListSubheader } from '@material-ui/core';
+import { ListItem, ListItemIcon, ListItemText, ListSubheader, Divider } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
 
+export interface MenuDivider {
+  type: 'divider';
+}
+
+export interface MenuItem {
+  type: 'item';
+  name: string;
+  slug: string;
+  offset?: number;
+}
+
+export interface MenuProject {
+  type: 'project';
+  projectId: string;
+  page: ConfigEditor.Page;
+}
+
 interface Props extends ListProps {
-  page:ConfigEditor.Page;
-  activePath:ConfigEditor.Path;
-  pageClicked:(path:ConfigEditor.Path)=>void;
+  items:(MenuProject|MenuItem|MenuDivider)[];
+  activePath: string;
+  activeSubPath: ConfigEditor.Path;
+  pageClicked:(path:string, subPath?:ConfigEditor.Path)=>void;
 }
 
 export default class Menu extends Component<Props> {
+  render() {
+    return (
+      <List component='nav' style={{padding: '0px'}}>
+        {this.props.items.map(item => {
+          if(item.type === 'item') {
+            return (
+              <ListItem selected={item.slug === this.props.activePath} button onClick={() => {
+                this.props.pageClicked(item.slug);
+              }}>
+                <ListItemText style={Menu.paddingForLevel(undefined, item.offset)} primary={item.name} />
+              </ListItem>
+            );
+          } else if(item.type === 'project') {
+            return (
+              <MenuPage
+                page={item.page}
+                activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
+                pageClicked={path => this.props.pageClicked(item.projectId, path)}
+              />
+            );
+          } else if(item.type === 'divider') {
+            return (
+              <Divider style={{marginTop: '-1px'}} variant='middle' />
+            );
+          } else {
+            return null;
+          }
+        })}
+      </List>
+    );
+  }
+
+  static paddingForLevel(path:ConfigEditor.Path = [], offset:number = 0):React.CSSProperties|undefined {
+    const paddingLevel = path.length + offset;
+    return paddingLevel === 0 ? undefined : { paddingLeft: (paddingLevel * 10) + 'px' };
+  }
+}
+
+interface PropsPage {
+  page:ConfigEditor.Page;
+  activePath?:ConfigEditor.Path;
+  pageClicked:(path:ConfigEditor.Path)=>void;
+}
+
+class MenuPage extends Component<PropsPage> {
   unsubscribe?:()=>void;
 
   componentDidMount() {
@@ -25,32 +88,30 @@ export default class Menu extends Component<Props> {
     const expanded = this.isExpanded(this.props.page.path);
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
-        <List component='nav' style={{padding: '0px'}}>
-          <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
-            this.props.pageClicked(this.props.page.path);
-          }}>
-            <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
-          </ListItem>
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            {this.props.page.getChildren().all
-              .map(child => {
-                switch(child.type) {
-                  case ConfigEditor.PageType:
-                    return ( <Menu {...this.props} page={child} /> );
-                  case ConfigEditor.PageGroupType:
-                    return ( <MenuPageGroup {...this.props} pageGroup={child} /> );
-                  default:
-                    return null;
-                }
-            })}
-          </Collapse>
-        </List>
+        <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
+          this.props.pageClicked(this.props.page.path);
+        }}>
+          <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
+        </ListItem>
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          {this.props.page.getChildren().all
+            .map(child => {
+              switch(child.type) {
+                case ConfigEditor.PageType:
+                  return ( <MenuPage {...this.props} page={child} /> );
+                case ConfigEditor.PageGroupType:
+                  return ( <MenuPageGroup {...this.props} pageGroup={child} /> );
+                default:
+                  return null;
+              }
+          })}
+        </Collapse>
       </Collapse>
     );
   }
 
   isExpanded(path:ConfigEditor.Path):boolean {
-    if(this.props.activePath.length < path.length) {
+    if(!this.props.activePath || this.props.activePath.length < path.length) {
       return false;
     }
     for (let i = 0; i < path.length; i++) {
@@ -62,7 +123,7 @@ export default class Menu extends Component<Props> {
   }
 
   isSelected(path:ConfigEditor.Path) {
-    if(this.props.activePath.length !== path.length) {
+    if(!this.props.activePath || this.props.activePath.length !== path.length) {
       return false;
     }
     for (let i = 0; i < path.length; i++) {
@@ -72,15 +133,11 @@ export default class Menu extends Component<Props> {
     }
     return true;
   }
-
-  static paddingForLevel(path:ConfigEditor.Path, offset:number = 0):React.CSSProperties {
-    return { paddingLeft: ((path.length + offset) * 10) + 'px' };
-  }
 }
 
-interface PropsPageGroup extends ListProps {
+interface PropsPageGroup {
   pageGroup:ConfigEditor.PageGroup;
-  activePath:ConfigEditor.Path;
+  activePath?:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
@@ -106,7 +163,7 @@ class MenuPageGroup extends Component<PropsPageGroup> {
               primary={this.props.pageGroup.name} />
           </ListItem>
           {childPages.map(childPage =>
-            <Menu {...this.props} page={childPage} />
+            <MenuPage {...this.props} page={childPage} />
           )}
         </div>
       </Collapse>

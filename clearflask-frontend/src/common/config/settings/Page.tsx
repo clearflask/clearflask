@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TableHead, TableRow, TableCell, Checkbox, withStyles } from '@material-ui/core';
+import { Typography, TableHead, TableRow, TableCell, Checkbox, withStyles, Link } from '@material-ui/core';
 import Property from './Property';
 import PresetWidget from './PresetWidget';
 import CreditPreview from './injects/CreditPreview';
+import Crumbs from './Crumbs';
 
 interface Props {
   page:ConfigEditor.Page;
