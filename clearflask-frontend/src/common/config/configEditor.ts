@@ -581,6 +581,73 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
+  setNewIds(rootItem:Page|PageGroup|Property):void {
+    const linkProps:(LinkProperty|LinkMultiProperty)[] = [];
+    const idProps:StringProperty[] = [];
+    const stack:(Page|PageGroup|Property)[] = [rootItem];
+    for (var i = 0; i < stack.length; i++) {
+      const item = stack[i];
+      switch(item.type) {
+        case PageType:
+          stack.push.apply(item.getChildren().all)
+          break;
+        case PageGroupType:
+          stack.push.apply(item.getChildPages())
+          break;
+        case PropertyType.Object:
+        case PropertyType.Array:
+          stack.push.apply(item.childProperties)
+          break;
+        case PropertyType.String:
+          if(item.subType === PropSubType.Id) {
+            idProps.push(item);
+          }
+          break;
+        case PropertyType.Link:
+        case PropertyType.LinkMulti:
+          linkProps.push(item);
+          break;
+        default:
+          break;
+      }
+    }
+    // Reset IDs
+    const newIds = {};
+    idProps.forEach(idProp => {
+      const oldId = idProp.value;
+      idProp.setDefault()
+      // If the parent is an array, keep track of its path to see if someone links to us
+      if(idProp.path.length > 2 && typeof idProp.path[idProp.path.length - 2] === 'number') {
+        var pathWithId = '';
+        for (let i = 0; i < idProp.path.length - 2; i++) {
+          pathWithId += (typeof idProp.path[i] === 'number' ? '<>' : idProp.path[i]) + '.';
+        }
+        pathWithId += oldId;
+        newIds[pathWithId] = idProp.value
+      }
+    });
+
+    // Repoint links
+    linkProps.forEach(linkProp => {
+      if(linkProp.value === undefined) return;
+      if(linkProp.type === PropertyType.Link) {
+        const linkPathWithId = [...linkProp.linkPath, linkProp.value].join('.');
+        if(newIds[linkPathWithId]) linkProp.set(newIds[linkPathWithId]);
+      } else {
+        const linkPathPrefix = linkProp.linkPath.join('.');
+        const newLinkValues:Set<string> = new Set();
+        linkProp.value!.forEach(linkValue => {
+          const linkPathWithId = linkPathPrefix + '.' + linkValue;
+          newLinkValues.add(newIds[linkPathWithId]
+            ? newIds[linkPathWithId]
+            : linkValue);
+        })
+        linkProp.set(newLinkValues);
+      }
+    })
+    console.log('debugdebug', JSON.stringify(newIds, null, 2), idProps.map(i => i.pathStr), linkProps.map(i => i.pathStr));
+  }
+
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     var pageSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
