@@ -22,19 +22,21 @@ class Main extends Component {
     return (
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
-          <Switch>
-            <Route path="/" exact render={props => (
-              <Site {...props} />
-            )} />
-            <Route path="/admin/:path?/:subPath*" render={props => (
-              <Admin {...props} />
-            )} />
-            <Route path="/:projectId/:pageUrlName?" render={props => (
-              <App {...props} />
-            )} />
-          </Switch>
-        </Router>
+        <div style={{background: theme.palette.background.default}}>
+          <Router>
+            <Switch>
+              <Route path="/" exact render={props => (
+                <Site {...props} />
+              )} />
+              <Route path="/admin/:path?/:subPath*" render={props => (
+                <Admin {...props} />
+              )} />
+              <Route path="/:projectId/:pageUrlName?" render={props => (
+                <App {...props} />
+              )} />
+            </Switch>
+          </Router>
+        </div>
       </MuiThemeProvider>
     );
   }

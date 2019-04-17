@@ -11,11 +11,8 @@ components:
         - name
         - slug
         - credits
-        - expression
         - layout
-        - grouping
-        - tagging
-        - workflows
+        - content
         - style
       properties:
         # TODO remove test page
@@ -37,22 +34,16 @@ components:
         projectSlug:
           x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url suffix of your project: https://clearflask.com/<slug>' }
           type: string
-        credits:
-          $ref: 'api-project.yaml#/components/schemas/credits'
-        expression:
-          $ref: 'api-project.yaml#/components/schemas/expression'
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
-        grouping:
-          $ref: 'api-project.yaml#/components/schemas/grouping'
-        tagging:
-          $ref: 'api-project.yaml#/components/schemas/tagging'
-        workflows:
-          $ref: 'api-project.yaml#/components/schemas/workflows'
+        content:
+          $ref: 'api-project.yaml#/components/schemas/content'
+        credits:
+          $ref: 'api-project.yaml#/components/schemas/credits'
         style:
           $ref: 'api-project.yaml#/components/schemas/style'
     credits:
-      x-clearflask-page: { order: 3, name: 'Credits', description: 'Define a currency for your users.' }
+      x-clearflask-page: { order: 13, name: 'Credits', description: 'Define a currency for your users.' }
       title: CreditFormatter
       type: object
       properties:
@@ -92,23 +83,109 @@ components:
                 x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
     style:
-      x-clearflask-page: { order: 7, name: 'Style' }
+      x-clearflask-page: { order: 14, name: 'Style' }
       title: Style
       type: object
       required:
+        - palette
+        - typography
       properties:
-        placeholderProperty:
-          type: string
-    expression:
+        palette:
+          x-clearflask-prop: { order: 1, name: 'Palette' }
+          title: Palette
+          type: object
+          required:
+            - darkMode
+          properties:
+            darkMode:
+              x-clearflask-prop: { order: 1, name: 'Dark mode' }
+              type: boolean
+            primary:
+              x-clearflask-prop: { order: 2, subType: 'color', name: 'Primary color' }
+              type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            secondary:
+              x-clearflask-prop: { order: 3, subType: 'color', name: 'Secondary color' }
+              type: string
+        typography:
+          x-clearflask-prop: { order: 2, name: 'Typography' }
+          title: Typography
+          type: object
+          properties:
+            fontFamily:
+              x-clearflask-prop: { order: 1, name: 'Font Family' }
+              type: string
+            fontSize:
+              x-clearflask-prop: { order: 2, name: 'Font Size' }
+              type: number
+    support:
       x-clearflask-page: { order: 4, name: 'Expression' }
       title: Expression
       type: object
       required:
       properties:
-        placeholderProperty:
-          type: string
+        fund:
+          x-clearflask-prop: { order: 1, name: 'Enable funding' }
+          title: Funding
+          type: object
+          required:
+            - showFunds
+            - showFunders
+          properties:
+            showFunds:
+              x-clearflask-prop: { order: 1, name: 'Show funds', description: '' }
+              type: boolean
+            showFunders:
+              x-clearflask-prop: { order: 1, name: 'Show funders', description: '' }
+              type: boolean
+        vote:
+          x-clearflask-prop: { order: 1, name: 'Enable voting' }
+          title: Voting
+          type: object
+          required:
+            - enableDownvotes
+            - showVotes
+            - showVoters
+          properties:
+            enableDownvotes:
+              x-clearflask-prop: { order: 1, name: 'Enable downvoting', description: '' }
+              type: boolean
+            showVotes:
+              x-clearflask-prop: { order: 1, name: 'Show votes', description: '' }
+              type: boolean
+            showVoters:
+              x-clearflask-prop: { order: 1, name: 'Show voters', description: '' }
+              type: boolean
+        express:
+          x-clearflask-prop: { order: 1, name: 'Enable expression' }
+          title: Express
+          type: object
+          properties:
+            limitEmojis:
+              x-clearflask-prop: { order: 3, name: 'Emoji whitelist', description: 'If enabled, limit the emojis that can be displayed. Additionally, set the weight of each emoji' }
+              type: array
+              items:
+                x-clearflask-prop: { order: 1, name: 'Emojis' }
+                title: Emojis
+                type: object
+                required:
+                properties:
+                  weight:
+                    minimum: -1
+                    maximum: 1
+                    type: number
+                  display:
+                    x-clearflask-prop: { order: 1, name: 'Display', subType: 'emoji' }
+                    type: string
+        comment:
+          x-clearflask-prop: { order: 1, name: 'Enable comments' }
+          title: Express
+          type: object
+          properties:
+            testtest:
+              type: string
     layout:
-      x-clearflask-page: { order: 1, name: 'Layout' }
+      x-clearflask-page: { order: 11, name: 'Layout' }
       title: Layout
       type: object
       required:
@@ -155,7 +232,7 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page<>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:['layout','pages','<>', 'slug'] }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:['layout','pages','<>', 'slug'] }
                 type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
@@ -175,197 +252,158 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
                 $ref: 'api-project.yaml#/components/schemas/PageExplorer'
-    workflows:
-      x-clearflask-page: { order: 5, name: 'Workflows' }
+    workflow:
+      x-clearflask-page: { order: 5, name: 'Workflow', nameFromProp: 'name' }
       title: Workflow
       type: object
       required:
-        - workflow
+        - workflowId
+        - name
+        - statuses
       properties:
-        workflow:
-          x-clearflask-page-group: { order: 1, name: 'Workflow', description: 'List of statuses an idea can be in.', tablePropertyNames:['name'] }
+        entryStatus:
+          x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+          type: string
+        statuses:
+          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color', 'nextStatusIds'] }
           type: array
           items:
-            x-clearflask-page: { order: 5, name: 'Workflow', nameFromProp: 'name' }
-            title: Workflow
+            x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
+            title: IdeaStatus
             type: object
             required:
-              - workflowId
+              - statusId
               - name
-              - entryStatus
-              - statuses
+              - disableFunding
+              - disableSupport
+              - disableIdeaEdits
+              - disableComments
             properties:
-              workflowId:
+              statusId:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { order: 1, defaultValue: 'Workflow<>', name: 'Name', description: 'Workflow name' }
+                x-clearflask-prop: { order: 1, defaultValue: 'Status <>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
                 type: string
-              entryStatus:
-                x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
-                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['workflows', 'workflow', '<>', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
-                type: string
-              statuses:
-                x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color', 'nextStatusIds'] }
+              nextStatusIds:
+                x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
-                  x-clearflask-page: { name: 'Status', nameFromProp: 'name' }
-                  title: IdeaStatus
-                  type: object
-                  required:
-                    - statusId
-                    - name
-                    - disableFunding
-                    - disableSupport
-                    - disableIdeaEdits
-                    - disableComments
-                  properties:
-                    statusId:
-                      x-clearflask-prop: { subType: 'id' }
-                      type: string
-                    name:
-                      x-clearflask-prop: { order: 1, defaultValue: 'Status<>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
-                      type: string
-                    nextStatusIds:
-                      x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
-                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['workflows', 'workflow', '<>', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
-                      type: array
-                      items:
-                        type: string
-                    color:
-                      x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
-                      type: string
-                    disableFunding:
-                      x-clearflask-prop: { order: 4, name: 'Disable Funding', description: 'Overrides parent settings to disable funding during this status' }
-                      type: boolean
-                    disableSupport:
-                      x-clearflask-prop: { order: 5, name: 'Disable Support', description: 'Overrides parent settings to disable support during this status' }
-                      type: boolean
-                    disableIdeaEdits:
-                      x-clearflask-prop: { order: 6, name: 'Disable Editing', description: 'Overrides parent settings to disable editing of the idea during this status' }
-                      type: boolean
-                    disableComments:
-                      x-clearflask-prop: { order: 7, name: 'Disable Commenting', description: 'Overrides parent settings to disable commenting during this status' }
-                      type: boolean
+                  type: string
+              color:
+                x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
+                type: string
+              disableFunding:
+                x-clearflask-prop: { order: 4, name: 'Disable Funding', description: 'Overrides parent settings to disable funding during this status' }
+                type: boolean
+              disableSupport:
+                x-clearflask-prop: { order: 5, name: 'Disable Support', description: 'Overrides parent settings to disable support during this status' }
+                type: boolean
+              disableIdeaEdits:
+                x-clearflask-prop: { order: 6, name: 'Disable Editing', description: 'Overrides parent settings to disable editing of the idea during this status' }
+                type: boolean
+              disableComments:
+                x-clearflask-prop: { order: 7, name: 'Disable Commenting', description: 'Overrides parent settings to disable commenting during this status' }
+                type: boolean
     tagging:
       x-clearflask-page: { order: 6, name: 'Tagging' }
       title: Tagging
       type: object
       required:
-        - tags
+        - tagGroups
       properties:
-        tags:
-          x-clearflask-page-group: { order: 3, name: 'Tags', tablePropertyNames:['name', 'color'] }
+        tagGroups:
+          x-clearflask-page-group: { order: 1, name: 'Tag Groups', description: 'A set of tags you can use', tablePropertyNames:['name'] }
           type: array
           items:
-            x-clearflask-page: { name: 'Tag', nameFromProp: 'name' }
-            title: IdeaTag
+            x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
+            title: TagGroup
             type: object
+            required:
+              - tagGroupId
+              - userSettable
+              - tags
             properties:
-              tagId:
+              tagGroupId:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Tag<>', order: 1, name: 'Name', description: 'Tag Name' }
+                x-clearflask-prop: { order: 1, defaultValue: 'Tag Group <>', name: 'Name', description: 'Tag Group name' }
                 type: string
-              color:
-                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
-                type: string
-            required:
-              - tagId
-              - name
-    grouping:
-      x-clearflask-page: { order: 2, name: 'Feedback' }
-      title: Feedback
+              minRequired:
+                x-clearflask-prop: { order: 2, name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user' }
+                type: integer
+              maxRequired:
+                x-clearflask-prop: { order: 3, name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user' }
+                type: integer
+              userSettable:
+                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Can be set by user', defaultValue: true }
+                type: boolean
+              tags:
+                x-clearflask-prop: { order: 5, name: 'tags', description: 'Set of tags in this group' }
+                type: array
+                items:
+                  title: Tag
+                  type: object
+                  required:
+                   - tagId
+                   - name
+                  properties:
+                    tagId:
+                      x-clearflask-prop: { subType: 'id' }
+                      type: string
+                    name:
+                      x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Name', description: 'Tag Name' }
+                      type: string
+                    color:
+                      x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                      type: string
+    content:
+      x-clearflask-page: { order: 12, name: 'Content' }
+      title: Content
       type: object
       required:
-        - groups
+        - categories
       properties:
-        groups:
-          x-clearflask-page-group: { order: 2, name: 'Groups', tablePropertyNames:['name', 'color'] }
+        categories:
+          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames:['name'] }
           type: array
           items:
             x-clearflask-page: { name: 'Group', nameFromProp: 'name' }
             title: IdeaGroup
             type: object
+            required:
+              - categoryId
+              - name
+              - workflow
+              - support
+              - tagging
+              - visibility
             properties:
-              groupId:
+              categoryId:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Group<>', order: 1, name: 'Name', description: 'Group Name' }
+                x-clearflask-prop: { defaultValue: 'Category <>', order: 1, name: 'Name', description: 'Group Name' }
                 type: string
               color:
                 x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
                 type: string
-              allowFunding:
-                x-clearflask-prop: { name: 'Allow Funding', description: 'Allows users to use their credits' }
-                type: boolean
-              allowSupport:
-                x-clearflask-prop: { name: 'Allow Support', description: 'Allows users to show support' }
-                type: boolean
-              allowEdits:
-                x-clearflask-prop: { name: 'Allow Edits', description: 'Allows users to edit submitted posts' }
-                type: boolean
-              allowComments:
-                x-clearflask-prop: { name: 'Allow Comments', description: 'Allows users to comment on posts' }
-                type: boolean
-              workflowId:
-                x-clearflask-prop: { name: 'Default Status', description: 'Idea status to assign if any on newly created ideas. Can be overriden in group.' }
-                x-clearflask-prop-link: { idPropName: 'workflowId', linkPath: ['workflows', 'workflow'], displayPropName: 'name'}
-                type: string
-              tag:
-                type: object
-                properties:
-                  defaultIdeaTagIds:
-                    x-clearflask-prop: { name: 'Default Tag Ids', description: 'Idea tag ids to apply. Cannot be modified by user.' }
-                    type: array
-                    items:
-                      type: string
-                  settableIdeaTagIdsOnCreate:
-                    x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
-                    description: >-
-                      In addition to project level idea tags,
-                      these tags can also be added by user
-                      when creating an idea.
-                    type: array
-                    items:
-                      type: string
-                  tagsOnCreate:
-                    x-clearflask-prop: { name: 'Settable Tag Id groups', description: 'These tags can be added by user when creating a new idea. Will be merged with configuration inside IdeaGroup.' }
-                    type: array
-                    items:
-                      title: TagGroupings
-                      type: object
-                      properties:
-                        minRequired:
-                          x-clearflask-prop: { name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user.' }
-                          type: number
-                        maxRequired:
-                          x-clearflask-prop: { name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user.' }
-                          type: number
-                        tagIds:
-                          x-clearflask-prop: { name: 'Tags', description: 'List of tags for this group.' }
-                          type: array
-                          items:
-                            type: string
+              workflow:
+                $ref: 'api-project.yaml#/components/schemas/workflow'
+              support:
+                $ref: 'api-project.yaml#/components/schemas/support'
+              tagging:
+                $ref: 'api-project.yaml#/components/schemas/tagging'
               visibility:
-                type: object
-                properties:
-                  defaultIdeaVisibility:
-                    x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users.' }
-                    type: string
-                    enum:
-                      - Public
-                      - Private
-                  settableIdeaVisibility:
-                    x-clearflask-prop: { name: 'Settable Visibility', description: 'User can toggle whether a post is visible publicly by other users or privately only by you.' }
-                    type: boolean
-            required:
-              - groupId
-              - name
-              - tag
-              - visibility
+                x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users' }
+                type: string
+                enum:
+                  - Public
+                  - PublicOrPrivate
+                  - Private
     ConfigAdmin:
       description: >-
         All Config properties available for admins.

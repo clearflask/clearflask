@@ -5,12 +5,16 @@ import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
 import SelectionPicker from './property/SelectionPicker';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
+import 'emoji-mart/css/emoji-mart.css';
+import { Picker, EmojiData, BaseEmoji } from 'emoji-mart';
+import Overlay from '../../Overlay';
 
 interface Props {
   prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property;
   bare?:boolean;
   width?:string
   pageClicked:(path:ConfigEditor.Path)=>void;
+  isInsideMuiTable?:boolean;
 }
 
 export default class Property extends Component<Props> {
@@ -54,7 +58,7 @@ export default class Property extends Component<Props> {
                     placeholder='#000'
                     defaultValue={prop.defaultValue}
                     value={prop.value}
-                    onChange={this.handlePropChange.bind(this)}
+                    onChange={color => prop.set(color)}
                     TextFieldProps={{
                       // Hack to modify material-ui-color-picker to fix bug
                       // where a click inside the empty space inside the
@@ -114,7 +118,7 @@ export default class Property extends Component<Props> {
             id={prop.pathStr}
             label={!this.props.bare && name}
             value={prop.value}
-            onChange={this.handlePropChange.bind(this)}
+            onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
@@ -128,6 +132,7 @@ export default class Property extends Component<Props> {
               style: {
                 minWidth: Property.inputMinWidth,
                 width: this.props.width,
+                readonly: prop.subType === ConfigEditor.PropSubType.Emoji,
               },
             }}
             FormHelperTextProps={{
@@ -138,33 +143,64 @@ export default class Property extends Component<Props> {
             }}
           />
         );
+        if(prop.subType === ConfigEditor.PropSubType.Emoji) {
+          propertySetter = (
+            <Overlay
+              isInsideMuiTable={this.props.isInsideMuiTable}
+              popup={(
+                <Picker
+                  native
+                  onSelect={emoji => prop.set(((emoji as BaseEmoji).native) as never)}
+                />
+              )}
+            >
+              {propertySetter}
+            </Overlay>
+          );
+        }
         break;
       case ConfigEditor.PageType:
-        if(prop.required) return null;
+        const link = (
+          <div>
+            <IconButton aria-label="Open" onClick={() => {
+              this.props.pageClicked(prop.path);
+            }}>
+              <VisitPageIcon />
+            </IconButton>
+          </div>
+        );
+        const description = (prop.description || prop.errorMsg)
+            ? (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)
+            : null;
+        var content;
+        if(prop.required) {
+          content = [description, link];
+        } else {
+          content = (
+            <div>
+              <div>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={!!prop.value}
+                      onChange={(e, checked) => prop.set(checked ? true : undefined)}
+                      color="default"
+                    />
+                  )}
+                  label={description}
+                />
+              </div>
+              <Collapse in={prop.value} style={{marginLeft: '30px'}}>
+                {link}
+              </Collapse>
+            </div>
+          );
+        }
         marginTop += 16;
         propertySetter = (
           <div>
-            {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-            <div>
-              <FormControlLabel
-                control={(
-                  <Switch
-                    checked={!!prop.value}
-                    onChange={this.handlePropChange.bind(this)}
-                    color="default"
-                  />
-                )}
-                label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
-              />
-            </div>
-            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
-            <Collapse in={prop.value} style={{marginLeft: '30px'}}>
-              <IconButton aria-label="Open" onClick={() => {
-                this.props.pageClicked(prop.path);
-              }}>
-                <VisitPageIcon />
-              </IconButton>
-            </Collapse>
+            <InputLabel error={!!prop.errorMsg}>{name}</InputLabel>
+            {content}
           </div>
         );
         break;
@@ -179,7 +215,7 @@ export default class Property extends Component<Props> {
                   control={(
                     <Switch
                       checked={!!prop.value}
-                      onChange={this.handlePropChange.bind(this)}
+                      onChange={(e, checked) => prop.set(checked)}
                       color="default"
                     />
                   )}
@@ -211,7 +247,7 @@ export default class Property extends Component<Props> {
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
               value={prop.value}
-              onChange={this.handlePropChange.bind(this)}
+              onChange={e => prop.set((e.target.value) as never)}
               error={!!prop.errorMsg}
             >
               {items.map(item => (
@@ -253,7 +289,7 @@ export default class Property extends Component<Props> {
             control={(
               <Switch
                 checked={!!prop.value}
-                onChange={this.handlePropChange.bind(this)}
+                onChange={(e, checked) => prop.set(checked ? true : undefined)}
                 color="default"
                 
               />
@@ -292,23 +328,5 @@ export default class Property extends Component<Props> {
           {propertySetter}
         </div>
       ) : null;
-  }
-
-  handlePropChange(event) {
-    const prop = this.props.prop;
-
-    var newValue;
-    if((prop.required && prop.type === ConfigEditor.PropertyType.Boolean)
-      || prop.type === ConfigEditor.PropertyType.Object
-      || prop.type === ConfigEditor.PageType) {
-      newValue = event.target.checked;
-    } else if(prop.type !== ConfigEditor.PageGroupType
-      && prop.subType === ConfigEditor.PropSubType.Color) {
-      newValue = event;
-    } else {
-      newValue = event.target.value;
-    }
-
-    prop.set(newValue as never);
   }
 }

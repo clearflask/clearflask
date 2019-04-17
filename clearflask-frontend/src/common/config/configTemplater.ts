@@ -13,28 +13,38 @@ export default class Templater {
     return new Templater(editor);
   }
 
-  workflowFeatures() {
+  taggingOsPlatform(categoryIndex:number) {
+    this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
+      tagGroupId: randomUuid(), name: 'Platform', userSettable: true, tags: [
+        Admin.TagToJSON({tagId: randomUuid(), name: 'Windows'}),
+        Admin.TagToJSON({tagId: randomUuid(), name: 'Mac'}),
+        Admin.TagToJSON({tagId: randomUuid(), name: 'Linux'}),
+      ],
+    }));
+  }
+
+  workflowFeatures(categoryIndex:number) {
     const closed = Admin.IdeaStatusToJSON({name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
     const completed = Admin.IdeaStatusToJSON({name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const planned = Admin.IdeaStatusToJSON({name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const funding = Admin.IdeaStatusToJSON({name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [funding.statusId, closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    this._get<ConfigEditor.PageGroup>(['workflows', 'workflow']).insert().setRaw(Admin.WorkflowToJSON({
-      workflowId: randomUuid(), name: 'Features', entryStatus: underReview.statusId,
-      statuses: [closed, completed, inProgress, planned, funding, underReview],
-    }));
+    this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(underReview.statusId);
+    this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'workflow', 'statuses']).setRaw(
+      [closed, completed, inProgress, planned, funding, underReview]
+    );
   }
-  workflowBug() {
+  workflowBug(categoryIndex:number) {
     const notReproducible = Admin.IdeaStatusToJSON({name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
     const wontFix = Admin.IdeaStatusToJSON({name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
     const fixed = Admin.IdeaStatusToJSON({name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
     const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    this._get<ConfigEditor.PageGroup>(['workflows', 'workflow']).insert().setRaw(Admin.WorkflowToJSON({
-      workflowId: randomUuid(), name: 'Bugs', entryStatus: underReview.statusId,
-      statuses: [notReproducible, wontFix, fixed, inProgress, underReview],
-    }));
+    this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(underReview.statusId);
+    this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'workflow', 'statuses']).setRaw(
+      [notReproducible, wontFix, fixed, inProgress, underReview]
+    );
   }
 
   creditsCurrency() {

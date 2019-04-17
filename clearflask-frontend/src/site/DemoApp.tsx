@@ -32,7 +32,11 @@ export default class DemoApp extends Component<Props> {
     return (
       <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}`]}>
         <Route path="/:projectId/:pageUrlName?" render={props => (
-          <App {...props} supressConfigGet serverOverride={this.props.server} />
+          <App
+            {...props}
+            supressConfigGet
+            supressCssBaseline
+            serverOverride={this.props.server} />
         )} />
       </MemoryRouter>
     );

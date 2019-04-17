@@ -12,7 +12,7 @@ interface Props {
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
-class Page extends Component<Props> {
+export default class Page extends Component<Props> {
   unsubscribe?:()=>void;
 
   componentDidMount() {
@@ -40,5 +40,3 @@ class Page extends Component<Props> {
     );
   }
 }
-
-export default Page;

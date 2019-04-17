@@ -6,6 +6,7 @@ components:
       title: Test
       type: object
       required:
+        - emojiReq
         - stringReq
         - datetimeReq
         - timeReq
@@ -39,6 +40,12 @@ components:
           type: string
           minLength: 2
           maxLength: 5
+        emojiReq:
+          x-clearflask-prop: { order: 1, name: 'Emoji required', description: 'Description description description', subType: 'emoji' }
+          type: string
+        emojiOpt:
+          x-clearflask-prop: { order: 1, name: 'Emoji Optional', description: 'Description description description', subType: 'emoji' }
+          type: string
         datetimeReq:
           x-clearflask-prop: { order: 2, name: 'DateTime required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: string
@@ -276,6 +283,7 @@ components:
           items:
             type: object
             required:
+              - emojiReq
               - stringReq
               - datetimeReq
               - timeReq
@@ -308,6 +316,9 @@ components:
                 type: string
                 minLength: 2
                 maxLength: 5
+              emojiReq:
+                x-clearflask-prop: { order: 1, name: 'Emoji required', description: 'Description description description', subType: 'emoji' }
+                type: string
               datetimeReq:
                 x-clearflask-prop: { order: 2, name: 'DateTime required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: string

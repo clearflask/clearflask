@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton, InputLabel, FormHelperText } from '@material-ui/core';
 import Property from './Property';
+import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
 import DeleteIcon from '@material-ui/icons/Delete';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import AddIcon from '@material-ui/icons/AddRounded';
@@ -19,6 +20,8 @@ interface State {
 }
 
 export default class TableProp extends Component<Props, State> {
+  readonly padding = 'dense';
+  readonly paddingButton = 'checkbox';
   unsubscribe?:()=>void;
 
   constructor(props:Props) {
@@ -40,6 +43,7 @@ export default class TableProp extends Component<Props, State> {
     const rows:React.ReactNode[] = [];
     if(this.props.data.type === 'pagegroup') {
       const pageGroup:ConfigEditor.PageGroup = this.props.data;
+      if(pageGroup.getChildPages().length > 0) header.push(this.renderHeaderCellShowLink());
       pageGroup.getChildPages().forEach((childPage, childPageIndex, arr) => {
         const row:React.ReactNode[] = [];
         pageGroup.tablePropertyNames.forEach((propName, propNameIndex) => {
@@ -48,11 +52,7 @@ export default class TableProp extends Component<Props, State> {
           if(childPageIndex === 0) {
             header.push(this.renderHeaderCell(propNameIndex, prop.name, prop.description));
           }
-          row.push(
-            <TableCell align='center'>
-              <Property bare prop={prop} pageClicked={this.props.pageClicked} />
-            </TableCell>
-          );
+          row.push(this.renderDataCell(prop));
         });
         rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, true));
       });
@@ -68,11 +68,7 @@ export default class TableProp extends Component<Props, State> {
               if(childPropIndex === 0) {
                 header.push(this.renderHeaderCell(grandchildPropIndex, grandchildProp.name, grandchildProp.description));
               }
-              row.push(
-                <TableCell align='center'>
-                  <Property bare prop={grandchildProp} pageClicked={this.props.pageClicked} />
-                </TableCell>
-              );
+              row.push(this.renderDataCell(grandchildProp));
             });
           rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
         });
@@ -84,11 +80,7 @@ export default class TableProp extends Component<Props, State> {
           if(childPropIndex === 0) {
             header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
           }
-          const row = [(
-            <TableCell align='center'>
-              <Property bare prop={childProp} pageClicked={this.props.pageClicked} />
-            </TableCell>
-          )];
+          const row = [this.renderDataCell(childProp)];
           rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
         });
     }
@@ -116,7 +108,7 @@ export default class TableProp extends Component<Props, State> {
               <TableHead>
                 <TableRow key='header'>
                   {header}
-                  <TableCell key='delete' align='center'></TableCell>
+                  <TableCell key='delete' align='center' padding={this.paddingButton}></TableCell>
                 </TableRow>
               </TableHead>
             )}
@@ -132,18 +124,25 @@ export default class TableProp extends Component<Props, State> {
   renderRow(rowCells, key:string, index:number, showLink:boolean = false) {
     return (
       <TableRow key={key}>
+        {showLink && (
+          <TableCell key={'more' + key} align='center' padding={this.paddingButton}>
+            <IconButton aria-label="More" onClick={() => {
+              this.props.pageClicked([...this.props.data.path, index]);
+            }}>
+              <MoreIcon />
+            </IconButton>
+          </TableCell>
+        )}
         {rowCells}
-        <TableCell key={'delete' + key} align='left'>
+        <TableCell key={'action' + key} align='left' padding={this.paddingButton}>
           <div style={{
             display: 'flex',
           }}>
-            {showLink && (
-              <IconButton aria-label="More" onClick={() => {
-                this.props.pageClicked([...this.props.data.path, index]);
-              }}>
-                <MoreIcon />
-              </IconButton>
-            )}
+            <IconButton aria-label="Duplicate" onClick={() => {
+              this.props.data.duplicate(index);
+            }}>
+              <DuplicateIcon />
+            </IconButton>
             <IconButton aria-label="Delete" onClick={() => {
               this.props.data.delete(index);
             }}>
@@ -155,12 +154,24 @@ export default class TableProp extends Component<Props, State> {
     )
   }
 
-  renderHeaderCell(key, name, description) {
+  renderDataCell(prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property) {
     return (
-      <TableCell key={key} align='center' style={{fontWeight: 'normal'}}>
-        <InputLabel shrink={false}>{name}</InputLabel>
-        <FormHelperText>{description}</FormHelperText>
+      <TableCell align='center' padding={this.padding}>
+        <Property isInsideMuiTable bare prop={prop} pageClicked={this.props.pageClicked} />
       </TableCell>
+    );
+  }
+  renderHeaderCell(key:string|number, name?:string, description?:string) {
+    return (
+      <TableCell key={key} align='center' style={{fontWeight: 'normal'}} padding={this.padding}>
+        {name && (<InputLabel shrink={false}>{name}</InputLabel>)}
+        {description && (<FormHelperText>{description}</FormHelperText>)}
+      </TableCell>
+    );
+  }
+  renderHeaderCellShowLink() {
+    return (
+      <TableCell key='showLink' padding={this.paddingButton}></TableCell>
     );
   }
 }

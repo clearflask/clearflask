@@ -70,6 +70,7 @@ export enum PropSubType {
    */
   Id = 'id',
   Color = 'color',
+  Emoji = 'emoji',
 }
 export interface xCfPropLink {
   /**
@@ -135,6 +136,7 @@ export interface PageGroup extends Setting<PageGroupType, true|undefined>, xCfPa
   maxItems?:number;
   getChildPages():Page[];
   insert(index?:number):Page;
+  duplicate(sourceIndex:number):Page;
   delete(index:number):void;
   setRaw(val:Array<any>|undefined):void;
   cachedChildPages?:Page[]; // Internal use only
@@ -218,6 +220,7 @@ export interface ArrayProperty extends PropertyBase<PropertyType.Array, true> {
   childType:PropertyType;
   childProperties?:Property[];
   insert(index?:number):Property;
+  duplicate(sourceIndex:number):Property;
   delete(index:number):void;
   setRaw(val:Array<any>|undefined):void;
 }
@@ -409,7 +412,7 @@ export class EditorImpl implements Editor {
         return;
       }
     }
-    const cacheNode =pointer[path[path.length - 1]];
+    const cacheNode = pointer[path[path.length - 1]];
     if(cacheNode._) {
       pointer[path[path.length - 1]] = {_: cacheNode._};
     } else {
@@ -581,73 +584,6 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
-  setNewIds(rootItem:Page|PageGroup|Property):void {
-    const linkProps:(LinkProperty|LinkMultiProperty)[] = [];
-    const idProps:StringProperty[] = [];
-    const stack:(Page|PageGroup|Property)[] = [rootItem];
-    for (var i = 0; i < stack.length; i++) {
-      const item = stack[i];
-      switch(item.type) {
-        case PageType:
-          stack.push.apply(item.getChildren().all)
-          break;
-        case PageGroupType:
-          stack.push.apply(item.getChildPages())
-          break;
-        case PropertyType.Object:
-        case PropertyType.Array:
-          stack.push.apply(item.childProperties)
-          break;
-        case PropertyType.String:
-          if(item.subType === PropSubType.Id) {
-            idProps.push(item);
-          }
-          break;
-        case PropertyType.Link:
-        case PropertyType.LinkMulti:
-          linkProps.push(item);
-          break;
-        default:
-          break;
-      }
-    }
-    // Reset IDs
-    const newIds = {};
-    idProps.forEach(idProp => {
-      const oldId = idProp.value;
-      idProp.setDefault()
-      // If the parent is an array, keep track of its path to see if someone links to us
-      if(idProp.path.length > 2 && typeof idProp.path[idProp.path.length - 2] === 'number') {
-        var pathWithId = '';
-        for (let i = 0; i < idProp.path.length - 2; i++) {
-          pathWithId += (typeof idProp.path[i] === 'number' ? '<>' : idProp.path[i]) + '.';
-        }
-        pathWithId += oldId;
-        newIds[pathWithId] = idProp.value
-      }
-    });
-
-    // Repoint links
-    linkProps.forEach(linkProp => {
-      if(linkProp.value === undefined) return;
-      if(linkProp.type === PropertyType.Link) {
-        const linkPathWithId = [...linkProp.linkPath, linkProp.value].join('.');
-        if(newIds[linkPathWithId]) linkProp.set(newIds[linkPathWithId]);
-      } else {
-        const linkPathPrefix = linkProp.linkPath.join('.');
-        const newLinkValues:Set<string> = new Set();
-        linkProp.value!.forEach(linkValue => {
-          const linkPathWithId = linkPathPrefix + '.' + linkValue;
-          newLinkValues.add(newIds[linkPathWithId]
-            ? newIds[linkPathWithId]
-            : linkValue);
-        })
-        linkProp.set(newLinkValues);
-      }
-    })
-    console.log('debugdebug', JSON.stringify(newIds, null, 2), idProps.map(i => i.pathStr), linkProps.map(i => i.pathStr));
-  }
-
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     var pageSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
@@ -751,6 +687,7 @@ export class EditorImpl implements Editor {
           };
         }
         page.value = val;
+        page.validateValue(page.value);
         this.notify(localSubscribers);
       },
       setDefault: ():void => {
@@ -771,6 +708,7 @@ export class EditorImpl implements Editor {
             props: [],
           };
         }
+        page.validateValue(page.value);
         this.notify(localSubscribers);
       },
       getDynamicName: ():string => {
@@ -870,7 +808,15 @@ export class EditorImpl implements Editor {
             : pageGroup.cachedChildPages.length - 1];
         newPage.setDefault();
         pageGroup.value = true;
+        pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
+        return newPage;
+      },
+      duplicate: (sourceIndex:number):Page => {
+        const arr = this.getOrDefaultValue(path, []);
+        const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
+        const newPage = pageGroup.insert();
+        newPage.setRaw(duplicateData);
         return newPage;
       },
       delete: (index:number):void => {
@@ -878,6 +824,7 @@ export class EditorImpl implements Editor {
         arr.splice(index, 1);
         this.cacheInvalidateChildren(path);
         pageGroup.cachedChildPages = depth === ResolveDepth.None ? undefined : fetchChildPages()
+        pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
       set: (val:true|undefined):void => {
@@ -892,6 +839,7 @@ export class EditorImpl implements Editor {
           pageGroup.cachedChildPages = [];
         }
         pageGroup.value = val;
+        pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
       setDefault: ():void => {
@@ -907,6 +855,7 @@ export class EditorImpl implements Editor {
           pageGroup.value = undefined;
           pageGroup.cachedChildPages = undefined;
         }
+        pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
       validateValue: (val:true|undefined):void => {
@@ -929,6 +878,7 @@ export class EditorImpl implements Editor {
       },
       cachedChildPages: depth === ResolveDepth.None ? undefined : fetchChildPages(),
     };
+    pageGroup.validateValue(pageGroup.value);
     return pageGroup;
   }
 
@@ -1348,6 +1298,18 @@ export class EditorImpl implements Editor {
             arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
             return newProperty;
+          },
+          duplicate: (sourceIndex:number):Property => {
+            const arr = this.getValue(path);
+            const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
+            const arrayProperty = property as ArrayProperty;
+            const newProp = arrayProperty.insert();
+            if(newProp.type === PropertyType.Object || newProp.type === PropertyType.Array) {
+              newProp.setRaw(duplicateData);
+            } else {
+              newProp.set(duplicateData);
+            }
+            return newProp;
           },
           delete: (index:number):void => {
             if(!property.value) return;

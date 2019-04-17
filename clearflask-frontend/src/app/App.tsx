@@ -7,10 +7,12 @@ import { History, Location } from 'history';
 import Page from './Page';
 import { Provider } from 'react-redux';
 import { connect } from 'react-redux';
+import { CssBaseline, MuiThemeProvider, createMuiTheme } from '@material-ui/core';
 
 interface Props extends StateConf {
   serverOverride?:Server;
   supressConfigGet?:boolean;
+  supressCssBaseline?:boolean;
   // Router matching
   match:match;
   history:History;
@@ -38,29 +40,58 @@ export default class App extends Component<Props> {
   render() {
     const confState = this.server.getStore().getState().conf;
     var page:Client.Page|undefined;
+    var theme;
     if(confState.conf && confState.status === Status.FULFILLED) {
+      const conf = confState.conf;
       const pageSlug:string|undefined = this.props.match.params['pageUrlName'];
       if(pageSlug === undefined) {
-        page = confState.conf.layout.pages[0];
+        page = conf.layout.pages[0];
       } else {
-        page = confState.conf.layout.pages.find(p => p.slug === pageSlug);
+        page = conf.layout.pages.find(p => p.slug === pageSlug);
       }
+      theme = createMuiTheme({
+        palette: {
+          type: conf.style.palette.darkMode ? 'dark' : 'light',
+          primary: conf.style.palette.primary ? {
+            main: conf.style.palette.primary
+          } : undefined,
+          secondary: conf.style.palette.secondary ? {
+            main: conf.style.palette.secondary
+          } : undefined,
+        },
+        typography: {
+          fontFamily: conf.style.typography.fontFamily || undefined,
+          fontSize: conf.style.typography.fontSize || undefined,
+        }
+      })
+      confState.conf.style
+    } else {
+      theme = createMuiTheme();
     }
 
     return (
       <Provider store={this.server.getStore()}>
-        <Header
-          server={this.server}
-          conf={confState.conf}
-          page={page}
-          pageChanged={this.pageChanged.bind(this)}
-        />
-        <Page
-          server={this.server}
-          conf={confState.conf}
-          pageConf={page}
-          pageChanged={this.pageChanged.bind(this)}
-        />
+      <MuiThemeProvider theme={theme}>
+        {!this.props.supressCssBaseline && (<CssBaseline />)}
+        <div style={{
+          background: theme.palette.background.default,
+          height: '100%',
+          width: '100%',
+        }}>
+          <Header
+            server={this.server}
+            conf={confState.conf}
+            page={page}
+            pageChanged={this.pageChanged.bind(this)}
+          />
+          <Page
+            server={this.server}
+            conf={confState.conf}
+            pageConf={page}
+            pageChanged={this.pageChanged.bind(this)}
+          />
+        </div>
+      </MuiThemeProvider>
       </Provider>
     );
   }

@@ -24,31 +24,35 @@ interface Preset {
   title:string;
   body:string;
   actionTitle:string;
-  action:(templater:Templater)=>void;
+  action:(templater:Templater, path:ConfigEditor.Path)=>void;
 }
 
 class PresetWidget extends Component<Props> {
   static presets:{[pathStr:string]:Array<Preset>} = {
-    'workflows': [
+    'content.categories.<>.tagging': [
+      { title: 'OS Platform', body: 'Select an OS platform',
+        actionTitle: 'Add', action: (templater:Templater, path:ConfigEditor.Path) => templater.taggingOsPlatform(path[2] as number) },
+    ],
+    'content.categories.<>.workflow': [
       { title: 'Features', body: 'Typical workflow for a software feature. Under review -> Planned -> In progress -> Completed. Also includes Funding and Closed statuses.',
-        actionTitle: 'Add', action: (templater:Templater) => templater.workflowFeatures() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.workflowFeatures(path[2] as number) },
       { title: 'Bugs', body: 'Bug workflow.',
-        actionTitle: 'Add', action: (templater:Templater) => templater.workflowBug() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.workflowBug(path[2] as number) },
     ],
     'credits': [
       { title: 'Time', body: 'Structure your work based on how long it\'ll take. Recommended for transparency. Also ideal if your hourly rate may change in the future.',
-        actionTitle: 'Set', action: (templater:Templater) => templater.creditsTime() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.creditsTime() },
       { title: 'Currency', body: 'Direct monetary value shows users exactly how much an idea is worth.',
-        actionTitle: 'Set', action: (templater:Templater) => templater.creditsCurrency() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.creditsCurrency() },
       { title: 'Points', body: 'Virtual currency disconnects from the real world value. Ideal if you give away points from various sources with differing price points or discounts.',
-        actionTitle: 'Set', action: (templater:Templater) => templater.creditsUnitless() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.creditsUnitless() },
       { title: 'Beer', body: 'Tip jars may decide to use a currency such as tipping a beer, coffee, or lunch.',
-        actionTitle: 'Set', action: (templater:Templater) => templater.creditsBeer() },
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.creditsBeer() },
     ],
   }
 
   render() {
-    const presets:Array<Preset> = PresetWidget.presets[this.props.page.pathStr];
+    const presets:Array<Preset> = PresetWidget.presets[this.props.page.pathStr.replace(/\d+/, '<>')];
     if(presets === undefined) {
       return null;
     }
@@ -63,7 +67,7 @@ class PresetWidget extends Component<Props> {
           <Paper elevation={1} className={this.props.classes.paper}>
             <Typography variant="h5">{preset.title}</Typography>
             <Typography component="p">{preset.body}</Typography>
-            <Button onClick={() => preset.action(Templater.get(this.props.editor))}
+            <Button onClick={() => preset.action(Templater.get(this.props.editor), this.props.page.path)}
             >{preset.actionTitle}</Button>
           </Paper>
         ))}

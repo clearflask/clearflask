@@ -12,12 +12,12 @@ const styles = (theme:Theme) => ({
   },
   drawer: {
     [theme.breakpoints.up('sm')]: {
-      width: '140px',
+      width: '180px',
       flexShrink: 0,
     },
   },
   drawerPaper: {
-    width: '140px',
+    width: '180px',
   },
   previewPaper: {
     width: '40%',
