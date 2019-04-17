@@ -119,10 +119,11 @@ components:
               x-clearflask-prop: { order: 2, name: 'Font Size' }
               type: number
     support:
-      x-clearflask-page: { order: 4, name: 'Expression' }
-      title: Expression
+      x-clearflask-page: { order: 4, name: 'Support' }
+      title: Support
       type: object
       required:
+        - comment
       properties:
         fund:
           x-clearflask-prop: { order: 1, name: 'Enable funding' }
@@ -158,7 +159,7 @@ components:
               type: boolean
         express:
           x-clearflask-prop: { order: 1, name: 'Enable expression' }
-          title: Express
+          title: Expressing
           type: object
           properties:
             limitEmojis:
@@ -166,24 +167,27 @@ components:
               type: array
               items:
                 x-clearflask-prop: { order: 1, name: 'Emojis' }
-                title: Emojis
+                title: Expression
                 type: object
                 required:
+                  - weight
+                  - display
+                  - text
                 properties:
-                  weight:
-                    minimum: -1
-                    maximum: 1
-                    type: number
                   display:
                     x-clearflask-prop: { order: 1, name: 'Display', subType: 'emoji' }
                     type: string
+                  text:
+                    x-clearflask-prop: { order: 2, name: 'Text' }
+                    type: string
+                  weight:
+                    x-clearflask-prop: { order: 3, name: 'Weight' }
+                    minimum: -1
+                    maximum: 1
+                    type: number
         comment:
-          x-clearflask-prop: { order: 1, name: 'Enable comments' }
-          title: Express
-          type: object
-          properties:
-            testtest:
-              type: string
+          x-clearflask-prop: { order: 1, name: 'Enable comments', defaultValue: true }
+          type: boolean
     layout:
       x-clearflask-page: { order: 11, name: 'Layout' }
       title: Layout

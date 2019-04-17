@@ -1384,7 +1384,7 @@ export class EditorImpl implements Editor {
             const objectProperty = property as ObjectProperty;
             if(val !== undefined) {
               objectProperty.value = true;
-              objectProperty.childProperties = fetchChildPropertiesArray();
+              objectProperty.childProperties = fetchChildPropertiesObject();
             } else {
               objectProperty.value = undefined;
               objectProperty.childProperties = undefined;

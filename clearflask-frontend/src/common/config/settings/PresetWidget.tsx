@@ -29,6 +29,18 @@ interface Preset {
 
 class PresetWidget extends Component<Props> {
   static presets:{[pathStr:string]:Array<Preset>} = {
+    'content.categories.<>.support': [
+      { title: 'Funding', body: 'Enables funding',
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.supportFunding(path[2] as number) },
+      { title: 'Voting', body: 'Enables voting',
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.supportVoting(path[2] as number) },
+      { title: 'Any Reaction', body: 'Enables any kind of reactions',
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.supportExpressingAllEmojis(path[2] as number) },
+      { title: 'Github Reactions', body: 'Enables reactions based on Github reactions',
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.supportExpressingGithubStyle(path[2] as number) },
+      { title: 'Facebook Reactions', body: 'Enables reactions based on Facebook Messenger reactions',
+        actionTitle: 'Set', action: (templater:Templater, path:ConfigEditor.Path) => templater.supportExpressingFacebookStyle(path[2] as number) },
+    ],
     'content.categories.<>.tagging': [
       { title: 'OS Platform', body: 'Select an OS platform',
         actionTitle: 'Add', action: (templater:Templater, path:ConfigEditor.Path) => templater.taggingOsPlatform(path[2] as number) },

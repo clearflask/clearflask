@@ -87,7 +87,7 @@ export default class Property extends Component<Props> {
                     error={!!prop.errorMsg}
                   />
                 </div>
-                {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+                {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
               </div>
             );
             break OUTER;
@@ -222,7 +222,7 @@ export default class Property extends Component<Props> {
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
                 />
               </div>
-              {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             </div>
           );
           break;
@@ -257,7 +257,7 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
           </FormControl>
         );
         break;
@@ -285,24 +285,25 @@ export default class Property extends Component<Props> {
           </Collapse>
         );
         const enableObject = !prop.required && (
-          <FormControlLabel
-            control={(
-              <Switch
-                checked={!!prop.value}
-                onChange={(e, checked) => prop.set(checked ? true : undefined)}
-                color="default"
-                
-              />
-            )}
-            label={!this.props.bare && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
-            style={{ marginBottom: '-10px'}}
-          />
+          <div>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={!!prop.value}
+                  onChange={(e, checked) => prop.set(checked ? true : undefined)}
+                  color="default"
+                />
+              )}
+              label={!this.props.bare && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+              style={{ marginBottom: '-10px'}}
+            />
+          </div>
         );
         marginTop += 16;
         propertySetter = (
           <div style={{marginBottom: '10px'}}>
             {!this.props.bare && (<InputLabel shrink={shrink} error={!!prop.errorMsg}>{name}</InputLabel>)}
-            {(!this.props.bare || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>

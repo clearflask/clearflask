@@ -13,6 +13,48 @@ export default class Templater {
     return new Templater(editor);
   }
 
+  supportFunding(categoryIndex:number) {
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).setRaw(Admin.FundingToJSON({
+      showFunds: true, showFunders: true,
+    }));
+  }
+  supportVoting(categoryIndex:number) {
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).setRaw(Admin.VotingToJSON({
+      enableDownvotes: false, showVotes: true, showVoters: true,
+    }));
+  }
+  supportExpressingAllEmojis(categoryIndex:number) {
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(true);
+  }
+  supportExpressingFacebookStyle(categoryIndex:number) {
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).setRaw(Admin.ExpressingToJSON({
+      limitEmojis: [
+        Admin.ExpressionToJSON({display: '😍', text: 'Love', weight: 1}),
+        Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
+        Admin.ExpressionToJSON({display: '😮', text: 'Shocked', weight: 0}),
+        Admin.ExpressionToJSON({display: '😥', text: 'Crying', weight: -1}),
+        Admin.ExpressionToJSON({display: '😠', text: 'Angry', weight: -1}),
+        Admin.ExpressionToJSON({display: '👍', text: 'Thumbs up', weight: 1}),
+        Admin.ExpressionToJSON({display: '👎', text: 'Thumbs down', weight: -1}),
+      ],
+    }));
+  }
+  supportExpressingGithubStyle(categoryIndex:number) {
+    console.log('debugebug', categoryIndex, JSON.stringify(this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']), null, 2));
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).setRaw(Admin.ExpressingToJSON({
+      limitEmojis: [
+        Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
+        Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -1}),
+        Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
+        Admin.ExpressionToJSON({display: '🎉', text: 'Hooray', weight: 1}),
+        Admin.ExpressionToJSON({display: '😕', text: 'Confused', weight: -1}),
+        Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
+        Admin.ExpressionToJSON({display: '🚀', text: 'Rocket', weight: 1}),
+        Admin.ExpressionToJSON({display: '👀', text: 'Eyes', weight: 1}),
+      ],
+    }));
+  }
+
   taggingOsPlatform(categoryIndex:number) {
     this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
       tagGroupId: randomUuid(), name: 'Platform', userSettable: true, tags: [
