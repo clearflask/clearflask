@@ -3,11 +3,19 @@ import { Input, IconButton, Typography, Drawer, Divider, AppBar, Hidden, Select,
 import { withStyles, StyledComponentProps, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => createStyles({
+  formControl: {
+    minWidth: '160px',
+  },
   select: {
     height: '48px',
-    minWidth: '160px',
+    // Get rid of text cursor
+    cursor: 'inherit',
     // Get rid of permanent underline
     '&:before': {
+      borderBottom: '0px'
+    },
+    // Get rid of focus underline
+    '&:after': {
       borderBottom: '0px'
     },
     // Get rid of hover over border
@@ -55,7 +63,7 @@ class DropdownTab extends Component<Props> {
     });
     const id = `dropdowntab-${this.props.key}`;
     return (
-      <FormControl>
+      <FormControl className={this.props.classes.formControl}>
         <Select
           className={this.props.classes.select}
           value={anySelected ? this.props.selectedValue : '__NOT_SELECTED__'}

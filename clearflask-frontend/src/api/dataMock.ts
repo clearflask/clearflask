@@ -27,7 +27,7 @@ class DataMock {
     //         panels: [
     //           ConfViewPanelFromJSON({
     //             titleOpt: 'Planned',
-    //             ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //             search: ConfViewIdeaSearchQueryFromJSON({
     //               searchKey: randomUuid(),
     //               sortBy: SortBy.New,
     //               filterIdeaStatusIds: ['statusPlanned'],
@@ -35,7 +35,7 @@ class DataMock {
     //           }),
     //           ConfViewPanelFromJSON({
     //             titleOpt: 'In progress',
-    //             ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //             search: ConfViewIdeaSearchQueryFromJSON({
     //               searchKey: randomUuid(),
     //               sortBy: SortBy.New,
     //               filterIdeaStatusIds: ['statusInProgress'],
@@ -43,7 +43,7 @@ class DataMock {
     //           }),
     //           ConfViewPanelFromJSON({
     //             titleOpt: 'Completed',
-    //             ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //             search: ConfViewIdeaSearchQueryFromJSON({
     //               searchKey: randomUuid(),
     //               sortBy: SortBy.New,
     //               filterIdeaStatusIds: ['statusResolved'],
@@ -59,7 +59,7 @@ class DataMock {
     //         ConfViewPanelFromJSON({
     //           titleOpt: 'Support needed',
     //           hideIfEmpty: true,
-    //           ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //           search: ConfViewIdeaSearchQueryFromJSON({
     //             searchKey: randomUuid(),
     //             sortBy: SortBy.Top,
     //             filterIdeaGroupIds: ['idea-group-feature-request'],
@@ -68,7 +68,7 @@ class DataMock {
     //         }),
     //       ],
     //       explorer: ConfViewIdeaExplorerFromJSON({
-    //         ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //         search: ConfViewIdeaSearchQueryFromJSON({
     //           searchKey: randomUuid(),
     //           sortBy: SortBy.Trending,
     //           filterIdeaGroupIds: ['idea-group-feature-request'],
@@ -79,7 +79,7 @@ class DataMock {
     //       urlName: 'bug',
     //       name: 'Bug',
     //       explorer: ConfViewIdeaExplorerFromJSON({
-    //         ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //         search: ConfViewIdeaSearchQueryFromJSON({
     //           searchKey: randomUuid(),
     //           sortBy: SortBy.Trending,
     //           filterIdeaGroupIds: ['idea-group-bug']
@@ -90,7 +90,7 @@ class DataMock {
     //       urlName: 'security-privacy',
     //       name: 'Security Privacy',
     //       explorer: ConfViewIdeaExplorerFromJSON({
-    //         ideaList: ConfViewIdeaSearchQueryFromJSON({
+    //         search: ConfViewIdeaSearchQueryFromJSON({
     //           searchKey: randomUuid(),
     //           sortBy: SortBy.Trending,
     //           filterIdeaGroupIds: ['idea-group-security-privacy']

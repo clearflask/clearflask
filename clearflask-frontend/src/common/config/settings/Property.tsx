@@ -10,6 +10,7 @@ import { Picker, EmojiData, BaseEmoji } from 'emoji-mart';
 import Overlay from '../../Overlay';
 
 interface Props {
+  key:string;
   prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property;
   bare?:boolean;
   width?:string
@@ -265,6 +266,7 @@ export default class Property extends Component<Props> {
       case ConfigEditor.PropertyType.Array:
         propertySetter = (
           <TableProp
+            key={prop.key}
             data={prop}
             errorMsg={prop.errorMsg}
             label={!this.props.bare && name}
@@ -279,7 +281,7 @@ export default class Property extends Component<Props> {
             {prop.childProperties && prop.childProperties
               .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
               .map(childProp => (
-                <Property {...this.props} bare={false} prop={childProp} />
+                <Property {...this.props} bare={false} key={childProp.key} prop={childProp} />
               ))
             }
           </Collapse>

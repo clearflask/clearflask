@@ -38,7 +38,10 @@ export class Server {
       const enhancer = composeEnhancers(
         applyMiddleware(thunk, reduxPromiseMiddleware),
       );
-      this.store = createStore(reducers, enhancer);
+      this.store = createStore(
+        reducers,
+        Server.initialState(this.projectId),
+        enhancer);
     }
 
     const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
@@ -74,16 +77,6 @@ export class Server {
       ideas: stateIdeasDefault,
     };
     return state;
-    // TODO
-    // var accountInfo = TokenManager.getInstance().getAccountInfo();
-    // if(!accountInfo) {
-    //   return undefined;
-    // }
-    // var initialAuthAction = {
-    //   type: `${AuthAction.REGISTER_USER}_${Status.FULFILLED}`,
-    //   payload: accountInfo,
-    // };
-    // return reducers(undefined, initialAuthAction);
   }
 
   getProjectId():string {

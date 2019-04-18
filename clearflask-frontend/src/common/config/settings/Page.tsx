@@ -7,6 +7,7 @@ import CreditPreview from './injects/CreditPreview';
 import Crumbs from './Crumbs';
 
 interface Props {
+  key:string;
   page:ConfigEditor.Page;
   editor:ConfigEditor.Editor;
   pageClicked:(path:ConfigEditor.Path)=>void;
@@ -34,7 +35,7 @@ export default class Page extends Component<Props> {
         {this.props.page.getChildren().all
           .filter(child => (child as ConfigEditor.Property).subType !== ConfigEditor.PropSubType.Id)
           .map(child => (
-            <Property key={child.pathStr} prop={child} pageClicked={this.props.pageClicked} />
+            <Property key={child.key} prop={child} pageClicked={this.props.pageClicked} />
           ))}
       </div>
     );

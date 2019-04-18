@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton, InputLabel, FormHelperText } from '@material-ui/core';
 import Property from './Property';
+import MoveUpIcon from '@material-ui/icons/ArrowUpward';
+import MoveDownIcon from '@material-ui/icons/ArrowDownward';
 import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
 import DeleteIcon from '@material-ui/icons/Delete';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
@@ -9,6 +11,7 @@ import AddIcon from '@material-ui/icons/AddRounded';
 
 interface Props {
   styleOuter?:React.CSSProperties;
+  key:string;
   data:ConfigEditor.PageGroup|ConfigEditor.ArrayProperty;
   label?:React.ReactNode;
   helperText?:React.ReactNode;
@@ -138,16 +141,36 @@ export default class TableProp extends Component<Props, State> {
           <div style={{
             display: 'flex',
           }}>
-            <IconButton aria-label="Duplicate" onClick={() => {
-              this.props.data.duplicate(index);
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
             }}>
-              <DuplicateIcon />
-            </IconButton>
-            <IconButton aria-label="Delete" onClick={() => {
-              this.props.data.delete(index);
+              <IconButton aria-label="Move up" onClick={() => {
+                this.props.data.moveUp(index);
+              }}>
+                <MoveUpIcon />
+              </IconButton>
+              <IconButton aria-label="Move down" onClick={() => {
+                this.props.data.moveDown(index);
+              }}>
+                <MoveDownIcon />
+              </IconButton>
+            </div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
             }}>
-              <DeleteIcon />
-            </IconButton>
+              <IconButton aria-label="Duplicate" onClick={() => {
+                this.props.data.duplicate(index);
+              }}>
+                <DuplicateIcon />
+              </IconButton>
+              <IconButton aria-label="Delete" onClick={() => {
+                this.props.data.delete(index);
+              }}>
+                <DeleteIcon />
+              </IconButton>
+            </div>
           </div>
         </TableCell>
       </TableRow>
@@ -157,7 +180,7 @@ export default class TableProp extends Component<Props, State> {
   renderDataCell(prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property) {
     return (
       <TableCell align='center' padding={this.padding}>
-        <Property isInsideMuiTable bare prop={prop} pageClicked={this.props.pageClicked} />
+        <Property isInsideMuiTable bare key={prop.key} prop={prop} pageClicked={this.props.pageClicked} />
       </TableCell>
     );
   }

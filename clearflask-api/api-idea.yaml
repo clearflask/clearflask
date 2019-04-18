@@ -6,7 +6,7 @@ components:
       type: object
       properties:
         searchKey:
-          x-clearflask-prop: { name: 'Search text', description: 'Text to use for searching idea title, description and other information' }
+          x-clearflask-prop: { subType: 'id' }
           type: string
           description: >-
             Unique key describing this specific search query.
@@ -18,21 +18,21 @@ components:
             - Trending
             - Top
             - New
-        filterIdeaGroupIds:
+        filterCategoryIds:
           x-clearflask-prop: { name: 'Group', description: 'Display only ideas from these groups' }
-          x-clearflask-prop-link: { idPropName: 'groupId', linkPath: ['grouping', 'groups'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
-        filterIdeaStatusIds:
+        filterStatusIds:
           x-clearflask-prop: { name: 'Status', description: 'Display only ideas having these statuses' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
-        filterIdeaTagIds:
+        filterTagIds:
           x-clearflask-prop: { name: 'Tag', description: 'Display only ideas having these tags' }
-          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string

@@ -18,6 +18,7 @@ interface Label {
 }
 
 interface Props extends ListProps {
+  key:string;
   prop:ConfigEditor.LinkProperty|ConfigEditor.LinkMultiProperty;
   bare?:boolean;
   width?:string

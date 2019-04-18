@@ -48,11 +48,11 @@ class Page extends Component<Props> {
     var panelsCmpt:any = [];
     for(let panel of this.props.pageConf.panels || []) {
       panelsCmpt.push(
-        <div key={panel.ideaList.searchKey}>
+        <div key={panel.search.searchKey}>
           <Typography variant='overline'>
             {panel.title}
           </Typography>
-          <Panel direction={Direction.Horizontal} {...this.props} searchKey={panel.ideaList.searchKey} />
+          <Panel direction={Direction.Horizontal} {...this.props} searchKey={panel.search.searchKey} />
         </div>
       );
       // TODO
@@ -65,11 +65,11 @@ class Page extends Component<Props> {
       var panels:any = [];
       for(let panel of board.panels) {
         panels.push(
-          <div key={panel.ideaList.searchKey}>
+          <div key={panel.search.searchKey}>
             <Typography variant='overline'>
               {panel.title}
             </Typography>
-            <Panel direction={Direction.Vertical} {...this.props} searchKey={panel.ideaList.searchKey} />
+            <Panel direction={Direction.Vertical} {...this.props} searchKey={panel.search.searchKey} />
           </div>
         );
       }
@@ -97,7 +97,7 @@ class Page extends Component<Props> {
           <Typography variant='overline'>
             {explorer.title}
           </Typography>
-          <Panel direction={Direction.Wrap} {...this.props} searchKey={explorer.ideaList.searchKey} />
+          <Panel direction={Direction.Wrap} {...this.props} searchKey={explorer.search.searchKey} />
         </div>
       );
       // TODO
@@ -126,9 +126,9 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
   }
 
   const searchQueries:Client.IdeaSearch[] = [
-    ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.ideaList) || []),
-    ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.ideaList) || []),
-    ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.ideaList] || []),
+    ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.search) || []),
+    ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.search) || []),
+    ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.search] || []),
   ];
 
   for(let searchQuery of searchQueries) {

@@ -107,6 +107,15 @@ components:
             secondary:
               x-clearflask-prop: { order: 3, subType: 'color', name: 'Secondary color' }
               type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            background:
+              x-clearflask-prop: { order: 4, subType: 'color', name: 'Background color' }
+              type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            backgroundPaper:
+              x-clearflask-prop: { order: 5, subType: 'color', name: 'Inner background color' }
+              type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
           x-clearflask-prop: { order: 2, name: 'Typography' }
           title: Typography
@@ -251,7 +260,7 @@ components:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
                 type: array
                 items:
-                  $ref: 'api-project.yaml#/components/schemas/PagePanel'
+                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearchControls'
               board:
                 $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
@@ -261,8 +270,6 @@ components:
       title: Workflow
       type: object
       required:
-        - workflowId
-        - name
         - statuses
       properties:
         entryStatus:
@@ -316,10 +323,30 @@ components:
       title: Tagging
       type: object
       required:
+        - tags
         - tagGroups
       properties:
+        tags:
+          x-clearflask-prop: { order: 1, name: 'Tags', description: 'Tags' }
+          type: array
+          items:
+            title: Tag
+            type: object
+            required:
+              - tagId
+              - name
+            properties:
+              tagId:
+                x-clearflask-prop: { subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Name', description: 'Tag Name' }
+                type: string
+              color:
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                type: string
         tagGroups:
-          x-clearflask-page-group: { order: 1, name: 'Tag Groups', description: 'A set of tags you can use', tablePropertyNames:['name'] }
+          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'A set of tags you can use', tablePropertyNames:['name', 'tagIds'] }
           type: array
           items:
             x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
@@ -328,7 +355,7 @@ components:
             required:
               - tagGroupId
               - userSettable
-              - tags
+              - tagIds
             properties:
               tagGroupId:
                 x-clearflask-prop: { subType: 'id' }
@@ -345,25 +372,12 @@ components:
               userSettable:
                 x-clearflask-prop: { order: 4, name: 'User settable', description: 'Can be set by user', defaultValue: true }
                 type: boolean
-              tags:
-                x-clearflask-prop: { order: 5, name: 'tags', description: 'Set of tags in this group' }
+              tagIds:
+                x-clearflask-prop: { order: 5, name: 'Tags', description: 'Set of tags in this group' }
+                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
-                  title: Tag
-                  type: object
-                  required:
-                   - tagId
-                   - name
-                  properties:
-                    tagId:
-                      x-clearflask-prop: { subType: 'id' }
-                      type: string
-                    name:
-                      x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Name', description: 'Tag Name' }
-                      type: string
-                    color:
-                      x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
-                      type: string
+                  type: string
     content:
       x-clearflask-page: { order: 12, name: 'Content' }
       title: Content
@@ -375,8 +389,8 @@ components:
           x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames:['name'] }
           type: array
           items:
-            x-clearflask-page: { name: 'Group', nameFromProp: 'name' }
-            title: IdeaGroup
+            x-clearflask-page: { name: 'Category', nameFromProp: 'name' }
+            title: Category
             type: object
             required:
               - categoryId
@@ -426,41 +440,51 @@ components:
       properties:
         title:
           type: string
+        controls:
+            $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
         panels:
           type: array
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanel'
       required:
         - panels
+    PagePanelWithSearchControls:
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
     PagePanel:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object
+      required:
+        - search
       properties:
         title:
           type: string
         hideIfEmpty:
           type: boolean
-        ideaList:
+        search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
-        enableSearchByGroup:
+    PagePanelSearchControls:
+      x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
+      type: object
+      properties:
+        enableSearchByCategory:
           type: boolean
         enableSearchByStatus:
           type: boolean
         enableSearchByTag:
           type: boolean
-      required:
-        - ideaList
     PageExplorer:
       x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
+      required:
+        - search
       properties:
         title:
           x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above the explorer.' }
           type: string
-        ideaList:
+        search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
-      required:
-        - ideaList
     Projects:
       type: object
       required:

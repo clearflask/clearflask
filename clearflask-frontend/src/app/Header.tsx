@@ -8,9 +8,15 @@ import Notifications from '@material-ui/icons/Notifications';
 import { Server } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
+import { withStyles, StyledComponentProps, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
+const styles = (theme:Theme) => createStyles({
+  indicator: {
+    borderRadius: '1px',
+  },
+});
 
-interface Props {
+interface Props extends WithStyles<typeof styles> {
   server:Server;
   conf?:Client.Config;
   page?:Client.Page;
@@ -116,6 +122,9 @@ class Header extends Component<Props> {
         <Tabs
           variant='scrollable'
           scrollButtons="auto"
+          classes={{
+            indicator: this.props.classes.indicator,
+          }}
           ScrollButtonComponent={(props) => (
             <Button
               disableRipple
@@ -147,10 +156,7 @@ class Header extends Component<Props> {
         >
           {tabs}
         </Tabs>
-        <Divider style={{
-          marginTop: '-2px',
-          height: '2px',
-        }} />
+        <Divider />
       </div>
     );
   }
@@ -160,4 +166,4 @@ class Header extends Component<Props> {
   }
 }
 
-export default Header;
+export default withStyles(styles, { withTheme: true })(Header);

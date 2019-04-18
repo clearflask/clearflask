@@ -61,16 +61,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.ideaGet(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
+    console.log(Object.keys(this.db), request.projectId);
     return this.returnLater(this.filterCursor(this.sort(this.db[request.projectId].ideas
-      .filter(idea => !request.search.filterIdeaTagIds
-        || request.search.filterIdeaTagIds.filter(tagId =>
+      .filter(idea => !request.search.filterTagIds
+        || request.search.filterTagIds.filter(tagId =>
             idea.tagIds && idea.tagIds.includes(tagId)
           ).length > 0)
-      .filter(idea => !request.search.filterIdeaGroupIds
-        || request.search.filterIdeaGroupIds.includes(idea.groupId))
-      .filter(idea => request.search.filterIdeaStatusIds === undefined
-        || (request.search.filterIdeaStatusIds.length === 0 && !idea.statusId)
-        || (idea.statusId && request.search.filterIdeaStatusIds.includes(idea.statusId)))
+      .filter(idea => !request.search.filterCategoryIds
+        || request.search.filterCategoryIds.includes(idea.groupId))
+      .filter(idea => request.search.filterStatusIds === undefined
+        || (request.search.filterStatusIds.length === 0 && !idea.statusId)
+        || (idea.statusId && request.search.filterStatusIds.includes(idea.statusId)))
       .filter(idea => request.search.searchText === undefined
         || idea.title.indexOf(request.search.searchText) >= 0
         || idea.description.indexOf(request.search.searchText) < 0)

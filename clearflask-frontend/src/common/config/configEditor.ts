@@ -95,6 +95,8 @@ export interface xCfPropLink {
 
 export type Unsubscribe = () => void;
 export interface Setting<T extends PageType|PageGroupType|PropertyType, R> {
+  /** Unique object key; used in React to determine whether prop changed */
+  key:string;
   type:T;
   path:Path;
   pathStr:string;
@@ -137,6 +139,8 @@ export interface PageGroup extends Setting<PageGroupType, true|undefined>, xCfPa
   getChildPages():Page[];
   insert(index?:number):Page;
   duplicate(sourceIndex:number):Page;
+  moveUp(index:number):void;
+  moveDown(index:number):void;
   delete(index:number):void;
   setRaw(val:Array<any>|undefined):void;
   cachedChildPages?:Page[]; // Internal use only
@@ -221,6 +225,8 @@ export interface ArrayProperty extends PropertyBase<PropertyType.Array, true> {
   childProperties?:Property[];
   insert(index?:number):Property;
   duplicate(sourceIndex:number):Property;
+  moveUp(index:number):void;
+  moveDown(index:number):void;
   delete(index:number):void;
   setRaw(val:Array<any>|undefined):void;
 }
@@ -458,6 +464,12 @@ export class EditorImpl implements Editor {
     }
   }
 
+  static stringToSlug(val?:string):string {
+    return val
+      ? val.toLowerCase().replace(/[^0-9a-z]+/g,'-')
+      : '';
+  }
+
   sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property):number {
     // id subtype needs to initialize first in case a subsequent link points to itself
     return (l['subType'] === 'id' ? -1 : l.order || l.name)
@@ -660,6 +672,7 @@ export class EditorImpl implements Editor {
     var dynamicNameUnsubscribe:(()=>void)|undefined = undefined;
 
     const page:Page = {
+      key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
       ...xPage,
@@ -781,6 +794,7 @@ export class EditorImpl implements Editor {
     const localSubscribers:{[subscriberId:string]:()=>void} = {};
 
     const pageGroup:PageGroup = {
+      key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
       ...xPageGroup,
@@ -817,7 +831,31 @@ export class EditorImpl implements Editor {
         const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
         const newPage = pageGroup.insert();
         newPage.setRaw(duplicateData);
+        if(newPage.nameFromProp) {
+          const nameProp = newPage.getChildren().props.find(p => p.path[p.path.length - 1] === newPage.nameFromProp) as StringProperty;
+          nameProp.set(nameProp.value + ' (Copy)');
+        }
         return newPage;
+      },
+      moveUp: (index:number):void => {
+        const arr = this.getOrDefaultValue(path, []);
+        if(index <= 0 || arr.length - 1 < index) return;
+        const temp = arr[index - 1];
+        arr[index - 1] = arr[index];
+        arr[index] = temp;
+        this.cacheInvalidateChildren(path);
+        pageGroup.cachedChildPages = fetchChildPages();
+        this.notify(localSubscribers);
+      },
+      moveDown: (index:number):void => {
+        const arr = this.getOrDefaultValue(path, []);
+        if(index < 0 || arr.length - 2 < index) return;
+        const temp = arr[index + 1];
+        arr[index + 1] = arr[index];
+        arr[index] = temp;
+        this.cacheInvalidateChildren(path);
+        pageGroup.cachedChildPages = fetchChildPages();
+        this.notify(localSubscribers);
       },
       delete: (index:number):void => {
         const arr = this.getValue(path);
@@ -922,6 +960,7 @@ export class EditorImpl implements Editor {
     };
     const pathStr = path.join('.');
     const base = {
+      key: randomUuid(),
       name: pathStr,
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
@@ -1047,14 +1086,17 @@ export class EditorImpl implements Editor {
           }
           if(xProp && xProp.slugAutoComplete !== undefined) {
             setStringFun = (val:string|undefined):void => {
+              const prevVal = (property as StringProperty).value;
               setFun(val);
               setTimeout(() => {
                 const slugProp = this.getProperty(xProp.slugAutoComplete!
                   .map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep));
-                const slugName = val && val
-                  .toLowerCase()
-                  .replace(/[^0-9a-z]+/g,'-')
-                slugProp.set(slugName as never);
+                const prevSlugName = EditorImpl.stringToSlug(prevVal);
+                // Only update slug if it hasn't been changed already manually
+                if(slugProp.value === prevSlugName) {
+                  const slugName = EditorImpl.stringToSlug(val);
+                  slugProp.set(slugName as never);
+                }
               }, 1);
             };
           }
@@ -1310,6 +1352,26 @@ export class EditorImpl implements Editor {
               newProp.set(duplicateData);
             }
             return newProp;
+          },
+          moveUp: (index:number):void => {
+            const arr = this.getOrDefaultValue(path, []);
+            if(index <= 0 || arr.length - 1 < index) return;
+            const temp = arr[index - 1];
+            arr[index - 1] = arr[index];
+            arr[index] = temp;
+            this.cacheInvalidateChildren(path);
+            (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
+            this.notify(localSubscribers);
+          },
+          moveDown: (index:number):void => {
+            const arr = this.getOrDefaultValue(path, []);
+            if(index < 0 || arr.length - 2 < index) return;
+            const temp = arr[index + 1];
+            arr[index + 1] = arr[index];
+            arr[index] = temp;
+            this.cacheInvalidateChildren(path);
+            (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
+            this.notify(localSubscribers);
           },
           delete: (index:number):void => {
             if(!property.value) return;

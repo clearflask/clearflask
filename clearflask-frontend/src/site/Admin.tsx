@@ -51,15 +51,9 @@ export default class Admin extends Component<Props, State> {
     this.serverAdmin = new ServerAdmin();
 
     if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      this.loadProjects({
-        configs: [
-          new ConfigEditor.EditorImpl().getConfig(),
-          new ConfigEditor.EditorImpl().getConfig(),
-          new ConfigEditor.EditorImpl().getConfig(),
-          new ConfigEditor.EditorImpl().getConfig(),
-          new ConfigEditor.EditorImpl().getConfig(),
-        ]
-      });
+      this.serverAdmin.dispatchAdmin()
+        .then(d => d.projectCreateAdmin({projectId: 'demo'})
+          .then(() => d.configGetAllAdmin().then(this.loadProjects.bind(this))));
     } else {
       this.serverAdmin.dispatchAdmin().then(d => d.configGetAllAdmin().then(this.loadProjects.bind(this)));
     }
@@ -100,7 +94,7 @@ export default class Admin extends Component<Props, State> {
       }
       page = (
         <Page
-          key={activePath}
+          key={currentPage.key}
           page={currentPage}
           editor={activeProject.editor}
           pageClicked={path => this.pageClicked(activePath, path)}
@@ -116,7 +110,7 @@ export default class Admin extends Component<Props, State> {
     return (
       <Layout
         toolbarLeft={
-          <Typography variant="h6" color="inherit" noWrap>
+          <Typography variant='h6' color="inherit" noWrap>
             Admin
           </Typography>
         }

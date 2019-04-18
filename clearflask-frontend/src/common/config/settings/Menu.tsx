@@ -44,6 +44,7 @@ export default class Menu extends Component<Props> {
           } else if(item.type === 'project') {
             return (
               <MenuPage
+                key={item.page.key}
                 page={item.page}
                 activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
                 pageClicked={path => this.props.pageClicked(item.projectId, path)}
@@ -68,6 +69,7 @@ export default class Menu extends Component<Props> {
 }
 
 interface PropsPage {
+  key:string;
   page:ConfigEditor.Page;
   activePath?:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
@@ -98,9 +100,9 @@ class MenuPage extends Component<PropsPage> {
             .map(child => {
               switch(child.type) {
                 case ConfigEditor.PageType:
-                  return ( <MenuPage {...this.props} page={child} /> );
+                  return ( <MenuPage {...this.props} key={child.key} page={child} /> );
                 case ConfigEditor.PageGroupType:
-                  return ( <MenuPageGroup {...this.props} pageGroup={child} /> );
+                  return ( <MenuPageGroup {...this.props} key={child.key} pageGroup={child} /> );
                 default:
                   return null;
               }
@@ -136,6 +138,7 @@ class MenuPage extends Component<PropsPage> {
 }
 
 interface PropsPageGroup {
+  key:string;
   pageGroup:ConfigEditor.PageGroup;
   activePath?:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
@@ -163,7 +166,7 @@ class MenuPageGroup extends Component<PropsPageGroup> {
               primary={this.props.pageGroup.name} />
           </ListItem>
           {childPages.map(childPage =>
-            <MenuPage {...this.props} page={childPage} />
+            <MenuPage {...this.props} key={childPage.key} page={childPage} />
           )}
         </div>
       </Collapse>

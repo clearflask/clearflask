@@ -36,8 +36,8 @@ export default class ServerAdmin {
 
   async _dispatch(msg:any):Promise<any>{
     if(msg.type === Admin.Action.configGetAllAdmin) {
-      const result = await msg.payload as Array<Admin.ConfigAdmin>;
-      result.forEach(config => {
+      const result = await msg.payload as Admin.Projects;
+      result.configs.forEach(config => {
         if(this.projectIdToServer[config.projectId] === undefined) {
           this.projectIdToServer[config.projectId] = new Server(config.projectId, this.apiOverride);
         }

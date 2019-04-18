@@ -52,12 +52,16 @@ export default class App extends Component<Props> {
       theme = createMuiTheme({
         palette: {
           type: conf.style.palette.darkMode ? 'dark' : 'light',
-          primary: conf.style.palette.primary ? {
-            main: conf.style.palette.primary
-          } : undefined,
-          secondary: conf.style.palette.secondary ? {
-            main: conf.style.palette.secondary
-          } : undefined,
+          ...(conf.style.palette.primary ? { primary: {
+            main: conf.style.palette.primary,
+          }} : {}),
+          ...(conf.style.palette.secondary ? { secondary: {
+            main: conf.style.palette.secondary,
+          }} : {}),
+          ...((conf.style.palette.background || conf.style.palette.backgroundPaper) ? { background: {
+            default: conf.style.palette.background ? conf.style.palette.background : undefined,
+            paper: conf.style.palette.backgroundPaper ? conf.style.palette.backgroundPaper : undefined,
+          }} : {}),
         },
         typography: {
           fontFamily: conf.style.typography.fontFamily || undefined,
