@@ -443,6 +443,7 @@ components:
         controls:
             $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
         panels:
+          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
           type: array
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanel'
@@ -465,7 +466,6 @@ components:
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
     PagePanelSearchControls:
-      x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object
       properties:
         enableSearchByCategory:
@@ -485,6 +485,26 @@ components:
           type: string
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+    VersionedConfig:
+      type: object
+      required:
+        - version
+        - config
+      properties:
+        config:
+          $ref: 'api-project.yaml#/components/schemas/Config'
+        version:
+          type: string
+    VersionedConfigAdmin:
+      type: object
+      required:
+        - version
+        - config
+      properties:
+        config:
+          $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+        version:
+          type: string
     Projects:
       type: object
       required:
@@ -493,7 +513,7 @@ components:
         configs:
           type: array
           items:
-              $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+            $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
 
 /project/{projectId}/config:
   get:
@@ -510,7 +530,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-project.yaml#/components/schemas/Config'
+              $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/config/admin:
@@ -548,7 +568,7 @@ components:
                 projectId:
                   type: string
                 config:
-                  $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
 /project/{projectId}/admin/config:
   get:
     operationId: configGetAdmin
@@ -564,7 +584,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+              $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   put:
@@ -591,15 +611,8 @@ components:
         content:
           application/json:
             schema:
-              title: NewConfigResult
-              type: object
-              properties:
-                config:
-                  $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
-                version:
-                  type: string
-              required:
-                - config
-                - version
+              $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+      '412':
+        $ref: 'api-client.yaml#/components/responses/ConfigChanged'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

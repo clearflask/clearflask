@@ -20,6 +20,9 @@ export default class Templater {
     this.baseFeatures();
     // TODO KNOWLEDGE BASE
     // TODO BLOG
+    // TODO BUG BOUNTY
+    // TODO QUESTION AND ANSWER
+    // TODO FORUM
   }
 
   baseFeatures() {
@@ -58,10 +61,10 @@ export default class Templater {
       pageId: pageRoadmapId,
       name: 'Roadmap',
       slug: ConfigEditor.EditorImpl.stringToSlug('Roadmap'),
-      title: 'Roadmap',
       description: undefined,
       panels: [],
       board: Admin.PageBoardToJSON({
+        title: 'Roadmap',
         panels: [
           Admin.PagePanelToJSON({title: 'Funding', search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,

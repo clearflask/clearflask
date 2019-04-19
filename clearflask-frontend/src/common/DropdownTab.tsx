@@ -1,6 +1,6 @@
 import React, { Component, Key } from 'react';
 import { Input, IconButton, Typography, Drawer, Divider, AppBar, Hidden, Select, MenuItem, InputLabel, FormControl } from '@material-ui/core';
-import { withStyles, StyledComponentProps, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => createStyles({
   formControl: {

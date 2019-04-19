@@ -8,11 +8,36 @@ import Notifications from '@material-ui/icons/Notifications';
 import { Server } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
-import { withStyles, StyledComponentProps, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
     borderRadius: '1px',
+  },
+  header: {
+    maxWidth: '1024px',
+    margin: '0px auto',
+  },
+  tabs: {
+    // TODO figure out how to place these AND allow scroll buttons
+    // display: 'inline-flex',
+    // whiteSpace: 'nowrap',
+    // '&:before': {
+    //   content: '\'\'',
+    //   width: '100%',
+    //   minWidth: '0px',
+    //   maxWidth: '50px',
+    //   display: 'inline-block',
+    //   height: '100px',
+    // },
+    // '&:after': {
+    //   content: '\'\'',
+    //   width: '100%',
+    //   minWidth: '0px',
+    //   maxWidth: '50px',
+    //   display: 'inline-block',
+    //   height: '100px',
+    // },
   },
 });
 
@@ -24,13 +49,6 @@ interface Props extends WithStyles<typeof styles> {
 }
 
 class Header extends Component<Props> {
-  readonly styles = {
-    container: {
-      maxWidth: '1024px',
-      margin: '0px auto'
-    },
-  };
-
   render() {
     var currentTabValue;
     var tabs;
@@ -76,7 +94,7 @@ class Header extends Component<Props> {
     }
 
     return (
-      <div style={this.styles.container}>
+      <div className={this.props.classes.header}>
         <Grid
           style={{paddingTop: '12px'}}
           container
@@ -119,6 +137,8 @@ class Header extends Component<Props> {
             </div>
           </Grid>
         </Grid>
+        <div className={this.props.classes.tabs}>
+        <div>
         <Tabs
           variant='scrollable'
           scrollButtons="auto"
@@ -157,6 +177,8 @@ class Header extends Component<Props> {
           {tabs}
         </Tabs>
         <Divider />
+        </div>
+        </div>
       </div>
     );
   }

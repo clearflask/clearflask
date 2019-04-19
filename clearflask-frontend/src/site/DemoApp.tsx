@@ -34,7 +34,6 @@ export default class DemoApp extends Component<Props> {
         <Route path="/:projectId/:pageUrlName?" render={props => (
           <App
             {...props}
-            supressConfigGet
             supressCssBaseline
             serverOverride={this.props.server} />
         )} />

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { StateIdeas } from '../../api/server';
 import IdeaCard from './IdeaCard';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 export enum Direction {
   Horizontal,
@@ -8,12 +9,18 @@ export enum Direction {
   Wrap,
 }
 
-interface Props extends StateIdeas {
+const styles = (theme:Theme) => createStyles({
+  container: {
+    margin: theme.spacing.unit,
+  },
+});
+
+interface Props extends StateIdeas, WithStyles<typeof styles> {
   searchKey?:string;
   direction:Direction
 }
 
-export default class Panel extends Component<Props> {
+class Panel extends Component<Props> {
   readonly styles = {
     container: {
       display: 'flex',
@@ -59,3 +66,5 @@ export default class Panel extends Component<Props> {
     );
   }
 }
+
+export default withStyles(styles, { withTheme: true })(Panel);

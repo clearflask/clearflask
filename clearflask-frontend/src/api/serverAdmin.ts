@@ -34,17 +34,14 @@ export default class ServerAdmin {
     return projectId === undefined ? this.dispatcherAdmin : this.projectIdToServer[projectId].dispatchAdmin();
   }
 
-  async _dispatch(msg:any):Promise<any>{
-    if(msg.type === Admin.Action.configGetAllAdmin) {
-      const result = await msg.payload as Admin.Projects;
-      result.configs.forEach(config => {
-        if(this.projectIdToServer[config.projectId] === undefined) {
-          this.projectIdToServer[config.projectId] = new Server(config.projectId, this.apiOverride);
-        }
-      });
-      return result;
-    } else {
-      return await msg.payload;
+  createServer(projectId:string):Server {
+    if(!this.projectIdToServer[projectId]) {
+      this.projectIdToServer[projectId] = new Server(projectId, this.apiOverride);
     }
+    return this.projectIdToServer[projectId];
+  }
+
+  async _dispatch(msg:any):Promise<any>{
+    return await msg.payload;
   }
 }

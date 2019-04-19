@@ -14,8 +14,12 @@ import { detectEnv, Environment } from '../common/util/detectEnv';
 import ConfigView from '../common/config/settings/ConfigView';
 import ServerAdmin from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
+import Templater from '../common/config/configTemplater';
+import DataMock from '../api/dataMock';
+import ServerMock from '../api/serverMock';
 
 export interface Project {
+  configVersion:string;
   editor:ConfigEditor.Editor;
   server:Server;
 }
@@ -48,23 +52,36 @@ export default class Admin extends Component<Props, State> {
 
     this.state = {currentPagePath: []}
 
-    this.serverAdmin = new ServerAdmin();
-
     if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+      this.serverAdmin = new ServerAdmin(ServerMock.get());
+      const mockProjectId = 'mock';
+      const mockProjectServer = this.serverAdmin.createServer(mockProjectId);
       this.serverAdmin.dispatchAdmin()
-        .then(d => d.projectCreateAdmin({projectId: 'demo'})
-          .then(() => d.configGetAllAdmin().then(this.loadProjects.bind(this))));
+        .then(dispatchAdmin => dispatchAdmin.projectCreateAdmin({projectId: mockProjectId})
+        .then(project => {
+          const editor = new ConfigEditor.EditorImpl(project.config.config);
+          Templater.get(editor).demo();
+          dispatchAdmin.configSetAdmin({
+            projectId: mockProjectId,
+            versionLast: project.config.version,
+            config: editor.getConfig(),
+          }).then(() => DataMock.get(mockProjectId).mockItems()
+            .then(() => dispatchAdmin.configGetAllAdmin()
+            .then(this.loadProjects.bind(this))));
+        }));
     } else {
+      this.serverAdmin = new ServerAdmin();
       this.serverAdmin.dispatchAdmin().then(d => d.configGetAllAdmin().then(this.loadProjects.bind(this)));
     }
   }
 
   loadProjects(projects:AdminClient.Projects) {
-    projects.configs.forEach(config => {
-      const editor = new ConfigEditor.EditorImpl(config);
-      const server = new Server(config.projectId);
+    projects.configs.forEach(versionedConfig => {
+      const server = this.serverAdmin.createServer(versionedConfig.config.projectId);
+      const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       server.subscribeToChanges(editor);
-      this.projects[config.projectId] = {
+      this.projects[versionedConfig.config.projectId] = {
+        configVersion: versionedConfig.version,
         editor: editor,
         server: server,
       };
@@ -102,7 +119,7 @@ export default class Admin extends Component<Props, State> {
       );
       preview = (
         <DemoApp
-          key={activePath}
+          key={activeProject.configVersion}
           editor={activeProject.editor}
           server={activeProject.server} />
       );
@@ -145,7 +162,8 @@ export default class Admin extends Component<Props, State> {
           />,
           page,
         ]}
-        {/* TODO remove <ConfigView editor={this.editor} /> */}
+        {/* TODO remove */}
+        {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
       </Layout>
     );
   }

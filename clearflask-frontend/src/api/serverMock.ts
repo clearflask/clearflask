@@ -12,6 +12,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   readonly LATENCY = 300;
   readonly DEFAULT_LIMIT = 10;
+  hasLatency:boolean = true;
 
   // Mock server-side cookie data
   loggedInUser?:Admin.User;
@@ -19,8 +20,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   // Mock database
   readonly db:{
     [projectId:string]: {
-      config: Admin.ConfigAdmin,
-      comments:(Admin.Comment & {ideaId:string})[];
+      config: Admin.VersionedConfigAdmin,
+      comments:Admin.Comment[];
       transactions:Admin.Credit[];
       ideas:Admin.IdeaAdmin[];
       users:Admin.UserAdmin[];
@@ -31,6 +32,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static get():ServerMock {
     if(ServerMock.instance === undefined) ServerMock.instance = new ServerMock();
     return ServerMock.instance;
+  }
+
+  setLatency(enabled:boolean) {
+    this.hasLatency = enabled;
   }
 
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
@@ -61,20 +66,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.ideaGet(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
-    console.log(Object.keys(this.db), request.projectId);
     return this.returnLater(this.filterCursor(this.sort(this.db[request.projectId].ideas
       .filter(idea => !request.search.filterTagIds
         || request.search.filterTagIds.filter(tagId =>
             idea.tagIds && idea.tagIds.includes(tagId)
           ).length > 0)
       .filter(idea => !request.search.filterCategoryIds
-        || request.search.filterCategoryIds.includes(idea.groupId))
+        || request.search.filterCategoryIds.includes(idea.categoryId))
       .filter(idea => request.search.filterStatusIds === undefined
         || (request.search.filterStatusIds.length === 0 && !idea.statusId)
         || (idea.statusId && request.search.filterStatusIds.includes(idea.statusId)))
       .filter(idea => request.search.searchText === undefined
         || idea.title.indexOf(request.search.searchText) >= 0
-        || idea.description.indexOf(request.search.searchText) < 0)
+        || (idea.description || '').indexOf(request.search.searchText) < 0)
       ,[(l,r) => {switch(request.search.sortBy){
           default: case Admin.IdeaSearchSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
           case Admin.IdeaSearchSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
@@ -85,7 +89,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
     throw new Error("Method not implemented.");
   }
-  configGet(request: Client.ConfigGetRequest): Promise<Client.Config> {
+  configGet(request: Client.ConfigGetRequest): Promise<Client.VersionedConfig> {
     return this.configGetAdmin(request);
   }
   userCreate(request: Client.UserCreateRequest): Promise<Client.User> {
@@ -114,7 +118,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
-    throw new Error("Method not implemented.");
+    const comment:Admin.Comment = {
+      ideaId: request.ideaId,
+      commentId: randomUuid(),
+      created: new Date(),
+      ...(request.comment),
+    };
+    this.db[request.projectId].comments.push(comment);
+    return this.returnLater(comment);
   }
   commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -135,7 +146,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaAdmin> {
-    throw new Error("Method not implemented.");
+    const idea:Admin.IdeaAdmin = {
+      ideaId: randomUuid(),
+      created: new Date(),
+      ...(request.idea),
+    };
+    this.db[request.projectId].ideas.push(idea);
+    return this.returnLater(idea);
   }
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -153,7 +170,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.IdeaAdmin> {
     throw new Error("Method not implemented.");
   }
-  configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.ConfigAdmin> {
+  configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if(!this.db[request.projectId]) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.db[request.projectId].config);
   }
@@ -162,14 +179,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       configs: Object.values(this.db).map(p => p.config),
     });
   }
-  configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.NewConfigResult> {
-    throw new Error("Method not implemented.");
+  configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
+    if(this.db[request.projectId].config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
+    this.db[request.projectId].config = { config: request.config, version: randomUuid() };
+    return this.returnLater(this.db[request.projectId].config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
     const editor = new ConfigEditor.EditorImpl();
     editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(request.projectId);
     this.db[request.projectId] = {
-      config: editor.getConfig(),
+      config: {config: editor.getConfig(), version: randomUuid()},
       comments: [],
       transactions: [],
       ideas: [],
@@ -178,11 +197,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     };
     return this.returnLater({
       projectId: request.projectId,
-      config: editor.getConfig(),
+      config: this.db[request.projectId].config,
     });
   }
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
-    throw new Error("Method not implemented.");
+    const user = {
+      userId: randomUuid(),
+      name: request.create.name,
+      email: request.create.email,
+    };
+    this.db[request.projectId].users.push(user);
+    return this.returnLater(user);
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -570,14 +595,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async returnLater<T>(returnValue:T):Promise<T> {
-    console.log('Server SEND:', returnValue);
-    await new Promise(resolve => setTimeout(resolve, this.LATENCY));
+    // console.log('Server SEND:', returnValue);
+    if(this.hasLatency){
+      await new Promise(resolve => setTimeout(resolve, this.LATENCY));
+    }
     return returnValue;
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {
-    console.log('Server THROW:', httpStatus, userFacingMessage);
-    await new Promise(resolve => setTimeout(resolve, this.LATENCY));
+    // console.log('Server THROW:', httpStatus, userFacingMessage);
+    if(this.hasLatency){
+      await new Promise(resolve => setTimeout(resolve, this.LATENCY));
+    }
     throw {
       status: httpStatus,
       json: Promise.resolve(Admin.ErrorResponseFromJSON({

@@ -79,7 +79,7 @@ components:
           type: string
         description:
           type: string
-        groupId:
+        categoryId:
           type: string
         statusId:
           type: string
@@ -100,8 +100,7 @@ components:
         - authorUserId
         - created
         - title
-        - description
-        - groupId
+        - categoryId
         - tagIds
     IdeaAdmin:
       allOf:
@@ -118,7 +117,7 @@ components:
           type: string
         description:
           type: string
-        groupId:
+        categoryId:
           type: string
         tagIds:
           type: array
@@ -127,7 +126,7 @@ components:
       required:
         - authorUserId
         - title
-        - groupId
+        - categoryId
         - tagIds
     IdeaCreateAdmin:
       allOf:
@@ -158,7 +157,7 @@ components:
           properties:
             title:
               type: string
-            groupId:
+            categoryId:
               type: string
             tagIds:
               type: array

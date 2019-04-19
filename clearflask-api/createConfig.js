@@ -12,6 +12,8 @@ const CONF_PATH = [
   'content',
   'application/json',
   'schema',
+  'properties',
+  'config',
 ];
 
 SwaggerParser.dereference(SPEC_LOCATION, function(err, api) {

@@ -599,7 +599,7 @@ export class EditorImpl implements Editor {
   parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
     var pageSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
-      pageSchema = subSchema;
+      pageSchema = this.mergeAllOf(subSchema);
     } else {
       pageSchema = this.getSubSchema(path);
       if(path.length === 0) {
@@ -754,7 +754,7 @@ export class EditorImpl implements Editor {
   parsePageGroup(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):PageGroup {
     var pageGroupSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
-      pageGroupSchema = subSchema;
+      pageGroupSchema = this.mergeAllOf(subSchema);
     } else {
       pageGroupSchema = this.getSubSchema(path);
       if(path.length === 0) {
@@ -907,6 +907,7 @@ export class EditorImpl implements Editor {
           } else if(pageGroup.maxItems !== undefined && count > pageGroup.maxItems) {
             pageGroup.errorMsg = `Must have at most ${pageGroup.maxItems} entries`;
           }
+          pageGroup.errorMsg = undefined;
         } else {
           pageGroup.errorMsg = undefined;
         }
@@ -926,7 +927,7 @@ export class EditorImpl implements Editor {
     }
     var propSchema;
     if(isRequired !== undefined && subSchema !== undefined) {
-      propSchema = subSchema;
+      propSchema = this.mergeAllOf(subSchema);
     } else {
       const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
       const propName = path[path.length - 1];

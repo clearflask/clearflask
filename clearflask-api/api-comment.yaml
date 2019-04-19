@@ -11,6 +11,8 @@ components:
     Comment:
       type: object
       properties:
+        ideaId:
+          type: string
         commentId:
           type: string
         parentCommentId:
@@ -28,6 +30,7 @@ components:
         content:
           type: string
       required:
+        - ideaId
         - commentId
         - created
         - text
@@ -41,7 +44,6 @@ components:
         content:
           type: string
       required:
-        - parentCommentId
         - authorUserId
         - content
     CommentCreateAdmin:

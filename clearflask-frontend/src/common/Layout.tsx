@@ -4,7 +4,7 @@ import { Toolbar, IconButton, Typography, Drawer, Divider, AppBar, Hidden } from
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
-import { withStyles, StyledComponentProps, Theme } from '@material-ui/core/styles';
+import { withStyles, Theme } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => ({
   root: {

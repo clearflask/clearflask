@@ -7,6 +7,7 @@ import { isProd, detectEnv, Environment } from '../common/util/detectEnv';
 import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
+import randomUuid from '../common/util/uuid';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -109,7 +110,7 @@ export class Server {
           projectId: this.projectId
         },
       },
-      payload: config,
+      payload: { config: config, version: randomUuid() },
     };
     this._dispatch(msg);
   }
@@ -127,6 +128,7 @@ export class Server {
 export interface StateConf {
   status?:Status;
   conf?:Client.Config;
+  ver?:string;
 }
 function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
   switch (action.type) {
@@ -137,7 +139,8 @@ function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
     case Client.configGetActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
-        conf: action.payload,
+        conf: action.payload.config,
+        ver: action.payload.version,
       };
     case Client.configGetActionStatus.Rejected:
       return { status: Status.REJECTED };
