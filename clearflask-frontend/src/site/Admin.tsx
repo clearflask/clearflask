@@ -54,24 +54,26 @@ export default class Admin extends Component<Props, State> {
 
     if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       this.serverAdmin = new ServerAdmin(ServerMock.get());
-      const mockProjectId = 'mock';
-      const mockProjectServer = this.serverAdmin.createServer(mockProjectId);
+      const projectId = 'mock';
       this.serverAdmin.dispatchAdmin()
-        .then(dispatchAdmin => dispatchAdmin.projectCreateAdmin({projectId: mockProjectId})
-        .then(project => {
-          const editor = new ConfigEditor.EditorImpl(project.config.config);
-          Templater.get(editor).demo();
-          dispatchAdmin.configSetAdmin({
-            projectId: mockProjectId,
-            versionLast: project.config.version,
-            config: editor.getConfig(),
-          }).then(() => DataMock.get(mockProjectId).mockItems()
-            .then(() => dispatchAdmin.configGetAllAdmin()
-            .then(this.loadProjects.bind(this))));
-        }));
+        .then(d => d.projectCreateAdmin({projectId: projectId})
+          .then(project =>{
+            const editor = new ConfigEditor.EditorImpl(project.config.config);
+            Templater.get(editor).demo();
+            return d.configSetAdmin({
+              projectId: projectId,
+              versionLast: project.config.version,
+              config: editor.getConfig(),
+            });
+          })
+          .then(() => DataMock.get(projectId).mockItems())
+          .then(() => d.configGetAllAdmin()))
+        .then(this.loadProjects.bind(this));
     } else {
       this.serverAdmin = new ServerAdmin();
-      this.serverAdmin.dispatchAdmin().then(d => d.configGetAllAdmin().then(this.loadProjects.bind(this)));
+      this.serverAdmin.dispatchAdmin()
+        .then(d => d.configGetAllAdmin())
+        .then(this.loadProjects.bind(this));
     }
   }
 

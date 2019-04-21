@@ -20,38 +20,41 @@ components:
         - sortBy
     Vote:
       type: object
+      required:
+        - voterUserId
       properties:
-        voterName:
-          description: >-
-            For privacy, name may not be present.
-            If so, assume user is anonymous.
+        voterUserId:
           type: string
-    VoteAdmin:
-      allOf:
-        - $ref: 'api-vote.yaml#/components/schemas/Vote'
-        - type: object
-          properties:
-            voterUserId:
-              type: string
-          required:
-            - voterUserId
-    VoteCreate:
-      type: object
-      properties:
         fundAmount:
           description: Optional amount of credits to fund.
           type: number
-        supportTypeIds:
-          description: Optional support type given.
+        vote:
+          description: Optional vote.
+          type: string
+          enum:
+            - upvote
+            - downvote
+        expressions:
+          description: Optional expression type given.
           type: array
           items:
             type: string
     VoteUpdate:
       type: object
+      required:
+        - voterUserId
       properties:
+        voterUserId:
+          type: string
         fundAmount:
           type: number
-        supportTypeIds:
+        vote:
+          type: string
+          enum:
+            - upvote
+            - downvote
+            - none
+        expressions:
           type: object
           properties:
             add:
@@ -64,32 +67,6 @@ components:
                 type: string
 
 /project/{projectId}/idea/{ideaId}/vote:
-  post:
-    operationId: voteCreate
-    tags: [Vote]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: create
-        in: query
-        required: true
-        schema:
-          $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
-/project/{projectId}/idea/{ideaId}/vote/{voteId}:
   patch:
     operationId: voteUpdate
     tags: [Vote]
@@ -100,11 +77,6 @@ components:
         schema:
           type: string
       - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: voteId
         in: path
         required: true
         schema:
@@ -120,30 +92,6 @@ components:
           application/json:
             schema:
               $ref: 'api-vote.yaml#/components/schemas/Vote'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-  delete:
-    operationId: voteDelete
-    tags: [Vote]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: voteId
-        in: path
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/vote:
@@ -178,7 +126,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
+                    $ref: 'api-vote.yaml#/components/schemas/Vote'
               required:
                 - results
   delete:
@@ -201,32 +149,6 @@ components:
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea/{ideaId}/vote:
-  post:
-    operationId: voteCreateAdmin
-    tags: [VoteAdmin]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: vote
-        in: query
-        required: true
-        schema:
-          $ref: 'api-vote.yaml#/components/schemas/VoteCreate'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
-/project/{projectId}/admin/idea/{ideaId}/vote/{voteId}:
   patch:
     operationId: voteUpdateAdmin
     tags: [VoteAdmin]
@@ -241,11 +163,6 @@ components:
         required: true
         schema:
           type: string
-      - name: voteId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: update
         in: query
         required: true
@@ -256,7 +173,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/VoteAdmin'
+              $ref: 'api-vote.yaml#/components/schemas/Vote'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

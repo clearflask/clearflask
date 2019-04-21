@@ -1,6 +1,7 @@
 import * as Admin from "./admin";
 import ServerMock from "./serverMock";
 import { fillerText } from "../common/util/fillerText";
+import { emojiIndex } from 'emoji-mart'
 
 class DataMock {
   projectId:string;
@@ -13,60 +14,101 @@ class DataMock {
     return new DataMock(projectId);
   }
 
-  mockItems():Promise<void> {
+  mockItems():Promise<any> {
     ServerMock.get().setLatency(false);
-    return ServerMock.get().configGetAdmin({projectId: this.projectId}).then(versionedConfig => versionedConfig.config.content.categories.forEach(category => {
-      [undefined, ...category.workflow.statuses].forEach(status => {
-        [undefined, ...category.tagging.tags].forEach(tag => {
-          ServerMock.get().userCreateAdmin({
-            projectId: versionedConfig.config.projectId,
-            create: {
-              name: fillerText(2,2,3,10),
-              email: 'example@example.com',
-            },
-          }).then(user => ServerMock.get().ideaCreateAdmin({
-            projectId: versionedConfig.config.projectId,
-            idea: {
-              authorUserId: user.userId,
-              title: fillerText(2,10,3,10),
-              description: fillerText(2,40,3,10),
-              categoryId: category.categoryId,
-              tagIds: tag ? [tag.tagId] : [],
-              statusId: status ? status.statusId : undefined,
-              created: new Date(Math.random() * new Date().getTime()),
-            },
-          }).then(item => ((numComments)=>{while(numComments-- > 0) ServerMock.get().commentCreateAdmin({
-            projectId: versionedConfig.config.projectId,
-            ideaId: item.ideaId,
-            comment: {
-              authorUserId: user.userId,
-              content: fillerText(2,40,3,10),
-              created: new Date(Math.random() * new Date().getTime()),
-            },
-          }).then(comment => ((numComments)=>{while(numComments-- > 0) ServerMock.get().commentCreateAdmin({
-            projectId: versionedConfig.config.projectId,
-            ideaId: item.ideaId,
-            comment: {
-              parentCommentId: comment.commentId,
-              authorUserId: user.userId,
-              content: fillerText(2,40,3,10),
-              created: new Date(Math.random() * new Date().getTime()),
-            },
-          }).then(subComment => ((numComments)=>{while(numComments-- > 0) ServerMock.get().commentCreateAdmin({
-            projectId: versionedConfig.config.projectId,
-            ideaId: item.ideaId,
-            comment: {
-              parentCommentId: subComment.commentId,
-              authorUserId: user.userId,
-              content: fillerText(2,40,3,10),
-              created: new Date(Math.random() * new Date().getTime()),
-            },
-          })})(Math.random() * 2))})(Math.random() * 2))})(Math.random() * 2))
-          .then(() => ServerMock.get().setLatency(true))
-          );
+    return ServerMock.get().configGetAdmin({projectId: this.projectId})
+      .then((versionedConfig:Admin.VersionedConfigAdmin) => {
+        const promises:Promise<any>[] = [];
+        versionedConfig.config.content.categories.forEach((category:Admin.Category) => {
+          [undefined, ...category.workflow.statuses].forEach((status:Admin.IdeaStatus|undefined) => {
+            [undefined, ...category.tagging.tags].forEach((tag:Admin.Tag|undefined) => {
+              promises.push(this.mockUser(versionedConfig)
+                .then((user:Admin.UserAdmin) => 
+                  this.mockIdea(versionedConfig, category, status, tag, user)
+                    .then(() => ServerMock.get().setLatency(true))
+                )
+              );
+            });
+          });
         });
+        return Promise.all(promises);
       });
-    }));
+  }
+
+  mockUser(versionedConfig:Admin.VersionedConfigAdmin):Promise<Admin.UserAdmin> {
+    return ServerMock.get().userCreateAdmin({
+      projectId: versionedConfig.config.projectId,
+      create: {
+        name: fillerText(2,2,3,10),
+        email: 'example@example.com',
+      },
+    });
+  }
+
+  mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, tag:Admin.Tag|undefined, user:Admin.UserAdmin):Promise<any> {
+    return ServerMock.get().ideaCreateAdmin({
+      projectId: this.projectId,
+      idea: {
+        authorUserId: user.userId,
+        title: fillerText(2,10,3,10),
+        description: fillerText(2,40,3,10),
+        categoryId: category.categoryId,
+        tagIds: tag ? [tag.tagId] : [],
+        statusId: status ? status.statusId : undefined,
+        created: new Date(Math.random() * new Date().getTime()),
+      },
+    })
+    .then((item:Admin.IdeaAdmin) => this.mockCommentsAndExpression(versionedConfig, category, item))
+  }
+
+  mockCommentsAndExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
+    return this.mockUser(versionedConfig)
+      .then(user => this.mockExpression(versionedConfig, category, item, user)
+        .then(() => ServerMock.get().commentCreateAdmin({
+          projectId: this.projectId,
+          ideaId: item.ideaId,
+          comment: {
+            authorUserId: user.userId,
+            parentCommentId: parentComment ? parentComment.commentId : undefined,
+            content: fillerText(2,40,3,10),
+            created: new Date(Math.random() * new Date().getTime()),
+          },
+        })))
+      .then(comment => {
+        if(level <= 0 ) return Promise.resolve();
+        var remainingComments = numComments * Math.random();
+        var promise:Promise<any> = Promise.resolve();
+        while(remainingComments-- > 0){
+          promise = promise.then(() => this.mockCommentsAndExpression(versionedConfig, category, item, level - 1, numComments, comment));
+        }
+        return promise;
+      });
+  }
+
+  mockExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, user:Admin.UserAdmin):Promise<any> {
+    return ServerMock.get().voteUpdateAdmin({
+      projectId: this.projectId,
+      ideaId: item.ideaId,
+      update: {
+        voterUserId: user.userId,
+        fundAmount: (category.support.fund && Math.random() < 0.2)
+          ? ((versionedConfig.config.credits.increment
+              ? Math.ceil(Math.random() * 1000 / versionedConfig.config.credits.increment) * versionedConfig.config.credits.increment
+              : Math.random() * 1000))
+          : undefined,
+        vote: category.support.vote && Math.random() < 0.5
+          ? (category.support.vote.enableDownvotes && Math.random() < 0.5
+            ? Admin.VoteUpdateVoteEnum.Upvote : Admin.VoteUpdateVoteEnum.Downvote)
+          : undefined,
+        expressions: { add: [
+          category.support.express
+            ? (category.support.express.limitEmojis
+              ? category.support.express.limitEmojis[Math.floor(Math.random() * category.support.express.limitEmojis.length)].display
+              : Object.values(emojiIndex.emojis)[Math.floor(Math.random() * Object.values(emojiIndex.emojis).length)]['native'])
+            : undefined
+        ]},
+      }
+    });
   }
 }
 

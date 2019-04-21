@@ -30,8 +30,6 @@ paths:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1credit'
   /project/{projectId}/idea/{ideaId}/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
-  /project/{projectId}/idea/{ideaId}/vote/{voteId}:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1{voteId}'
   /project/{projectId}/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
   # api-admin.yaml
@@ -59,8 +57,6 @@ paths:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote'
   /project/{projectId}/admin/idea/{ideaId}/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1vote'
-  /project/{projectId}/admin/idea/{ideaId}/vote/{voteId}:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1vote~1{voteId}'
   /project/config/admin:
     $ref: 'api-project.yaml#/~1project~1config~1admin'
   /project/admin:

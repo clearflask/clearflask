@@ -179,12 +179,14 @@ components:
                 title: Expression
                 type: object
                 required:
+                  - expressionId
                   - weight
                   - display
                   - text
                 properties:
                   display:
                     x-clearflask-prop: { order: 1, name: 'Display', subType: 'emoji' }
+                    description: TODO Must be unique, used as an ID
                     type: string
                   text:
                     x-clearflask-prop: { order: 2, name: 'Text' }

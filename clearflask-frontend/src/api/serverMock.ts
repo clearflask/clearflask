@@ -3,10 +3,6 @@ import * as Admin from './admin';
 import randomUuid from '../common/util/uuid';
 import * as ConfigEditor from '../common/config/configEditor';
 
-interface Id {
-  id:string;
-}
-
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
 
@@ -25,7 +21,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       transactions:Admin.Credit[];
       ideas:Admin.IdeaAdmin[];
       users:Admin.UserAdmin[];
-      votes:Admin.VoteAdmin[];
+      votes:Admin.Vote[];
+      credits:{[userId:string]: number};
     }
   } = {};
 
@@ -108,14 +105,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
   }
-  voteCreate(request: Client.VoteCreateRequest): Promise<Client.Vote> {
-    throw new Error("Method not implemented.");
-  }
-  voteDelete(request: Client.VoteDeleteRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
   voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.Vote> {
-    throw new Error("Method not implemented.");
+    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    return this.voteUpdateAdmin({
+      ...request,
+      update: {
+        ...(request.update),
+        voterUserId: this.loggedInUser.userId,
+      }
+    });
   }
   commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
     const comment:Admin.Comment = {
@@ -194,6 +192,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ideas: [],
       users: [],
       votes: [],
+      credits: {},
     };
     return this.returnLater({
       projectId: request.projectId,
@@ -201,7 +200,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
-    const user = {
+    const user:Admin.UserAdmin = {
       userId: randomUuid(),
       name: request.create.name,
       email: request.create.email,
@@ -227,9 +226,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
     throw new Error("Method not implemented.");
   }
-  voteCreateAdmin(request: Admin.VoteCreateAdminRequest): Promise<Admin.VoteAdmin> {
-    throw new Error("Method not implemented.");
-  }
   voteDeleteAdmin(request: Admin.VoteDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
@@ -239,331 +235,101 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   voteSearchAdmin(request: Admin.VoteSearchAdminRequest): Promise<Admin.VoteSearchResponse> {
     throw new Error("Method not implemented.");
   }
-  voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.VoteAdmin> {
-    throw new Error("Method not implemented.");
+  voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.Vote> {
+    const idea = this.db[request.projectId].ideas.find(idea => idea.ideaId === request.ideaId)!;
+    var vote:Admin.Vote|undefined = this.db[request.projectId].votes.find(vote => vote.voterUserId === request.update.voterUserId);
+    if(!vote) {
+      vote = { voterUserId: request.update.voterUserId };
+      this.db[request.projectId].votes.push(vote);
+    }
+    if(request.update.fundAmount){
+      if(request.update.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
+      const fundDiff = request.update.fundAmount - (vote.fundAmount || 0);
+      const balanceCurrent = this.db[request.projectId].credits[request.update.voterUserId] || 0;
+      const balanceNew = balanceCurrent + fundDiff;
+      if(balanceNew < 0) return this.throwLater(403, 'Insufficient funds');
+      const fundersCountDiff = (request.update.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
+
+      this.db[request.projectId].transactions.push({
+        transactionId: randomUuid(),
+        created: new Date(),
+        amount: fundDiff,
+        balance: balanceNew,
+        transactionType: Admin.CreditTransactionTypeEnum.Vote,
+        targetId: request.ideaId,
+      });
+      vote.fundAmount = request.update.fundAmount;
+      this.db[request.projectId].credits[request.update.voterUserId] = balanceNew;
+      idea.funded = (idea.funded || 0) + fundDiff;
+      if(fundersCountDiff !== 0) idea.fundersCount = (idea.fundersCount || 0) + fundersCountDiff;
+    }
+    if(request.update.vote) {
+      var votePrevValue:number = 0;
+      switch(vote.vote) {
+        case Admin.VoteVoteEnum.Upvote:
+          votePrevValue = 1;
+          break;
+        case Admin.VoteVoteEnum.Downvote:
+          votePrevValue = -1;
+          break;
+      }
+      var voteValue:number = 0;
+      switch(request.update.vote) {
+        case Admin.VoteUpdateVoteEnum.Upvote:
+          voteValue = 1;
+          vote.vote = Admin.VoteVoteEnum.Upvote;
+          break;
+        case Admin.VoteUpdateVoteEnum.Downvote:
+          voteValue = -1;
+          vote.vote = Admin.VoteVoteEnum.Downvote;
+          break;
+      }
+      const voteValueDiff = voteValue - votePrevValue;
+      if(voteValueDiff !== 0) idea.votersCount = (idea.votersCount || 0) + voteValueDiff;
+    }
+    if(request.update.expressions) {
+      const expressionsSet = new Set<string>(vote.expressions || []);
+      idea.expressionsValue = idea.expressionsValue || 0;
+      idea.expressions = idea.expressions || [];
+      const expressing:Admin.Expressing = this.db[request.projectId].config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
+      request.update.expressions.add && request.update.expressions.add.forEach(expression => {
+        if(expressionsSet.has(expression)) return;
+        expressionsSet.add(expression);
+        if(expressing && expressing.limitEmojis) {
+          const weight = expressing.limitEmojis.find(e => e.display === expression)!.weight;
+          idea.expressionsValue! += weight;
+        }
+        var ideaExpression = idea.expressions!.find(e => e.display === expression);
+        if(!ideaExpression) {
+          ideaExpression = { display: expression, count: 1};
+          idea.expressions!.push(ideaExpression);
+        } else {
+          ideaExpression.count += 1;
+        }
+      });
+      request.update.expressions.remove && request.update.expressions.remove.forEach(expression => {
+        if(!expressionsSet.has(expression)) return;
+        expressionsSet.delete(expression);
+        if(expressing && expressing.limitEmojis) {
+          const weight = expressing.limitEmojis.find(e => e.display === expression)!.weight;
+          idea.expressionsValue! -= weight;
+        }
+        var ideaExpression = idea.expressions!.find(e => e.display === expression);
+        if(!ideaExpression) {
+          ideaExpression = { display: expression, count: 0};
+          idea.expressions!.push(ideaExpression);
+        } else {
+          ideaExpression.count -= 1;
+        }
+      });
+      idea.expressions.sort((l,r) => r.count - l.count);
+      vote.expressions = Array.from(expressionsSet);
+    }
+    return this.returnLater(vote);
   }
 
-  // TODO remove commented code once I migrate it over
-
-  // // ### CommentApiInterface
-  // getComments(request: GetCommentsRequest): Promise<Array<Comment>> {
-  //   console.log("Server RECV: getComments", requestParameters);
-  //   return this.returnLater(this.ideaIdToComments[requestParameters.ideaId] || []);
-  // }
-
-  // // ### ConfigApiInterface
-
-  // getConfig(): Promise<Conf> {
-  //   console.log("Server RECV: getConfig");
-  //   return this.returnLater(this.conf);
-  // }
-
-  // // ### CreditApiInterface
-
-  // getTransactions(request: GetTransactionsRequest): Promise<Array<Transaction>> {
-  //   console.log("Server RECV: getTransactions", requestParameters);
-  //   if(!this.loggedInUser || requestParameters.userId !== this.loggedInUser.id) {
-  //     return this.throwLater(403, 'Cannot get transaction for other users');
-  //   }
-
-  //   return this.returnLater(this.userIdToTransactions[requestParameters.userId] || []);
-  // }
-
-  // voteIdea(request: VoteIdeaRequest): Promise<VoteIdeaResult> {
-  //   console.log("Server RECV: voteIdea", requestParameters);
-  //   const idea = this.ideas[requestParameters.ideaId];
-  //   if(!this.loggedInUser) {
-  //     return this.throwLater(403, 'Need to be logged in');
-  //   }
-  //   if(!idea) {
-  //     return this.throwLater(404, 'Idea does not exist anymore');
-  //   }
-    
-  //   const group = this.conf.ideaGroups[idea.groupId];
-  //   const supportType = group.supportType || this.conf.supportType;
-
-  //   if(supportType === ConfSupportType.None) {
-  //     return this.throwLater(400, 'Invalid request: idea does not support voting nor funding');
-  //   }
-
-  //   var creditAmount = requestParameters.creditAmount || 0 > 0 ? requestParameters.creditAmount || 0 : 0;
-  //   if(creditAmount > 0) {
-  //     if(supportType === ConfSupportType.VotingOnly) {
-  //       return this.throwLater(400, 'Invalid request: idea does not support funding');
-  //     }
-  //     var creditsOwned = this.userIdToCredits[this.loggedInUser.id];
-  //     if(!creditsOwned || creditsOwned < creditAmount) {
-  //       return this.throwLater(403, 'Not enought credits on your account');
-  //     }
-
-  //     this.userIdToCredits[this.loggedInUser.id] = creditsOwned - creditAmount;
-
-  //     idea.credits = idea.credits ? idea.credits + creditAmount : creditAmount;
-  //     idea.funderCount = idea.funderCount ? idea.funderCount + 1 : 1;
-  //   }
-
-  //   if(supportType === ConfSupportType.FundingVoting || supportType === ConfSupportType.VotingOnly) {
-  //     idea.supporterCount = idea.supporterCount ? idea.supporterCount + 1 : 1;
-  //   }
-
-  //   const transaction = creditAmount > 0 ? TransactionFromJSON({
-  //     id: this.generateId(),
-  //     created: new Date(),
-  //     amount: creditAmount,
-  //     transactionType: TransactionTransactionTypeEnum.VoteIdea,
-  //     targetId: idea.id,
-  //   }) : undefined;
-  //   if(transaction) {
-  //     var transactions = this.userIdToTransactions[this.loggedInUser.id];
-  //     if(!transactions) {
-  //       transactions = [];
-  //       this.userIdToTransactions[this.loggedInUser.id] = transactions;
-  //     }
-  //     transactions.push(transaction);
-  //   }
-
-  //   return this.returnLater(VoteIdeaResultFromJSON({
-  //     idea: idea,
-  //     transaction: transaction,
-  //   }));
-  // }
-
-  // changeVoteIdea(request: ChangeVoteIdeaRequest): Promise<VoteIdeaResult> {
-  //   console.log("Server RECV: changeVoteIdea", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // unvoteIdea(request: UnvoteIdeaRequest): Promise<VoteIdeaResult> {
-  //   console.log("Server RECV: unvoteIdea", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // // ### IdeaApiInterface
-
-  // createIdea(request: CreateIdeaRequest): Promise<Idea> {
-  //   console.log("Server RECV: createIdea", requestParameters);
-  //   if(!this.loggedInUser) {
-  //     return this.throwLater(403, 'Need to be logged in');
-  //   }
-
-  //   const group = this.conf.ideaGroups.find(g => g.id === requestParameters.groupId);
-  //   if(!group) {
-  //     return this.throwLater(400, 'Invalid request: Unknown group');
-  //   }
-
-  //   const supportType = group.supportType || this.conf.supportType;
-  //   const isIdeaFunding = requestParameters.creditsToFund && requestParameters.creditsToFund > 0;
-  //   if(supportType === ConfSupportType.None) {
-  //     return this.throwLater(400, 'Invalid request: Voting not allowed');
-  //   }
-  //   if(isIdeaFunding && supportType === ConfSupportType.VotingOnly) {
-  //     return this.throwLater(400, 'Invalid request: Only voting allowed, funding is not');
-  //   }
-  //   if(!isIdeaFunding && supportType === ConfSupportType.FundingOnly) {
-  //     return this.throwLater(400, 'Invalid request: Only funding allowed, voting is not');
-  //   }
-
-  //   const addVote = supportType === ConfSupportType.FundingVoting
-  //     || supportType === ConfSupportType.VotingOnly;
-
-  //   const idea = IdeaFromJSON({
-  //     id: this.generateId(),
-  //     authorUserId: this.loggedInUser,
-  //     created: new Date(),
-  //     title: requestParameters.title,
-  //     description: requestParameters.description,
-  //     groupId: requestParameters.groupId,
-  //     statusId: group.defaultIdeaStatusId || this.conf.defaultIdeaStatusId,
-  //     tagIds: requestParameters.tagIds,
-  //     credits: requestParameters.creditsToFund || 0,
-  //     creditGoal: 0,
-  //     funderCount: isIdeaFunding ? 1 : 0,
-  //     supporterCount: addVote ? 1 : 0,
-  //     myCredits: requestParameters.creditsToFund,
-  //     mySupport: addVote,
-  //   });
-
-  //   if(idea.tagIds) {
-  //     for(let tagId of idea.tagIds) {
-  //       if(group.settableIdeaTagIdsOnCreate && group.settableIdeaTagIdsOnCreate.indexOf(tagId) >= 0
-  //         || this.conf.settableIdeaTagIdsOnCreate && this.conf.settableIdeaTagIdsOnCreate.indexOf(tagId) >= 0) {
-  //         var tagName = this.conf.ideaTags ? this.conf.ideaTags[tagId] || undefined : undefined;
-  //         if(tagName) {
-  //           return this.throwLater(400, 'Invalid request: Idea tag not found: ' + tagId);
-  //         } else {
-  //           return this.throwLater(400, 'Invalid request: Idea tag not allowed: ' + tagName);
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   this.ideas[idea.id] = idea;
-
-  //   if(addVote) {
-  //     this.addVoteToVotesSet(this.loggedInUser.id, idea.id);
-  //   }
-
-  //   return this.returnLater(idea);
-  // }
-
-  // deleteIdea(request: DeleteIdeaRequest): Promise<void> {
-  //   console.log("Server RECV: deleteIdea", requestParameters);
-  //   if(!this.loggedInUser) {
-  //     return this.throwLater(403, 'You need to login first to delete an idea');
-  //   }
-
-  //   const idea = this.ideas[requestParameters.ideaId];
-  //   if(!idea) {
-  //     return this.throwLater(404, 'Idea does not exist anymore');
-  //   }
-
-  //   if(!this.loggedInUser.isAdmin && idea.authorUserId !== this.loggedInUser.id) {
-  //     return this.throwLater(403, 'You cannot delete an idea that is not yours');
-  //   }
-
-  //   delete this.ideas[requestParameters.ideaId];
-  //   return this.returnLater();
-  // }
-
-  // getIdea(request: GetIdeaRequest): Promise<Idea> {
-  //   console.log("Server RECV: getIdea", requestParameters);
-  //   const idea = this.ideas[requestParameters.ideaId];
-  //   if(!idea) {
-  //     return this.throwLater(404, 'Idea does not exist anymore');
-  //   }
-  //   return this.returnLater(idea);
-  // }
-
-  // getIdeas(request: GetIdeasRequest): Promise<Ideas> {
-  //   console.log("Server RECV: getIdeas", requestParameters);
-  //   const limit = requestParameters.searchQuery.limit || 10;
-  //   if(limit < 0 || limit > 50) {
-  //     return this.throwLater(400, 'Invalid request: limit is out of bounds');
-  //   }
-
-  //   var result:Array<Idea> = [];
-  //   for(var idea of Object.values(this.ideas)) {
-  //     if(requestParameters.searchQuery.filterIdeaStatusIds
-  //       && requestParameters.searchQuery.filterIdeaStatusIds.length > 0
-  //       && !requestParameters.searchQuery.filterIdeaStatusIds.includes(idea.statusId)) {
-  //       continue;
-  //     }
-
-  //     if(requestParameters.searchQuery.filterIdeaGroupIds
-  //       && requestParameters.searchQuery.filterIdeaGroupIds.length > 0
-  //       && !requestParameters.searchQuery.filterIdeaGroupIds.includes(idea.groupId)) {
-  //       continue;
-  //     }
-
-  //     if(requestParameters.searchQuery.filterIdeaTagIds
-  //       && requestParameters.searchQuery.filterIdeaTagIds.length > 0
-  //       && (!idea.tagIds
-  //       || requestParameters.searchQuery.filterIdeaTagIds.filter(tagId =>
-  //           idea.tagIds && idea.tagIds.includes(tagId)
-  //         ).length > 0)) {
-  //       continue;
-  //     }
-
-
-  //     if(requestParameters.searchQuery.searchText
-  //       && idea.title.indexOf(requestParameters.searchQuery.searchText) < 0
-  //       && idea.description.indexOf(requestParameters.searchQuery.searchText) < 0) {
-  //       continue;
-  //     }
-
-  //     result.push(idea);
-  //   }
-
-  //   if(requestParameters.searchQuery.sortBy === SortBy.Top) {
-  //     result.sort((l, r) => 
-  //       (r.credits || r.supporterCount || 0)
-  //       - (l.credits || l.supporterCount || 0)
-  //     );
-  //   } else if(requestParameters.searchQuery.sortBy === SortBy.New) {
-  //     result.sort((l, r) => 
-  //       r.created.getTime() - l.created.getTime()
-  //     );
-  //   } else if(requestParameters.searchQuery.sortBy === SortBy.Trending) {
-  //     result.sort((l, r) => 
-  //       this.calcTrendingScore(r) - this.calcTrendingScore(l)
-  //     );
-  //   }
-
-  //   var currentCursor = 0;
-  //   if(requestParameters.cursor) {
-  //     currentCursor = parseInt(requestParameters.cursor);
-  //   }
-
-  //   var nextCursor:string|undefined = undefined;
-  //   if(result.length >= currentCursor + limit) {
-  //     nextCursor = currentCursor + limit + '';
-  //   }
-
-  //   result.slice(currentCursor, Math.min(result.length, currentCursor + limit));
-
-  //   return this.returnLater(IdeasFromJSON({
-  //     ideas: result,
-  //     cursor: nextCursor,
-  //   }));
-  // }
-
-  // updateIdea(request: UpdateIdeaRequest): Promise<void> {
-  //   console.log("Server RECV: updateIdea", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // // ### UserApiInterface
-
-  // getUser(request: GetUserRequest): Promise<User> {
-  //   console.log("Server RECV: getUser", requestParameters);
-  //   const user = this.users[requestParameters.userId];
-  //   if(!user) {
-  //     return this.throwLater(404, 'User does not exist anymore');
-  //   }
-  //   return this.returnLater(user);
-  // }
-
-  // bindUser(request: BindUserRequest): Promise<AuthSuccessResult> {
-  //   console.log("Server RECV: bindUser", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // loginUser(request: LoginUserRequest): Promise<AuthSuccessResult> {
-  //   console.log("Server RECV: loginUser", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // registerUser(request: RegisterUserRequest): Promise<AuthSuccessResult> {
-  //   console.log("Server RECV: registerUser", requestParameters);
-  //   const newUser = UserFromJSON({
-  //     'id': randomUuid(),
-  //     'name': requestParameters.name || 'Anonymous',
-  //     'isAdmin': false,
-  //     'avatar': requestParameters.avatar,
-  //   });
-  //   this.users[newUser.id] = newUser;
-  //   this.loggedInUser = newUser;
-  //   return this.returnLater(newUser);
-  // }
-
-  // updateUser(request: UpdateUserRequest): Promise<void> {
-  //   console.log("Server RECV : updateUser", requestParameters);
-  //   throw new Error("Method not implemented.");
-  // }
-
-  // // ### Private methods
-
-  // addVoteToVotesSet(userId:string, ideaId:string) {
-  //   var userIdVotes = this.ideaIdToUserIdVotes[ideaId];
-  //   if(!userIdVotes) {
-  //     userIdVotes = new Set();
-  //     this.ideaIdToUserIdVotes[ideaId] = userIdVotes;
-  //   }
-  //   userIdVotes.add(userId);
-  // }
-
   calcScore(idea:Admin.IdeaAdmin) {
-    return (idea.fundersCount || 0) + (idea.supportersCount || 0) + (idea.funded || 0) + 1;
+    return (idea.fundersCount || 0) + (idea.votersCount || 0) + (idea.funded || 0) + (idea.expressionsValue || 0) + 1;
   }
 
   calcTrendingScore(idea:Admin.IdeaAdmin) {
@@ -599,7 +365,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(this.hasLatency){
       await new Promise(resolve => setTimeout(resolve, this.LATENCY));
     }
-    return returnValue;
+    return JSON.parse(JSON.stringify(returnValue));
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {

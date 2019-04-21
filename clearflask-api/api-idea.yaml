@@ -93,8 +93,24 @@ components:
           type: number
         fundersCount:
           type: integer
-        supportersCount:
+        votersCount:
           type: integer
+        expressionsValue:
+          description: Combined value of all expressions. Not the expression count.
+          type: number
+        expressions:
+          type: array
+          items:
+            type: object
+            title: ExpressionCounts
+            required:
+              - display
+              - count
+            properties:
+              display:
+                type: string
+              count:
+                type: integer
       required:
         - ideaId
         - authorUserId

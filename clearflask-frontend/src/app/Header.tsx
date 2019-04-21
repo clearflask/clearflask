@@ -5,10 +5,11 @@ import ArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
 import ArrowRight from '@material-ui/icons/KeyboardArrowRight';
 import Balance from '@material-ui/icons/AccountBalance';
 import Notifications from '@material-ui/icons/Notifications';
-import { Server } from '../api/server';
+import { Server, ReduxState, Status } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { connect } from 'react-redux';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -43,26 +44,28 @@ const styles = (theme:Theme) => createStyles({
 
 interface Props extends WithStyles<typeof styles> {
   server:Server;
-  conf?:Client.Config;
-  page?:Client.Page;
+  pageSlug:string;
   pageChanged:(pageUrlName:string)=>void;
+  // connect
+  config?:Client.Config;
+  page?:Client.Page;
 }
 
 class Header extends Component<Props> {
   render() {
     var currentTabValue;
     var tabs;
-    if(!this.props.conf) {
+    if(!this.props.config) {
       currentTabValue = undefined;
       tabs = undefined;
     } else {
       currentTabValue = this.props.page
         ? this.props.page.slug
         : undefined;
-      tabs = this.props.conf.layout.menu.map(menu => {
+      tabs = this.props.config.layout.menu.map(menu => {
         if(!menu.pageIds || menu.pageIds.length === 0) return null;
         if(menu.pageIds.length === 1) {
-          const page = this.props.conf!.layout.pages.find(p => p.pageId === menu.pageIds[0]);
+          const page = this.props.config!.layout.pages.find(p => p.pageId === menu.pageIds[0]);
           if(page === undefined) return null;
           return (
             <RegularTab
@@ -74,7 +77,7 @@ class Header extends Component<Props> {
           );
         }
         const dropdownItems = menu.pageIds.map(pageId => {
-          const page = this.props.conf!.layout.pages.find(p => p.pageId === pageId)!;
+          const page = this.props.config!.layout.pages.find(p => p.pageId === pageId)!;
           if(this.props.page && this.props.page.pageId === page.pageId) {
             currentTabValue = menu.menuId;
           }
@@ -108,11 +111,11 @@ class Header extends Component<Props> {
               display: 'flex',
               alignItems: 'center',
             }}>
-              {this.props.conf && this.props.conf.logoUrl && (
-                <img src={this.props.conf.logoUrl} style={{maxHeight: '48px'}} />
+              {this.props.config && this.props.config.logoUrl && (
+                <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
               )}
               <Typography variant='h6'>
-                {this.props.conf && this.props.conf.name || 'ClearFlask'}
+                {this.props.config && this.props.config.name || 'ClearFlask'}
               </Typography>
             </div>
           </Grid>
@@ -188,4 +191,17 @@ class Header extends Component<Props> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Header);
+export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
+  var page:Client.Page|undefined = undefined;
+  if(state.conf.status === Status.FULFILLED && state.conf.conf) {
+    if(ownProps.pageSlug === '') {
+      page = state.conf.conf.layout.pages[0];
+    } else {
+      page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
+    }
+  }
+  return {
+    config: state.conf.conf,
+    page: page,
+  };
+})(withStyles(styles, { withTheme: true })(Header));

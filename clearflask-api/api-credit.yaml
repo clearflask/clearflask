@@ -59,7 +59,7 @@ components:
           description: >-
             Optional resource ID involved in this transaction.
             Resource type depends on the transactionType.
-            Ex, for IdeaVoteCreate type, this resource id is of the voted Idea.
+            Ex, for Vote type, this resource id is of the voted Idea.
             For Adjustment type, resource id is user id of the admin that
             initiated the adjustment.
           type: string

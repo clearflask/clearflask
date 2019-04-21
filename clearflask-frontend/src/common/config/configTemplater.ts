@@ -55,12 +55,12 @@ export default class Templater {
     // Layout
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    // Roadmap
-    const pageRoadmapId = randomUuid();
+    // Home
+    const pageHomeId = randomUuid();
     pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: pageRoadmapId,
-      name: 'Roadmap',
-      slug: ConfigEditor.EditorImpl.stringToSlug('Roadmap'),
+      pageId: pageHomeId,
+      name: 'Home',
+      slug: ConfigEditor.EditorImpl.stringToSlug('Home'),
       description: undefined,
       panels: [],
       board: Admin.PageBoardToJSON({
@@ -96,7 +96,7 @@ export default class Templater {
       explorer: undefined,
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageRoadmapId], name: 'Roadmap',
+      menuId: randomUuid(), pageIds: [pageHomeId],
     }));
     // Features
     const pageIdeaIds:string[] = [];

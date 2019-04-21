@@ -4,14 +4,16 @@ import Loading from './comps/Loading';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { StateIdeas, ReduxState as ReduxState, Server } from '../api/server';
+import { StateIdeas, ReduxState as ReduxState, Server, Status } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 
 interface Props extends StateIdeas {
   server:Server;
-  conf?:Client.Config;
-  pageConf?:Client.Page;
+  pageSlug:string;
   pageChanged:(pageUrlName:string)=>void;
+  // connect
+  config?:Client.Config;
+  page?:Client.Page;
 }
 
 class Page extends Component<Props> {
@@ -24,7 +26,7 @@ class Page extends Component<Props> {
   };
 
   render() {
-    if(!this.props.conf) {
+    if(!this.props.config) {
       return (
         <div style={this.styles.page}>
           <Loading />
@@ -32,7 +34,7 @@ class Page extends Component<Props> {
       );
     }
 
-    if(!this.props.conf || !this.props.pageConf) {
+    if(!this.props.config || !this.props.page) {
       return (
         <div style={this.styles.page}>
           <Message  innerStyle={{margin: '40px auto'}}
@@ -46,13 +48,17 @@ class Page extends Component<Props> {
 
     // ### PANELS
     var panelsCmpt:any = [];
-    for(let panel of this.props.pageConf.panels || []) {
+    for(let panel of this.props.page.panels || []) {
       panelsCmpt.push(
         <div key={panel.search.searchKey}>
           <Typography variant='overline'>
             {panel.title}
           </Typography>
-          <Panel direction={Direction.Horizontal} {...this.props} searchKey={panel.search.searchKey} />
+          <Panel
+            direction={Direction.Horizontal}
+            {...this.props}
+            searchKey={panel.search.searchKey}
+            ideaCardVariant='full' />
         </div>
       );
       // TODO
@@ -60,8 +66,8 @@ class Page extends Component<Props> {
 
     // ### BOARD
     var boardCmpt;
-    if(this.props.pageConf.board) {
-      const board = this.props.pageConf.board;
+    if(this.props.page.board) {
+      const board = this.props.page.board;
       var panels:any = [];
       for(let panel of board.panels) {
         panels.push(
@@ -69,7 +75,11 @@ class Page extends Component<Props> {
             <Typography variant='overline'>
               {panel.title}
             </Typography>
-            <Panel direction={Direction.Vertical} {...this.props} searchKey={panel.search.searchKey} />
+            <Panel
+              direction={Direction.Vertical}
+              {...this.props}
+              searchKey={panel.search.searchKey}
+              ideaCardVariant='title' />
           </div>
         );
       }
@@ -90,14 +100,18 @@ class Page extends Component<Props> {
 
     // ### EXPLORER
     var explorerCmpt;
-    if(this.props.pageConf.explorer) {
-      const explorer = this.props.pageConf.explorer;
+    if(this.props.page.explorer) {
+      const explorer = this.props.page.explorer;
       explorerCmpt = (
         <div>
           <Typography variant='overline'>
             {explorer.title}
           </Typography>
-          <Panel direction={Direction.Wrap} {...this.props} searchKey={explorer.search.searchKey} />
+          <Panel
+            direction={Direction.Wrap}
+            {...this.props}
+            searchKey={explorer.search.searchKey}
+            ideaCardVariant='full' />
         </div>
       );
       // TODO
@@ -105,8 +119,8 @@ class Page extends Component<Props> {
 
     return (
       <div style={this.styles.page}>
-        <Typography variant='h4' component='h1'>{this.props.pageConf.title}</Typography>
-        <Typography variant='body1' component='p'>{this.props.pageConf.description}</Typography>
+        <Typography variant='h4' component='h1'>{this.props.page.title}</Typography>
+        <Typography variant='body1' component='p'>{this.props.page.description}</Typography>
         {panelsCmpt}
         {boardCmpt}
         {explorerCmpt}
@@ -116,19 +130,29 @@ class Page extends Component<Props> {
 }
 
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
-  var newProps:StateIdeas = {
+  var newProps:StateIdeas&{config?:Client.Config;page?:Client.Page;} = {
     byId: {},
     bySearch: {},
+    config: state.conf.conf,
+    page: undefined,
   };
 
-  if(!ownProps.pageConf) {
+  if(state.conf.status === Status.FULFILLED && state.conf.conf) {
+    if(ownProps.pageSlug === '') {
+      newProps.page = state.conf.conf.layout.pages[0];
+    } else {
+      newProps.page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
+    }
+  }
+
+  if(!newProps.page) {
     return newProps;
   }
 
   const searchQueries:Client.IdeaSearch[] = [
-    ...(ownProps.pageConf.panels && ownProps.pageConf.panels.map(p => p.search) || []),
-    ...(ownProps.pageConf.board && ownProps.pageConf.board.panels.map(p => p.search) || []),
-    ...(ownProps.pageConf.explorer && [ownProps.pageConf.explorer.search] || []),
+    ...(newProps.page.panels && newProps.page.panels.map(p => p.search) || []),
+    ...(newProps.page.board && newProps.page.board.panels.map(p => p.search) || []),
+    ...(newProps.page.explorer && [newProps.page.explorer.search] || []),
   ];
 
   for(let searchQuery of searchQueries) {

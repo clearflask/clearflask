@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { StateIdeas } from '../../api/server';
-import IdeaCard from './IdeaCard';
+import IdeaCard, { IdeaCardVariant } from './IdeaCard';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 export enum Direction {
@@ -18,6 +18,7 @@ const styles = (theme:Theme) => createStyles({
 interface Props extends StateIdeas, WithStyles<typeof styles> {
   searchKey?:string;
   direction:Direction
+  ideaCardVariant:IdeaCardVariant;
 }
 
 class Panel extends Component<Props> {
@@ -33,7 +34,7 @@ class Panel extends Component<Props> {
     const ideas = ideaIds.map(ideaId => {
       const byId = ideaId && this.props.byId[ideaId];
       return (
-        <IdeaCard idea={byId && byId.idea || undefined} />
+        <IdeaCard idea={byId && byId.idea || undefined} variant={this.props.ideaCardVariant} />
       )
     });
 
