@@ -2,13 +2,12 @@ import React, { Component } from 'react';
 import { Idea } from '../../api/client';
 import { Typography } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import Loader from './Loader';
 
 const styles = (theme:Theme) => createStyles({
   container: {
     margin: theme.spacing.unit,
     display: 'flex',
-  },
-  content: {
   },
 });
 
@@ -32,13 +31,13 @@ class IdeaCard extends Component<Props> {
     }
 
     return (
-      <div className={this.props.classes.container}>
-        <div className={this.props.classes.content}>
+      <Loader loaded={!!this.props.idea}>
+        <div className={this.props.classes.container}>
           <Typography variant='subtitle2'>{this.props.idea && this.props.idea.title || 'Loading...'}</Typography>
           {expression}
           {this.props.variant !== 'title' && (<Typography variant='body1'>{this.props.idea && this.props.idea.description}</Typography>)}
         </div>
-      </div>
+      </Loader>
     );
   }
 }

@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
-import { StateIdeas } from '../../api/server';
+import { Server, StateIdeas, ReduxState } from '../../api/server';
 import IdeaCard, { IdeaCardVariant } from './IdeaCard';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import * as Client from '../../api/client';
+import { connect } from 'react-redux';
+import { Status } from '../../api/serverAdmin';
 
 export enum Direction {
   Horizontal,
@@ -9,16 +12,33 @@ export enum Direction {
   Wrap,
 }
 
+interface SearchResult {
+  status:Status;
+  ideas:(Client.Idea|undefined)[];
+  cursor:string|undefined,
+}
+
 const styles = (theme:Theme) => createStyles({
   container: {
     margin: theme.spacing.unit,
   },
+  [Direction.Horizontal]: {
+  },
+  [Direction.Vertical]: {
+    flexDirection: 'column',
+  },
+  [Direction.Wrap]: {
+    flexWrap: 'wrap',
+  },
 });
 
 interface Props extends StateIdeas, WithStyles<typeof styles> {
-  searchKey?:string;
+  server:Server;
+  search:Client.IdeaSearch;
   direction:Direction
   ideaCardVariant:IdeaCardVariant;
+  // connect
+  searchResult:SearchResult;
 }
 
 class Panel extends Component<Props> {
@@ -29,43 +49,41 @@ class Panel extends Component<Props> {
   };
 
   render() {
-    const bySearch = this.props.searchKey && this.props.bySearch[this.props.searchKey];
-    const ideaIds:(string|undefined)[] = bySearch && bySearch.ideaIds || [undefined];
-    const ideas = ideaIds.map(ideaId => {
-      const byId = ideaId && this.props.byId[ideaId];
-      return (
-        <IdeaCard idea={byId && byId.idea || undefined} variant={this.props.ideaCardVariant} />
-      )
-    });
-
-    var directionStyle;
-    switch(this.props.direction) {
-      case Direction.Horizontal:
-        directionStyle = {
-        };
-        break;
-      case Direction.Vertical:
-        directionStyle = {
-          flexDirection: 'column',
-        };
-        break;
-      default:
-      case Direction.Wrap:
-        directionStyle = {
-          flexWrap: 'wrap',
-        };
-        break;
-    }
-
     return (
-      <div style={{
-        ...this.styles.container,
-        ...(directionStyle),
-      }}>
-        {ideas}
+      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
+        {this.props.searchResult.ideas.map(idea => (
+          <IdeaCard idea={idea} variant={this.props.ideaCardVariant} />
+        ))}
       </div>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Panel);
+export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
+  var newProps = {
+    searchResult: {
+      status: Status.PENDING,
+      ideas: [],
+      cursor: undefined,
+    } as SearchResult,
+  };
+
+  const bySearch = state.ideas.bySearch[ownProps.search.searchKey];
+  if(!bySearch) {
+    ownProps.server.dispatch().ideaSearch({
+      projectId: state.projectId,
+      search: ownProps.search,
+    });
+  } else {
+    newProps.searchResult.status = bySearch.status;
+    newProps.searchResult.cursor = bySearch.cursor;
+    newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
+      const idea = state.ideas.byId[ideaId];
+      return (idea && idea.status === Status.FULFILLED)
+        ? idea.idea
+        : undefined;
+    });
+  }
+
+  return newProps;
+})(withStyles(styles, { withTheme: true })(Panel));

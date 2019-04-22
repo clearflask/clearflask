@@ -89,9 +89,26 @@ components:
       required:
         - palette
         - typography
+        - animation
       properties:
+        animation:
+          x-clearflask-prop: { order: 1, name: 'Animation' }
+          title: Animation
+          type: object
+          required:
+            - type
+          properties:
+            type:
+              x-clearflask-prop: { order: 1, name: 'Type', defaultValue: 'Fade' }
+              type: string
+              enum:
+                - None
+                - Fade
+                - Grow
+                - Zoom
+                - Slide
         palette:
-          x-clearflask-prop: { order: 1, name: 'Palette' }
+          x-clearflask-prop: { order: 2, name: 'Palette' }
           title: Palette
           type: object
           required:
@@ -117,7 +134,7 @@ components:
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
-          x-clearflask-prop: { order: 2, name: 'Typography' }
+          x-clearflask-prop: { order: 3, name: 'Typography' }
           title: Typography
           type: object
           properties:
