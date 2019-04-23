@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import * as Client from '../api/client';
-import { Server, ReduxState, Status, StateConf } from '../api/server';
+import { Server } from '../api/server';
 import { match } from 'react-router';
 import Header from './Header';
 import { History, Location } from 'history';
-import Page from './Page';
+import BasePage from './BasePage';
 import { Provider } from 'react-redux';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import ServerMock from '../api/serverMock';
@@ -12,6 +11,15 @@ import DataMock from '../api/dataMock';
 import Templater from '../common/config/configTemplater';
 import * as ConfigEditor from '../common/config/configEditor';
 import AppThemeProvider from './AppThemeProvider';
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+  Redirect,
+} from 'react-router-dom'
+import PostPage from './comps/PostPage';
+import CustomPage from './CustomPage';
+import { SnackbarProvider, withSnackbar, WithSnackbarProps, useSnackbar } from 'notistack';
 
 interface Props {
   serverOverride?:Server;
@@ -23,7 +31,7 @@ interface Props {
   location:Location;
 }
 
-export default class App extends Component<Props> {
+class App extends Component<Props> {
   readonly server:Server;
 
   constructor(props) {
@@ -59,30 +67,51 @@ export default class App extends Component<Props> {
     if(!supressConfigGet && this.server.getStore().getState().conf.status === undefined) {
       this.server.dispatch().configGet({projectId: this.server.getProjectId()});
     }
+
+    // this.server.subscribeToErrors(errorMsg => this.props.enqueueSnackbar(
+    //   errorMsg, { variant: 'error', preventDuplicate: true }))
   }
 
   render() {
-    const pageSlug:string = this.props.match.params['pageUrlName'] || '';
 
     return (
       <Provider store={this.server.getStore()}>
-        <AppThemeProvider supressCssBaseline={this.props.supressCssBaseline}>
-          <div style={{
-            height: '100%',
-            width: '100%',
-          }}>
+      <AppThemeProvider supressCssBaseline={this.props.supressCssBaseline}>
+      <SnackbarProvider maxSnack={3}>
+        <ServerErrorNotifier server={this.server} />
+        <div style={{
+          height: '100%',
+          width: '100%',
+        }}>
+          <Route path={`${this.props.match.url}/:page?`} render={props => (
             <Header
+              pageSlug={props.match.params['page'] || ''}
               server={this.server}
-              pageSlug={pageSlug}
               pageChanged={this.pageChanged.bind(this)}
             />
-            <Page
-              server={this.server}
-              pageSlug={pageSlug}
-              pageChanged={this.pageChanged.bind(this)}
-            />
-          </div>
-        </AppThemeProvider>
+          )} />
+          <Switch>
+            <Route path={`${this.props.match.url}/post/:postId?`} exact render={props => (
+              <BasePage>
+                <PostPage
+                  postId={props.match.params['postId'] || ''}
+                  server={this.server}
+                />
+              </BasePage>
+            )} />
+            <Route path={`${this.props.match.url}/:page?`} render={props => (
+              <BasePage>
+                <CustomPage
+                  pageSlug={props.match.params['page'] || ''}
+                  server={this.server}
+                  pageChanged={this.pageChanged.bind(this)}
+                />
+              </BasePage>
+            )} />
+          </Switch>
+        </div>
+      </SnackbarProvider>
+      </AppThemeProvider>
       </Provider>
     );
   }
@@ -92,3 +121,12 @@ export default class App extends Component<Props> {
     this.props.history.push(`/${this.props.match.params['projectId']}${pageUrlName}`);
   }
 }
+
+const ServerErrorNotifier = (props:({server:Server})) => {
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  props.server.subscribeToErrors(errorMsg =>
+    enqueueSnackbar(errorMsg, { variant: 'error', preventDuplicate: true }))
+  return null;
+};
+
+export default App;

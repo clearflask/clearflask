@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { ReduxState as ReduxState, Server, Status } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 import Loader from './comps/Loader';
+import ErrorPage from './ErrorPage';
 
 interface Props {
   server:Server;
@@ -17,25 +18,10 @@ interface Props {
 }
 
 class Page extends Component<Props> {
-  readonly styles = {
-    page: {
-      maxWidth: '1024px',
-      padding: '40px',
-      margin: '0px auto',
-    },
-  };
 
   render() {
     if(this.props.pageNotFound) {
-      return (
-        <div style={this.styles.page}>
-          <Message innerStyle={{margin: '40px auto'}}
-            message='Oops, page not found'
-            variant='error'
-            onClose={() => this.props.pageChanged('')}
-          />
-        </div>
-      );
+      return (<ErrorPage msg='Oops, page not found' />);
     }
 
     var panelsCmpt:any = [];
@@ -114,13 +100,11 @@ class Page extends Component<Props> {
 
     return (
       <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
-        <div style={this.styles.page}>
-          <Typography variant='h4' component='h1'>{this.props.page && this.props.page.title}</Typography>
-          <Typography variant='body1' component='p'>{this.props.page && this.props.page.description}</Typography>
-          {panelsCmpt}
-          {boardCmpt}
-          {explorerCmpt}
-        </div>
+        <Typography variant='h4' component='h1'>{this.props.page && this.props.page.title}</Typography>
+        <Typography variant='body1' component='p'>{this.props.page && this.props.page.description}</Typography>
+        {panelsCmpt}
+        {boardCmpt}
+        {explorerCmpt}
       </Loader>
     );
   }

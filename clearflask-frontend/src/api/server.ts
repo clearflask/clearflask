@@ -21,6 +21,7 @@ export class Server {
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
+  readonly errorSubscribers:((msg:string)=>void)[] = [];
 
   constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     this.projectId = projectId;
@@ -76,6 +77,7 @@ export class Server {
       projectId: projectId,
       conf: {},
       ideas: stateIdeasDefault,
+      users: stateUsersDefault,
     };
     return state;
   }
@@ -101,6 +103,10 @@ export class Server {
     editor.subscribe(() => this.overrideConfig(editor.getConfig()));
   }
 
+  subscribeToErrors(subscriber:((msg:string)=>void)) {
+    this.errorSubscribers.push(subscriber);
+  }
+
   overrideConfig(config:Admin.Config):void {
     const msg:Admin.configGetAdminActionFulfilled = {
       type: Admin.configGetAdminActionStatus.Fulfilled,
@@ -120,7 +126,20 @@ export class Server {
   }
 
   async _dispatch(msg:any):Promise<any>{
+    try {
     var result = await this.store.dispatch(msg);
+    } catch(err) {
+      var errorMsg;
+      if(err.json && err.json.userFacingMessage) {
+        errorMsg = err.json.userFacingMessage;
+      } else if(msg && msg.meta && msg.meta.action) {
+        errorMsg = `Failed to process: ${msg.meta.action}`;
+      } else {
+        errorMsg = `Unknown error processing: ${JSON.stringify(msg)}`;
+      }
+      this.errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg));
+      throw err;
+    }
     return result.value;
   }
 }
@@ -247,13 +266,83 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
   }
 }
 
+export interface StateUsers {
+  byId:{[userId:string]:{
+    status:Status;
+    user?:Client.User;
+  }};
+  loggedIn: {
+    status?:Status;
+    user?:Client.UserMe,
+  },
+}
+const stateUsersDefault = {
+  byId: {},
+  loggedIn: {},
+};
+function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Actions):StateUsers {
+  switch (action.type) {
+    case Client.userGetActionStatus.Pending:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.userId]: { status: Status.PENDING }
+        }
+      };
+    case Client.userGetActionStatus.Rejected:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.userId]: { status: Status.REJECTED }
+        }
+      };
+    case Client.userGetActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.userId]: {
+            user: action.payload,
+            status: Status.FULFILLED,
+          }
+        }
+      };
+      case Client.userCreateActionStatus.Fulfilled:
+      case Client.userLoginActionStatus.Fulfilled:
+      case Client.userUpdateActionStatus.Fulfilled:
+        return {
+          ...state,
+          byId: {
+            ...state.byId,
+            [action.payload.userId]: {
+              user: action.payload,
+              status: Status.FULFILLED,
+            }
+          },
+          loggedIn: {
+            user: action.payload,
+            status: Status.FULFILLED,
+          },
+        };
+    case Client.userDeleteActionStatus.Fulfilled:
+      const {[action.meta.request.userId]:removedUser, ...byIdWithout} = state.byId;
+      return {...state, byId: byIdWithout};
+    default:
+      return state;
+  }
+}
+
 export interface ReduxState {
   projectId:string;
   conf:StateConf;
   ideas:StateIdeas;
+  users:StateUsers;
 }
 export const reducers = combineReducers({
-  projectId: (state) => ((!state || state.projectId === null) ? { projectId: 'unknown' } : state),
+  projectId: (projectId?:string) => (projectId ? projectId : 'unknown'),
   conf: reducerConf,
   ideas: reducerIdeas,
+  users: reducerUsers,
 });

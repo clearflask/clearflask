@@ -20,10 +20,12 @@ const styles = (theme:Theme) => ({
     width: '180px',
   },
   previewPaper: {
+    overflowY: 'scroll' as 'scroll',
     width: '40%',
     background: theme.palette.background.default,
   },
   previewMobilePaper: {
+    overflowY: 'scroll' as 'scroll',
     width: '100%',
     background: theme.palette.background.default,
   },

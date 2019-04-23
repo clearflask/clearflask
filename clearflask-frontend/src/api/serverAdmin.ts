@@ -3,12 +3,6 @@ import * as Client from './client';
 import * as Admin from './admin';
 import { Server } from './server';
 
-export enum Status {
-  PENDING = 'PENDING',
-  FULFILLED = 'FULFILLED',
-  REJECTED = 'REJECTED',
-}
-
 export default class ServerAdmin {
   readonly apiOverride?:Client.ApiInterface&Admin.ApiInterface;
   readonly projectIdToServer:{[projectId:string]:Server} = {};

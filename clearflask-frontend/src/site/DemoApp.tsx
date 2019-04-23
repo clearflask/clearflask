@@ -31,7 +31,7 @@ export default class DemoApp extends Component<Props> {
     }
     return (
       <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}`]}>
-        <Route path="/:projectId/:pageUrlName?" render={props => (
+        <Route path="/:projectId" render={props => (
           <App
             {...props}
             supressCssBaseline

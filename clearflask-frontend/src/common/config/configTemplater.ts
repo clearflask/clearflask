@@ -1,6 +1,7 @@
 import * as ConfigEditor from "./configEditor";
 import * as Admin from "../../api/admin";
 import randomUuid from "../util/uuid";
+import stringToSlug from "../util/slugger";
 
 export default class Templater {
   editor:ConfigEditor.Editor;
@@ -37,7 +38,7 @@ export default class Templater {
     }));
     const categoryIndex = categories.getChildPages().length - 1;
     this.supportFunding(categoryIndex);
-    this.supportVoting(categoryIndex);
+    this.supportVoting(categoryIndex, true);
     this.supportExpressingFacebookStyle(categoryIndex);
     this.taggingOsPlatform(categoryIndex);
     const statuses = this.workflowFeatures(categoryIndex);
@@ -60,7 +61,7 @@ export default class Templater {
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: pageHomeId,
       name: 'Home',
-      slug: ConfigEditor.EditorImpl.stringToSlug('Home'),
+      slug: stringToSlug('Home'),
       description: undefined,
       panels: [],
       board: Admin.PageBoardToJSON({
@@ -106,7 +107,7 @@ export default class Templater {
       pagesProp.insert().setRaw(Admin.PageToJSON({
         pageId: pageIdeaId,
         name: tag.name,
-        slug: ConfigEditor.EditorImpl.stringToSlug(tag.name),
+        slug: stringToSlug(tag.name),
         title: tag.name,
         description: undefined,
         panels: [],
@@ -114,6 +115,7 @@ export default class Templater {
         explorer: Admin.PageExplorerToJSON({search: Admin.IdeaSearchToJSON({
           searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.Trending,
           filterCategoryIds: [categoryId],
+          filterTagIds: [tag.tagId],
         })}),
       }));
     });
@@ -127,9 +129,9 @@ export default class Templater {
       showFunds: true, showFunders: true,
     }));
   }
-  supportVoting(categoryIndex:number) {
+  supportVoting(categoryIndex:number, enableDownvotes:boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).setRaw(Admin.VotingToJSON({
-      enableDownvotes: false, showVotes: true, showVoters: true,
+      enableDownvotes: enableDownvotes, showVotes: true, showVoters: true,
     }));
   }
   supportExpressingAllEmojis(categoryIndex:number) {

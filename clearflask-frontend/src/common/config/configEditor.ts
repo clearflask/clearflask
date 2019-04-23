@@ -2,6 +2,7 @@ import Schema from '../../api/schema/schema-1.0.0.json';
 import { Config } from '../../api/admin/models/Config.js';
 import randomUuid from '../util/uuid';
 import { ConfigAdmin } from '../../api/admin/index.js';
+import stringToSlug from '../util/slugger';
 
 /**
  * OpenApi vendor properties.
@@ -462,12 +463,6 @@ export class EditorImpl implements Editor {
         parent[path[path.length - 1]] = value;
       }
     }
-  }
-
-  static stringToSlug(val?:string):string {
-    return val
-      ? val.toLowerCase().replace(/[^0-9a-z]+/g,'-')
-      : '';
   }
 
   sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property):number {
@@ -1092,10 +1087,10 @@ export class EditorImpl implements Editor {
               setTimeout(() => {
                 const slugProp = this.getProperty(xProp.slugAutoComplete!
                   .map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep));
-                const prevSlugName = EditorImpl.stringToSlug(prevVal);
+                const prevSlugName = stringToSlug(prevVal);
                 // Only update slug if it hasn't been changed already manually
                 if(slugProp.value === prevSlugName) {
-                  const slugName = EditorImpl.stringToSlug(val);
+                  const slugName = stringToSlug(val);
                   slugProp.set(slugName as never);
                 }
               }, 1);

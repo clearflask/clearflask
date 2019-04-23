@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import { Server, StateIdeas, ReduxState } from '../../api/server';
-import IdeaCard, { IdeaCardVariant } from './IdeaCard';
+import { Server, StateIdeas, ReduxState, Status } from '../../api/server';
+import Post, { PostVariant } from './Post';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
-import { Status } from '../../api/serverAdmin';
 
 export enum Direction {
   Horizontal,
@@ -36,7 +35,7 @@ interface Props extends StateIdeas, WithStyles<typeof styles> {
   server:Server;
   search:Client.IdeaSearch;
   direction:Direction
-  ideaCardVariant:IdeaCardVariant;
+  ideaCardVariant:PostVariant;
   // connect
   searchResult:SearchResult;
 }
@@ -52,7 +51,7 @@ class Panel extends Component<Props> {
     return (
       <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
         {this.props.searchResult.ideas.map(idea => (
-          <IdeaCard idea={idea} variant={this.props.ideaCardVariant} />
+          <Post server={this.props.server} idea={idea} variant={this.props.ideaCardVariant} />
         ))}
       </div>
     );

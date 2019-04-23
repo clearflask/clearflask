@@ -26,15 +26,18 @@ class Loader extends Component<Props> {
     if(!this.props.loaded) {
       return (<Loading />);
     }
+    const wrappedChildren = (
+      <div>{this.props.children}</div>
+    );
     switch(this.props.type) {
       case Client.AnimationTypeEnum.Fade:
-        return (<Fade in={this.props.loaded}>{this.props.children}</Fade>);
+        return (<Fade in={this.props.loaded}>{wrappedChildren}</Fade>);
       case Client.AnimationTypeEnum.Grow:
-        return (<Grow in={this.props.loaded}>{this.props.children}</Grow>);
+        return (<Grow in={this.props.loaded}>{wrappedChildren}</Grow>);
       case Client.AnimationTypeEnum.Zoom:
-        return (<Zoom in={this.props.loaded}>{this.props.children}</Zoom>);
+        return (<Zoom in={this.props.loaded}>{wrappedChildren}</Zoom>);
       case Client.AnimationTypeEnum.Slide:
-        return (<Slide direction='left' in={this.props.loaded}>{this.props.children}</Slide>);
+        return (<Slide direction='left' in={this.props.loaded}>{wrappedChildren}</Slide>);
       default:
       case Client.AnimationTypeEnum.None:
         return this.props.children;

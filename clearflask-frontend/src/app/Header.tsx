@@ -98,48 +98,40 @@ class Header extends Component<Props> {
 
     return (
       <div className={this.props.classes.header}>
-        <Grid
-          style={{paddingTop: '12px'}}
-          container
-          direction='row'
-          justify='center'
-          alignItems='baseline'
-          spacing={16}
-        >
-          <Grid item xs={6}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-            }}>
-              {this.props.config && this.props.config.logoUrl && (
-                <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
-              )}
-              <Typography variant='h6'>
-                {this.props.config && this.props.config.name || 'ClearFlask'}
-              </Typography>
-            </div>
-          </Grid>
-          <Grid item xs={6}>
-            <div style={{
-              marginLeft: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-            }}>
-              <IconButton aria-label="Notifications">
-                <Badge badgeContent={1} color='secondary'>
-                  <Notifications />
-                </Badge>
-              </IconButton>
-              <IconButton aria-label="Account balance">
-                <Badge badgeContent='2k' color='primary'>
-                  <Balance />
-                </Badge>
-              </IconButton>
-              <Avatar>W</Avatar>
-            </div>
-          </Grid>
-        </Grid>
+        <div style={{
+          display: 'flex',
+          alignItems: 'baseline',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            {this.props.config && this.props.config.logoUrl && (
+              <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
+            )}
+            <Typography variant='h6'>
+              {this.props.config && this.props.config.name || 'ClearFlask'}
+            </Typography>
+          </div>
+          <div style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}>
+            <IconButton aria-label="Notifications">
+              <Badge badgeContent={1} color='secondary'>
+                <Notifications />
+              </Badge>
+            </IconButton>
+            <IconButton aria-label="Account balance">
+              <Badge badgeContent='2k' color='primary'>
+                <Balance />
+              </Badge>
+            </IconButton>
+            <Avatar>W</Avatar>
+          </div>
+        </div>
         <div className={this.props.classes.tabs}>
         <div>
         <Tabs

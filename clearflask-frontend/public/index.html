@@ -25,10 +25,59 @@
     -->
     <title>React App</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet" />
+    <style>
+      div.showScreen {
+        visibility: visible;
+        animation: fadeInOpacity 150ms linear 0s 1 normal forwards;
+      }
+      div.hideScreen {
+        visibility: hidden;
+        transition: visibility 150ms;
+        animation: fadeOutOpacity 150ms linear 0s 1 normal forwards;
+        transition: none !important;
+      }
+      .mainScreen {
+        visibility: hidden;
+        opacity: 0;
+      }
+      .loadingScreen {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        display:flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        animation: fadeInOpacity 150ms linear 1s 1 normal forwards;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        line-height: 0px;
+        color: #333;
+        font-size: 2em;
+      }
+      @keyframes fadeInOpacity {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeOutOpacity {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+    </style>
   </head>
-  <body class="mdc-typography">
+  <body class="mdc-typography" style="margin:0px">
+    <div class=loadingScreen id=loadingScreen>Loading...</div>
+    <div id="mainScreen"></div>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

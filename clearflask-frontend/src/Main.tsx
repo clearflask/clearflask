@@ -10,6 +10,7 @@ import Site from './site/Site';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
 import Admin from './site/Admin';
+import {closeLoadingScreen} from './common/loadingScreen';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -18,6 +19,10 @@ const theme:Theme = createMuiTheme({
 });
 
 class Main extends Component {
+  componentDidMount() {
+    closeLoadingScreen();
+  }
+
   render() {
     return (
       <MuiThemeProvider theme={theme}>
@@ -31,7 +36,7 @@ class Main extends Component {
               <Route path="/admin/:path?/:subPath*" render={props => (
                 <Admin {...props} />
               )} />
-              <Route path="/:projectId/:pageUrlName?" render={props => (
+              <Route path="/:projectId" render={props => (
                 <App {...props} />
               )} />
             </Switch>

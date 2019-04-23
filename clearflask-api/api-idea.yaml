@@ -87,11 +87,15 @@ components:
           type: array
           items:
             type: string
+        commentCount:
+          type: integer
         funded:
           type: number
         fundGoal:
           type: number
         fundersCount:
+          type: integer
+        voteValue:
           type: integer
         votersCount:
           type: integer

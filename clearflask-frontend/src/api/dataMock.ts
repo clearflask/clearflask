@@ -49,6 +49,7 @@ class DataMock {
     return ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       idea: {
+        ...this.fakeMockIdeaData(category),
         authorUserId: user.userId,
         title: fillerText(2,10,3,10),
         description: fillerText(2,40,3,10),
@@ -59,6 +60,32 @@ class DataMock {
       },
     })
     .then((item:Admin.IdeaAdmin) => this.mockCommentsAndExpression(versionedConfig, category, item))
+  }
+
+  fakeMockIdeaData(category:Admin.Category):Partial<Admin.IdeaAdmin> {
+    return {
+      ...(Math.random() < 0.3 ? {
+        fundGoal: Math.round(Math.random() * 10) * 50,
+        fundersCount: Math.round(Math.random() * 100),
+      } : {}),
+      ...(Math.random() < 0.3 ? {
+        fundGoal: Math.round(Math.random() * 10) * 50,
+      } : {}),
+      ...(Math.random() < 0.9 ? {
+        votersCount: Math.round(Math.random() * 30),
+        voteValue: Math.round(Math.random() * 1000) - 300,
+      } : {}),
+      ...(Math.random() < 0.9 ? {
+        expressionsValue: Math.random() * 100 - 30,
+        expressions: ((category.support.express && category.support.express.limitEmojis)
+          ? category.support.express.limitEmojis.map(e => e.display)
+          : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
+          .map(emojiDisplay => {return {
+            display: emojiDisplay,
+            count: Math.round(Math.random() * 100),
+          }}),
+      } : {}),
+    };
   }
 
   mockCommentsAndExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {

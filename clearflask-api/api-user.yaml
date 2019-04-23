@@ -42,6 +42,14 @@ components:
       required:
         - userId
         - name
+    UserMe:
+      allOf:
+        - $ref: 'api-user.yaml#/components/schemas/User'
+        - type: object
+          properties:
+            email:
+              type: string
+          required:
     UserAdmin:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'
@@ -98,7 +106,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/User'
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
 /project/{projectId}/user:
   post:
     operationId: userCreate
@@ -119,7 +127,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/User'
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
 /project/{projectId}/user/{userId}:
   get:
     operationId: userGet
@@ -167,7 +175,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/User'
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -204,7 +212,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/User'
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
 /project/{projectId}/admin/user:
   get:
     operationId: userSearchAdmin

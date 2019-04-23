@@ -2,6 +2,7 @@ import * as Client from './client';
 import * as Admin from './admin';
 import randomUuid from '../common/util/uuid';
 import * as ConfigEditor from '../common/config/configEditor';
+import stringToSlug from '../common/util/slugger';
 
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
@@ -42,7 +43,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   commentList(request: Client.CommentListRequest): Promise<Client.CommentSearchResponse> {
-    return this.returnLater(this.filterCursor(this.sort(this.db[request.projectId].comments
+    return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.ideaId === request.ideaId)
       ,[(l,r) => r.created.getTime() - l.created.getTime()]) // TODO improve sort
       ,this.DEFAULT_LIMIT, request.cursor));
@@ -60,10 +61,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaGet(request: Client.IdeaGetRequest): Promise<Client.Idea> {
-    return this.ideaGet(request);
+    return this.ideaGetAdmin(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
-    return this.returnLater(this.filterCursor(this.sort(this.db[request.projectId].ideas
+    return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).ideas
       .filter(idea => !request.search.filterTagIds
         || request.search.filterTagIds.filter(tagId =>
             idea.tagIds && idea.tagIds.includes(tagId)
@@ -96,7 +97,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
-    const user = this.db[request.projectId].users.find(user => user.userId === request.userId);
+    const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
     return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
   }
   userLogin(request: Client.UserLoginRequest): Promise<Client.User> {
@@ -122,7 +123,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       created: new Date(),
       ...(request.comment),
     };
-    this.db[request.projectId].comments.push(comment);
+    this.getProject(request.projectId).comments.push(comment);
     return this.returnLater(comment);
   }
   commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<void> {
@@ -145,11 +146,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaAdmin> {
     const idea:Admin.IdeaAdmin = {
-      ideaId: randomUuid(),
+      ideaId: stringToSlug(request.idea.title + '-' + randomUuid().substring(0,5)),
       created: new Date(),
       ...(request.idea),
     };
-    this.db[request.projectId].ideas.push(idea);
+    this.getProject(request.projectId).ideas.push(idea);
     return this.returnLater(idea);
   }
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
@@ -159,7 +160,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaAdmin> {
-    const idea = this.db[request.projectId].ideas.find(idea => idea.ideaId === request.ideaId);
+    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
     return idea ? this.returnLater(idea) : this.throwLater(404, 'Idea not found');
   }
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
@@ -169,8 +170,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
-    if(!this.db[request.projectId]) return this.throwLater(404, 'Project not found');
-    return this.returnLater(this.db[request.projectId].config);
+    if(!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
+    return this.returnLater(this.getProject(request.projectId).config);
   }
   configGetAllAdmin(): Promise<Admin.Projects> {
     return this.returnLater({
@@ -178,25 +179,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
-    if(this.db[request.projectId].config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
-    this.db[request.projectId].config = { config: request.config, version: randomUuid() };
-    return this.returnLater(this.db[request.projectId].config);
+    if(this.getProject(request.projectId).config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
+    this.getProject(request.projectId).config = { config: request.config, version: randomUuid() };
+    return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    const editor = new ConfigEditor.EditorImpl();
-    editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(request.projectId);
-    this.db[request.projectId] = {
-      config: {config: editor.getConfig(), version: randomUuid()},
-      comments: [],
-      transactions: [],
-      ideas: [],
-      users: [],
-      votes: [],
-      credits: {},
-    };
     return this.returnLater({
       projectId: request.projectId,
-      config: this.db[request.projectId].config,
+      config: this.getProject(request.projectId).config,
     });
   }
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
@@ -205,7 +195,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       name: request.create.name,
       email: request.create.email,
     };
-    this.db[request.projectId].users.push(user);
+    this.getProject(request.projectId).users.push(user);
     return this.returnLater(user);
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {
@@ -236,21 +226,21 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.Vote> {
-    const idea = this.db[request.projectId].ideas.find(idea => idea.ideaId === request.ideaId)!;
-    var vote:Admin.Vote|undefined = this.db[request.projectId].votes.find(vote => vote.voterUserId === request.update.voterUserId);
+    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
+    var vote:Admin.Vote|undefined = this.getProject(request.projectId).votes.find(vote => vote.voterUserId === request.update.voterUserId);
     if(!vote) {
       vote = { voterUserId: request.update.voterUserId };
-      this.db[request.projectId].votes.push(vote);
+      this.getProject(request.projectId).votes.push(vote);
     }
     if(request.update.fundAmount){
       if(request.update.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
       const fundDiff = request.update.fundAmount - (vote.fundAmount || 0);
-      const balanceCurrent = this.db[request.projectId].credits[request.update.voterUserId] || 0;
+      const balanceCurrent = this.getProject(request.projectId).credits[request.update.voterUserId] || 0;
       const balanceNew = balanceCurrent + fundDiff;
       if(balanceNew < 0) return this.throwLater(403, 'Insufficient funds');
       const fundersCountDiff = (request.update.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
 
-      this.db[request.projectId].transactions.push({
+      this.getProject(request.projectId).transactions.push({
         transactionId: randomUuid(),
         created: new Date(),
         amount: fundDiff,
@@ -259,7 +249,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         targetId: request.ideaId,
       });
       vote.fundAmount = request.update.fundAmount;
-      this.db[request.projectId].credits[request.update.voterUserId] = balanceNew;
+      this.getProject(request.projectId).credits[request.update.voterUserId] = balanceNew;
       idea.funded = (idea.funded || 0) + fundDiff;
       if(fundersCountDiff !== 0) idea.fundersCount = (idea.fundersCount || 0) + fundersCountDiff;
     }
@@ -284,14 +274,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           vote.vote = Admin.VoteVoteEnum.Downvote;
           break;
       }
+      const votersCountDiff = Math.abs(voteValue) - Math.abs(votePrevValue);
+      if(votersCountDiff !== 0) idea.votersCount = (idea.votersCount || 0) + votersCountDiff;
       const voteValueDiff = voteValue - votePrevValue;
-      if(voteValueDiff !== 0) idea.votersCount = (idea.votersCount || 0) + voteValueDiff;
+      if(voteValueDiff !== 0) idea.voteValue = (idea.voteValue || 0) + voteValueDiff;
     }
     if(request.update.expressions) {
       const expressionsSet = new Set<string>(vote.expressions || []);
       idea.expressionsValue = idea.expressionsValue || 0;
       idea.expressions = idea.expressions || [];
-      const expressing:Admin.Expressing = this.db[request.projectId].config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
+      const expressing:Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
       request.update.expressions.add && request.update.expressions.add.forEach(expression => {
         if(expressionsSet.has(expression)) return;
         expressionsSet.add(expression);
@@ -328,8 +320,29 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(vote);
   }
 
+  // **** Private methods
+
+  getProject(projectId:string) {
+    var project = this.db[projectId];
+    if(!project) {
+      const editor = new ConfigEditor.EditorImpl();
+      editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
+      project = {
+        config: {config: editor.getConfig(), version: randomUuid()},
+        comments: [],
+        transactions: [],
+        ideas: [],
+        users: [],
+        votes: [],
+        credits: {},
+      };
+      this.db[projectId] = project;
+    }
+    return project;
+  }
+
   calcScore(idea:Admin.IdeaAdmin) {
-    return (idea.fundersCount || 0) + (idea.votersCount || 0) + (idea.funded || 0) + (idea.expressionsValue || 0) + 1;
+    return (idea.fundersCount || 0) + (idea.voteValue || 0) + (idea.funded || 0) + (idea.expressionsValue || 0) + 1;
   }
 
   calcTrendingScore(idea:Admin.IdeaAdmin) {
@@ -361,7 +374,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async returnLater<T>(returnValue:T):Promise<T> {
-    // console.log('Server SEND:', returnValue);
+    console.log('Server SEND:', returnValue);
     if(this.hasLatency){
       await new Promise(resolve => setTimeout(resolve, this.LATENCY));
     }
@@ -369,15 +382,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {
-    // console.log('Server THROW:', httpStatus, userFacingMessage);
+    console.log('Server THROW:', httpStatus, userFacingMessage);
     if(this.hasLatency){
       await new Promise(resolve => setTimeout(resolve, this.LATENCY));
     }
     throw {
       status: httpStatus,
-      json: Promise.resolve(Admin.ErrorResponseFromJSON({
+      json: Admin.ErrorResponseToJSON({
         userFacingMessage: userFacingMessage,
-      })),
+      }),
     };
   }
 
