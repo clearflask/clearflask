@@ -16,9 +16,9 @@ interface Props extends WithStyles<typeof styles> {
 class CreditView extends Component<Props> {
   render() {
     return (
-      <div className={this.props.classes.root}>
+      <span className={this.props.classes.root}>
         {CreditView.formatCredit(this.props.val, this.props.credits)}
-      </div>
+      </span>
     );
   }
 

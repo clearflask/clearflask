@@ -63,6 +63,12 @@ export interface xCfProp {
    * the supplied path will become something like 'feature-requests'.
    */
   slugAutoComplete?:Path;
+  /** BooleanProperty only.
+   * Treat false value as undefined.
+   * Useful if you only need two states but don't want to waste space
+   * in config with a false value.
+   */
+  falseAsUndefined?:boolean;
 }
 export enum PropSubType {
   /**
@@ -1153,6 +1159,15 @@ export class EditorImpl implements Editor {
           ...base,
           type: PropertyType.Boolean,
           value: value,
+          ...(xProp && xProp.falseAsUndefined && !isRequired ? {
+            required: true,
+            set: (val:boolean|undefined):void => {
+              this.setValue(path, val === true ? true : undefined);
+              property.value = val;
+              property.validateValue(val as never);
+              this.notify(localSubscribers);
+            },
+          } : {}),
         };
         break;
       case 'array':

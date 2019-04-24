@@ -125,12 +125,20 @@ components:
               x-clearflask-prop: { order: 3, subType: 'color', name: 'Secondary color' }
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            text:
+              x-clearflask-prop: { order: 4, subType: 'color', name: 'Text color' }
+              type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             background:
-              x-clearflask-prop: { order: 4, subType: 'color', name: 'Background color' }
+              x-clearflask-prop: { order: 5, subType: 'color', name: 'Background color' }
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             backgroundPaper:
-              x-clearflask-prop: { order: 5, subType: 'color', name: 'Inner background color' }
+              x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color' }
+              type: string
+              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            funding:
+              x-clearflask-prop: { order: 7, subType: 'color', name: 'Funding progress bar color' }
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
@@ -477,6 +485,7 @@ components:
       type: object
       required:
         - search
+        - display
       properties:
         title:
           type: string
@@ -484,6 +493,47 @@ components:
           type: boolean
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+        display:
+          x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
+          type: object
+          title: PanelDisplay
+          properties:
+            titleTruncateLines:
+              x-clearflask-prop: { order: 1, name: 'Title maximum lines', placeholder: 1}
+              type: number
+            descriptionTruncateLines:
+              x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
+              type: number
+            hideDescription:
+              x-clearflask-prop: { order: 3, name: 'Hide Description', falseAsUndefined: true }
+              type: boolean
+            hideCommentCount:
+              x-clearflask-prop: { order: 4, name: 'Hide Comment Count', falseAsUndefined: true }
+              type: boolean
+            hideCategoryName:
+              x-clearflask-prop: { order: 5, name: 'Hide CategoryName', falseAsUndefined: true }
+              type: boolean
+            hideCreated:
+              x-clearflask-prop: { order: 6, name: 'Hide Created', falseAsUndefined: true }
+              type: boolean
+            hideAuthor:
+              x-clearflask-prop: { order: 7, name: 'Hide Author', falseAsUndefined: true }
+              type: boolean
+            hideStatus:
+              x-clearflask-prop: { order: 8, name: 'Hide Status', falseAsUndefined: true }
+              type: boolean
+            hideTags:
+              x-clearflask-prop: { order: 9, name: 'Hide Tags', falseAsUndefined: true }
+              type: boolean
+            hideVoting:
+              x-clearflask-prop: { order: 10, name: 'Hide Voting', falseAsUndefined: true }
+              type: boolean
+            hideFunding:
+              x-clearflask-prop: { order: 11, name: 'Hide Funding', falseAsUndefined: true }
+              type: boolean
+            hideExpression:
+              x-clearflask-prop: { order: 12, name: 'Hide Expression', falseAsUndefined: true }
+              type: boolean
     PagePanelSearchControls:
       type: object
       properties:
@@ -502,8 +552,8 @@ components:
         title:
           x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above the explorer.' }
           type: string
-        search:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+        panel:
+          $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearchControls'
     VersionedConfig:
       type: object
       required:

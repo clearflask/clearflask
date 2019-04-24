@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { ReduxState, Status } from '../api/server';
 import { connect } from 'react-redux';
-import { CssBaseline, MuiThemeProvider, createMuiTheme } from '@material-ui/core';
+import { CssBaseline, MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
+import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 
 interface Props {
   supressCssBaseline?:boolean;
@@ -12,9 +13,13 @@ interface Props {
 
 class App extends Component<Props> {
   render() {
-    var theme;
+    var theme:Theme|undefined;
     if(this.props.config) {
       theme = createMuiTheme({
+        ...{custom: { // Custom variables
+          funding: this.props.config.style.palette.funding
+            || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
+        }} as ThemeOptions,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           ...(this.props.config.style.palette.primary ? { primary: {
@@ -22,6 +27,9 @@ class App extends Component<Props> {
           }} : {}),
           ...(this.props.config.style.palette.secondary ? { secondary: {
             main: this.props.config.style.palette.secondary,
+          }} : {}),
+          ...(this.props.config.style.palette.text ? { text: {
+            primary: this.props.config.style.palette.text,
           }} : {}),
           ...((this.props.config.style.palette.background || this.props.config.style.palette.backgroundPaper) ? { background: {
             default: this.props.config.style.palette.background ? this.props.config.style.palette.background : undefined,
@@ -31,7 +39,7 @@ class App extends Component<Props> {
         typography: {
           fontFamily: this.props.config.style.typography.fontFamily || undefined,
           fontSize: this.props.config.style.typography.fontSize || undefined,
-        }
+        },
       })
     } else {
       theme = createMuiTheme();

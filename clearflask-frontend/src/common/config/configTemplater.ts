@@ -67,22 +67,22 @@ export default class Templater {
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
-          Admin.PagePanelToJSON({title: 'Funding', search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'Funding',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'Planned', search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'Planned',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'In progress', search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'In progress',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'Completed', search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'Completed',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
@@ -112,11 +112,13 @@ export default class Templater {
         description: undefined,
         panels: [],
         board: undefined,
-        explorer: Admin.PageExplorerToJSON({search: Admin.IdeaSearchToJSON({
-          searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.Trending,
-          filterCategoryIds: [categoryId],
-          filterTagIds: [tag.tagId],
-        })}),
+        explorer: Admin.PageExplorerToJSON({
+          panel: Admin.PagePanelWithSearchControlsToJSON({title: 'Funding', display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.Trending,
+            filterCategoryIds: [categoryId],
+            filterTagIds: [tag.tagId],
+          })}),
+        }),
       }));
     });
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
@@ -210,6 +212,7 @@ export default class Templater {
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({prefix: '$', greaterOrEqual: 100, minimumFractionDigits: 0}),
       Admin.CreditFormatterEntryToJSON({prefix: '$', greaterOrEqual: 1, minimumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({prefix: '$', lessOrEqual: 0}),
       Admin.CreditFormatterEntryToJSON({prefix: '¢', multiplier: 100}),
     ]);
   }

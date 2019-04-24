@@ -178,10 +178,12 @@ export interface StateIdeas {
     ideaIds?: string[],
     cursor?: string,
   }};
+  maxFundAmountSeen:number;
 }
 const stateIdeasDefault = {
   byId: {},
   bySearch: {},
+  maxFundAmountSeen: 0,
 };
 function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions):StateIdeas {
   switch (action.type) {
@@ -210,7 +212,8 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
             idea: action.payload,
             status: Status.FULFILLED,
           }
-        }
+        },
+        maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
     case Client.ideaSearchActionStatus.Pending:
       return {
@@ -259,7 +262,10 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
             ],
             cursor: action.payload.cursor,
           }
-        }
+        },
+        maxFundAmountSeen: Math.max(
+          action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0),  0) || 0,
+          state.maxFundAmountSeen),
       };
     default:
       return state;

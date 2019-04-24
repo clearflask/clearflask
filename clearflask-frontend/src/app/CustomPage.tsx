@@ -38,7 +38,7 @@ class Page extends Component<Props> {
             </Typography>
             <Panel
               direction={Direction.Horizontal}
-              search={panel.search}
+              panel={panel}
               server={this.props.server}
               ideaCardVariant='full' />
           </div>
@@ -58,7 +58,7 @@ class Page extends Component<Props> {
               </Typography>
               <Panel
                 direction={Direction.Vertical}
-                search={panel.search}
+                panel={panel}
                 server={this.props.server}
                 ideaCardVariant='title' />
             </div>
@@ -89,7 +89,7 @@ class Page extends Component<Props> {
             </Typography>
             <Panel
               direction={Direction.Wrap}
-              search={explorer.search}
+              panel={explorer.panel}
               server={this.props.server}
               ideaCardVariant='full' />
           </div>
