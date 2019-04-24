@@ -113,7 +113,7 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
-          panel: Admin.PagePanelWithSearchControlsToJSON({title: 'Funding', display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.Trending,
             filterCategoryIds: [categoryId],
             filterTagIds: [tag.tagId],

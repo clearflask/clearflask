@@ -122,12 +122,30 @@ components:
         - title
         - categoryId
         - tagIds
+    IdeaWithAuthor:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/Idea'
+        - type: object
+          required:
+           - author
+          properties:
+            author:
+              $ref: 'api-user.yaml#/components/schemas/User'
     IdeaAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/Idea'
         - type: object
           properties:
           required:
+    IdeaWithAuthorAdmin:
+      allOf:
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
+        - type: object
+          required:
+           - author
+          properties:
+            author:
+              $ref: 'api-user.yaml#/components/schemas/User'
     IdeaCreate:
       type: object
       properties:
@@ -218,7 +236,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/Idea'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthor'
               required:
                 - results
   post:
@@ -261,7 +279,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/Idea'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthor'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -342,7 +360,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAdmin'
               required:
                 - results
   post:
@@ -404,7 +422,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:

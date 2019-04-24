@@ -315,23 +315,49 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
           }
         }
       };
-      case Client.userCreateActionStatus.Fulfilled:
-      case Client.userLoginActionStatus.Fulfilled:
-      case Client.userUpdateActionStatus.Fulfilled:
-        return {
-          ...state,
-          byId: {
-            ...state.byId,
-            [action.payload.userId]: {
-              user: action.payload,
-              status: Status.FULFILLED,
-            }
-          },
-          loggedIn: {
+    case Client.ideaSearchActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (usersById, idea) => {
+              usersById[idea.author.userId] = {
+                user: idea.author,
+                status: Status.FULFILLED,
+              };
+              return usersById;
+            }, {}),
+        }
+      };
+    case Client.ideaGetActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.author.userId]: {
+            user: action.payload.author,
+            status: Status.FULFILLED,
+          }
+        }
+      };
+    case Client.userCreateActionStatus.Fulfilled:
+    case Client.userLoginActionStatus.Fulfilled:
+    case Client.userUpdateActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.userId]: {
             user: action.payload,
             status: Status.FULFILLED,
-          },
-        };
+          }
+        },
+        loggedIn: {
+          user: action.payload,
+          status: Status.FULFILLED,
+        },
+      };
     case Client.userDeleteActionStatus.Fulfilled:
       const {[action.meta.request.userId]:removedUser, ...byIdWithout} = state.byId;
       return {...state, byId: byIdWithout};

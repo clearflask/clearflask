@@ -7,7 +7,7 @@ import stringToSlug from '../common/util/slugger';
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
 
-  readonly LATENCY = 300;
+  readonly BASE_LATENCY = 200;
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = true;
 
@@ -60,7 +60,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGet(request: Client.IdeaGetRequest): Promise<Client.Idea> {
+  ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithAuthor> {
     return this.ideaGetAdmin(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
@@ -77,6 +77,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(idea => request.search.searchText === undefined
         || idea.title.indexOf(request.search.searchText) >= 0
         || (idea.description || '').indexOf(request.search.searchText) < 0)
+      .map(idea => {
+        const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
+        if(!author) throw Error('Author of idea not found');
+        return { ...idea, author: author };
+      })
       ,[(l,r) => {switch(request.search.sortBy){
           default: case Admin.IdeaSearchSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
           case Admin.IdeaSearchSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
@@ -159,9 +164,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaAdmin> {
+  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAdmin> {
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
-    return idea ? this.returnLater(idea) : this.throwLater(404, 'Idea not found');
+    if(!idea) return this.throwLater(404, 'Idea not found');
+    const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
+    if(!author) return this.throwLater(404, 'Author of idea not found');
+    return this.returnLater({ ...idea, author: author }); 
   }
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
     throw new Error("Method not implemented.");
@@ -375,23 +383,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   async returnLater<T>(returnValue:T):Promise<T> {
     console.log('Server SEND:', returnValue);
-    if(this.hasLatency){
-      await new Promise(resolve => setTimeout(resolve, this.LATENCY));
-    }
+    await this.waitLatency();
     return JSON.parse(JSON.stringify(returnValue));
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {
     console.log('Server THROW:', httpStatus, userFacingMessage);
-    if(this.hasLatency){
-      await new Promise(resolve => setTimeout(resolve, this.LATENCY));
-    }
+    await this.waitLatency();
     throw {
       status: httpStatus,
       json: Admin.ErrorResponseToJSON({
         userFacingMessage: userFacingMessage,
       }),
     };
+  }
+
+  async waitLatency():Promise<void> {
+    if(this.hasLatency){
+      await new Promise(resolve => setTimeout(resolve, this.BASE_LATENCY + this.BASE_LATENCY * Math.random()));
+    }
   }
 
   generateId():string {
