@@ -3,10 +3,11 @@ import * as Client from '../api/client';
 import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { ReduxState as ReduxState, Server, Status } from '../api/server';
+import { ReduxState as ReduxState, Server, Status, getSearchKey } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
 import Loader from './comps/Loader';
 import ErrorPage from './ErrorPage';
+import PanelWithControls from './comps/PanelWithControls';
 
 interface Props {
   server:Server;
@@ -32,15 +33,15 @@ class Page extends Component<Props> {
       // ### PANELS
       for(let panel of this.props.page.panels || []) {
         panelsCmpt.push(
-          <div key={panel.search.searchKey}>
+          <div>
             <Typography variant='overline'>
               {panel.title}
             </Typography>
             <Panel
+              key={getSearchKey(panel.search)}
               direction={Direction.Horizontal}
               panel={panel}
-              server={this.props.server}
-              ideaCardVariant='full' />
+              server={this.props.server} />
           </div>
         );
         // TODO
@@ -52,15 +53,15 @@ class Page extends Component<Props> {
         var panels:any = [];
         for(let panel of board.panels) {
           panels.push(
-            <div key={panel.search.searchKey}>
+            <div>
               <Typography variant='overline'>
                 {panel.title}
               </Typography>
               <Panel
+                key={getSearchKey(panel.search)}
                 direction={Direction.Vertical}
                 panel={panel}
-                server={this.props.server}
-                ideaCardVariant='title' />
+                server={this.props.server} />
             </div>
           );
         }
@@ -87,11 +88,11 @@ class Page extends Component<Props> {
             <Typography variant='overline'>
               {explorer.title}
             </Typography>
-            <Panel
+            <PanelWithControls
+              key={getSearchKey(explorer.panel.search)}
               direction={Direction.Wrap}
               panel={explorer.panel}
-              server={this.props.server}
-              ideaCardVariant='full' />
+              server={this.props.server} />
           </div>
         );
         // TODO

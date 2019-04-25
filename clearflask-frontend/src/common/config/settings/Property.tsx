@@ -3,11 +3,11 @@ import * as ConfigEditor from '../configEditor';
 import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse, IconButton } from '@material-ui/core';
 import TableProp from './TableProp';
 import ColorPicker from 'material-ui-color-picker'
-import SelectionPicker from './property/SelectionPicker';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
 import 'emoji-mart/css/emoji-mart.css';
 import { Picker, EmojiData, BaseEmoji } from 'emoji-mart';
 import Overlay from '../../Overlay';
+import SelectionPicker from '../../../app/comps/SelectionPicker';
 
 interface Props {
   key:string;
@@ -313,11 +313,34 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PropertyType.Link:
       case ConfigEditor.PropertyType.LinkMulti:
+        const onValueChange = (labels, action) => {
+          if(prop.type === ConfigEditor.PropertyType.LinkMulti) {
+            prop.set(new Set<string>(labels.map(o => o.value)));
+          } else {
+            prop.set(labels.length === 0 ? undefined : labels[0].value);
+          }
+        };
+        const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
         propertySetter = (
           <SelectionPicker
-            {...this.props}
-            prop={prop}
+            name={prop.name}
+            description={prop.description}
+            placeholder={prop.placeholder}
+            errorMsg={prop.errorMsg}
+            value={prop.value === undefined ? [] :
+              (prop.type === ConfigEditor.PropertyType.Link
+              ? [prop.getOptions().find(o => o.id === prop.value)]
+                .filter(o => o !== undefined)
+              : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
+              .map(o => {return {label: o!.name, value: o!.id}})}
+            options={prop.getOptions()
+              .map(o => {return {label: o.name, value: o.id}})}
+            isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
+            bare={this.props.bare}
+            width={this.props.width}
             inputMinWidth={Property.inputMinWidth}
+            onValueChange={onValueChange}
+            onValueCreate={onValueCreate}
           />
         );
         break;

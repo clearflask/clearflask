@@ -12,11 +12,10 @@ import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
 import Truncate from 'react-truncate';
 import CreditView from '../../common/config/CreditView';
-import { red, green } from '@material-ui/core/colors';
+import HelpPopover from '../../common/HelpPopover';
 
 const styles = (theme:Theme) => createStyles({
   cardContainer: {
-    margin: theme.spacing.unit * 2,
   },
   cardContainerLeftColumn: {
     margin: theme.spacing.unit,
@@ -118,7 +117,7 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-export type PostVariant = 'title'|'full'|'page';
+export type PostVariant = 'list'|'page';
 
 interface Props extends WithStyles<typeof styles>, RouteComponentProps {
   server:Server;
@@ -369,7 +368,11 @@ class Post extends Component<Props, State> {
     );
     const fundGoalDisplay = (
       <Typography variant='body1' inline>
-        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
+        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal} style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          lineHeight: 'normal',
+        }}>
           {fundGoal && (<CreditView val={this.props.idea.fundGoal || 0} credits={this.props.credits} />)}
           &nbsp;raised
         </span>
@@ -388,7 +391,7 @@ class Post extends Component<Props, State> {
       <div className={this.props.classes.funding}>
         <div style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'baseline',
         }}>
           {fundAmountDisplay}
           {fundGoalDisplay}

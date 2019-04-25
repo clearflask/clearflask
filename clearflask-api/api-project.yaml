@@ -547,7 +547,7 @@ components:
       x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
       required:
-        - search
+        - panel
       properties:
         title:
           x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above the explorer.' }

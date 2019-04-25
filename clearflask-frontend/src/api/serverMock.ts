@@ -7,7 +7,7 @@ import stringToSlug from '../common/util/slugger';
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
 
-  readonly BASE_LATENCY = 200;
+  readonly BASE_LATENCY = 300;
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = true;
 
@@ -66,17 +66,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
     return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).ideas
       .filter(idea => !request.search.filterTagIds
+        || request.search.filterTagIds.length === 0
         || request.search.filterTagIds.filter(tagId =>
             idea.tagIds && idea.tagIds.includes(tagId)
           ).length > 0)
       .filter(idea => !request.search.filterCategoryIds
         || request.search.filterCategoryIds.includes(idea.categoryId))
       .filter(idea => request.search.filterStatusIds === undefined
-        || (request.search.filterStatusIds.length === 0 && !idea.statusId)
+        || request.search.filterStatusIds.length === 0
         || (idea.statusId && request.search.filterStatusIds.includes(idea.statusId)))
       .filter(idea => request.search.searchText === undefined
         || idea.title.indexOf(request.search.searchText) >= 0
-        || (idea.description || '').indexOf(request.search.searchText) < 0)
+        || (idea.description || '').indexOf(request.search.searchText) >= 0)
       .map(idea => {
         const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
         if(!author) throw Error('Author of idea not found');

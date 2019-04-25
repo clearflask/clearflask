@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Server, StateIdeas, ReduxState, Status } from '../../api/server';
+import { Server, StateIdeas, ReduxState, Status, getSearchKey } from '../../api/server';
 import Post, { PostVariant } from './Post';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
@@ -19,7 +19,6 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   container: {
-    margin: theme.spacing.unit,
   },
   [Direction.Horizontal]: {
   },
@@ -34,8 +33,8 @@ const styles = (theme:Theme) => createStyles({
 interface Props extends StateIdeas, WithStyles<typeof styles> {
   server:Server;
   panel:Client.PagePanel;
+  searchOverride?:Partial<Client.IdeaSearch>;
   direction:Direction
-  ideaCardVariant:PostVariant;
   // connect
   config?:Client.Config;
   searchResult:SearchResult;
@@ -58,7 +57,7 @@ class Panel extends Component<Props> {
           <Post
             server={this.props.server}
             idea={idea}
-            variant={this.props.ideaCardVariant}
+            variant='list'
             titleTruncateLines={this.props.panel.display.titleTruncateLines || 1}
             descriptionTruncateLines={this.props.panel.display.descriptionTruncateLines || 2}
             hideCommentCount={this.props.panel.display.hideCommentCount}
@@ -92,11 +91,13 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     } as SearchResult,
   };
 
-  const bySearch = state.ideas.bySearch[ownProps.panel.search.searchKey];
+  const search = {...ownProps.searchOverride, ...ownProps.panel.search};
+  const searchKey = getSearchKey(search);
+  const bySearch = state.ideas.bySearch[searchKey];
   if(!bySearch) {
     ownProps.server.dispatch().ideaSearch({
       projectId: state.projectId,
-      search: ownProps.panel.search,
+      search: search,
     });
   } else {
     newProps.searchResult.status = bySearch.status;

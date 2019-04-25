@@ -21,14 +21,15 @@ class DataMock {
         const promises:Promise<any>[] = [];
         versionedConfig.config.content.categories.forEach((category:Admin.Category) => {
           [undefined, ...category.workflow.statuses].forEach((status:Admin.IdeaStatus|undefined) => {
-            [undefined, ...category.tagging.tags].forEach((tag:Admin.Tag|undefined) => {
+            var n = 4;
+            while (n-- > 0) {
               promises.push(this.mockUser(versionedConfig)
                 .then((user:Admin.UserAdmin) => 
-                  this.mockIdea(versionedConfig, category, status, tag, user)
+                  this.mockIdea(versionedConfig, category, status, user)
                     .then(() => ServerMock.get().setLatency(true))
                 )
               );
-            });
+            }
           });
         });
         return Promise.all(promises);
@@ -45,7 +46,7 @@ class DataMock {
     });
   }
 
-  mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, tag:Admin.Tag|undefined, user:Admin.UserAdmin):Promise<any> {
+  mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, user:Admin.UserAdmin):Promise<any> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       idea: {
@@ -54,7 +55,9 @@ class DataMock {
         title: fillerText(2,10,3,10),
         description: fillerText(2,40,3,10),
         categoryId: category.categoryId,
-        tagIds: tag ? [tag.tagId] : [],
+        tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
+          .filter(t => Math.random() < 0.3)
+          .map(t => t.tagId),
         statusId: status ? status.statusId : undefined,
         created: new Date(Math.random() * new Date().getTime()),
       },

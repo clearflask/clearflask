@@ -121,10 +121,6 @@ export class Server {
     this._dispatch(msg);
   }
 
-  mockData():void {
-    // TODO Will be used to inject data into mock in-memory client-side "server"
-  }
-
   async _dispatch(msg:any):Promise<any>{
     try {
     var result = await this.store.dispatch(msg);
@@ -142,6 +138,17 @@ export class Server {
     }
     return result.value;
   }
+}
+
+export const getSearchKey = (search:Client.IdeaSearch):string => {
+  return [
+    (search.filterCategoryIds || []).join('.'),
+    (search.filterStatusIds || []).join('.'),
+    (search.filterTagIds || []).join('.'),
+    search.limit || -1,
+    search.sortBy,
+    search.searchText || '',
+  ].join('-');
 }
 
 export interface StateConf {
@@ -186,6 +193,7 @@ const stateIdeasDefault = {
   maxFundAmountSeen: 0,
 };
 function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions):StateIdeas {
+  var searchKey;
   switch (action.type) {
     case Client.ideaGetActionStatus.Pending:
       return {
@@ -216,28 +224,31 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
     case Client.ideaSearchActionStatus.Pending:
+      searchKey = getSearchKey(action.meta.request.search);
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.search.searchKey]: {
-            ...state.bySearch[action.meta.request.search.searchKey],
+          [searchKey]: {
+            ...state.bySearch[searchKey],
             status: Status.PENDING,
           }
         }
       };
     case Client.ideaSearchActionStatus.Rejected:
+      searchKey = getSearchKey(action.meta.request.search);
       return {
         ...state,
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.search.searchKey]: {
-            ...state.bySearch[action.meta.request.search.searchKey],
+          [searchKey]: {
+            ...state.bySearch[searchKey],
             status: Status.REJECTED,
           }
         }
       };
     case Client.ideaSearchActionStatus.Fulfilled:
+      searchKey = getSearchKey(action.meta.request.search);
       return {
         ...state,
         byId: {
@@ -253,11 +264,11 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         },
         bySearch: {
           ...state.bySearch,
-          [action.meta.request.search.searchKey]: {
+          [searchKey]: {
             status: Status.FULFILLED,
             // Append results to existing idea ids
             ideaIds: [
-              ...(state.bySearch[action.meta.request.search.searchKey].ideaIds || []),
+              ...(state.bySearch[searchKey].ideaIds || []),
               ...action.payload.results.map(idea => idea.ideaId),
             ],
             cursor: action.payload.cursor,

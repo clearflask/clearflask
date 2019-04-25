@@ -67,23 +67,23 @@ export default class Templater {
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
-          Admin.PagePanelToJSON({title: 'Funding',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
+          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'Planned',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
+          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'In progress',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
+          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'Completed',  display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.New,
+          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
           })}),
@@ -94,7 +94,9 @@ export default class Templater {
           enableSearchByTag: false,
         }),
       }),
-      explorer: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+      }),
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: [pageHomeId],
@@ -114,7 +116,7 @@ export default class Templater {
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
           panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            searchKey: randomUuid(), sortBy: Admin.IdeaSearchSortByEnum.Trending,
+            sortBy: Admin.IdeaSearchSortByEnum.Trending,
             filterCategoryIds: [categoryId],
             filterTagIds: [tag.tagId],
           })}),
