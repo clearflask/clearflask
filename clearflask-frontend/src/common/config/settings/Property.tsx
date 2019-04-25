@@ -7,7 +7,7 @@ import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
 import 'emoji-mart/css/emoji-mart.css';
 import { Picker, EmojiData, BaseEmoji } from 'emoji-mart';
 import Overlay from '../../Overlay';
-import SelectionPicker from '../../../app/comps/SelectionPicker';
+import SelectionPicker, { Label, ColorLookup } from '../../../app/comps/SelectionPicker';
 
 interface Props {
   key:string;
@@ -321,20 +321,32 @@ export default class Property extends Component<Props> {
           }
         };
         const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
+        const values:Label[] = []
+        const options:Label[] = []
+        const colorLookup:ColorLookup = {}
+        prop.getOptions()
+        .forEach(o => {
+          options.push({label: o.name, value: o.id});
+          if(o!.color) colorLookup[o!.id] = o!.color;
+        });
+        if(prop.value !== undefined) {
+          (prop.type === ConfigEditor.PropertyType.Link
+            ? [prop.getOptions().find(o => o.id === prop.value)]
+              .filter(o => o !== undefined)
+            : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
+            .forEach(o => {
+              values.push({label: o!.name, value: o!.id});
+            })
+        }
         propertySetter = (
           <SelectionPicker
             name={prop.name}
             description={prop.description}
             placeholder={prop.placeholder}
             errorMsg={prop.errorMsg}
-            value={prop.value === undefined ? [] :
-              (prop.type === ConfigEditor.PropertyType.Link
-              ? [prop.getOptions().find(o => o.id === prop.value)]
-                .filter(o => o !== undefined)
-              : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
-              .map(o => {return {label: o!.name, value: o!.id}})}
-            options={prop.getOptions()
-              .map(o => {return {label: o.name, value: o.id}})}
+            value={values}
+            colorLookup={colorLookup}
+            options={options}
             isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
             bare={this.props.bare}
             width={this.props.width}

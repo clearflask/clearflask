@@ -35,9 +35,13 @@ interface Props extends StateIdeas, WithStyles<typeof styles> {
   panel:Client.PagePanel;
   searchOverride?:Partial<Client.IdeaSearch>;
   direction:Direction
+  onClickTag?:(tagId:string)=>void;
+  onClickCategory?:(categoryId:string)=>void;
+  onClickStatus?:(statusId:string)=>void;
   // connect
   config?:Client.Config;
   searchResult:SearchResult;
+  searchMerged:Client.IdeaSearch;
 }
 
 class Panel extends Component<Props> {
@@ -63,17 +67,20 @@ class Panel extends Component<Props> {
             hideCommentCount={this.props.panel.display.hideCommentCount}
             hideCategoryName={this.props.panel.display.hideCategoryName
               || (this.props.config && this.props.config.content.categories.length <= 1)
-              || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1)}
+              || (this.props.searchMerged.filterCategoryIds && this.props.searchMerged.filterCategoryIds.length === 1)}
             hideCreated={this.props.panel.display.hideCreated}
             hideAuthor={this.props.panel.display.hideAuthor}
             hideStatus={this.props.panel.display.hideStatus
-              || (this.props.panel.search.filterStatusIds && this.props.panel.search.filterStatusIds.length === 1)}
+              || (this.props.searchMerged.filterStatusIds && this.props.searchMerged.filterStatusIds.length === 1)}
             hideTags={this.props.panel.display.hideTags
-              || (this.props.panel.search.filterTagIds && this.props.panel.search.filterTagIds.length === 1)}
+              || (this.props.searchMerged.filterTagIds && this.props.searchMerged.filterTagIds.length === 1)}
             hideVoting={this.props.panel.display.hideVoting}
             hideFunding={this.props.panel.display.hideFunding}
             hideExpression={this.props.panel.display.hideExpression}
             hideDescription={this.props.panel.display.hideDescription}
+            onClickTag={this.props.onClickTag}
+            onClickCategory={this.props.onClickCategory}
+            onClickStatus={this.props.onClickStatus}
           />
         ))}
       </div>
@@ -89,15 +96,15 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
       ideas: [],
       cursor: undefined,
     } as SearchResult,
+    searchMerged: {...ownProps.searchOverride, ...ownProps.panel.search},
   };
 
-  const search = {...ownProps.searchOverride, ...ownProps.panel.search};
-  const searchKey = getSearchKey(search);
+  const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
   if(!bySearch) {
     ownProps.server.dispatch().ideaSearch({
       projectId: state.projectId,
-      search: search,
+      search: newProps.searchMerged,
     });
   } else {
     newProps.searchResult.status = bySearch.status;

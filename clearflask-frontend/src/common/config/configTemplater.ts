@@ -94,9 +94,7 @@ export default class Templater {
           enableSearchByTag: false,
         }),
       }),
-      explorer: Admin.PageExplorerToJSON({
-        panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
-      }),
+      explorer: undefined,
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: [pageHomeId],

@@ -38,6 +38,7 @@ const styles = (theme:Theme) => createStyles({
     padding: `3px ${theme.spacing.unit / 2}px`,
     whiteSpace: 'nowrap',
     minWidth: 'unset',
+    textTransform: 'unset',
   },
   timeAgo: {
     whiteSpace: 'nowrap',
@@ -183,7 +184,7 @@ class Post extends Component<Props, State> {
         <Loader loaded={!!this.props.idea}>
           <div className={this.props.classes.cardContainer} style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
           }}>
             {voting && (
               <div className={this.props.classes.cardContainerLeftColumn}>
@@ -275,7 +276,7 @@ class Post extends Component<Props, State> {
 
     return (
       <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus}
-        onClick={e => this.props.onClickStatus && this.props.onClickStatus(this.props.category!.categoryId)}>
+        onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
         <Typography variant='caption' style={{color: status.color}}>
           {status.name}
         </Typography>

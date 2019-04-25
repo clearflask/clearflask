@@ -45,6 +45,8 @@ export interface Label {
   value: string;
 }
 
+export type ColorLookup = { [value:string]: string; }
+
 interface Props extends ListProps, WithStyles<typeof styles> {
   classes; // conflict
   name?:string;
@@ -53,6 +55,7 @@ interface Props extends ListProps, WithStyles<typeof styles> {
   errorMsg?:string;
   value?:Label[];
   options:Label[];
+  colorLookup?:ColorLookup;
   isMulti?:boolean;
   bare?:boolean;
   width?:string
@@ -76,6 +79,7 @@ class SelectionPicker extends Component<Props> {
       options: this.props.options,
       components: {
         Control,
+        Input,
         Menu,
         MultiValue,
         NoOptionsMessage,
@@ -118,6 +122,16 @@ const NoOptionsMessage = (props) => {
   );
 }
 
+const Input = (props) => {
+  return (
+    <div style={{
+      minWidth: '20px',
+    }}>
+      <components.Input {...props}/>
+    </div>
+  );
+}
+
 const inputComponent = ({ inputRef, ...props }) => {
   return <div ref={inputRef} {...props} />;
 }
@@ -149,6 +163,7 @@ const Control = (props) => {
 }
 
 const Option = (props) => {
+  const outerProps:Props = props.selectProps.commonProps;
   return (
     <MenuItem
       buttonRef={props.innerRef}
@@ -156,6 +171,7 @@ const Option = (props) => {
       component="div"
       style={{
         fontWeight: props.isSelected ? 500 : 400,
+        color: outerProps.colorLookup ? outerProps.colorLookup[props.data.value] : undefined,
       }}
       {...props.innerProps}
     >
@@ -192,9 +208,11 @@ const Placeholder = (props) => {
 }
 
 const SingleValue = (props) => {
+  const outerProps:Props = props.selectProps.commonProps;
   return (
     <Typography {...props.innerProps} style={{
       fontSize: 16,
+      color: outerProps.colorLookup ? outerProps.colorLookup[props.data.value] : undefined,
     }}>
       {props.children}
     </Typography>
@@ -224,7 +242,8 @@ const MultiValue = (props) => {
       tabIndex={-1}
       label={props.children}
       onDelete={props.removeProps.onClick}
-      deleteIcon={<DeleteIcon {...props.removeProps} className={outerProps.classes.deleteIcon} />}
+      deleteIcon={<DeleteIcon {...props.removeProps} className={outerProps.classes.deleteIcon}/>}
+      style={outerProps.colorLookup ? {color: outerProps.colorLookup[props.data.value]} : undefined}
     />
   );
 }

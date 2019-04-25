@@ -4,32 +4,32 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
 import Panel, { Direction } from './Panel';
-import SelectionPicker, { Label } from './SelectionPicker';
-import { Typography, TextField, Select, MenuItem } from '@material-ui/core';
+import SelectionPicker, { Label, ColorLookup } from './SelectionPicker';
+import { Typography, MenuItem } from '@material-ui/core';
 import { ActionMeta } from 'react-select/lib/types';
 
 enum FilterType {
   Search = 'search',
   Sort = 'sort',
   Category = 'category',
-  Status = 'status',
   Tag = 'tag',
+  Status = 'status',
 }
 
 const styles = (theme:Theme) => createStyles({
-  container: {
+  selection: {
     margin: theme.spacing.unit,
   },
   menuContainer: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing.unit,
   },
   menuList: {
-    display: 'flex',
-    flexWrap: 'wrap',
   },
   menuItem: {
-    minWidth: '150px',
     margin: theme.spacing.unit,
+    webkitColumnBreakInside: 'avoid',
+    pageBreakInside: 'avoid',
+    breakInside: 'avoid',
   },
 });
 
@@ -54,19 +54,20 @@ class PanelWithControls extends Component<Props, State> {
 
   render() {
     const controls = this.getControls();
-    return (
-      <div className={this.props.classes.container}>
+    return [
+      <div className={this.props.classes.selection}>
         <SelectionPicker
           value={controls.values}
           options={controls.options}
+          colorLookup={controls.colorLookup}
           isMulti={true}
-          inputMinWidth='250px'
+          inputMinWidth='130px'
           onValueChange={this.onValueChange.bind(this)}
           onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
           placeholder='Search'
           formatCreateLabel={inputValue => `Search '${inputValue}'`}
+          bare
           overrideComponents={{
-            ClearIndicator: () => null,
             MenuList: (menuProps) => {
               var newSearch:React.ReactNode|undefined;
               const filters:any = {};
@@ -80,6 +81,20 @@ class PanelWithControls extends Component<Props, State> {
                   filters[type].push(child);
                 }
               });
+              const menuItems = Object.values(FilterType).map(type => type !== FilterType.Search
+                && this.isFilterControllable(type)
+                && (!newSearch || filters[type])
+                && (
+                  <div className={this.props.classes.menuItem}>
+                    <Typography variant='overline'>{type}</Typography>
+                    {filters[type] ? filters[type] : (
+                      <MenuItem component="div" disabled>
+                        No option
+                      </MenuItem>
+                    )}
+                  </div>
+                ));
+              const menuItemColumnCount = Math.min(3, menuItems.filter(m => !!m).length);
               return (
                 <div {...menuProps} className={this.props.classes.menuContainer}>
                   {newSearch ? newSearch : (
@@ -87,32 +102,29 @@ class PanelWithControls extends Component<Props, State> {
                       Type to search
                     </MenuItem>
                   )}
-                  <div className={this.props.classes.menuList}>
-                    {Object.values(FilterType).map(type => type !== FilterType.Search && (
-                      <div className={this.props.classes.menuItem}>
-                        <Typography variant='overline'>{type}</Typography>
-                        {filters[type] ? filters[type] : (
-                          <MenuItem component="div" disabled>
-                            No option
-                          </MenuItem>
-                        )}
-                      </div>
-                    ))}
+                  <div style={{
+                    mozColumns: `${menuItemColumnCount} 150px`,
+                    webkitColumns: `${menuItemColumnCount} 150px`,
+                    columns: `${menuItemColumnCount} 150px`,
+                  }}>
+                    {menuItems}
                   </div>
                 </div>
               );
             },
           }}
-          bare
         />
-        <Panel
-          server={this.props.server}
-          panel={this.props.panel}
-          searchOverride={this.state.overrideSearch}
-          direction={this.props.direction}
-        />
-      </div>
-    );
+      </div>,
+      <Panel
+        server={this.props.server}
+        panel={this.props.panel}
+        searchOverride={this.state.overrideSearch}
+        direction={this.props.direction}
+        onClickTag={tagId => this.setState({overrideSearch: {...this.state.overrideSearch, filterTagIds: [tagId]}}) }
+        onClickCategory={categoryId => this.setState({overrideSearch: {...this.state.overrideSearch, filterCategoryIds: [categoryId]}}) }
+        onClickStatus={statusId => this.setState({overrideSearch: {...this.state.overrideSearch, filterStatusIds: [statusId]}}) }
+      />,
+    ];
   }
 
   onValueChange(labels:Label[], action: ActionMeta) {
@@ -155,10 +167,12 @@ class PanelWithControls extends Component<Props, State> {
     }});
   }
 
-  getControls():{values: Label[], options: Label[]} {
+  getControls():{values: Label[], options: Label[], permanent: Label[], colorLookup:ColorLookup} {
     const controls = {
       values: [] as Label[],
       options: [] as Label[],
+      permanent: [] as Label[],
+      colorLookup: {},
     };
 
     if(!this.props.config) return controls;
@@ -166,8 +180,7 @@ class PanelWithControls extends Component<Props, State> {
     // sort
     if(!this.isFilterControllable(FilterType.Sort)) {
       const label:Label = this.getLabel(FilterType.Sort, this.props.panel.search.sortBy!, this.props.panel.search.sortBy!);
-      controls.options.push(label);
-      controls.values.push(label);
+      controls.permanent.push(label);
     } else {
       Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
         const label:Label = this.getLabel(FilterType.Sort, sortBy, sortBy);
@@ -186,8 +199,8 @@ class PanelWithControls extends Component<Props, State> {
         if(!category) return;
         searchableCategories.push(category);
         const label:Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
-        controls.options.push(label);
-        controls.values.push(label);
+        controls.permanent.push(label);
+        controls.colorLookup[label.value] = category.color;
       });
     } else {
       if(!this.state.overrideSearch || !this.state.overrideSearch.filterCategoryIds || this.state.overrideSearch.filterCategoryIds.length === 0) {
@@ -196,6 +209,7 @@ class PanelWithControls extends Component<Props, State> {
       this.props.config.content.categories.forEach(category => {
         const label:Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
         controls.options.push(label);
+        controls.colorLookup[label.value] = category.color;
         if(this.state.overrideSearch && this.state.overrideSearch.filterCategoryIds && this.state.overrideSearch.filterCategoryIds.includes(category.categoryId)) {
           controls.values.push(label);
           searchableCategories.push(category);
@@ -209,8 +223,8 @@ class PanelWithControls extends Component<Props, State> {
         category.workflow.statuses.forEach(status => {
           if(this.props.panel.search.filterStatusIds!.includes(status.statusId)) {
             const label:Label = this.getLabel(FilterType.Status, status.statusId, status.name);
-            controls.options.push(label);
-            controls.values.push(label);
+            controls.permanent.push(label);
+            controls.colorLookup[label.value] = status.color;
           }
         })
       });
@@ -219,6 +233,7 @@ class PanelWithControls extends Component<Props, State> {
         category.workflow.statuses.forEach(status => {
           const label:Label = this.getLabel(FilterType.Status, status.statusId, status.name);
           controls.options.push(label);
+          controls.colorLookup[label.value] = status.color;
           if(this.state.overrideSearch && this.state.overrideSearch.filterStatusIds && this.state.overrideSearch.filterStatusIds.includes(status.statusId)) {
             controls.values.push(label);
           }
@@ -232,8 +247,8 @@ class PanelWithControls extends Component<Props, State> {
         category.tagging.tags.forEach(tag => {
           if(this.props.panel.search.filterTagIds!.includes(tag.tagId)) {
             const label:Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
-            controls.options.push(label);
-            controls.values.push(label);
+            controls.permanent.push(label);
+            controls.colorLookup[label.value] = tag.color;
           }
         })
       });
@@ -242,6 +257,7 @@ class PanelWithControls extends Component<Props, State> {
         category.tagging.tags.forEach(tag => {
           const label:Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
           controls.options.push(label);
+          controls.colorLookup[label.value] = tag.color;
           if(this.state.overrideSearch && this.state.overrideSearch.filterTagIds && this.state.overrideSearch.filterTagIds.includes(tag.tagId)) {
             controls.values.push(label);
           }
@@ -252,8 +268,7 @@ class PanelWithControls extends Component<Props, State> {
     // search
     if(!this.isFilterControllable(FilterType.Search)) {
       const label:Label = this.getLabel(FilterType.Search, this.props.panel.search.searchText!, this.props.panel.search.searchText!);
-      controls.options.push(label);
-      controls.values.push(label);
+      controls.permanent.push(label);
     } else if(this.state.overrideSearch && this.state.overrideSearch.searchText != undefined) {
       const label:Label = this.getLabel(FilterType.Search, this.state.overrideSearch.searchText, this.state.overrideSearch.searchText);
       controls.options.push(label);
