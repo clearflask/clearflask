@@ -4,6 +4,9 @@ import Post, { PostVariant } from './Post';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
+import { Typography } from '@material-ui/core';
+import ErrorPage from '../ErrorPage';
+import Loading from './Loading';
 
 export enum Direction {
   Horizontal,
@@ -19,6 +22,10 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   container: {
+  },
+  nothing: {
+    margin: theme.spacing.unit * 4,
+    color: theme.palette.text.hint,
   },
   [Direction.Horizontal]: {
   },
@@ -52,12 +59,25 @@ class Panel extends Component<Props> {
   };
 
   render() {
-    if(this.props.panel.hideIfEmpty && this.props.searchResult.ideas.length === 0) {
-      return null;
-    }
-    return (
-      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
-        {this.props.searchResult.ideas.map(idea => (
+    var content;
+    switch(this.props.searchResult.status) {
+      default:
+      case Status.REJECTED:
+        content = (
+          <ErrorPage msg='Failed to load' />
+        );
+        break;
+      case Status.PENDING:
+        if(this.props.panel.hideIfEmpty) return null;
+        content = (
+          <Loading />
+        );
+        break;
+      case Status.FULFILLED:
+        if(this.props.panel.hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
+        content = (this.props.searchResult.ideas.length === 0 ? (
+          <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
+        ) : this.props.searchResult.ideas.map(idea => (
           <Post
             server={this.props.server}
             idea={idea}
@@ -82,7 +102,12 @@ class Panel extends Component<Props> {
             onClickCategory={this.props.onClickCategory}
             onClickStatus={this.props.onClickStatus}
           />
-        ))}
+        )));
+        break;
+    }
+    return (
+      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
+        {content}
       </div>
     );
   }
@@ -90,6 +115,7 @@ class Panel extends Component<Props> {
 
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
   var newProps = {
+    configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     searchResult: {
       status: Status.PENDING,

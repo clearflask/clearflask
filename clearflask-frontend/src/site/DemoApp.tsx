@@ -6,7 +6,6 @@ import {
   MemoryRouter,
   Route,
 } from 'react-router-dom'
-import ConfigView from '../common/config/settings/ConfigView';
 import { Server } from '../api/server';
 
 interface Props {
@@ -15,20 +14,7 @@ interface Props {
 }
 
 export default class DemoApp extends Component<Props> {
-  unsubscribe?:()=>void;
-
-  componentDidMount() {
-    this.unsubscribe = this.props.editor && this.props.editor.subscribe(this.forceUpdate.bind(this));
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe && this.unsubscribe();
-  }
-
   render() {
-    if(this.unsubscribe === undefined && this.props.editor !== undefined) {
-      this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
-    }
     return (
       <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}`]}>
         <Route path="/:projectId" render={props => (

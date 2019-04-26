@@ -73,8 +73,10 @@ class PanelWithControls extends Component<Props, State> {
               const filters:any = {};
               const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
               children.forEach((child:any) => {
-                if(child.props.data.__isNew__) {
-                  newSearch = child;
+                if(!child.props.data) {
+                  // child is "No option(s)" text, ignore
+                } else if(child.props.data.__isNew__) {
+                  newSearch = child; // child is "Search '...'" option
                 } else {
                   const type:FilterType = this.getType(child.props.data);
                   if(!filters[type])filters[type] = [];
@@ -312,5 +314,6 @@ class PanelWithControls extends Component<Props, State> {
 }
 
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
+  configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
 }})(withStyles(styles, { withTheme: true })(PanelWithControls));

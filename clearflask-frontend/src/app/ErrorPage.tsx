@@ -10,6 +10,8 @@ export default class ErrorPage extends Component<Props> {
   readonly styles = {
     message: {
       margin: '40px auto',
+      width: 'fit-content',
+      minWidth: 'unset',
     },
   };
 

@@ -190,7 +190,7 @@ const DropdownIndicator = (props) => {
 const ClearIndicator = (props) => {
   const outerProps:Props = props.selectProps.commonProps;
   const { innerProps: { ref, ...restInnerProps } } = props;
-  return (
+  return !outerProps.value || outerProps.value.length <= 1 ? null : (
       <DeleteIcon {...restInnerProps} fontSize='inherit' className={outerProps.classes.deleteIcon} />
   );
 }

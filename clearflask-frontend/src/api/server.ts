@@ -8,6 +8,7 @@ import { Store, createStore, compose, applyMiddleware, combineReducers } from 'r
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import randomUuid from '../common/util/uuid';
+import debounce from '../common/util/debounce';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -100,7 +101,8 @@ export class Server {
   }
 
   subscribeToChanges(editor:ConfigEditor.Editor) {
-    editor.subscribe(() => this.overrideConfig(editor.getConfig()));
+    const overrideConfigDebounced = debounce(this.overrideConfig.bind(this), 200);
+    editor.subscribe(() => overrideConfigDebounced(editor.getConfig()));
   }
 
   subscribeToErrors(subscriber:((msg:string)=>void)) {

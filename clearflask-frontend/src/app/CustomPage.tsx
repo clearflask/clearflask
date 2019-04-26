@@ -112,7 +112,8 @@ class Page extends Component<Props> {
 }
 
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
-  var newProps:{pageNotFound:boolean;page?:Client.Page;} = {
+  var newProps:{configver?:string;pageNotFound:boolean;page?:Client.Page;} = {
+    configver: state.conf.ver, // force rerender on config change
     pageNotFound: false,
     page: undefined,
   };

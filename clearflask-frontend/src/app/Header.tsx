@@ -193,6 +193,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     }
   }
   return {
+    configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     page: page,
   };

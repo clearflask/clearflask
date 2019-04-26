@@ -523,6 +523,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     }
   }
   return {
+    configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId,
     authorUser: authorUser,
     category: (ownProps.idea && state.conf.conf)

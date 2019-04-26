@@ -46,5 +46,6 @@ class Loader extends Component<Props> {
 }
 
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
+  configver: state.conf.ver, // force rerender on config change
   type: state.conf.conf && state.conf.conf.style.animation.type
 }})(withStyles(styles, { withTheme: true })(Loader));
