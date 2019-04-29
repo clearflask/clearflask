@@ -36,6 +36,7 @@ const styles = (theme:Theme) => createStyles({
 interface Props extends WithStyles<typeof styles> {
   server:Server;
   panel:Client.PagePanel;
+  displayDefaults?:Client.PostDisplay;
   direction:Direction
   // connect
   config?:Client.Config;
@@ -120,6 +121,7 @@ class PanelWithControls extends Component<Props, State> {
       <Panel
         server={this.props.server}
         panel={this.props.panel}
+        displayDefaults={this.props.displayDefaults}
         searchOverride={this.state.overrideSearch}
         direction={this.props.direction}
         onClickTag={tagId => this.setState({overrideSearch: {...this.state.overrideSearch, filterTagIds: [tagId]}}) }

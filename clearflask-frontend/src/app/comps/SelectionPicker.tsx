@@ -9,7 +9,7 @@ import Chip from '@material-ui/core/Chip';
 import MenuItem from '@material-ui/core/MenuItem';
 import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
-import { FormHelperText } from '@material-ui/core';
+import { FormHelperText, FormControl } from '@material-ui/core';
 import { SelectComponents, components } from 'react-select/lib/components';
 import { ActionMeta } from 'react-select/lib/types';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
@@ -69,13 +69,6 @@ interface Props extends ListProps, WithStyles<typeof styles> {
 class SelectionPicker extends Component<Props> {
   render() {
     const selectComponentProps = {
-      textFieldProps: {
-        label: !this.props.bare && this.props.name,
-        InputLabelProps: {
-          shrink: (this.props.value !== undefined && this.props.value.length !== 0) ? true : undefined,
-        },
-        error: !!this.props.errorMsg,
-      },
       options: this.props.options,
       components: {
         Control,
@@ -94,7 +87,7 @@ class SelectionPicker extends Component<Props> {
       commonProps: this.props,
       value: this.props.value,
       onChange: (value, action) => this.props.onValueChange(this.props.isMulti ? value : (value ? [value] : []), action),
-      placeholder: this.props.placeholder,
+      placeholder: this.props.placeholder || '',
       isMulti: this.props.isMulti,
       isClearable: true,
       error: !!this.props.errorMsg,
@@ -144,7 +137,7 @@ const Control = (props) => {
         verticalAlign: 'baseline',
       }}
       InputProps={{
-        inputComponent,
+        inputComponent: inputComponent as any,
         inputProps: {
           style: {
             display: 'flex',
@@ -157,7 +150,14 @@ const Control = (props) => {
           ...props.innerProps,
         },
       }}
-      {...props.selectProps.textFieldProps}
+      label={!outerProps.bare && outerProps.name}
+      InputLabelProps={{
+        style: {
+          marginTop: '3px',
+        },
+        shrink: (outerProps.value !== undefined && outerProps.value.length !== 0 || outerProps.placeholder) ? true : undefined,
+      }}
+      error={!!outerProps.errorMsg}
     />
   );
 }

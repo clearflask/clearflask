@@ -81,7 +81,7 @@ export default class Admin extends Component<Props, State> {
     projects.configs.forEach(versionedConfig => {
       const server = this.serverAdmin.createServer(versionedConfig.config.projectId);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
-      server.subscribeToChanges(editor);
+      server.subscribeToChanges(editor, 200);
       this.projects[versionedConfig.config.projectId] = {
         configVersion: versionedConfig.version,
         editor: editor,

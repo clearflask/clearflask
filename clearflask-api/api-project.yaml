@@ -91,22 +91,6 @@ components:
         - typography
         - animation
       properties:
-        animation:
-          x-clearflask-prop: { order: 1, name: 'Animation' }
-          title: Animation
-          type: object
-          required:
-            - type
-          properties:
-            type:
-              x-clearflask-prop: { order: 1, name: 'Type', defaultValue: 'Fade' }
-              type: string
-              enum:
-                - None
-                - Fade
-                - Grow
-                - Zoom
-                - Slide
         palette:
           x-clearflask-prop: { order: 2, name: 'Palette' }
           title: Palette
@@ -480,6 +464,47 @@ components:
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/PagePanel'
         - $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
+    PostDisplay:
+      x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
+      type: object
+      title: PanelDisplay
+      properties:
+        titleTruncateLines:
+          x-clearflask-prop: { order: 1, name: 'Title maximum lines', placeholder: 1}
+          type: number
+        descriptionTruncateLines:
+          x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
+          type: number
+        showDescription:
+          x-clearflask-prop: { order: 3, name: 'Force show Description' }
+          type: boolean
+        showCommentCount:
+          x-clearflask-prop: { order: 4, name: 'Force show Comment Count' }
+          type: boolean
+        showCategoryName:
+          x-clearflask-prop: { order: 5, name: 'Force show CategoryName' }
+          type: boolean
+        showCreated:
+          x-clearflask-prop: { order: 6, name: 'Force show Created' }
+          type: boolean
+        showAuthor:
+          x-clearflask-prop: { order: 7, name: 'Force show Author' }
+          type: boolean
+        showStatus:
+          x-clearflask-prop: { order: 8, name: 'Force show Status' }
+          type: boolean
+        showTags:
+          x-clearflask-prop: { order: 9, name: 'Force show Tags' }
+          type: boolean
+        showVoting:
+          x-clearflask-prop: { order: 10, name: 'Force show Voting' }
+          type: boolean
+        showFunding:
+          x-clearflask-prop: { order: 11, name: 'Force show Funding' }
+          type: boolean
+        showExpression:
+          x-clearflask-prop: { order: 12, name: 'Force show Expression' }
+          type: boolean
     PagePanel:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object
@@ -494,46 +519,7 @@ components:
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
         display:
-          x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
-          type: object
-          title: PanelDisplay
-          properties:
-            titleTruncateLines:
-              x-clearflask-prop: { order: 1, name: 'Title maximum lines', placeholder: 1}
-              type: number
-            descriptionTruncateLines:
-              x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
-              type: number
-            hideDescription:
-              x-clearflask-prop: { order: 3, name: 'Hide Description', falseAsUndefined: true }
-              type: boolean
-            hideCommentCount:
-              x-clearflask-prop: { order: 4, name: 'Hide Comment Count', falseAsUndefined: true }
-              type: boolean
-            hideCategoryName:
-              x-clearflask-prop: { order: 5, name: 'Hide CategoryName', falseAsUndefined: true }
-              type: boolean
-            hideCreated:
-              x-clearflask-prop: { order: 6, name: 'Hide Created', falseAsUndefined: true }
-              type: boolean
-            hideAuthor:
-              x-clearflask-prop: { order: 7, name: 'Hide Author', falseAsUndefined: true }
-              type: boolean
-            hideStatus:
-              x-clearflask-prop: { order: 8, name: 'Hide Status', falseAsUndefined: true }
-              type: boolean
-            hideTags:
-              x-clearflask-prop: { order: 9, name: 'Hide Tags', falseAsUndefined: true }
-              type: boolean
-            hideVoting:
-              x-clearflask-prop: { order: 10, name: 'Hide Voting', falseAsUndefined: true }
-              type: boolean
-            hideFunding:
-              x-clearflask-prop: { order: 11, name: 'Hide Funding', falseAsUndefined: true }
-              type: boolean
-            hideExpression:
-              x-clearflask-prop: { order: 12, name: 'Hide Expression', falseAsUndefined: true }
-              type: boolean
+          $ref: 'api-project.yaml#/components/schemas/PostDisplay'
     PagePanelSearchControls:
       type: object
       properties:

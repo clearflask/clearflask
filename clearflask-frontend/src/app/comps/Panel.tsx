@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Server, StateIdeas, ReduxState, Status, getSearchKey } from '../../api/server';
-import Post, { PostVariant } from './Post';
+import Post from './Post';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
@@ -11,7 +11,6 @@ import Loading from './Loading';
 export enum Direction {
   Horizontal,
   Vertical,
-  Wrap,
 }
 
 interface SearchResult {
@@ -22,6 +21,7 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   container: {
+    display: 'flex',
   },
   nothing: {
     margin: theme.spacing.unit * 4,
@@ -32,14 +32,12 @@ const styles = (theme:Theme) => createStyles({
   [Direction.Vertical]: {
     flexDirection: 'column',
   },
-  [Direction.Wrap]: {
-    flexWrap: 'wrap',
-  },
 });
 
 interface Props extends StateIdeas, WithStyles<typeof styles> {
   server:Server;
   panel:Client.PagePanel;
+  displayDefaults?:Client.PostDisplay;
   searchOverride?:Partial<Client.IdeaSearch>;
   direction:Direction
   onClickTag?:(tagId:string)=>void;
@@ -52,12 +50,6 @@ interface Props extends StateIdeas, WithStyles<typeof styles> {
 }
 
 class Panel extends Component<Props> {
-  readonly styles = {
-    container: {
-      display: 'flex',
-    },
-  };
-
   render() {
     var content;
     switch(this.props.searchResult.status) {
@@ -75,34 +67,32 @@ class Panel extends Component<Props> {
         break;
       case Status.FULFILLED:
         if(this.props.panel.hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
-        content = (this.props.searchResult.ideas.length === 0 ? (
-          <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
-        ) : this.props.searchResult.ideas.map(idea => (
-          <Post
-            server={this.props.server}
-            idea={idea}
-            variant='list'
-            titleTruncateLines={this.props.panel.display.titleTruncateLines || 1}
-            descriptionTruncateLines={this.props.panel.display.descriptionTruncateLines || 2}
-            hideCommentCount={this.props.panel.display.hideCommentCount}
-            hideCategoryName={this.props.panel.display.hideCategoryName
-              || (this.props.config && this.props.config.content.categories.length <= 1)
-              || (this.props.searchMerged.filterCategoryIds && this.props.searchMerged.filterCategoryIds.length === 1)}
-            hideCreated={this.props.panel.display.hideCreated}
-            hideAuthor={this.props.panel.display.hideAuthor}
-            hideStatus={this.props.panel.display.hideStatus
-              || (this.props.searchMerged.filterStatusIds && this.props.searchMerged.filterStatusIds.length === 1)}
-            hideTags={this.props.panel.display.hideTags
-              || (this.props.searchMerged.filterTagIds && this.props.searchMerged.filterTagIds.length === 1)}
-            hideVoting={this.props.panel.display.hideVoting}
-            hideFunding={this.props.panel.display.hideFunding}
-            hideExpression={this.props.panel.display.hideExpression}
-            hideDescription={this.props.panel.display.hideDescription}
-            onClickTag={this.props.onClickTag}
-            onClickCategory={this.props.onClickCategory}
-            onClickStatus={this.props.onClickStatus}
-          />
-        )));
+        if(this.props.searchResult.ideas.length === 0) {
+          content = (
+            <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
+          )
+        } else {
+          const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1);
+
+          const display:Client.PostDisplay = {
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 2,
+            ...(onlyHasOneCategory ? {showCategoryName: false} : {}),
+            ...(this.props.displayDefaults || {}),
+            ...this.props.panel.display,
+          }
+          content = this.props.searchResult.ideas.map(idea => (
+            <Post
+              server={this.props.server}
+              idea={idea}
+              expandable
+              onClickTag={this.props.onClickTag}
+              onClickCategory={this.props.onClickCategory}
+              onClickStatus={this.props.onClickStatus}
+              display={display}
+            />
+          ));
+        }
         break;
     }
     return (

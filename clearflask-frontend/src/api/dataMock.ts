@@ -1,7 +1,7 @@
 import * as Admin from "./admin";
 import ServerMock from "./serverMock";
-import { fillerText } from "../common/util/fillerText";
 import { emojiIndex } from 'emoji-mart'
+import { loremIpsum } from "lorem-ipsum";
 
 class DataMock {
   projectId:string;
@@ -40,7 +40,10 @@ class DataMock {
     return ServerMock.get().userCreateAdmin({
       projectId: versionedConfig.config.projectId,
       create: {
-        name: fillerText(2,2,3,10),
+        name: loremIpsum({
+          units: 'words',
+          count: 2,
+        }),
         email: 'example@example.com',
       },
     });
@@ -52,8 +55,14 @@ class DataMock {
       idea: {
         ...this.fakeMockIdeaData(category),
         authorUserId: user.userId,
-        title: fillerText(2,10,3,10),
-        description: fillerText(2,40,3,10),
+        title: loremIpsum({
+          units: 'words',
+          count: Math.round(Math.random() * 10 + 3),
+        }),
+        description: loremIpsum({
+          units: 'paragraphs',
+          count: Math.round(Math.random() * 3 + 1),
+        }),
         categoryId: category.categoryId,
         tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
           .filter(t => Math.random() < 0.3)
@@ -100,7 +109,10 @@ class DataMock {
           comment: {
             authorUserId: user.userId,
             parentCommentId: parentComment ? parentComment.commentId : undefined,
-            content: fillerText(2,40,3,10),
+            content: loremIpsum({
+              units: 'paragraphs',
+              count: Math.round(Math.random() * 1 + 1),
+            }),
             created: new Date(Math.random() * new Date().getTime()),
           },
         })))

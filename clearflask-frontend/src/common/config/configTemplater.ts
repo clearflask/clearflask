@@ -44,6 +44,7 @@ export default class Templater {
     const statuses = this.workflowFeatures(categoryIndex);
 
     // tags: Feature Requests, Bug Reports, Translations
+    // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security
     const tagGroupIdIdeas = randomUuid();
     const tags = [Admin.TagToJSON({tagId: randomUuid(), name: 'Feature'}),
       Admin.TagToJSON({tagId: randomUuid(), name: 'Bug'}),
@@ -63,26 +64,27 @@ export default class Templater {
       name: 'Home',
       slug: stringToSlug('Home'),
       description: undefined,
-      panels: [],
+      panels: [
+        Admin.PagePanelWithSearchControlsToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.New,
+          filterCategoryIds: [categoryId],
+          filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+        })}),
+      ],
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
-          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [categoryId],
-            filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
-          })}),
-          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelToJSON({title: 'Completed', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [categoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
@@ -113,8 +115,7 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
-          panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PanelDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.Trending,
+          panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             filterCategoryIds: [categoryId],
             filterTagIds: [tag.tagId],
           })}),
@@ -123,6 +124,22 @@ export default class Templater {
     });
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Feature requests',
+    }));
+    // Explorer
+    const pageExplorerId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: pageExplorerId,
+      name: 'Explorer',
+      slug: stringToSlug('Explorer'),
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+      }),
+    }));
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [pageExplorerId],
     }));
   }
 

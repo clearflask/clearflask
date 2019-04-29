@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { match } from 'react-router';
 import { History, Location } from 'history';
+import LandingPage from './LandingPage';
 
 interface Props {
   // Router matching
@@ -13,11 +14,7 @@ export default class Site extends Component<Props> {
 
   render() {
     return (
-      <div>
-        <h1>
-          This is suppose to be a landing page
-        </h1>
-      </div>
+      <LandingPage />
     );
   }
 }

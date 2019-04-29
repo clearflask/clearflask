@@ -25,26 +25,48 @@ class Page extends Component<Props> {
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
-    var panelsCmpt:any = [];
+    var panelsCmpt;
     var boardCmpt;
     var explorerCmpt;
 
     if(this.props.page) {
       // ### PANELS
-      for(let panel of this.props.page.panels || []) {
-        panelsCmpt.push(
-          <div>
-            <Typography variant='overline'>
-              {panel.title}
-            </Typography>
-            <Panel
-              key={getSearchKey(panel.search)}
-              direction={Direction.Horizontal}
-              panel={panel}
-              server={this.props.server} />
+      if(this.props.page.panels.length > 0) {
+        panelsCmpt = (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+          }}>
+            {(this.props.page.panels || []).map(panel => (
+              <div style={{
+                minWidth: '256px',
+              }}>
+                <Typography variant='overline'>
+                  {panel.title}
+                </Typography>
+                <Panel
+                  key={getSearchKey(panel.search)}
+                  direction={Direction.Horizontal}
+                  panel={panel}
+                  server={this.props.server}
+                  displayDefaults={{
+                    titleTruncateLines: 1,
+                    descriptionTruncateLines: 2,
+                    showDescription: true,
+                    showCommentCount: false,
+                    showCategoryName: false,
+                    showCreated: false,
+                    showAuthor: false,
+                    showStatus: false,
+                    showTags: false,
+                    showVoting: true,
+                    showFunding: true,
+                    showExpression: true,
+                  }} />
+              </div>
+            ))}
           </div>
         );
-        // TODO
       }
 
       // ### BOARD
@@ -61,7 +83,21 @@ class Page extends Component<Props> {
                 key={getSearchKey(panel.search)}
                 direction={Direction.Vertical}
                 panel={panel}
-                server={this.props.server} />
+                server={this.props.server}
+                displayDefaults={{
+                  titleTruncateLines: 3,
+                  descriptionTruncateLines: 0,
+                  showDescription: false,
+                  showCommentCount: false,
+                  showCategoryName: false,
+                  showCreated: false,
+                  showAuthor: false,
+                  showStatus: false,
+                  showTags: false,
+                  showVoting: false,
+                  showFunding: false,
+                  showExpression: false,
+                }} />
             </div>
           );
         }
@@ -90,9 +126,20 @@ class Page extends Component<Props> {
             </Typography>
             <PanelWithControls
               key={getSearchKey(explorer.panel.search)}
-              direction={Direction.Wrap}
+              direction={Direction.Vertical}
               panel={explorer.panel}
-              server={this.props.server} />
+              server={this.props.server}
+              displayDefaults={{
+                titleTruncateLines: 1,
+                descriptionTruncateLines: 2,
+                showDescription: true,
+                showCommentCount: true,
+                showCreated: true,
+                showAuthor: true,
+                showVoting: true,
+                showFunding: true,
+                showExpression: true,
+              }} />
           </div>
         );
         // TODO

@@ -264,16 +264,46 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PageGroupType:
       case ConfigEditor.PropertyType.Array:
-        propertySetter = (
-          <TableProp
-            key={prop.key}
-            data={prop}
-            errorMsg={prop.errorMsg}
-            label={!this.props.bare && name}
-            helperText={!this.props.bare && prop.description}
-            pageClicked={this.props.pageClicked}
-          />
-        );
+        if(prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
+          const values:Label[] = [];
+          const options:Label[] = [];
+          const enumValues = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.EnumProperty)
+            .value));
+          prop.childEnumItems.forEach(enumItem => {
+            const label = {label: enumItem!.name, value: enumItem!.value};
+            options.push(label);
+            if(enumValues.has(enumItem.value)) {
+              values.push(label);
+            }
+          });
+          propertySetter = (
+            <SelectionPicker
+              name={prop.name}
+              description={prop.description}
+              placeholder={prop.placeholder}
+              errorMsg={prop.errorMsg}
+              value={values}
+              options={options}
+              isMulti={true}
+              bare={this.props.bare}
+              width={this.props.width}
+              inputMinWidth={Property.inputMinWidth}
+              onValueChange={(labels, action) => prop
+                .setRaw(labels.map(label => label.value))}
+            />
+          );
+        } else {
+          propertySetter = (
+            <TableProp
+              key={prop.key}
+              data={prop}
+              errorMsg={prop.errorMsg}
+              label={!this.props.bare && name}
+              helperText={!this.props.bare && prop.description}
+              pageClicked={this.props.pageClicked}
+            />
+          );
+        }
         break;
       case ConfigEditor.PropertyType.Object:
         const subProps = (
@@ -321,9 +351,9 @@ export default class Property extends Component<Props> {
           }
         };
         const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
-        const values:Label[] = []
-        const options:Label[] = []
-        const colorLookup:ColorLookup = {}
+        const values:Label[] = [];
+        const options:Label[] = [];
+        const colorLookup:ColorLookup = {};
         prop.getOptions()
         .forEach(o => {
           options.push({label: o.name, value: o.id});

@@ -3,29 +3,34 @@ import * as Client from '../../api/client';
 import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Loader from './Loader';
-import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 import { ReduxState, Server } from '../../api/server';
 import TimeAgo from 'react-timeago'
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
-import Truncate from 'react-truncate';
+import TruncateMarkup from 'react-truncate-markup';
 import CreditView from '../../common/config/CreditView';
-import HelpPopover from '../../common/HelpPopover';
+import { withRouter, RouteComponentProps, matchPath } from 'react-router';
+import Expander from '../../common/Expander';
 
 const styles = (theme:Theme) => createStyles({
-  cardContainer: {
+  page: {
   },
-  cardContainerLeftColumn: {
+  list: {
+  },
+  leftColumn: {
     margin: theme.spacing.unit,
     marginRight: '0px',
   },
-  cardContainerRightColumn: {
+  rightColumn: {
     margin: theme.spacing.unit,
   },
   titleAndDescriptionOuter: {
     padding: theme.spacing.unit / 2,
+  },
+  titleAndDescriptionCard: {
+    background: 'transparent',
   },
   titleAndDescription: {
     padding: theme.spacing.unit / 2,
@@ -78,13 +83,23 @@ const styles = (theme:Theme) => createStyles({
     margin: '-1em -.333em',
   },
   separator: {
+    '&:before': {
+      content: '"·"',
+    },
     margin: theme.spacing.unit / 2,
+  },
+  bottomBarLine: {
+    display: 'flex',
+    alignItems: 'center', // TODO properly center items, neither center nor baseline works here
+  },
+  grow: {
+    flexGrow: 1,
   },
   bottomBar: {
     margin:  theme.spacing.unit,
     marginTop: `-${theme.spacing.unit / 2}px`,
     display: 'flex',
-    alignItems: 'center', // TODO properly center items, neither center nor baseline works here
+    alignItems: 'center',
   },
   funding: {
     margin:  theme.spacing.unit,
@@ -120,22 +135,18 @@ const styles = (theme:Theme) => createStyles({
 
 export type PostVariant = 'list'|'page';
 
-interface Props extends WithStyles<typeof styles>, RouteComponentProps {
+interface Props extends RouteComponentProps, WithStyles<typeof styles> {
   server:Server;
   idea?:Client.Idea;
   variant:PostVariant;
-  titleTruncateLines?:number;
-  descriptionTruncateLines?:number;
-  hideCommentCount?:boolean;
-  hideCategoryName?:boolean;
-  hideCreated?:boolean;
-  hideAuthor?:boolean;
-  hideStatus?:boolean;
-  hideTags?:boolean;
-  hideVoting?:boolean;
-  hideFunding?:boolean;
-  hideExpression?:boolean;
-  hideDescription?:boolean;
+  /**
+   * If true, when post is clicked,
+   * variant is switched from 'list' to 'page',
+   * url is appended with /post/<postId>
+   * and post is expanded to full screen.
+   */
+  expandable?:boolean;
+  display?:Client.PostDisplay;
   onClickTag?:(tagId:string)=>void;
   onClickCategory?:(categoryId:string)=>void;
   onClickStatus?:(statusId:string)=>void;
@@ -152,84 +163,123 @@ interface State {
   expressionExpandedAnchor?:HTMLElement;
 }
 
+export const isExpanded = ():boolean => !!Post.expandedPath;
+
 class Post extends Component<Props, State> {
+  /**
+   * Transitions:
+   * post
+   * post1 -> post2
+   * post -> category
+   * category -> post
+   * category -> post -> category
+   * 
+   * Edge case transitions:
+   * post1 -> post1
+   * category -> post1 -> post1
+   * category -> post1 -> post2
+   * 
+   */
+  /**
+   * expandedPath allows a page transition from a list of posts into a
+   * single post without having to render a new page.
+   */
+  static expandedPath:string|undefined;
+  expandedPath:string|undefined;
 
   constructor(props:Props) {
     super(props);
     this.state = {};
   }
 
-  render() {
-    if(this.props.variant !== 'page'){
-      var bottomBarItems = this.insertBetween([
-        this.renderStatus(),
-        this.renderCategory(),
-        this.renderTags(),
-        this.renderAuthor(),
-        this.renderCreatedDatetime(),
-        this.renderCommentCount(),
-        this.renderExpression(),
-      ], (
-        <div className={this.props.classes.separator}>·</div>
-      ));
-      var bottomBar;
-      if(bottomBarItems.length > 0) bottomBar = (
-        <div className={this.props.classes.bottomBar}>
-          {bottomBarItems}
-        </div>
-      );
-
-      const voting = this.renderVoting();
-      return (
-        <Loader loaded={!!this.props.idea}>
-          <div className={this.props.classes.cardContainer} style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-          }}>
-            {voting && (
-              <div className={this.props.classes.cardContainerLeftColumn}>
-                {voting}
-              </div>
-            )}
-            <div className={this.props.classes.cardContainerRightColumn} style={{
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              {this.renderFunding()}
-              <div className={this.props.classes.titleAndDescriptionOuter}>
-                <CardActionArea className={this.props.classes.titleAndDescription} onClick={() => {
-                  this.props.history.push(`/${this.props.projectId}/post/${this.props.idea!.ideaId}`);
-                }}>
-                  {this.renderTitle()}
-                  {this.renderDescription(2)}
-                </CardActionArea>
-              </div>
-              {bottomBar}
-            </div>
-          </div>
-        </Loader>
-      );
-    } else {
-      return (
-        <Grid
-          container
-          direction='row'
-        >
-          <Grid item xs={4}>
-            {this.renderExpression()}
-          </Grid>
-          <Grid item xs={4}>
-            <Typography variant='subtitle2'>{this.props.idea && this.props.idea.title || 'Loading...'}</Typography>
-            <Typography variant='body1'>{this.props.idea && this.props.idea.description}</Typography>
-          </Grid>
-        </Grid>
-
-      );
+  componentWillUnmount() {
+    if(Post.expandedPath === this.expandedPath) {
+      Post.expandedPath = undefined;
     }
   }
 
+  render() {
+    var forceExpand = false;
+    if(this.expandedPath) {
+      if(this.expandedPath !== Post.expandedPath) {
+        this.expandedPath = undefined;
+      } else if(this.expandedPath !== this.props.location.pathname) {
+        this.expandedPath = undefined;
+        Post.expandedPath = undefined;
+      } else {
+        forceExpand = true;
+      }
+    }
+    const variant = forceExpand ? 'page' : this.props.variant;
+
+    var bottomBarInfo = this.insertBetween([
+      this.renderExpression(),
+      this.renderCommentCount(),
+      this.renderAuthor(),
+      this.renderCreatedDatetime(),
+    ], (
+      <div className={this.props.classes.separator} />
+    ));
+    var bottomBarFilters = this.insertBetween([
+      this.renderStatus(),
+      this.renderCategory(),
+      ...(this.renderTags() || []),
+    ], (
+      <div className={this.props.classes.separator} />
+    ));
+    var bottomBar = (
+      <div className={this.props.classes.bottomBar}>
+        <div className={this.props.classes.bottomBarLine}>
+          {bottomBarFilters}
+        </div>
+        <div className={this.props.classes.grow} />
+        <div className={this.props.classes.bottomBarLine}>
+          {bottomBarInfo}
+        </div>
+      </div>
+    );
+
+    const voting = this.renderVoting();
+    return (
+      <Loader loaded={!!this.props.idea}>
+      <Expander expand={forceExpand}>
+        <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+        }}>
+          {voting && (
+            <div className={this.props.classes.leftColumn}>
+              {voting}
+            </div>
+          )}
+          <div className={this.props.classes.rightColumn} style={{
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            {this.renderFunding()}
+            <div className={this.props.classes.titleAndDescriptionOuter}>
+              <CardActionArea
+                className={this.props.classes.titleAndDescription}
+                disabled={!this.props.expandable}
+                onClick={this.onExpand.bind(this)}
+                classes={{
+                  focusHighlight: this.props.classes.titleAndDescriptionCard,
+                }}
+              >
+                {this.renderTitle()}
+                {this.renderDescription()}
+              </CardActionArea>
+            </div>
+            {bottomBar}
+          </div>
+        </div>
+      </Expander>
+      </Loader>
+    );
+  }
+
   renderAuthor() {
-    if(this.props.hideAuthor
+    if(this.props.display && this.props.display.showAuthor === false
       || !this.props.authorUser) return null;
 
     return (
@@ -240,7 +290,7 @@ class Post extends Component<Props, State> {
   }
 
   renderCreatedDatetime() {
-    if(this.props.hideCreated
+    if(this.props.display && this.props.display.showCreated === false
       || !this.props.idea) return null;
 
     return (
@@ -251,7 +301,7 @@ class Post extends Component<Props, State> {
   }
 
   renderCommentCount() {
-    if(this.props.hideCommentCount
+    if(this.props.display && this.props.display.showCommentCount === false
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.comment) return null;
@@ -266,7 +316,7 @@ class Post extends Component<Props, State> {
   }
 
   renderStatus() {
-    if(this.props.hideStatus
+    if(this.props.display && this.props.display.showStatus === false
       || !this.props.idea
       || !this.props.idea.statusId
       || !this.props.category) return null;
@@ -285,7 +335,7 @@ class Post extends Component<Props, State> {
   }
 
   renderTags() {
-    if(this.props.hideTags
+    if(this.props.display && this.props.display.showTags === false
       || !this.props.idea
       || this.props.idea.tagIds.length === 0
       || !this.props.category) return null;
@@ -304,7 +354,7 @@ class Post extends Component<Props, State> {
   }
 
   renderCategory() {
-    if(this.props.hideCategoryName
+    if(this.props.display && this.props.display.showCategoryName === false
       || !this.props.idea
       || !this.props.category) return null;
       
@@ -319,7 +369,7 @@ class Post extends Component<Props, State> {
   }
 
   renderVoting() {
-    if(this.props.hideVoting
+    if(this.props.display && this.props.display.showVoting === false
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.vote) return null;
@@ -349,7 +399,7 @@ class Post extends Component<Props, State> {
   }
 
   renderFunding() {
-    if(this.props.hideFunding
+    if(this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
@@ -410,7 +460,7 @@ class Post extends Component<Props, State> {
   }
 
   renderExpression(showExpanded:boolean = false) {
-    if(this.props.hideExpression
+    if(this.props.display && this.props.display.showExpression === false
       || !this.props.idea
       || !this.props.idea.expressions
       || !this.props.category
@@ -458,7 +508,6 @@ class Post extends Component<Props, State> {
     return [
       <Button
         className={this.props.classes.button}
-        // onMouseOver={e => this.setState({expressionExpandedAnchor: e.currentTarget})}
         onClick={e => this.setState({expressionExpandedAnchor: e.currentTarget})}
       >
         {summary}
@@ -467,8 +516,8 @@ class Post extends Component<Props, State> {
         open={!!this.state.expressionExpandedAnchor}
         anchorEl={this.state.expressionExpandedAnchor}
         onClose={() => this.setState({expressionExpandedAnchor: undefined})}
-        anchorOrigin={{ vertical: 'center', horizontal: 'left', }}
-        transformOrigin={{ vertical: 'center', horizontal: 'left', }}
+        anchorOrigin={{ vertical: 'center', horizontal: 'center', }}
+        transformOrigin={{ vertical: 'center', horizontal: 'center', }}
       >
         {full}
       </Popover>
@@ -479,25 +528,32 @@ class Post extends Component<Props, State> {
     if(!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='subtitle2'>
-        {this.props.titleTruncateLines !== undefined && this.props.titleTruncateLines > 0
-          ? (<Truncate lines={this.props.titleTruncateLines}>{this.props.idea.title}</Truncate>)
+      <Typography variant='subtitle1'>
+        {this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
+          ? (<TruncateMarkup lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateMarkup>)
           : this.props.idea.title}
       </Typography>
     );
   }
 
-  renderDescription(truncateToLines:number|undefined = undefined) {
-    if(this.props.hideDescription
+  renderDescription() {
+    if(this.props.display && this.props.display.showDescription === false
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
       <Typography variant='body1'>
-        {this.props.descriptionTruncateLines !== undefined && this.props.descriptionTruncateLines > 0
-          ? (<Truncate lines={this.props.descriptionTruncateLines}>{this.props.idea.description}</Truncate>)
+        {this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
+          ? (<TruncateMarkup lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></TruncateMarkup>)
           : this.props.idea.description}
       </Typography>
     );
+  }
+
+  onExpand() {
+    if(!this.props.expandable || !this.props.idea) return;
+    this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;
+    Post.expandedPath = this.expandedPath;
+    this.props.history.push(this.expandedPath);
   }
 
   insertBetween(items:any[], insert:any) {

@@ -100,9 +100,13 @@ export class Server {
     return this.dispatcherAdmin;
   }
 
-  subscribeToChanges(editor:ConfigEditor.Editor) {
-    const overrideConfigDebounced = debounce(this.overrideConfig.bind(this), 200);
-    editor.subscribe(() => overrideConfigDebounced(editor.getConfig()));
+  subscribeToChanges(editor:ConfigEditor.Editor, debounceWait:number|undefined = undefined) {
+    if(debounceWait == undefined) {
+      editor.subscribe(() => this.overrideConfig(editor.getConfig()));
+    } else {
+      const overrideConfigDebounced = debounce(this.overrideConfig.bind(this), debounceWait);
+      editor.subscribe(() => overrideConfigDebounced(editor.getConfig()));
+    }
   }
 
   subscribeToErrors(subscriber:((msg:string)=>void)) {
@@ -182,6 +186,7 @@ export interface StateIdeas {
     status:Status;
     idea?:Client.Idea;
   }};
+  // TODO eventually we should invalidate these searches over time
   bySearch:{[searchKey:string]:{
     status: Status,
     ideaIds?: string[],

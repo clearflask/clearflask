@@ -17,6 +17,7 @@ components:
         - enumReq
         - booleanReq
         - colorReq
+        - arrayOfUniqueEnumReq
         - arrayOfStringReq
         - arrayOfObjectReq
         - linkReq
@@ -108,6 +109,13 @@ components:
         colorOpt:
           x-clearflask-prop: { order: 6, subType: 'color', name: 'Color optional', description: 'Display color' }
           type: string
+        arrayOfUniqueEnumReq:
+          type: array
+          x-clearflask-prop: { order: 7, name: 'ArrayOfUniqueEnum required', description: 'Description description description.' }
+          uniqueItems: true
+          items:
+            type: string
+            enum: [enumOne, enumTwo, enumThree]
         arrayOfStringReq:
           x-clearflask-prop: { order: 7, name: 'ArrayOfString required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: array
@@ -294,6 +302,7 @@ components:
               - enumReq
               - booleanReq
               - colorReq
+              - arrayOfUniqueEnumReq
               - arrayOfStringReq
               - arrayOfObjectReq
               - linkReq
@@ -381,6 +390,13 @@ components:
               colorOpt:
                 x-clearflask-prop: { order: 6, subType: 'color', name: 'Color optional', description: 'Display color' }
                 type: string
+              arrayOfUniqueEnumReq:
+                type: array
+                x-clearflask-prop: { order: 7, name: 'ArrayOfUniqueEnum required', description: 'Description description description.' }
+                uniqueItems: true
+                items:
+                  type: string
+                  enum: [enumOne, enumTwo, enumThree]
               arrayOfStringReq:
                 x-clearflask-prop: { order: 7, name: 'ArrayOfString required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: array

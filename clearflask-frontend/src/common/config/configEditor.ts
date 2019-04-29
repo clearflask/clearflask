@@ -228,7 +228,9 @@ export interface EnumItem {
 export interface ArrayProperty extends PropertyBase<PropertyType.Array, true> {
   minItems?:number;
   maxItems?:number;
+  uniqueItems?:boolean;
   childType:PropertyType;
+  childEnumItems?:EnumItem[]; // Only set if childType === Enum
   childProperties?:Property[];
   insert(index?:number):Property;
   duplicate(sourceIndex:number):Property;
@@ -533,6 +535,20 @@ export class EditorImpl implements Editor {
     } else {
       return this.parseProperty(path, isRequired, schema);
     }
+  }
+
+  getEnumItems(propSchema:any):EnumItem[] {
+    const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
+    if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
+    if(xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
+    const items:EnumItem[] = new Array(propSchema.enum.length);
+    for (let i = 0; i < propSchema.enum.length; i++) {
+      items[i] = {
+        name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
+        value: propSchema.enum[i],
+      };
+    }
+    return items;
   }
 
   getLinkOptions(linkProp:LinkProperty|LinkMultiProperty, localSubscribers:{[subscriberId:string]:()=>void}):LinkPropertyOption[] {
@@ -980,15 +996,7 @@ export class EditorImpl implements Editor {
     switch(propSchema.type || 'object') {
       case 'string':
         if(propSchema.enum){
-          if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value on path ${path}`);
-          if(xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values on path ${path}`);
-          const items:EnumItem[] = new Array(propSchema.enum.length);
-          for (let i = 0; i < propSchema.enum.length; i++) {
-            items[i] = {
-              name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
-              value: propSchema.enum[i],
-            };
-          }
+          const items:EnumItem[] = this.getEnumItems(propSchema);
           property = {
             defaultValue: isRequired ? propSchema.enum[0] : undefined,
             ...base,
@@ -1296,7 +1304,9 @@ export class EditorImpl implements Editor {
           value: value === undefined ? undefined : true,
           minItems: propSchema.minItems,
           maxItems: propSchema.maxItems,
-          childType: propSchema.items.type || 'object',
+          uniqueItems: propSchema.uniqueItems,
+          childType: propSchema.items.enum ? 'enum' : (propSchema.items.type || 'object'),
+          childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items) : undefined,
           childProperties: fetchChildPropertiesArray(),
           set: (val:true|undefined):void => {
             if(!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
@@ -1404,6 +1414,8 @@ export class EditorImpl implements Editor {
                 property.errorMsg = `Must have at least ${arrayProperty.minItems} entries`;
               } else if(arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) {
                 property.errorMsg = `Must have at most ${arrayProperty.maxItems} entries`;
+              } else if(arrayProperty.uniqueItems !== undefined && (new Set(this.getValue(path))).size !== (arrayProperty.childProperties || []).length) {
+                property.errorMsg = `Must have unique entries`;
               } else {
                 property.errorMsg = undefined;
               }

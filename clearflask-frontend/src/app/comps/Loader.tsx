@@ -11,14 +11,10 @@ const styles = (theme:Theme) => createStyles({
     margin: theme.spacing.unit,
     display: 'flex',
   },
-  content: {
-  },
 });
 
 interface Props extends WithStyles<typeof styles> {
   loaded:boolean;
-  // connect
-  type:Client.AnimationTypeEnum|undefined;
 }
 
 class Loader extends Component<Props> {
@@ -26,26 +22,14 @@ class Loader extends Component<Props> {
     if(!this.props.loaded) {
       return (<Loading />);
     }
-    const wrappedChildren = (
-      <div>{this.props.children}</div>
+    return (
+      <Fade in={this.props.loaded}>
+        <div>
+          {this.props.children}
+        </div>
+      </Fade>
     );
-    switch(this.props.type) {
-      case Client.AnimationTypeEnum.Fade:
-        return (<Fade in={this.props.loaded}>{wrappedChildren}</Fade>);
-      case Client.AnimationTypeEnum.Grow:
-        return (<Grow in={this.props.loaded}>{wrappedChildren}</Grow>);
-      case Client.AnimationTypeEnum.Zoom:
-        return (<Zoom in={this.props.loaded}>{wrappedChildren}</Zoom>);
-      case Client.AnimationTypeEnum.Slide:
-        return (<Slide direction='left' in={this.props.loaded}>{wrappedChildren}</Slide>);
-      default:
-      case Client.AnimationTypeEnum.None:
-        return this.props.children;
-    }
   }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
-  configver: state.conf.ver, // force rerender on config change
-  type: state.conf.conf && state.conf.conf.style.animation.type
-}})(withStyles(styles, { withTheme: true })(Loader));
+export default withStyles(styles, { withTheme: true })(Loader);
