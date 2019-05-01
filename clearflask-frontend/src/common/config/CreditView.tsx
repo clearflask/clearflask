@@ -8,7 +8,7 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   val:number;
   credits:Client.Credits;
 }

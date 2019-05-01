@@ -1,13 +1,33 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
-import Message from './comps/Message';
 import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
 import { ReduxState as ReduxState, Server, Status, getSearchKey } from '../api/server';
 import Panel, { Direction } from './comps/Panel';
-import Loader from './comps/Loader';
+import Loader from './utils/Loader';
 import ErrorPage from './ErrorPage';
-import PanelWithControls from './comps/PanelWithControls';
+import Explorer from './comps/Explorer';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import DividerCorner from './utils/DividerCorner';
+
+const styles = (theme:Theme) => createStyles({
+  singlePanels: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  singlePanel: {
+    minWidth: '256px',
+  },
+  board: {
+    display: 'flex',
+    transition: theme.transitions.create('flex', {
+      duration: theme.transitions.duration.shortest,
+    }),
+    marginLeft: theme.spacing.unit * 2,
+  },
+  boardPanel: {
+  },
+});
 
 interface Props {
   server:Server;
@@ -18,7 +38,7 @@ interface Props {
   page?:Client.Page;
 }
 
-class Page extends Component<Props> {
+class Page extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     if(this.props.pageNotFound) {
@@ -33,17 +53,9 @@ class Page extends Component<Props> {
       // ### PANELS
       if(this.props.page.panels.length > 0) {
         panelsCmpt = (
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-          }}>
+          <div className={this.props.classes.singlePanels}>
             {(this.props.page.panels || []).map(panel => (
-              <div style={{
-                minWidth: '256px',
-              }}>
-                <Typography variant='overline'>
-                  {panel.title}
-                </Typography>
+              <div className={this.props.classes.singlePanel}>
                 <Panel
                   key={getSearchKey(panel.search)}
                   direction={Direction.Horizontal}
@@ -75,10 +87,9 @@ class Page extends Component<Props> {
         var panels:any = [];
         for(let panel of board.panels) {
           panels.push(
-            <div>
-              <Typography variant='overline'>
-                {panel.title}
-              </Typography>
+            <div className={this.props.classes.boardPanel} style={{
+              width: `${Math.round(100/Math.min(4, board.panels.length))}%`,
+            }}>
               <Panel
                 key={getSearchKey(panel.search)}
                 direction={Direction.Vertical}
@@ -103,14 +114,11 @@ class Page extends Component<Props> {
         }
         boardCmpt = (
           <div>
-            <Typography variant='overline'>
-              {board.title}
-            </Typography>
-            <div style={{
-              display: 'flex',
-            }}>
-              {panels}
-            </div>
+            <DividerCorner title={board.title} width='90%' height='96px'>
+              <div className={this.props.classes.board}>
+                {panels}
+              </div>
+            </DividerCorner>
           </div>
         );
         // TODO
@@ -120,27 +128,10 @@ class Page extends Component<Props> {
       if(this.props.page.explorer) {
         const explorer = this.props.page.explorer;
         explorerCmpt = (
-          <div>
-            <Typography variant='overline'>
-              {explorer.title}
-            </Typography>
-            <PanelWithControls
-              key={getSearchKey(explorer.panel.search)}
-              direction={Direction.Vertical}
-              panel={explorer.panel}
-              server={this.props.server}
-              displayDefaults={{
-                titleTruncateLines: 1,
-                descriptionTruncateLines: 2,
-                showDescription: true,
-                showCommentCount: true,
-                showCreated: true,
-                showAuthor: true,
-                showVoting: true,
-                showFunding: true,
-                showExpression: true,
-              }} />
-          </div>
+          <Explorer
+            server={this.props.server}
+            explorer={explorer}
+          />
         );
         // TODO
       }
@@ -175,4 +166,4 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
   }
 
   return newProps;
-})(Page);
+})(withStyles(styles, { withTheme: true })(Page));

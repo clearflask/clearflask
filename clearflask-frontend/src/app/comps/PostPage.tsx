@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Idea } from '../../api/client';
 import { Typography } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import Loader from './Loader';
+import Loader from '../utils/Loader';
 import { Server, ReduxState, Status } from '../../api/server';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
@@ -18,7 +18,7 @@ const styles = (theme:Theme) => createStyles({
 
 export type IdeaCardVariant = 'title'|'full';
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   server:Server;
   postId:string;
   // connect

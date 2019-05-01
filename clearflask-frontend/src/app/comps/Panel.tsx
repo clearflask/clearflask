@@ -4,9 +4,10 @@ import Post from './Post';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
-import { Typography } from '@material-ui/core';
+import { Typography, Divider } from '@material-ui/core';
 import ErrorPage from '../ErrorPage';
-import Loading from './Loading';
+import Loading from '../utils/Loading';
+import DividerCorner from '../utils/DividerCorner';
 
 export enum Direction {
   Horizontal,
@@ -21,6 +22,7 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   container: {
+    margin: theme.spacing.unit,
     display: 'flex',
   },
   nothing: {
@@ -34,7 +36,7 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-interface Props extends StateIdeas, WithStyles<typeof styles> {
+interface Props extends StateIdeas, WithStyles<typeof styles, true> {
   server:Server;
   panel:Client.PagePanel;
   displayDefaults?:Client.PostDisplay;
@@ -90,14 +92,26 @@ class Panel extends Component<Props> {
               onClickCategory={this.props.onClickCategory}
               onClickStatus={this.props.onClickStatus}
               display={display}
+              variant='list'
             />
           ));
         }
         break;
     }
-    return (
+    content = (
       <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
         {content}
+      </div>
+    );
+    return (
+      <div>
+        {this.props.panel.title ? (
+          <div>
+            <DividerCorner title={this.props.panel.title} width='96px' height='24px'>
+              {content}
+            </DividerCorner>
+          </div>
+        ) : content}
       </div>
     );
   }

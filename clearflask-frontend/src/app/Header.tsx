@@ -19,8 +19,8 @@ const styles = (theme:Theme) => createStyles({
     maxWidth: '1024px',
     margin: '0px auto',
   },
-  tabs: {
-    // TODO figure out how to place these AND allow scroll buttons
+  // TODO figure out how to place these AND allow scroll buttons
+  // tabs: {
     // display: 'inline-flex',
     // whiteSpace: 'nowrap',
     // '&:before': {
@@ -39,10 +39,32 @@ const styles = (theme:Theme) => createStyles({
     //   display: 'inline-block',
     //   height: '100px',
     // },
+  // },
+  tabsFlexContainer: {
+    alignItems: 'baseline',
+  },
+  scrollButton: {
+    padding: '0px',
+    transition: 'min-width 100ms ease-out',
+    overflow: 'hidden',
+    position: 'absolute',
+    zIndex: 1000,
+    height: '48px',
+    WebkitScrollbar: 'none',
+  },
+  scrollButtonLeft: {
+    right: '',
+    background: `radial-gradient(ellipse at left, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse at center, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%)`,
+  },
+  scrollButtonRight: {
+    right: '0px',
+    background: `radial-gradient(ellipse at right, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse at center, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%)`,
   },
 });
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   server:Server;
   pageSlug:string;
   pageChanged:(pageUrlName:string)=>void;
@@ -132,30 +154,20 @@ class Header extends Component<Props> {
             <Avatar>W</Avatar>
           </div>
         </div>
-        <div className={this.props.classes.tabs}>
-        <div>
         <Tabs
           variant='scrollable'
           scrollButtons="auto"
           classes={{
+            flexContainer: this.props.classes.tabsFlexContainer,
             indicator: this.props.classes.indicator,
           }}
           ScrollButtonComponent={(props) => (
             <Button
               disableRipple
+              className={`${this.props.classes.scrollButton} ${props.direction === 'left' ? this.props.classes.scrollButtonLeft : this.props.classes.scrollButtonRight}`}
               style={{
-                padding: '0px',
                 minWidth: props.visible ? '40px' : '0px',
                 width: props.visible ? '30px' : '0px',
-                transition: 'min-width 100ms ease-out',
-                overflow: 'hidden',
-                position: 'absolute',
-                zIndex: 1000,
-                height: '48px',
-                WebkitScrollbar: 'none',
-                right: props.direction === 'right' ? '0px' : '',
-                background: `radial-gradient(ellipse at ${props.direction}, #fafafa 60%, rgba(255,255,255,0) 70%),
-                             radial-gradient(ellipse at center, #fafafa 60%, rgba(255,255,255,0) 70%)`,
               }}
               onClick={props.onClick.bind()}
             >
@@ -172,8 +184,6 @@ class Header extends Component<Props> {
           {tabs}
         </Tabs>
         <Divider />
-        </div>
-        </div>
       </div>
     );
   }

@@ -31,7 +31,7 @@ export default class Templater {
     const categoryId = randomUuid();
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: categoryId, name: 'Features', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       workflow: Admin.WorkflowToJSON({statuses: []}),
       support: Admin.SupportToJSON({comment: true}),
       tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
@@ -65,7 +65,7 @@ export default class Templater {
       slug: stringToSlug('Home'),
       description: undefined,
       panels: [
-        Admin.PagePanelWithSearchControlsToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        Admin.PagePanelWithSearchToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.New,
           filterCategoryIds: [categoryId],
           filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
@@ -90,7 +90,7 @@ export default class Templater {
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
           })}),
         ],
-        controls: Admin.PagePanelSearchControlsToJSON({
+        controls: Admin.PagePanelSearchToJSON({
           enableSearchByCategory: false,
           enableSearchByStatus: false,
           enableSearchByTag: false,
@@ -115,7 +115,7 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
-          panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             filterCategoryIds: [categoryId],
             filterTagIds: [tag.tagId],
           })}),
@@ -123,19 +123,19 @@ export default class Templater {
       }));
     });
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Feature requests',
+      menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Ideas',
     }));
     // Explorer
     const pageExplorerId = randomUuid();
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: pageExplorerId,
-      name: 'Explorer',
+      name: 'Search',
       slug: stringToSlug('Explorer'),
       description: undefined,
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        panel: Admin.PagePanelWithSearchControlsToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
       }),
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({

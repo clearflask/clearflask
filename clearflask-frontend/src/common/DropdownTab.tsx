@@ -3,8 +3,14 @@ import { Input, IconButton, Typography, Drawer, Divider, AppBar, Hidden, Select,
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => createStyles({
-  formControl: {
-    minWidth: '160px',
+  outer: {
+    [theme.breakpoints.up('md')]: {
+      minWidth: '160px',
+    },
+    display: 'flex',
+    justifyContent: 'center',
+    paddingLeft: '24px',
+    paddingRight: '24px',
   },
   select: {
     height: '48px',
@@ -25,11 +31,11 @@ const styles = (theme:Theme) => createStyles({
   },
   tabButton: {
     ...theme.typography.button,
+    paddingRight: '20px',
     textTransform: 'uppercase',
     textAlign: 'center',
     [theme.breakpoints.up('md')]: {
       fontSize: theme.typography.pxToRem(13),
-      minWidth: 160,
     },
     color: theme.palette.text.secondary,
     // Get rid of focused background color
@@ -39,10 +45,13 @@ const styles = (theme:Theme) => createStyles({
   },
   tabButtonSelected: {
     color: theme.palette.primary.main,
-  }
+  },
+  selectIcon: {
+    right: '-12px',
+  },
 });
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   key?:Key;
   label?:string;
   links:Array<{name:string; val:string}>;
@@ -63,9 +72,13 @@ class DropdownTab extends Component<Props> {
     });
     const id = `dropdowntab-${this.props.key}`;
     return (
-      <FormControl className={this.props.classes.formControl}>
+      <div className={this.props.classes.outer}>
+      <FormControl>
         <Select
           className={this.props.classes.select}
+          classes={{
+            icon: this.props.classes.selectIcon
+          }}
           value={anySelected ? this.props.selectedValue : '__NOT_SELECTED__'}
           key={this.props.key}
           onChange={e => this.props.onDropdownTabSelect(e.target.value)}
@@ -79,6 +92,7 @@ class DropdownTab extends Component<Props> {
           {items}
         </Select>
       </FormControl>
+      </div>
     );
   }
 }

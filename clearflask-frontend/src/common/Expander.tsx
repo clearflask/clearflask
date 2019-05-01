@@ -7,15 +7,9 @@ const styles = (theme:Theme) => createStyles({
   screen: {
     background: theme.palette.background.default,
   },
-  container: {
-    transition: theme.transitions.create('width', {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  },
 });
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   expand:boolean;
 }
 
@@ -43,54 +37,63 @@ class RegularTab extends Component<Props> {
       }
     }
 
-    return [
-      <div ref={this.contentRef} style={{
-        position: this.props.expand ? 'absolute' : 'static'
-      }}>
-        <Motion style={{
-          top: muiSpring(this.props.expand && this.parentRect && this.contentRect
-            ? this.parentRect.top - this.contentRect.top : 0),
-          left: muiSpring(this.props.expand && this.parentRect && this.contentRect
-            ? this.parentRect.left - this.contentRect.left : 0),
-        }}>
-          {motionStyle =>
-            <div className={this.props.classes.container} style={{
-              position: 'relative',
-              zIndex: this.props.expand ? 600 : undefined,
-              // TODO fix the transition
-              width: this.props.expand && this.parentRect && this.contentRect ? this.parentRect.width : undefined,
-              ...motionStyle,
-            }}>
-              {this.props.children}
-            </div>
-          }
-        </Motion>
-      </div>,
-      // filler
-      <div style={{
-        width: this.props.expand && this.parentRect && this.contentRect
-          ? this.contentRect.right - this.contentRect.left : 0,
-        height: this.props.expand && this.parentRect && this.contentRect
-          ? this.contentRect.bottom - this.contentRect.top : 0,
-      }}></div>,
-      // screen to hide previous page
+    return (
       <Motion style={{
+        top: muiSpring(this.props.expand && this.parentRect && this.contentRect
+          ? this.parentRect.top - this.contentRect.top : 0),
+        left: muiSpring(this.props.expand && this.parentRect && this.contentRect
+          ? this.parentRect.left - this.contentRect.left : 0),
+        minWidth: muiSpring(this.props.expand && this.parentRect
+          ? this.parentRect.right - this.parentRect.left : 0),
+        minHeight: muiSpring(this.props.expand && this.parentRect
+          ? this.parentRect.bottom - this.parentRect.top : 0),
         opacity: muiSpring(this.props.expand ? 1 : 0),
       }}>
-        {({opacity}) =>
-          <div className={this.props.classes.screen} style={{
-            visibility: opacity <= 0.001 ? 'hidden' : undefined,
-            opacity: opacity,
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 500,
-            width: '100%',
-            height: '100%',
-          }}></div>
-        }
+        {motion => {
+          const isFullyDetached = motion.opacity > 0.999;
+          const isFullyAttached = motion.opacity < 0.001;
+          return (
+            <div>
+              {/* content */}
+              <div ref={this.contentRef} style={{
+                position: isFullyAttached ? undefined : 'absolute',
+              }}>        
+                <div style={{
+                  position: isFullyAttached ? undefined : 'relative',
+                  zIndex: !isFullyAttached ? 600 : undefined,
+                  width: this.contentRect ? Math.max(this.contentRect.width, motion.minWidth) : undefined,
+                  overflowY: !isFullyAttached && !isFullyDetached ? 'scroll' : undefined,
+                  height: this.contentRect ? Math.max(this.contentRect.height, motion.minHeight) : undefined,
+                  top: motion.top,
+                  left: motion.left,
+                  minWidth: motion.minWidth,
+                }}>
+                  {this.props.children}
+                </div>
+              </div>
+              {/* filler */}
+              <div style={{
+                width: !isFullyAttached && this.parentRect && this.contentRect
+                  ? this.contentRect.right - this.contentRect.left : 0,
+                height: !isFullyAttached && this.parentRect && this.contentRect
+                  ? this.contentRect.bottom - this.contentRect.top : 0,
+              }}></div>
+              {/* screen */}
+              <div className={this.props.classes.screen} style={{
+                visibility: isFullyAttached ? 'hidden' : undefined,
+                opacity: motion.opacity,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 500,
+                width: '100%',
+                height: '100%',
+              }}></div>
+            </div>
+          );
+        }}
       </Motion>
-    ];
+    );
   }
 }
 

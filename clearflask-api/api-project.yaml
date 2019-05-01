@@ -271,7 +271,7 @@ components:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
                 type: array
                 items:
-                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearchControls'
+                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearch'
               board:
                 $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
@@ -452,7 +452,7 @@ components:
         title:
           type: string
         controls:
-            $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
+            $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
         panels:
           x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
           type: array
@@ -460,10 +460,10 @@ components:
             $ref: 'api-project.yaml#/components/schemas/PagePanel'
       required:
         - panels
-    PagePanelWithSearchControls:
+    PagePanelWithSearch:
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/PagePanel'
-        - $ref: 'api-project.yaml#/components/schemas/PagePanelSearchControls'
+        - $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
     PostDisplay:
       x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
       type: object
@@ -520,9 +520,13 @@ components:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
         display:
           $ref: 'api-project.yaml#/components/schemas/PostDisplay'
-    PagePanelSearchControls:
+    PagePanelSearch:
       type: object
       properties:
+        enableSort:
+          type: boolean
+        enableSearchText:
+          type: boolean
         enableSearchByCategory:
           type: boolean
         enableSearchByStatus:
@@ -535,11 +539,8 @@ components:
       required:
         - panel
       properties:
-        title:
-          x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above the explorer.' }
-          type: string
         panel:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearchControls'
+          $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearch'
     VersionedConfig:
       type: object
       required:

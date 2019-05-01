@@ -108,14 +108,36 @@ class DataMock {
           ideaId: item.ideaId,
           comment: {
             authorUserId: user.userId,
-            parentCommentId: parentComment ? parentComment.commentId : undefined,
             content: loremIpsum({
-              units: 'paragraphs',
-              count: Math.round(Math.random() * 1 + 1),
+              units: 'sentences',
+              count: Math.round(Math.random() * 3 + 1),
             }),
+            parentCommentId: parentComment ? parentComment.commentId : undefined,
             created: new Date(Math.random() * new Date().getTime()),
           },
-        })))
+        }))
+        .then(comment => {
+          if(Math.random() < 0.1) {
+            return ServerMock.get().commentDelete({
+              projectId: this.projectId,
+              ideaId: item.ideaId,
+              commentId: comment.commentId,
+            })
+            .then(() => comment);
+          }
+          if(Math.random() < 0.2) {
+            return ServerMock.get().commentUpdate({
+              projectId: this.projectId,
+              ideaId: item.ideaId,
+              commentId: comment.commentId,
+              update: { content: loremIpsum({
+                units: 'sentences',
+                count: Math.round(Math.random() * 3 + 1),
+              })}
+            });
+          }
+          return comment;
+        }))
       .then(comment => {
         if(level <= 0 ) return Promise.resolve();
         var remainingComments = numComments * Math.random();

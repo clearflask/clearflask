@@ -78,6 +78,7 @@ export class Server {
       projectId: projectId,
       conf: {},
       ideas: stateIdeasDefault,
+      comments: stateCommentsDefault,
       users: stateUsersDefault,
     };
     return state;
@@ -290,6 +291,81 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
   }
 }
 
+export interface StateComments {
+  byId:{[commentId:string]:{
+    status:Status;
+    comment?:Client.Comment;
+  }};
+  byIdeaId:{[ideaId:string]:{
+    status:Status;
+    commentIds?:string[];
+    cursor?:string;
+  }};
+}
+const stateCommentsDefault = {
+  byId: {},
+  byIdeaId: {},
+};
+function reducerComments(state:StateComments = stateCommentsDefault, action:Client.Actions):StateComments {
+  switch (action.type) {
+    case Client.commentListActionStatus.Pending:
+      return {
+        ...state,
+        byIdeaId: {
+          ...state.byIdeaId,
+          [action.meta.request.ideaId]: { status: Status.PENDING }
+        },
+      };
+    case Client.commentListActionStatus.Rejected:
+      return {
+        ...state,
+        byIdeaId: {
+          ...state.byIdeaId,
+          [action.meta.request.ideaId]: { status: Status.REJECTED }
+        },
+      };
+    case Client.commentDeleteActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.commentId]: {
+            status: Status.FULFILLED,
+            comment: action.payload,
+          }
+        },
+      };
+    case Client.commentListActionStatus.Fulfilled:
+      return {
+        ...state,
+        byIdeaId: {
+          ...state.byIdeaId,
+          [action.meta.request.ideaId]: {
+            commentIds: action.payload.results.map(comment => comment.commentId),
+            cursor: action.payload.cursor,
+            status: Status.FULFILLED,
+          }
+        },
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (commentsById, comment) => {
+              commentsById[comment.commentId] = {
+                comment: {
+                  ...comment,
+                  author: undefined, // Change CommentWithAuthor to just Comment
+                },
+                status: Status.FULFILLED,
+              };
+              return commentsById;
+            }, {}),
+        },
+      };
+    default:
+      return state;
+  }
+}
+
 export interface StateUsers {
   byId:{[userId:string]:{
     status:Status;
@@ -298,7 +374,7 @@ export interface StateUsers {
   loggedIn: {
     status?:Status;
     user?:Client.UserMe,
-  },
+  };
 }
 const stateUsersDefault = {
   byId: {},
@@ -348,6 +424,23 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
             }, {}),
         }
       };
+    case Client.commentListActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (usersById, comment) => {
+              if(comment.author) {
+                usersById[comment.author.userId] = {
+                  user: comment.author,
+                  status: Status.FULFILLED,
+                };
+              }
+              return usersById;
+            }, {}),
+        }
+      };
     case Client.ideaGetActionStatus.Fulfilled:
       return {
         ...state,
@@ -388,11 +481,13 @@ export interface ReduxState {
   projectId:string;
   conf:StateConf;
   ideas:StateIdeas;
+  comments:StateComments;
   users:StateUsers;
 }
 export const reducers = combineReducers({
   projectId: (projectId?:string) => (projectId ? projectId : 'unknown'),
   conf: reducerConf,
   ideas: reducerIdeas,
+  comments: reducerComments,
   users: reducerUsers,
 });

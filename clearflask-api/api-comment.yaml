@@ -33,7 +33,13 @@ components:
         - ideaId
         - commentId
         - created
-        - text
+    CommentWithAuthor:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/Comment'
+        - type: object
+          properties:
+            author:
+              $ref: 'api-user.yaml#/components/schemas/User'
     CommentCreate:
       type: object
       properties:
@@ -93,7 +99,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/Comment'
+                    $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
               required:
                 - results
   post:
@@ -175,7 +181,10 @@ components:
           type: string
     responses:
       '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/comment:
@@ -210,7 +219,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/Comment'
+                    $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
               required:
                 - results
   delete:
@@ -307,6 +316,9 @@ components:
           type: string
     responses:
       '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

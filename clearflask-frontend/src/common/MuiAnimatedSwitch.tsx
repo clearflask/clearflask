@@ -9,7 +9,7 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles, true> {
   classes; // Conflicted property
 }
 

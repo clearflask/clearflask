@@ -39,17 +39,21 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     throw new Error("Method not implemented.");
   }
-  commentDelete(request: Client.CommentDeleteRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+  commentDelete(request: Client.CommentDeleteRequest): Promise<Admin.Comment> {
+    return this.commentDeleteAdmin(request);
   }
   commentList(request: Client.CommentListRequest): Promise<Client.CommentSearchResponse> {
     return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.ideaId === request.ideaId)
+      .map(comment => {return {
+        ...comment,
+        author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
+      }})
       ,[(l,r) => r.created.getTime() - l.created.getTime()]) // TODO improve sort
       ,this.DEFAULT_LIMIT, request.cursor));
   }
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.Comment> {
-    throw new Error("Method not implemented.");
+    return this.commentUpdateAdmin(request);
   }
   creditSearch(request: Client.CreditSearchRequest): Promise<Client.CreditSearchResponse> {
     throw new Error("Method not implemented.");
@@ -132,8 +136,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).comments.push(comment);
     return this.returnLater(comment);
   }
-  commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+  commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<Admin.Comment> {
+    const comment = this.getProject(request.projectId).comments.find(comment => comment.commentId === request.commentId)!;
+    comment.content = undefined;
+    comment.authorUserId = undefined;
+    comment.edited = new Date();
+    return this.returnLater(comment);
   }
   commentDeleteBulkAdmin(request: Admin.CommentDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -142,7 +150,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   commentUpdateAdmin(request: Admin.CommentUpdateAdminRequest): Promise<Admin.Comment> {
-    throw new Error("Method not implemented.");
+    const comment = this.getProject(request.projectId).comments.find(comment => comment.commentId === request.commentId)!;
+    comment.content = request.update.content;
+    comment.edited = new Date();
+    return this.returnLater(comment);
   }
   creditCreateAdmin(request: Admin.CreditCreateAdminRequest): Promise<Admin.Credit> {
     throw new Error("Method not implemented.");
@@ -385,7 +396,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   async returnLater<T>(returnValue:T):Promise<T> {
     console.log('Server SEND:', returnValue);
     await this.waitLatency();
-    return JSON.parse(JSON.stringify(returnValue));
+    return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
   }
 
   async throwLater(httpStatus:number, userFacingMessage?:string):Promise<any> {

@@ -47,7 +47,7 @@ export interface Label {
 
 export type ColorLookup = { [value:string]: string; }
 
-interface Props extends ListProps, WithStyles<typeof styles> {
+interface Props extends ListProps, WithStyles<typeof styles, true> {
   classes; // conflict
   name?:string;
   description?:string;
@@ -71,6 +71,7 @@ class SelectionPicker extends Component<Props> {
     const selectComponentProps = {
       options: this.props.options,
       components: {
+        IndicatorSeparator: () => null,
         Control,
         Input,
         Menu,
@@ -196,11 +197,13 @@ const ClearIndicator = (props) => {
 }
 
 const Placeholder = (props) => {
+  const outerProps:Props = props.selectProps.commonProps;
   return (
     <Typography color="textSecondary" {...props.innerProps} style={{
       position: 'absolute',
       left: 2,
       fontSize: 16,
+      color: outerProps.theme.palette.text.hint,
     }}>
       {props.children}
     </Typography>

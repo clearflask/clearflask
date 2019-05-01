@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover } from '@material-ui/core';
+import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import Loader from './Loader';
+import Loader from '../utils/Loader';
 import { connect } from 'react-redux';
-import { ReduxState, Server } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import TimeAgo from 'react-timeago'
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
@@ -13,11 +13,16 @@ import TruncateMarkup from 'react-truncate-markup';
 import CreditView from '../../common/config/CreditView';
 import { withRouter, RouteComponentProps, matchPath } from 'react-router';
 import Expander from '../../common/Expander';
+import Delimited from '../utils/Delimited';
+import Comment from './Comment';
 
 const styles = (theme:Theme) => createStyles({
   page: {
   },
   list: {
+  },
+  comment: {
+    margin: theme.spacing.unit,
   },
   leftColumn: {
     margin: theme.spacing.unit,
@@ -82,12 +87,6 @@ const styles = (theme:Theme) => createStyles({
     transform: 'scale(.25) translateY(1.1em)',
     margin: '-1em -.333em',
   },
-  separator: {
-    '&:before': {
-      content: '"·"',
-    },
-    margin: theme.spacing.unit / 2,
-  },
   bottomBarLine: {
     display: 'flex',
     alignItems: 'center', // TODO properly center items, neither center nor baseline works here
@@ -100,6 +99,13 @@ const styles = (theme:Theme) => createStyles({
     marginTop: `-${theme.spacing.unit / 2}px`,
     display: 'flex',
     alignItems: 'center',
+  },
+  commentSection: {
+    marginTop: theme.spacing.unit * 2,
+  },
+  nothing: {
+    margin: theme.spacing.unit * 4,
+    color: theme.palette.text.hint,
   },
   funding: {
     margin:  theme.spacing.unit,
@@ -135,7 +141,7 @@ const styles = (theme:Theme) => createStyles({
 
 export type PostVariant = 'list'|'page';
 
-interface Props extends RouteComponentProps, WithStyles<typeof styles> {
+interface Props {
   server:Server;
   idea?:Client.Idea;
   variant:PostVariant;
@@ -150,12 +156,19 @@ interface Props extends RouteComponentProps, WithStyles<typeof styles> {
   onClickTag?:(tagId:string)=>void;
   onClickCategory?:(categoryId:string)=>void;
   onClickStatus?:(statusId:string)=>void;
-  // connect
+}
+
+interface ConnectProps {
+  configver?:string;
   projectId:string;
   category?:Client.Category;
   credits?:Client.Credits;
   maxFundAmountSeen:number;
   authorUser?:Client.User;
+  loggedInUser?:Client.User;
+  commentsStatus?:Status;
+  comments?:(Client.CommentWithAuthor|undefined)[]
+  commentCursor?:string;
   updateVote: (voteUpdate:Partial<Client.VoteUpdate>)=>void;
 }
 
@@ -165,7 +178,7 @@ interface State {
 
 export const isExpanded = ():boolean => !!Post.expandedPath;
 
-class Post extends Component<Props, State> {
+class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<typeof styles, true>, State> {
   /**
    * Transitions:
    * post
@@ -187,7 +200,7 @@ class Post extends Component<Props, State> {
   static expandedPath:string|undefined;
   expandedPath:string|undefined;
 
-  constructor(props:Props) {
+  constructor(props) {
     super(props);
     this.state = {};
   }
@@ -212,34 +225,7 @@ class Post extends Component<Props, State> {
     }
     const variant = forceExpand ? 'page' : this.props.variant;
 
-    var bottomBarInfo = this.insertBetween([
-      this.renderExpression(),
-      this.renderCommentCount(),
-      this.renderAuthor(),
-      this.renderCreatedDatetime(),
-    ], (
-      <div className={this.props.classes.separator} />
-    ));
-    var bottomBarFilters = this.insertBetween([
-      this.renderStatus(),
-      this.renderCategory(),
-      ...(this.renderTags() || []),
-    ], (
-      <div className={this.props.classes.separator} />
-    ));
-    var bottomBar = (
-      <div className={this.props.classes.bottomBar}>
-        <div className={this.props.classes.bottomBarLine}>
-          {bottomBarFilters}
-        </div>
-        <div className={this.props.classes.grow} />
-        <div className={this.props.classes.bottomBarLine}>
-          {bottomBarInfo}
-        </div>
-      </div>
-    );
-
-    const voting = this.renderVoting();
+    const voting = this.renderVoting(variant);
     return (
       <Loader loaded={!!this.props.idea}>
       <Expander expand={forceExpand}>
@@ -256,21 +242,22 @@ class Post extends Component<Props, State> {
             display: 'flex',
             flexDirection: 'column',
           }}>
-            {this.renderFunding()}
+            {this.renderFunding(variant)}
             <div className={this.props.classes.titleAndDescriptionOuter}>
               <CardActionArea
                 className={this.props.classes.titleAndDescription}
-                disabled={!this.props.expandable}
+                disabled={!this.props.expandable || variant === 'page'}
                 onClick={this.onExpand.bind(this)}
                 classes={{
                   focusHighlight: this.props.classes.titleAndDescriptionCard,
                 }}
               >
-                {this.renderTitle()}
-                {this.renderDescription()}
+                {this.renderTitle(variant)}
+                {this.renderDescription(variant)}
               </CardActionArea>
             </div>
-            {bottomBar}
+            {this.renderBottomBar(variant)}
+            {this.renderComments(variant)}
           </div>
         </div>
       </Expander>
@@ -278,8 +265,40 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderAuthor() {
-    if(this.props.display && this.props.display.showAuthor === false
+  renderBottomBar(variant:PostVariant) {
+    const leftSide = [
+      this.renderExpression(variant),
+      this.renderCommentCount(variant),
+      this.renderAuthor(variant),
+      this.renderCreatedDatetime(variant),
+    ].filter(i => !!i);
+    const rightSide = [
+      this.renderStatus(variant),
+      this.renderCategory(variant),
+      ...(this.renderTags(variant) || []),
+    ].filter(i => !!i);
+
+    if(leftSide.length + rightSide.length === 0) return null;
+
+    return (
+      <div className={this.props.classes.bottomBar}>
+        <div className={this.props.classes.bottomBarLine}>
+          <Delimited>
+            {leftSide}
+          </Delimited>
+        </div>
+        <div className={this.props.classes.grow} />
+        <div className={this.props.classes.bottomBarLine}>
+          <Delimited>
+            {rightSide}
+          </Delimited>
+        </div>
+      </div>
+    );
+  }
+
+  renderAuthor(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showAuthor === false
       || !this.props.authorUser) return null;
 
     return (
@@ -289,8 +308,8 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderCreatedDatetime() {
-    if(this.props.display && this.props.display.showCreated === false
+  renderCreatedDatetime(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showCreated === false
       || !this.props.idea) return null;
 
     return (
@@ -300,12 +319,13 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderCommentCount() {
+  renderCommentCount(variant:PostVariant) {
     if(this.props.display && this.props.display.showCommentCount === false
+      || variant === 'page'
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.comment) return null;
-      
+
     return (
       <Typography className={this.props.classes.commentCount} variant='caption' inline>
         <SpeechIcon fontSize='inherit' />
@@ -315,8 +335,35 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderStatus() {
-    if(this.props.display && this.props.display.showStatus === false
+  renderComments(variant:PostVariant) {
+    if(variant !== 'page'
+      || !this.props.idea
+      || !this.props.category
+      || !this.props.category.support.comment) return null;
+
+    if(!this.props.commentsStatus) {
+      this.props.server.dispatch().commentList({
+        projectId: this.props.server.getProjectId(),
+        ideaId: this.props.idea.ideaId,
+      });
+    }
+
+    // TODO infinite scroll this.props.commentCursor
+    return (
+      <div className={this.props.classes.commentSection}>
+        <Loader loaded={!!this.props.comments}>
+          {this.props.comments && (this.props.comments.length > 0 ? (this.props.comments.map(comment => (
+            <Comment comment={comment} />
+          ))) : (
+            <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
+          ))}
+        </Loader>
+      </div>
+    );
+  }
+
+  renderStatus(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showStatus === false
       || !this.props.idea
       || !this.props.idea.statusId
       || !this.props.category) return null;
@@ -325,7 +372,7 @@ class Post extends Component<Props, State> {
     if(!status) return null;
 
     return (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus}
+      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
         onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
         <Typography variant='caption' style={{color: status.color}}>
           {status.name}
@@ -334,8 +381,8 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderTags() {
-    if(this.props.display && this.props.display.showTags === false
+  renderTags(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showTags === false
       || !this.props.idea
       || this.props.idea.tagIds.length === 0
       || !this.props.category) return null;
@@ -344,7 +391,7 @@ class Post extends Component<Props, State> {
     .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
     .filter(tag => !!tag)
     .map(tag => (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag}
+      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
         onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
         <Typography variant='caption' style={{color: tag!.color}}>
           {tag!.name}
@@ -353,13 +400,13 @@ class Post extends Component<Props, State> {
     ));
   }
 
-  renderCategory() {
-    if(this.props.display && this.props.display.showCategoryName === false
+  renderCategory(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showCategoryName === false
       || !this.props.idea
       || !this.props.category) return null;
       
     return (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory}
+      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant === 'page'}
         onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
         <Typography variant='caption' style={{color: this.props.category.color}}>
           {this.props.category.name}
@@ -368,8 +415,8 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderVoting() {
-    if(this.props.display && this.props.display.showVoting === false
+  renderVoting(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showVoting === false
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.vote) return null;
@@ -398,8 +445,8 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderFunding() {
-    if(this.props.display && this.props.display.showFunding === false
+  renderFunding(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
@@ -459,8 +506,8 @@ class Post extends Component<Props, State> {
     );
   }
 
-  renderExpression(showExpanded:boolean = false) {
-    if(this.props.display && this.props.display.showExpression === false
+  renderExpression(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showExpression === false
       || !this.props.idea
       || !this.props.idea.expressions
       || !this.props.category
@@ -477,8 +524,6 @@ class Post extends Component<Props, State> {
         ))}
       </div>
     );
-
-    if(showExpanded) return full;
 
     const summaryItems:React.ReactNode[] = [];
     var summaryCount = 0;
@@ -524,25 +569,25 @@ class Post extends Component<Props, State> {
     ];
   }
 
-  renderTitle() {
+  renderTitle(variant:PostVariant) {
     if(!this.props.idea
       || !this.props.idea.title) return null;
     return (
       <Typography variant='subtitle1'>
-        {this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
+        {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<TruncateMarkup lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateMarkup>)
           : this.props.idea.title}
       </Typography>
     );
   }
 
-  renderDescription() {
-    if(this.props.display && this.props.display.showDescription === false
+  renderDescription(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showDescription === false
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
       <Typography variant='body1'>
-        {this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
+        {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<TruncateMarkup lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></TruncateMarkup>)
           : this.props.idea.description}
       </Typography>
@@ -555,18 +600,10 @@ class Post extends Component<Props, State> {
     Post.expandedPath = this.expandedPath;
     this.props.history.push(this.expandedPath);
   }
-
-  insertBetween(items:any[], insert:any) {
-    return items
-      .filter(i => !!i)
-      .map((val, index) => index === 0
-        ? val
-        : [insert,val]);
-  }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
-  var authorUser;
+export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
+  var authorUser, commentsStatus, comments, commentCursor;
   if(ownProps.idea) {
     const user = state.users.byId[ownProps.idea.authorUserId];
     if(!user) {
@@ -576,6 +613,18 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
       });
     } else {
       authorUser = user.user;
+    }
+    const commentsByIdeaId = state.comments.byIdeaId[ownProps.idea.ideaId];
+    commentsStatus = commentsByIdeaId && commentsByIdeaId.status;
+    if(commentsByIdeaId && commentsByIdeaId.status === Status.FULFILLED && commentsByIdeaId.commentIds) {
+      commentCursor = commentsByIdeaId.cursor;
+      comments = commentsByIdeaId.commentIds.map(commentId => {
+        const comment = state.comments.byId[commentId];
+        if(!comment || !comment.comment) return undefined;
+        if(!comment.comment.authorUserId) return comment.comment;
+        const commentAuthorUser = state.users.byId[comment.comment.authorUserId]
+        return {...comment.comment, author: commentAuthorUser ? commentAuthorUser.user : undefined};
+      });
     }
   }
   return {
@@ -590,8 +639,11 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
       : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
+    commentsStatus: commentsStatus,
+    comments: comments,
+    commentCursor: commentCursor,
     updateVote: (voteUpdate:Partial<Client.VoteUpdate>) => ownProps.server.dispatch().voteUpdate({
-      projectId: ownProps.projectId,
+      projectId: state.projectId,
       ideaId: ownProps.idea!.ideaId,
       update: {
         ...voteUpdate,
@@ -599,4 +651,4 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
       },
     }),
   };
-})(withRouter(withStyles(styles, { withTheme: true })(Post)));
+})(withStyles(styles, { withTheme: true })(withRouter(Post)));
