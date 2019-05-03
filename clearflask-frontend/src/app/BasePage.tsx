@@ -9,7 +9,6 @@ export default class BasePage extends Component {
     },
     page: {
       maxWidth: '1024px',
-      padding: '40px',
       margin: '0px auto',
     },
     anchor: {

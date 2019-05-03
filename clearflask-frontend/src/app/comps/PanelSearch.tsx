@@ -14,6 +14,7 @@ export enum FilterType {
   Tag = 'tag',
   Status = 'status',
 }
+const FilterTypes = new Set(Object.values(FilterType));
 
 const styles = (theme:Theme) => createStyles({
   container: {
@@ -28,6 +29,8 @@ const styles = (theme:Theme) => createStyles({
   menuList: {
   },
   menuItem: {
+    display: 'inline-block',
+    width: '100%',
     margin: theme.spacing.unit,
     webkitColumnBreakInside: 'avoid',
     pageBreakInside: 'avoid',
@@ -41,6 +44,7 @@ interface Props {
   onSearchChanged:(search:Partial<Client.IdeaSearch>)=>void;
   panel:Client.PagePanelWithSearch;
 }
+
 interface ConnectProps {
   config?:Client.Config;
 }
@@ -76,7 +80,8 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
             overrideComponents={{
               MenuList: (menuProps) => {
                 var newSearch:React.ReactNode|undefined;
-                const filters:any = {};
+                const tagColumns:any = {};
+                const baseColumns:any = {};
                 const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
                 children.forEach((child:any) => {
                   if(!child.props.data) {
@@ -84,25 +89,31 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                   } else if(child.props.data.__isNew__) {
                     newSearch = child; // child is "Search '...'" option
                   } else {
-                    const type:FilterType = this.getType(child.props.data);
-                    if(!filters[type])filters[type] = [];
-                    filters[type].push(child);
+                    const type = this.getType(child.props.data);
+                    const columns = FilterTypes.has(type) ? baseColumns : tagColumns;
+                    if(!columns[type]) columns[type] = [];
+                    columns[type].push(child);
                   }
                 });
-                const menuItems = Object.values(FilterType).map(type => type !== FilterType.Search
-                  && this.isFilterControllable(type)
-                  && (!newSearch || filters[type])
-                  && (
-                    <div className={this.props.classes.menuItem}>
-                      <Typography variant='overline'>{type}</Typography>
-                      {filters[type] ? filters[type] : (
-                        <MenuItem component="div" disabled>
-                          No option
-                        </MenuItem>
-                      )}
-                    </div>
-                  ));
-                const menuItemColumnCount = Math.min(3, menuItems.filter(m => !!m).length);
+                const menuItems:React.ReactNode[] = [];
+                const addColumn = (title, content) => menuItems.push((
+                  <div className={this.props.classes.menuItem}>
+                    <Typography variant='overline'>{title}</Typography>
+                    {content ? content : (
+                      <MenuItem component="div" disabled>
+                        No option
+                      </MenuItem>
+                    )}
+                  </div>
+                ));
+                Object.values(FilterType)
+                .filter(t => this.isFilterControllable(t)
+                  && t !== FilterType.Search
+                  && t !== FilterType.Tag
+                  && (!newSearch || baseColumns[t]))
+                .forEach(t => addColumn(t, baseColumns[t]));
+                Object.keys(tagColumns)
+                  .forEach(t => addColumn(t, tagColumns[t]));
                 return (
                   <div {...menuProps} className={this.props.classes.menuContainer}>
                     {newSearch ? newSearch : (
@@ -111,9 +122,9 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                       </MenuItem>
                     )}
                     <div style={{
-                      mozColumns: `${menuItemColumnCount} 150px`,
-                      webkitColumns: `${menuItemColumnCount} 150px`,
-                      columns: `${menuItemColumnCount} 150px`,
+                      mozColumns: `150px`,
+                      webkitColumns: `150px`,
+                      columns: `150px`,
                     }}>
                       {menuItems}
                     </div>
@@ -144,16 +155,14 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
           if(!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
           partialSearch.filterCategoryIds.push(data);
           break;
-        case FilterType.Tag:
-          if(!partialSearch.filterTagIds) partialSearch.filterTagIds = [];
-          partialSearch.filterTagIds.push(data);
-          break;
         case FilterType.Status:
           if(!partialSearch.filterStatusIds) partialSearch.filterStatusIds = [];
           partialSearch.filterStatusIds.push(data);
           break;
         default:
-          throw Error(`Unknown filter ${this.getType(type)}`);
+          if(!partialSearch.filterTagIds) partialSearch.filterTagIds = [];
+          partialSearch.filterTagIds.push(data);
+          break;
         }
     });
     this.props.onSearchChanged(partialSearch);
@@ -253,14 +262,27 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
         })
       });
     } else {
+      const filterTagIds = new Set(this.props.panel.search.filterTagIds);
       searchableCategories.forEach(category => {
-        category.tagging.tags.forEach(tag => {
-          const label:Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
-          controls.options.push(label);
-          controls.colorLookup[label.value] = tag.color;
-          if(this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
-            controls.values.push(label);
-          }
+        category.tagging.tagGroups.forEach(tagGroup => {
+          const matchingCount:number = tagGroup.tagIds.reduce((count, nextTagId) => count + (filterTagIds.has(nextTagId) ? 1 : 0), 0);
+          const permanent = matchingCount > 0
+            && (tagGroup.minRequired || 0) <= matchingCount
+            && (tagGroup.maxRequired || tagGroup.tagIds.length) >= matchingCount;
+          tagGroup.tagIds.forEach(tagId => {
+            const tag = category.tagging.tags.find(t => t.tagId === tagId);
+            if(!tag) return;
+            const label:Label = this.getLabel(tagGroup.name, tag.tagId, tag.name);
+            if(permanent) {
+              controls.permanent.push(label);
+            } else {
+              controls.options.push(label);
+              controls.colorLookup[label.value] = tag.color;
+              if(this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
+                controls.values.push(label);
+              }
+            }
+          })
         })
       });
     }
@@ -278,22 +300,22 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     return controls;
   }
 
-  getLabel(type:FilterType, data:string, name:string):Label {
+  getLabel(type:FilterType|string, data:string, name:string):Label {
     return {
-      label: `${name}`,
+      label: name,
       value: `${type}:${data}`,
     };
   }
   
-  getType(label:Label):FilterType {
-    return label.value.substr(0, label.value.indexOf(':')) as FilterType;
+  getType(label:Label):FilterType|string {
+    return label.value.substr(0, label.value.indexOf(':'));
   }
 
   getData(label:Label):string {
     return label.value.substr(label.value.indexOf(':') + 1);
   }
 
-  isFilterControllable(type:FilterType):boolean {
+  isFilterControllable(type:FilterType|string):boolean {
     switch(type) {
       case FilterType.Search:
         return this.props.panel.enableSearchText !== undefined ? this.props.panel.enableSearchText : this.props.panel.search.searchText === undefined;
@@ -302,11 +324,11 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
       case FilterType.Category:
         return this.props.panel.enableSearchByCategory !== undefined ? this.props.panel.enableSearchByCategory : (!this.props.panel.search.filterCategoryIds || this.props.panel.search.filterCategoryIds.length <= 0);
       case FilterType.Tag:
-        return this.props.panel.enableSearchByTag !== undefined ? this.props.panel.enableSearchByTag : (!this.props.panel.search.filterTagIds || this.props.panel.search.filterTagIds.length <= 0);
+        return this.props.panel.enableSearchByTag !== undefined ? this.props.panel.enableSearchByTag : true;
       case FilterType.Status:
         return this.props.panel.enableSearchByStatus !== undefined ? this.props.panel.enableSearchByStatus : (!this.props.panel.search.filterStatusIds || this.props.panel.search.filterStatusIds.length <= 0);
       default:
-        throw Error(`Unknown filter ${type}`);
+        return true;
     }
   }
 }

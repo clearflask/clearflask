@@ -269,8 +269,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const leftSide = [
       this.renderExpression(variant),
       this.renderCommentCount(variant),
-      this.renderAuthor(variant),
       this.renderCreatedDatetime(variant),
+      this.renderAuthor(variant),
     ].filter(i => !!i);
     const rightSide = [
       this.renderStatus(variant),

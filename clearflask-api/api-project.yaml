@@ -16,8 +16,8 @@ components:
         - style
       properties:
         # TODO remove test page
-        # test:
-        #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
+        test:
+          $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         projectId:
           x-clearflask-prop: { subType: 'id' }
           type: string
@@ -365,6 +365,7 @@ components:
             type: object
             required:
               - tagGroupId
+              - name
               - userSettable
               - tagIds
             properties:
@@ -406,6 +407,7 @@ components:
             required:
               - categoryId
               - name
+              - userCreatable
               - workflow
               - support
               - tagging
@@ -420,6 +422,9 @@ components:
               color:
                 x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
                 type: string
+              userCreatable:
+                x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Can be created by user', defaultValue: true }
+                type: boolean
               workflow:
                 $ref: 'api-project.yaml#/components/schemas/workflow'
               support:
@@ -537,8 +542,16 @@ components:
       x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
       required:
+        - allowSearch
+        - allowCreate
         - panel
       properties:
+        allowSearch:
+          x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
+          type: boolean
+        allowCreate:
+          x-clearflask-prop: { order: 1, name: 'Allow creating', defaultValue: true }
+          type: boolean
         panel:
           $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearch'
     VersionedConfig:

@@ -27,21 +27,34 @@ export default class Templater {
   }
 
   baseFeatures() {
-    // Category
-    const categoryId = randomUuid();
+    // Categories
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    // Idea
+    const ideaCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
       workflow: Admin.WorkflowToJSON({statuses: []}),
       support: Admin.SupportToJSON({comment: true}),
       tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
     }));
-    const categoryIndex = categories.getChildPages().length - 1;
-    this.supportFunding(categoryIndex);
-    this.supportVoting(categoryIndex, true);
-    this.supportExpressingFacebookStyle(categoryIndex);
-    this.taggingOsPlatform(categoryIndex);
-    const statuses = this.workflowFeatures(categoryIndex);
+    const ideaCategoryIndex = categories.getChildPages().length - 1;
+    this.supportFunding(ideaCategoryIndex);
+    this.supportVoting(ideaCategoryIndex, true);
+    this.supportExpressingFacebookStyle(ideaCategoryIndex);
+    this.taggingOsPlatform(ideaCategoryIndex);
+    const statuses = this.workflowFeatures(ideaCategoryIndex);
+    // Article
+    const articleCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: false}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const articleCategoryIndex = categories.getChildPages().length - 1;
+    this.supportExpressingFacebookStyle(articleCategoryIndex);
 
     // tags: Feature Requests, Bug Reports, Translations
     // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security
@@ -49,7 +62,7 @@ export default class Templater {
     const tags = [Admin.TagToJSON({tagId: randomUuid(), name: 'Feature'}),
       Admin.TagToJSON({tagId: randomUuid(), name: 'Bug'}),
       Admin.TagToJSON({tagId: randomUuid(), name: 'Translation'})];
-    this.tagging(categoryIndex, tags, Admin.TagGroupToJSON({
+    this.tagging(ideaCategoryIndex, tags, Admin.TagGroupToJSON({
       tagGroupId: tagGroupIdIdeas, name: 'Ideas', userSettable: true, tagIds: [],
       minRequired: 1, maxRequired: 1,
     }));
@@ -67,7 +80,7 @@ export default class Templater {
       panels: [
         Admin.PagePanelWithSearchToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.New,
-          filterCategoryIds: [categoryId],
+          filterCategoryIds: [ideaCategoryId],
           filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
         })}),
       ],
@@ -76,17 +89,17 @@ export default class Templater {
         panels: [
           Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [categoryId],
+            filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
           Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [categoryId],
+            filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
           })}),
           Admin.PagePanelToJSON({title: 'Completed', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [categoryId],
+            filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
           })}),
         ],
@@ -115,8 +128,10 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
+          allowSearch: true,
+          allowCreate: true,
           panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
-            filterCategoryIds: [categoryId],
+            filterCategoryIds: [ideaCategoryId],
             filterTagIds: [tag.tagId],
           })}),
         }),
@@ -124,6 +139,26 @@ export default class Templater {
     });
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Ideas',
+    }));
+    // Blog
+    const pageBlogId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: pageBlogId,
+      name: 'Blog',
+      slug: stringToSlug('blog'),
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: false,
+        allowCreate: false,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          filterCategoryIds: [articleCategoryId],
+        })}),
+      }),
+    }));
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [pageBlogId],
     }));
     // Explorer
     const pageExplorerId = randomUuid();
@@ -135,6 +170,8 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
+        allowSearch: true,
+        allowCreate: true,
         panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
       }),
     }));

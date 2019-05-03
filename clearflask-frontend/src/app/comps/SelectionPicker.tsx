@@ -9,7 +9,7 @@ import Chip from '@material-ui/core/Chip';
 import MenuItem from '@material-ui/core/MenuItem';
 import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
-import { FormHelperText, FormControl } from '@material-ui/core';
+import { FormHelperText } from '@material-ui/core';
 import { SelectComponents, components } from 'react-select/lib/components';
 import { ActionMeta } from 'react-select/lib/types';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
@@ -136,6 +136,7 @@ const Control = (props) => {
     <TextField
       style={{
         verticalAlign: 'baseline',
+        width: outerProps.width,
       }}
       InputProps={{
         inputComponent: inputComponent as any,
@@ -256,7 +257,7 @@ const Menu = (props) => {
     <Paper square {...props.innerProps} style={{
       position: 'absolute',
       zIndex: 1,
-      marginTop: 10,
+      marginTop: 0,
       left: 0,
       right: 0,
       width: 'fit-content',

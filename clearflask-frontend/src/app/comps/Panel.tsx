@@ -74,7 +74,8 @@ class Panel extends Component<Props> {
             <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
           )
         } else {
-          const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1);
+          const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
+            || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
 
           const display:Client.PostDisplay = {
             titleTruncateLines: 1,
