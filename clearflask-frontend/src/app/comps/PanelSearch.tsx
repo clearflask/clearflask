@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import SelectionPicker, { Label, ColorLookup } from './SelectionPicker';
 import { Typography, MenuItem } from '@material-ui/core';
 import { ActionMeta } from 'react-select/lib/types';
+import FilterIcon from '@material-ui/icons/FilterListRounded';
 
 export enum FilterType {
   Search = 'search',
@@ -24,14 +25,13 @@ const styles = (theme:Theme) => createStyles({
     margin: theme.spacing.unit,
   },
   menuContainer: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing.unit * 2,
   },
   menuList: {
   },
   menuItem: {
     display: 'inline-block',
     width: '100%',
-    margin: theme.spacing.unit,
     webkitColumnBreakInside: 'avoid',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
@@ -76,8 +76,10 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             placeholder='Search'
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
-            bare
             overrideComponents={{
+              DropdownIndicator: (dropdownIndicatorProps) => (
+                <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
+              ),
               MenuList: (menuProps) => {
                 var newSearch:React.ReactNode|undefined;
                 const tagColumns:any = {};

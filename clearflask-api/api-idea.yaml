@@ -243,7 +243,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
+          $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
     responses:
       '200':
         content:

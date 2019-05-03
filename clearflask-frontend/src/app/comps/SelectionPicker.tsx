@@ -50,7 +50,7 @@ export type ColorLookup = { [value:string]: string; }
 interface Props extends ListProps, WithStyles<typeof styles, true> {
   classes; // conflict
   name?:string;
-  description?:string;
+  label?:string;
   placeholder?:string;
   errorMsg?:string;
   value?:Label[];
@@ -100,7 +100,7 @@ class SelectionPicker extends Component<Props> {
         {this.props.onValueCreate
           ? (<CreatableSelect<Label> {...selectComponentProps} />)
           : (<Select<Label> {...selectComponentProps} />)}
-        {(!this.props.bare || this.props.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.description}</FormHelperText>)}
+        {(!this.props.bare || this.props.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.label}</FormHelperText>)}
       </div>
     );
   }
@@ -185,7 +185,7 @@ const Option = (props) => {
 const DropdownIndicator = (props) => {
   const outerProps:Props = props.selectProps.commonProps;
   return (
-      <DropdownIcon fontSize='inherit' className={outerProps.classes.dropdownIcon} />
+    <DropdownIcon fontSize='inherit' className={outerProps.classes.dropdownIcon} />
   );
 }
 

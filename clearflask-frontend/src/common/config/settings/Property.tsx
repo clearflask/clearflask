@@ -279,7 +279,7 @@ export default class Property extends Component<Props> {
           propertySetter = (
             <SelectionPicker
               name={prop.name}
-              description={prop.description}
+              label={prop.description}
               placeholder={prop.placeholder}
               errorMsg={prop.errorMsg}
               value={values}
@@ -371,7 +371,7 @@ export default class Property extends Component<Props> {
         propertySetter = (
           <SelectionPicker
             name={prop.name}
-            description={prop.description}
+            label={prop.description}
             placeholder={prop.placeholder}
             errorMsg={prop.errorMsg}
             value={values}

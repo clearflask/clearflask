@@ -85,7 +85,9 @@ interface Props {
 }
 
 interface ConnectProps {
+  configver?:string;
   config?:Client.Config;
+  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]) => void;
 }
 
 interface State {
@@ -207,9 +209,12 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
       ? this.props.config.content.categories.filter(c => this.props.explorer.panel.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories)
       .filter(c => c.userCreatable);
+    if(this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
+      this.setState({newItemChosenCategoryId: categoryOptions[0].categoryId})
+    }
     const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
     const tagSelection = selectedCategory ? this.getTagSelection(selectedCategory) : undefined;
-
+    const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
       <div className={this.props.classes.createFormFields} style={{
         width: (createFormHasTypedIn)
@@ -254,7 +259,10 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               alignItems: 'flex-end',
             }}>
               {categoryOptions.length > 1 && (
-                <FormControl className={this.props.classes.createFormField}>
+                <FormControl
+                  className={this.props.classes.createFormField}
+                  error={!selectedCategory}
+                >
                   <Select
                     value={selectedCategory ? selectedCategory.categoryId : undefined}
                     onChange={e => this.setState({newItemChosenCategoryId: e.target.value})}
@@ -263,12 +271,15 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                       <MenuItem value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>Category</FormHelperText>
+                  <FormHelperText>
+                    {!selectedCategory && 'Choose a category'}
+                  </FormHelperText>
                 </FormControl>
               )}
               {tagSelection && tagSelection.options.length > 0 && (
                 <div className={this.props.classes.createFormField}>
                   <SelectionPicker
+                    placeholder='Tags'
                     value={tagSelection.values}
                     options={tagSelection.options}
                     colorLookup={tagSelection.colorLookup}
@@ -277,7 +288,6 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                     width='100%'
                     onValueChange={labels => this.setState({newItemChosenTagIds:
                       [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
-                    description='Tags'
                     overrideComponents={{
                       MenuList: (menuProps) => {
                         const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
@@ -314,9 +324,18 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                 </div>
               )}
             </div>
-            <Button style={{
-              alignSelf: 'flex-end',
-            }}>
+            <Button
+              disabled={!enableSubmit}
+              onClick={e => enableSubmit && this.props.createPost(
+                this.state.newItemTitle!,
+                this.state.newItemDescription,
+                this.state.newItemChosenCategoryId!,
+                [...tagSelection!.mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
+              )}
+              style={{
+                alignSelf: 'flex-end',
+              }}
+            >
               Submit
             </Button>
           </div>
@@ -385,4 +404,14 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
 export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {return {
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
+  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]):void => {ownProps.server.dispatch().ideaCreate({
+    projectId: state.projectId,
+    create: {
+      authorUserId: state.users.loggedIn.user!.userId,
+      title: title,
+      description: description,
+      categoryId: categoryId,
+      tagIds: tagIds,
+    },
+  })},
 }}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Explorer));
