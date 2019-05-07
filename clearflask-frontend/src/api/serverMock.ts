@@ -100,8 +100,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   configGet(request: Client.ConfigGetRequest): Promise<Client.VersionedConfig> {
     return this.configGetAdmin(request);
   }
-  userCreate(request: Client.UserCreateRequest): Promise<Client.User> {
-    throw new Error("Method not implemented.");
+  userCreate(request: Client.UserCreateRequest): Promise<Client.UserMe> {
+    return this.userCreateAdmin(request);
   }
   userDelete(request: Client.UserDeleteRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -112,6 +112,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userLogin(request: Client.UserLoginRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
+  }
+  userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMe> {
+    console.log('debugdebug', request.token);
+    var token;
+    try {
+      token = JSON.parse(request.token);
+    } catch(er) {
+      console.log('Failed parsing sso path param', er);
+    }
+    if(token['userId']) {
+      const user = this.getProject(request.projectId).users.find(user => user.userId === token['userId']);
+      if(user) {
+        return this.returnLater(user);
+      }
+    }
+    return this.userCreate({
+      projectId: request.projectId,
+      create: typeof token === 'object' ? {...token} : {},
+    });
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
@@ -216,6 +235,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       email: request.create.email,
     };
     this.getProject(request.projectId).users.push(user);
+    this.loggedInUser = user;
     return this.returnLater(user);
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {

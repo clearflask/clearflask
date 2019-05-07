@@ -18,7 +18,7 @@ class Delimited extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     if(!Array.isArray(this.props.children)) {
-      return this.props.children;
+      return this.props.children || null;
     }
     const delimiter = this.props.delimiter || (
       <div className={this.props.classes.separator} />

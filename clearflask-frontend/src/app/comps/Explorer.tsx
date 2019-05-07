@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Server, getSearchKey, ReduxState } from '../../api/server';
+import { Server, getSearchKey, ReduxState, Status } from '../../api/server';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
 import Panel, { Direction } from './Panel';
@@ -8,6 +8,7 @@ import DividerCorner from '../utils/DividerCorner';
 import { connect } from 'react-redux';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
+import LogInDialog from './LogInDialog';
 
 enum FilterType {
   Search = 'search',
@@ -67,12 +68,11 @@ const styles = (theme:Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   menuContainer: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing.unit * 2,
   },
   menuItem: {
     display: 'inline-block',
     width: '100%',
-    margin: theme.spacing.unit,
     webkitColumnBreakInside: 'avoid',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
@@ -87,6 +87,7 @@ interface Props {
 interface ConnectProps {
   configver?:string;
   config?:Client.Config;
+  isLoggedIn:boolean;
   createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]) => void;
 }
 
@@ -96,6 +97,7 @@ interface State {
   newItemChosenCategoryId?:string;
   newItemChosenTagIds?:string[];
   search?:Partial<Client.IdeaSearch>;
+  logInOpen?:boolean;
 }
 
 class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
@@ -325,22 +327,42 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               )}
             </div>
             <Button
+              color='primary'
               disabled={!enableSubmit}
-              onClick={e => enableSubmit && this.props.createPost(
-                this.state.newItemTitle!,
-                this.state.newItemDescription,
-                this.state.newItemChosenCategoryId!,
-                [...tagSelection!.mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
-              )}
+              onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
               style={{
                 alignSelf: 'flex-end',
               }}
             >
               Submit
             </Button>
+            <LogInDialog
+              server={this.props.server}
+              open={this.state.logInOpen}
+              onClose={() => this.setState({logInOpen: false})}
+              onLoggedIn={() => this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
+            />
           </div>
         </Grow>
       </div>
+    );
+  }
+
+  createClickSubmit(mandatoryTagIds:string[]) {
+    if(this.props.isLoggedIn) {
+      this.createSubmit(mandatoryTagIds);
+    } else {
+      // open log in page, submit on success
+      this.setState({logInOpen: true})
+    }
+  }
+
+  createSubmit(mandatoryTagIds:string[]) {
+    this.props.createPost(
+      this.state.newItemTitle!,
+      this.state.newItemDescription,
+      this.state.newItemChosenCategoryId!,
+      [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
     );
   }
 
@@ -404,10 +426,11 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
 export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {return {
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
-  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]):void => {ownProps.server.dispatch().ideaCreate({
+  isLoggedIn: state.users.loggedIn.status === Status.FULFILLED,
+  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]):void => {state.users.loggedIn.user && ownProps.server.dispatch().ideaCreate({
     projectId: state.projectId,
     create: {
-      authorUserId: state.users.loggedIn.user!.userId,
+      authorUserId: state.users.loggedIn.user.userId,
       title: title,
       description: description,
       categoryId: categoryId,

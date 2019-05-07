@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input } from '@material-ui/core';
-import ArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
-import ArrowRight from '@material-ui/icons/KeyboardArrowRight';
-import Balance from '@material-ui/icons/AccountBalance';
-import Notifications from '@material-ui/icons/Notifications';
+import ArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
+import ArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
+import BalanceIcon from '@material-ui/icons/AccountBalance';
+import NotificationsIcon from '@material-ui/icons/Notifications';
 import { Server, ReduxState, Status } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
@@ -64,16 +64,18 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-interface Props extends WithStyles<typeof styles, true> {
+interface Props {
   server:Server;
   pageSlug:string;
   pageChanged:(pageUrlName:string)=>void;
-  // connect
+}
+interface ConnectProps {
   config?:Client.Config;
   page?:Client.Page;
+  loggedInUser?:Client.UserMe;
 }
 
-class Header extends Component<Props> {
+class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
   render() {
     var currentTabValue;
     var tabs;
@@ -135,24 +137,26 @@ class Header extends Component<Props> {
               {this.props.config && this.props.config.name || 'ClearFlask'}
             </Typography>
           </div>
-          <div style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-          }}>
-            <IconButton aria-label="Notifications">
-              <Badge badgeContent={1} color='secondary'>
-                <Notifications />
-              </Badge>
-            </IconButton>
-            <IconButton aria-label="Account balance">
-              <Badge badgeContent='2k' color='primary'>
-                <Balance />
-              </Badge>
-            </IconButton>
-            <Avatar>W</Avatar>
-          </div>
+          {this.props.loggedInUser &&
+            <div style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+            }}>
+              <IconButton aria-label="Notifications">
+                <Badge invisible badgeContent={1} color='secondary'>
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+              <IconButton aria-label="Account balance">
+                <Badge invisible badgeContent='2k' color='primary'>
+                  <BalanceIcon />
+                </Badge>
+              </IconButton>
+              <Avatar>{this.props.loggedInUser.name ? this.props.loggedInUser.name.charAt(0) : 'A'}</Avatar>
+            </div>
+          }
         </div>
         <Tabs
           variant='scrollable'
@@ -172,8 +176,8 @@ class Header extends Component<Props> {
               onClick={props.onClick.bind()}
             >
               {props.direction === 'left'
-                ? (<ArrowLeft />)
-                : (<ArrowRight />)}
+                ? (<ArrowLeftIcon />)
+                : (<ArrowRightIcon />)}
             </Button>
           )}
           value={currentTabValue}
@@ -193,7 +197,7 @@ class Header extends Component<Props> {
   }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
+export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
   var page:Client.Page|undefined = undefined;
   if(state.conf.status === Status.FULFILLED && state.conf.conf) {
     if(ownProps.pageSlug === '') {
@@ -206,5 +210,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     page: page,
+    loggedInUser: state.users.loggedIn.user,
   };
 })(withStyles(styles, { withTheme: true })(Header));
+ 

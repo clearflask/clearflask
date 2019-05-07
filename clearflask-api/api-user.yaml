@@ -34,14 +34,13 @@ components:
       required:
     User:
       type: object
+      required:
+        - userId
       properties:
         userId:
           type: string
         name:
           type: string
-      required:
-        - userId
-        - name
     UserMe:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'
@@ -52,12 +51,11 @@ components:
           required:
     UserAdmin:
       allOf:
-        - $ref: 'api-user.yaml#/components/schemas/User'
+        - $ref: 'api-user.yaml#/components/schemas/UserMe'
         - type: object
           properties:
             email:
               type: string
-          required:
     UserCreate:
       type: object
       properties:
@@ -67,15 +65,11 @@ components:
           type: string
         password:
           type: string
-      required:
-        - name
-        - email
     UserCreateAdmin:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserCreate'
         - type: object
           properties:
-          required:
     UserUpdate:
       type: object
       properties:
@@ -96,11 +90,32 @@ components:
         required: true
         schema:
           type: string
-      - name: create
+      - name: credentials
         in: query
         required: true
         schema:
           $ref: 'api-user.yaml#/components/schemas/UserLogin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserMe'
+/project/{projectId}/sso:
+  post:
+    operationId: userSsoCreateOrLogin
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -121,7 +136,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-user.yaml#/components/schemas/UserUpdate'
+          $ref: 'api-user.yaml#/components/schemas/UserCreate'
     responses:
       '200':
         content:

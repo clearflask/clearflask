@@ -14,10 +14,11 @@ components:
         - layout
         - content
         - style
+        - users
       properties:
         # TODO remove test page
-        test:
-          $ref: 'api-test.yaml#/components/schemas/ConfigTest'
+        # test:
+        #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         projectId:
           x-clearflask-prop: { subType: 'id' }
           type: string
@@ -42,6 +43,8 @@ components:
           $ref: 'api-project.yaml#/components/schemas/credits'
         style:
           $ref: 'api-project.yaml#/components/schemas/style'
+        users:
+          $ref: 'api-project.yaml#/components/schemas/users'
     credits:
       x-clearflask-page: { order: 13, name: 'Credits', description: 'Define a currency for your users.' }
       title: CreditFormatter
@@ -82,6 +85,77 @@ components:
               suffix:
                 x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
+    users:
+      x-clearflask-page: { order: 15, name: 'Users' }
+      title: Users
+      type: object
+      required:
+        - displayName
+        - onboarding
+      properties:
+        oauth:
+          x-clearflask-page: { order: 15, name: 'OAuth' }
+          title: OAuth
+          type: object
+          properties:
+            test:
+              type: string
+        onboarding:
+          x-clearflask-page: { order: 15, name: 'Onboarding' }
+          title: Onboarding
+          type: object
+          required:
+            - displayName
+            - collectionMethods
+          properties:
+            displayName:
+              x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: 'Optional' }
+              type: string
+              enum: [None, Optional, Required]
+            collectionMethods:
+              x-clearflask-prop: { order: 1, name: 'Collection methods' }
+              title: SignupMethods
+              type: object
+              required:
+                - displayName
+              properties:
+                anonymousSignup:
+                  x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }
+                  type: object
+                  title: AnonymousSignup
+                  required:
+                    - password
+                  properties:
+                    onlyShowIfPushNotAvailable:
+                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only show this option if neither Mobile Push nor Web Notifications are available.', defaultValue: true }
+                      type: boolean
+                browserNotificationSignup:
+                  x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: true }
+                  type: boolean
+                mobileNotificationSignup:
+                  x-clearflask-prop: { order: 1, name: 'Mobile Push', defaultValue: true }
+                  type: boolean
+                emailSignup:
+                  x-clearflask-prop: { order: 1, name: 'Email', defaultValue: true }
+                  type: object
+                  title: EmailSignup
+                  required:
+                    - confirmEmails
+                    - password
+                  properties:
+                    confirmEmails:
+                      type: boolean
+                    password:
+                      x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'Optional' }
+                      type: string
+                      enum: [None, Optional, Required]
+                singleSignOn:
+                  x-clearflask-prop: { order: 1, name: 'Single sign-on', defaultValue: false }
+                  title: singleSignOn
+                  type: object
+                  properties:
+                    redirectUrl:
+                      type: string
     style:
       x-clearflask-page: { order: 14, name: 'Style' }
       title: Style

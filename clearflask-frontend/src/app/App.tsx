@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Server, ReduxState } from '../api/server';
+import { Server, ReduxState, Status } from '../api/server';
 import { match, RouteComponentProps } from 'react-router';
 import Header from './Header';
 import { History, Location } from 'history';
@@ -79,6 +79,7 @@ class App extends Component<Props> {
       <AppThemeProvider supressCssBaseline={this.props.supressCssBaseline}>
       <SnackbarProvider maxSnack={3}>
         <ServerErrorNotifier server={this.server} />
+        <SsoLogin server={this.server} />
         <div style={{
           height: '100%',
           width: '100%',
@@ -138,6 +139,23 @@ const ServerErrorNotifier = (props:({server:Server})) => {
   return null;
 };
 
+const SsoLogin = connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
+  ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.collectionMethods.singleSignOn,
+}})((props:{server:Server, ssoEnabled:boolean}) => {
+  if(!props.ssoEnabled) return null;
+
+  const url = new URL(window.location.href);
+  const sso = url.searchParams.get('sso');
+
+  if(!sso) return null;
+
+  props.server.dispatch().userSsoCreateOrLogin({
+    projectId: props.server.getProjectId(),
+    token: sso,
+  });
+
+  return null;
+});
 
 const AnimatedRoutesApp = connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
   customPageSlugs: state.conf.conf && state.conf.conf.layout.pages.map(p => p.slug),

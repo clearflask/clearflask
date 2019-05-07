@@ -403,7 +403,7 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.userId]: {
+          [action.payload.userId]: {
             user: action.payload,
             status: Status.FULFILLED,
           }
@@ -452,6 +452,7 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
           }
         }
       };
+    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:

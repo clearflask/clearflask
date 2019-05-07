@@ -27,6 +27,9 @@ export default class Templater {
   }
 
   baseFeatures() {
+    // Enable SSO
+    this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'collectionMethods', 'singleSignOn']).set(true);
+
     // Categories
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     // Idea
