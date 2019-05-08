@@ -123,6 +123,9 @@ components:
               x-clearflask-prop: { order: 1, name: 'Collection methods' }
               title: NotificationMethods
               type: object
+              required:
+                - browserPush
+                - mobilePush
               properties:
                 anonymous:
                   x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }

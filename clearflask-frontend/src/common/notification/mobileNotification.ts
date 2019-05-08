@@ -1,7 +1,7 @@
 
 export default class MobileNotification {
   static instance:MobileNotification;
-  status:Status = Status.Disconnected;
+  status:Status = Status.Available; // TODO
   device:Device = Device.None;
 
   static getInstance():MobileNotification {
@@ -9,6 +9,7 @@ export default class MobileNotification {
   }
 
   startListen():void {
+    // TODO
   }
 
   getStatus():Status {

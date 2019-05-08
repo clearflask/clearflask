@@ -21,6 +21,7 @@ export default class DemoApp extends Component<Props> {
           <App
             {...props}
             supressCssBaseline
+            isInsideContainer
             serverOverride={this.props.server} />
         )} />
       </MemoryRouter>

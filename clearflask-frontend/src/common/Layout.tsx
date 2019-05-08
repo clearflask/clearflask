@@ -161,7 +161,7 @@ class Layout extends Component<Props, State> {
               >
                 <div className={classes.toolbar} />
                 <Divider />
-                <div>
+                <div style={{flex: '1 1 auto'}}>
                   {this.props.preview}
                 </div>
               </Drawer>
@@ -177,7 +177,9 @@ class Layout extends Component<Props, State> {
               >
                 <div className={classes.toolbar} />
                 <Divider />
-                <div>
+                <div style={{
+                  flex: '1 1 auto',
+                }}>
                   {this.props.preview}
                 </div>
               </Drawer>

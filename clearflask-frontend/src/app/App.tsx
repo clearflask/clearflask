@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, PropsWithChildren } from 'react';
 import { Server, ReduxState, Status } from '../api/server';
 import { match, RouteComponentProps } from 'react-router';
 import Header from './Header';
@@ -19,15 +19,18 @@ import {
 } from 'react-router-dom'
 import PostPage from './comps/PostPage';
 import CustomPage from './CustomPage';
-import { SnackbarProvider, withSnackbar, WithSnackbarProps, useSnackbar } from 'notistack';
+import { SnackbarProvider, useSnackbar } from 'notistack';
 import { connect } from 'react-redux';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Post, { isExpanded } from './comps/Post';
+import randomUuid from '../common/util/uuid';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 interface Props {
   serverOverride?:Server;
   supressConfigGet?:boolean;
   supressCssBaseline?:boolean;
+  isInsideContainer?:boolean;
   // Router matching
   match:match;
   history:History;
@@ -36,6 +39,7 @@ interface Props {
 
 class App extends Component<Props> {
   readonly server:Server;
+  readonly uniqId = randomUuid();
 
   constructor(props) {
     super(props);
@@ -74,16 +78,23 @@ class App extends Component<Props> {
 
   render() {
     const prefixMatch = this.props.match.url;
+    const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (
       <Provider store={this.server.getStore()}>
-      <AppThemeProvider supressCssBaseline={this.props.supressCssBaseline}>
-      <SnackbarProvider maxSnack={3}>
+      <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
+      <MuiSnackbarProvider>
         <ServerErrorNotifier server={this.server} />
         <SsoLogin server={this.server} />
-        <div style={{
-          height: '100%',
-          width: '100%',
-        }}>
+        <div
+          id={appRootId}
+          style={{
+            height: '100%',
+            width: '100%',
+            ...(this.props.isInsideContainer ? {
+              position: 'relative',
+            } : {}),
+          }}
+        >
           <Route path={`${prefixMatch}/:page?`} render={props => (
             <Header
               pageSlug={props.match.params['page'] || ''}
@@ -120,7 +131,7 @@ class App extends Component<Props> {
             )}
           </AnimatedRoutesApp>
         </div>
-      </SnackbarProvider>
+      </MuiSnackbarProvider>
       </AppThemeProvider>
       </Provider>
     );
@@ -131,6 +142,19 @@ class App extends Component<Props> {
     this.props.history.push(`/${this.props.match.params['projectId']}${pageUrlName}`);
   }
 }
+
+const muiSnackbarStyles = createStyles({
+  snackbarRoot: {
+    position: 'absolute',
+  },
+});
+const MuiSnackbarProvider = withStyles((theme:Theme) => muiSnackbarStyles, { withTheme: true })((props:any) => (
+  <SnackbarProvider maxSnack={3} classes={{
+    root: props.classes.snackbarRoot,
+  }}>
+    {props.children}
+  </SnackbarProvider>
+));
 
 const ServerErrorNotifier = (props:({server:Server})) => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();

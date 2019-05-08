@@ -7,6 +7,8 @@ import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 
 interface Props {
   supressCssBaseline?:boolean;
+  isInsideContainer?:boolean;
+  appRootId:string;
   // connect
   config:Client.Config;
 }
@@ -19,6 +21,7 @@ class App extends Component<Props> {
         ...{custom: { // Custom variables
           funding: this.props.config.style.palette.funding
             || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
+          isInsideContainer: this.props.isInsideContainer,
         }} as ThemeOptions,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
@@ -40,6 +43,15 @@ class App extends Component<Props> {
           fontFamily: this.props.config.style.typography.fontFamily || undefined,
           fontSize: this.props.config.style.typography.fontSize || undefined,
         },
+        props: {
+          MuiDialog: {
+            container: () => document.getElementById(this.props.appRootId)!,
+            ...(this.props.isInsideContainer ? {
+              style: { position: 'absolute' },
+              BackdropProps: { style: { position: 'absolute' } },
+            } : {}),
+          },
+        },
       })
     } else {
       theme = createMuiTheme();
@@ -49,6 +61,7 @@ class App extends Component<Props> {
       <MuiThemeProvider theme={theme}>
         {!this.props.supressCssBaseline && (<CssBaseline />)}
         <div style={{
+          height: '100%',
           background: theme.palette.background.default,
         }}>
           {this.props.children}
