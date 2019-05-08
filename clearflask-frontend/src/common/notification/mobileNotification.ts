@@ -54,5 +54,5 @@ export interface MobileNotificationSubscription {
 
 export interface MobileNotificationError {
   type:'error';
-  userFacingMsg:string,
+  userFacingMsg?:string,
 }

@@ -1,4 +1,29 @@
 import React from 'react';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+
+const styles = (theme:Theme) => createStyles({
+  hr: {
+    width: '10%',
+    margin: '40px auto 30px auto',
+    backgroundColor: theme.palette.background.default,
+    borderBottom: '1px solid #cccccc',
+    textAlign: 'center' as 'center',
+    lineHeight: '0.1em',
+    color: '#777777',
+  },
+  vr: {
+    height: '10%',
+    borderLeft: '1px solid #eee',
+    marginLeft: '40px',
+    marginRight: '40px',
+    position: 'relative' as 'relative',
+    color: '#777777',
+  },
+  vrContainer: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+});
 
 interface Props {
   className?:string;
@@ -8,40 +33,13 @@ interface Props {
   length?:string;
 }
 
-export default class Hr extends React.Component<Props> {
-  readonly styles = {
-    hr: {
-      width: '10%',
-      margin: '40px auto 30px auto',
-      backgroundColor: '#FFFFFF',
-      borderBottom: '1px solid #cccccc',
-      textAlign: 'center' as 'center',
-      lineHeight: '0.1em',
-      color: '#777777',
-    },
-    vr: {
-      height: '10%',
-      borderLeft: '1px solid #eee',
-      marginLeft: '40px',
-      marginRight: '40px',
-      position: 'relative' as 'relative',
-      color: '#777777',
-    },
-    vrContainer: {
-      display: 'flex',
-      alignItems: 'center',
-    }
-  }
+class Hr extends React.Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     if(this.props.vertical) {
       return (
-        <div
-          className={this.props.className}
-          style={this.styles.vrContainer}
-        >
-          <div style={{
-              ...this.styles.vr,
+        <div className={`${this.props.classes.vrContainer} ${this.props.className}`}>
+          <div className={this.props.classes.vr} style={{
               ...this.props.style,
               ...(this.props.length && {
                 height: this.props.length
@@ -69,9 +67,8 @@ export default class Hr extends React.Component<Props> {
       );
     } else {
       return (
-        <div className={this.props.className}
+        <div className={`${this.props.classes.hr} ${this.props.className}`}
           style={{
-            ...this.styles.hr,
             ...this.props.style,
             ...(this.props.length && {
               width: this.props.length
@@ -95,3 +92,5 @@ export default class Hr extends React.Component<Props> {
     }
   }
 }
+
+export default withStyles(styles, { withTheme: true })(Hr);

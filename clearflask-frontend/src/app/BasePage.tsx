@@ -4,7 +4,7 @@ export default class BasePage extends Component {
   readonly styles = {
     // Required for AnimatedSwitch to overlap two pages during animation
     animationContainer: {
-      position: 'absolute' as 'absolute',
+      // position: 'absolute' as 'absolute',
       width: '100%',
     },
     page: {

@@ -105,37 +105,42 @@ components:
           title: Onboarding
           type: object
           required:
-            - displayName
-            - collectionMethods
+            - accountFields
+            - notificationMethods
           properties:
-            displayName:
-              x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: 'Optional' }
-              type: string
-              enum: [None, Optional, Required]
-            collectionMethods:
+            accountFields:
               x-clearflask-prop: { order: 1, name: 'Collection methods' }
-              title: SignupMethods
+              title: AccountFields
               type: object
               required:
                 - displayName
               properties:
-                anonymousSignup:
+                displayName:
+                  x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: 'None' }
+                  type: string
+                  enum: [None, Optional, Required]
+            notificationMethods:
+              x-clearflask-prop: { order: 1, name: 'Collection methods' }
+              title: NotificationMethods
+              type: object
+              properties:
+                anonymous:
                   x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }
                   type: object
                   title: AnonymousSignup
                   required:
-                    - password
+                    - onlyShowIfPushNotAvailable
                   properties:
                     onlyShowIfPushNotAvailable:
-                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only show this option if neither Mobile Push nor Web Notifications are available.', defaultValue: true }
+                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only show this option if neither Mobile Push nor Web Notifications are available.' }
                       type: boolean
-                browserNotificationSignup:
+                browserPush:
                   x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: true }
                   type: boolean
-                mobileNotificationSignup:
+                mobilePush:
                   x-clearflask-prop: { order: 1, name: 'Mobile Push', defaultValue: true }
                   type: boolean
-                emailSignup:
+                email:
                   x-clearflask-prop: { order: 1, name: 'Email', defaultValue: true }
                   type: object
                   title: EmailSignup

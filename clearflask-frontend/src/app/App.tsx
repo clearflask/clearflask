@@ -140,7 +140,7 @@ const ServerErrorNotifier = (props:({server:Server})) => {
 };
 
 const SsoLogin = connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
-  ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.collectionMethods.singleSignOn,
+  ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.notificationMethods.singleSignOn,
 }})((props:{server:Server, ssoEnabled:boolean}) => {
   if(!props.ssoEnabled) return null;
 

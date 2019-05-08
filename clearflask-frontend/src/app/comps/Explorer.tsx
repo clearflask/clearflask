@@ -8,7 +8,7 @@ import DividerCorner from '../utils/DividerCorner';
 import { connect } from 'react-redux';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
-import LogInDialog from './LogInDialog';
+import LogIn from './LogIn';
 
 enum FilterType {
   Search = 'search',
@@ -336,7 +336,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
             >
               Submit
             </Button>
-            <LogInDialog
+            <LogIn
               server={this.props.server}
               open={this.state.logInOpen}
               onClose={() => this.setState({logInOpen: false})}

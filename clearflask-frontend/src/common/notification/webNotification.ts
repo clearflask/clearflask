@@ -36,9 +36,14 @@ export default class WebNotification {
       } else {
         return {
           type: 'error',
-          userFacingMsg: 'Failed to setup',
         };
       }
+    }, (err):WebNotificationError => {
+      console.log('notification setup failed with err:', err);
+      return {
+        type: 'error',
+        userFacingMsg: 'Failed to setup',
+      };
     })
   }
 
@@ -80,5 +85,5 @@ export interface WebNotificationSubscription {
 
 export interface WebNotificationError {
   type:'error';
-  userFacingMsg:string;
+  userFacingMsg?:string;
 }

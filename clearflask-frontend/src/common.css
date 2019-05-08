@@ -7,6 +7,8 @@ html {
   -webkit-font-smoothing: antialiased;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* IE 10+ */
+
+  height: 100%;
 }
 
 ::-webkit-scrollbar {

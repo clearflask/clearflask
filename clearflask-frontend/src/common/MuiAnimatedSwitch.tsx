@@ -31,6 +31,8 @@ class MuiAnimatedSwitch extends Component<Props> {
           offset: muiSpring(0),
         }}
         mapStyles={(styles) => {return {
+          width: '100%',
+          position: styles.opacity >= 0.999 ? 'relative' : 'absolute',
           opacity: styles.opacity,
           transform: `translateY(${styles.offset}px)`
         }}}
