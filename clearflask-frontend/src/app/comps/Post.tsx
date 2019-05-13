@@ -22,6 +22,7 @@ import { Picker, BaseEmoji } from 'emoji-mart';
 import GradientFade from '../../common/GradientFade';
 import { PopoverPosition } from '@material-ui/core/Popover';
 import { fade } from '@material-ui/core/styles/colorManipulator';
+import { withSnackbar, WithSnackbarProps } from 'notistack';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -101,6 +102,7 @@ const styles = (theme:Theme) => createStyles({
   expressionOuter: {
     height: 'auto',
     margin: theme.spacing.unit / 4,
+    borderRadius: '9px',
   },
   expressionHasExpressed: {
     borderColor: theme.palette.primary.main,
@@ -118,6 +120,25 @@ const styles = (theme:Theme) => createStyles({
   expressionExpressedNonButton: {
     border: '1px solid ' + theme.palette.primary.main,
     color: theme.palette.primary.main,
+  },
+  expressionPicker: {
+    '& .emoji-mart' : {
+      color: theme.palette.text.primary + '!important',
+    },
+    '& .emoji-mart-anchor-icon svg' : {
+      fill: theme.palette.text.hint + '!important',
+    },
+    '& .emoji-mart-search input::placeholder' : {
+      color: theme.palette.text.hint + '!important',
+    },
+    '& .emoji-mart-search input' : {
+      background: 'inherit' + '!important',
+      border: '0px' + '!important',
+      color: theme.palette.text.primary + '!important',
+    },
+    '& .emoji-mart-category-label span' : {
+      background: 'inherit' + '!important',
+    },
   },
   bottomBarLine: {
     display: 'flex',
@@ -217,7 +238,7 @@ interface State {
 
 export const isExpanded = ():boolean => !!Post.expandedPath;
 
-class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<typeof styles, true>, State> {
+class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<typeof styles, true>&WithSnackbarProps, State> {
   /**
    * expandedPath allows a page transition from a list of posts into a
    * single post without having to render a new page.
@@ -575,7 +596,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderExpressionEmoji(key:string, display:string|React.ReactNode, hasExpressed:boolean, onLoggedInClick, count:number = 0) {
+  renderExpressionEmoji(key:string, display:string|React.ReactNode, hasExpressed:boolean, onLoggedInClick:(currentTarget:HTMLElement)=>void, count:number = 0) {
     return (
       <Chip
         clickable
@@ -583,10 +604,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         variant='outlined'
         color={hasExpressed ? 'primary' : 'default'}
         onClick={e => {
+          const currentTarget = e.currentTarget;
           if(this.props.loggedInUser) {
-            onLoggedInClick(e);
+            onLoggedInClick(currentTarget);
           } else {
-            this.onLoggedIn = () => onLoggedInClick(e);
+            this.onLoggedIn = () => onLoggedInClick(currentTarget);
             this.setState({logInOpen: true});
           }
         }}
@@ -613,32 +635,50 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea.expressions
       || !this.props.category
       || !this.props.category.support.express) return null;
+    
+    const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
+    const reachedLimitPerIdea = limitEmojiPerIdea !== undefined && (this.props.vote && this.props.vote.expressions && this.props.vote.expressions.length || 0) >= limitEmojiPerIdea;
 
-    const hasExpressed = (display:string):boolean => {
+    const getHasExpressed = (display:string):boolean => {
       return this.props.vote
         && this.props.vote.expressions
         && this.props.vote.expressions.includes(display)
         || false;
     };  
     const clickExpression = (display:string) => {
-      this.props.updateVote({
-        expressions: {[hasExpressed(display) ? 'remove' : 'add']: [display]}
-      })
+      const expressionDiff:Client.VoteUpdateExpressions = {};
+      const hasExpressed = getHasExpressed(display);
+      if(limitEmojiPerIdea === 1) {
+        if(hasExpressed) {
+          expressionDiff.remove = [display];
+        } else {
+          expressionDiff.add = [display];
+          expressionDiff.remove = this.props.vote && this.props.vote.expressions || undefined;
+        }
+      } else if(!hasExpressed && reachedLimitPerIdea) {
+        this.props.enqueueSnackbar('Whoa, that is too many expressions', { variant: 'error', preventDuplicate: true });
+        return;
+      } else if(hasExpressed) {
+        expressionDiff.remove = [display];
+      } else {
+        expressionDiff.add = [display];
+      }
+      this.props.updateVote({ expressions: expressionDiff })
     };  
 
-    const limitEmojis = this.props.category.support.express.limitEmojis;
+    const limitEmojiSet = this.props.category.support.express.limitEmojiSet;
     const seenEmojis = new Set<string>();
     const expressionsExpressed:React.ReactNode[] = this.props.idea.expressions.map(expression => {
-      if(limitEmojis) seenEmojis.add(expression.display);
-      return this.renderExpressionEmoji(expression.display, expression.display, hasExpressed(expression.display), () => clickExpression(expression.display), expression.count);
+      if(limitEmojiSet) seenEmojis.add(expression.display);
+      return this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), expression.count);
     });
-    const expressionsUnused:React.ReactNode[] = (limitEmojis && limitEmojis.length !== seenEmojis.size)
-      ? limitEmojis
+    const expressionsUnused:React.ReactNode[] = (limitEmojiSet && limitEmojiSet.length !== seenEmojis.size)
+      ? limitEmojiSet
           .filter(expression => !seenEmojis.has(expression.display))
-          .map(expression => this.renderExpressionEmoji(expression.display, expression.display, hasExpressed(expression.display), () => clickExpression(expression.display), 0))
+          .map(expression => this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), 0))
       : [];
-    const picker = limitEmojis ? undefined : (
-      <Picker
+    const picker = limitEmojiSet ? undefined : (
+      <span className={this.props.classes.expressionPicker}><Picker
         key='picker'
         native
         onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
@@ -652,13 +692,13 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           display: 'block',
         }}
         color={this.props.theme.palette.primary.main}
-      />
+      /></span>
     );
 
     const maxItems = 5;
     const summaryItems:React.ReactNode[] = expressionsExpressed.length > 0 ? expressionsExpressed.slice(0, Math.min(maxItems, expressionsExpressed.length)) : [];
 
-    const showMoreButton:boolean = !limitEmojis || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
+    const showMoreButton:boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
       <div style={{
@@ -687,8 +727,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               </span>
             ),
             false,
-            e => {
-              const targetElement = e.currentTarget.parentElement || e.currentTarget;
+            currentTarget => {
+              const targetElement = currentTarget.parentElement || currentTarget;
               this.setState({expressionExpandedAnchor: {
                 top: targetElement.getBoundingClientRect().top,
                 left: targetElement.getBoundingClientRect().left}})
@@ -706,8 +746,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           PaperProps={{
             style: {
               overflow: 'hidden',
-              ...(limitEmojis ? {} : { width: 'min-content' }),
-              borderRadius: '16px',
+              ...(limitEmojiSet ? {} : { width: 'min-content' }),
+              borderRadius: '9px',
             }
           }}
         >
@@ -814,4 +854,4 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       },
     }, {previousVote: vote || null}),
   };
-})(withStyles(styles, { withTheme: true })(withRouter(Post)));
+})(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

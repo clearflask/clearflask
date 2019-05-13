@@ -304,7 +304,6 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     
     return (
       <Dialog
-        fullScreen={this.props.fullScreen}
         open={!!this.props.open}
         onClose={this.props.onClose}
         scroll='body'

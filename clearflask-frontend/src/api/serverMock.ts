@@ -344,8 +344,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       request.update.expressions.add && request.update.expressions.add.forEach(expression => {
         if(expressionsSet.has(expression)) return;
         expressionsSet.add(expression);
-        if(expressing && expressing.limitEmojis) {
-          const weight = expressing.limitEmojis.find(e => e.display === expression)!.weight;
+        if(expressing && expressing.limitEmojiSet) {
+          const weight = expressing.limitEmojiSet.find(e => e.display === expression)!.weight;
           idea.expressionsValue! += weight;
         }
         var ideaExpression = idea.expressions!.find(e => e.display === expression);
@@ -359,8 +359,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       request.update.expressions.remove && request.update.expressions.remove.forEach(expression => {
         if(!expressionsSet.has(expression)) return;
         expressionsSet.delete(expression);
-        if(expressing && expressing.limitEmojis) {
-          const weight = expressing.limitEmojis.find(e => e.display === expression)!.weight;
+        if(expressing && expressing.limitEmojiSet) {
+          const weight = expressing.limitEmojiSet.find(e => e.display === expression)!.weight;
           idea.expressionsValue! -= weight;
         }
         const ideaExpressionIndex = idea.expressions!.findIndex(e => e.display === expression);

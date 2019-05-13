@@ -312,6 +312,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                     value={tagSelection.values}
                     options={tagSelection.options}
                     colorLookup={tagSelection.colorLookup}
+                    helperText=' ' // Keep it aligned
                     errorMsg={tagSelection.error}
                     isMulti={true}
                     width='100%'

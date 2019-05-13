@@ -89,8 +89,8 @@ class DataMock {
       } : {}),
       ...(Math.random() < 0.09 ? {
         expressionsValue: Math.random() * 100,
-        expressions: ((category.support.express && category.support.express.limitEmojis)
-          ? category.support.express.limitEmojis.map(e => e.display)
+        expressions: ((category.support.express && category.support.express.limitEmojiSet)
+          ? category.support.express.limitEmojiSet.map(e => e.display)
           : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
           .map(emojiDisplay => {return {
             display: emojiDisplay,
@@ -166,8 +166,8 @@ class DataMock {
           : undefined,
         expressions: { add: [
           category.support.express
-            ? (category.support.express.limitEmojis
-              ? category.support.express.limitEmojis[Math.floor(Math.random() * category.support.express.limitEmojis.length)].display
+            ? (category.support.express.limitEmojiSet
+              ? category.support.express.limitEmojiSet[Math.floor(Math.random() * category.support.express.limitEmojiSet.length)].display
               : Object.values(emojiIndex.emojis)[Math.floor(Math.random() * Object.values(emojiIndex.emojis).length)]['native'])
             : undefined
         ]},
