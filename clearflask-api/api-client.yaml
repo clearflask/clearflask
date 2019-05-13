@@ -70,6 +70,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}'
   /project/{projectId}/login:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1login'
+  /project/{projectId}/logout:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1logout'
   /project/{projectId}/sso:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1sso'
   /project/{projectId}/user:

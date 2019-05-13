@@ -9,6 +9,8 @@ import { connect } from 'react-redux';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 import LogIn from './LogIn';
+import debounce from '../../common/util/debounce';
+import { withRouter, RouteComponentProps, matchPath } from 'react-router';
 
 enum FilterType {
   Search = 'search',
@@ -26,6 +28,7 @@ interface TagSelection {
   error?:string;
 }
 
+const expandTimeout = 500;
 const styles = (theme:Theme) => createStyles({
   explorer: {
     margin: theme.spacing.unit,
@@ -56,7 +59,7 @@ const styles = (theme:Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     margin: theme.spacing.unit,
-    transition: theme.transitions.create('width'),
+    transition: theme.transitions.create('width', {duration: expandTimeout}),
   },
   createFormField: {
     margin: theme.spacing.unit,
@@ -87,8 +90,7 @@ interface Props {
 interface ConnectProps {
   configver?:string;
   config?:Client.Config;
-  isLoggedIn:boolean;
-  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]) => void;
+  loggedInUserId?:string;
 }
 
 interface State {
@@ -96,32 +98,42 @@ interface State {
   newItemDescription?:string;
   newItemChosenCategoryId?:string;
   newItemChosenTagIds?:string[];
+  newItemSearchText?:string;
+  newItemIsSubmitting?:boolean;
   search?:Partial<Client.IdeaSearch>;
   logInOpen?:boolean;
+  createFormHasExpanded?:boolean;
 }
 
-class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
+class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
   readonly panelSearchRef:React.RefObject<any> = React.createRef();
+  readonly updateSearchText:(title?:string,desc?:string)=>void;
 
   constructor(props) {
     super(props);
     this.state = {};
+    this.updateSearchText = debounce(
+      (title?:string,desc?:string)=>this.setState({newItemSearchText: 
+        `${this.state.newItemTitle || ''} ${this.state.newItemDescription || ''}`}),
+      1000);
   }
 
   render() {
-    const createFormHasTypedIn = !!(this.state.newItemTitle || this.state.newItemDescription);
+    const expand = !!(this.state.newItemTitle || this.state.newItemDescription);
+    const expandInMotion = expand !== (this.state.createFormHasExpanded || false);
+
     var content, topBar;
-    if(createFormHasTypedIn) {
+    if(expand) {
       topBar = (
         <Typography variant='overline' className={this.props.classes.caption}>Similar:</Typography>
         );
-      content = (
+      content = !expandInMotion && (
         <div>
           <Panel
             key={getSearchKey(this.props.explorer.panel.search)}
             direction={Direction.Vertical}
             panel={this.props.explorer.panel}
-            searchOverride={{searchText: `${this.state.newItemTitle || ''} ${this.state.newItemDescription || ''}`}}
+            searchOverride={{searchText: this.state.newItemSearchText}}
             server={this.props.server}
             displayDefaults={{
               titleTruncateLines: 1,
@@ -149,7 +161,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           panel={this.props.explorer.panel}
         />
       );
-      content = (
+      content = !expandInMotion && (
         <div>
           <Panel
             key={getSearchKey(this.props.explorer.panel.search)}
@@ -181,7 +193,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
       );
     }
 
-    const create = this.props.explorer.allowCreate && this.renderCreate();
+    const create = this.props.explorer.allowCreate && this.renderCreate(expand, expandInMotion);
 
     return (
       <div className={this.props.classes.explorer}>
@@ -202,11 +214,10 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     );
   }
 
-  renderCreate() {
+  renderCreate(expand:boolean, expandInMotion:boolean) {
     if(!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
-    const createFormHasTypedIn = !!(this.state.newItemTitle || this.state.newItemDescription);
     const categoryOptions = ((this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
       ? this.props.config.content.categories.filter(c => this.props.explorer.panel.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories)
@@ -219,16 +230,20 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
       <div className={this.props.classes.createFormFields} style={{
-        width: (createFormHasTypedIn)
+        width: (expand)
           ? '384px': '100px',
       }}>
-        <Typography variant='overline' className={this.props.classes.caption}>Create</Typography>
+        {/* <Typography variant='overline' className={this.props.classes.caption}>Create</Typography> */}
         <TextField
           id='createTitle'
+          disabled={this.state.newItemIsSubmitting}
           className={this.props.classes.createFormField}
+          label='Add'
           placeholder='Title'
-          value={this.state.newItemTitle}
-          onChange={e => this.setState({
+          value={this.state.newItemTitle || ''}
+          onChange={e => {
+            this.updateSearchText(e.target.value, this.state.newItemDescription);
+            this.setState({
             newItemTitle: e.target.value,
             ...(this.state.newItemChosenCategoryId === undefined
               ? {newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
@@ -240,19 +255,29 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
             ...(this.state.newItemChosenTagIds === undefined ? {newItemChosenTagIds: [...new Set([
               ...(this.state.search && this.state.search.filterTagIds || []),
               ...(this.props.explorer.panel.search.filterTagIds || [])])]} : {}),
-          })}
+          })}}
         />
-        <Grow in={createFormHasTypedIn} unmountOnExit>
+        <Grow
+          in={expand}
+          unmountOnExit
+          onEntered={() => this.setState({createFormHasExpanded: true})}
+          onExited={() => this.setState({createFormHasExpanded: false})}
+          timeout={expandTimeout}
+        >
           <div style={{
             display: 'flex',
             flexDirection: 'column',
           }}>
             <TextField
               id='createDescription'
+              disabled={this.state.newItemIsSubmitting}
               className={this.props.classes.createFormField}
               placeholder='Description'
-              value={this.state.newItemDescription}
-              onChange={e => this.setState({newItemDescription: e.target.value})}
+              value={this.state.newItemDescription || ''}
+              onChange={e => {
+                this.updateSearchText(this.state.newItemTitle, e.target.value);
+                this.setState({newItemDescription: e.target.value})
+              }}
               multiline
             />
             <div style={{
@@ -266,7 +291,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                   error={!selectedCategory}
                 >
                   <Select
-                    value={selectedCategory ? selectedCategory.categoryId : undefined}
+                    disabled={this.state.newItemIsSubmitting}
+                    value={selectedCategory ? selectedCategory.categoryId : ''}
                     onChange={e => this.setState({newItemChosenCategoryId: e.target.value})}
                   >
                     {categoryOptions.map(categoryOption => (
@@ -282,6 +308,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                 <div className={this.props.classes.createFormField}>
                   <SelectionPicker
                     placeholder='Tags'
+                    disabled={this.state.newItemIsSubmitting}
                     value={tagSelection.values}
                     options={tagSelection.options}
                     colorLookup={tagSelection.colorLookup}
@@ -328,7 +355,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
             </div>
             <Button
               color='primary'
-              disabled={!enableSubmit}
+              disabled={!enableSubmit || this.state.newItemIsSubmitting}
               onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
               style={{
                 alignSelf: 'flex-end',
@@ -340,7 +367,10 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               server={this.props.server}
               open={this.state.logInOpen}
               onClose={() => this.setState({logInOpen: false})}
-              onLoggedIn={() => this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
+              onLoggedInAndClose={() => {
+                this.setState({logInOpen: false});
+                this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
+              }}
             />
           </div>
         </Grow>
@@ -349,7 +379,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
   }
 
   createClickSubmit(mandatoryTagIds:string[]) {
-    if(this.props.isLoggedIn) {
+    if(this.props.loggedInUserId) {
       this.createSubmit(mandatoryTagIds);
     } else {
       // open log in page, submit on success
@@ -358,12 +388,29 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
   }
 
   createSubmit(mandatoryTagIds:string[]) {
-    this.props.createPost(
-      this.state.newItemTitle!,
-      this.state.newItemDescription,
-      this.state.newItemChosenCategoryId!,
-      [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
-    );
+    this.setState({newItemIsSubmitting: true});
+    this.props.server.dispatch().ideaCreate({
+      projectId: this.props.server.getProjectId(),
+      create: {
+        authorUserId: this.props.loggedInUserId!,
+        title: this.state.newItemTitle!,
+        description: this.state.newItemDescription,
+        categoryId: this.state.newItemChosenCategoryId!,
+        tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
+      },
+    }).then(idea => {
+      this.setState({
+        newItemTitle: undefined,
+        newItemDescription: undefined,
+        newItemChosenCategoryId: undefined,
+        newItemChosenTagIds: undefined,
+        newItemSearchText: undefined,
+        newItemIsSubmitting: false,
+      });
+      this.props.history.push(`${this.props.server.getProjectId()}/post/${idea.ideaId}`);
+    }).catch(e => this.setState({
+      newItemIsSubmitting: false,
+    }));
   }
 
   getTagSelection(category:Client.Category):TagSelection {
@@ -426,15 +473,5 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
 export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {return {
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
-  isLoggedIn: state.users.loggedIn.status === Status.FULFILLED,
-  createPost: (title:string, description:string|undefined, categoryId:string, tagIds:string[]):void => {state.users.loggedIn.user && ownProps.server.dispatch().ideaCreate({
-    projectId: state.projectId,
-    create: {
-      authorUserId: state.users.loggedIn.user.userId,
-      title: title,
-      description: description,
-      categoryId: categoryId,
-      tagIds: tagIds,
-    },
-  })},
-}}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Explorer));
+  loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
+}}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(Explorer)));

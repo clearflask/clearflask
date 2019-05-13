@@ -52,7 +52,7 @@ class DataMock {
   mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, user:Admin.UserAdmin):Promise<any> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
-      idea: {
+      create: {
         ...this.fakeMockIdeaData(category),
         authorUserId: user.userId,
         title: loremIpsum({
@@ -87,8 +87,8 @@ class DataMock {
         votersCount: Math.round(Math.random() * 30),
         voteValue: Math.round(Math.random() * 1000) - 300,
       } : {}),
-      ...(Math.random() < 0.9 ? {
-        expressionsValue: Math.random() * 100 - 30,
+      ...(Math.random() < 0.09 ? {
+        expressionsValue: Math.random() * 100,
         expressions: ((category.support.express && category.support.express.limitEmojis)
           ? category.support.express.limitEmojis.map(e => e.display)
           : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
@@ -152,8 +152,8 @@ class DataMock {
   mockExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, user:Admin.UserAdmin):Promise<any> {
     return ServerMock.get().voteUpdateAdmin({
       projectId: this.projectId,
-      ideaId: item.ideaId,
       update: {
+        ideaId: item.ideaId,
         voterUserId: user.userId,
         fundAmount: (category.support.fund && Math.random() < 0.2)
           ? ((versionedConfig.config.credits.increment

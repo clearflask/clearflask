@@ -138,14 +138,22 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
       search: newProps.searchMerged,
     });
   } else {
+    const missingVotesByIdeaIds:string[] = [];
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;
     newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
+      if(state.votes.byIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
       const idea = state.ideas.byId[ideaId];
       return (idea && idea.status === Status.FULFILLED)
         ? idea.idea
         : undefined;
     });
+    if(missingVotesByIdeaIds.length > 0) {
+      ownProps.server.dispatch().voteGetOwn({
+        projectId: state.projectId,
+        ideaIds: missingVotesByIdeaIds,
+      });
+    }
   }
 
   return newProps;

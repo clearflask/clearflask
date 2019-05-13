@@ -59,12 +59,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaCreate(request: Client.IdeaCreateRequest): Promise<Client.Idea> {
-    throw new Error("Method not implemented.");
+    return this.ideaCreateAdmin(request);
   }
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithAuthor> {
+  ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithAuthorAndVote> {
     return this.ideaGetAdmin(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
@@ -85,7 +85,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .map(idea => {
         const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
         if(!author) throw Error('Author of idea not found');
-        return { ...idea, author: author };
+        const vote = this.loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === this.loggedInUser!.userId) : undefined;
+        return { ...idea, author: author, vote: vote };
       })
       ,[(l,r) => {switch(request.search.sortBy){
           default: case Admin.IdeaSearchSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
@@ -113,6 +114,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userLogin(request: Client.UserLoginRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
   }
+  userLogout(request: Client.UserLogoutRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
   userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMe> {
     console.log('debugdebug', request.token);
     var token;
@@ -135,7 +139,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.User> {
     throw new Error("Method not implemented.");
   }
-  voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.Vote> {
+  voteGetOwn(request: Client.VoteGetOwnRequest): Promise<Client.VoteGetOwnResponse> {
+    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === this.loggedInUser!.userId && request.ideaIds.includes(vote.ideaId));
+    return this.returnLater({results: votes});
+  }
+  voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.VoteUpdateResponse> {
     if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
     return this.voteUpdateAdmin({
       ...request,
@@ -182,9 +191,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaAdmin> {
     const idea:Admin.IdeaAdmin = {
-      ideaId: stringToSlug(request.idea.title + '-' + randomUuid().substring(0,5)),
+      ideaId: stringToSlug(request.create.title + '-' + randomUuid().substring(0,5)),
       created: new Date(),
-      ...(request.idea),
+      ...(request.create),
     };
     this.getProject(request.projectId).ideas.push(idea);
     return this.returnLater(idea);
@@ -195,12 +204,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAdmin> {
+  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAndVoteAdmin> {
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
     if(!idea) return this.throwLater(404, 'Idea not found');
     const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
     if(!author) return this.throwLater(404, 'Author of idea not found');
-    return this.returnLater({ ...idea, author: author }); 
+    const vote = this.loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === this.loggedInUser!.userId) : undefined;
+    return this.returnLater({ ...idea, author: author, vote: vote }); 
   }
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
     throw new Error("Method not implemented.");
@@ -231,8 +241,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user:Admin.UserAdmin = {
       userId: randomUuid(),
-      name: request.create.name,
-      email: request.create.email,
+      ...request.create,
+      iosPush: !!request.create.iosPushToken,
+      androidPush: !!request.create.androidPushToken,
+      browserPush: !!request.create.browserPushToken,
     };
     this.getProject(request.projectId).users.push(user);
     this.loggedInUser = user;
@@ -265,13 +277,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   voteSearchAdmin(request: Admin.VoteSearchAdminRequest): Promise<Admin.VoteSearchResponse> {
     throw new Error("Method not implemented.");
   }
-  voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.Vote> {
-    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
-    var vote:Admin.Vote|undefined = this.getProject(request.projectId).votes.find(vote => vote.voterUserId === request.update.voterUserId);
-    if(!vote) {
-      vote = { voterUserId: request.update.voterUserId };
-      this.getProject(request.projectId).votes.push(vote);
-    }
+  voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.VoteUpdateAdminResponse> {
+    const idea = this.getImmutable(
+      this.getProject(request.projectId).ideas,
+      idea => idea.ideaId === request.update.ideaId);
+    const vote = this.getImmutable(
+      this.getProject(request.projectId).votes,
+      vote => vote.voterUserId === request.update.voterUserId && vote.ideaId === request.update.ideaId,
+      () => ({ ideaId: idea.ideaId, voterUserId: request.update.voterUserId }));
     if(request.update.fundAmount){
       if(request.update.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
       const fundDiff = request.update.fundAmount - (vote.fundAmount || 0);
@@ -286,7 +299,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         amount: fundDiff,
         balance: balanceNew,
         transactionType: Admin.CreditTransactionTypeEnum.Vote,
-        targetId: request.ideaId,
+        targetId: request.update.ideaId,
       });
       vote.fundAmount = request.update.fundAmount;
       this.getProject(request.projectId).credits[request.update.voterUserId] = balanceNew;
@@ -312,6 +325,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         case Admin.VoteUpdateVoteEnum.Downvote:
           voteValue = -1;
           vote.vote = Admin.VoteVoteEnum.Downvote;
+          break;
+        case Admin.VoteUpdateVoteEnum.None:
+          voteValue = 0;
+          vote.vote = undefined;
           break;
       }
       const votersCountDiff = Math.abs(voteValue) - Math.abs(votePrevValue);
@@ -346,18 +363,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           const weight = expressing.limitEmojis.find(e => e.display === expression)!.weight;
           idea.expressionsValue! -= weight;
         }
-        var ideaExpression = idea.expressions!.find(e => e.display === expression);
-        if(!ideaExpression) {
-          ideaExpression = { display: expression, count: 0};
-          idea.expressions!.push(ideaExpression);
-        } else {
+        const ideaExpressionIndex = idea.expressions!.findIndex(e => e.display === expression);
+        const ideaExpression = ideaExpressionIndex !== -1 ? idea.expressions[ideaExpressionIndex] : undefined;
+        if(ideaExpression && ideaExpression.count === 1) {
+          idea.expressions.splice(ideaExpressionIndex, 1);
+        } else if(ideaExpression) {
           ideaExpression.count -= 1;
         }
       });
       idea.expressions.sort((l,r) => r.count - l.count);
       vote.expressions = Array.from(expressionsSet);
     }
-    return this.returnLater(vote);
+    return this.returnLater({vote, idea});
   }
 
   // **** Private methods
@@ -411,6 +428,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       return 0;
     });
     return data;
+  }
+
+  getImmutable<T extends object>(arr:T[], filter:(t:T)=>boolean, loader?:()=>T) {
+    const index:number = arr.findIndex(filter);
+    var t;
+    if(index === -1) {
+      if(!loader) throw Error('Not found');
+      t = loader();
+      arr.push(t);
+    } else {
+      t = { ...arr[index] };
+      arr[index] = t;
+    }
+    return t;
   }
 
   async returnLater<T>(returnValue:T):Promise<T> {

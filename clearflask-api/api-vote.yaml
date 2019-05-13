@@ -21,8 +21,11 @@ components:
     Vote:
       type: object
       required:
+        - ideaId
         - voterUserId
       properties:
+        ideaId:
+          type: string
         voterUserId:
           type: string
         fundAmount:
@@ -42,8 +45,11 @@ components:
     VoteUpdate:
       type: object
       required:
+        - ideaId
         - voterUserId
       properties:
+        ideaId:
+          type: string
         voterUserId:
           type: string
         fundAmount:
@@ -67,8 +73,8 @@ components:
                 type: string
 
 /project/{projectId}/idea/{ideaId}/vote:
-  patch:
-    operationId: voteUpdate
+  get:
+    operationId: voteGetOwn
     tags: [Vote]
     parameters:
       - name: projectId
@@ -76,7 +82,32 @@ components:
         required: true
         schema:
           type: string
-      - name: ideaId
+      - name: ideaIds
+        in: query
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: VoteGetOwnResponse
+              type: object
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-vote.yaml#/components/schemas/Vote'
+              required:
+                - results
+  patch:
+    operationId: voteUpdate
+    tags: [Vote]
+    parameters:
+      - name: projectId
         in: path
         required: true
         schema:
@@ -91,7 +122,16 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
+              title: VoteUpdateResponse
+              type: object
+              required:
+                - vote
+                - idea
+              properties:
+                vote:
+                  $ref: 'api-vote.yaml#/components/schemas/Vote'
+                idea:
+                  $ref: 'api-idea.yaml#/components/schemas/Idea'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/vote:
@@ -158,11 +198,6 @@ components:
         required: true
         schema:
           type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: update
         in: query
         required: true
@@ -173,7 +208,16 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
+              title: VoteUpdateAdminResponse
+              type: object
+              required:
+                - vote
+                - idea
+              properties:
+                vote:
+                  $ref: 'api-vote.yaml#/components/schemas/Vote'
+                idea:
+                  $ref: 'api-idea.yaml#/components/schemas/Idea'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -181,11 +225,6 @@ components:
     tags: [VoteAdmin]
     parameters:
       - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
         in: path
         required: true
         schema:

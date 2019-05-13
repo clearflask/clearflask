@@ -113,7 +113,7 @@ components:
         - title
         - categoryId
         - tagIds
-    IdeaWithAuthor:
+    IdeaWithAuthorAndVote:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/Idea'
         - type: object
@@ -122,13 +122,15 @@ components:
           properties:
             author:
               $ref: 'api-user.yaml#/components/schemas/User'
+            vote:
+              $ref: 'api-vote.yaml#/components/schemas/Vote'
     IdeaAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/Idea'
         - type: object
           properties:
           required:
-    IdeaWithAuthorAdmin:
+    IdeaWithAuthorAndVoteAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
         - type: object
@@ -137,6 +139,8 @@ components:
           properties:
             author:
               $ref: 'api-user.yaml#/components/schemas/User'
+            vote:
+              $ref: 'api-vote.yaml#/components/schemas/Vote'
     IdeaCreate:
       type: object
       properties:
@@ -227,7 +231,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthor'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVote'
               required:
                 - results
   post:
@@ -270,7 +274,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthor'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVote'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
@@ -351,7 +355,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAdmin'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVoteAdmin'
               required:
                 - results
   post:
@@ -363,7 +367,7 @@ components:
         required: true
         schema:
           type: string
-      - name: idea
+      - name: create
         in: query
         required: true
         schema:
@@ -413,7 +417,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVoteAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:

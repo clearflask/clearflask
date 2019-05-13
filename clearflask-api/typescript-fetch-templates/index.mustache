@@ -82,10 +82,11 @@ export class Dispatcher implements ApiInterface {
 {{#operations}}
 {{#operation}}
 
-  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request{{/allParams.0}}): Promise<{{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request, {{/allParams.0}}metaExtra?:any): Promise<{{#returnType}}Model.{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
     return this.dispatcherDelegate({
       type: Action.{{nickname}},
       meta: {
+        ...metaExtra,
         action: Action.{{nickname}},
         request: {{#allParams.0}}request{{/allParams.0}}{{^allParams.0}}undefined{{/allParams.0}},
       },

@@ -58,7 +58,7 @@ export default class Property extends Component<Props> {
                     name='color'
                     placeholder='#000'
                     defaultValue={prop.defaultValue}
-                    value={prop.value}
+                    value={prop.value || ''}
                     onChange={color => prop.set(color)}
                     TextFieldProps={{
                       // Hack to modify material-ui-color-picker to fix bug
@@ -118,7 +118,7 @@ export default class Property extends Component<Props> {
           <TextField
             id={prop.pathStr}
             label={!this.props.bare && name}
-            value={prop.value}
+            value={prop.value || ''}
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
             placeholder={prop.placeholder}
@@ -247,12 +247,12 @@ export default class Property extends Component<Props> {
           >
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
-              value={prop.value}
+              value={prop.value || ''}
               onChange={e => prop.set((e.target.value) as never)}
               error={!!prop.errorMsg}
             >
               {items.map(item => (
-                <MenuItem value={item.value}>{item.value === undefined
+                <MenuItem value={item.value || ''}>{item.value === undefined
                   ? (<em>{item.name}</em>)
                   : item.name
                 }</MenuItem>
@@ -278,8 +278,8 @@ export default class Property extends Component<Props> {
           });
           propertySetter = (
             <SelectionPicker
-              name={prop.name}
-              label={prop.description}
+              label={prop.name}
+              helperText={prop.description}
               placeholder={prop.placeholder}
               errorMsg={prop.errorMsg}
               value={values}
@@ -370,8 +370,8 @@ export default class Property extends Component<Props> {
         }
         propertySetter = (
           <SelectionPicker
-            name={prop.name}
-            label={prop.description}
+            label={prop.name}
+            helperText={prop.description}
             placeholder={prop.placeholder}
             errorMsg={prop.errorMsg}
             value={values}

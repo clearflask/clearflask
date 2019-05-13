@@ -13,7 +13,7 @@ import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 /** Alternatives: NotificationsActive, Web */
 import WebPushIcon from '@material-ui/icons/NotificationsActive';
 import WebNotification from '../../common/notification/webNotification';
-import MobileNotification from '../../common/notification/mobileNotification';
+import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import withMobileDialog, { InjectedProps } from '@material-ui/core/withMobileDialog';
 import { WithWidth } from '@material-ui/core/withWidth';
@@ -23,8 +23,9 @@ type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
   Email = 'email',
-  Web = 'web',
-  Mobile = 'mobile',
+  Browser = 'browser',
+  Ios = 'ios',
+  Android = 'android',
   Silent = 'silent',
 }
 
@@ -54,41 +55,54 @@ export interface Props {
   server:Server;
   open?:boolean;
   onClose:()=>void;
-  onLoggedIn:()=>void;
+  onLoggedInAndClose:()=>void;
 }
 
 interface ConnectProps {
   configver?:string;
   config?:Client.Config;
+  isLoggedIn:boolean;
 }
 
 interface State {
   open?:boolean;
   notificationType?:NotificationType
-  notificationData?:any
+  notificationDataAndroid?:string
+  notificationDataIos?:string
+  notificationDataBrowser?:string
   displayName?:string;
   email?:string;
   pass?:string;
   revealPassword?:boolean;
+  isSubmitting?:boolean;
 }
 
 class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&WithSnackbarProps&WithMobileDialogProps, State> {
   state:State={};
 
   render() {
+    if(!this.props.open) return null;
+
     const notifOpts:Set<NotificationType> = new Set();
     if(this.props.config) {
       if(this.props.config.users.onboarding.notificationMethods.mobilePush === true
         && MobileNotification.getInstance().canAskPermission()) {
-        notifOpts.add(NotificationType.Mobile);
+        switch(MobileNotification.getInstance().getDevice()) {
+          case Device.Android:
+            notifOpts.add(NotificationType.Android);
+            break;
+          case Device.Ios:
+            notifOpts.add(NotificationType.Ios);
+            break;
+        }
       }
       if(this.props.config.users.onboarding.notificationMethods.browserPush === true
         && WebNotification.getInstance().canAskPermission()) {
-        notifOpts.add(NotificationType.Web);
+        notifOpts.add(NotificationType.Browser);
       }
       if(this.props.config.users.onboarding.notificationMethods.anonymous
         && (this.props.config.users.onboarding.notificationMethods.anonymous.onlyShowIfPushNotAvailable !== true
-          || (!notifOpts.has(NotificationType.Mobile) && !notifOpts.has(NotificationType.Web)))) {
+          || (!notifOpts.has(NotificationType.Android) && !notifOpts.has(NotificationType.Ios) && !notifOpts.has(NotificationType.Browser)))) {
         notifOpts.add(NotificationType.Silent)
       }
       if(this.props.config.users.onboarding.notificationMethods.email) {
@@ -97,7 +111,16 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     }
 
     var dialogContent;
-    if(notifOpts.size === 0) {
+    if(this.props.isLoggedIn) {
+      dialogContent = [
+        <DialogContent>
+          <DialogContentText>Oops, you are already logged in</DialogContentText>
+        </DialogContent>,
+        <DialogActions>
+          <Button onClick={e => this.props.onLoggedInAndClose.bind(this)}>Close</Button>
+        </DialogActions>,
+      ];
+    } else if(notifOpts.size === 0) {
       dialogContent = [
         <DialogContent>
           <DialogContentText>Sign ups are currently disabled</DialogContentText>
@@ -121,14 +144,17 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
       const showPasswordInput = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
       const isPasswordRequired = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
       const isSubmittable = selectedNotificationType
-        && ((selectedNotificationType !== NotificationType.Mobile && selectedNotificationType !== NotificationType.Web) || this.state.notificationData)
+        && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
+        && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
+        && (selectedNotificationType !== NotificationType.Browser || this.state.notificationDataBrowser)
         && (!isDisplayNameRequired || this.state.displayName)
         && (selectedNotificationType !== NotificationType.Email || this.state.email)
         && (!isPasswordRequired || this.state.pass);
 
       const onlySingleOptionRequiresAllow = onlySingleOption &&
-        ((selectedNotificationType === NotificationType.Web && (!this.state.notificationData || this.state.notificationType !== NotificationType.Web))
-        || (selectedNotificationType === NotificationType.Mobile && (!this.state.notificationData || this.state.notificationType !== NotificationType.Mobile)));
+        ((selectedNotificationType === NotificationType.Android && !this.state.notificationDataAndroid)
+        || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
+        || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
       dialogContent = [
         <DialogContent>
@@ -144,18 +170,19 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                 <ListItem 
                   button={!onlySingleOption}
                   selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
-                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email, notificationData: undefined}) : undefined}
+                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
+                  disabled={this.state.isSubmitting}
                 >
                   <ListItemIcon><EmailIcon /></ListItemIcon>
                   <ListItemText inset primary='Email' className={this.props.classes.noWrap} />
                 </ListItem>
               </Collapse>
-              <Collapse in={notifOpts.has(NotificationType.Mobile)}>
+              <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                 <ListItem
                   button={!onlySingleOption}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Mobile}
+                  selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
                   onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
-                  disabled={onlySingleOptionRequiresAllow}
+                  disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                 >
                   <ListItemIcon><MobilePushIcon /></ListItemIcon>
                   <ListItemText inset primary='Mobile Push' className={this.props.classes.noWrap} />
@@ -164,12 +191,12 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                   <Button className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
                 </Collapse>
               </Collapse>
-              <Collapse in={notifOpts.has(NotificationType.Web)}>
+              <Collapse in={notifOpts.has(NotificationType.Browser)}>
                 <ListItem
                   button={!onlySingleOption}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Web}
+                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
                   onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
-                  disabled={onlySingleOptionRequiresAllow}
+                  disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                 >
                   <ListItemIcon><WebPushIcon /></ListItemIcon>
                   <ListItemText inset primary='Browser Push' className={this.props.classes.noWrap} />
@@ -182,10 +209,11 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                 <ListItem
                   button={!onlySingleOption}
                   selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
-                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Silent, notificationData: undefined}) : undefined}
+                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Silent}) : undefined}
+                  disabled={this.state.isSubmitting}
                 >
                   <ListItemIcon><SilentIcon /></ListItemIcon>
-                  <ListItemText inset primary={onlySingleOption ? 'In-App Only' : 'In-App'} />
+                  <ListItemText inset primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
                 </ListItem>
               </Collapse>
             </List>
@@ -203,13 +231,14 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                   <TextField
                     fullWidth
                     required={isDisplayNameRequired}
-                    value={this.state.displayName}
+                    value={this.state.displayName || ''}
                     onChange={e => this.setState({displayName: e.target.value})}
                     label='Display name'
                     helperText={(<div className={this.props.classes.noWrap}>How others see you</div>)}
                     margin='normal'
                     classes={{ root: this.props.classes.noWrap }}
                     style={{marginTop: '0px'}}
+                    disabled={this.state.isSubmitting}
                   />
                 )}
                 <Collapse in={showEmailInput} unmountOnExit>
@@ -217,19 +246,20 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                     <TextField
                       fullWidth
                       required
-                      value={this.state.email}
+                      value={this.state.email || ''}
                       onChange={e => this.setState({email: e.target.value})}
                       label='Email'
                       type='email'
                       helperText={(<div className={this.props.classes.noWrap}>Where to send you notifications</div>)}
                       margin='normal'
                       style={{marginTop: showDisplayNameInput ? undefined : '0px'}}
+                      disabled={this.state.isSubmitting}
                     />
                     {showPasswordInput && (
                       <TextField
                         fullWidth
                         required={isPasswordRequired}
-                        value={this.state.pass}
+                        value={this.state.pass || ''}
                         onChange={e => this.setState({pass: e.target.value})}
                         label='Password'
                         helperText={(<div className={this.props.classes.noWrap}>
@@ -249,6 +279,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                           </InputAdornment>
                         )}}
                         margin='normal'
+                        disabled={this.state.isSubmitting}
                       />
                     )}
                   </div>
@@ -258,8 +289,15 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
           </div>
         </DialogContent>,
         <DialogActions>
-          <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
-          <Button color='primary' disabled={!isSubmittable}>Continue</Button>
+          <Button
+            onClick={this.props.onClose.bind(this)}
+            disabled={this.state.isSubmitting}
+          >Cancel</Button>
+          <Button
+            color='primary'
+            disabled={!isSubmittable || this.state.isSubmitting}
+            onClick={this.onSubmit.bind(this)}
+          >Submit</Button>
         </DialogActions>,
       ];
     }
@@ -279,16 +317,37 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     );
   }
 
+  onSubmit() {
+    this.setState({isSubmitting: true});
+    this.props.server.dispatch().userCreate({
+      projectId: this.props.server.getProjectId(),
+      create: {
+        name: this.state.displayName,
+        email: this.state.email,
+        password: this.state.pass,
+        iosPushToken: this.state.notificationDataIos,
+        androidPushToken: this.state.notificationDataAndroid,
+        browserPushToken: this.state.notificationDataBrowser,
+      },
+    }).then(() => {
+      this.setState({isSubmitting: false});
+      this.props.onLoggedInAndClose();
+    }).catch(() => {
+      this.setState({isSubmitting: false});
+    });
+  }
+
   onClickMobileNotif() {
+    const device = MobileNotification.getInstance().getDevice();
+    if(device === Device.None) return;
     this.setState({
-      notificationType: NotificationType.Mobile,
-      notificationData: undefined,
+      notificationType: device === Device.Android ? NotificationType.Android : NotificationType.Ios,
     });
     MobileNotification.getInstance().askPermission().then(r => {
       if(r.type === 'success') {
         this.setState({
-          notificationType: NotificationType.Mobile,
-          notificationData: r.token,
+          ...(r.device === Device.Android ? { notificationDataAndroid: r.token } : {}),
+          ...(r.device === Device.Ios ? { notificationDataIos: r.token } : {}),
         });
       } else if(r.type === 'error') {
         if(r.userFacingMsg) {
@@ -301,14 +360,12 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
 
   onClickWebNotif() {
     this.setState({
-      notificationType: NotificationType.Web,
-      notificationData: undefined,
+      notificationType: NotificationType.Browser,
     });
     WebNotification.getInstance().askPermission().then(r => {
       if(r.type === 'success') {
         this.setState({
-          notificationType: NotificationType.Web,
-          notificationData: r.token,
+          notificationDataBrowser: r.token,
         });
       } else if(r.type === 'error') {
         if(r.userFacingMsg) {
@@ -324,12 +381,4 @@ export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {r
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
   isLoggedIn: state.users.loggedIn.status === Status.FULFILLED,
-  signup: (name?:string, email?:string, password?:string):void => {ownProps.server.dispatch().userCreate({
-    projectId: state.projectId,
-    create: {
-      name: name,
-      email: email,
-      password: password,
-    },
-  })},
 }})(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props&ConnectProps&WithStyles<typeof styles, true>&WithSnackbarProps>()(LogIn))));

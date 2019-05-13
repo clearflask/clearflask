@@ -59,7 +59,7 @@ export default class Templater {
       tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
     }));
     const articleCategoryIndex = categories.getChildPages().length - 1;
-    this.supportExpressingFacebookStyle(articleCategoryIndex);
+    this.supportExpressingAllEmojis(articleCategoryIndex);
 
     // tags: Feature Requests, Bug Reports, Translations
     // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security

@@ -49,13 +49,14 @@ export type ColorLookup = { [value:string]: string; }
 
 interface Props extends ListProps, WithStyles<typeof styles, true> {
   classes; // conflict
-  name?:string;
   label?:string;
+  helperText?:string;
   placeholder?:string;
   errorMsg?:string;
   value?:Label[];
   options:Label[];
   colorLookup?:ColorLookup;
+  disabled?:boolean;
   isMulti?:boolean;
   bare?:boolean;
   width?:string
@@ -100,7 +101,7 @@ class SelectionPicker extends Component<Props> {
         {this.props.onValueCreate
           ? (<CreatableSelect<Label> {...selectComponentProps} />)
           : (<Select<Label> {...selectComponentProps} />)}
-        {(!this.props.bare || this.props.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.label}</FormHelperText>)}
+        {(!this.props.bare && this.props.helperText || this.props.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>)}
       </div>
     );
   }
@@ -152,7 +153,8 @@ const Control = (props) => {
           ...props.innerProps,
         },
       }}
-      label={!outerProps.bare && outerProps.name}
+      label={!outerProps.bare && outerProps.label}
+      disabled={outerProps.disabled}
       InputLabelProps={{
         style: {
           marginTop: '3px',

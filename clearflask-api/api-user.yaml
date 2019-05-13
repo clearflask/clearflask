@@ -48,13 +48,24 @@ components:
           properties:
             email:
               type: string
-          required:
+            iosPush:
+              type: boolean
+            androidPush:
+              type: boolean
+            browserPush:
+              type: boolean
     UserAdmin:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMe'
         - type: object
           properties:
             email:
+              type: string
+            iosPushToken:
+              type: string
+            androidPushToken:
+              type: string
+            browserPushToken:
               type: string
     UserCreate:
       type: object
@@ -64,6 +75,12 @@ components:
         email:
           type: string
         password:
+          type: string
+        iosPushToken:
+          type: string
+        androidPushToken:
+          type: string
+        browserPushToken:
           type: string
     UserCreateAdmin:
       allOf:
@@ -78,6 +95,12 @@ components:
         email:
           type: string
         password:
+          type: string
+        iosPushToken:
+          type: string
+        androidPushToken:
+          type: string
+        browserPushToken:
           type: string
 
 /project/{projectId}/login:
@@ -101,6 +124,19 @@ components:
           application/json:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserMe'
+/project/{projectId}/logout:
+  post:
+    operationId: userLogout
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/sso:
   post:
     operationId: userSsoCreateOrLogin

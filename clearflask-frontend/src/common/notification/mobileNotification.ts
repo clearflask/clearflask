@@ -43,7 +43,7 @@ export enum Status {
 
 export enum Device {
   None = 'none',
-  IOS = 'ios',
+  Ios = 'ios',
   Android = 'android',
 }
 

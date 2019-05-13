@@ -67,6 +67,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
       <div className={this.props.classes.container}>
         <div className={this.props.classes.selection}>
           <SelectionPicker
+            label='Search'
             value={controls.values}
             options={controls.options}
             colorLookup={controls.colorLookup}
@@ -74,7 +75,6 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
             inputMinWidth='100px'
             onValueChange={this.onValueChange.bind(this)}
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
-            placeholder='Search'
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
             overrideComponents={{
               DropdownIndicator: (dropdownIndicatorProps) => (
@@ -124,9 +124,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                       </MenuItem>
                     )}
                     <div style={{
-                      mozColumns: `150px`,
-                      webkitColumns: `150px`,
-                      columns: `150px`,
+                      columnWidth: '150px',
                     }}>
                       {menuItems}
                     </div>
