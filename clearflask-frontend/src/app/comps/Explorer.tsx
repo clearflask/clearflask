@@ -152,7 +152,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
         </div>
       );
     } else {
-      topBar = this.props.explorer.allowCreate && (
+      topBar = this.props.explorer.allowSearch && (
         <PanelSearch
           innerRef={this.panelSearchRef}
           server={this.props.server}
@@ -180,7 +180,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               showExpression: true,
             }} 
             searchOverride={this.state.search}
-            {...(this.props.explorer.allowCreate ? {
+            {...(this.props.explorer.allowSearch ? {
               onClickTag: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Tag)
                 ? tagId => this.panelSearchRef.current && this.panelSearchRef.current.onClickTag(tagId) : undefined,
               onClickStatus: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Status)

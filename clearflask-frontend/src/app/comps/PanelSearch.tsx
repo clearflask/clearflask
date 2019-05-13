@@ -112,7 +112,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 .filter(t => this.isFilterControllable(t)
                   && t !== FilterType.Search
                   && t !== FilterType.Tag
-                  && (!newSearch || baseColumns[t]))
+                  && baseColumns[t])
                 .forEach(t => addColumn(t, baseColumns[t]));
                 Object.keys(tagColumns)
                   .forEach(t => addColumn(t, tagColumns[t]));

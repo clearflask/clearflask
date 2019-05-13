@@ -8,6 +8,7 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
+  className?:string;
   direction?:string;
   start?:string;
   end?:string;
@@ -22,7 +23,7 @@ class GradientFade extends React.Component<Props&WithStyles<typeof styles, true>
   render() {
     if(this.props.disabled) return this.props.children;
     return (
-      <div className={this.props.classes.content} style={{
+      <div className={`${this.props.classes.content} ${this.props.className || ''}`} style={{
         ...(this.props.style || {}),
         webkitMaskImage: `linear-gradient(${this.props.direction || 'to right'}, ${this.props.isPaper ? this.props.theme.palette.background.paper : this.props.theme.palette.background.default} ${this.props.start || '0%'}, rgba(0, 0, 0, ${this.props.opacity || 0}) ${this.props.end || '100%'})`,
         maskImage: `linear-gradient(${this.props.direction || 'to right'}, ${this.props.isPaper ? this.props.theme.palette.background.paper : this.props.theme.palette.background.default} ${this.props.start || '0%'}, rgba(0, 0, 0, ${this.props.opacity || 0}) ${this.props.end || '100%'})`,

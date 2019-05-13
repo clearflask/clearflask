@@ -87,7 +87,7 @@ class DataMock {
         votersCount: Math.round(Math.random() * 30),
         voteValue: Math.round(Math.random() * 1000) - 300,
       } : {}),
-      ...(Math.random() < 0.09 ? {
+      ...(Math.random() < 0.9 ? {
         expressionsValue: Math.random() * 100,
         expressions: ((category.support.express && category.support.express.limitEmojiSet)
           ? category.support.express.limitEmojiSet.map(e => e.display)

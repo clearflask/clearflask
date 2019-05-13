@@ -23,6 +23,7 @@ import GradientFade from '../../common/GradientFade';
 import { PopoverPosition } from '@material-ui/core/Popover';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
+import Truncate from '../../common/Truncate';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -96,13 +97,15 @@ const styles = (theme:Theme) => createStyles({
     alignItems: 'center',
   },
   expressionInner: {
-    paddingLeft: theme.spacing.unit / 2,
-    paddingRight: theme.spacing.unit / 2,
+    // paddingLeft: theme.spacing.unit / 2,
+    // paddingRight: theme.spacing.unit / 2,
+    padding: '4px 6px',
   },
   expressionOuter: {
     height: 'auto',
-    margin: theme.spacing.unit / 4,
-    borderRadius: '9px',
+    marginLeft: theme.spacing.unit / 4,
+    marginRight: theme.spacing.unit / 4,
+    borderRadius: '18px',
   },
   expressionHasExpressed: {
     borderColor: theme.palette.primary.main,
@@ -112,14 +115,31 @@ const styles = (theme:Theme) => createStyles({
     borderColor: 'rgba(0,0,0,0)',
   },
   expression: {
+    lineHeight: 1.15,
+    fontSize: 16,
     display: 'inline-block',
-    fontSize: '4em',
-    transform: 'scale(.25) translateY(1.1em)',
-    margin: '-1em -.333em',
+    width: 16,
+    height: 16,
+    transform: 'translate(-1px,-1px)',  
+    wordBreak: 'keep-all',
+    fontFamily: '"Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI", "Apple Color Emoji", "Twemoji Mozilla", "Noto Color Emoji", "EmojiOne Color", "Android Emoji"',
   },
   expressionExpressedNonButton: {
     border: '1px solid ' + theme.palette.primary.main,
     color: theme.palette.primary.main,
+  },
+  expressionShowMoreEmojiIcon: {
+    position: 'relative',
+    top: 2,
+    left: -1,
+  },
+  expressionShowMoreAddIcon: {
+    borderRadius: 16,
+    width: 12,
+    height: 12,
+    position: 'relative',
+    top: -4,
+    left: -6,
   },
   expressionPicker: {
     '& .emoji-mart' : {
@@ -617,12 +637,9 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           root: `${this.props.classes.expressionOuter} ${hasExpressed ? this.props.classes.expressionHasExpressed : this.props.classes.expressionNotExpressed}`,
         }}
         label={(
-          <div>
-            {typeof display === 'string'
-              ? <span className={this.props.classes.expression}>{display}</span>
-              : display
-            }
-            {count > 0 && (<Typography variant='caption' inline>{count}</Typography>)}
+          <div style={{display: 'flex', alignItems: 'center'}}>
+            <span className={this.props.classes.expression}>{display}</span>
+            {count > 0 && (<Typography variant='caption' color={hasExpressed ? 'primary' : 'default'} inline>&nbsp;{count}</Typography>)}
           </div>
         )}
       />
@@ -632,7 +649,6 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
   renderExpression(variant:PostVariant) {
     if(variant !== 'page' && this.props.display && this.props.display.showExpression === false
       || !this.props.idea
-      || !this.props.idea.expressions
       || !this.props.category
       || !this.props.category.support.express) return null;
     
@@ -656,7 +672,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           expressionDiff.remove = this.props.vote && this.props.vote.expressions || undefined;
         }
       } else if(!hasExpressed && reachedLimitPerIdea) {
-        this.props.enqueueSnackbar('Whoa, that is too many expressions', { variant: 'error', preventDuplicate: true });
+        this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'error', preventDuplicate: true });
         return;
       } else if(hasExpressed) {
         expressionDiff.remove = [display];
@@ -668,7 +684,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 
     const limitEmojiSet = this.props.category.support.express.limitEmojiSet;
     const seenEmojis = new Set<string>();
-    const expressionsExpressed:React.ReactNode[] = this.props.idea.expressions.map(expression => {
+    const expressionsExpressed:React.ReactNode[] = (this.props.idea.expressions || []).map(expression => {
       if(limitEmojiSet) seenEmojis.add(expression.display);
       return this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), expression.count);
     });
@@ -684,7 +700,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
         showPreview={false}
         showSkinTones={false}
-        emojiSize={18}
+        emojiSize={16}
         exclude={['recent']}
         style={{
           border: 'unset',
@@ -722,8 +738,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                 alignItems: 'center',
                 opacity: 0.3,
               }}>
-                <AddEmojiIcon fontSize='inherit' />
-                <AddIcon fontSize='inherit' style={{marginLeft: '-5px', marginTop: '-6px'}} />
+                <AddEmojiIcon fontSize='inherit' className={this.props.classes.expressionShowMoreEmojiIcon} />
+                <AddIcon fontSize='inherit' className={this.props.classes.expressionShowMoreAddIcon} />
               </span>
             ),
             false,
@@ -742,7 +758,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           onClose={() => this.setState({expressionExpandedAnchor: undefined})}
           anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
           transformOrigin={{ vertical: 'top', horizontal: 'left', }}
-          marginThreshold={0}
+          marginThreshold={2}
           PaperProps={{
             style: {
               overflow: 'hidden',
