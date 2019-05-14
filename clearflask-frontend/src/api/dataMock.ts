@@ -15,7 +15,6 @@ class DataMock {
   }
 
   mockItems():Promise<any> {
-    ServerMock.get().setLatency(false);
     return ServerMock.get().configGetAdmin({projectId: this.projectId})
       .then((versionedConfig:Admin.VersionedConfigAdmin) => {
         const promises:Promise<any>[] = [];
@@ -26,7 +25,6 @@ class DataMock {
               promises.push(this.mockUser(versionedConfig)
                 .then((user:Admin.UserAdmin) => 
                   this.mockIdea(versionedConfig, category, status, user)
-                    .then(() => ServerMock.get().setLatency(true))
                 )
               );
             }

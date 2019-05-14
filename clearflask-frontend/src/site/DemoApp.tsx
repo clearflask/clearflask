@@ -10,13 +10,13 @@ import { Server } from '../api/server';
 
 interface Props {
   server:Server;
-  editor:ConfigEditor.Editor|undefined;
+  intialSubPath?:string;
 }
 
 export default class DemoApp extends Component<Props> {
   render() {
     return (
-      <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}`]}>
+      <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}${this.props.intialSubPath || ''}`]}>
         <Route path="/:projectId" render={props => (
           <App
             {...props}

@@ -130,8 +130,9 @@ const styles = (theme:Theme) => createStyles({
   },
   expressionShowMoreEmojiIcon: {
     position: 'relative',
-    top: 2,
-    left: -1,
+    width: 14,
+    height: 14,
+    top: 3,
   },
   expressionShowMoreAddIcon: {
     borderRadius: 16,
@@ -157,7 +158,7 @@ const styles = (theme:Theme) => createStyles({
       color: theme.palette.text.primary + '!important',
     },
     '& .emoji-mart-category-label span' : {
-      background: 'inherit' + '!important',
+      background: fade(theme.palette.background.paper, .95) + '!important',
     },
   },
   bottomBarLine: {

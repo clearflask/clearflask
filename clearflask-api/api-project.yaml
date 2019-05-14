@@ -263,7 +263,7 @@ components:
           type: object
           properties:
             limitEmojiPerIdea:
-              x-clearflask-prop: { order: 1, name: 'Limit per Idea', description: 'If set, limit the number of expressions that can be added per idea', defaultValue: 1 }
+              x-clearflask-prop: { order: 1, name: 'Limit per Idea', description: 'If set, limit the number of expressions that can be added per idea', defaultValue: 5 }
               type: number
             limitEmojiSet:
               x-clearflask-prop: { order: 2, name: 'Emoji whitelist', description: 'If enabled, limit the emojis that can be displayed. Additionally, set the weight of each emoji' }

@@ -26,6 +26,32 @@ export default class Templater {
     // TODO FORUM
   }
 
+  demoCategory() {
+    const categoryId = randomUuid();
+    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: true}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const categoryIndex = categories.getChildPages().length - 1;
+    return categoryIndex;
+  }
+
+  demoPagePanel() {
+    const pageId = randomUuid();
+    this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
+      pageId: pageId,
+      name: 'Demo',
+      slug: stringToSlug('demo'),
+      panels: [
+        Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+      ],
+    }));
+  }
+
   baseFeatures() {
     // Enable SSO
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'singleSignOn']).set(true);
@@ -300,13 +326,13 @@ export default class Templater {
   creditsBeer() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: '🍺', lessOrEqual: 999}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
+      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({suffix: ' 🍺', lessOrEqual: 999}),
     ]);
   }
 

@@ -122,7 +122,6 @@ export default class Admin extends Component<Props, State> {
       preview = (
         <DemoApp
           key={activeProject.configVersion}
-          editor={activeProject.editor}
           server={activeProject.server} />
       );
     }

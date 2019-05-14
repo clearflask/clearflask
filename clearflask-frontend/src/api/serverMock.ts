@@ -9,7 +9,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   readonly BASE_LATENCY = 300;
   readonly DEFAULT_LIMIT = 10;
-  hasLatency:boolean = true;
+  hasLatency:boolean = false;
 
   // Mock server-side cookie data
   loggedInUser?:Admin.User;

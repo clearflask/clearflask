@@ -66,6 +66,7 @@ class App extends Component<Props> {
           })
           .then(() => DataMock.get(projectId).mockItems())
           .then(() => this.server.dispatch().configGet({projectId: projectId}))
+          .then(() => {if(projectId === 'mock-latency') ServerMock.get().setLatency(true)})
         );
     } else {
       this.server = new Server(projectId);
@@ -95,7 +96,7 @@ class App extends Component<Props> {
             } : {}),
           }}
         >
-          <Route path={`${prefixMatch}/:page?`} render={props => (
+          <Route path={`${prefixMatch}/:page?`} render={props => props.match.params['page'] === 'embed' ? null : (
             <Header
               pageSlug={props.match.params['page'] || ''}
               server={this.server}
@@ -104,7 +105,7 @@ class App extends Component<Props> {
           )} />
           <AnimatedRoutesApp
             render={(pageSlug:string) => (
-              <Route path={`${prefixMatch}/${pageSlug}`} render={props => (
+              <Route path={`${prefixMatch}/(embed)?/${pageSlug}`} render={props => (
                 <BasePage>
                   <CustomPage
                     pageSlug={pageSlug}
