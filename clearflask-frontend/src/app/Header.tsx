@@ -10,6 +10,7 @@ import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
+import CreditView from '../common/config/CreditView';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -73,6 +74,7 @@ interface ConnectProps {
   config?:Client.Config;
   page?:Client.Page;
   loggedInUser?:Client.UserMe;
+  balance:number;
 }
 
 class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
@@ -137,21 +139,22 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
               {this.props.config && this.props.config.name || 'ClearFlask'}
             </Typography>
           </div>
-          {this.props.loggedInUser &&
+          {this.props.config && this.props.loggedInUser &&
             <div style={{
               marginLeft: 'auto',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
             }}>
-              <IconButton aria-label="Notifications">
-                <Badge invisible badgeContent={1} color='secondary'>
-                  <NotificationsIcon />
-                </Badge>
+              <Typography variant='caption' >
+                <CreditView val={this.props.balance} credits={this.props.config.credits} />
+              </Typography>
+              <IconButton aria-label='Account balance'>
+                <BalanceIcon />
               </IconButton>
-              <IconButton aria-label="Account balance">
-                <Badge invisible badgeContent='2k' color='primary'>
-                  <BalanceIcon />
+              <IconButton aria-label='Notifications'>
+                <Badge badgeContent={0} color='secondary'>
+                  <NotificationsIcon />
                 </Badge>
               </IconButton>
               <Avatar>{this.props.loggedInUser.name ? this.props.loggedInUser.name.charAt(0) : 'A'}</Avatar>
@@ -211,6 +214,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     config: state.conf.conf,
     page: page,
     loggedInUser: state.users.loggedIn.user,
+    balance: state.credits.myBalance.balance || 0,
   };
 })(withStyles(styles, { withTheme: true })(Header));
  

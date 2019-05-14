@@ -68,6 +68,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea'
   /project/{projectId}/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea~1{ideaId}'
+  /project/{projectId}/bind:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1bind'
   /project/{projectId}/login:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1login'
   /project/{projectId}/logout:
@@ -82,8 +84,8 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment'
   /project/{projectId}/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
-  /project/{projectId}/user/{userId}/credit:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1credit'
+  /project/{projectId}/user/{userId}/transaction:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transaction'
   /project/{projectId}/idea/{ideaId}/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
   /project/{projectId}/config:

@@ -33,6 +33,10 @@ components:
         searchText:
           x-clearflask-prop: { name: 'Search query', description: 'Optionally set a search query to use' }
           type: string
+        fundedByMeAndActive:
+          x-clearflask-hide: true
+          x-clearflask-prop: { name: 'Funded by me', description: 'Ideas funded by me and can be adjust' }
+          type: boolean
         limit:
           x-clearflask-prop: { name: 'Limit', description: 'Optionally set a limit on how many results to return' }
           minimum: 1

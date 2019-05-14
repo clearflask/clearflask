@@ -66,7 +66,7 @@ export default class Admin extends Component<Props, State> {
               config: editor.getConfig(),
             });
           })
-          .then(() => DataMock.get(projectId).mockItems())
+          .then(() => DataMock.get(projectId).mockAll())
           .then(() => d.configGetAllAdmin()))
         .then(this.loadProjects.bind(this));
     } else {

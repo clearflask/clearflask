@@ -15,6 +15,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /admin/bind:
+    $ref: 'api-user.yaml#/~1admin~1bind'
   /admin/login:
     $ref: 'api-user.yaml#/~1admin~1login'
   /project/{projectId}/admin/user:
@@ -27,10 +29,10 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
-  /project/{projectId}/admin/user/{userId}/credit:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1credit'
-  /project/{projectId}/admin/credit:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1credit'
+  /project/{projectId}/admin/user/{userId}/transaction:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1transaction'
+  /project/{projectId}/admin/transaction:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction'
   /project/{projectId}/admin/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote'
   /project/{projectId}/admin/idea/{ideaId}/vote:

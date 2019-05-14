@@ -81,7 +81,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           templater.supportExpressingGithubStyle(categoryIndex);
           templater.demoPagePanel();
         },
-        mocker => mocker.mockItems(),
+        mocker => mocker.mockAll(),
         '/embed/demo',
       ));
   }
@@ -95,9 +95,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         templater => {
           const categoryIndex = templater.demoCategory();
           templater.supportFunding(categoryIndex);
+          templater.creditsCurrency();
           templater.demoPagePanel();
         },
-        mocker => mocker.mockItems(),
+        mocker => mocker.mockAll(),
         '/embed/demo',
       ));
   }
@@ -113,7 +114,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           templater.supportVoting(categoryIndex, true);
           templater.demoPagePanel();
         },
-        mocker => mocker.mockItems(),
+        mocker => mocker.mockAll(),
         '/embed/demo',
       ));
   }

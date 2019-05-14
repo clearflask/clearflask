@@ -27,6 +27,8 @@ export enum OpenApiTags {
    * Can be on a string property or array of string property.
    */
   PropLink = 'x-clearflask-prop-link',
+  /** Hide */
+  Hide = 'x-clearflask-hide',
 }
 export interface xCfPage {
   name?:string;
@@ -528,7 +530,9 @@ export class EditorImpl implements Editor {
       }
     }
 
-    if(schema[OpenApiTags.Page]) {
+    if(schema[OpenApiTags.Hide]) {
+      throw Error(`Property hidden on path ${path}`);
+    } else if(schema[OpenApiTags.Page]) {
       return this.parsePage(path, depth, isRequired, schema);
     } else if(schema[OpenApiTags.PageGroup]) {
       return this.parsePageGroup(path, depth, isRequired, schema);
@@ -627,6 +631,10 @@ export class EditorImpl implements Editor {
         isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
     }
+    
+    if(pageSchema[OpenApiTags.Hide]) {
+      throw Error(`Cannot parse hidden page on path ${path}`);
+    }
 
     const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
     if(!xPage) {
@@ -647,7 +655,9 @@ export class EditorImpl implements Editor {
       Object.keys(propsSchema).forEach(propName => {
         const propPath = [...path, propName];
         const propSchema = this.getSubSchema([propName], propsSchema);
-        if(propSchema[OpenApiTags.Page]) {
+        if(propSchema[OpenApiTags.Hide]) {
+          // Nothing to do, hidden
+        } else if(propSchema[OpenApiTags.Page]) {
           const childPage = this.getPage(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
@@ -781,6 +791,10 @@ export class EditorImpl implements Editor {
         const propName = path[path.length - 1];
         isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
+    }
+
+    if(pageGroupSchema[OpenApiTags.Hide]) {
+      throw Error(`Cannot parse hidden page group on path ${path}`);
     }
 
     const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
@@ -954,6 +968,10 @@ export class EditorImpl implements Editor {
     }
     if(propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
       throw Error(`Page or pagegroup found instead of property on path ${path}`);
+    }
+
+    if(propSchema[OpenApiTags.Hide]) {
+      throw Error(`Cannot parse hidden property on path ${path}`);
     }
 
     var property:Property;
@@ -1433,10 +1451,14 @@ export class EditorImpl implements Editor {
               || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
             const requiredProps = propSchema.required || [];
             Object.keys(childPropsSchema).forEach(propName => {
+              const objectPropSchema = this.getSubSchema([propName], childPropsSchema);
+              if(objectPropSchema[OpenApiTags.Hide]) {
+                return;
+              }
               childProperties!.push(this.getProperty(
                 [...path, propName],
                 requiredProps.includes(propName),
-                this.getSubSchema([propName], childPropsSchema)));
+                objectPropSchema));
             });
             childProperties.sort(this.sortPagesProps);
           }

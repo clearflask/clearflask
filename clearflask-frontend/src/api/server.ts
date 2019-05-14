@@ -81,6 +81,7 @@ export class Server {
       comments: stateCommentsDefault,
       users: stateUsersDefault,
       votes: stateVotesDefault,
+      credits: stateCreditsDefault,
     };
     return state;
   }
@@ -133,6 +134,10 @@ export class Server {
     try {
     var result = await this.store.dispatch(msg);
     } catch(err) {
+      // Error exceptions
+      if((msg.type === Client.Action.userBind || msg.type === 'userBindAdmin') && err.status === 404) {
+        throw err;
+      }
       var errorMsg;
       if(err.json && err.json.userFacingMessage) {
         errorMsg = err.json.userFacingMessage;
@@ -156,6 +161,7 @@ export const getSearchKey = (search:Client.IdeaSearch):string => {
     search.limit || -1,
     search.sortBy,
     search.searchText || '',
+    search.fundedByMeAndActive ? 't' : 'f',
   ].join('-');
 }
 
@@ -369,13 +375,6 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         },
         maxFundAmountSeen: Math.max(action.payload.idea.funded || 0, state.maxFundAmountSeen),
       };
-    case Client.userLogoutActionStatus.Fulfilled:
-    case Client.userDeleteActionStatus.Fulfilled:
-      return {
-        ...state,
-        byId: {}, // Clear on login
-        bySearch: {}, // Clear on login
-      };
     default:
       return state;
   }
@@ -450,12 +449,6 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
               return commentsById;
             }, {}),
         },
-      };
-    case Client.userLogoutActionStatus.Fulfilled:
-    case Client.userDeleteActionStatus.Fulfilled:
-      return {
-        ...state,
-        byId: {}, // Clear on login
       };
     default:
       return state;
@@ -552,6 +545,7 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
     case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
+    case Client.userBindActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
@@ -725,6 +719,79 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
   }
 }
 
+export interface StateCredits {
+  myTransactions:{
+    status?:Status;
+    transactions?:Client.Transaction[];
+  };
+  myBalance:{
+    status?:Status;
+    balance?:number;
+  }
+}
+const stateCreditsDefault = {
+  myTransactions: {},
+  myBalance: {},
+};
+function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.Actions):StateCredits {
+  switch (action.type) {
+    case Client.transactionSearchActionStatus.Pending:
+      return {
+        ...state,
+        myTransactions: {
+          status: Status.PENDING,
+        },
+      };
+    case Client.transactionSearchActionStatus.Rejected:
+      return {
+        ...state,
+        myTransactions: {
+          status: Status.REJECTED,
+        },
+      };
+    case Client.transactionSearchActionStatus.Fulfilled:
+      return {
+        ...state,
+        myTransactions: {
+          status: Status.FULFILLED,
+          transactions: action.payload.results,
+        },
+        myBalance: {
+          status: Status.FULFILLED,
+          balance: action.payload.balance.balance,
+        },
+      };
+    case Client.voteUpdateActionStatus.Fulfilled:
+      if(action.payload.balance === undefined || action.payload.balance === undefined) return state;
+      return {
+        ...state,
+        myBalance: {
+          status: Status.FULFILLED,
+          balance: action.payload.balance.balance,
+        },
+      };
+    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
+    case Client.userLoginActionStatus.Fulfilled:
+    case Client.userBindActionStatus.Fulfilled:
+    case Client.userCreateActionStatus.Fulfilled:
+      return {
+        ...state,
+        myBalance: {
+          status: Status.FULFILLED,
+          balance: action.payload.balance,
+        },
+      };
+    case Client.userDeleteActionStatus.Fulfilled:
+    case Client.userLogoutActionStatus.Fulfilled:
+      return {
+        ...state,
+        myBalance: {}, // Clear on logout
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxState {
   projectId:string;
   conf:StateConf;
@@ -732,6 +799,7 @@ export interface ReduxState {
   comments:StateComments;
   users:StateUsers;
   votes:StateVotes;
+  credits:StateCredits;
 }
 export const reducers = combineReducers({
   projectId: (projectId?:string) => (projectId ? projectId : 'unknown'),
@@ -740,4 +808,5 @@ export const reducers = combineReducers({
   comments: reducerComments,
   users: reducerUsers,
   votes: reducerVotes,
+  credits: reducerCredits
 });

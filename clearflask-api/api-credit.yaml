@@ -1,7 +1,14 @@
 
 components:
   schemas:
-    CreditSearch:
+    Balance:
+      type: object
+      required:
+        - balance
+      properties:
+        balance:
+          type: number
+    TransactionSearch:
       type: object
       properties:
         filterTransactionTypes:
@@ -19,9 +26,9 @@ components:
           type: string
           format: date-time
       required:
-    CreditSearchAdmin:
+    TransactionSearchAdmin:
       allOf:
-        - $ref: 'api-credit.yaml#/components/schemas/CreditSearch'
+        - $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
         - type: object
           properties:
             filterUserIds:
@@ -31,9 +38,11 @@ components:
             filterTargetId:
               type: string
           required:
-    Credit:
+    Transaction:
       type: object
       properties:
+        userId:
+          type: string
         transactionId:
           type: string
         created:
@@ -67,12 +76,13 @@ components:
           description: Optional user facing explanation of the transaction.
           type: string
       required:
+        - userId
         - transactionId
         - created
         - amount
         - balance
         - transactionType
-    CreditCreateAdmin:
+    TransactionCreateAdmin:
       type: object
       properties:
         amount:
@@ -87,9 +97,9 @@ components:
         - balance
         - transactionType
 
-/project/{projectId}/user/{userId}/credit:
+/project/{projectId}/user/{userId}/transaction:
   get:
-    operationId: creditSearch
+    operationId: transactionSearch
     tags: [Credit]
     parameters:
       - name: projectId
@@ -110,13 +120,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-credit.yaml#/components/schemas/CreditSearch'
+          $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: CreditSearchResponse
+              title: TransactionSearchResponse
               type: object
               properties:
                 cursor:
@@ -124,12 +134,15 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-credit.yaml#/components/schemas/Credit'
+                    $ref: 'api-credit.yaml#/components/schemas/Transaction'
+                balance:
+                  $ref: 'api-credit.yaml#/components/schemas/Balance'
               required:
                 - results
-/project/{projectId}/admin/user/{userId}/credit:
+                - balance
+/project/{projectId}/admin/user/{userId}/transaction:
   post:
-    operationId: creditCreateAdmin
+    operationId: transactionCreateAdmin
     tags: [CreditAdmin]
     parameters:
       - name: projectId
@@ -142,20 +155,20 @@ components:
         required: true
         schema:
           type: string
-      - name: credit
+      - name: transaction
         in: query
         required: true
         schema:
-          $ref: 'api-credit.yaml#/components/schemas/CreditCreateAdmin'
+          $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-credit.yaml#/components/schemas/Credit'
-/project/{projectId}/admin/credit:
+              $ref: 'api-credit.yaml#/components/schemas/Transaction'
+/project/{projectId}/admin/transaction:
   get:
-    operationId: creditSearchAdmin
+    operationId: transactionSearchAdmin
     tags: [CreditAdmin]
     parameters:
       - name: projectId
@@ -171,13 +184,13 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-credit.yaml#/components/schemas/CreditSearchAdmin'
+          $ref: 'api-credit.yaml#/components/schemas/TransactionSearchAdmin'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: CreditSearchResponse
+              title: TransactionSearchAdminResponse
               type: object
               properties:
                 cursor:
@@ -185,6 +198,8 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-credit.yaml#/components/schemas/Credit'
+                    $ref: 'api-credit.yaml#/components/schemas/Transaction'
+                balance:
+                  $ref: 'api-credit.yaml#/components/schemas/Balance'
               required:
                 - results

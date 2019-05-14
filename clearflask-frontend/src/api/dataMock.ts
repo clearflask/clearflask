@@ -14,6 +14,33 @@ class DataMock {
     return new DataMock(projectId);
   }
 
+  mockAll():Promise<any> {
+    return this.mockLoggedIn()
+    .then(this.mockItems.bind(this));
+  }
+
+  mockLoggedIn():Promise<any> {
+    return ServerMock.get().userCreate({
+      projectId: this.projectId,
+      create: {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        password: 'password',
+        iosPushToken: 'fake-ios-push-token',
+        browserPushToken: 'fake-browser-push-token',
+      }
+    }).then(userMe => {
+      ServerMock.get().transactionCreateAdmin({
+        projectId: this.projectId,
+        userId: userMe.userId,
+        transaction: {
+          amount: 400,
+          summary: 'Mock amount given, spend it wisely',
+        },
+      });
+    });
+  }
+
   mockItems():Promise<any> {
     return ServerMock.get().configGetAdmin({projectId: this.projectId})
       .then((versionedConfig:Admin.VersionedConfigAdmin) => {
@@ -100,8 +127,7 @@ class DataMock {
 
   mockCommentsAndExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
     return this.mockUser(versionedConfig)
-      .then(user => this.mockExpression(versionedConfig, category, item, user)
-        .then(() => ServerMock.get().commentCreateAdmin({
+      .then(user => ServerMock.get().commentCreateAdmin({
           projectId: this.projectId,
           ideaId: item.ideaId,
           comment: {
@@ -135,7 +161,7 @@ class DataMock {
             });
           }
           return comment;
-        }))
+        })
       .then(comment => {
         if(level <= 0 ) return Promise.resolve();
         var remainingComments = numComments * Math.random();
@@ -145,32 +171,6 @@ class DataMock {
         }
         return promise;
       });
-  }
-
-  mockExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, user:Admin.UserAdmin):Promise<any> {
-    return ServerMock.get().voteUpdateAdmin({
-      projectId: this.projectId,
-      update: {
-        ideaId: item.ideaId,
-        voterUserId: user.userId,
-        fundAmount: (category.support.fund && Math.random() < 0.2)
-          ? ((versionedConfig.config.credits.increment
-              ? Math.ceil(Math.random() * 1000 / versionedConfig.config.credits.increment) * versionedConfig.config.credits.increment
-              : Math.random() * 1000))
-          : undefined,
-        vote: category.support.vote && Math.random() < 0.5
-          ? (category.support.vote.enableDownvotes && Math.random() < 0.5
-            ? Admin.VoteUpdateVoteEnum.Upvote : Admin.VoteUpdateVoteEnum.Downvote)
-          : undefined,
-        expressions: { add: [
-          category.support.express
-            ? (category.support.express.limitEmojiSet
-              ? category.support.express.limitEmojiSet[Math.floor(Math.random() * category.support.express.limitEmojiSet.length)].display
-              : Object.values(emojiIndex.emojis)[Math.floor(Math.random() * Object.values(emojiIndex.emojis).length)]['native'])
-            : undefined
-        ]},
-      }
-    });
   }
 }
 

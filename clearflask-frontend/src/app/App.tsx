@@ -28,7 +28,6 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 
 interface Props {
   serverOverride?:Server;
-  supressConfigGet?:boolean;
   supressCssBaseline?:boolean;
   isInsideContainer?:boolean;
   // Router matching
@@ -46,12 +45,12 @@ class App extends Component<Props> {
 
     this.state = {};
 
-    var supressConfigGet = this.props.supressConfigGet;
+    var supressConfigGetAndBind = false;
     const projectId = this.props.match.params['projectId'];
     if(this.props.serverOverride) { 
       this.server = this.props.serverOverride;
     } else if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      supressConfigGet = true;
+      supressConfigGetAndBind = true;
       this.server = new Server(projectId, ServerMock.get());
       this.server.dispatchAdmin()
         .then(d => d.projectCreateAdmin({projectId: projectId})
@@ -64,16 +63,24 @@ class App extends Component<Props> {
               config: editor.getConfig(),
             });
           })
-          .then(() => DataMock.get(projectId).mockItems())
-          .then(() => this.server.dispatch().configGet({projectId: projectId}))
+          .then(() => DataMock.get(projectId).mockAll())
+          .then(() => {
+            this.server.dispatch().configGet({projectId: projectId});
+            if(this.server.getStore().getState().users.loggedIn.status === undefined) {
+              this.server.dispatch().userBind({projectId: this.server.getProjectId()});
+            }
+          })
           .then(() => {if(projectId === 'mock-latency') ServerMock.get().setLatency(true)})
         );
     } else {
       this.server = new Server(projectId);
     }
 
-    if(!supressConfigGet && this.server.getStore().getState().conf.status === undefined) {
+    if(!supressConfigGetAndBind && this.server.getStore().getState().conf.status === undefined) {
       this.server.dispatch().configGet({projectId: this.server.getProjectId()});
+      if(this.server.getStore().getState().users.loggedIn.status === undefined) {
+        this.server.dispatch().userBind({projectId: this.server.getProjectId()});
+      }
     }
   }
 

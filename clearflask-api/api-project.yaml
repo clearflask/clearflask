@@ -49,9 +49,11 @@ components:
       x-clearflask-page: { order: 13, name: 'Credits', description: 'Define a currency for your users.' }
       title: CreditFormatter
       type: object
+      required:
+        - increment
       properties:
         increment:
-          x-clearflask-prop: { order: 1, name: 'Increments', description: 'Minimum increment to consider significant.', placeholder: '0' }
+          x-clearflask-prop: { order: 1, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
           type: number
         formats:
           x-clearflask-prop: { order: 2, name: 'Display rules', description: '

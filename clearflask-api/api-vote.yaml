@@ -132,6 +132,8 @@ components:
                   $ref: 'api-vote.yaml#/components/schemas/Vote'
                 idea:
                   $ref: 'api-idea.yaml#/components/schemas/Idea'
+                balance:
+                  $ref: 'api-credit.yaml#/components/schemas/Balance'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/vote:
@@ -218,6 +220,8 @@ components:
                   $ref: 'api-vote.yaml#/components/schemas/Vote'
                 idea:
                   $ref: 'api-idea.yaml#/components/schemas/Idea'
+                balance:
+                  $ref: 'api-credit.yaml#/components/schemas/Balance'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:

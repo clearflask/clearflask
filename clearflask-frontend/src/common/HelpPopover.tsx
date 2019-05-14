@@ -44,6 +44,7 @@ class HelpPopover extends Component<Props, State> {
         onClose={() => this.setState({expandedAnchor: undefined})}
         anchorOrigin={{ vertical: 'center', horizontal: 'right', }}
         transformOrigin={{ vertical: 'center', horizontal: 'left', }}
+        disableRestoreFocus
       >
         <div className={this.props.classes.popover}>
           {this.props.title && (<Typography variant='subtitle2'>{this.props.title}</Typography>)}

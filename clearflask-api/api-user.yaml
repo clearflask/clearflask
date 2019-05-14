@@ -54,9 +54,13 @@ components:
               type: boolean
             browserPush:
               type: boolean
-    UserAdmin:
+    UserMeWithBalance:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMe'
+        - $ref: 'api-credit.yaml#/components/schemas/Balance'
+    UserAdmin:
+      allOf:
+        - $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
         - type: object
           properties:
             email:
@@ -103,6 +107,24 @@ components:
         browserPushToken:
           type: string
 
+/project/{projectId}/bind:
+  post:
+    operationId: userBind
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/login:
   post:
     operationId: userLogin
@@ -123,7 +145,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMe'
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/logout:
   post:
     operationId: userLogout
@@ -157,7 +179,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMe'
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/user:
   post:
     operationId: userCreate
@@ -178,7 +200,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMe'
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/user/{userId}:
   get:
     operationId: userGet
@@ -226,7 +248,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMe'
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -248,6 +270,18 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/admin/bind:
+  post:
+    operationId: userBindAdmin
+    tags: [UserAdmin]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /admin/login:
   post:
     operationId: userLoginAdmin
@@ -263,7 +297,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMe'
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/admin/user:
   get:
     operationId: userSearchAdmin

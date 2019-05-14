@@ -6,9 +6,12 @@ import Loader from '../utils/Loader';
 import { connect } from 'react-redux';
 import { ReduxState, Server, Status } from '../../api/server';
 import TimeAgo from 'react-timeago'
+/* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
-import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
+import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded'
+/* Other potential icons: receipt, shopping cart, create, attach money, local atm, money, plus one */
+import FundIcon from '@material-ui/icons/MoneyRounded';
 import TruncateMarkup from 'react-truncate-markup';
 import CreditView from '../../common/config/CreditView';
 import { withRouter, RouteComponentProps, matchPath } from 'react-router';
@@ -23,12 +26,15 @@ import GradientFade from '../../common/GradientFade';
 import { PopoverPosition } from '@material-ui/core/Popover';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import Truncate from '../../common/Truncate';
+import FundingBar from './FundingBar';
+import FundingControl from './FundingControl';
 
 const styles = (theme:Theme) => createStyles({
   page: {
+    minWidth: 300,
   },
   list: {
+    minWidth: 300,
   },
   comment: {
     margin: theme.spacing.unit,
@@ -76,6 +82,7 @@ const styles = (theme:Theme) => createStyles({
   voteIconButton: {
     fontSize: '2em',
     padding: '0px',
+    color: theme.palette.text.hint,
   },
   voteIconButtonUp: {
     borderRadius: '80% 80% 50% 50%',
@@ -97,8 +104,6 @@ const styles = (theme:Theme) => createStyles({
     alignItems: 'center',
   },
   expressionInner: {
-    // paddingLeft: theme.spacing.unit / 2,
-    // paddingRight: theme.spacing.unit / 2,
     padding: '4px 6px',
   },
   expressionOuter: {
@@ -128,13 +133,32 @@ const styles = (theme:Theme) => createStyles({
     border: '1px solid ' + theme.palette.primary.main,
     color: theme.palette.primary.main,
   },
-  expressionShowMoreEmojiIcon: {
+  fundMoreButton: {
+    height: 'auto',
+    padding: 0,
+    borderRadius: '18px',
+    margin: theme.spacing.unit / 2,
+  },
+  fundMoreLabel: {
+    padding: '4px 6px',
+  },
+  fundMoreContainer: {
+    width: 16,
+    height: 16,
+  },
+  moreContainer: {
+    lineHeight: 'unset',
+    display: 'flex',
+    alignItems: 'center',
+    color: theme.palette.text.hint,
+  },
+  moreMainIcon: {
     position: 'relative',
     width: 14,
     height: 14,
     top: 3,
   },
-  expressionShowMoreAddIcon: {
+  moreAddIcon: {
     borderRadius: 16,
     width: 12,
     height: 12,
@@ -185,31 +209,7 @@ const styles = (theme:Theme) => createStyles({
     margin:  theme.spacing.unit,
     marginBottom: '0px',
     maxWidth: '400px',
-  },
-  fundingAmount: {
-    fontSize: '1.1em',
-  },
-  fundingGoal: {
-    fontSize: '0.8em',
-  },
-  fundingAmountReached: {
-    fontSize: '1.2em',
-  },
-  fundingGoalReached: {
-    fontSize: '0.8em',
-  },
-  fundingBar: {
-    backgroundColor: theme['custom'] && theme['custom'].funding,
-  },
-  fundingBarBackground: {
-    backgroundColor: theme.palette.grey[theme.palette.type === 'light' ? 300 : 700],
-  },
-  fundingBarNoGoal: {
-    background: `linear-gradient(to left, transparent 20px, ${theme['custom'] && theme['custom'].funding} 100%)`,
-    opacity: 0.4,
-  },
-  fundingBarBackgroundNoGoal: {
-    background: `linear-gradient(to right, ${theme.palette.grey[theme.palette.type === 'light' ? 300 : 700]}, transparent 100%)`,
+    display: 'flex',
   },
 });
 
@@ -249,6 +249,7 @@ interface ConnectProps {
 
 
 interface State {
+  fundingExpandedAnchor?:PopoverPosition&{width:number};
   expressionExpandedAnchor?:PopoverPosition;
   logInOpen?:boolean;
   isSubmittingUpvote?:boolean;
@@ -563,56 +564,72 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.fund) return null;
 
-    const fundGoal = this.props.idea.fundGoal && this.props.idea.fundGoal > 0
-      ? this.props.idea.fundGoal : undefined;
-    const fundPerc = Math.floor(100 * (this.props.idea.funded || 0) / (fundGoal || this.props.maxFundAmountSeen));
-    const fundingReached = fundGoal ? (this.props.idea.funded || 0) >= fundGoal : false;
-    const fundAmountDisplay = (
-      <Typography variant='body1' inline>
-        <span className={fundingReached ? this.props.classes.fundingAmountReached : this.props.classes.fundingAmount}>
-          <CreditView val={this.props.idea.funded || 0} credits={this.props.credits} />
-          {fundGoal && (<span>&nbsp;/&nbsp;</span>)}
-        </span>
-      </Typography>
-    );
-    const fundGoalDisplay = (
-      <Typography variant='body1' inline>
-        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal} style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          lineHeight: 'normal',
-        }}>
-          {fundGoal && (<CreditView val={this.props.idea.fundGoal || 0} credits={this.props.credits} />)}
-          &nbsp;raised
-        </span>
-      </Typography>
-    );
-    const fundPercDisplay = fundGoal && [
-      <div style={{ flexGrow: 1 }}>&nbsp;</div>,
-      <Typography variant='body1' inline>
-        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
-          {fundPerc}
-          &nbsp;%
-        </span>
-      </Typography>,
-    ];
+    const padding = this.props.theme.spacing.unit * 2;
     return (
       <div className={this.props.classes.funding}>
         <div style={{
-          display: 'flex',
-          alignItems: 'baseline',
+          flexGrow: 1,
+          position: 'relative',
         }}>
-          {fundAmountDisplay}
-          {fundGoalDisplay}
-          {fundPercDisplay}
+          <FundingBar
+            idea={this.props.idea}
+            credits={this.props.credits}
+            vote={this.props.vote}
+            maxFundAmountSeen={this.props.maxFundAmountSeen}
+          />
+          <Popover
+            open={!!this.state.fundingExpandedAnchor}
+            anchorReference='anchorPosition'
+            anchorPosition={this.state.fundingExpandedAnchor}
+            onClose={() => this.setState({fundingExpandedAnchor: undefined})}
+            anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left', }}
+            marginThreshold={2}
+            PaperProps={{
+              style: {
+                overflow: 'hidden',
+                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + padding * 2 : undefined,
+                padding: padding,
+              }
+            }}
+            disableRestoreFocus
+          >
+            <FundingControl
+              server={this.props.server}
+              idea={this.props.idea}
+              credits={this.props.credits}
+              vote={this.props.vote}
+              maxFundAmountSeen={this.props.maxFundAmountSeen}
+            />
+          </Popover>
         </div>
-        <LinearProgress value={Math.min(fundPerc, 100)} variant='determinate'
-          className={this.props.classes.fundingBar}
+        <IconButton
           classes={{
-            colorPrimary: fundGoal ? this.props.classes.fundingBarBackground : this.props.classes.fundingBarBackgroundNoGoal,
-            barColorPrimary: fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal,
+            label: this.props.classes.fundMoreLabel,
+            root: this.props.classes.fundMoreButton,
           }}
-        />
+          onClick={e => {
+            const currentTarget = e.currentTarget;
+            const onLoggedInClick = () => {
+              const targetElement:any = (currentTarget.parentElement && currentTarget.parentElement.firstChild) || currentTarget.parentElement || currentTarget;
+              this.setState({fundingExpandedAnchor: {
+                width: targetElement.getBoundingClientRect().width,
+                top: targetElement.getBoundingClientRect().top - padding,
+                left: targetElement.getBoundingClientRect().left - padding}})
+            };
+            if(this.props.loggedInUser) {
+              onLoggedInClick();
+            } else {
+              this.onLoggedIn = onLoggedInClick;
+              this.setState({logInOpen: true});
+            }
+          }}
+        >
+          <span className={`${this.props.classes.moreContainer} ${this.props.classes.fundMoreContainer}`}>
+            <FundIcon fontSize='inherit' className={this.props.classes.moreMainIcon} />
+            <AddIcon fontSize='inherit' className={this.props.classes.moreAddIcon} />
+          </span>
+        </IconButton>
       </div>
     );
   }
@@ -653,6 +670,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.express) return null;
     
+    const padding = this.props.theme.spacing.unit / 2;
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
     const reachedLimitPerIdea = limitEmojiPerIdea !== undefined && (this.props.vote && this.props.vote.expressions && this.props.vote.expressions.length || 0) >= limitEmojiPerIdea;
 
@@ -733,22 +751,17 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           {showMoreButton && this.renderExpressionEmoji(
             'showMoreButton',
             (
-              <span style={{
-                lineHeight: 'unset',
-                display: 'flex',
-                alignItems: 'center',
-                opacity: 0.3,
-              }}>
-                <AddEmojiIcon fontSize='inherit' className={this.props.classes.expressionShowMoreEmojiIcon} />
-                <AddIcon fontSize='inherit' className={this.props.classes.expressionShowMoreAddIcon} />
+              <span className={this.props.classes.moreContainer}>
+                <AddEmojiIcon fontSize='inherit' className={this.props.classes.moreMainIcon} />
+                <AddIcon fontSize='inherit' className={this.props.classes.moreAddIcon} />
               </span>
             ),
             false,
             currentTarget => {
               const targetElement = currentTarget.parentElement || currentTarget;
               this.setState({expressionExpandedAnchor: {
-                top: targetElement.getBoundingClientRect().top,
-                left: targetElement.getBoundingClientRect().left}})
+                top: targetElement.getBoundingClientRect().top - padding,
+                left: targetElement.getBoundingClientRect().left - padding}})
             }
           )}
         </div>
@@ -765,8 +778,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               overflow: 'hidden',
               ...(limitEmojiSet ? {} : { width: 'min-content' }),
               borderRadius: '9px',
+              padding: padding,
+              paddingBottom: limitEmojiSet ? padding : 0,
             }
           }}
+          disableRestoreFocus
         >
           {expressionsExpressed}
           {expressionsUnused}
