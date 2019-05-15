@@ -23,7 +23,7 @@ import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import AddIcon from '@material-ui/icons/Add';
 import { Picker, BaseEmoji } from 'emoji-mart';
 import GradientFade from '../../common/GradientFade';
-import { PopoverPosition } from '@material-ui/core/Popover';
+import { PopoverPosition, PopoverActions } from '@material-ui/core/Popover';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
@@ -249,7 +249,9 @@ interface ConnectProps {
 
 
 interface State {
+  fundingExpanded?:boolean;
   fundingExpandedAnchor?:PopoverPosition&{width:number};
+  expressionExpanded?:boolean;
   expressionExpandedAnchor?:PopoverPosition;
   logInOpen?:boolean;
   isSubmittingUpvote?:boolean;
@@ -557,12 +559,17 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
+  fundingPopoverActions?:PopoverActions;
   renderFunding(variant:PostVariant) {
     if(variant !== 'page' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
       || !this.props.category.support.fund) return null;
+
+    const fundingAllowed = !this.props.idea.statusId
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)!
+        .disableFunding !== true;
 
     const padding = this.props.theme.spacing.unit * 3;
     return (
@@ -577,22 +584,23 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             vote={this.props.vote}
             maxFundAmountSeen={this.props.maxFundAmountSeen}
           />
-          <Popover
-            open={!!this.state.fundingExpandedAnchor}
+          {fundingAllowed && (<Popover
+            open={!!this.state.fundingExpanded}
             anchorReference='anchorPosition'
             anchorPosition={this.state.fundingExpandedAnchor}
-            onClose={() => this.setState({fundingExpandedAnchor: undefined})}
+            onClose={() => this.setState({fundingExpanded: false})}
             anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
             transformOrigin={{ vertical: 'top', horizontal: 'left', }}
             marginThreshold={2}
             PaperProps={{
               style: {
                 overflow: 'hidden',
-                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + padding * 2 : undefined,
+                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + padding * 2 : 0,
                 padding: padding,
               }
             }}
             disableRestoreFocus
+            action={actions => this.fundingPopoverActions = actions}
           >
             <FundingControl
               server={this.props.server}
@@ -600,10 +608,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               credits={this.props.credits}
               vote={this.props.vote}
               maxFundAmountSeen={this.props.maxFundAmountSeen}
+              onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
             />
-          </Popover>
+          </Popover>)}
         </div>
-        <IconButton
+        {fundingAllowed && (<IconButton
           classes={{
             label: this.props.classes.fundMoreLabel,
             root: this.props.classes.fundMoreButton,
@@ -612,10 +621,14 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             const currentTarget = e.currentTarget;
             const onLoggedInClick = () => {
               const targetElement:any = (currentTarget.parentElement && currentTarget.parentElement.firstChild) || currentTarget.parentElement || currentTarget;
-              this.setState({fundingExpandedAnchor: {
-                width: targetElement.getBoundingClientRect().width,
-                top: targetElement.getBoundingClientRect().top - padding,
-                left: targetElement.getBoundingClientRect().left - padding}})
+              this.setState({
+                fundingExpanded: true,
+                fundingExpandedAnchor: {
+                  width: targetElement.getBoundingClientRect().width,
+                  top: targetElement.getBoundingClientRect().top - padding,
+                  left: targetElement.getBoundingClientRect().left - padding}
+                },
+              )
             };
             if(this.props.loggedInUser) {
               onLoggedInClick();
@@ -629,7 +642,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             <FundIcon fontSize='inherit' className={this.props.classes.moreMainIcon} />
             <AddIcon fontSize='inherit' className={this.props.classes.moreAddIcon} />
           </span>
-        </IconButton>
+        </IconButton>)}
       </div>
     );
   }
@@ -759,17 +772,21 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             false,
             currentTarget => {
               const targetElement = currentTarget.parentElement || currentTarget;
-              this.setState({expressionExpandedAnchor: {
-                top: targetElement.getBoundingClientRect().top - padding,
-                left: targetElement.getBoundingClientRect().left - padding}})
+              this.setState({
+                expressionExpanded: true,
+                expressionExpandedAnchor: {
+                  top: targetElement.getBoundingClientRect().top - padding,
+                  left: targetElement.getBoundingClientRect().left - padding}
+                },
+              )
             }
           )}
         </div>
         <Popover
-          open={!!this.state.expressionExpandedAnchor}
+          open={!!this.state.expressionExpanded}
           anchorReference='anchorPosition'
           anchorPosition={this.state.expressionExpandedAnchor}
-          onClose={() => this.setState({expressionExpandedAnchor: undefined})}
+          onClose={() => this.setState({expressionExpanded: false})}
           anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
           transformOrigin={{ vertical: 'top', horizontal: 'left', }}
           marginThreshold={2}

@@ -20,7 +20,9 @@ class App extends Component<Props> {
       theme = createMuiTheme({
         ...{custom: { // Custom variables
           funding: this.props.config.style.palette.funding
-            || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
+            || this.props.config.style.palette.primary,
+            // Optional green color
+            // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
           isInsideContainer: this.props.isInsideContainer,
         }} as ThemeOptions,
         palette: {

@@ -18,11 +18,12 @@ interface SearchResult {
 }
 
 const styles = (theme:Theme) => createStyles({
-  container: {
+  separatorMargin: {
+    marginTop: theme.spacing.unit * 3,
   },
   slider: {
-    paddingTop: theme.spacing.unit,
-    paddingBottom: theme.spacing.unit,
+    paddingTop: theme.spacing.unit * 2,
+    paddingBottom: theme.spacing.unit * 2,
   },
   sliderTransitionNone: {
     transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
@@ -45,6 +46,7 @@ interface Props {
   credits?:Client.Credits;
   vote?:Client.Vote;
   maxFundAmountSeen:number;
+  onOtherFundedIdeasLoaded?:()=>void;
 }
 
 interface ConnectProps {
@@ -81,12 +83,19 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     return null;
   }
 
+  componentDidUpdate(prevProps: Readonly<Props&ConnectProps&WithStyles<typeof styles, true>>): void {
+    if(prevProps.otherFundedIdeas.status !== Status.FULFILLED
+      && this.props.otherFundedIdeas.status === Status.FULFILLED) {
+      this.props.onOtherFundedIdeasLoaded && this.props.onOtherFundedIdeasLoaded();
+    }
+  }
+
   render() {
     if(!this.props.idea
       || !this.props.credits) return null;
 
     return (
-      <div style={this.props.style} className={this.props.classes.container}>
+      <div style={this.props.style}>
         <FundingBar
           idea={this.props.idea}
           credits={this.props.credits}
@@ -96,12 +105,20 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
         />
         {this.renderSlider(this.props.idea, this.props.credits, this.props.vote)}
         <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
+          {this.props.otherFundedIdeas.ideas.length > 0 && (
+            <Typography
+              className={this.props.classes.separatorMargin}
+              variant='overline'
+              style={{textAlign: 'center'}}
+            >
+              Rank compare to your other choices
+            </Typography>
+          )}
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
-            <div>
-              {index === 0 && (<Divider style={{margin: this.props.theme.spacing.unit * 2}} />)}
-              <Typography variant='subtitle1'>
+            <div className={this.props.classes.separatorMargin}>
+              {/* <Typography variant='subtitle1'>
                 <TruncateMarkup lines={1}><div>{idea.title}</div></TruncateMarkup>
-              </Typography>
+              </Typography> */}
               <FundingBar
                 idea={idea}
                 credits={this.props.credits}
@@ -125,10 +142,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     if(!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
     const value = isSliding ? fundAmount + (this.state.sliderFundAmountDiff || 0) : fundAmount;
     const step = this.props.credits && this.props.credits.increment || undefined;
-    const currentTarget = (this.state.fixedTarget || this.state.maxTarget);
-    const widthPerc = (100 * (max) / currentTarget)
+    const widthPerc = (100 * (max) / (this.state.fixedTarget || this.state.maxTarget))
     const transitionClassNamne = (this.state.sliderCurrentIdeaId && !this.state.sliderIsSubmitting) ? this.props.classes.sliderTransitionNone : this.props.classes.sliderTransitionSmooth
-    const minMaxTitleOpacity = widthPerc > 25 ? 0.2 : 0;
+    const minMaxTitleOpacity = widthPerc > 25 ? 0.1 : 0;
 
     return (
       <div className={transitionClassNamne} style={{
@@ -188,9 +204,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{flexGrow: value / currentTarget}}></div>
+            <div style={{flexGrow: value / max}}></div>
             <div style={{flexGrow: 0}}><CreditView val={value} credits={credits} /></div>
-            <div style={{flexGrow: 1 - (value / currentTarget)}}></div>
+            <div style={{flexGrow: 1 - (value / max)}}></div>
           </div>
           <div style={{
             position: 'relative',

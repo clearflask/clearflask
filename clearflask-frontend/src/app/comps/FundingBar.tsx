@@ -9,7 +9,7 @@ const styles = (theme:Theme) => createStyles({
   container: {
   },
   fundingAmount: {
-    fontSize: '1.1em',
+    fontSize: '1.2em',
   },
   fundingGoal: {
     fontSize: '0.8em',
@@ -38,7 +38,7 @@ const styles = (theme:Theme) => createStyles({
     backgroundColor: theme.palette.grey[theme.palette.type === 'light' ? 300 : 700],
   },
   fundingBarNoGoal: {
-    background: `linear-gradient(to left, transparent 20px, ${theme['custom'] && theme['custom'].funding} 100%)`,
+    background: `linear-gradient(to left, transparent 20px, ${theme['custom'] && theme['custom'].funding || theme.palette.primary.main} 100%)`,
     opacity: 0.4,
   },
   fundingDiffBarNoGoal: {
