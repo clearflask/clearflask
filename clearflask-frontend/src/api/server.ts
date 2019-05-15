@@ -282,11 +282,13 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           ...state.bySearch,
           [searchKey]: {
             status: Status.FULFILLED,
-            // Append results to existing idea ids
-            ideaIds: [
-              ...(state.bySearch[searchKey].ideaIds || []),
-              ...action.payload.results.map(idea => idea.ideaId),
-            ],
+            ideaIds: (action.meta.request.cursor!== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
+              ? [ // Append results to existing idea ids
+                ...(state.bySearch[searchKey].ideaIds || []),
+                ...action.payload.results.map(idea => idea.ideaId),
+              ] : ( // Replace results if cursor doesn't match
+                action.payload.results.map(idea => idea.ideaId)
+              ),
             cursor: action.payload.cursor,
           }
         },

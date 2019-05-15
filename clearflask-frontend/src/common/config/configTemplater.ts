@@ -15,7 +15,7 @@ export default class Templater {
   }
 
   demo() {
-    // this.creditsTime();
+    this.creditsTime();
     // TODO Home
     // TODO FAQ
     this.baseFeatures();

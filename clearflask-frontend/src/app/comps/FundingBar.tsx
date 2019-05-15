@@ -1,24 +1,9 @@
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip } from '@material-ui/core';
+import { Typography, LinearProgress } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import Loader from '../utils/Loader';
-import { connect } from 'react-redux';
-import { ReduxState, Server, Status } from '../../api/server';
-import TimeAgo from 'react-timeago'
 import CreditView from '../../common/config/CreditView';
-import { withRouter, RouteComponentProps, matchPath } from 'react-router';
-import Expander from '../../common/Expander';
-import Delimited from '../utils/Delimited';
-import Comment from './Comment';
-import LogIn from './LogIn';
-import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
-import AddIcon from '@material-ui/icons/Add';
-import { Picker, BaseEmoji } from 'emoji-mart';
-import GradientFade from '../../common/GradientFade';
-import { PopoverPosition } from '@material-ui/core/Popover';
 import { fade } from '@material-ui/core/styles/colorManipulator';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
 
 const styles = (theme:Theme) => createStyles({
   container: {
@@ -34,6 +19,12 @@ const styles = (theme:Theme) => createStyles({
   },
   fundingGoalReached: {
     fontSize: '0.8em',
+  },
+  fundingBarTransition: {
+    transition: theme.transitions.create('transform', {
+      duration: theme.transitions.duration.shortest,
+      easing: theme.transitions.easing.easeOut,
+    }),
   },
   fundingBar: {
     backgroundColor: theme['custom'] && theme['custom'].funding || theme.palette.primary.main,
@@ -78,7 +69,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
     const fundGoal = this.props.idea.fundGoal && this.props.idea.fundGoal > 0
       ? this.props.idea.fundGoal : undefined;
     const fundPerc = Math.floor(100 * (this.props.idea.funded || 0) / (fundGoal || this.props.maxFundAmountSeen));
-    const fundPercOld = this.props.fundAmountDiff ? Math.floor(100 * ((this.props.idea.funded || 0) + this.props.fundAmountDiff) / (fundGoal || this.props.maxFundAmountSeen)) : fundPerc;
+    const fundPercNew = this.props.fundAmountDiff ? Math.floor(100 * ((this.props.idea.funded || 0) + this.props.fundAmountDiff) / (fundGoal || this.props.maxFundAmountSeen)) : fundPerc;
     const fundingReached = fundGoal ? ((this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)) >= fundGoal : false;
     const fundAmountDisplay = (
       <Typography variant='body1' inline>
@@ -104,7 +95,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
       <div style={{ flexGrow: 1 }}>&nbsp;</div>,
       <Typography variant='body1' inline>
         <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
-          {fundPerc}
+          {fundPercNew}
           &nbsp;%
         </span>
       </Typography>,
@@ -121,12 +112,12 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
         </div>
         <LinearProgress
           variant='buffer'
-          value={Math.min(fundPercOld, fundPerc, 100)}
-          valueBuffer={Math.min(Math.max(fundPercOld, fundPerc), 100)}
+          value={Math.min(fundPercNew, fundPerc, 100)}
+          valueBuffer={Math.min(Math.max(fundPercNew, fundPerc), 100)}
           className={this.props.classes.fundingBar}
           classes={{
-            colorPrimary: fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal,
-            barColorPrimary: fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal,
+            colorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal}`,
+            barColorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal}`,
             dashedColorPrimary: fundGoal ? this.props.classes.fundingBarBackground : this.props.classes.fundingBarBackgroundNoGoal,
           }}
         />

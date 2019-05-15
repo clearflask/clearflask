@@ -564,7 +564,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.fund) return null;
 
-    const padding = this.props.theme.spacing.unit * 2;
+    const padding = this.props.theme.spacing.unit * 3;
     return (
       <div className={this.props.classes.funding}>
         <div style={{

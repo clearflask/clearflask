@@ -9,6 +9,7 @@ import Loader from '../utils/Loader';
 import TruncateMarkup from 'react-truncate-markup';
 import { Slider } from '@material-ui/lab';
 import { string } from 'prop-types';
+import CreditView from '../../common/config/CreditView';
 
 interface SearchResult {
   status:Status;
@@ -19,8 +20,21 @@ interface SearchResult {
 const styles = (theme:Theme) => createStyles({
   container: {
   },
-  fundingSlider: {
-    padding: '22px 0px',
+  slider: {
+    paddingTop: theme.spacing.unit,
+    paddingBottom: theme.spacing.unit,
+  },
+  sliderTransitionNone: {
+    transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
+      duration: 0,
+      easing: theme.transitions.easing.easeOut,
+    }),
+  },
+  sliderTransitionSmooth: {
+    transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
+      duration: theme.transitions.duration.shortest,
+      easing: theme.transitions.easing.easeOut,
+    }),
   },
 });
 
@@ -45,13 +59,26 @@ interface State {
   sliderCurrentIdeaId?:string;
   sliderFundAmountDiff?:number;
   sliderIsSubmitting?:boolean;
+  fixedTarget?:number;
+  maxTarget:number;
 }
 
 class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
-  state:State={};
+  state:State={maxTarget: 0};
 
   componentDidMount() {
     this.props.callOnMount();
+  }
+
+  static getDerivedStateFromProps(props:Props&ConnectProps&WithStyles<typeof styles, true>, state:State):Partial<State> | null {
+    var maxTarget:number = (props.vote && props.vote.fundAmount || 0);
+    props.otherFundedIdeas.ideas.forEach(i =>
+      maxTarget = Math.max(maxTarget, i ? (i.vote.fundAmount || 0) : 0));
+    maxTarget += props.balance;
+    if(state.maxTarget !== maxTarget) {
+      return {maxTarget};
+    }
+    return null;
   }
 
   render() {
@@ -67,11 +94,11 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           maxFundAmountSeen={this.props.maxFundAmountSeen}
           fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
         />
-        {this.renderSlider(this.props.idea, this.props.vote)}
+        {this.renderSlider(this.props.idea, this.props.credits, this.props.vote)}
         <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
             <div>
-              {index === 0 && (<Divider />)}
+              {index === 0 && (<Divider style={{margin: this.props.theme.spacing.unit * 2}} />)}
               <Typography variant='subtitle1'>
                 <TruncateMarkup lines={1}><div>{idea.title}</div></TruncateMarkup>
               </Typography>
@@ -82,7 +109,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
                 maxFundAmountSeen={this.props.maxFundAmountSeen}
                 fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
               />
-              {this.renderSlider(idea, idea.vote)}
+              {this.renderSlider(idea, this.props.credits!, idea.vote)}
             </div>
           ))}
         </Loader>
@@ -90,51 +117,93 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     );
   }
 
-  renderSlider(idea:Client.Idea, vote?:Client.Vote) {
+  renderSlider(idea:Client.Idea, credits:Client.Credits, vote?:Client.Vote) {
     const isSliding = this.state.sliderCurrentIdeaId === idea.ideaId;
     const fundAmount = vote && vote.fundAmount || 0;
     const min = 0;
-    const max = fundAmount + this.props.balance;
+    var max = fundAmount + this.props.balance;
+    if(!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
     const value = isSliding ? fundAmount + (this.state.sliderFundAmountDiff || 0) : fundAmount;
     const step = this.props.credits && this.props.credits.increment || undefined;
+    const currentTarget = (this.state.fixedTarget || this.state.maxTarget);
+    const widthPerc = (100 * (max) / currentTarget)
+    const transitionClassNamne = (this.state.sliderCurrentIdeaId && !this.state.sliderIsSubmitting) ? this.props.classes.sliderTransitionNone : this.props.classes.sliderTransitionSmooth
+    const minMaxTitleOpacity = widthPerc > 25 ? 0.2 : 0;
 
     return (
-      <Slider
-        disabled={this.state.sliderIsSubmitting}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e, newFundAmount) => {
-          if(!isSliding) return;
-          const fundAmountDiff = newFundAmount - fundAmount;
-          this.setState({sliderFundAmountDiff: fundAmountDiff});
-        }}
-        onDragStart={e => {
-          this.setState({
-            sliderCurrentIdeaId: idea.ideaId,
-          });
-        }}
-        onDragEnd={e => {
-          if(!this.state.sliderFundAmountDiff || this.state.sliderFundAmountDiff === 0) {
+      <div className={transitionClassNamne} style={{
+        width: widthPerc + '%',
+      }}>
+        <Slider
+          disabled={this.state.sliderIsSubmitting || min === max}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e, newFundAmount) => {
+            if(!isSliding) return;
+            const fundAmountDiff = newFundAmount - fundAmount;
+            this.setState({sliderFundAmountDiff: fundAmountDiff});
+          }}
+          onDragStart={e => {
             this.setState({
-              sliderCurrentIdeaId: undefined,
-              sliderFundAmountDiff: undefined,
+              sliderCurrentIdeaId: idea.ideaId,
+              fixedTarget: this.state.maxTarget,
             });
-            return;
-          }
-          this.setState({
-            sliderIsSubmitting: true,
-          });
-          this.props.updateVote(idea.ideaId, {fundAmount: fundAmount + Math.min(this.state.sliderFundAmountDiff, this.props.balance)})
-          .finally(() => this.setState({
-            sliderCurrentIdeaId: undefined,
-            sliderFundAmountDiff: undefined,
-            sliderIsSubmitting: false,
-          }));
-        }}
-        classes={{ container: this.props.classes.fundingSlider }}
-      />
+          }}
+          onDragEnd={e => {
+            const sliderFundAmountDiff = this.state.sliderFundAmountDiff;
+            if(sliderFundAmountDiff === undefined || sliderFundAmountDiff === 0) {
+              this.setState({
+                sliderCurrentIdeaId: undefined,
+                fixedTarget: undefined,
+                sliderFundAmountDiff: undefined,
+              });
+              return;
+            }
+            this.setState({
+              sliderIsSubmitting: true,
+            });
+            this.props.updateVote(idea.ideaId, {fundAmount: fundAmount + Math.min(sliderFundAmountDiff, this.props.balance)})
+            .finally(() => this.setState({
+              sliderCurrentIdeaId: undefined,
+              fixedTarget: undefined,
+              sliderFundAmountDiff: undefined,
+              sliderIsSubmitting: false,
+            }));
+          }}
+          classes={{
+            container: this.props.classes.slider,
+            thumbWrapper: transitionClassNamne,
+            trackBefore: transitionClassNamne,
+            trackAfter: transitionClassNamne,
+          }}
+        />
+        <div style={{
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'baseline',
+          }}>
+            <div style={{flexGrow: value / currentTarget}}></div>
+            <div style={{flexGrow: 0}}><CreditView val={value} credits={credits} /></div>
+            <div style={{flexGrow: 1 - (value / currentTarget)}}></div>
+          </div>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'baseline',
+          }}>
+            <div style={{opacity: minMaxTitleOpacity}}><CreditView val={0} credits={credits} /></div>
+            <div style={{flexGrow: 1}}>&nbsp;</div>
+            <div style={{opacity: minMaxTitleOpacity}}><CreditView val={max} credits={credits} /></div>
+          </div>
+        </div>
+      </div>
     );
   }
 }
