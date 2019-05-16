@@ -4,11 +4,10 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import { connect } from 'react-redux';
 import { ReduxState, Server, Status, getSearchKey } from '../../api/server';
 import FundingBar from './FundingBar';
-import { Divider, Typography } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import Loader from '../utils/Loader';
 import TruncateMarkup from 'react-truncate-markup';
 import { Slider } from '@material-ui/lab';
-import { string } from 'prop-types';
 import CreditView from '../../common/config/CreditView';
 
 interface SearchResult {
@@ -111,14 +110,14 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
               variant='overline'
               style={{textAlign: 'center'}}
             >
-              Rank compare to your other choices
+              Prioritize all choices
             </Typography>
           )}
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
             <div className={this.props.classes.separatorMargin}>
-              {/* <Typography variant='subtitle1'>
+              <Typography variant='subtitle1' style={{ opacity: 0.6 }}>
                 <TruncateMarkup lines={1}><div>{idea.title}</div></TruncateMarkup>
-              </Typography> */}
+              </Typography>
               <FundingBar
                 idea={idea}
                 credits={this.props.credits}
@@ -205,7 +204,13 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             alignItems: 'baseline',
           }}>
             <div style={{flexGrow: value / max}}></div>
-            <div style={{flexGrow: 0}}><CreditView val={value} credits={credits} /></div>
+            <div style={{flexGrow: 0}}>
+              {(min !== max) && ( 
+                <Typography variant='body1' inline>
+                  <CreditView key='value' val={value} credits={credits} />
+                </Typography>
+              )}
+            </div>
             <div style={{flexGrow: 1 - (value / max)}}></div>
           </div>
           <div style={{
@@ -214,9 +219,17 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{opacity: minMaxTitleOpacity}}><CreditView val={0} credits={credits} /></div>
+            <div style={{opacity: minMaxTitleOpacity}}>
+              <Typography variant='body1' inline>
+                <CreditView key='min' val={min} credits={credits} />
+              </Typography>
+            </div>
             <div style={{flexGrow: 1}}>&nbsp;</div>
-            <div style={{opacity: minMaxTitleOpacity}}><CreditView val={max} credits={credits} /></div>
+            <div style={{opacity: minMaxTitleOpacity}}>
+              <Typography variant='body1' inline>
+                <CreditView key='max' val={max} credits={credits} />
+              </Typography>
+            </div>
           </div>
         </div>
       </div>

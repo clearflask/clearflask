@@ -5,13 +5,19 @@ html {
   font-family: Roboto,-apple-system-body,BlinkMacSystemFont,SFUI,HelveticaNeue,Helvetica,Arial,sans-serif;
   color: #333;
   -webkit-font-smoothing: antialiased;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE 10+ */
+  /* Firefox */
+  scrollbar-width: none;
+  /* IE 10+ */
+  -ms-overflow-style: none;
 
   height: 100%;
 }
 
 ::-webkit-scrollbar {
-  width: 0px;  /* remove scrollbar space */
-  background: transparent;  /* optional: just make scrollbar invisible */
+  display: none;
+  max-width: 0px;
+  overflow: hidden;
+  max-height: 0px;
+  background: transparent;
+  -webkit-appearance: none;
 }

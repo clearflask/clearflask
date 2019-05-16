@@ -13,7 +13,6 @@ import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded'
 /* Other potential icons: receipt, shopping cart, create, attach money, local atm, money, plus one */
 import FundIcon from '@material-ui/icons/MoneyRounded';
 import TruncateMarkup from 'react-truncate-markup';
-import CreditView from '../../common/config/CreditView';
 import { withRouter, RouteComponentProps, matchPath } from 'react-router';
 import Expander from '../../common/Expander';
 import Delimited from '../utils/Delimited';
@@ -139,6 +138,13 @@ const styles = (theme:Theme) => createStyles({
     borderRadius: '18px',
     margin: theme.spacing.unit / 2,
   },
+  fundThisButton: {
+    alignSelf: 'flex-end',
+  },
+  fundThisButtonLabel: {
+    display: 'flex',
+    alignItems: 'center',
+  },
   fundMoreLabel: {
     padding: '4px 6px',
   },
@@ -207,9 +213,10 @@ const styles = (theme:Theme) => createStyles({
   },
   funding: {
     margin:  theme.spacing.unit,
-    marginBottom: '0px',
     maxWidth: '400px',
     display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
 });
 
@@ -502,6 +509,9 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.vote) return null;
 
+    const upvoted:boolean = (!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Upvote) !== !!this.state.isSubmittingUpvote;
+    const downvoted:boolean = (!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Downvote) !== !!this.state.isSubmittingDownvote;
+
     return (
       <div style={{
         display: 'flex',
@@ -509,7 +519,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         alignItems: 'center',
       }}>
         <IconButton
-          className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${(!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Upvote) !== !!this.state.isSubmittingUpvote ? this.props.classes.voteIconVoted : ''}`}
+          color={upvoted ? 'primary' : undefined}
+          className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}
           onClick={e => {
             const upvote = () => {
               if(this.state.isSubmittingUpvote) return;
@@ -534,8 +545,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         
         {this.props.category.support.vote.enableDownvotes && (
           <IconButton
-            color={this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Downvote ? 'primary' : undefined}
-            className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${(!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Downvote) !== !!this.state.isSubmittingDownvote ? this.props.classes.voteIconVoted : ''}`}
+            color={downvoted ? 'primary' : undefined}
+            className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''}`}
             onClick={e => {
               if(this.state.isSubmittingDownvote) return;
               const downvote = () => {
@@ -559,6 +570,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
+  fundingBarRef:React.RefObject<HTMLDivElement> = React.createRef();
   fundingPopoverActions?:PopoverActions;
   renderFunding(variant:PostVariant) {
     if(variant !== 'page' && this.props.display && this.props.display.showFunding === false
@@ -570,21 +582,61 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const fundingAllowed = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)!
         .disableFunding !== true;
-
+    const iFundedThis = this.props.vote && this.props.vote.fundAmount && this.props.vote.fundAmount > 0;
     const padding = this.props.theme.spacing.unit * 3;
+
+    const fundThisButton = (
+      <Button
+        color={iFundedThis ? 'primary' : 'default'}
+        classes={{
+          root: `${this.props.classes.button} ${this.props.classes.fundThisButton}`,
+        }}
+        disabled={!fundingAllowed}
+        onClick={!fundingAllowed ? undefined : (e => {
+          const onLoggedInClick = () => {
+            this.setState({
+              fundingExpanded: true,
+              fundingExpandedAnchor: {
+                width: this.fundingBarRef.current!.getBoundingClientRect().width,
+                top: this.fundingBarRef.current!.getBoundingClientRect().top - padding,
+                left: this.fundingBarRef.current!.getBoundingClientRect().left - padding}
+              },
+            )
+          };
+          if(this.props.loggedInUser) {
+            onLoggedInClick();
+          } else {
+            this.onLoggedIn = onLoggedInClick;
+            this.setState({logInOpen: true});
+          }
+        })}
+      >
+        <Typography
+          variant='caption'
+          className={this.props.classes.fundThisButtonLabel}
+          color={iFundedThis ? 'primary' : 'default'}
+        >
+          {fundingAllowed ?
+            [<AddIcon fontSize='inherit' />,
+            iFundedThis ? 'Adjust funding' : 'Fund this']
+            : 'Funding has ended'}
+        </Typography>
+      </Button>
+    );
+
     return (
       <div className={this.props.classes.funding}>
-        <div style={{
-          flexGrow: 1,
-          position: 'relative',
-        }}>
-          <FundingBar
-            idea={this.props.idea}
-            credits={this.props.credits}
-            vote={this.props.vote}
-            maxFundAmountSeen={this.props.maxFundAmountSeen}
-          />
-          {fundingAllowed && (<Popover
+        <FundingBar
+          fundingBarRef={this.fundingBarRef}
+          idea={this.props.idea}
+          credits={this.props.credits}
+          vote={this.props.vote}
+          maxFundAmountSeen={this.props.maxFundAmountSeen}
+          style={{alignSelf: 'stretch'}}
+          overrideRight={fundThisButton}
+        />
+        {fundingAllowed && (
+          <Popover
             open={!!this.state.fundingExpanded}
             anchorReference='anchorPosition'
             anchorPosition={this.state.fundingExpandedAnchor}
@@ -610,39 +662,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               maxFundAmountSeen={this.props.maxFundAmountSeen}
               onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
             />
-          </Popover>)}
-        </div>
-        {fundingAllowed && (<IconButton
-          classes={{
-            label: this.props.classes.fundMoreLabel,
-            root: this.props.classes.fundMoreButton,
-          }}
-          onClick={e => {
-            const currentTarget = e.currentTarget;
-            const onLoggedInClick = () => {
-              const targetElement:any = (currentTarget.parentElement && currentTarget.parentElement.firstChild) || currentTarget.parentElement || currentTarget;
-              this.setState({
-                fundingExpanded: true,
-                fundingExpandedAnchor: {
-                  width: targetElement.getBoundingClientRect().width,
-                  top: targetElement.getBoundingClientRect().top - padding,
-                  left: targetElement.getBoundingClientRect().left - padding}
-                },
-              )
-            };
-            if(this.props.loggedInUser) {
-              onLoggedInClick();
-            } else {
-              this.onLoggedIn = onLoggedInClick;
-              this.setState({logInOpen: true});
-            }
-          }}
-        >
-          <span className={`${this.props.classes.moreContainer} ${this.props.classes.fundMoreContainer}`}>
-            <FundIcon fontSize='inherit' className={this.props.classes.moreMainIcon} />
-            <AddIcon fontSize='inherit' className={this.props.classes.moreAddIcon} />
-          </span>
-        </IconButton>)}
+          </Popover>
+        )}
       </div>
     );
   }

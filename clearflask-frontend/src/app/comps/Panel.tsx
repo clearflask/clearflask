@@ -8,6 +8,7 @@ import { Typography, Divider } from '@material-ui/core';
 import ErrorPage from '../ErrorPage';
 import Loading from '../utils/Loading';
 import DividerCorner from '../utils/DividerCorner';
+import ContentScroll from '../../common/ContentScroll';
 
 export enum Direction {
   Horizontal,
@@ -100,21 +101,18 @@ class Panel extends Component<Props> {
         break;
     }
     content = (
-      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`} >
+      <ContentScroll
+        className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`}
+        isVertical={this.props.direction === Direction.Vertical}
+      >
         {content}
-      </div>
+      </ContentScroll>
     );
-    return (
-      <div>
-        {this.props.panel.title ? (
-          <div>
-            <DividerCorner title={this.props.panel.title} width='96px' height='24px'>
-              {content}
-            </DividerCorner>
-          </div>
-        ) : content}
-      </div>
-    );
+    return this.props.panel.title ? (
+      <DividerCorner title={this.props.panel.title} width='96px' height='24px'>
+        {content}
+      </DividerCorner>
+    ) : content;
   }
 }
 

@@ -12,8 +12,8 @@ const styles = (theme:Theme) => createStyles({
     display: 'grid',
     gridTemplateAreas:
       '"divider-horizontal divider-horizontal ."'
-      + '"divider-vertical content content"'
-      + '". content content"',
+      + ' "divider-vertical content content"'
+      + ' ". content content"',
   },
   dividerHorizontal: {
     gridArea: 'divider-horizontal',
@@ -25,6 +25,8 @@ const styles = (theme:Theme) => createStyles({
     gridArea: 'content',
     marginTop: theme.spacing.unit,
     marginLeft: theme.spacing.unit,
+    minWidth: 0,
+    minHeight: 0,
   },
 });
 

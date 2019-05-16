@@ -38,26 +38,29 @@ const styles = (theme:Theme) => createStyles({
     backgroundColor: theme.palette.grey[theme.palette.type === 'light' ? 300 : 700],
   },
   fundingBarNoGoal: {
-    background: `linear-gradient(to left, transparent 20px, ${theme['custom'] && theme['custom'].funding || theme.palette.primary.main} 100%)`,
-    opacity: 0.4,
+    background: `linear-gradient(to left, transparent 20px, ${fade(theme['custom'] && theme['custom'].funding || theme.palette.primary.main, 0.4)} 100%)`,
   },
   fundingDiffBarNoGoal: {
     background: `linear-gradient(to left, transparent 20px, ${fade(theme['custom'] && theme['custom'].funding || theme.palette.primary.main, 0.4)} 100%)`,
-    opacity: 0.4,
   },
   fundingBarBackgroundNoGoal: {
-    backgroundImage: 'unset',
     background: `linear-gradient(to right, ${theme.palette.grey[theme.palette.type === 'light' ? 300 : 700]}, transparent 100%)`,
+  },
+  fundingBufferUndash: {
+    backgroundImage: 'unset',
   },
 });
 
 interface Props {
+  fundingBarRef?: React.Ref<HTMLDivElement>;
   style?:React.CSSProperties;
   idea?:Client.Idea;
   credits?:Client.Credits;
   vote?:Client.Vote;
   maxFundAmountSeen:number;
   fundAmountDiff?:number;
+  /** If set, shown on the right side of the bar, otherwise a percentage is shown */
+  overrideRight?:React.ReactNode;
 }
 
 class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
@@ -91,34 +94,35 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
         </span>
       </Typography>
     );
-    const fundPercDisplay = fundGoal && [
-      <div style={{ flexGrow: 1 }}>&nbsp;</div>,
+    const fundRightSide = this.props.overrideRight || fundGoal && (
       <Typography variant='body1' inline>
         <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
           {fundPercNew}
           &nbsp;%
         </span>
-      </Typography>,
-    ];
+      </Typography>
+    );
     return (
-      <div style={this.props.style} className={this.props.classes.container}>
+      <div ref={this.props.fundingBarRef} style={this.props.style} className={this.props.classes.container}>
         <div style={{
           display: 'flex',
           alignItems: 'baseline',
         }}>
           {fundAmountDisplay}
           {fundGoalDisplay}
-          {fundPercDisplay}
+          <div style={{ flexGrow: 1 }}>&nbsp;</div>
+          {fundRightSide}
         </div>
         <LinearProgress
           variant='buffer'
           value={Math.min(fundPercNew, fundPerc, 100)}
           valueBuffer={Math.min(Math.max(fundPercNew, fundPerc), 100)}
-          className={this.props.classes.fundingBar}
           classes={{
-            colorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal}`,
+            // TODO this is really screwed up
+            bar2Buffer: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal}`,
             barColorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal}`,
-            dashedColorPrimary: fundGoal ? this.props.classes.fundingBarBackground : this.props.classes.fundingBarBackgroundNoGoal,
+            dashedColorPrimary: this.props.classes.fundingBufferUndash,
+            root: fundGoal ? this.props.classes.fundingBarBackground : this.props.classes.fundingBarBackgroundNoGoal,
           }}
         />
       </div>
