@@ -15,6 +15,7 @@ export default class Templater {
   }
 
   demo() {
+    this._get<ConfigEditor.StringProperty>(['name']).set('Demo App');
     this.creditsCurrency();
     // TODO Home
     // TODO FAQ
@@ -123,6 +124,26 @@ export default class Templater {
             filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId],
+            filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+          })}),
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId],
+            filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+          })}),
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId],
+            filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+          })}),
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId],
+            filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+          })}),
           Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId],
@@ -141,24 +162,6 @@ export default class Templater {
         }),
       }),
       explorer: undefined,
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: [pageHomeId],

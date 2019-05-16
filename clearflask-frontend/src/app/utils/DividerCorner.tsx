@@ -21,13 +21,6 @@ const styles = (theme:Theme) => createStyles({
   dividerVertical: {
     gridArea: 'divider-vertical',
   },
-  content: {
-    gridArea: 'content',
-    marginTop: theme.spacing.unit,
-    marginLeft: theme.spacing.unit,
-    minWidth: 0,
-    minHeight: 0,
-  },
 });
 
 interface Props {
@@ -39,21 +32,29 @@ interface Props {
 class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
-    return [
-      this.props.title ? (
-        <Typography variant='overline' className={this.props.classes.title}>
-          {this.props.title}
-        </Typography>
-      ) : null,
-      <div className={this.props.classes.grid} style={{
-        gridTemplateColumns: `1px ${this.props.width || '50%'} auto`,
-        gridTemplateRows: `1px ${this.props.height || '50%'} auto`,
-      }}>
-        <div className={this.props.classes.dividerHorizontal}><Divider /></div>
-        <div className={this.props.classes.dividerVertical}><DividerVertical /></div>
-        <div className={this.props.classes.content}>{this.props.children}</div>
+    return (
+      <div>
+        <div style={{
+          minWidth: this.props.width || '50%',
+        }}>
+          {this.props.title ? (
+            <Typography variant='overline' className={this.props.classes.title}>
+              {this.props.title}
+            </Typography>
+          ) : null}
+          <Divider />
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+        }}>
+          <div style={{
+            height: this.props.height || '50%',
+          }}><DividerVertical /></div>
+          <div>{this.props.children}</div>
+        </div>
       </div>
-    ];
+    );
   }
 }
 

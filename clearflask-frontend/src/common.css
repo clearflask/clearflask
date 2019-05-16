@@ -15,9 +15,8 @@ html {
 
 ::-webkit-scrollbar {
   display: none;
-  max-width: 0px;
-  overflow: hidden;
-  max-height: 0px;
+  width: 0px;
+  height: 0px;
   background: transparent;
   -webkit-appearance: none;
 }

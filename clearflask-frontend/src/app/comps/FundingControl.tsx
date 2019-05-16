@@ -141,15 +141,16 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     if(!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
     const value = isSliding ? fundAmount + (this.state.sliderFundAmountDiff || 0) : fundAmount;
     const step = this.props.credits && this.props.credits.increment || undefined;
-    const widthPerc = (100 * (max) / (this.state.fixedTarget || this.state.maxTarget))
-    const transitionClassNamne = (this.state.sliderCurrentIdeaId && !this.state.sliderIsSubmitting) ? this.props.classes.sliderTransitionNone : this.props.classes.sliderTransitionSmooth
+    const target = this.state.fixedTarget || this.state.maxTarget;
+    const widthPerc = (100 * (max) / target)
+    const transitionClassName = (this.state.sliderCurrentIdeaId && !this.state.sliderIsSubmitting) ? this.props.classes.sliderTransitionNone : this.props.classes.sliderTransitionSmooth
     const minMaxTitleOpacity = widthPerc > 25 ? 0.1 : 0;
 
     return (
-      <div className={transitionClassNamne} style={{
-        width: widthPerc + '%',
-      }}>
+      <div>
         <Slider
+          className={transitionClassName}
+          style={{ width: widthPerc + '%' }}
           disabled={this.state.sliderIsSubmitting || min === max}
           min={min}
           max={max}
@@ -189,9 +190,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           }}
           classes={{
             container: this.props.classes.slider,
-            thumbWrapper: transitionClassNamne,
-            trackBefore: transitionClassNamne,
-            trackAfter: transitionClassNamne,
+            thumbWrapper: transitionClassName,
+            trackBefore: transitionClassName,
+            trackAfter: transitionClassName,
           }}
         />
         <div style={{
@@ -203,7 +204,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{flexGrow: value / max}}></div>
+            <div style={{flexGrow: value / target}}></div>
             <div style={{flexGrow: 0}}>
               {(min !== max) && ( 
                 <Typography variant='body1' inline>
@@ -211,25 +212,26 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
                 </Typography>
               )}
             </div>
-            <div style={{flexGrow: 1 - (value / max)}}></div>
+            <div style={{flexGrow: 1 - (value / target)}}></div>
           </div>
           <div style={{
-            position: 'relative',
+            position: 'absolute',
             width: '100%',
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{opacity: minMaxTitleOpacity}}>
-              <Typography variant='body1' inline>
-                <CreditView key='min' val={min} credits={credits} />
-              </Typography>
-            </div>
-            <div style={{flexGrow: 1}}>&nbsp;</div>
+            <div style={{flexGrow: max / target}}></div>
             <div style={{opacity: minMaxTitleOpacity}}>
               <Typography variant='body1' inline>
                 <CreditView key='max' val={max} credits={credits} />
               </Typography>
             </div>
+            <div style={{flexGrow: 1 - (max / target)}}></div>
+          </div>
+          <div style={{ opacity: minMaxTitleOpacity }}>
+            <Typography variant='body1' inline>
+              <CreditView key='min' val={min} credits={credits} />
+            </Typography>
           </div>
         </div>
       </div>

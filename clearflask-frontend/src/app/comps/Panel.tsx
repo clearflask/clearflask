@@ -8,7 +8,7 @@ import { Typography, Divider } from '@material-ui/core';
 import ErrorPage from '../ErrorPage';
 import Loading from '../utils/Loading';
 import DividerCorner from '../utils/DividerCorner';
-import ContentScroll from '../../common/ContentScroll';
+import ContentScroll, { Side, contentScrollApplyStyles } from '../../common/ContentScroll';
 
 export enum Direction {
   Horizontal,
@@ -23,7 +23,6 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   container: {
-    margin: theme.spacing.unit,
     display: 'flex',
   },
   nothing: {
@@ -31,9 +30,11 @@ const styles = (theme:Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   [Direction.Horizontal]: {
+    ...(contentScrollApplyStyles(theme, Side.Center, false)),
   },
   [Direction.Vertical]: {
     flexDirection: 'column',
+    ...(contentScrollApplyStyles(theme, Side.Center, true)),
   },
 });
 
@@ -101,15 +102,16 @@ class Panel extends Component<Props> {
         break;
     }
     content = (
-      <ContentScroll
-        className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`}
-        isVertical={this.props.direction === Direction.Vertical}
-      >
+      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`}>
         {content}
-      </ContentScroll>
+      </div>
     );
     return this.props.panel.title ? (
-      <DividerCorner title={this.props.panel.title} width='96px' height='24px'>
+      <DividerCorner
+        title={this.props.panel.title}
+        width='0px'
+        height='16px'
+      >
         {content}
       </DividerCorner>
     ) : content;

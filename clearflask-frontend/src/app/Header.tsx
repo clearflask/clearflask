@@ -11,6 +11,7 @@ import RegularTab from '../common/RegularTab';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
 import CreditView from '../common/config/CreditView';
+import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -43,25 +44,7 @@ const styles = (theme:Theme) => createStyles({
   // },
   tabsFlexContainer: {
     alignItems: 'center',
-  },
-  scrollButton: {
-    padding: '0px',
-    transition: 'min-width 100ms ease-out',
-    overflow: 'hidden',
-    position: 'absolute',
-    zIndex: 1000,
-    height: '48px',
-    WebkitScrollbar: 'none',
-  },
-  scrollButtonLeft: {
-    right: '',
-    background: `radial-gradient(ellipse at left, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%),
-    radial-gradient(ellipse at center, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%)`,
-  },
-  scrollButtonRight: {
-    right: '0px',
-    background: `radial-gradient(ellipse at right, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%),
-    radial-gradient(ellipse at center, ${theme.palette.background.default} 60%, rgba(255,255,255,0) 70%)`,
+    ...(contentScrollApplyStyles(theme, Side.Right)),
   },
 });
 
@@ -136,7 +119,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
               <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
             )}
             <Typography variant='h6'>
-              {this.props.config && this.props.config.name || 'ClearFlask'}
+              {this.props.config && this.props.config.name}
             </Typography>
           </div>
           {this.props.config && this.props.loggedInUser &&
@@ -162,27 +145,12 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
           }
         </div>
         <Tabs
-          variant='scrollable'
-          scrollButtons="auto"
+          variant='standard'
+          scrollButtons='off'
           classes={{
             flexContainer: this.props.classes.tabsFlexContainer,
             indicator: this.props.classes.indicator,
           }}
-          ScrollButtonComponent={(props) => (
-            <Button
-              disableRipple
-              className={`${this.props.classes.scrollButton} ${props.direction === 'left' ? this.props.classes.scrollButtonLeft : this.props.classes.scrollButtonRight}`}
-              style={{
-                minWidth: props.visible ? '40px' : '0px',
-                width: props.visible ? '30px' : '0px',
-              }}
-              onClick={props.onClick.bind()}
-            >
-              {props.direction === 'left'
-                ? (<ArrowLeftIcon />)
-                : (<ArrowRightIcon />)}
-            </Button>
-          )}
           value={currentTabValue}
           onChange={(event, value) => this.props.pageChanged(value)}
           indicatorColor="primary"

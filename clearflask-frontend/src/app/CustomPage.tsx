@@ -9,6 +9,7 @@ import ErrorPage from './ErrorPage';
 import Explorer from './comps/Explorer';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import DividerCorner from './utils/DividerCorner';
+import { Side, contentScrollApplyStyles } from '../common/ContentScroll';
 
 const styles = (theme:Theme) => createStyles({
   singlePanels: {
@@ -24,8 +25,10 @@ const styles = (theme:Theme) => createStyles({
       duration: theme.transitions.duration.shortest,
     }),
     marginLeft: theme.spacing.unit * 2,
+    ...(contentScrollApplyStyles(theme)),
   },
   boardPanel: {
+    // minWidth: 'fit-content',
   },
 });
 
@@ -88,7 +91,7 @@ class Page extends Component<Props&WithStyles<typeof styles, true>> {
         for(let panel of board.panels) {
           panels.push(
             <div className={this.props.classes.boardPanel} style={{
-              width: `${Math.round(100/Math.min(4, board.panels.length))}%`,
+              // width: `${Math.round(100/Math.min(4, board.panels.length))}%`,
             }}>
               <Panel
                 key={getSearchKey(panel.search)}
