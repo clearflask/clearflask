@@ -42,7 +42,7 @@ const styles = (theme:Theme) => createStyles({
     // },
   // },
   tabsFlexContainer: {
-    alignItems: 'baseline',
+    alignItems: 'center',
   },
   scrollButton: {
     padding: '0px',
