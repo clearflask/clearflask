@@ -156,8 +156,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           max={max}
           step={step}
           value={value}
-          onChange={(e, newFundAmount) => {
+          onChange={(e, val) => {
             if(!isSliding) return;
+            const newFundAmount = this.sticky(val, min, max, target, vote && vote.fundAmount || undefined, idea.fundGoal ? idea.fundGoal - (idea.funded || 0) : undefined);
             const fundAmountDiff = newFundAmount - fundAmount;
             this.setState({sliderFundAmountDiff: fundAmountDiff});
           }}
@@ -236,6 +237,21 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
         </div>
       </div>
     );
+  }
+
+  sticky(input:number, min:number, max:number, target:number, startValue?:number, fundGoal?:number):number {
+    var pointOfNoReturn = (target - min) / 100;
+    var output = input;
+    var outputCloseness;
+    [fundGoal, startValue].forEach(target => {
+      if(target === undefined) return;
+      const closeness = Math.abs(target - input);
+      if(closeness <= pointOfNoReturn && (!outputCloseness || outputCloseness > closeness)) { 
+        outputCloseness = closeness;
+        output = target;
+      }
+    })
+    return output;
   }
 }
 

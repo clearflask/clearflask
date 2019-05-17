@@ -11,6 +11,7 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
+  style?: React.CSSProperties;
   className?: string;
   absolute?: boolean;
   component?: React.ReactType<DividerProps>;

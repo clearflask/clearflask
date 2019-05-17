@@ -1,19 +1,11 @@
 import React, { Component } from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { Divider, Typography } from '@material-ui/core';
-import { DividerProps } from '@material-ui/core/Divider';
 import DividerVertical from './DividerVertical';
 
 const styles = (theme:Theme) => createStyles({
   title: {
     margin: theme.spacing.unit,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateAreas:
-      '"divider-horizontal divider-horizontal ."'
-      + ' "divider-vertical content content"'
-      + ' ". content content"',
   },
   dividerHorizontal: {
     gridArea: 'divider-horizontal',
@@ -24,7 +16,9 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
+  className?:string
   title?:string;
+  header?:React.ReactNode;
   width?:string;
   height?:string;
 }
@@ -33,25 +27,36 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <div>
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        flexDirection: 'column',
+      }}>
         <div style={{
           minWidth: this.props.width || '50%',
+          display: 'inline-block',
         }}>
           {this.props.title ? (
             <Typography variant='overline' className={this.props.classes.title}>
               {this.props.title}
             </Typography>
           ) : null}
+          {this.props.header}
           <Divider />
         </div>
         <div style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          width: '100%',
         }}>
           <div style={{
-            height: this.props.height || '50%',
-          }}><DividerVertical /></div>
-          <div>{this.props.children}</div>
+            display: 'flex',
+            alignItems: 'stretch',
+          }}>
+            <DividerVertical style={{ height: this.props.height || '50%' }} />
+          </div>
+          <div style={{width: '100%'}}>
+            {this.props.children}
+          </div>
         </div>
       </div>
     );

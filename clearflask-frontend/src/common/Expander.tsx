@@ -57,7 +57,7 @@ class RegularTab extends Component<Props> {
               {/* content */}
               <div ref={this.contentRef} style={{
                 position: isFullyAttached ? undefined : 'absolute',
-              }}>        
+              }}>
                 <div style={{
                   position: isFullyAttached ? undefined : 'relative',
                   zIndex: !isFullyAttached ? 600 : undefined,

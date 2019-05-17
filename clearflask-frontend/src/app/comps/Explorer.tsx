@@ -31,19 +31,27 @@ interface TagSelection {
 const expandTimeout = 500;
 const styles = (theme:Theme) => createStyles({
   explorer: {
-    margin: theme.spacing.unit,
     display: 'grid',
-    gridTemplateColumns: 'auto minmax(0, 1fr)',
-    /// 111px leaves enough space for search bar to have two lines without cell expanding
-    gridTemplateRows: 'minmax(111px, auto) minmax(0, 1fr)',
-    gridTemplateAreas:
-      '". search"'
-      + '"create results"',
+    [theme.breakpoints.up('sm')]: {
+      gridTemplateColumns: 'auto minmax(0, 1fr)',
+      // 111px leaves enough space for search bar to have two lines without cell expanding
+      gridTemplateRows: 'minmax(111px, auto) minmax(0, 1fr)',
+      gridTemplateAreas:
+        '". search"'
+        + '"create results"',
+    },
+    [theme.breakpoints.down('xs')]: {
+      gridTemplateColumns: 'auto',
+      gridTemplateRows: 'auto auto auto',
+      gridTemplateAreas:
+        '"create"'
+        +'"search"'
+        + '"results"',
+    },
   },
   search: {
     gridArea: 'search',
     alignSelf: 'end',
-    margin: theme.spacing.unit * 2,
   },
   results: {
     gridArea: 'results',
@@ -58,7 +66,6 @@ const styles = (theme:Theme) => createStyles({
   createFormFields: {
     display: 'flex',
     flexDirection: 'column',
-    margin: theme.spacing.unit,
     transition: theme.transitions.create('width', {duration: expandTimeout}),
   },
   createFormField: {
@@ -125,7 +132,11 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     var content, topBar;
     if(expand) {
       topBar = (
-        <Typography variant='overline' className={this.props.classes.caption}>Similar:</Typography>
+        <Typography variant='overline' className={this.props.classes.caption} style={{
+          visibility: expandInMotion ? 'hidden' : undefined,
+        }}>
+          Similar:
+        </Typography>
         );
       content = !expandInMotion && (
         <div>
@@ -154,6 +165,9 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     } else {
       topBar = this.props.explorer.allowSearch && (
         <PanelSearch
+          style={{
+            visibility: expandInMotion ? 'hidden' : undefined,
+          }}
           innerRef={this.panelSearchRef}
           server={this.props.server}
           search={this.state.search}
@@ -230,8 +244,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
       <div className={this.props.classes.createFormFields} style={{
-        width: (expand)
-          ? '384px': '100px',
+        width: expand ? '364px': '100px',
+        maxWidth: '100vw',
       }}>
         {/* <Typography variant='overline' className={this.props.classes.caption}>Create</Typography> */}
         <TextField
@@ -259,6 +273,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
         />
         <Grow
           in={expand}
+          mountOnEnter
           unmountOnExit
           onEntered={() => this.setState({createFormHasExpanded: true})}
           onExited={() => this.setState({createFormHasExpanded: false})}

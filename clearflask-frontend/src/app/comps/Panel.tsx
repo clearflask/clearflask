@@ -109,8 +109,8 @@ class Panel extends Component<Props> {
     return this.props.panel.title ? (
       <DividerCorner
         title={this.props.panel.title}
-        width='0px'
-        height='16px'
+        width={this.props.direction === Direction.Vertical ? '90%' : '24px'}
+        height={this.props.direction === Direction.Horizontal ? '90%' : '24px'}
       >
         {content}
       </DividerCorner>

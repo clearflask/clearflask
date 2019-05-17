@@ -12,6 +12,9 @@ import DividerCorner from './utils/DividerCorner';
 import { Side, contentScrollApplyStyles } from '../common/ContentScroll';
 
 const styles = (theme:Theme) => createStyles({
+  page: {
+    margin: theme.spacing.unit,
+  },
   singlePanels: {
     display: 'flex',
     flexDirection: 'column',
@@ -24,11 +27,12 @@ const styles = (theme:Theme) => createStyles({
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
-    marginLeft: theme.spacing.unit * 2,
+    paddingLeft: theme.spacing.unit * 2,
     ...(contentScrollApplyStyles(theme)),
   },
   boardPanel: {
-    // minWidth: 'fit-content',
+    paddingTop: theme.spacing.unit * 2,
+    paddingLeft: theme.spacing.unit * 2,
   },
 });
 
@@ -90,9 +94,7 @@ class Page extends Component<Props&WithStyles<typeof styles, true>> {
         var panels:any = [];
         for(let panel of board.panels) {
           panels.push(
-            <div className={this.props.classes.boardPanel} style={{
-              // width: `${Math.round(100/Math.min(4, board.panels.length))}%`,
-            }}>
+            <div className={this.props.classes.boardPanel}>
               <Panel
                 key={getSearchKey(panel.search)}
                 direction={Direction.Vertical}
@@ -117,7 +119,7 @@ class Page extends Component<Props&WithStyles<typeof styles, true>> {
         }
         boardCmpt = (
           <div>
-            <DividerCorner title={board.title} width='90%' height='96px'>
+            <DividerCorner title={board.title} width='24px' height='90%'>
               <div className={this.props.classes.board}>
                 {panels}
               </div>
@@ -142,11 +144,13 @@ class Page extends Component<Props&WithStyles<typeof styles, true>> {
 
     return (
       <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
-        <Typography variant='h4' component='h1'>{this.props.page && this.props.page.title}</Typography>
-        <Typography variant='body1' component='p'>{this.props.page && this.props.page.description}</Typography>
-        {panelsCmpt}
-        {boardCmpt}
-        {explorerCmpt}
+        <div className={this.props.classes.page}>
+          <Typography variant='h4' component='h1'>{this.props.page && this.props.page.title}</Typography>
+          <Typography variant='body1' component='p'>{this.props.page && this.props.page.description}</Typography>
+          {panelsCmpt}
+          {boardCmpt}
+          {explorerCmpt}
+        </div>
       </Loader>
     );
   }

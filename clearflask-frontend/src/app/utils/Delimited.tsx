@@ -23,11 +23,14 @@ class Delimited extends Component<Props&WithStyles<typeof styles, true>> {
     const delimiter = this.props.delimiter || (
       <div className={this.props.classes.separator} />
     );
-    return this.props.children
-      .filter(i => !!i)
-      .map((val, index) => index === 0
-        ? val
-        : [delimiter, val]);
+    const result:React.ReactNode[] = [];
+    for (let i = 0; i < this.props.children.length; i++) {
+      const el = this.props.children[i];
+      if(!el) continue;
+      if(i > 0) result.push(delimiter);
+      result.push(el);
+    }
+    return result;
   }
 }
 

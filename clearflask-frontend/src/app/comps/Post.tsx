@@ -193,6 +193,7 @@ const styles = (theme:Theme) => createStyles({
   },
   bottomBarLine: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center', // TODO properly center items, neither center nor baseline works here
   },
   grow: {
@@ -203,6 +204,7 @@ const styles = (theme:Theme) => createStyles({
     marginTop: `-${theme.spacing.unit / 2}px`,
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   commentSection: {
     marginTop: theme.spacing.unit * 2,
@@ -764,7 +766,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       /></span>
     );
 
-    const maxItems = 5;
+    const maxItems = 3;
     const summaryItems:React.ReactNode[] = expressionsExpressed.length > 0 ? expressionsExpressed.slice(0, Math.min(maxItems, expressionsExpressed.length)) : [];
 
     const showMoreButton:boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
@@ -778,7 +780,10 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             disabled={summaryItems.length < maxItems}
             start={'50%'}
             opacity={0.3}
-            style={{display: 'flex'}}
+            style={{
+              display: 'flex', 
+              flexWrap: 'wrap',
+            }}
           >
             {summaryItems}
           </GradientFade>
