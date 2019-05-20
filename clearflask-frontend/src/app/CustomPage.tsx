@@ -45,7 +45,7 @@ interface Props {
   page?:Client.Page;
 }
 
-class Page extends Component<Props&WithStyles<typeof styles, true>> {
+class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     if(this.props.pageNotFound) {
@@ -119,7 +119,7 @@ class Page extends Component<Props&WithStyles<typeof styles, true>> {
         }
         boardCmpt = (
           <div>
-            <DividerCorner title={board.title} width='24px' height='90%'>
+            <DividerCorner title={board.title} height='90%'>
               <div className={this.props.classes.board}>
                 {panels}
               </div>
@@ -173,4 +173,4 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(Page));
+})(withStyles(styles, { withTheme: true })(CustomPage));

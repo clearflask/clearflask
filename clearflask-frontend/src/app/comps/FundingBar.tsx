@@ -118,7 +118,6 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
           value={Math.min(fundPercNew, fundPerc, 100)}
           valueBuffer={Math.min(Math.max(fundPercNew, fundPerc), 100)}
           classes={{
-            // TODO this is really screwed up
             bar2Buffer: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal}`,
             barColorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal}`,
             dashedColorPrimary: this.props.classes.fundingBufferUndash,

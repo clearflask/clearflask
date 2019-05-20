@@ -1,7 +1,14 @@
+import { isProd, detectEnv, Environment } from "../util/detectEnv";
+
+const KEY_PUBLIC = 'TODO';
+const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';
+export const KEY_DEV_PRIVATE = '6xIMnmOfFz4xxsSw1h0ZhPCYuCfed56oNA7AEOSfHWE';
 
 export default class WebNotification {
   static instance:WebNotification;
   status:Status = Status.Unsupported;
+  unsubscribeCall?:()=>Promise<boolean>;
+  swRegistration?:ServiceWorkerRegistration;
 
   static getInstance():WebNotification {
     return this.instance || (this.instance = new this());
@@ -20,31 +27,45 @@ export default class WebNotification {
       && this.status !== Status.Denied;
   }
 
-  askPermission():Promise<WebNotificationSubscription|WebNotificationError> {
-    // TODO register Service Worker
+  async askPermission():Promise<WebNotificationSubscription|WebNotificationError> {
     if(this.status === Status.Unsupported) {
       throw Error('Cannot ask for permission when unsupported');
     }
-    return (window['Notification']['requestPermission']() as Promise<string>)
-    .then((permission):(WebNotificationSubscription|WebNotificationError) => {
-      this._checkStatus();
-      if(this.status === Status.Granted) {
-        return {
-          type: 'success',
-          token: 'fake-token',
-        };
-      } else {
-        return {
-          type: 'error',
-        };
-      }
-    }, (err):WebNotificationError => {
-      console.log('notification setup failed with err:', err);
+
+    try {
+      this.swRegistration = await (navigator['serviceWorker']['register']('/sw.js') as Promise<ServiceWorkerRegistration>);
+    } catch(err) {
+      this.status = Status.Unsupported;
       return {
         type: 'error',
-        userFacingMsg: 'Failed to setup',
+        userFacingMsg: 'Failed to register notification service',
       };
-    })
+    }
+
+    var pushSubscription:PushSubscription;
+    try {
+      pushSubscription = await this.swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this._urlB64ToUint8Array(this._getPublicKey()),
+      });
+    } catch(err) {
+      this.status = Status.Unsupported;
+      return {
+        type: 'error',
+        userFacingMsg: 'Failed to subscribe to notification service',
+      };
+    }
+
+    this.unsubscribeCall = pushSubscription.unsubscribe;
+    this.status = Status.Granted;
+    return {
+      type: 'success',
+      token: JSON.stringify(pushSubscription),
+    };
+  }
+
+  unsubscribe() {
+    this.unsubscribeCall && this.unsubscribeCall(); 
   }
 
   _checkStatus() {
@@ -69,6 +90,32 @@ export default class WebNotification {
       this.status = Status.Unsupported;
     }
   }
+
+  _getPublicKey() {
+    switch(detectEnv()) {
+      case Environment.DEVELOPMENT_FRONTEND:
+      case Environment.DEVELOPMENT_LOCAL:
+        return KEY_DEV_PUBLIC;
+      default:
+      case Environment.PRODUCTION:
+        return KEY_PUBLIC;
+    }
+  }
+
+  _urlB64ToUint8Array(base64String:string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+  
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+  
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }  
 }
 
 export enum Status {

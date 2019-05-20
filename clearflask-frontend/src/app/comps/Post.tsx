@@ -12,7 +12,7 @@ import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded'
 /* Other potential icons: receipt, shopping cart, create, attach money, local atm, money, plus one */
 import FundIcon from '@material-ui/icons/MoneyRounded';
-import TruncateMarkup from 'react-truncate-markup';
+import Truncate from 'react-truncate';
 import { withRouter, RouteComponentProps, matchPath } from 'react-router';
 import Expander from '../../common/Expander';
 import Delimited from '../utils/Delimited';
@@ -215,7 +215,6 @@ const styles = (theme:Theme) => createStyles({
   },
   funding: {
     margin:  theme.spacing.unit,
-    maxWidth: '400px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -659,9 +658,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             <FundingControl
               server={this.props.server}
               idea={this.props.idea}
-              credits={this.props.credits}
               vote={this.props.vote}
-              maxFundAmountSeen={this.props.maxFundAmountSeen}
               onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
             />
           </Popover>
@@ -841,7 +838,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     return (
       <Typography variant='subtitle1'>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
-          ? (<TruncateMarkup lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateMarkup>)
+          ? (<Truncate lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></Truncate>)
           : this.props.idea.title}
       </Typography>
     );
@@ -854,7 +851,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     return (
       <Typography variant='body1'>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
-          ? (<TruncateMarkup lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></TruncateMarkup>)
+          ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}
       </Typography>
     );

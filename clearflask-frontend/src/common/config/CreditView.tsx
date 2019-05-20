@@ -1,10 +1,17 @@
 import { Table, TableBody, TableCell, createStyles, withStyles, WithStyles, Theme } from '@material-ui/core';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
+import { red } from '@material-ui/core/colors';
 
 const styles = (theme:Theme) => createStyles({
   root: {
     whiteSpace: 'nowrap',
+  },
+  negative: {
+    color: theme.palette.type === 'light' ? red.A700 : red.A100 ,
+  },
+  negativeBrackets: {
+    opacity: 0.6,
   },
 });
 
@@ -15,14 +22,12 @@ interface Props extends WithStyles<typeof styles, true> {
 
 class CreditView extends Component<Props> {
   render() {
-    return (
-      <span className={this.props.classes.root}>
-        {CreditView.formatCredit(this.props.val, this.props.credits)}
-      </span>
-    );
+    return this.formatCredit(this.props.val, this.props.credits);
   }
 
-  static formatCredit(val, credits:Client.Credits) {
+  formatCredit(val, credits:Client.Credits) {
+    const isNegative = val < 0;
+    val = Math.abs(val);
     if(credits.increment === undefined) {
       val = Math.floor(val);
     } else {
@@ -47,14 +52,20 @@ class CreditView extends Component<Props> {
         val = val.toLocaleString('en-US', {
           minimumFractionDigits: format.minimumFractionDigits || undefined,
         });
-        return (format.prefix || '')
-        + val
-        + (format.suffix || '')
+        val = (format.prefix || '')
+          + val
+          + (format.suffix || '')
+        break;
       }
     }
-    return val;
+    return (
+      <span className={`${this.props.classes.root} ${isNegative ? this.props.classes.negative : ''}`}>
+        {isNegative && (<span className={this.props.classes.negativeBrackets}>(</span>)}
+        {val}
+        {isNegative && (<span className={this.props.classes.negativeBrackets}>)</span>)}
+      </span>
+    )
   }
-
 }
 
 export default withStyles(styles, { withTheme: true })(CreditView);

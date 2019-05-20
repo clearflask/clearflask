@@ -27,7 +27,7 @@ class DataMock {
         email: 'john.doe@example.com',
         password: 'password',
         iosPushToken: 'fake-ios-push-token',
-        browserPushToken: 'fake-browser-push-token',
+        // browserPushToken: 'fake-browser-push-token',
       }
     }).then(userMe => {
       ServerMock.get().transactionCreateAdmin({

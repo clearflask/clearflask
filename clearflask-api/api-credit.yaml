@@ -14,7 +14,7 @@ components:
         filterTransactionTypes:
           type: array
           items:
-            type: string
+            $ref: 'api-credit.yaml#/components/schemas/TransactionType'
         filterAmountMin:
           type: number
         filterAmountMax:
@@ -53,17 +53,7 @@ components:
         balance:
           type: number
         transactionType:
-          type: string
-          enum:
-            - Vote
-            - Income
-            - Adjustment
-            - Other
-          description: >-
-            Transaction type
-            * Vote - Balance changes due to funding an idea
-            * Income - Income based on project settings.
-            * Adjustment - Typically Admin initiaited change in credit.
+          $ref: 'api-credit.yaml#/components/schemas/TransactionType'
         targetId:
           description: >-
             Optional resource ID involved in this transaction.
@@ -84,18 +74,27 @@ components:
         - transactionType
     TransactionCreateAdmin:
       type: object
+      required:
+        - amount
       properties:
         amount:
           type: number
         summary:
           description: Optional user facing explanation of the transaction.
           type: string
-      required:
-        - transactionId
-        - created
-        - amount
-        - balance
-        - transactionType
+    TransactionType:
+      type: string
+      enum:
+        - Vote
+        - Income
+        - Adjustment
+        - Other
+      description: >-
+        Transaction type
+        * Vote - Balance changes due to funding an idea
+        * Income - Income based on project settings.
+        * Adjustment - Typically Admin initiaited change in credit.
+
 
 /project/{projectId}/user/{userId}/transaction:
   get:

@@ -4,11 +4,12 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import { connect } from 'react-redux';
 import { ReduxState, Server, Status, getSearchKey } from '../../api/server';
 import FundingBar from './FundingBar';
-import { Typography } from '@material-ui/core';
+import { Typography, Button } from '@material-ui/core';
 import Loader from '../utils/Loader';
-import TruncateMarkup from 'react-truncate-markup';
+import Truncate from 'react-truncate';
 import { Slider } from '@material-ui/lab';
 import CreditView from '../../common/config/CreditView';
+import { withRouter, RouteComponentProps } from 'react-router';
 
 interface SearchResult {
   status:Status;
@@ -36,22 +37,27 @@ const styles = (theme:Theme) => createStyles({
       easing: theme.transitions.easing.easeOut,
     }),
   },
+  msg: {
+    color: theme.palette.text.hint,
+  },
 });
 
 interface Props {
   server:Server;
+  className?:string;
   style?:React.CSSProperties;
+  /** If you want to show a particular idea first, set idea and vote here */
   idea?:Client.Idea;
-  credits?:Client.Credits;
   vote?:Client.Vote;
-  maxFundAmountSeen:number;
   onOtherFundedIdeasLoaded?:()=>void;
 }
 
 interface ConnectProps {
   configver?:string;
+  credits?:Client.Credits;
   otherFundedIdeas:SearchResult;
   balance:number;
+  maxFundAmountSeen:number;
   updateVote: (ideaId:string, voteUpdate:Partial<Client.VoteUpdate>)=>Promise<Client.VoteUpdateResponse>;
   callOnMount: ()=>void,
 }
@@ -64,7 +70,7 @@ interface State {
   maxTarget:number;
 }
 
-class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
+class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
   state:State={maxTarget: 0};
 
   componentDidMount() {
@@ -90,33 +96,46 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
   }
 
   render() {
-    if(!this.props.idea
-      || !this.props.credits) return null;
+    if(!this.props.credits) return null;
+
+    const showFirstIdea = !!this.props.idea;
+    var msg;
+    if(showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0) {
+      msg = 'Prioritize against others';
+    } else if(!showFirstIdea
+      && this.props.otherFundedIdeas.status === Status.FULFILLED
+      && this.props.otherFundedIdeas.ideas.length === 0) {
+      msg = 'No items funded yet';
+    }
 
     return (
-      <div style={this.props.style}>
-        <FundingBar
-          idea={this.props.idea}
-          credits={this.props.credits}
-          vote={this.props.vote}
-          maxFundAmountSeen={this.props.maxFundAmountSeen}
-          fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
-        />
-        {this.renderSlider(this.props.idea, this.props.credits, this.props.vote)}
+      <div style={this.props.style} className={this.props.className}>
+        {showFirstIdea && this.props.idea && (<div>
+          <FundingBar
+            idea={this.props.idea}
+            credits={this.props.credits}
+            vote={this.props.vote}
+            maxFundAmountSeen={this.props.maxFundAmountSeen}
+            fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
+          />
+          {this.renderSlider(this.props.idea, this.props.credits, this.props.vote)}
+        </div>)}
+        {msg && (
+          <Typography
+            className={`${this.props.classes.separatorMargin} ${this.props.classes.msg}`}
+            variant='overline'
+          >{msg}</Typography>
+        )}
         <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
-          {this.props.otherFundedIdeas.ideas.length > 0 && (
-            <Typography
-              className={this.props.classes.separatorMargin}
-              variant='overline'
-              style={{textAlign: 'center'}}
-            >
-              Prioritize all choices
-            </Typography>
-          )}
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
             <div className={this.props.classes.separatorMargin}>
-              <Typography variant='subtitle1' style={{ opacity: 0.6 }}>
-                <TruncateMarkup lines={1}><div>{idea.title}</div></TruncateMarkup>
+              <Typography variant='subtitle1' style={{display: 'flex', alignItems: 'baseline'}}>
+                <Truncate lines={1} style={{ opacity: 0.6 }}><div>{idea.title}</div></Truncate>
+                {!showFirstIdea && (
+                  <Button onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/post/${idea.ideaId}`)}>
+                    View
+                  </Button>
+                )}
               </Typography>
               <FundingBar
                 idea={idea}
@@ -259,6 +278,8 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
   const search = { fundedByMeAndActive: true };
   var newProps = {
     configver: state.conf.ver, // force rerender on config change
+    credits: state.conf.conf ? state.conf.conf.credits : undefined,
+    maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     otherFundedIdeas: {
       status: Status.PENDING,
       ideas: [],
@@ -291,10 +312,10 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       const idea = state.ideas.byId[ideaId];
       if(!idea || !idea.idea || idea.status !== Status.FULFILLED) return undefined;
       const vote = state.votes.byIdeaId[ideaId];
-      if(!vote) return undefined;
-      return {vote: vote.vote, ...idea.idea} as Client.Idea&{vote:Client.Vote};
+      if(!vote || !vote.vote) return undefined;
+      return {vote: vote.vote, ...idea.idea};
     });
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(FundingControl));
+})(withStyles(styles, { withTheme: true })(withRouter(FundingControl)));

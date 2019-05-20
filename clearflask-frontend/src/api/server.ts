@@ -165,6 +165,16 @@ export const getSearchKey = (search:Client.IdeaSearch):string => {
   ].join('-');
 }
 
+export const getTransactionSearchKey = (search:Client.TransactionSearch):string => {
+  return [
+    (search.filterTransactionTypes || []).join('.'),
+    search.filterAmountMin || -1,
+    search.filterAmountMax || -1,
+    search.filterCreatedStart || '',
+    search.filterCreatedEnd || '',
+  ].join('-');
+}
+
 export interface StateConf {
   status?:Status;
   conf?:Client.Config;
@@ -722,9 +732,11 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
 }
 
 export interface StateCredits {
-  myTransactions:{
+  transactionSearch:{
+    searchKey?:string;
     status?:Status;
     transactions?:Client.Transaction[];
+    cursor?:string;
   };
   myBalance:{
     status?:Status;
@@ -732,7 +744,7 @@ export interface StateCredits {
   }
 }
 const stateCreditsDefault = {
-  myTransactions: {},
+  transactionSearch: {},
   myBalance: {},
 };
 function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.Actions):StateCredits {
@@ -740,23 +752,35 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
     case Client.transactionSearchActionStatus.Pending:
       return {
         ...state,
-        myTransactions: {
+        transactionSearch: {
+          ...state.transactionSearch,
           status: Status.PENDING,
+          searchKey: getTransactionSearchKey(action.meta.request.search),
         },
       };
     case Client.transactionSearchActionStatus.Rejected:
       return {
         ...state,
-        myTransactions: {
+        transactionSearch: {
+          ...state.transactionSearch,
           status: Status.REJECTED,
+          searchKey: getTransactionSearchKey(action.meta.request.search),
         },
       };
     case Client.transactionSearchActionStatus.Fulfilled:
       return {
         ...state,
-        myTransactions: {
+        transactionSearch: {
           status: Status.FULFILLED,
-          transactions: action.payload.results,
+          searchKey: getTransactionSearchKey(action.meta.request.search),
+          transactions: (action.meta.request.cursor !== undefined && action.meta.request.cursor === state.transactionSearch.cursor)
+            ? [ // Append results
+              ...(state.transactionSearch.transactions || []),
+              ...action.payload.results,
+            ] : ( // Replace results
+              action.payload.results
+            ),
+          cursor: action.payload.cursor,
         },
         myBalance: {
           status: Status.FULFILLED,
@@ -764,13 +788,17 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
         },
       };
     case Client.voteUpdateActionStatus.Fulfilled:
-      if(action.payload.balance === undefined || action.payload.balance === undefined) return state;
       return {
         ...state,
-        myBalance: {
-          status: Status.FULFILLED,
-          balance: action.payload.balance.balance,
-        },
+        ...(action.payload.balance !== undefined ? {
+          myBalance: {
+            status: Status.FULFILLED,
+            balance: action.payload.balance.balance,
+          }
+        } : {}),
+        ...(action.payload.transaction !== undefined ? {
+          transactionSearch: {},
+        } : {}),
       };
     case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:

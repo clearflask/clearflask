@@ -27,13 +27,13 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <div style={{
+      <div className={this.props.className} style={{
         display: 'flex',
         alignItems: 'flex-start',
         flexDirection: 'column',
       }}>
         <div style={{
-          minWidth: this.props.width || '50%',
+          minWidth: this.props.width || '24px',
           display: 'inline-block',
         }}>
           {this.props.title ? (
@@ -52,7 +52,7 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
             display: 'flex',
             alignItems: 'stretch',
           }}>
-            <DividerVertical style={{ height: this.props.height || '50%' }} />
+            <DividerVertical style={{ height: this.props.height || '24px' }} />
           </div>
           <div style={{width: '100%'}}>
             {this.props.children}

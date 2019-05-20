@@ -24,6 +24,6 @@
     "noUnusedLocals": false
   },
   "include": [
-    "src"
+    "src", "public/sw.ts"
   ]
 }

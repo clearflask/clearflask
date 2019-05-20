@@ -25,6 +25,7 @@ import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Post, { isExpanded } from './comps/Post';
 import randomUuid from '../common/util/uuid';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import BankPage from './BankPage';
 
 interface Props {
   serverOverride?:Server;
@@ -122,6 +123,18 @@ class App extends Component<Props> {
                 </BasePage>
               )} />
             )} >
+            <Route path={`${prefixMatch}/transaction`} render={props => (
+              <BasePage>
+                <BankPage
+                  server={this.server}
+                />
+              </BasePage>
+            )} />
+            <Route path={`${prefixMatch}/notification`} render={props => (
+              <BasePage>
+                Here should be your notifications
+              </BasePage>
+            )} />
             {!isExpanded() && (
               <Route path={`${prefixMatch}/post/:postId`} render={props => (
                 <BasePage>

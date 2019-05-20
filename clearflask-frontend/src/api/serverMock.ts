@@ -3,6 +3,7 @@ import * as Admin from './admin';
 import randomUuid from '../common/util/uuid';
 import * as ConfigEditor from '../common/config/configEditor';
 import stringToSlug from '../common/util/slugger';
+import WebNotification from '../common/notification/webNotification';
 
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
@@ -57,10 +58,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
     if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    if(request.search.filterAmountMax !== undefined
+      || request.search.filterAmountMin !== undefined
+      || request.search.filterCreatedEnd !== undefined
+      || request.search.filterCreatedStart !== undefined
+      || request.search.filterTransactionTypes !== undefined
+      ) throw new Error("Filters not implemented.");
     const balance = this.getProject(request.projectId).balances[this.loggedInUser.userId] || 0;
-    const transactions = this.getProject(request.projectId).transactions[this.loggedInUser.userId] || [];
+    const transactions = this.getProject(request.projectId).transactions.filter(t => t.userId === this.loggedInUser!.userId);
+    transactions.sort((l,r) => r.created.valueOf() - l.created.valueOf());
     return this.returnLater({
-      ...this.filterCursor<Client.Transaction>(transactions, 20, request.cursor),
+      ...this.filterCursor<Client.Transaction>(transactions, 10, request.cursor),
       balance: {balance},
     });
   }
@@ -229,7 +237,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       created: new Date(),
       amount: request.transaction.amount,
       balance: balance,
-      transactionType: Admin.TransactionTransactionTypeEnum.Adjustment,
+      transactionType: Admin.TransactionType.Adjustment,
       summary: request.transaction.summary,
     };
     this.getProject(request.projectId).transactions.push(transaction);
@@ -339,6 +347,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       vote => vote.voterUserId === request.update.voterUserId && vote.ideaId === request.update.ideaId,
       () => ({ ideaId: idea.ideaId, voterUserId: request.update.voterUserId }));
     var balance:number|undefined;
+    var transaction:Admin.Transaction|undefined;
     if(request.update.fundAmount !== undefined){
       if(request.update.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
       const fundDiff = request.update.fundAmount - (vote.fundAmount || 0);
@@ -347,15 +356,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       if(balance < 0) return this.throwLater(403, 'Insufficient funds');
       const fundersCountDiff = (request.update.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
 
-      this.getProject(request.projectId).transactions.push({
+      transaction = {
         userId: request.update.voterUserId,
         transactionId: randomUuid(),
         created: new Date(),
         amount: fundDiff,
         balance: balance,
-        transactionType: Admin.TransactionTransactionTypeEnum.Vote,
+        transactionType: Admin.TransactionType.Vote,
         targetId: request.update.ideaId,
-      });
+        summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0,47) + '...' : idea.title}"`
+      };
+      this.getProject(request.projectId).transactions.push(transaction);
       vote.fundAmount = request.update.fundAmount;
       this.getProject(request.projectId).balances[request.update.voterUserId] = balance;
       idea.funded = (idea.funded || 0) + fundDiff;
@@ -432,11 +443,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({
       vote,
       idea,
+      transaction,
       ...(balance !== undefined ? {balance:{balance}} : {}),
     });
   }
 
   // **** Private methods
+
+  sendWebNotification(title:string, body:string) {
+    const notificationData = {
+      notificationTitle: title,
+      notificationOptions: {
+        body: body,
+      },
+    };
+    // This was taken from sw.js, if changed, change it there too.
+    WebNotification.getInstance().swRegistration!.showNotification(
+      notificationData.notificationTitle,
+      notificationData.notificationOptions,
+    );
+  }
 
   getProject(projectId:string) {
     var project = this.db[projectId];

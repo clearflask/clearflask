@@ -134,6 +134,8 @@ components:
                   $ref: 'api-idea.yaml#/components/schemas/Idea'
                 balance:
                   $ref: 'api-credit.yaml#/components/schemas/Balance'
+                transaction:
+                  $ref: 'api-credit.yaml#/components/schemas/Transaction'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/vote:

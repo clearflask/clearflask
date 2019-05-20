@@ -12,6 +12,7 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import { connect } from 'react-redux';
 import CreditView from '../common/config/CreditView';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
+import { withRouter, RouteComponentProps } from 'react-router';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -60,7 +61,7 @@ interface ConnectProps {
   balance:number;
 }
 
-class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps> {
   render() {
     var currentTabValue;
     var tabs;
@@ -132,10 +133,16 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
               <Typography variant='caption' >
                 <CreditView val={this.props.balance} credits={this.props.config.credits} />
               </Typography>
-              <IconButton aria-label='Account balance'>
+              <IconButton
+                aria-label='Account balance'
+                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
+              >
                 <BalanceIcon />
               </IconButton>
-              <IconButton aria-label='Notifications'>
+              <IconButton
+                aria-label='Notifications'
+                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
+              >
                 <Badge badgeContent={0} color='secondary'>
                   <NotificationsIcon />
                 </Badge>
@@ -184,5 +191,5 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     loggedInUser: state.users.loggedIn.user,
     balance: state.credits.myBalance.balance || 0,
   };
-})(withStyles(styles, { withTheme: true })(Header));
+})(withStyles(styles, { withTheme: true })(withRouter(Header)));
  

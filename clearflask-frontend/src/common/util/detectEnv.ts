@@ -5,7 +5,7 @@ var betaCache:boolean|undefined = undefined;
 enum Environment {
   DEVELOPMENT_FRONTEND = 'FRONTEND',
   DEVELOPMENT_LOCAL = 'LOCAL',
-  PRODUCTION_GOOGLE_CLOUD = 'PROD',
+  PRODUCTION = 'PROD',
 }
 
 function isBeta():boolean {
@@ -22,7 +22,7 @@ function isBeta():boolean {
 function detectEnv():Environment {
   if(envCache === undefined) {
     if(location.hostname.match('clearflask.com')) {
-      envCache = Environment.PRODUCTION_GOOGLE_CLOUD;
+      envCache = Environment.PRODUCTION;
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       envCache = Environment.DEVELOPMENT_FRONTEND;
     } else {
@@ -33,7 +33,7 @@ function detectEnv():Environment {
 }
 
 function isProd():boolean {
-  return detectEnv() === Environment.PRODUCTION_GOOGLE_CLOUD;
+  return detectEnv() === Environment.PRODUCTION;
 }
 
 export { isProd, isBeta, detectEnv, Environment };

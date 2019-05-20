@@ -218,7 +218,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           {create}
         </div>
         <div className={this.props.classes.results}>
-          <DividerCorner width='160px' height={this.props.explorer.allowCreate ? '320px' : '80px'}>
+          <DividerCorner height={this.props.explorer.allowCreate ? '320px' : '80px'}>
             <div className={this.props.classes.resultsInner}>
               {content}
             </div>
