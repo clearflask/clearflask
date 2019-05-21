@@ -6,10 +6,8 @@ import NotificationsIcon from '@material-ui/icons/Notifications';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import { Server, ReduxState, Status } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
-import RegularTab from '../common/RegularTab';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
-import CreditView from '../common/config/CreditView';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import { withRouter, RouteComponentProps } from 'react-router';
 import NotificationBadge from './NotificationBadge';
@@ -77,7 +75,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
           const page = this.props.config!.layout.pages.find(p => p.pageId === menu.pageIds[0]);
           if(page === undefined) return null;
           return (
-            <RegularTab
+            <Tab
               key={page.slug}
               value={page.slug}
               disableRipple

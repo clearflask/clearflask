@@ -229,7 +229,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{flexGrow: value / target}}></div>
+            <div style={{flexGrow: target > 0 ? (value / target) : 0}}></div>
             <div style={{flexGrow: 0}}>
               {(min !== max) && ( 
                 <Typography variant='body1' inline>
@@ -237,7 +237,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
                 </Typography>
               )}
             </div>
-            <div style={{flexGrow: 1 - (value / target)}}></div>
+            <div style={{flexGrow: target > 0 ? (1 - (value / target)) : 0}}></div>
           </div>
           <div style={{
             position: 'absolute',

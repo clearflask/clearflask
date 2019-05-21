@@ -310,7 +310,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                     onChange={e => this.setState({newItemChosenCategoryId: e.target.value})}
                   >
                     {categoryOptions.map(categoryOption => (
-                      <MenuItem value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
+                      <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
                     ))}
                   </Select>
                   <FormHelperText>

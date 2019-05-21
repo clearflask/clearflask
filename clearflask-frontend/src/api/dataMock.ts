@@ -32,7 +32,7 @@ class DataMock {
     return Promise.resolve();
   }
 
-  mockLoggedIn():Promise<Admin.UserMeWithBalance> {
+    mockLoggedIn():Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       create: {

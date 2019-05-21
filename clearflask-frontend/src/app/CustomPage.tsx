@@ -64,29 +64,32 @@ class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
       if(this.props.page.panels.length > 0) {
         panelsCmpt = (
           <div className={this.props.classes.singlePanels}>
-            {(this.props.page.panels || []).map(panel => (
-              <div className={this.props.classes.singlePanel}>
-                <Panel
-                  key={getSearchKey(panel.search)}
-                  direction={Direction.Horizontal}
-                  panel={panel}
-                  server={this.props.server}
-                  displayDefaults={{
-                    titleTruncateLines: 1,
-                    descriptionTruncateLines: 2,
-                    showDescription: true,
-                    showCommentCount: false,
-                    showCategoryName: false,
-                    showCreated: false,
-                    showAuthor: false,
-                    showStatus: false,
-                    showTags: false,
-                    showVoting: true,
-                    showFunding: true,
-                    showExpression: true,
-                  }} />
-              </div>
-            ))}
+            {(this.props.page.panels || []).map(panel => {
+              const searchKey = getSearchKey(panel.search);
+              return (
+                <div key={searchKey} className={this.props.classes.singlePanel}>
+                  <Panel
+                    key={searchKey}
+                    direction={Direction.Horizontal}
+                    panel={panel}
+                    server={this.props.server}
+                    displayDefaults={{
+                      titleTruncateLines: 1,
+                      descriptionTruncateLines: 2,
+                      showDescription: true,
+                      showCommentCount: false,
+                      showCategoryName: false,
+                      showCreated: false,
+                      showAuthor: false,
+                      showStatus: false,
+                      showTags: false,
+                      showVoting: true,
+                      showFunding: true,
+                      showExpression: true,
+                    }} />
+                </div>
+              );
+            })}
           </div>
         );
       }

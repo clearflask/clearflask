@@ -13,7 +13,7 @@ interface Props extends WithStyles<typeof styles, true> {
   expand:boolean;
 }
 
-class RegularTab extends Component<Props> {
+class Expander extends Component<Props> {
   readonly contentRef:React.RefObject<HTMLDivElement> = React.createRef();
   prevExpandValue:boolean;
 
@@ -97,4 +97,4 @@ class RegularTab extends Component<Props> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(RegularTab);
+export default withStyles(styles, { withTheme: true })(Expander);

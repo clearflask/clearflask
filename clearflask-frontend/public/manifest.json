@@ -1,0 +1,9 @@
+{
+  "name": "Clear Flask",
+  "short_name": "ClearFlask",
+  "icons": [{
+    "src": "/favicon.ico"
+  }],
+  "start_url": "/",
+  "display": "browser"
+}

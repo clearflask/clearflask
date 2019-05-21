@@ -23,8 +23,10 @@ const styles = (theme:Theme) => createStyles({
   },
   demo: {
     width: '100vw',
-    padding: '30vh 10vw',
-
+    padding: '10vh 10vw 10vh',
+  },
+  demoApp: {
+    height: '50vw',
   },
 });
 
@@ -127,22 +129,22 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         <Typography variant='subtitle1' component='div'>{text}</Typography>
       </Grid>
     );
-    const filler = (
-      <Grid item xs={false} sm={3}></Grid>
-    );
-    const demoContainer = (
-      <Grid item xs={false} sm={3}>
+    const app = (
+      <Grid item xs={false} sm={6} className={this.props.classes.demoApp}>
         {demo}
       </Grid>
     );
 
     return (
       <Grid container spacing={24} className={this.props.classes.demo}>
-        {isEven ? [
-          filler, textContainer, demoContainer,
-        ] : [
-          demoContainer, filler, textContainer,
-        ]}
+        {isEven ? (<span>
+          <Grid item xs={false} sm={3}></Grid>
+          {textContainer}
+          {app}
+        </span>) : (<span>
+          {app}
+          {textContainer}
+        </span>)}
       </Grid>
     );
   }

@@ -88,6 +88,7 @@ class Panel extends Component<Props> {
           }
           content = this.props.searchResult.ideas.map(idea => (
             <Post
+              key={idea && idea.ideaId}
               server={this.props.server}
               idea={idea}
               expandable

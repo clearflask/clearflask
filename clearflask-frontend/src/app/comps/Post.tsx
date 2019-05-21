@@ -28,6 +28,7 @@ import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import { getCustomTheme } from '../AppThemeProvider';
+import randomUuid from '../../common/util/uuid';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -341,6 +342,16 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             {this.renderComments(variant)}
           </div>
         </div>
+        <LogIn
+          server={this.props.server}
+          open={this.state.logInOpen}
+          onClose={() => this.setState({logInOpen: false})}
+          onLoggedInAndClose={() => {
+            this.setState({logInOpen: false});
+            this.onLoggedIn && this.onLoggedIn();
+            this.onLoggedIn = undefined;
+          }}
+        />
       </Expander>
       </Loader>
     );
@@ -374,16 +385,6 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             {rightSide}
           </Delimited>
         </div>
-        <LogIn
-          server={this.props.server}
-          open={this.state.logInOpen}
-          onClose={() => this.setState({logInOpen: false})}
-          onLoggedInAndClose={() => {
-            this.setState({logInOpen: false});
-            this.onLoggedIn && this.onLoggedIn();
-            this.onLoggedIn = undefined;
-          }}
-        />
       </div>
     );
   }
@@ -393,7 +394,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.authorUser) return null;
 
     return (
-      <Typography className={this.props.classes.author} variant='caption' inline>
+      <Typography key='author' className={this.props.classes.author} variant='caption' inline>
         {this.props.authorUser.name}
       </Typography>
     );
@@ -404,7 +405,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea) return null;
 
     return (
-      <Typography className={this.props.classes.timeAgo} variant='caption' inline>
+      <Typography key='createdDatetime' className={this.props.classes.timeAgo} variant='caption' inline>
         <TimeAgo date={this.props.idea.created} />
       </Typography>
     );
@@ -418,7 +419,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category.support.comment) return null;
 
     return (
-      <Typography className={this.props.classes.commentCount} variant='caption' inline>
+      <Typography key='commentCount' className={this.props.classes.commentCount} variant='caption' inline>
         <SpeechIcon fontSize='inherit' />
         &nbsp;
         {this.props.idea.commentCount || 0}
@@ -463,7 +464,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     if(!status) return null;
 
     return (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
+      <Button key='status' variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
         onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
         <Typography variant='caption' style={{color: status.color}}>
           {status.name}
@@ -482,7 +483,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
     .filter(tag => !!tag)
     .map(tag => (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
+      <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
         onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
         <Typography variant='caption' style={{color: tag!.color}}>
           {tag!.name}
@@ -497,7 +498,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category) return null;
       
     return (
-      <Button variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant === 'page'}
+      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant === 'page'}
         onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
         <Typography variant='caption' style={{color: this.props.category.color}}>
           {this.props.category.name}
@@ -619,9 +620,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           className={this.props.classes.fundThisButtonLabel}
           color={iFundedThis ? 'primary' : 'default'}
         >
-          {fundingAllowed ?
-            [<AddIcon fontSize='inherit' />,
-            iFundedThis ? 'Adjust funding' : 'Fund this']
+          {fundingAllowed
+            ? <span>
+                <AddIcon fontSize='inherit' />
+                {iFundedThis ? 'Adjust funding' : 'Fund this'}
+              </span>
             : 'Funding has ended'}
         </Typography>
       </Button>
@@ -749,21 +752,22 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           .map(expression => this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), 0))
       : [];
     const picker = limitEmojiSet ? undefined : (
-      <span className={this.props.classes.expressionPicker}><Picker
-        key='picker'
-        native
-        onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
-        showPreview={false}
-        showSkinTones={false}
-        emojiSize={16}
-        exclude={['recent']}
-        style={{
-          border: 'unset',
-          background: 'unset',
-          display: 'block',
-        }}
-        color={this.props.theme.palette.primary.main}
-      /></span>
+      <span key='picker' className={this.props.classes.expressionPicker}>
+        <Picker
+          native
+          onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
+          showPreview={false}
+          showSkinTones={false}
+          emojiSize={16}
+          exclude={['recent']}
+          style={{
+            border: 'unset',
+            background: 'unset',
+            display: 'block',
+          }}
+          color={this.props.theme.palette.primary.main}
+        />
+      </span>
     );
 
     const maxItems = 3;
@@ -772,7 +776,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const showMoreButton:boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <div style={{
+      <div key='expression' style={{
         position: 'relative',
       }}>
         <div style={{display: 'flex'}}>
@@ -828,9 +832,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           }}
           disableRestoreFocus
         >
-          {expressionsExpressed}
-          {expressionsUnused}
-          {picker}
+          {[
+            ...expressionsExpressed,
+            ...expressionsUnused,
+            picker,
+          ]}
         </Popover>
       </div>
     );
@@ -840,7 +846,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     if(!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='subtitle1'>
+      <Typography variant='subtitle1' component={'span'}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<Truncate lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></Truncate>)
           : this.props.idea.title}
@@ -853,7 +859,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
-      <Typography variant='body1'>
+      <Typography variant='body1' component={'span'}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}

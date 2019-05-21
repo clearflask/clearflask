@@ -12,12 +12,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = false;
 
-  // Mock server-side cookie data
-  loggedInUser?:Admin.User;
-
   // Mock database
   readonly db:{
     [projectId:string]: {
+      loggedInUser?:Admin.User; // Mock server-side cookie data
       config: Admin.VersionedConfigAdmin,
       comments: Admin.Comment[];
       ideas: Admin.IdeaAdmin[];
@@ -58,15 +56,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.commentUpdateAdmin(request);
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
-    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     if(request.search.filterAmountMax !== undefined
       || request.search.filterAmountMin !== undefined
       || request.search.filterCreatedEnd !== undefined
       || request.search.filterCreatedStart !== undefined
       || request.search.filterTransactionTypes !== undefined
       ) throw new Error("Filters not implemented.");
-    const balance = this.getProject(request.projectId).balances[this.loggedInUser.userId] || 0;
-    const transactions = this.getProject(request.projectId).transactions.filter(t => t.userId === this.loggedInUser!.userId);
+    const balance = this.getProject(request.projectId).balances[loggedInUser.userId] || 0;
+    const transactions = this.getProject(request.projectId).transactions.filter(t => t.userId === loggedInUser.userId);
     transactions.sort((l,r) => r.created.valueOf() - l.created.valueOf());
     return this.returnLater({
       ...this.filterCursor<Client.Transaction>(transactions, 10, request.cursor),
@@ -114,7 +113,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .map(idea => {
         const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
         if(!author) throw Error('Author of idea not found');
-        const vote = this.loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === this.loggedInUser!.userId) : undefined;
+        const loggedInUser = this.getProject(request.projectId).loggedInUser;
+        const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
         return { ...idea, author: author, vote: vote };
       })
       ,[(l,r) => {switch(request.search.sortBy){
@@ -132,17 +132,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userCreate(request: Client.UserCreateRequest, isSso?:boolean): Promise<Client.UserMeWithBalance> {
     return this.userCreateAdmin(request, isSso).then(user => {
-      this.loggedInUser = user;
+      this.getProject(request.projectId).loggedInUser = user;
       return user;
     });
   }
   userDelete(request: Client.UserDeleteRequest): Promise<void> {
-    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
-    const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === this.loggedInUser!.userId);
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === loggedInUser.userId);
     if(userIdIndex) {
       this.getProject(request.projectId).users.splice(userIdIndex, 1);
     }
-    this.loggedInUser = undefined;
+    this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater(undefined);
   }
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
@@ -150,10 +151,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
   }
   userBind(request: Client.UserBindRequest): Promise<Client.UserMeWithBalance> {
-    return this.loggedInUser
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    return loggedInUser
       ? this.returnLater({
-        ...this.loggedInUser,
-        balance: this.getProject(request.projectId).balances[this.loggedInUser.userId],
+        ...loggedInUser,
+        balance: this.getProject(request.projectId).balances[loggedInUser.userId],
       })
       : this.throwLater(404, 'User not logged in');
   }
@@ -161,7 +163,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
-    this.loggedInUser = undefined;
+    this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater(undefined);
   }
   userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMeWithBalance> {
@@ -176,7 +178,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       if(user) {
         const balance = this.getProject(request.projectId).balances[user.userId] || 0;
         const userMeWithBalance = Admin.UserMeWithBalanceToJSON({...user, balance});
-        this.loggedInUser = userMeWithBalance;
+        this.getProject(request.projectId).loggedInUser = userMeWithBalance;
         return this.returnLater(userMeWithBalance);
       }
     }
@@ -188,42 +190,47 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
     return this.userUpdateAdmin(request)
       .then(user => {
-        this.loggedInUser = user;
+        this.getProject(request.projectId).loggedInUser = user;
         return user;
       });
   }
   voteGetOwn(request: Client.VoteGetOwnRequest): Promise<Client.VoteGetOwnResponse> {
-    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
-    const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === this.loggedInUser!.userId && request.ideaIds.includes(vote.ideaId));
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === loggedInUser.userId && request.ideaIds.includes(vote.ideaId));
     return this.returnLater({results: votes});
   }
   voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.VoteUpdateResponse> {
-    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     return this.voteUpdateAdmin({
       ...request,
       update: {
         ...(request.update),
-        voterUserId: this.loggedInUser.userId,
+        voterUserId: loggedInUser.userId,
       }
     });
   }
   notificationClear(request: Client.NotificationClearRequest): Promise<void> {
-    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser || request.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
-      .filter(notification => notification.userId !== this.loggedInUser!.userId
+      .filter(notification => notification.userId !== loggedInUser.userId
         || notification.notificationId !== request.notificationId);
     return this.returnLater(undefined);
   }
   notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
-    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser || request.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
-      .filter(notification => notification.userId !== this.loggedInUser!.userId);
+      .filter(notification => notification.userId !== loggedInUser.userId);
     return this.returnLater(undefined);
   }
   notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
-    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser || request.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
     const notifications = this.getProject(request.projectId).notifications
-      .filter(notification => notification.userId === this.loggedInUser!.userId);
+      .filter(notification => notification.userId === loggedInUser.userId);
     return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
   }
   commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
@@ -298,7 +305,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(!idea) return this.throwLater(404, 'Idea not found');
     const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
     if(!author) return this.throwLater(404, 'Author of idea not found');
-    const vote = this.loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === this.loggedInUser!.userId) : undefined;
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
     return this.returnLater({ ...idea, author: author, vote: vote }); 
   }
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {

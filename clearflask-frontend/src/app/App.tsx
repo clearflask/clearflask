@@ -115,7 +115,7 @@ class App extends Component<Props> {
           )} />
           <AnimatedPageSwitch
             render={(pageSlug:string) => (
-              <Route path={`${prefixMatch}/(embed)?/${pageSlug}`} render={props => (
+              <Route key={pageSlug} path={`${prefixMatch}/(embed)?/${pageSlug}`} render={props => (
                 <BasePage>
                   <CustomPage
                     pageSlug={pageSlug}

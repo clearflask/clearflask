@@ -27,7 +27,7 @@ class Delimited extends Component<Props&WithStyles<typeof styles, true>> {
     for (let i = 0; i < this.props.children.length; i++) {
       const el = this.props.children[i];
       if(!el) continue;
-      if(i > 0) result.push(delimiter);
+      if(i > 0) result.push(<span key={i}>{delimiter}</span>);
       result.push(el);
     }
     return result;
