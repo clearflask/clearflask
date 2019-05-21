@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip } from '@material-ui/core';
+import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Loader from '../utils/Loader';
 import { connect } from 'react-redux';
@@ -27,6 +27,7 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
+import { getCustomTheme } from '../AppThemeProvider';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -140,6 +141,7 @@ const styles = (theme:Theme) => createStyles({
   },
   fundThisButton: {
     alignSelf: 'flex-end',
+    marginBottom: '-1px', // Fix baseline alignment when button is not present
   },
   fundThisButtonLabel: {
     display: 'flex',
@@ -638,6 +640,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         />
         {fundingAllowed && (
           <Popover
+            TransitionComponent={Fade}
             open={!!this.state.fundingExpanded}
             anchorReference='anchorPosition'
             anchorPosition={this.state.fundingExpandedAnchor}
@@ -806,6 +809,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           )}
         </div>
         <Popover
+          TransitionComponent={Fade}
           open={!!this.state.expressionExpanded}
           anchorReference='anchorPosition'
           anchorPosition={this.state.expressionExpandedAnchor}
@@ -859,9 +863,13 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 
   onExpand() {
     if(!this.props.expandable || !this.props.idea) return;
-    this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;
-    Post.expandedPath = this.expandedPath;
-    this.props.history.push(this.expandedPath);
+    if(getCustomTheme(this.props.theme).disableTransitions) {
+      this.props.history.push(`/${this.props.server.getProjectId()}/post/${this.props.idea.ideaId}`);
+    } else {
+      this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;
+      Post.expandedPath = this.expandedPath;
+      this.props.history.push(this.expandedPath);
+    }
   }
 }
 

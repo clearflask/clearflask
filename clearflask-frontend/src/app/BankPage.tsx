@@ -34,7 +34,7 @@ interface ConnectProps {
 class BankPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
 
   render() {
-  if(!this.props.isLoggedIn) {
+    if(!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }
     return (

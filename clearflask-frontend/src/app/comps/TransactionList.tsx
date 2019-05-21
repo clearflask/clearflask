@@ -61,10 +61,10 @@ class TransactionList extends Component<Props&ConnectProps&WithStyles<typeof sty
                 {this.props.credits && this.props.transactions && this.props.transactions.map(transaction => (
                 <TableRow key={transaction.transactionId}>
                   <TableCell key='date'>
-                    <TimeAgo date={transaction.created} />
+                    <Typography><TimeAgo date={transaction.created} /></Typography>
                   </TableCell>
                   <TableCell key='type'>
-                    <TimeAgo date={transaction.created} />
+                    <Typography><TimeAgo date={transaction.created} /></Typography>
                   </TableCell>
                   <TableCell key='description'>
                     {transaction.summary}

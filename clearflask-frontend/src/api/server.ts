@@ -82,6 +82,7 @@ export class Server {
       users: stateUsersDefault,
       votes: stateVotesDefault,
       credits: stateCreditsDefault,
+      notifications: stateNotificationsDefault,
     };
     return state;
   }
@@ -822,6 +823,71 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
   }
 }
 
+export interface StateNotifications {
+  notificationSearch:{
+    status?:Status;
+    notifications?:Client.Notification[];
+    cursor?:string;
+  };
+}
+const stateNotificationsDefault = {
+  notificationSearch: {},
+};
+function reducerNotifications(state:StateNotifications = stateNotificationsDefault, action:Client.Actions):StateNotifications {
+  switch (action.type) {
+    case Client.notificationSearchActionStatus.Pending:
+      return {
+        ...state,
+        notificationSearch: {
+          ...state.notificationSearch,
+          status: Status.PENDING,
+        },
+      };
+    case Client.notificationSearchActionStatus.Rejected:
+      return {
+        ...state,
+        notificationSearch: {
+          ...state.notificationSearch,
+          status: Status.REJECTED,
+        },
+      };
+    case Client.notificationSearchActionStatus.Fulfilled:
+      return {
+        ...state,
+        notificationSearch: {
+          status: Status.FULFILLED,
+          notifications: (action.meta.request.cursor !== undefined && action.meta.request.cursor === state.notificationSearch.cursor)
+            ? [ // Append results
+              ...(state.notificationSearch.notifications || []),
+              ...action.payload.results,
+            ] : ( // Replace results
+              action.payload.results
+            ),
+          cursor: action.payload.cursor,
+        },
+      };
+    case Client.notificationClearActionStatus.Fulfilled:
+      return {
+        ...state,
+        notificationSearch: {
+          ...state.notificationSearch,
+          notifications: state.notificationSearch.notifications === undefined ? undefined :
+            state.notificationSearch.notifications.filter(n => n.notificationId !== action.meta.request.notificationId),
+        },
+      };
+    case Client.notificationClearAllActionStatus.Fulfilled:
+      return {
+        ...state,
+        notificationSearch: {
+          ...state.notificationSearch,
+          notifications: [],
+        },
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxState {
   projectId:string;
   conf:StateConf;
@@ -830,6 +896,7 @@ export interface ReduxState {
   users:StateUsers;
   votes:StateVotes;
   credits:StateCredits;
+  notifications:StateNotifications;
 }
 export const reducers = combineReducers({
   projectId: (projectId?:string) => (projectId ? projectId : 'unknown'),
@@ -838,5 +905,6 @@ export const reducers = combineReducers({
   comments: reducerComments,
   users: reducerUsers,
   votes: reducerVotes,
-  credits: reducerCredits
+  credits: reducerCredits,
+  notifications: reducerNotifications,
 });

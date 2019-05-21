@@ -20,6 +20,9 @@ const styles = (theme:Theme) => createStyles({
   fundingGoalReached: {
     fontSize: '0.8em',
   },
+  fundingBarColorPrimary: {
+    zIndex: 0,
+  },
   fundingBarTransition: {
     transition: theme.transitions.create('transform', {
       duration: theme.transitions.duration.shortest,
@@ -119,7 +122,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
           valueBuffer={Math.min(Math.max(fundPercNew, fundPerc), 100)}
           classes={{
             bar2Buffer: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingDiffBar : this.props.classes.fundingDiffBarNoGoal}`,
-            barColorPrimary: `${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal}`,
+            barColorPrimary: `${this.props.classes.fundingBarColorPrimary} ${this.props.classes.fundingBarTransition} ${fundGoal ? this.props.classes.fundingBar : this.props.classes.fundingBarNoGoal}`,
             dashedColorPrimary: this.props.classes.fundingBufferUndash,
             root: fundGoal ? this.props.classes.fundingBarBackground : this.props.classes.fundingBarBackgroundNoGoal,
           }}

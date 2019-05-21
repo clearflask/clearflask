@@ -15,6 +15,9 @@ const styles = (theme:Theme) => createStyles({
   page: {
     margin: theme.spacing.unit,
   },
+  spacing: {
+    margin: theme.spacing.unit * 2,
+  },
   singlePanels: {
     display: 'flex',
     flexDirection: 'column',
@@ -145,8 +148,13 @@ class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
     return (
       <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
         <div className={this.props.classes.page}>
-          <Typography variant='h4' component='h1'>{this.props.page && this.props.page.title}</Typography>
-          <Typography variant='body1' component='p'>{this.props.page && this.props.page.description}</Typography>
+          {this.props.page && (this.props.page.title || this.props.page.description) && (
+            <DividerCorner header={this.props.page.title && (
+              <Typography className={this.props.classes.spacing} variant='h5' component='h1'>{this.props.page.title}</Typography>
+            )}>
+              <Typography className={this.props.classes.spacing} variant='body1' component='p'>{this.props.page.description}</Typography>
+            </DividerCorner>
+          )}
           {panelsCmpt}
           {boardCmpt}
           {explorerCmpt}

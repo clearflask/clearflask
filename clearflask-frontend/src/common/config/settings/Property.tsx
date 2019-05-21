@@ -217,7 +217,7 @@ export default class Property extends Component<Props> {
                     <Switch
                       checked={!!prop.value}
                       onChange={(e, checked) => prop.set(checked)}
-                      color="default"
+                      color='default'
                     />
                   )}
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}

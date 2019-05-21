@@ -34,8 +34,7 @@ const styles = (theme:Theme) => createStyles({
     display: 'grid',
     [theme.breakpoints.up('sm')]: {
       gridTemplateColumns: 'auto minmax(0, 1fr)',
-      // 111px leaves enough space for search bar to have two lines without cell expanding
-      gridTemplateRows: 'minmax(111px, auto) minmax(0, 1fr)',
+      gridTemplateRows: 'minmax(0px, auto) minmax(0, 1fr)',
       gridTemplateAreas:
         '". search"'
         + '"create results"',
@@ -218,7 +217,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           {create}
         </div>
         <div className={this.props.classes.results}>
-          <DividerCorner height={this.props.explorer.allowCreate ? '320px' : '80px'}>
+          <DividerCorner width='320px' height={this.props.explorer.allowCreate ? '320px' : '80px'}>
             <div className={this.props.classes.resultsInner}>
               {content}
             </div>

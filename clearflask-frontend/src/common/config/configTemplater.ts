@@ -324,15 +324,23 @@ export default class Templater {
       Admin.CreditFormatterEntryToJSON({suffix: 'k', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
     ]);
   }
-  creditsScale() { // TODO finish up
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(0.01);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: 'Critical', multiplier: 100, greaterOrEqual: 0.9}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'High', multiplier: 100, greaterOrEqual: 10000000}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'Medium', multiplier: 100, greaterOrEqual: 0.2}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' 🍺', multiplier: 100, lessOrEqual: 0.1}),
-    ]);
-  }
+   /**
+    * TODO Create scale instead of credits. Possibly negative credits too?
+    * Requirements:
+    * - Display # of people funded and average instead of total
+    * - Max funding per item
+    * - Balance and transaction history??
+    * - Goal??
+    */
+  // creditsScale() {
+  //   this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(0.01);
+  //   this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+  //     Admin.CreditFormatterEntryToJSON({suffix: 'Critical', multiplier: 100, greaterOrEqual: 0.9}),
+  //     Admin.CreditFormatterEntryToJSON({suffix: 'High', multiplier: 100, greaterOrEqual: 10000000}),
+  //     Admin.CreditFormatterEntryToJSON({suffix: 'Medium', multiplier: 100, greaterOrEqual: 0.2}),
+  //     Admin.CreditFormatterEntryToJSON({suffix: 'Low', multiplier: 100, lessOrEqual: 0.1}),
+  //   ]);
+  // }
   creditsBeer() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([

@@ -1,4 +1,33 @@
 
+var isClientFocused = function() {
+  return clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  })
+  .then((windowClients) => {
+    let clientIsFocused = false;
+
+    for (let i = 0; i < windowClients.length; i++) {
+      const windowClient = windowClients[i];
+      if (windowClient.focused) {
+        clientIsFocused = true;
+        break;
+      }
+    }
+
+    return clientIsFocused;
+  });
+}
+
+var notifyAllOpen = function(projectId) {
+  windowClients.forEach((windowClient) => {
+    windowClient.postMessage({
+      type: 'update-notification-list',
+      projectId: projectId,
+    });
+  });
+}
+
 var showNotification = function(data) {
   self['registration'].showNotification(
     data.notificationTitle,
@@ -6,7 +35,13 @@ var showNotification = function(data) {
 }
 
 var pushListener = function(event) {
-  event['waitUntil'](showNotification(JSON.parse(event.data.text())));
+  var data = event.data.json();
+  event['waitUntil'](isClientFocused().then(isFocused => {
+    notifyAllOpen(data.projectId)
+    if(!isFocused) {
+      showNotification(data)
+    }
+  }));
 };
 
 var notificationClickListener = function(event) {
@@ -23,3 +58,4 @@ var notificationClickListener = function(event) {
 
 self.addEventListener('push', pushListener);
 self.addEventListener('notificationclick', notificationClickListener);
+// TODO self.addEventListener('notificationclose', notificationCloseListener);

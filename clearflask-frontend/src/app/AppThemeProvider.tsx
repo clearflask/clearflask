@@ -5,26 +5,37 @@ import { connect } from 'react-redux';
 import { CssBaseline, MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
 import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 
+export interface CustomTheme {
+  disableTransitions: boolean;
+  funding?: string;
+  isInsideContainer: boolean;
+}
+
+export const getCustomTheme = (theme:Theme):Partial<CustomTheme> => 
+  theme['custom'] !== undefined ? theme['custom'] as CustomTheme : {};
+ 
 interface Props {
   supressCssBaseline?:boolean;
   isInsideContainer?:boolean;
   appRootId:string;
   // connect
-  config:Client.Config;
+  config?:Client.Config;
 }
 
 class App extends Component<Props> {
   render() {
     var theme:Theme|undefined;
     if(this.props.config) {
+      const customTheme:CustomTheme = {
+        disableTransitions: !this.props.config.style.animation.enableTransitions,
+        funding: this.props.config.style.palette.funding
+          || this.props.config.style.palette.primary,
+          // Optional green color
+          // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
+        isInsideContainer: !!this.props.isInsideContainer,
+      };
       theme = createMuiTheme({
-        ...{custom: { // Custom variables
-          funding: this.props.config.style.palette.funding
-            || this.props.config.style.palette.primary,
-            // Optional green color
-            // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
-          isInsideContainer: this.props.isInsideContainer,
-        }} as ThemeOptions,
+        ...({custom: customTheme} as ThemeOptions),
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           ...(this.props.config.style.palette.primary ? { primary: {
@@ -44,6 +55,20 @@ class App extends Component<Props> {
         typography: {
           fontFamily: this.props.config.style.typography.fontFamily || undefined,
           fontSize: this.props.config.style.typography.fontSize || undefined,
+        },
+        transitions: {
+          ...(this.props.config.style.animation.enableTransitions ? {} : {
+            create: () => 'none',
+            duration: {
+              shortest: 0,
+              shorter: 0,
+              short: 0,
+              standard: 0,
+              complex: 0,
+              enteringScreen: 0,
+              leavingScreen: 0,
+            },
+          }),
         },
         props: {
           MuiDialog: {

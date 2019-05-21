@@ -1,6 +1,6 @@
-import React, { Component, PropsWithChildren } from 'react';
-import { Server, ReduxState, Status } from '../api/server';
-import { match, RouteComponentProps } from 'react-router';
+import React, { Component } from 'react';
+import { Server } from '../api/server';
+import { match } from 'react-router';
 import Header from './Header';
 import { History, Location } from 'history';
 import BasePage from './BasePage';
@@ -12,20 +12,21 @@ import Templater from '../common/config/configTemplater';
 import * as ConfigEditor from '../common/config/configEditor';
 import AppThemeProvider from './AppThemeProvider';
 import {
-  BrowserRouter as Router,
   Route,
-  Switch,
   Redirect,
 } from 'react-router-dom'
 import PostPage from './comps/PostPage';
 import CustomPage from './CustomPage';
-import { SnackbarProvider, useSnackbar } from 'notistack';
-import { connect } from 'react-redux';
-import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import Post, { isExpanded } from './comps/Post';
+import { isExpanded } from './comps/Post';
 import randomUuid from '../common/util/uuid';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import BankPage from './BankPage';
+import AccountPage from './AccountPage';
+import ServerErrorNotifier from './utils/ServerErrorNotifier';
+import SsoLogin from './utils/SsoLogin';
+import MuiSnackbarProvider from './utils/MuiSnackbarProvider';
+import PushNotificationListener from './utils/PushNotificationListener';
+import AnimatedPageSwitch from './utils/AnimatedRoutes';
+import NotificationPage from './NotificationPage';
 
 interface Props {
   serverOverride?:Server;
@@ -92,6 +93,7 @@ class App extends Component<Props> {
       <Provider store={this.server.getStore()}>
       <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
       <MuiSnackbarProvider>
+        <PushNotificationListener server={this.server} />
         <ServerErrorNotifier server={this.server} />
         <SsoLogin server={this.server} />
         <div
@@ -111,7 +113,7 @@ class App extends Component<Props> {
               pageChanged={this.pageChanged.bind(this)}
             />
           )} />
-          <AnimatedRoutesApp
+          <AnimatedPageSwitch
             render={(pageSlug:string) => (
               <Route path={`${prefixMatch}/(embed)?/${pageSlug}`} render={props => (
                 <BasePage>
@@ -125,14 +127,17 @@ class App extends Component<Props> {
             )} >
             <Route path={`${prefixMatch}/transaction`} render={props => (
               <BasePage>
-                <BankPage
-                  server={this.server}
-                />
+                <BankPage server={this.server} />
               </BasePage>
             )} />
             <Route path={`${prefixMatch}/notification`} render={props => (
               <BasePage>
-                Here should be your notifications
+                <NotificationPage server={this.server} />
+              </BasePage>
+            )} />
+            <Route path={`${prefixMatch}/account`} render={props => (
+              <BasePage>
+                <AccountPage server={this.server} />
               </BasePage>
             )} />
             {!isExpanded() && (
@@ -150,7 +155,7 @@ class App extends Component<Props> {
                 <Redirect exact to={{pathname: `${prefixMatch}/post/${props.match.params.postId}`}} />
               )} />
             )}
-          </AnimatedRoutesApp>
+          </AnimatedPageSwitch>
         </div>
       </MuiSnackbarProvider>
       </AppThemeProvider>
@@ -163,54 +168,5 @@ class App extends Component<Props> {
     this.props.history.push(`/${this.props.match.params['projectId']}${pageUrlName}`);
   }
 }
-
-const muiSnackbarStyles = createStyles({
-  snackbarRoot: {
-    position: 'absolute',
-  },
-});
-const MuiSnackbarProvider = withStyles((theme:Theme) => muiSnackbarStyles, { withTheme: true })((props:any) => (
-  <SnackbarProvider maxSnack={3} classes={{
-    root: props.classes.snackbarRoot,
-  }}>
-    {props.children}
-  </SnackbarProvider>
-));
-
-const ServerErrorNotifier = (props:({server:Server})) => {
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-  props.server.subscribeToErrors(errorMsg =>
-    enqueueSnackbar(errorMsg, { variant: 'error', preventDuplicate: true }))
-  return null;
-};
-
-const SsoLogin = connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
-  ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.notificationMethods.singleSignOn,
-}})((props:{server:Server, ssoEnabled:boolean}) => {
-  if(!props.ssoEnabled) return null;
-
-  const url = new URL(window.location.href);
-  const sso = url.searchParams.get('sso');
-
-  if(!sso) return null;
-
-  props.server.dispatch().userSsoCreateOrLogin({
-    projectId: props.server.getProjectId(),
-    token: sso,
-  });
-
-  return null;
-});
-
-const AnimatedRoutesApp = connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {return {
-  customPageSlugs: state.conf.conf && state.conf.conf.layout.pages.map(p => p.slug),
-}})((props:any) => (
-  <MuiAnimatedSwitch>
-    {props.children}
-    {props.customPageSlugs
-    ? props.customPageSlugs.map(customPageSlug => props.render(customPageSlug))
-    : null}
-  </MuiAnimatedSwitch>
-));
 
 export default App;

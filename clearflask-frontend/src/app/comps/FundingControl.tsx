@@ -176,10 +176,15 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           step={step}
           value={value}
           onChange={(e, val) => {
-            if(!isSliding) return;
             const newFundAmount = this.sticky(val, min, max, target, vote && vote.fundAmount || undefined, idea.fundGoal ? idea.fundGoal - (idea.funded || 0) : undefined);
             const fundAmountDiff = newFundAmount - fundAmount;
-            this.setState({sliderFundAmountDiff: fundAmountDiff});
+            this.setState({
+              sliderFundAmountDiff: fundAmountDiff,
+              ...(!isSliding ? {
+                sliderCurrentIdeaId: idea.ideaId,
+                fixedTarget: this.state.maxTarget,
+              } : {}),
+            });
           }}
           onDragStart={e => {
             this.setState({

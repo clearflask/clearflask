@@ -53,10 +53,10 @@ components:
         - increment
       properties:
         increment:
-          x-clearflask-prop: { order: 1, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
+          x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
           type: number
         formats:
-          x-clearflask-prop: { order: 2, name: 'Display rules', description: '
+          x-clearflask-prop: { order: 3, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules.
             Rules are evaluated in order, the first rule matching a range will take effect.
             The credits will be multiplied by the multiplier, rounded based on significant digits,
@@ -175,6 +175,16 @@ components:
         - typography
         - animation
       properties:
+        animation:
+          x-clearflask-prop: { order: 1, name: 'Animation' }
+          title: Animation
+          type: object
+          required:
+            - enableTransitions
+          properties:
+            enableTransitions:
+              x-clearflask-prop: { order: 1, name: 'Enable animation', defaultValue: true }
+              type: boolean
         palette:
           x-clearflask-prop: { order: 2, name: 'Palette' }
           title: Palette

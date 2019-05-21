@@ -16,10 +16,23 @@ class DataMock {
 
   mockAll():Promise<any> {
     return this.mockLoggedIn()
-    .then(this.mockItems.bind(this));
+    .then(userMe =>
+      this.mockItems(userMe)
+      .then(() => this.mockNotification(userMe)));
   }
 
-  mockLoggedIn():Promise<any> {
+  mockNotification(userMe:Admin.User):Promise<any> {
+    ServerMock.get().addNotification(
+      this.projectId,
+      userMe,
+      'Welcome to your first notification',
+      'This is a long description of the notification in question',
+      '/home',
+      );
+    return Promise.resolve();
+  }
+
+  mockLoggedIn():Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       create: {
@@ -38,10 +51,11 @@ class DataMock {
           summary: 'Mock amount given, spend it wisely',
         },
       });
+      return userMe;
     });
   }
 
-  mockItems():Promise<any> {
+  mockItems(userMe?:Admin.UserMeWithBalance):Promise<any> {
     return ServerMock.get().configGetAdmin({projectId: this.projectId})
       .then((versionedConfig:Admin.VersionedConfigAdmin) => {
         const promises:Promise<any>[] = [];
@@ -49,8 +63,8 @@ class DataMock {
           [undefined, ...category.workflow.statuses].forEach((status:Admin.IdeaStatus|undefined) => {
             var n = 4;
             while (n-- > 0) {
-              promises.push(this.mockUser(versionedConfig)
-                .then((user:Admin.UserAdmin) => 
+              promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser(versionedConfig))
+                .then((user:Admin.User) => 
                   this.mockIdea(versionedConfig, category, status, user)
                 )
               );
@@ -74,7 +88,7 @@ class DataMock {
     });
   }
 
-  mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, user:Admin.UserAdmin):Promise<any> {
+  mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, user:Admin.User):Promise<any> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       create: {
@@ -96,7 +110,7 @@ class DataMock {
         created: new Date(Math.random() * new Date().getTime()),
       },
     })
-    .then((item:Admin.IdeaAdmin) => this.mockCommentsAndExpression(versionedConfig, category, item))
+    .then((item:Admin.IdeaAdmin) => this.mockCommentsAndExpression([user], versionedConfig, category, item))
   }
 
   fakeMockIdeaData(category:Admin.Category):Partial<Admin.IdeaAdmin> {
@@ -113,26 +127,33 @@ class DataMock {
         voteValue: Math.round(Math.random() * 1000) - 300,
       } : {}),
       ...(Math.random() < 0.9 ? {
-        expressionsValue: Math.random() * 100,
-        expressions: ((category.support.express && category.support.express.limitEmojiSet)
-          ? category.support.express.limitEmojiSet.map(e => e.display)
-          : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
-          .map(emojiDisplay => {return {
-            display: emojiDisplay,
-            count: Math.round(Math.random() * 100),
-          }}),
+        expressionsValue: Math.random() * 10,
+        expressions: this.fakeExpressions(category),
       } : {}),
     };
   }
 
-  mockCommentsAndExpression(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
+  fakeExpressions(category:Admin.Category):Array<Admin.ExpressionCounts> {
+    const expressions = ((category.support.express && category.support.express.limitEmojiSet)
+      ? category.support.express.limitEmojiSet.map(e => e.display)
+      : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
+      .map(emojiDisplay => {return {
+        display: emojiDisplay,
+        count: Math.round(Math.random() * 10) + 1,
+      }});
+    expressions.sort((l,r) => r.count - l.count);
+    return expressions;
+  }
+
+  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
     return this.mockUser(versionedConfig)
+      .then(user => (userMentionPool.push(user), user))
       .then(user => ServerMock.get().commentCreateAdmin({
           projectId: this.projectId,
           ideaId: item.ideaId,
           comment: {
             authorUserId: user.userId,
-            content: loremIpsum({
+            content: this.mockMention(userMentionPool) + loremIpsum({
               units: 'sentences',
               count: Math.round(Math.random() * 3 + 1),
             }),
@@ -154,7 +175,7 @@ class DataMock {
               projectId: this.projectId,
               ideaId: item.ideaId,
               commentId: comment.commentId,
-              update: { content: loremIpsum({
+              update: { content: this.mockMention(userMentionPool) + loremIpsum({
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
               })}
@@ -167,10 +188,16 @@ class DataMock {
         var remainingComments = numComments * Math.random();
         var promise:Promise<any> = Promise.resolve();
         while(remainingComments-- > 0){
-          promise = promise.then(() => this.mockCommentsAndExpression(versionedConfig, category, item, level - 1, numComments, comment));
+          promise = promise.then(() => this.mockCommentsAndExpression(userMentionPool, versionedConfig, category, item, level - 1, numComments, comment));
         }
         return promise;
       });
+  }
+
+  mockMention(userPool:Admin.User[]):string {
+    return Math.random() < 0.5
+      ? '@' + userPool[Math.floor(Math.random()*userPool.length)].name + ' '
+      : '';
   }
 }
 

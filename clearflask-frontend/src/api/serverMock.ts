@@ -25,6 +25,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       votes: Admin.Vote[];
       transactions: Admin.Transaction[];
       balances: {[userId: string]: number};
+      notifications: Client.Notification[];
     }
   } = {};
 
@@ -129,14 +130,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   configGet(request: Client.ConfigGetRequest): Promise<Client.VersionedConfig> {
     return this.configGetAdmin(request);
   }
-  userCreate(request: Client.UserCreateRequest): Promise<Client.UserMeWithBalance> {
-    return this.userCreateAdmin(request).then(user => {
+  userCreate(request: Client.UserCreateRequest, isSso?:boolean): Promise<Client.UserMeWithBalance> {
+    return this.userCreateAdmin(request, isSso).then(user => {
       this.loggedInUser = user;
       return user;
     });
   }
   userDelete(request: Client.UserDeleteRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
+    const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === this.loggedInUser!.userId);
+    if(userIdIndex) {
+      this.getProject(request.projectId).users.splice(userIdIndex, 1);
+    }
+    this.loggedInUser = undefined;
+    return this.returnLater(undefined);
   }
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
@@ -154,7 +161,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    this.loggedInUser = undefined;
+    return this.returnLater(undefined);
   }
   userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMeWithBalance> {
     var token;
@@ -175,10 +183,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.userCreate({
       projectId: request.projectId,
       create: typeof token === 'object' ? {...token} : {},
-    });
+    }, true);
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
-    throw new Error("Method not implemented.");
+    return this.userUpdateAdmin(request)
+      .then(user => {
+        this.loggedInUser = user;
+        return user;
+      });
   }
   voteGetOwn(request: Client.VoteGetOwnRequest): Promise<Client.VoteGetOwnResponse> {
     if(!this.loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -194,6 +206,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         voterUserId: this.loggedInUser.userId,
       }
     });
+  }
+  notificationClear(request: Client.NotificationClearRequest): Promise<void> {
+    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
+      .filter(notification => notification.userId !== this.loggedInUser!.userId
+        || notification.notificationId !== request.notificationId);
+    return this.returnLater(undefined);
+  }
+  notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
+    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
+      .filter(notification => notification.userId !== this.loggedInUser!.userId);
+    return this.returnLater(undefined);
+  }
+  notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
+    if(!this.loggedInUser || request.userId !== this.loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    const notifications = this.getProject(request.projectId).notifications
+      .filter(notification => notification.userId === this.loggedInUser!.userId);
+    return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
   }
   commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
     const comment:Admin.Comment = {
@@ -296,13 +327,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       config: this.getProject(request.projectId).config,
     });
   }
-  userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
+  userCreateAdmin(request: Admin.UserCreateAdminRequest, isSso?:boolean): Promise<Admin.UserAdmin> {
     const user:Admin.UserAdmin = {
       userId: randomUuid(),
       balance: 0,
+      emailNotify: !!request.create.email,
       iosPush: !!request.create.iosPushToken,
       androidPush: !!request.create.androidPushToken,
       browserPush: !!request.create.browserPushToken,
+      isSso: !!isSso,
       ...request.create,
     };
     this.getProject(request.projectId).users.push(user);
@@ -327,7 +360,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
-    throw new Error("Method not implemented.");
+    const user = this.getImmutable(
+      this.getProject(request.projectId).users,
+      user => user.userId === request.userId);
+    if(request.update.name !== undefined) user.name = request.update.name;
+    if(request.update.email !== undefined) user.email = request.update.email === '' ? undefined : request.update.email;
+    if(request.update.emailNotify !== undefined) user.emailNotify = request.update.emailNotify;
+    if(request.update.password !== undefined) user.password = request.update.password === '' ? undefined : request.update.password;
+    if(request.update.iosPushToken !== undefined) {
+      user.iosPushToken = request.update.iosPushToken === '' ? undefined : request.update.iosPushToken;
+      user.iosPush = request.update.iosPushToken !== '';
+    };
+    if(request.update.androidPushToken !== undefined) {
+      user.androidPushToken = request.update.androidPushToken === '' ? undefined : request.update.androidPushToken;
+      user.androidPush = request.update.androidPushToken !== '';
+    };
+    if(request.update.browserPushToken !== undefined) {
+      user.browserPushToken = request.update.browserPushToken === '' ? undefined : request.update.browserPushToken;
+      user.browserPush = request.update.browserPushToken !== '';
+    };
+    return this.returnLater(user);
   }
   voteDeleteAdmin(request: Admin.VoteDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -450,13 +502,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   // **** Private methods
 
-  sendWebNotification(title:string, body:string) {
-    const notificationData = {
-      notificationTitle: title,
-      notificationOptions: {
-        body: body,
-      },
+  addNotification(projectId:string, user:Admin.User, title:string, description:string, url:string) {
+    this.getProject(projectId).notifications.push({
+      projectId,
+      notificationId: randomUuid(),
+      userId: user.userId,
+      type: Client.NotificationTypeEnum.Other,
+      created: new Date(),
+      title,
+      description,
+      url,
+    });
+  }
+
+  sendWebNotification(projectId:string, title:string, description:string) {
+    const icon = this.getProject(projectId).config.config.logoUrl;
+    const notificationOptions:NotificationOptions = {
+      body: description,
+      icon,
     };
+    const notificationData = { notificationTitle: title, notificationOptions };
     // This was taken from sw.js, if changed, change it there too.
     WebNotification.getInstance().swRegistration!.showNotification(
       notificationData.notificationTitle,
@@ -477,6 +542,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         users: [],
         votes: [],
         balances: {},
+        notifications: [],
       };
       this.db[projectId] = project;
     }

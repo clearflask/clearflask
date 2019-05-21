@@ -194,6 +194,8 @@ components:
           properties:
             title:
               type: string
+            statusId:
+              type: string
             categoryId:
               type: string
             tagIds:

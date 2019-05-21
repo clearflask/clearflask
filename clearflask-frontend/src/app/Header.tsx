@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input } from '@material-ui/core';
-import ArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
-import ArrowRightIcon from '@material-ui/icons/KeyboardArrowRight';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import NotificationsIcon from '@material-ui/icons/Notifications';
+import AccountIcon from '@material-ui/icons/AccountCircle';
 import { Server, ReduxState, Status } from '../api/server';
 import DropdownTab from '../common/DropdownTab';
 import RegularTab from '../common/RegularTab';
@@ -13,6 +12,7 @@ import { connect } from 'react-redux';
 import CreditView from '../common/config/CreditView';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import { withRouter, RouteComponentProps } from 'react-router';
+import NotificationBadge from './NotificationBadge';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -58,7 +58,6 @@ interface ConnectProps {
   config?:Client.Config;
   page?:Client.Page;
   loggedInUser?:Client.UserMe;
-  balance:number;
 }
 
 class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps> {
@@ -130,11 +129,8 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
               alignItems: 'center',
               justifyContent: 'flex-end',
             }}>
-              <Typography variant='caption' >
-                <CreditView val={this.props.balance} credits={this.props.config.credits} />
-              </Typography>
               <IconButton
-                aria-label='Account balance'
+                aria-label='Balance'
                 onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
               >
                 <BalanceIcon />
@@ -143,11 +139,16 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
                 aria-label='Notifications'
                 onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
               >
-                <Badge badgeContent={0} color='secondary'>
+                <NotificationBadge server={this.props.server}>
                   <NotificationsIcon />
-                </Badge>
+                </NotificationBadge>
               </IconButton>
-              <Avatar>{this.props.loggedInUser.name ? this.props.loggedInUser.name.charAt(0) : 'A'}</Avatar>
+              <IconButton
+                aria-label='Account'
+                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/account`)}
+              >
+                <AccountIcon />
+              </IconButton>
             </div>
           }
         </div>
@@ -189,7 +190,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     config: state.conf.conf,
     page: page,
     loggedInUser: state.users.loggedIn.user,
-    balance: state.credits.myBalance.balance || 0,
   };
 })(withStyles(styles, { withTheme: true })(withRouter(Header)));
  

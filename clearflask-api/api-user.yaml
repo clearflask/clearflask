@@ -45,9 +45,19 @@ components:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'
         - type: object
+          required:
+            - isSso
+            - iosPush
+            - androidPush
+            - browserPush
+            - emailNotify
           properties:
+            isSso:
+              type: boolean
             email:
               type: string
+            emailNotify:
+              type: boolean
             iosPush:
               type: boolean
             androidPush:
@@ -100,6 +110,8 @@ components:
           type: string
         password:
           type: string
+        emailNotify:
+          type: boolean
         iosPushToken:
           type: string
         androidPushToken:
@@ -146,6 +158,19 @@ components:
           application/json:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/project/{projectId}/delete:
+  post:
+    operationId: userDelete
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/logout:
   post:
     operationId: userLogout
@@ -409,7 +434,7 @@ components:
         required: true
         schema:
           type: string
-      - name: updates
+      - name: update
         in: query
         required: true
         schema:
