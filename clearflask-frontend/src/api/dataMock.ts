@@ -14,6 +14,42 @@ class DataMock {
     return new DataMock(projectId);
   }
 
+  demoPrioritization() {
+    return Promise.all([
+      this.mockLoggedIn(),
+      this.getConfig()
+      .then(config =>
+      this.mockUser("John Doe")
+      .then(user =>
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        create: {
+          authorUserId: user.userId,
+          title: 'Support Jira integration',
+          description: 'I would like to be able to synchronize user ideas with my Jira board',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+          created: new Date(),
+          ...{ // Fake data
+            funded: 125,
+            fundersCount: 27,
+            fundGoal: 300,
+            votersValue: 3,
+            votersCount: 2,
+            expressionsValue: 7,
+            expressions: [
+              {display: '👍', count: 9},
+              {display: '👎', count: 3},
+              {display: '😍', count: 7},
+              {display: '❤️', count: 5},
+              {display: '🎉', count: 1},
+            ],
+          },
+        },
+      }))),
+    ]);
+  }
+
   mockAll():Promise<any> {
     return this.mockLoggedIn()
     .then(userMe =>
@@ -63,7 +99,7 @@ class DataMock {
           [undefined, ...category.workflow.statuses].forEach((status:Admin.IdeaStatus|undefined) => {
             var n = 4;
             while (n-- > 0) {
-              promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser(versionedConfig))
+              promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser())
                 .then((user:Admin.User) => 
                   this.mockIdea(versionedConfig, category, status, user)
                 )
@@ -75,11 +111,11 @@ class DataMock {
       });
   }
 
-  mockUser(versionedConfig:Admin.VersionedConfigAdmin):Promise<Admin.UserAdmin> {
+  mockUser(name?:string):Promise<Admin.UserAdmin> {
     return ServerMock.get().userCreateAdmin({
-      projectId: versionedConfig.config.projectId,
+      projectId: this.projectId,
       create: {
-        name: loremIpsum({
+        name: name || loremIpsum({
           units: 'words',
           count: 2,
         }),
@@ -146,7 +182,7 @@ class DataMock {
   }
 
   mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
-    return this.mockUser(versionedConfig)
+    return this.mockUser()
       .then(user => (userMentionPool.push(user), user))
       .then(user => ServerMock.get().commentCreateAdmin({
           projectId: this.projectId,
@@ -198,6 +234,11 @@ class DataMock {
     return Math.random() < 0.5
       ? '@' + userPool[Math.floor(Math.random()*userPool.length)].name + ' '
       : '';
+  }
+
+  getConfig():Promise<Admin.ConfigAdmin> {
+    return ServerMock.get().configGetAdmin({projectId: this.projectId})
+      .then((versionedConfig:Admin.VersionedConfigAdmin) => versionedConfig.config);
   }
 }
 

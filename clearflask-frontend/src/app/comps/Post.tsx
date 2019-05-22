@@ -53,12 +53,17 @@ const styles = (theme:Theme) => createStyles({
   titleAndDescriptionCard: {
     background: 'transparent',
   },
+  title: {
+  },
   titleAndDescription: {
     padding: theme.spacing.unit / 2,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     textTransform: 'none',
+    '&:hover $title': {
+      textDecoration: 'underline',
+    },
   },
   button: {
     padding: `3px ${theme.spacing.unit / 2}px`,
@@ -730,7 +735,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           expressionDiff.remove = this.props.vote && this.props.vote.expressions || undefined;
         }
       } else if(!hasExpressed && reachedLimitPerIdea) {
-        this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'error', preventDuplicate: true });
+        this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'warning', preventDuplicate: true });
         return;
       } else if(hasExpressed) {
         expressionDiff.remove = [display];
@@ -740,17 +745,30 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       this.props.updateVote({ expressions: expressionDiff })
     };  
 
-    const limitEmojiSet = this.props.category.support.express.limitEmojiSet;
-    const seenEmojis = new Set<string>();
-    const expressionsExpressed:React.ReactNode[] = (this.props.idea.expressions || []).map(expression => {
-      if(limitEmojiSet) seenEmojis.add(expression.display);
-      return this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), expression.count);
+    const limitEmojiSet = this.props.category.support.express.limitEmojiSet
+      ? new Set<string>(this.props.category.support.express.limitEmojiSet.map(e => e.display))
+      : undefined;
+    const unusedEmoji = new Set<string>(limitEmojiSet || []);
+    const expressionsExpressed:React.ReactNode[] = [];
+    (this.props.idea.expressions || []).forEach(expression => {
+      if(limitEmojiSet) {
+        if(!limitEmojiSet.has(expression.display)) {
+          return; // expression not in the list of approved expressions
+        }
+        unusedEmoji.delete(expression.display)
+      };
+      expressionsExpressed.push(this.renderExpressionEmoji(
+        expression.display,
+        expression.display,
+        getHasExpressed(expression.display),
+        () => clickExpression(expression.display), expression.count));
     });
-    const expressionsUnused:React.ReactNode[] = (limitEmojiSet && limitEmojiSet.length !== seenEmojis.size)
-      ? limitEmojiSet
-          .filter(expression => !seenEmojis.has(expression.display))
-          .map(expression => this.renderExpressionEmoji(expression.display, expression.display, getHasExpressed(expression.display), () => clickExpression(expression.display), 0))
-      : [];
+    const expressionsUnused:React.ReactNode[] = [...unusedEmoji].map(expressionDisplay =>
+      this.renderExpressionEmoji(
+        expressionDisplay,
+        expressionDisplay,
+        getHasExpressed(expressionDisplay),
+        () => clickExpression(expressionDisplay), 0));
     const picker = limitEmojiSet ? undefined : (
       <span key='picker' className={this.props.classes.expressionPicker}>
         <Picker
@@ -846,7 +864,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     if(!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='subtitle1' component={'span'}>
+      <Typography variant='subtitle1' component={'span'} className={this.props.classes.title}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<Truncate lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></Truncate>)
           : this.props.idea.title}

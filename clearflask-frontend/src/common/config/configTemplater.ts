@@ -26,6 +26,21 @@ export default class Templater {
     // TODO QUESTION AND ANSWER
     // TODO FORUM
   }
+  
+  demoPrioritization() {
+    const categoryIndex = this.demoCategory();
+
+    this.supportFunding(categoryIndex);
+
+    // const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
+    // if(expressProp.value !== true) expressProp.set(true);
+    // this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
+    //   Admin.ExpressionToJSON({display: '🎉', text: 'Celebrate', weight: 1}),
+    //   Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
+    //   Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -0.5}),
+    // ]);
+    this.demoPagePanel();
+  }
 
   demoCategory() {
     const categoryId = randomUuid();
@@ -212,6 +227,11 @@ export default class Templater {
     }));
   }
 
+  supportNone(categoryIndex:number) {
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).set(undefined);
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).set(undefined);
+    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(undefined);
+  }
   supportFunding(categoryIndex:number) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).setRaw(Admin.FundingToJSON({
       showFunds: true, showFunders: true,

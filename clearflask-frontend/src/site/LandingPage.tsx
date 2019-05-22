@@ -8,7 +8,24 @@ import { Server } from '../api/server';
 import ServerMock from '../api/serverMock';
 import DataMock from '../api/dataMock';
 import randomUuid from '../common/util/uuid';
-import DividerCorner from '../app/utils/DividerCorner';
+import Promised from '../common/Promised';
+import PrioritizationControls from './landing/PrioritizationControls';
+
+interface Project {
+  server: Server;
+  templater: Templater;
+  editor: ConfigEditor.Editor;
+}
+
+interface DemoProps {
+  isEven:boolean;
+  title:string;
+  description:string;
+  initialSubPath?:string;
+  template?:(templater:Templater)=>void;
+  mock?:(mocker:DataMock)=>Promise<any>;
+  controls?:(project:Project)=>React.ReactNode;
+}
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -27,10 +44,38 @@ const styles = (theme:Theme) => createStyles({
     padding: '10vh 10vw 10vh',
   },
   demoApp: {
-    height: '50vh',
   },
 });
 
+/** Landing page brainstorm **
+ * 
+ * User feedback
+ * 
+ * Prioritization:
+ * Title: Give granular control to your users
+ * Description: Reward users with credits to spend on your next feature.
+ * Controls:
+ * - Funding
+ *  - Currency
+ *  - Time
+ * - Voting
+ *  - Toggle downvote
+ * - Expressions
+ *  - Toggle limit
+ * 
+ * Frictionless onboarding and retention:
+ * 
+ * Analytics:
+ * 
+ * Customization:
+ * Highly customizable
+ * - Menu
+ * - Style
+ * 
+ * Features (Demos):
+ * - Funding Voting Expressions
+ * 
+ */
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
   render() {
@@ -41,15 +86,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           {this.renderSubTitle()}
         </div>
 
+        {this.renderPrioritization(true)}
+
         {/* Major templates (Feature ranking, blog, knowledge base, bug bounty, forum, FAQ, etc...)
         all-in-one customer feedback */}
         {/* Onboarding, minimal friction (SSO, email, Mobile push, Browser push, anonymous; email,pass,user req/opt)*/}
-        {/* Voting (toggle downvotes) */}
-        {this.renderVoting(true)}
         {/* Funding (toggle credit types: time, currency, points, beer) */}
-        {this.renderFunding(false)}
+        {/* Voting (toggle downvotes) */}
         {/* Expressions (toggle whitelist (github, unlimited, custom)) */}
-        {this.renderExpression(true)}
         {/* Layout (Rearrange menu and pages) */}
         {/* Statuses (name color next status), display workflow */}
         {/* Tagging (tag group name and tags) */}
@@ -60,79 +104,55 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
   renderTitle() {
     return (
-      <Typography variant='h1'>
-        Crowd-funded roadmap
+      <Typography variant='h3' component='h1'>
+        Clear Flask
       </Typography>
     );
   }
   renderSubTitle() {
     return (
-      <Typography variant='h2'>
-        Customer feedback platform prioritized based on their monetary contributions
+      <Typography variant='h5' component='h2'>
+        Give valuable customers a proportionate voice to drive your product
       </Typography>
     );
   }
 
-  renderExpression(isEven:boolean) {
-    return this.renderDemo(
+
+  renderPrioritization(isEven:boolean) {
+    return this.renderDemo({
       isEven,
-      'Expression',
-      'Blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah',
-      this.getDemoApp(
-        templater => {
-          const categoryIndex = templater.demoCategory();
-          templater.supportExpressingGithubStyle(categoryIndex);
-          templater.demoPagePanel();
-        },
-        mocker => mocker.mockAll(),
-        '/embed/demo',
-      ));
+      title: 'Give granular control to your users',
+      description: 'Reward users with credits to spend on your next feature.',
+      initialSubPath: '/embed/demo',
+      template: templater => templater.demoPrioritization(),
+      mock: mocker => mocker.demoPrioritization(),
+      controls: project => (<PrioritizationControls templater={project.templater} />),
+    });
   }
 
-  renderFunding(isEven:boolean) {
-    return this.renderDemo(
-      isEven,
-      'Funding',
-      'Blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah',
-      this.getDemoApp(
-        templater => {
-          const categoryIndex = templater.demoCategory();
-          templater.supportFunding(categoryIndex);
-          templater.creditsCurrency();
-          templater.demoPagePanel();
-        },
-        mocker => mocker.mockAll(),
-        '/embed/demo',
-      ));
-  }
-
-  renderVoting(isEven:boolean) {
-    return this.renderDemo(
-      isEven,
-      'Voting',
-      'Blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah',
-      this.getDemoApp(
-        templater => {
-          const categoryIndex = templater.demoCategory();
-          templater.supportVoting(categoryIndex, true);
-          templater.demoPagePanel();
-        },
-        mocker => mocker.mockAll(),
-        '/embed/demo',
-      ));
-  }
-
-  renderDemo(isEven:boolean, heading:string, text:string, demo) {
+  renderDemo(demoProps:DemoProps) {
+    const projectPromise = this.getProject(demoProps.template, demoProps.mock);
+    const controls = demoProps.controls === undefined ? undefined : (
+      <Promised promise={projectPromise} render={demoProps.controls} />
+    );
     const textContainer = (
-      <Grid item xs={12} sm={3}>
-        <Typography variant='h5' component='h3'>{heading}</Typography>
+      <Grid item xs={12} sm={5} md={4} lg={3} xl={2}>
+        <Typography variant='h5' component='h3'>{demoProps.title}</Typography>
         <br />
-        <Typography variant='subtitle1' component='div'>{text}</Typography>
+        <Typography variant='subtitle1' component='div'>{demoProps.description}</Typography>
+        <br />
+        {controls}
       </Grid>
     );
+    const spacing = (<Grid item xs={false} sm={false} md={2} lg={1} xl={false} />);
     const app = (
       <Grid item xs={12} sm={6} className={this.props.classes.demoApp}>
-        {demo}
+        <Promised promise={projectPromise} render={project => (
+          <DemoApp
+            server={project.server}
+            intialSubPath={demoProps.initialSubPath}
+          />
+        )} />
       </Grid>
     );
 
@@ -141,55 +161,44 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         className={this.props.classes.demo}
         container
         spacing={24}
-        direction={ isEven ? 'row-reverse' : undefined }
+        direction={ demoProps.isEven ? 'row-reverse' : undefined }
         wrap='wrap-reverse'
       >
         {app}
+        {spacing}
         {textContainer}
       </Grid>
     );
   }
 
-  getDemoApp(
-    template:((templater:Templater)=>void)|undefined = undefined,
-    mock:((mocker:DataMock)=>void)|undefined = undefined,
-    initialSubPath?:string
-  ):React.ReactNode {
-    return (
-      <DemoApp
-        server={this.getDemoServer(template, mock)}
-        intialSubPath={initialSubPath}
-      />
-    );
-  }
-
-  getDemoServer(
+  getProject(
     template:((templater:Templater)=>void)|undefined = undefined,
     mock:((mocker:DataMock)=>void)|undefined = undefined
-  ):Server {
+  ):Promise<Project> {
     const projectId = randomUuid();
     const server = new Server(projectId, ServerMock.get());
-    server.dispatchAdmin()
+    return server.dispatchAdmin()
       .then(d => d.projectCreateAdmin({projectId: projectId})
         .then(project =>{
           const editor = new ConfigEditor.EditorImpl(project.config.config);
-          template && template(Templater.get(editor));
+          const templater = Templater.get(editor);
+          template && template(templater);
           server.subscribeToChanges(editor);
           return d.configSetAdmin({
             projectId: projectId,
             versionLast: project.config.version,
             config: editor.getConfig(),
-          });
+          })
+          .then(() => mock && mock(DataMock.get(projectId)))
+          .then(() => {
+            if(server.getStore().getState().users.loggedIn.status === undefined) {
+              server.dispatch().userBind({projectId});
+            }
+          })
+          .then(() => server.dispatch().configGet({projectId: projectId}))
+          .then(() => ({server, templater, editor}));
         })
-        .then(() => mock && mock(DataMock.get(projectId)))
-        .then(() => {
-          if(server.getStore().getState().users.loggedIn.status === undefined) {
-            server.dispatch().userBind({projectId});
-          }
-        })
-        .then(() => server.dispatch().configGet({projectId: projectId}))
       );
-    return server;
   }
 }
 

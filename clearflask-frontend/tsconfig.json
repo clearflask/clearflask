@@ -25,5 +25,9 @@
   },
   "include": [
     "src", "public/sw.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*"
   ]
 }
