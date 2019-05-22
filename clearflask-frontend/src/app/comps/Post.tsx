@@ -333,7 +333,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             <div className={this.props.classes.titleAndDescriptionOuter}>
               <CardActionArea
                 className={this.props.classes.titleAndDescription}
-                disabled={!this.props.expandable || variant === 'page'}
+                disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
                 onClick={this.onExpand.bind(this)}
                 classes={{
                   focusHighlight: this.props.classes.titleAndDescriptionCard,

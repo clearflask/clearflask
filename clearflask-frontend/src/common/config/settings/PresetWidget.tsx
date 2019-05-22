@@ -56,10 +56,10 @@ class PresetWidget extends Component<Props> {
         actionTitle: 'Set', action: (templater, path) => templater.workflowBug(path[2] as number) },
     ],
     'credits': [
-      { title: 'Time', body: 'Structure your work based on how long it\'ll take. Recommended for transparency. Also ideal if your hourly rate may change in the future.',
-        actionTitle: 'Set', action: (templater, path) => templater.creditsTime() },
       { title: 'Currency', body: 'Direct monetary value shows users exactly how much an idea is worth.',
         actionTitle: 'Set', action: (templater, path) => templater.creditsCurrency() },
+      { title: 'Time', body: 'Structure your work based on how long it\'ll take. Recommended for transparency. Also ideal if your hourly rate may change in the future.',
+        actionTitle: 'Set', action: (templater, path) => templater.creditsTime() },
       { title: 'Points', body: 'Virtual currency disconnects from the real world value. Ideal if you give away points from various sources with differing price points or discounts.',
         actionTitle: 'Set', action: (templater, path) => templater.creditsUnitless() },
       { title: 'Beer', body: 'Tip jars may decide to use a currency such as tipping a beer, coffee, or lunch.',

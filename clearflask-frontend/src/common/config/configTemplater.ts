@@ -39,7 +39,21 @@ export default class Templater {
     //   Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
     //   Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -0.5}),
     // ]);
-    this.demoPagePanel();
+    this.demoPagePanel(Admin.PostDisplayToJSON({
+      titleTruncateLines: undefined,
+      descriptionTruncateLines: undefined,
+      showDescription: true,
+      showCommentCount: false,
+      showCategoryName: false,
+      showCreated: false,
+      showAuthor: false,
+      showStatus: false,
+      showTags: false,
+      showVoting: true,
+      showFunding: true,
+      showExpression: true,
+      disableExpand: true,
+    }));
   }
 
   demoCategory() {
@@ -56,14 +70,14 @@ export default class Templater {
     return categoryIndex;
   }
 
-  demoPagePanel() {
+  demoPagePanel(display:Admin.PostDisplay = {}) {
     const pageId = randomUuid();
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
       pageId: pageId,
       name: 'Demo',
       slug: stringToSlug('demo'),
       panels: [
-        Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+        Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({})}),
       ],
     }));
   }

@@ -64,7 +64,7 @@ class TransactionList extends Component<Props&ConnectProps&WithStyles<typeof sty
                     <Typography><TimeAgo date={transaction.created} /></Typography>
                   </TableCell>
                   <TableCell key='type'>
-                    <Typography><TimeAgo date={transaction.created} /></Typography>
+                    <Typography>{transaction.transactionType}</Typography>
                   </TableCell>
                   <TableCell key='description'>
                     {transaction.summary}

@@ -33,7 +33,7 @@ const styles = (theme:Theme) => createStyles({
   hero: {
     width: '100vw',
     minHeight: '100vh',
-    padding: '10vh 10vw',
+    padding: '20vh 10vw',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -121,7 +121,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderPrioritization(isEven:boolean) {
     return this.renderDemo({
       isEven,
-      title: 'Give granular control to your users',
+      title: 'Give users fine control to prioritize your ',
       description: 'Reward users with credits to spend on your next feature.',
       initialSubPath: '/embed/demo',
       template: templater => templater.demoPrioritization(),
