@@ -92,7 +92,6 @@ class App extends Component<Props> {
     return (
       <Provider store={this.server.getStore()}>
       <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
-      <MuiSnackbarProvider>
         <PushNotificationListener server={this.server} />
         <ServerErrorNotifier server={this.server} />
         <SsoLogin server={this.server} />
@@ -157,7 +156,6 @@ class App extends Component<Props> {
             )}
           </AnimatedPageSwitch>
         </div>
-      </MuiSnackbarProvider>
       </AppThemeProvider>
       </Provider>
     );

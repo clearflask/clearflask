@@ -11,6 +11,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
 import Admin from './site/Admin';
 import {closeLoadingScreen} from './common/loadingScreen';
+import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -26,6 +27,7 @@ class Main extends Component {
   render() {
     return (
       <MuiThemeProvider theme={theme}>
+      <MuiSnackbarProvider>
         <CssBaseline />
         <div style={{background: theme.palette.background.default}}>
           <Router>
@@ -42,6 +44,7 @@ class Main extends Component {
             </Switch>
           </Router>
         </div>
+      </MuiSnackbarProvider>
       </MuiThemeProvider>
     );
   }

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { Divider, Typography } from '@material-ui/core';
 import DividerVertical from './DividerVertical';
+import { ThemeStyle } from '@material-ui/core/styles/createTypography';
 
 const styles = (theme:Theme) => createStyles({
   title: {
@@ -18,9 +19,11 @@ const styles = (theme:Theme) => createStyles({
 interface Props {
   className?:string
   title?:string;
+  titleVariant?:ThemeStyle;
   header?:React.ReactNode;
   width?:string;
   height?:string;
+  rtl?:boolean;
 }
 
 class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
@@ -29,15 +32,15 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
     return (
       <div className={this.props.className} style={{
         display: 'flex',
-        alignItems: 'flex-start',
         flexDirection: 'column',
+        alignItems: this.props.rtl ? 'flex-end' : 'flex-start',
       }}>
         <div style={{
           minWidth: this.props.width || '24px',
           display: 'inline-block',
         }}>
-          {this.props.title ? (
-            <Typography variant='overline' className={this.props.classes.title}>
+          {this.props.title !== undefined ? (
+            <Typography variant={this.props.titleVariant || 'overline'} className={this.props.classes.title}>
               {this.props.title}
             </Typography>
           ) : null}
@@ -47,6 +50,7 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
         <div style={{
           display: 'flex',
           width: '100%',
+          flexDirection: this.props.rtl ? 'row-reverse' : 'row',
         }}>
           <div style={{
             display: 'flex',

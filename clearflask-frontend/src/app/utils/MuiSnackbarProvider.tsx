@@ -4,7 +4,7 @@ import { withStyles, Theme, createStyles } from '@material-ui/core/styles';
 
 const muiSnackbarStyles = createStyles({
   snackbarRoot: {
-    position: 'absolute',
+    position: 'fixed', // Keep the snackbar above dialogs AND scroll with the page
   },
 });
 const MuiSnackbarProvider = withStyles((theme:Theme) => muiSnackbarStyles, { withTheme: true })((props:any) => (

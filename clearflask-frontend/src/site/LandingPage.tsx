@@ -8,13 +8,14 @@ import { Server } from '../api/server';
 import ServerMock from '../api/serverMock';
 import DataMock from '../api/dataMock';
 import randomUuid from '../common/util/uuid';
+import DividerCorner from '../app/utils/DividerCorner';
 
 const styles = (theme:Theme) => createStyles({
   page: {
   },
   hero: {
     width: '100vw',
-    height: '100vh',
+    minHeight: '100vh',
     padding: '10vh 10vw',
     display: 'flex',
     flexDirection: 'column',
@@ -26,7 +27,7 @@ const styles = (theme:Theme) => createStyles({
     padding: '10vh 10vw 10vh',
   },
   demoApp: {
-    height: '50vw',
+    height: '50vh',
   },
 });
 
@@ -130,21 +131,21 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       </Grid>
     );
     const app = (
-      <Grid item xs={false} sm={6} className={this.props.classes.demoApp}>
+      <Grid item xs={12} sm={6} className={this.props.classes.demoApp}>
         {demo}
       </Grid>
     );
 
     return (
-      <Grid container spacing={24} className={this.props.classes.demo}>
-        {isEven ? (<span>
-          <Grid item xs={false} sm={3}></Grid>
-          {textContainer}
-          {app}
-        </span>) : (<span>
-          {app}
-          {textContainer}
-        </span>)}
+      <Grid
+        className={this.props.classes.demo}
+        container
+        spacing={24}
+        direction={ isEven ? 'row-reverse' : undefined }
+        wrap='wrap-reverse'
+      >
+        {app}
+        {textContainer}
       </Grid>
     );
   }
@@ -181,6 +182,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           });
         })
         .then(() => mock && mock(DataMock.get(projectId)))
+        .then(() => {
+          if(server.getStore().getState().users.loggedIn.status === undefined) {
+            server.dispatch().userBind({projectId});
+          }
+        })
         .then(() => server.dispatch().configGet({projectId: projectId}))
       );
     return server;
