@@ -31,17 +31,11 @@ export default class Templater {
     const categoryIndex = this.demoCategory();
 
     this.supportFunding(categoryIndex);
+    this.creditsCurrency();
 
-    // const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    // if(expressProp.value !== true) expressProp.set(true);
-    // this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
-    //   Admin.ExpressionToJSON({display: '🎉', text: 'Celebrate', weight: 1}),
-    //   Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
-    //   Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -0.5}),
-    // ]);
     this.demoPagePanel(Admin.PostDisplayToJSON({
-      titleTruncateLines: undefined,
-      descriptionTruncateLines: undefined,
+      titleTruncateLines: 0,
+      descriptionTruncateLines: 0,
       showDescription: true,
       showCommentCount: false,
       showCategoryName: false,
@@ -256,12 +250,27 @@ export default class Templater {
       enableDownvotes: enableDownvotes, showVotes: true, showVoters: true,
     }));
   }
-  supportExpressingAllEmojis(categoryIndex:number) {
+  supportExpressingAllEmojis(categoryIndex:number, limit?:number) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
   }
-  supportExpressingFacebookStyle(categoryIndex:number) {
+  supportExpressingFacebookStyle(categoryIndex:number, limit?:number) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
+    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
+      Admin.ExpressionToJSON({display: '👍', text: 'Thumbs up', weight: 1}),
+      Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
+      Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
+      Admin.ExpressionToJSON({display: '😮', text: 'Shocked', weight: 0}),
+      Admin.ExpressionToJSON({display: '😥', text: 'Crying', weight: -1}),
+      Admin.ExpressionToJSON({display: '😠', text: 'Angry', weight: -1}),
+    ]);
+  }
+  supportExpressingMessengerStyle(categoryIndex:number, limit?:number) {
+    const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
+    if(expressProp.value !== true) expressProp.set(true);
+    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
       Admin.ExpressionToJSON({display: '😍', text: 'Love', weight: 1}),
       Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
@@ -272,9 +281,10 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '👎', text: 'Thumbs down', weight: -1}),
     ]);
   }
-  supportExpressingGithubStyle(categoryIndex:number) {
+  supportExpressingGithubStyle(categoryIndex:number, limit?:number) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
+    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
       Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
       Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -1}),
@@ -285,6 +295,11 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '🚀', text: 'Rocket', weight: 1}),
       Admin.ExpressionToJSON({display: '👀', text: 'Eyes', weight: 1}),
     ]);
+  }
+  supportExpressingLimitEmojiPerIdea(categoryIndex:number, limit?:number) {
+    const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
+    if(expressProp.value !== true) expressProp.set(true);
+    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
   }
 
   taggingOsPlatform(categoryIndex:number) {
@@ -386,6 +401,33 @@ export default class Templater {
       Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
       Admin.CreditFormatterEntryToJSON({suffix: ' 🍺', lessOrEqual: 999}),
     ]);
+  }
+
+  usersOnboardingEmail(enable:boolean, passwordRequirement:Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional, confirmEmails:boolean = false) {
+    this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'email']).set(enable ? true : undefined);
+    if(enable) {
+      this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'password']).set(passwordRequirement);
+      this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'confirmEmails']).set(confirmEmails);
+    }
+  }
+
+  usersOnboardingAnonymous(enable:boolean, onlyShowIfPushNotAvailable:boolean = false) {
+    this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous']).set(enable ? true : undefined);
+    if(enable) {
+      this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous', 'onlyShowIfPushNotAvailable']).set(onlyShowIfPushNotAvailable);
+    }
+  }
+
+  usersOnboardingMobilePush(enable:boolean) {
+    this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'mobilePush']).set(enable);
+  }
+
+  usersOnboardingBrowserPush(enable:boolean) {
+    this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'browserPush']).set(enable);
+  }
+
+  usersOnboardingDisplayName(requirement:Admin.AccountFieldsDisplayNameEnum) {
+    this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(requirement);
   }
 
   _get<T extends ConfigEditor.Setting<any, any>>(path:ConfigEditor.Path):T {

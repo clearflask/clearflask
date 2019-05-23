@@ -19,7 +19,7 @@ class DataMock {
       this.mockLoggedIn(),
       this.getConfig()
       .then(config =>
-      this.mockUser("John Doe")
+      this.mockUser('John Doe')
       .then(user =>
       ServerMock.get().ideaCreateAdmin({
         projectId: this.projectId,
@@ -31,9 +31,9 @@ class DataMock {
           tagIds: [],
           created: new Date(),
           ...{ // Fake data
-            funded: 25,
-            fundersCount: 7,
-            fundGoal: 300,
+            funded: 12,
+            fundersCount: 5,
+            fundGoal: 60,
             voteValue: 3,
             votersCount: 2,
             expressionsValue: 7,
@@ -68,7 +68,7 @@ class DataMock {
     return Promise.resolve();
   }
 
-    mockLoggedIn():Promise<Admin.UserMeWithBalance> {
+  mockLoggedIn():Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       create: {
@@ -83,7 +83,7 @@ class DataMock {
         projectId: this.projectId,
         userId: userMe.userId,
         transaction: {
-          amount: 400,
+          amount: 100,
           summary: 'Mock amount given, spend it wisely',
         },
       });

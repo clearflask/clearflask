@@ -76,6 +76,7 @@ class App extends Component<Props> {
             ...(this.props.isInsideContainer ? {
               style: { position: 'absolute' },
               BackdropProps: { style: { position: 'absolute' } },
+              disableEnforceFocus: true,
             } : {}),
           },
         },

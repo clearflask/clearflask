@@ -1,4 +1,5 @@
 import { isProd, detectEnv, Environment } from "../util/detectEnv";
+import { string } from "prop-types";
 
 const KEY_PUBLIC = 'TODO';
 const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';
@@ -6,16 +7,26 @@ export const KEY_DEV_PRIVATE = '6xIMnmOfFz4xxsSw1h0ZhPCYuCfed56oNA7AEOSfHWE';
 
 export default class WebNotification {
   static instance:WebNotification;
+  static instanceMock:WebNotification;
+  readonly isMock:boolean;
   status:Status = Status.Unsupported;
   unsubscribeCall?:()=>Promise<boolean>;
   swRegistration?:ServiceWorkerRegistration;
 
-  static getInstance():WebNotification {
-    return this.instance || (this.instance = new this());
+  constructor(isMock:boolean) {
+    this.isMock = isMock;
+    if(isMock) {
+      this.status = Status.Granted;
+    } else {
+      this._checkStatus();
+    }
   }
 
-  constructor() {
-    this._checkStatus();
+  static getInstance():WebNotification {
+    return this.instance || (this.instance = new this(false));
+  }
+  static getMockInstance():WebNotification {
+    return this.instanceMock || (this.instanceMock = new this(true));
   }
 
   getStatus():Status {
@@ -28,6 +39,11 @@ export default class WebNotification {
   }
 
   async askPermission():Promise<WebNotificationSubscription|WebNotificationError> {
+    if(this.isMock) return Promise.resolve({
+      type: 'success',
+      token: 'mock-token',
+    } as WebNotificationSubscription);
+
     if(this.status === Status.Unsupported) {
       throw Error('Cannot ask for permission when unsupported');
     }

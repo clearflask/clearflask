@@ -19,6 +19,7 @@ import withMobileDialog, { InjectedProps } from '@material-ui/core/withMobileDia
 import { WithWidth } from '@material-ui/core/withWidth';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { DialogProps } from '@material-ui/core/Dialog';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
@@ -56,6 +57,9 @@ export interface Props {
   open?:boolean;
   onClose:()=>void;
   onLoggedInAndClose:()=>void;
+  overrideWebNotification?:WebNotification;
+  overrideMobileNotification?:MobileNotification;
+  DialogProps?: Partial<DialogProps>;
 }
 
 interface ConnectProps {
@@ -86,8 +90,8 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     const notifOpts:Set<NotificationType> = new Set();
     if(this.props.config) {
       if(this.props.config.users.onboarding.notificationMethods.mobilePush === true
-        && MobileNotification.getInstance().canAskPermission()) {
-        switch(MobileNotification.getInstance().getDevice()) {
+        && (this.props.overrideMobileNotification || MobileNotification.getInstance()).canAskPermission()) {
+        switch((this.props.overrideMobileNotification || MobileNotification.getInstance()).getDevice()) {
           case Device.Android:
             notifOpts.add(NotificationType.Android);
             break;
@@ -97,7 +101,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         }
       }
       if(this.props.config.users.onboarding.notificationMethods.browserPush === true
-        && WebNotification.getInstance().canAskPermission()) {
+        && (this.props.overrideWebNotification || WebNotification.getInstance()).canAskPermission()) {
         notifOpts.add(NotificationType.Browser);
       }
       if(this.props.config.users.onboarding.notificationMethods.anonymous
@@ -117,7 +121,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
           <DialogContentText>Oops, you are already logged in</DialogContentText>
         </DialogContent>,
         <DialogActions>
-          <Button onClick={e => this.props.onLoggedInAndClose.bind(this)}>Close</Button>
+          <Button onClick={this.props.onLoggedInAndClose.bind(this)}>Close</Button>
         </DialogActions>,
       ];
     } else if(notifOpts.size === 0) {
@@ -310,6 +314,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         PaperProps={{
           style: { width: !this.props.fullScreen ? 'fit-content' : undefined },
         }}
+        {...this.props.DialogProps}
       >
         {dialogContent}
       </Dialog>
@@ -337,12 +342,12 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
   }
 
   onClickMobileNotif() {
-    const device = MobileNotification.getInstance().getDevice();
+    const device = (this.props.overrideMobileNotification || MobileNotification.getInstance()).getDevice();
     if(device === Device.None) return;
     this.setState({
       notificationType: device === Device.Android ? NotificationType.Android : NotificationType.Ios,
     });
-    MobileNotification.getInstance().askPermission().then(r => {
+    (this.props.overrideMobileNotification || MobileNotification.getInstance()).askPermission().then(r => {
       if(r.type === 'success') {
         this.setState({
           ...(r.device === Device.Android ? { notificationDataAndroid: r.token } : {}),
@@ -361,7 +366,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     this.setState({
       notificationType: NotificationType.Browser,
     });
-    WebNotification.getInstance().askPermission().then(r => {
+    (this.props.overrideWebNotification || WebNotification.getInstance()).askPermission().then(r => {
       if(r.type === 'success') {
         this.setState({
           notificationDataBrowser: r.token,

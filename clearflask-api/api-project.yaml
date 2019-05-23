@@ -111,18 +111,18 @@ components:
             - notificationMethods
           properties:
             accountFields:
-              x-clearflask-prop: { order: 1, name: 'Collection methods' }
+              x-clearflask-prop: { order: 1, name: 'Account fields to collect' }
               title: AccountFields
               type: object
               required:
                 - displayName
               properties:
                 displayName:
-                  x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: 'None' }
+                  x-clearflask-prop: { order: 1, name: 'Display name', defaultValue: 'None' }
                   type: string
                   enum: [None, Optional, Required]
             notificationMethods:
-              x-clearflask-prop: { order: 1, name: 'Collection methods' }
+              x-clearflask-prop: { order: 2, name: 'Collection methods' }
               title: NotificationMethods
               type: object
               required:

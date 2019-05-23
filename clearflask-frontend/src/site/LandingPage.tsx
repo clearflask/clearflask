@@ -10,6 +10,9 @@ import DataMock from '../api/dataMock';
 import randomUuid from '../common/util/uuid';
 import Promised from '../common/Promised';
 import PrioritizationControls from './landing/PrioritizationControls';
+import LogIn from '../app/comps/LogIn';
+import OnboardingDemo from './landing/OnboardingDemo';
+import OnboardingControls from './landing/OnboardingControls';
 
 interface Project {
   server: Server;
@@ -25,6 +28,7 @@ interface DemoProps {
   template?:(templater:Templater)=>void;
   mock?:(mocker:DataMock)=>Promise<any>;
   controls?:(project:Project)=>React.ReactNode;
+  demo?:(project:Project)=>React.ReactNode;
 }
 
 const styles = (theme:Theme) => createStyles({
@@ -51,19 +55,14 @@ const styles = (theme:Theme) => createStyles({
  * 
  * User feedback
  * 
- * Prioritization:
- * Title: Give granular control to your users
- * Description: Reward users with credits to spend on your next feature.
- * Controls:
- * - Funding
- *  - Currency
- *  - Time
- * - Voting
- *  - Toggle downvote
- * - Expressions
- *  - Toggle limit
+ * DONE Prioritization
  * 
  * Frictionless onboarding and retention:
+ * title:
+ * description:
+ * demo: sign up form
+ * - Choose platform: Mobile, Desktop
+ * - Choose onboarding: Mobile, Desktop
  * 
  * Analytics:
  * 
@@ -87,6 +86,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         </div>
 
         {this.renderPrioritization(true)}
+        {this.renderOnboarding(false)}
 
         {/* Major templates (Feature ranking, blog, knowledge base, bug bounty, forum, FAQ, etc...)
         all-in-one customer feedback */}
@@ -121,12 +121,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderPrioritization(isEven:boolean) {
     return this.renderDemo({
       isEven,
-      title: 'Give users fine control to prioritize your ',
-      description: 'Reward users with credits to spend on your next feature.',
+      title: 'Give users fine control prioritizing features',
+      description: 'Users',
       initialSubPath: '/embed/demo',
       template: templater => templater.demoPrioritization(),
       mock: mocker => mocker.demoPrioritization(),
       controls: project => (<PrioritizationControls templater={project.templater} />),
+    });
+  }
+
+  renderOnboarding(isEven:boolean) {
+    return this.renderDemo({
+      isEven,
+      title: 'Frictionless user onboarding',
+      description: 'The intention is to retain users unhappy with your product. We collect only enough information to ',
+      // description: 'We recommend using Single Sign-On to allow users to seamlessly transition from your product to our feedback platform.'
+      //  + 'Otherwise we ask for minimal information',
+      initialSubPath: '/embed/demo',
+      controls: project => (<OnboardingControls templater={project.templater} />),
+      demo: project => (<OnboardingDemo server={project.server} />),
     });
   }
 
@@ -147,12 +160,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     const spacing = (<Grid item xs={false} sm={false} md={2} lg={1} xl={false} />);
     const app = (
       <Grid item xs={12} sm={6} className={this.props.classes.demoApp}>
-        <Promised promise={projectPromise} render={project => (
+        <Promised promise={projectPromise} render={demoProps.demo || (project => (
           <DemoApp
             server={project.server}
             intialSubPath={demoProps.initialSubPath}
           />
-        )} />
+        ))} />
       </Grid>
     );
 
