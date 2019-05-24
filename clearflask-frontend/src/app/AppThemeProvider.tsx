@@ -4,6 +4,7 @@ import { ReduxState, Status } from '../api/server';
 import { connect } from 'react-redux';
 import { CssBaseline, MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
 import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
+import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 
 export interface CustomTheme {
   disableTransitions: boolean;
@@ -17,6 +18,7 @@ export const getCustomTheme = (theme:Theme):Partial<CustomTheme> =>
 interface Props {
   supressCssBaseline?:boolean;
   isInsideContainer?:boolean;
+  breakpoints?:{[key in Breakpoint]:number};
   appRootId:string;
   // connect
   config?:Client.Config;
@@ -69,6 +71,11 @@ class App extends Component<Props> {
               leavingScreen: 0,
             },
           }),
+        },
+        breakpoints: {
+          ...(this.props.breakpoints !== undefined ? {
+            values: this.props.breakpoints,
+          } : {}),
         },
         props: {
           MuiDialog: {

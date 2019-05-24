@@ -10,9 +10,8 @@ import DataMock from '../api/dataMock';
 import randomUuid from '../common/util/uuid';
 import Promised from '../common/Promised';
 import PrioritizationControls from './landing/PrioritizationControls';
-import LogIn from '../app/comps/LogIn';
 import OnboardingDemo from './landing/OnboardingDemo';
-import OnboardingControls from './landing/OnboardingControls';
+import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
 
 interface Project {
   server: Server;
@@ -44,8 +43,12 @@ const styles = (theme:Theme) => createStyles({
     justifyContent: 'center',
   },
   demo: {
-    width: '100vw',
-    padding: '10vh 10vw 10vh',
+    [theme.breakpoints.up('md')]: {
+      padding: '10vh 10vw 10vh',
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: '10vh 1vw 10vh',
+    },
   },
   demoApp: {
   },
@@ -117,7 +120,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-
+  onboardingDemoRef:React.RefObject<any> = React.createRef();
   renderPrioritization(isEven:boolean) {
     return this.renderDemo({
       isEven,
@@ -133,13 +136,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderOnboarding(isEven:boolean) {
     return this.renderDemo({
       isEven,
-      title: 'Frictionless user onboarding',
-      description: 'The intention is to retain users unhappy with your product. We collect only enough information to ',
-      // description: 'We recommend using Single Sign-On to allow users to seamlessly transition from your product to our feedback platform.'
-      //  + 'Otherwise we ask for minimal information',
+      title: 'User retention',
+      description: 
+      'It is important to keep a communication channel from users leaving feedback.'
+      + 'To minimize friction, users can choose between browser push notifications, mobile push or standard email.',
       initialSubPath: '/embed/demo',
-      controls: project => (<OnboardingControls templater={project.templater} />),
-      demo: project => (<OnboardingDemo server={project.server} />),
+      template: templater => setInitSignupMethodsTemplate(templater),
+      controls: project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />),
+      demo: project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />),
     });
   }
 
@@ -149,7 +153,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <Promised promise={projectPromise} render={demoProps.controls} />
     );
     const textContainer = (
-      <Grid item xs={12} sm={5} md={4} lg={3} xl={2}>
+      <Grid item xs={12} md={4} lg={3} xl={2}>
         <Typography variant='h5' component='h3'>{demoProps.title}</Typography>
         <br />
         <Typography variant='subtitle1' component='div'>{demoProps.description}</Typography>
@@ -159,7 +163,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
     const spacing = (<Grid item xs={false} sm={false} md={2} lg={1} xl={false} />);
     const app = (
-      <Grid item xs={12} sm={6} className={this.props.classes.demoApp}>
+      <Grid item xs={12} md={6} className={this.props.classes.demoApp}>
         <Promised promise={projectPromise} render={demoProps.demo || (project => (
           <DemoApp
             server={project.server}

@@ -170,17 +170,6 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
               <ListSubheader className={this.props.classes.noWrap} component="div">
                 {onlySingleOption ? "We'll notify you of changes" : 'Get notified of changes'}
               </ListSubheader>
-              <Collapse in={notifOpts.has(NotificationType.Email)}>
-                <ListItem 
-                  button={!onlySingleOption}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
-                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
-                  disabled={this.state.isSubmitting}
-                >
-                  <ListItemIcon><EmailIcon /></ListItemIcon>
-                  <ListItemText inset primary='Email' className={this.props.classes.noWrap} />
-                </ListItem>
-              </Collapse>
               <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                 <ListItem
                   button={!onlySingleOption}
@@ -208,6 +197,17 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
                 <Collapse in={onlySingleOptionRequiresAllow}>
                   <Button className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
                 </Collapse>
+              </Collapse>
+              <Collapse in={notifOpts.has(NotificationType.Email)}>
+                <ListItem 
+                  button={!onlySingleOption}
+                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
+                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
+                  disabled={this.state.isSubmitting}
+                >
+                  <ListItemIcon><EmailIcon /></ListItemIcon>
+                  <ListItemText inset primary='Email' className={this.props.classes.noWrap} />
+                </ListItem>
               </Collapse>
               <Collapse in={notifOpts.has(NotificationType.Silent)}>
                 <ListItem
@@ -312,7 +312,11 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         onClose={this.props.onClose}
         scroll='body'
         PaperProps={{
-          style: { width: !this.props.fullScreen ? 'fit-content' : undefined },
+          style: {
+            width: 'fit-content',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          },
         }}
         {...this.props.DialogProps}
       >
@@ -385,4 +389,4 @@ export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {r
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
   isLoggedIn: state.users.loggedIn.status === Status.FULFILLED,
-}})(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props&ConnectProps&WithStyles<typeof styles, true>&WithSnackbarProps>()(LogIn))));
+}})(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props&ConnectProps&WithStyles<typeof styles, true>&WithSnackbarProps>({breakpoint: 'xs'})(LogIn))));

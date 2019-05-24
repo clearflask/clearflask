@@ -1,19 +1,17 @@
 import React, { Component } from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as ConfigEditor from '../../common/config/configEditor';
-import Templater from '../../common/config/configTemplater';
-import { ToggleButtonGroup, ToggleButton } from '@material-ui/lab';
-import { Grow, RadioGroup, FormControlLabel, Radio, Switch, FormHelperText, Button } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import LogIn from '../../app/comps/LogIn';
 import { Server } from '../../api/server';
 import { Provider } from 'react-redux';
 import AppThemeProvider from '../../app/AppThemeProvider';
-import MobileNotification from '../../common/notification/mobileNotification';
-import WebNotification from '../../common/notification/webNotification';
+import MobileNotification, { Status as MobileStatus, Device as MobileDevice } from '../../common/notification/mobileNotification';
+import WebNotification, { Status as WebStatus } from '../../common/notification/webNotification';
 import DeviceContainer, { Device } from '../../common/DeviceContainer';
+import DemoPushPermissionDialog from '../../common/DemoPushPermissionDialog';
 
 const styles = (theme:Theme) => createStyles({
-  page: {
+  content: {
     position: 'relative',
     width: '100%',
     height: '100%',
@@ -24,6 +22,7 @@ const styles = (theme:Theme) => createStyles({
   loginDialog: {
     position: 'relative' + '!important' as 'relative',
     width: '100%',
+    height: '100%',
   },
   loginPaperScrollBody: {
     marginBottom: 65, // Extend to show shadow
@@ -36,29 +35,49 @@ interface Props {
 
 interface State {
   loginOpen:boolean;
+  device:Device;
 }
 
 class OnboardingDemo extends Component<Props&WithStyles<typeof styles, true>, State> {
   state:State = {
     loginOpen: true,
+    device: Device.Desktop,
   };
+  mobileNotification = MobileNotification.getMockInstance();
+  mobileNotificationNotSupported = MobileNotification.getMockInstance(MobileStatus.Disconnected);
+  webNotification = WebNotification.getMockInstance();
+  webNotificationNotSupported = WebNotification.getMockInstance(WebStatus.Unsupported);
 
   render() {
     return (
-      <Provider store={this.props.server.getStore()}>
-      <AppThemeProvider appRootId='onboardingDemo' isInsideContainer={true} supressCssBaseline={true}>
-          <DeviceContainer device={Device.Mobile}>
-        <div id='onboardingDemo' className={this.props.classes.page}>
+      <DeviceContainer key={this.state.device} device={this.state.device}>
+      <DemoPushPermissionDialog
+        mobileNotification={this.mobileNotification}
+        webNotification={this.webNotification}
+      >
+        <Provider store={this.props.server.getStore()}>
+        <AppThemeProvider
+          appRootId='onboardingDemo'
+          isInsideContainer={true}
+          supressCssBaseline={true}
+          breakpoints={this.state.device === Device.Mobile ? {
+              'xs': 0,
+              'sm': 10000,
+              'md': 10000,
+              'lg': 10000,
+              'xl': 10000,
+            } : undefined}
+        >
+          <div id='onboardingDemo' className={this.props.classes.content}>
             {this.state.loginOpen ? (
               <LogIn
                 server={this.props.server}
                 open={this.state.loginOpen}
                 onClose={() => this.setState({loginOpen: false})}
                 onLoggedInAndClose={() => this.setState({loginOpen: false})}
-                overrideMobileNotification={MobileNotification.getMockInstance()}
-                overrideWebNotification={WebNotification.getMockInstance()}
+                overrideMobileNotification={this.state.device === Device.Mobile ? this.mobileNotification : this.mobileNotificationNotSupported}
+                overrideWebNotification={this.state.device === Device.Desktop ? this.webNotification : this.webNotificationNotSupported}
                 DialogProps={{
-                  // hideBackdrop: true,
                   disablePortal: true,
                   disableBackdropClick: true,
                   disableEscapeKeyDown: true,
@@ -71,14 +90,25 @@ class OnboardingDemo extends Component<Props&WithStyles<typeof styles, true>, St
             ) : (
               <Button
                 onClick={() => this.props.server.dispatch().userLogout({projectId: this.props.server.getProjectId()})
-                  .then(() => this.setState({loginOpen: true}))}
+                  .then(() => {
+                    this.mobileNotification.mockSetStatus(MobileStatus.Available);
+                    this.mobileNotification.mockSetDevice(MobileDevice.Ios);
+                    this.webNotification.mockSetStatus(WebStatus.Available);
+                    this.setState({loginOpen: true})
+                  })}
               >Try again</Button>
             )}
-        </div>
-          </DeviceContainer>
-      </AppThemeProvider>
-      </Provider>
+          </div>
+        </AppThemeProvider>
+        </Provider>
+      </DemoPushPermissionDialog>
+      </DeviceContainer>
     );
+  }
+
+  /** Called externally by OnboardingControls */
+  onDeviceChange(device:Device) {
+    this.setState({device: device});
   }
 }
 

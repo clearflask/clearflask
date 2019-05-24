@@ -1,23 +1,22 @@
 
 export default class MobileNotification {
   static instance:MobileNotification;
-  static instanceMock:MobileNotification;
   readonly isMock:boolean;
-  status:Status = Status.Available; // TODO
+  mockAskPermission?:()=>Promise<MobileNotificationSubscription|MobileNotificationError>;
+  status:Status;
   device:Device = Device.None;
 
-  constructor(isMock:boolean) {
+  constructor(isMock:boolean, status:Status = Status.Disconnected, mockAskPermission?:()=>Promise<MobileNotificationSubscription|MobileNotificationError>) {
     this.isMock = isMock;
-    if(isMock) {
-      this.status = Status.Subscribed;
-    }
+    this.status = status;
+    this.mockAskPermission = mockAskPermission;
   }
 
   static getInstance():MobileNotification {
     return this.instance || (this.instance = new this(false));
   }
-  static getMockInstance():MobileNotification {
-    return this.instanceMock || (this.instanceMock = new this(true));
+  static getMockInstance(status:Status = Status.Disconnected, mockAskPermission?:()=>Promise<MobileNotificationSubscription|MobileNotificationError>):MobileNotification {
+    return new this(true, status, mockAskPermission);
   }
 
   startListen():void {
@@ -38,11 +37,7 @@ export default class MobileNotification {
   }
 
   askPermission():Promise<MobileNotificationSubscription|MobileNotificationError> {
-    if(this.isMock) return Promise.resolve({
-      type: 'success',
-      device: Device.Ios,
-      token: 'mock-token',
-    } as MobileNotificationSubscription);
+    if(this.isMock) return this.mockAskPermission ? this.mockAskPermission() : Promise.reject('Mock incorrectly setup');
 
     return Promise.resolve({
       type: 'success',
@@ -50,6 +45,12 @@ export default class MobileNotification {
       token:'fake-token',
     } as MobileNotificationSubscription)
   }
+
+  mockSetStatus(status:Status) {if(this.isMock) this.status = status};
+
+  mockSetDevice(device:Device) {if(this.isMock) this.device = device};
+
+  mockSetAskPermission(mockAskPermission?:()=>Promise<MobileNotificationSubscription|MobileNotificationError>) {if(this.isMock) this.mockAskPermission = mockAskPermission};
 }
 
 export enum Status {

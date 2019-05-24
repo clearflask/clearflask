@@ -7,16 +7,17 @@ export const KEY_DEV_PRIVATE = '6xIMnmOfFz4xxsSw1h0ZhPCYuCfed56oNA7AEOSfHWE';
 
 export default class WebNotification {
   static instance:WebNotification;
-  static instanceMock:WebNotification;
-  readonly isMock:boolean;
+  isMock:boolean;
+  mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>;
   status:Status = Status.Unsupported;
   unsubscribeCall?:()=>Promise<boolean>;
   swRegistration?:ServiceWorkerRegistration;
 
-  constructor(isMock:boolean) {
+  constructor(isMock:boolean, status:Status = Status.Unsupported, mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>) {
     this.isMock = isMock;
+    this.status = status;
     if(isMock) {
-      this.status = Status.Granted;
+      this.mockAskPermission;
     } else {
       this._checkStatus();
     }
@@ -25,8 +26,8 @@ export default class WebNotification {
   static getInstance():WebNotification {
     return this.instance || (this.instance = new this(false));
   }
-  static getMockInstance():WebNotification {
-    return this.instanceMock || (this.instanceMock = new this(true));
+  static getMockInstance(status:Status = Status.Unsupported, mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>):WebNotification {
+    return new this(true, status, mockAskPermission);
   }
 
   getStatus():Status {
@@ -39,10 +40,7 @@ export default class WebNotification {
   }
 
   async askPermission():Promise<WebNotificationSubscription|WebNotificationError> {
-    if(this.isMock) return Promise.resolve({
-      type: 'success',
-      token: 'mock-token',
-    } as WebNotificationSubscription);
+    if(this.isMock) return this.mockAskPermission ? this.mockAskPermission() : Promise.reject('Mock incorrectly setup');
 
     if(this.status === Status.Unsupported) {
       throw Error('Cannot ask for permission when unsupported');
@@ -83,6 +81,10 @@ export default class WebNotification {
   unsubscribe() {
     this.unsubscribeCall && this.unsubscribeCall(); 
   }
+
+  mockSetStatus(status:Status) {this.status = status};
+
+  mockSetAskPermission(mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>) {this.mockAskPermission = mockAskPermission};
 
   _checkStatus() {
     if('Notification' in window

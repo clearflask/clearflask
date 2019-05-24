@@ -2,6 +2,8 @@ import React from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { ThemeStyle } from '@material-ui/core/styles/createTypography';
 import GradientFade from './GradientFade';
+import { fade } from '@material-ui/core/styles/colorManipulator';
+import { borderRadius } from 'react-select/lib/theme';
 
 export enum Device {
   Desktop = 'desktop',
@@ -9,91 +11,104 @@ export enum Device {
 }
 
 const styles = (theme:Theme) => createStyles({
-  // Taken from https://www.w3schools.com/howto/howto_css_devices.asp
-  [Device.Desktop]: {
+  // Based on https://www.w3schools.com/howto/howto_css_devices.asp
+  mobileBorder: {
+    margin: 'auto',
+    maxWidth: '360px',
+    borderWidth: '60px 16px',
+    borderRadius: '36px',
+    borderColor: theme.palette.grey[800],
+    borderStyle: 'solid',
+  },
+  mobileContainer: {
+    paddingTop: '177.78%',
+    width: '100%',
+    position: 'relative',
+    background: theme.palette.grey[800],
+  },
+  mobileTopBar: {
+    display: 'block',
+    width: '60px',
+    height: '5px',
+    position: 'absolute',
+    top: '-30px',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: theme.palette.grey[700],
+    borderRadius: '10px',
+  },
+  mobileBottomBar: {
+    display: 'block',
+    width: '35px',
+    height: '35px',
+    position: 'absolute',
+    left: '50%',
+    bottom: '-65px',
+    transform: 'translate(-50%, -50%)',
+    background: theme.palette.grey[700],
+    borderRadius: '50%',
+  },
+  mobileContent: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     WebkitTransformOrigin: '0 0',
     transformOrigin: '0 0',
-    WebkitTransform: 'scale(.6) translate(-50%)',
-    transform: 'scale(.6) translate(-50%)',
-    left: '50%',
-    position: 'absolute',
-    width: '1366px',
-    height: '800px',
-    borderRadius: '6px',
-    borderStyle: 'solid',
-    borderColor: 'black',
-    borderWidth: '24px 24px 80px',
-    backgroundColor: 'black',
-    '&:before': {
-      content: '""',
-      display: 'block',
-      position: 'absolute',
-      width: '250px',
-      height: '30px',
-      bottom: '-110px',
-      left: '50%',
-      WebkitTransform: 'translate(-50%)',
-      transform: 'translate(-50%)',
-      background: '#f1f1f1',
-      borderBottomLeftRadius: '5px',
-      borderBottomRightRadius: '5px',
-      zIndex: 1,
-    },
-    '&:after': {
-      content: '""',
-      display: 'block',
-      position: 'absolute',
-      width: '1600px',
-      height: '60px',
-      margin: '80px 0 0 -110px',
-      background: 'black',
-      borderRadius: '6px',
-    },
-    '& $content': {
-      width: '1366px',
-      height: '800px',
-      overflow: 'hidden',
-      border: 'none',
-    },
+    WebkitTransform: 'scale(.8)',
+    transform: 'scale(.8)',
+    width: '125%',
+    height: '125%',
   },
-  [Device.Mobile]: {
-    position: 'relative',
-    width: '360px',
-    height: '640px',
+  desktopOutside: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  desktopBorder: {
     margin: 'auto',
-    border: '16px black solid',
-    borderTopWidth: '60px',
-    borderBottomWidth: '60px',
-    borderRadius: '36px',
-    '&:before': {
-      content: '""',
-      display: 'block',
-      width: '60px',
-      height: '5px',
-      position: 'absolute',
-      top: '-30px',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: '#333',
-      borderRadius: '10px',
-    },
-    '&:after': {
-      content: '""',
-      display: 'block',
-      width: '35px',
-      height: '35px',
-      position: 'absolute',
-      left: '50%',
-      bottom: '-65px',
-      transform: 'translate(-50%, -50%)',
-      background: '#333',
-      borderRadius: '50%',
-    },
-    '& $content': {
-      background: theme.palette.background.default,
-    },
+    width: '90%',
+    maxWidth: '1366px',
+    borderWidth: '10px',
+    borderRadius: '8px',
+    borderColor: theme.palette.grey[800],
+    borderStyle: 'solid',
   },
-  content: {
+  desktopContainer: {
+    paddingTop: '58.6%',
+    width: '100%',
+    position: 'relative',
+    background: theme.palette.grey[800],
+  },
+  desktopContent: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    WebkitTransformOrigin: '0 0',
+    transformOrigin: '0 0',
+    WebkitTransform: 'scale(.64)',
+    transform: 'scale(.64)',
+    width: '156.25%',
+    height: '156.25%',
+  },
+  desktopBottom: {
+    display: 'block',
+    width: '100%',
+    marginTop: '6px',
+    height: '24px',
+    borderRadius: '4px',
+    background: theme.palette.grey[800],
+  },
+  desktopBottomOpening: {
+    display: 'block',
+    width: '20%',
+    margin: '0px auto',
+    height: '10px',
+    borderBottomLeftRadius: '8px',
+    borderBottomRightRadius: '8px',
+    background: theme.palette.grey[700],
   },
 });
 
@@ -104,17 +119,35 @@ interface Props {
 class DeviceContainer extends React.Component<Props&WithStyles<typeof styles, true>> {
 
   render() {
-    const classes:string[] = [];
-
-    classes.push(this.props.classes[this.props.device]);
-
-    return (
-      <div className={classes.join(' ')}>
-        <div className={this.props.classes.content}>
-          {this.props.children}
-        </div>
-      </div>
-    );
+    switch(this.props.device) {
+      case Device.Desktop:
+        return (
+            <div className={this.props.classes.desktopOutside}>
+              <div className={this.props.classes.desktopBorder}>
+              <div className={this.props.classes.desktopContainer}>
+                <div className={this.props.classes.desktopContent}>
+                  {this.props.children}
+                </div>
+              </div>
+            </div>
+            <div className={this.props.classes.desktopBottom}>
+            <div className={this.props.classes.desktopBottomOpening} />
+            </div>
+          </div>
+        );
+      case Device.Mobile:
+        return (
+          <div className={this.props.classes.mobileBorder}>
+            <div className={this.props.classes.mobileContainer}>
+              <div className={this.props.classes.mobileTopBar} />
+              <div className={this.props.classes.mobileContent}>
+                {this.props.children}
+              </div>
+              <div className={this.props.classes.mobileBottomBar} />
+            </div>
+          </div>
+        );
+    }
   }
 }
 

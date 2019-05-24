@@ -1,13 +1,35 @@
 import React, { Component } from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as ConfigEditor from '../../common/config/configEditor';
 import Templater from '../../common/config/configTemplater';
 import { ToggleButtonGroup, ToggleButton } from '@material-ui/lab';
-import { Grow, RadioGroup, FormControlLabel, Radio, Switch, FormHelperText, FormControl, Select, MenuItem } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import * as Client from '../../api/client';
+import { Device } from '../../common/DeviceContainer';
+
+enum SignupMethods {
+  Email = 'email',
+  Mobile = 'mobile',
+  Web = 'web',
+  Anonymous = 'anonymous',
+}
+
+const initialSignupMethods = [SignupMethods.Email, SignupMethods.Mobile, SignupMethods.Web];
+
+const setSignupMethodsTemplate = (templater:Templater, signupMethods:SignupMethods[]) => {
+  templater.usersOnboardingEmail(signupMethods.includes(SignupMethods.Email));
+  templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
+  templater.usersOnboardingBrowserPush(signupMethods.includes(SignupMethods.Web));
+  templater.usersOnboardingAnonymous(signupMethods.includes(SignupMethods.Anonymous), !signupMethods.includes(SignupMethods.Anonymous));
+}
+
+export const setInitSignupMethodsTemplate = (templater:Templater) => {
+  setSignupMethodsTemplate(templater, initialSignupMethods);
+}
 
 const styles = (theme:Theme) => createStyles({
-  page: {
+  toggleButtonGroup: {
+    display: 'inline-flex',
+    marginBottom: theme.spacing.unit * 2,
   },
   extraControls: {
     display: 'flex',
@@ -19,10 +41,12 @@ const styles = (theme:Theme) => createStyles({
 
 interface Props {
   templater: Templater;
+  onboardingDemoRef: React.RefObject<any>;
 }
 
 interface State {
-  platform:'mobile'|'desktop';
+  device:Device;
+  signupMethods:SignupMethods[];
   allowEmail:boolean;
   allowMobilePush:boolean;
   allowDesktopPush:boolean;
@@ -30,9 +54,10 @@ interface State {
   collectDisplayName:Client.AccountFieldsDisplayNameEnum;
 }
 
-class PrioritizationControls extends Component<Props&WithStyles<typeof styles, true>, State> {
+class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>, State> {
   state:State = {
-    platform: 'desktop',
+    device: Device.Desktop,
+    signupMethods: initialSignupMethods,
     allowEmail: true,
     allowMobilePush: true,
     allowDesktopPush: true,
@@ -42,20 +67,25 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
 
   render() {
     return (
-      <div className={this.props.classes.page}>
+      <div>
+        <Typography variant='caption'>Platform</Typography>
         <ToggleButtonGroup
-          value={this.state.platform}
+          value={this.state.device}
           exclusive
-          style={{display: 'inline-block'}}
+          className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {
             switch(val) {
               case 'mobile':
-                this.setState({platform: val});
-                // TODO
+                this.setState({device: Device.Mobile});
+                this.props.onboardingDemoRef.current
+                  && this.props.onboardingDemoRef.current.onDeviceChange
+                  && this.props.onboardingDemoRef.current.onDeviceChange(Device.Mobile);
                 break;
               case 'desktop':
-                this.setState({platform: val});
-                // TODO
+                this.setState({device: Device.Desktop});
+                this.props.onboardingDemoRef.current
+                  && this.props.onboardingDemoRef.current.onDeviceChange
+                  && this.props.onboardingDemoRef.current.onDeviceChange(Device.Desktop);
                 break;
             }
           }}
@@ -63,69 +93,46 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
           <ToggleButton value='desktop'>Desktop</ToggleButton>
           <ToggleButton value='mobile'>Mobile</ToggleButton>
         </ToggleButtonGroup>
-        <div className={this.props.classes.extraControls}>
-          <FormControlLabel
-            control={(<Switch
-              color='default'
-              checked={!!this.state.allowEmail}
-              onChange={(e, checked) => {
-                this.setState({allowEmail: checked});
-                this.props.templater.usersOnboardingEmail(checked);
-              }}
-            />)}
-            label={<FormHelperText component='span'>Email</FormHelperText>}
-          />
-          <FormControlLabel
-            control={(<Switch
-              disabled={this.state.platform !== 'mobile'}
-              color='default'
-              checked={!!this.state.allowMobilePush}
-              onChange={(e, checked) => {
-                this.setState({allowMobilePush: checked});
-                this.props.templater.usersOnboardingMobilePush(checked);
-              }}
-            />)}
-            label={<FormHelperText component='span'>Mobile Push</FormHelperText>}
-          />
-          <FormControlLabel
-            control={(<Switch
-              disabled={this.state.platform !== 'desktop'}
-              color='default'
-              checked={!!this.state.allowDesktopPush}
-              onChange={(e, checked) => {
-                this.setState({allowDesktopPush: checked});
-                this.props.templater.usersOnboardingBrowserPush(checked);
-              }}
-            />)}
-            label={<FormHelperText component='span'>Browser Push</FormHelperText>}
-          />
-          <FormControlLabel
-            control={(<Switch
-              color='default'
-              checked={!!this.state.allowAnonymous}
-              onChange={(e, checked) => {
-                this.setState({allowAnonymous: checked});
-                this.props.templater.usersOnboardingAnonymous(checked);
-              }}
-            />)}
-            label={<FormHelperText component='span'>Anonymous</FormHelperText>}
-          />
-          <FormControlLabel
-            control={(<Switch
-              color='default'
-              checked={this.state.collectDisplayName !== Client.AccountFieldsDisplayNameEnum.None}
-              onChange={(e, checked) => {
-                const val = checked ? Client.AccountFieldsDisplayNameEnum.Required : Client.AccountFieldsDisplayNameEnum.None;
-                this.setState({collectDisplayName: val});
-                this.props.templater.usersOnboardingDisplayName(val);
-              }}
-            />)}
-            label={<FormHelperText component='span'>Display name</FormHelperText>}
-          />
-        </div>
+        <Typography variant='caption'>Signup methods</Typography>
+        <ToggleButtonGroup
+          selected
+          value={this.state.signupMethods}
+          className={this.props.classes.toggleButtonGroup}
+          onChange={(e, val) => {
+            const signupMethods = val as SignupMethods[];
+            this.setState({signupMethods: signupMethods});
+            setSignupMethodsTemplate(this.props.templater, signupMethods);
+          }}
+        >
+          <ToggleButton
+            selected={this.state.device === Device.Desktop ? false : undefined}
+            disabled={this.state.device === Device.Desktop}
+            value={SignupMethods.Mobile}>Mobile</ToggleButton>
+          <ToggleButton
+            selected={this.state.device === Device.Mobile ? false : undefined}
+            disabled={this.state.device === Device.Mobile}
+            value={SignupMethods.Web}>Web</ToggleButton>
+          <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
+          <ToggleButton value={SignupMethods.Anonymous}>None</ToggleButton>
+        </ToggleButtonGroup>
+        <Typography variant='caption'>Display name</Typography>
+        <ToggleButtonGroup
+          value={this.state.collectDisplayName}
+          exclusive
+          className={this.props.classes.toggleButtonGroup}
+          onChange={(e, val) => {
+            const displayName = val as Client.AccountFieldsDisplayNameEnum;
+            this.setState({collectDisplayName: displayName});
+            this.props.templater.usersOnboardingDisplayName(displayName);
+          }}
+        >
+          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.None}>None</ToggleButton>
+          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Optional</ToggleButton>
+          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Required</ToggleButton>
+        </ToggleButtonGroup>
       </div>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(PrioritizationControls);
+export default withStyles(styles, { withTheme: true })(OnboardingControls);
