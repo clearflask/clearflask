@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-import Admin from './Admin';
-import * as ConfigEditor from '../common/config/configEditor';
 import App from '../app/App';
 import {
   MemoryRouter,

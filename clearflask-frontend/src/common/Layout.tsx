@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
-import { Toolbar, IconButton, Typography, Drawer, Divider, AppBar, Hidden } from '@material-ui/core';
+import { Toolbar, IconButton, Drawer, Divider, AppBar, Hidden } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
@@ -89,7 +89,7 @@ class Layout extends Component<Props, State> {
 
     return (
       <div className={classes.root}>
-        <AppBar elevation={0} color='default' position="fixed" className={classes.appBar}>
+        <AppBar elevation={0} color='default' className={classes.appBar}>
           <Toolbar>
             <IconButton
               color="inherit"
@@ -117,7 +117,7 @@ class Layout extends Component<Props, State> {
         <nav className={classes.drawer}>
           <Hidden smUp implementation='css'>
             <Drawer
-              variant="temporary"
+              variant='temporary'
               open={this.state.mobileMenuOpen}
               onClose={this.handleDrawerToggle.bind(this)}
               classes={{

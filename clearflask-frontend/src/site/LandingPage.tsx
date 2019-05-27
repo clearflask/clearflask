@@ -90,6 +90,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
         {this.renderPrioritization(true)}
         {this.renderOnboarding(false)}
+        {this.renderAnalytics(true)}
 
         {/* Major templates (Feature ranking, blog, knowledge base, bug bounty, forum, FAQ, etc...)
         all-in-one customer feedback */}
@@ -146,6 +147,19 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       template: templater => setInitSignupMethodsTemplate(templater),
       controls: project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />),
       demo: project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />),
+    });
+  }
+
+  renderAnalytics(isEven:boolean) {
+    return this.renderDemo({
+      isEven,
+      title: 'Analytics',
+      description: 
+      'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Error, aperiam. Sapiente quibusdam atque praesentium quidem nemo inventore numquam eaque aperiam? Maxime quasi laborum accusamus amet eum ea cum reprehenderit natus.',
+      initialSubPath: '/admin/demo',
+      template: templater => templater.demo(),
+      mock: mocker => mocker.mockAll(),
+      demo: project => (<div>TODO show analytics page</div>),
     });
   }
 
