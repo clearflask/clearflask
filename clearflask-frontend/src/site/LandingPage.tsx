@@ -108,14 +108,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTitle() {
     return (
       <Typography variant='h3' component='h1'>
-        Clear Flask
+        Give valuable customers a proportionate voice to drive your product
       </Typography>
     );
   }
   renderSubTitle() {
     return (
       <Typography variant='h5' component='h2'>
-        Give valuable customers a proportionate voice to drive your product
+        A platform to collect and organize user feedback so you can implement the next most beneficial feature.
       </Typography>
     );
   }
@@ -124,8 +124,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderPrioritization(isEven:boolean) {
     return this.renderDemo({
       isEven,
-      title: 'Give users fine control prioritizing features',
-      description: 'Users',
+      title: 'Give users ability to convey the value of features',
+      description: 'Feature prioritization is critical to your success.'
+        + ' Give users proportionate amount of credits based on their value to you.'
+        + ' Alterntatively, let users support your development by purchasing credits to choose which feature you build next.',
       initialSubPath: '/embed/demo',
       template: templater => templater.demoPrioritization(),
       mock: mocker => mocker.demoPrioritization(),
@@ -136,7 +138,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderOnboarding(isEven:boolean) {
     return this.renderDemo({
       isEven,
-      title: 'User retention',
+      title: 'Notify users when their wishes are fulfilled',
       description: 
       'It is important to keep a communication channel from users leaving feedback.'
       + 'To minimize friction, users can choose between browser push notifications, mobile push or standard email.',

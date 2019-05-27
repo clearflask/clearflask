@@ -105,15 +105,13 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
           }}
         >
           <ToggleButton
-            selected={this.state.device === Device.Desktop ? false : undefined}
             disabled={this.state.device === Device.Desktop}
             value={SignupMethods.Mobile}>Mobile</ToggleButton>
           <ToggleButton
-            selected={this.state.device === Device.Mobile ? false : undefined}
             disabled={this.state.device === Device.Mobile}
             value={SignupMethods.Web}>Web</ToggleButton>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
-          <ToggleButton value={SignupMethods.Anonymous}>None</ToggleButton>
+          <ToggleButton value={SignupMethods.Anonymous}>Anonymous</ToggleButton>
         </ToggleButtonGroup>
         <Typography variant='caption'>Display name</Typography>
         <ToggleButtonGroup

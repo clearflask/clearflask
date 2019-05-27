@@ -51,16 +51,16 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
               value={this.state.fundingType}
               onChange={this.handleChangeFundingType.bind(this)}
             >
-              <FormControlLabel value='currency' control={<Radio />} label='Currency' />
-              <FormControlLabel value='time' control={<Radio />} label='Development time' />
-              <FormControlLabel value='beer' control={<Radio />} label="Customizable" />
+              <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
+              <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
+              <FormControlLabel value='beer' control={<Radio color='primary' />} label="Customizable" />
             </RadioGroup>
           )}
           {this.state.type === 'voting' && (
             <FormControlLabel
               control={(
                 <Switch
-                  color='default'
+                  color='primary'
                   checked={!!this.state.votingEnableDownvote}
                   onChange={this.handleChangeEnableDownvote.bind(this)}
                 />
@@ -72,7 +72,7 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
             <FormControlLabel
               control={(
                 <Switch
-                  color='default'
+                  color='primary'
                   checked={!!this.state.expressionsLimitEmojis}
                   onChange={this.handleChangeExpressionsLimitEmojis.bind(this)}
                 />
@@ -84,7 +84,7 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
             <FormControlLabel
               control={(
                 <Switch
-                  color='default'
+                  color='primary'
                   checked={!!this.state.expressionsAllowMultiple}
                   onChange={this.handleChangeExpressionsLimitSingle.bind(this)}
                 />

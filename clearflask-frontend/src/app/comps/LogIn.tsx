@@ -301,7 +301,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
             color='primary'
             disabled={!isSubmittable || this.state.isSubmitting}
             onClick={this.onSubmit.bind(this)}
-          >Submit</Button>
+          >Continue</Button>
         </DialogActions>,
       ];
     }
