@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, Link } from '@material-ui/core';
-import { Breadcrumbs } from '@material-ui/lab';
+import { Breadcrumbs, Link } from '@material-ui/core';
 import { MenuItem } from './Menu';
 import { Project } from '../../../site/Admin';
 

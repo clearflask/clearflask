@@ -2,9 +2,10 @@ import React, { Component } from 'react';
 import * as Client from '../api/client';
 import { ReduxState, Status } from '../api/server';
 import { connect } from 'react-redux';
-import { CssBaseline, MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
+import { CssBaseline, createMuiTheme, Theme } from '@material-ui/core';
 import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 
 export interface CustomTheme {
   disableTransitions: boolean;

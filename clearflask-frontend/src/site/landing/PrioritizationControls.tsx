@@ -10,7 +10,7 @@ const styles = (theme:Theme) => createStyles({
   },
   extraControls: {
     minHeight: 200,
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
 });
 
@@ -36,6 +36,7 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
     return (
       <div className={this.props.classes.page}>
         <ToggleButtonGroup
+          {...{size:'small'}}
           value={this.state.type}
           exclusive
           style={{display: 'inline-block'}}

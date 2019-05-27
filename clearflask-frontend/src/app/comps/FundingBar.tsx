@@ -78,7 +78,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
     const fundPercNew = this.props.fundAmountDiff ? Math.floor(100 * ((this.props.idea.funded || 0) + this.props.fundAmountDiff) / (fundGoal || this.props.maxFundAmountSeen)) : fundPerc;
     const fundingReached = fundGoal ? ((this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)) >= fundGoal : false;
     const fundAmountDisplay = (
-      <Typography variant='body1' inline>
+      <Typography variant='body1'>
         <span className={fundingReached ? this.props.classes.fundingAmountReached : this.props.classes.fundingAmount}>
           <CreditView val={(this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)} credits={this.props.credits} />
           {fundGoal && (<span>&nbsp;/&nbsp;</span>)}
@@ -86,7 +86,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
       </Typography>
     );
     const fundGoalDisplay = (
-      <Typography variant='body1' inline>
+      <Typography variant='body1'>
         <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal} style={{
           display: 'flex',
           alignItems: 'flex-end',
@@ -98,7 +98,7 @@ class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
       </Typography>
     );
     const fundRightSide = this.props.overrideRight || fundGoal && (
-      <Typography variant='body1' inline>
+      <Typography variant='body1'>
         <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
           {fundPercNew}
           &nbsp;%

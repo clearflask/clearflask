@@ -172,13 +172,14 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
               </ListSubheader>
               <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                 <ListItem
-                  button={!onlySingleOption}
+                  // https://github.com/mui-org/material-ui/pull/15049
+                  button={!onlySingleOption as any}
                   selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
                   onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
                   disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                 >
                   <ListItemIcon><MobilePushIcon /></ListItemIcon>
-                  <ListItemText inset primary='Mobile Push' className={this.props.classes.noWrap} />
+                  <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
                 </ListItem>
                 <Collapse in={onlySingleOptionRequiresAllow}>
                   <Button className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
@@ -186,13 +187,13 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
               </Collapse>
               <Collapse in={notifOpts.has(NotificationType.Browser)}>
                 <ListItem
-                  button={!onlySingleOption}
+                  button={!onlySingleOption as any}
                   selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
                   onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
                   disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                 >
                   <ListItemIcon><WebPushIcon /></ListItemIcon>
-                  <ListItemText inset primary='Browser Push' className={this.props.classes.noWrap} />
+                  <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
                 </ListItem>
                 <Collapse in={onlySingleOptionRequiresAllow}>
                   <Button className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
@@ -200,24 +201,24 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
               </Collapse>
               <Collapse in={notifOpts.has(NotificationType.Email)}>
                 <ListItem 
-                  button={!onlySingleOption}
+                  button={!onlySingleOption as any}
                   selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
                   onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
                   disabled={this.state.isSubmitting}
                 >
                   <ListItemIcon><EmailIcon /></ListItemIcon>
-                  <ListItemText inset primary='Email' className={this.props.classes.noWrap} />
+                  <ListItemText primary='Email' className={this.props.classes.noWrap} />
                 </ListItem>
               </Collapse>
               <Collapse in={notifOpts.has(NotificationType.Silent)}>
                 <ListItem
-                  button={!onlySingleOption}
+                  button={!onlySingleOption as any}
                   selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
                   onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Silent}) : undefined}
                   disabled={this.state.isSubmitting}
                 >
                   <ListItemIcon><SilentIcon /></ListItemIcon>
-                  <ListItemText inset primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
+                  <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
                 </ListItem>
               </Collapse>
             </List>

@@ -9,10 +9,10 @@ import NotificationList from './comps/NotificationList';
 
 const styles = (theme:Theme) => createStyles({
   page: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   spacing: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
 });
 

@@ -185,7 +185,7 @@ export default class Property extends Component<Props> {
                     <Switch
                       checked={!!prop.value}
                       onChange={(e, checked) => prop.set(checked ? true : undefined)}
-                      color="default"
+                      color='default'
                     />
                   )}
                   label={description}
@@ -323,7 +323,7 @@ export default class Property extends Component<Props> {
                 <Switch
                   checked={!!prop.value}
                   onChange={(e, checked) => prop.set(checked ? true : undefined)}
-                  color="default"
+                  color='default'
                 />
               )}
               label={!this.props.bare && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
@@ -334,7 +334,7 @@ export default class Property extends Component<Props> {
         marginTop += 16;
         propertySetter = (
           <div style={{marginBottom: '10px'}}>
-            {!this.props.bare && (<InputLabel shrink={shrink} error={!!prop.errorMsg}>{name}</InputLabel>)}
+            {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
             {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}

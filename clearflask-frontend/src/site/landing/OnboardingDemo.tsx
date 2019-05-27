@@ -81,6 +81,7 @@ class OnboardingDemo extends Component<Props&WithStyles<typeof styles, true>, St
                   disablePortal: true,
                   disableBackdropClick: true,
                   disableEscapeKeyDown: true,
+                  disableAutoFocus: true,
                   classes: {
                     root: this.props.classes.loginDialog,
                     paperScrollBody: this.props.classes.loginPaperScrollBody,

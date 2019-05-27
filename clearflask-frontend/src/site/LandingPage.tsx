@@ -67,7 +67,7 @@ const styles = (theme:Theme) => createStyles({
  * - Choose platform: Mobile, Desktop
  * - Choose onboarding: Mobile, Desktop
  * 
- * Analytics:
+ * Analytics: TODO
  * 
  * Customization:
  * Highly customizable
@@ -75,7 +75,6 @@ const styles = (theme:Theme) => createStyles({
  * - Style
  * 
  * Features (Demos):
- * - Funding Voting Expressions
  * 
  */
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
@@ -193,7 +192,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <Grid
         className={this.props.classes.demo}
         container
-        spacing={24}
+        spacing={3}
         direction={ demoProps.isEven ? 'row-reverse' : undefined }
         wrap='wrap-reverse'
       >

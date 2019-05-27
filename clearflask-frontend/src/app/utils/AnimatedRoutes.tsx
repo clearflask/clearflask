@@ -26,4 +26,4 @@ const AnimatedPageSwitch = connect<ConnectProps,{},Props,ReduxState>((state) => 
     : <MuiAnimatedSwitch>{children}</MuiAnimatedSwitch>;
 });
 
-export default withTheme()(AnimatedPageSwitch);
+export default withTheme(AnimatedPageSwitch);

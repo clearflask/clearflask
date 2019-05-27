@@ -7,8 +7,8 @@ import Templater from '../configTemplater';
 
 const styles = (theme: Theme) => createStyles({
   paper: {
-    padding: theme.spacing.unit * 2,
-    margin: theme.spacing.unit,
+    padding: theme.spacing(2),
+    margin: theme.spacing(1),
     flex: '1 1 150px',
     minWidth: '150px',
     maxWidth: '250px',

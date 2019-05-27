@@ -19,13 +19,13 @@ const FilterTypes = new Set(Object.values(FilterType));
 
 const styles = (theme:Theme) => createStyles({
   container: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   selection: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   menuContainer: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   menuList: {
   },

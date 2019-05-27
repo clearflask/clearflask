@@ -6,7 +6,7 @@ const styles = (theme:Theme) => createStyles({
     '&:before': {
       content: '"·"',
     },
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
 });
 

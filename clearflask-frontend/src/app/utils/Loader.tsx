@@ -8,7 +8,7 @@ import { ReduxState } from '../../api/server';
 
 const styles = (theme:Theme) => createStyles({
   container: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     display: 'flex',
   },
 });

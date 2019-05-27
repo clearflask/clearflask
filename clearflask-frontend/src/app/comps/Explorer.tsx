@@ -56,11 +56,11 @@ const styles = (theme:Theme) => createStyles({
     gridArea: 'results',
   },
   resultsInner: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   create: {
     gridArea: 'create',
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   createFormFields: {
     display: 'flex',
@@ -68,16 +68,16 @@ const styles = (theme:Theme) => createStyles({
     transition: theme.transitions.create('width', {duration: expandTimeout}),
   },
   createFormField: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     width: 'auto',
     flexGrow: 1,
   },
   caption: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     color: theme.palette.text.hint,
   },
   menuContainer: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   menuItem: {
     display: 'inline-block',
@@ -307,7 +307,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                   <Select
                     disabled={this.state.newItemIsSubmitting}
                     value={selectedCategory ? selectedCategory.categoryId : ''}
-                    onChange={e => this.setState({newItemChosenCategoryId: e.target.value})}
+                    onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
                   >
                     {categoryOptions.map(categoryOption => (
                       <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>

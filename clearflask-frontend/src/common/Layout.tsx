@@ -47,7 +47,7 @@ const styles = (theme:Theme) => ({
   content: {
     overflow: 'scroll',
     flexGrow: 1,
-    padding: theme.spacing.unit * 3,
+    padding: theme.spacing(3),
     [theme.breakpoints.up('md')]: {
       marginRight: '40%',
     },

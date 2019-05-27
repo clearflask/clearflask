@@ -26,7 +26,7 @@ const styles = (theme:Theme) => createStyles({
     display: 'flex',
   },
   nothing: {
-    margin: theme.spacing.unit * 4,
+    margin: theme.spacing(4),
     color: theme.palette.text.hint,
   },
   [Direction.Horizontal]: {

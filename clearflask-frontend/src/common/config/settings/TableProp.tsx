@@ -23,8 +23,6 @@ interface State {
 }
 
 export default class TableProp extends Component<Props, State> {
-  readonly padding = 'dense';
-  readonly paddingButton = 'checkbox';
   unsubscribe?:()=>void;
 
   constructor(props:Props) {
@@ -105,13 +103,13 @@ export default class TableProp extends Component<Props, State> {
             <AddIcon />
           </IconButton>
         </div>
-        <Paper style={{display: 'inline-block', marginLeft: '30px', marginTop: '15px'}}>
+        <Paper elevation={2} style={{display: 'inline-block', marginLeft: '30px', marginTop: '15px'}}>
           <Table style ={{width: 'inherit'}}>
             {header.length > 0 && (
               <TableHead>
                 <TableRow key='header'>
                   {header}
-                  <TableCell key='delete' align='center' padding={this.paddingButton}></TableCell>
+                  <TableCell key='delete' align='center' padding='checkbox'></TableCell>
                 </TableRow>
               </TableHead>
             )}
@@ -128,7 +126,7 @@ export default class TableProp extends Component<Props, State> {
     return (
       <TableRow key={key}>
         {showLink && (
-          <TableCell key={'more' + key} align='center' padding={this.paddingButton}>
+          <TableCell key={'more' + key} align='center' padding='checkbox'>
             <IconButton aria-label="More" onClick={() => {
               this.props.pageClicked([...this.props.data.path, index]);
             }}>
@@ -137,7 +135,7 @@ export default class TableProp extends Component<Props, State> {
           </TableCell>
         )}
         {rowCells}
-        <TableCell key={'action' + key} align='left' padding={this.paddingButton}>
+        <TableCell key={'action' + key} align='left' padding='checkbox'>
           <div style={{
             display: 'flex',
           }}>
@@ -179,14 +177,14 @@ export default class TableProp extends Component<Props, State> {
 
   renderDataCell(prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property) {
     return (
-      <TableCell align='center' padding={this.padding}>
+      <TableCell align='center' size='small'>
         <Property isInsideMuiTable bare key={prop.key} prop={prop} pageClicked={this.props.pageClicked} />
       </TableCell>
     );
   }
   renderHeaderCell(key:string|number, name?:string, description?:string) {
     return (
-      <TableCell key={key} align='center' style={{fontWeight: 'normal'}} padding={this.padding}>
+      <TableCell key={key} align='center' style={{fontWeight: 'normal'}} size='small'>
         {name && (<InputLabel shrink={false}>{name}</InputLabel>)}
         {description && (<FormHelperText>{description}</FormHelperText>)}
       </TableCell>
@@ -194,7 +192,7 @@ export default class TableProp extends Component<Props, State> {
   }
   renderHeaderCellShowLink() {
     return (
-      <TableCell key='showLink' padding={this.paddingButton}></TableCell>
+      <TableCell key='showLink' padding='checkbox'></TableCell>
     );
   }
 }

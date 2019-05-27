@@ -13,10 +13,10 @@ import { Side, contentScrollApplyStyles } from '../common/ContentScroll';
 
 const styles = (theme:Theme) => createStyles({
   page: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   spacing: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   singlePanels: {
     display: 'flex',
@@ -30,12 +30,12 @@ const styles = (theme:Theme) => createStyles({
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
-    paddingLeft: theme.spacing.unit * 2,
+    paddingLeft: theme.spacing(2),
     ...(contentScrollApplyStyles(theme)),
   },
   boardPanel: {
-    paddingTop: theme.spacing.unit * 2,
-    paddingLeft: theme.spacing.unit * 2,
+    paddingTop: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
   },
 });
 

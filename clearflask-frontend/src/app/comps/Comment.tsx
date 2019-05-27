@@ -7,11 +7,11 @@ import Delimited from '../utils/Delimited';
 
 const styles = (theme:Theme) => createStyles({
   comment: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   barItem: {
     whiteSpace: 'nowrap',
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
   bottomBarLine: {
     display: 'flex',
@@ -66,7 +66,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
     if(!this.props.comment || !this.props.comment.edited) return null;
 
     return (
-      <Typography className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption' inline>
+      <Typography className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
         {!this.props.comment.author ? 'deleted' : 'edited'}
         &nbsp;
         <TimeAgo date={this.props.comment.edited} />
@@ -78,7 +78,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
     if(!this.props.comment || !this.props.comment.author) return null;
 
     return (
-      <Typography className={this.props.classes.barItem} variant='caption' inline>
+      <Typography className={this.props.classes.barItem} variant='caption'>
         {this.props.comment.author.name}
       </Typography>
     );
@@ -88,7 +88,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
     if(!this.props.comment) return null;
 
     return (
-      <Typography className={this.props.classes.barItem} variant='caption' inline>
+      <Typography className={this.props.classes.barItem} variant='caption'>
         <TimeAgo date={this.props.comment.created} />
       </Typography>
     );

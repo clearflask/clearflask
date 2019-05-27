@@ -19,11 +19,11 @@ interface SearchResult {
 
 const styles = (theme:Theme) => createStyles({
   separatorMargin: {
-    marginTop: theme.spacing.unit * 3,
+    marginTop: theme.spacing(3),
   },
   slider: {
-    paddingTop: theme.spacing.unit * 2,
-    paddingBottom: theme.spacing.unit * 2,
+    marginTop: theme.spacing(-1),
+    marginBottom: theme.spacing(-2),
   },
   sliderTransitionNone: {
     transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
@@ -176,7 +176,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           step={step}
           value={value}
           onChange={(e, val) => {
-            const newFundAmount = this.sticky(val, min, max, target, vote && vote.fundAmount || undefined, idea.fundGoal ? idea.fundGoal - (idea.funded || 0) : undefined);
+            const newFundAmount = this.sticky(val, min, max, target, fundAmount, idea && idea.funded, idea.fundGoal ? idea.fundGoal : undefined);
             const fundAmountDiff = newFundAmount - fundAmount;
             this.setState({
               sliderFundAmountDiff: fundAmountDiff,
@@ -232,7 +232,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             <div style={{flexGrow: target > 0 ? (value / target) : 0}}></div>
             <div style={{flexGrow: 0}}>
               {(min !== max) && ( 
-                <Typography variant='body1' inline>
+                <Typography variant='body1'>
                   <CreditView key='value' val={value} credits={credits} />
                 </Typography>
               )}
@@ -247,14 +247,14 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           }}>
             <div style={{flexGrow: max / target}}></div>
             <div style={{opacity: minMaxTitleOpacity}}>
-              <Typography variant='body1' inline>
+              <Typography variant='body1'>
                 <CreditView key='max' val={max} credits={credits} />
               </Typography>
             </div>
             <div style={{flexGrow: 1 - (max / target)}}></div>
           </div>
           <div style={{ opacity: minMaxTitleOpacity }}>
-            <Typography variant='body1' inline>
+            <Typography variant='body1'>
               <CreditView key='min' val={min} credits={credits} />
             </Typography>
           </div>
@@ -263,16 +263,18 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     );
   }
 
-  sticky(input:number, min:number, max:number, target:number, startValue?:number, fundGoal?:number):number {
+  sticky(input:number, min:number, max:number, target:number, startValue:number, ideaFunded:number = 0, ideaGoal?:number):number {
     var pointOfNoReturn = (target - min) / 100;
     var output = input;
     var outputCloseness;
-    [fundGoal, startValue].forEach(target => {
+    const fundDiff = input - startValue;
+    [ideaGoal, startValue].forEach(target => {
       if(target === undefined) return;
-      const closeness = Math.abs(target - input);
+      const targetDiff = target - ideaFunded;
+      const closeness = Math.abs(targetDiff - fundDiff);
       if(closeness <= pointOfNoReturn && (!outputCloseness || outputCloseness > closeness)) { 
         outputCloseness = closeness;
-        output = target;
+        output = targetDiff + startValue;
       }
     })
     return output;

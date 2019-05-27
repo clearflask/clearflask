@@ -8,10 +8,11 @@ import {
 import App from './app/App';
 import Site from './site/Site';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { MuiThemeProvider, createMuiTheme, Theme } from '@material-ui/core';
+import { createMuiTheme, Theme } from '@material-ui/core';
 import Admin from './site/Admin';
 import {closeLoadingScreen} from './common/loadingScreen';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
+import { MuiThemeProvider } from '@material-ui/core/styles';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -26,6 +27,7 @@ class Main extends Component {
 
   render() {
     return (
+      <React.StrictMode>
       <MuiThemeProvider theme={theme}>
       <MuiSnackbarProvider>
         <CssBaseline />
@@ -46,6 +48,7 @@ class Main extends Component {
         </div>
       </MuiSnackbarProvider>
       </MuiThemeProvider>
+      </React.StrictMode>
     );
   }
 }

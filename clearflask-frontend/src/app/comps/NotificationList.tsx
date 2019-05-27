@@ -18,7 +18,7 @@ const styles = (theme:Theme) => createStyles({
     ...(contentScrollApplyStyles(theme)),
   },
   noNotificationsLabel: {
-    margin: theme.spacing.unit * 3,
+    margin: theme.spacing(3),
     color: theme.palette.text.hint,
   },
 });
@@ -44,7 +44,7 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
       <div className={this.props.className}>
         <DividerCorner title='Notifications' height={hasNotifications ? '100%' : undefined}>
           <div className={this.props.classes.table}>
-            <Table padding='dense'>
+            <Table size='small'>
               <TableBody>
                 {!hasNotifications ? (
                   <Typography

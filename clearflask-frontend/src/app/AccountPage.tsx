@@ -17,10 +17,10 @@ import MobileNotification, { Status as MobileNotificationStatus, Device as Mobil
 
 const styles = (theme:Theme) => createStyles({
   page: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   item: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
   },
   deleteButton: {
     color: theme.palette.error.main,

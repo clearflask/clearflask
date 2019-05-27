@@ -27,7 +27,7 @@ const styles = (theme:Theme) => createStyles({
     background: theme.palette.grey[800],
     left: 25,
     top: 0,
-    padding: theme.spacing.unit * 2,
+    padding: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
     color: theme.palette.common.white,
@@ -38,11 +38,11 @@ const styles = (theme:Theme) => createStyles({
     },
     '& .closeIcon': {
       color: theme.palette.common.white,
-      marginLeft: theme.spacing.unit * 2,
+      marginLeft: theme.spacing(2),
       cursor: 'pointer',
     },
     '& .wantsTo, .showNotifications, .button, .closeIcon, .notificationIcon': {
-      margin: theme.spacing.unit,
+      margin: theme.spacing(1),
     },
   },
   [PushDialogPlatform.Ios]: {
@@ -52,7 +52,7 @@ const styles = (theme:Theme) => createStyles({
     right: 0,
     top: 0,
     bottom: 0,
-    padding: theme.spacing.unit * 2,
+    padding: theme.spacing(2),
     display: 'flex',
     flexDirection: 'column',
     '& .dialogBorder': {
@@ -66,7 +66,7 @@ const styles = (theme:Theme) => createStyles({
       borderWidth: '1px',
       borderStyle: 'solid',
       borderColor: 'rgb(200, 200 ,200)',
-      borderRadius: theme.spacing.unit * 2,
+      borderRadius: theme.spacing(2),
     },
     '& .buttonContainer': {
       width: '100%',
@@ -82,16 +82,16 @@ const styles = (theme:Theme) => createStyles({
     '& .buttonDont, .buttonOk': {
       color: 'rgb(73, 121, 250)',
       width: '100%',
-      padding: theme.spacing.unit,
+      padding: theme.spacing(1),
     },
     '& .title, .body': {
-      padding: theme.spacing.unit * 3,
+      padding: theme.spacing(3),
     },
     '& .title': {
-      paddingBottom: theme.spacing.unit,
+      paddingBottom: theme.spacing(1),
     },
     '& .body': {
-      paddingTop: theme.spacing.unit,
+      paddingTop: theme.spacing(1),
     },
   },
 });
@@ -106,7 +106,7 @@ interface State {
   device?:PushDialogPlatform;
 }
 
-class PushDialogMock extends React.Component<Props&WithStyles<typeof styles, true>, State> {
+class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof styles, true>, State> {
   state:State = {};
   onAccept:undefined|(()=>void);
   onBlock:undefined|(()=>void);
@@ -230,4 +230,4 @@ class PushDialogMock extends React.Component<Props&WithStyles<typeof styles, tru
   }
 }
 
-export default withStyles(styles, { withTheme: true })(PushDialogMock);
+export default withStyles(styles, { withTheme: true })(DemoPushPermissionDialog);

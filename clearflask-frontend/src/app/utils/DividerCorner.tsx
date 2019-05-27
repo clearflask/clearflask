@@ -6,7 +6,7 @@ import { ThemeStyle } from '@material-ui/core/styles/createTypography';
 
 const styles = (theme:Theme) => createStyles({
   title: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   dividerHorizontal: {
     gridArea: 'divider-horizontal',

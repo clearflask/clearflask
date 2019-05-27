@@ -38,17 +38,17 @@ const styles = (theme:Theme) => createStyles({
     minWidth: 300,
   },
   comment: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   leftColumn: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     marginRight: '0px',
   },
   rightColumn: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
   titleAndDescriptionOuter: {
-    padding: theme.spacing.unit / 2,
+    padding: theme.spacing(0.5),
   },
   titleAndDescriptionCard: {
     background: 'transparent',
@@ -56,7 +56,7 @@ const styles = (theme:Theme) => createStyles({
   title: {
   },
   titleAndDescription: {
-    padding: theme.spacing.unit / 2,
+    padding: theme.spacing(0.5),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -66,24 +66,24 @@ const styles = (theme:Theme) => createStyles({
     },
   },
   button: {
-    padding: `3px ${theme.spacing.unit / 2}px`,
+    padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
     minWidth: 'unset',
     textTransform: 'unset',
   },
   timeAgo: {
     whiteSpace: 'nowrap',
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
   commentCount: {
     display: 'flex',
     alignItems: 'center',
     whiteSpace: 'nowrap',
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
   author: {
     whiteSpace: 'nowrap',
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
   voteIconButton: {
     fontSize: '2em',
@@ -114,8 +114,8 @@ const styles = (theme:Theme) => createStyles({
   },
   expressionOuter: {
     height: 'auto',
-    marginLeft: theme.spacing.unit / 4,
-    marginRight: theme.spacing.unit / 4,
+    marginLeft: theme.spacing(0.25),
+    marginRight: theme.spacing(0.25),
     borderRadius: '18px',
   },
   expressionHasExpressed: {
@@ -143,7 +143,7 @@ const styles = (theme:Theme) => createStyles({
     height: 'auto',
     padding: 0,
     borderRadius: '18px',
-    margin: theme.spacing.unit / 2,
+    margin: theme.spacing(0.5),
   },
   fundThisButton: {
     alignSelf: 'flex-end',
@@ -208,21 +208,21 @@ const styles = (theme:Theme) => createStyles({
     flexGrow: 1,
   },
   bottomBar: {
-    margin:  theme.spacing.unit,
-    marginTop: `-${theme.spacing.unit / 2}px`,
+    margin:  theme.spacing(1),
+    marginTop: `-${theme.spacing(0.5)}px`,
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
   commentSection: {
-    marginTop: theme.spacing.unit * 2,
+    marginTop: theme.spacing(2),
   },
   nothing: {
-    margin: theme.spacing.unit * 4,
+    margin: theme.spacing(4),
     color: theme.palette.text.hint,
   },
   funding: {
-    margin:  theme.spacing.unit,
+    margin:  theme.spacing(1),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -399,7 +399,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.authorUser) return null;
 
     return (
-      <Typography key='author' className={this.props.classes.author} variant='caption' inline>
+      <Typography key='author' className={this.props.classes.author} variant='caption'>
         {this.props.authorUser.name}
       </Typography>
     );
@@ -410,7 +410,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea) return null;
 
     return (
-      <Typography key='createdDatetime' className={this.props.classes.timeAgo} variant='caption' inline>
+      <Typography key='createdDatetime' className={this.props.classes.timeAgo} variant='caption'>
         <TimeAgo date={this.props.idea.created} />
       </Typography>
     );
@@ -424,7 +424,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category.support.comment) return null;
 
     return (
-      <Typography key='commentCount' className={this.props.classes.commentCount} variant='caption' inline>
+      <Typography key='commentCount' className={this.props.classes.commentCount} variant='caption'>
         <SpeechIcon fontSize='inherit' />
         &nbsp;
         {this.props.idea.commentCount || 0}
@@ -592,7 +592,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)!
         .disableFunding !== true;
     const iFundedThis = this.props.vote && this.props.vote.fundAmount && this.props.vote.fundAmount > 0;
-    const padding = this.props.theme.spacing.unit * 3;
+    const padding = this.props.theme.spacing(3);
 
     const fundThisButton = (
       <Button
@@ -623,7 +623,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         <Typography
           variant='caption'
           className={this.props.classes.fundThisButtonLabel}
-          color={iFundedThis ? 'primary' : 'default'}
+          color={iFundedThis ? 'primary' : undefined}
         >
           {fundingAllowed
             ? <span>
@@ -701,7 +701,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         label={(
           <div style={{display: 'flex', alignItems: 'center'}}>
             <span className={this.props.classes.expression}>{display}</span>
-            {count > 0 && (<Typography variant='caption' color={hasExpressed ? 'primary' : 'default'} inline>&nbsp;{count}</Typography>)}
+            {count > 0 && (<Typography variant='caption' color={hasExpressed ? 'primary' : undefined}>&nbsp;{count}</Typography>)}
           </div>
         )}
       />
@@ -714,7 +714,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.express) return null;
     
-    const padding = this.props.theme.spacing.unit / 2;
+    const padding = this.props.theme.spacing(0.5);
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
     const reachedLimitPerIdea = limitEmojiPerIdea !== undefined && (this.props.vote && this.props.vote.expressions && this.props.vote.expressions.length || 0) >= limitEmojiPerIdea;
 

@@ -146,7 +146,8 @@ const Control = (props) => {
             display: 'flex',
             minWidth: outerProps.inputMinWidth,
             width: outerProps.width,
-            paddingBottom: '3px',
+            paddingBottom: '0px',
+            height: 'unset',
           },
           inputRef: props.innerRef,
           children: props.children,
@@ -256,7 +257,7 @@ const MultiValue = (props) => {
 
 const Menu = (props) => {
   return (
-    <Paper square {...props.innerProps} style={{
+    <Paper elevation={2} square {...props.innerProps} style={{
       position: 'absolute',
       zIndex: 1,
       marginTop: 0,

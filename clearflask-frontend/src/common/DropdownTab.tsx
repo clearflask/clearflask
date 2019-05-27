@@ -81,7 +81,7 @@ class DropdownTab extends Component<Props> {
           }}
           value={anySelected ? this.props.selectedValue : '__NOT_SELECTED__'}
           key={this.props.key}
-          onChange={e => this.props.onDropdownTabSelect(e.target.value)}
+          onChange={e => this.props.onDropdownTabSelect(e.target.value as string)}
           inputProps={{
             className: `${this.props.classes.tabButton} ${anySelected && this.props.classes.tabButtonSelected}`,
             id: id,

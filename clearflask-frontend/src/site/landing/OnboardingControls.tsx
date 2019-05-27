@@ -29,13 +29,13 @@ export const setInitSignupMethodsTemplate = (templater:Templater) => {
 const styles = (theme:Theme) => createStyles({
   toggleButtonGroup: {
     display: 'inline-flex',
-    marginBottom: theme.spacing.unit * 2,
+    marginBottom: theme.spacing(2),
   },
   extraControls: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
   },
 });
 
@@ -68,8 +68,9 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
   render() {
     return (
       <div>
-        <Typography variant='caption'>Platform</Typography>
+        <Typography variant='caption' display='block'>Platform</Typography>
         <ToggleButtonGroup
+          {...{size:'small'}}
           value={this.state.device}
           exclusive
           className={this.props.classes.toggleButtonGroup}
@@ -93,8 +94,9 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
           <ToggleButton value='desktop'>Desktop</ToggleButton>
           <ToggleButton value='mobile'>Mobile</ToggleButton>
         </ToggleButtonGroup>
-        <Typography variant='caption'>Signup methods</Typography>
+        <Typography variant='caption' display='block'>Signup methods</Typography>
         <ToggleButtonGroup
+          {...{size:'small'}}
           selected
           value={this.state.signupMethods}
           className={this.props.classes.toggleButtonGroup}
@@ -113,8 +115,9 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
           <ToggleButton value={SignupMethods.Anonymous}>Anonymous</ToggleButton>
         </ToggleButtonGroup>
-        <Typography variant='caption'>Display name</Typography>
+        <Typography variant='caption' display='block'>Display name</Typography>
         <ToggleButtonGroup
+          {...{size:'small'}}
           value={this.state.collectDisplayName}
           exclusive
           className={this.props.classes.toggleButtonGroup}
