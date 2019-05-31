@@ -1,23 +1,13 @@
 import React, { Component } from 'react';
 import { Typography, Grid } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import DemoApp from './DemoApp';
-import * as ConfigEditor from '../common/config/configEditor';
+import DemoApp, { getProject, Project } from './DemoApp';
 import Templater from '../common/config/configTemplater';
-import { Server } from '../api/server';
-import ServerMock from '../api/serverMock';
 import DataMock from '../api/dataMock';
-import randomUuid from '../common/util/uuid';
 import Promised from '../common/Promised';
 import PrioritizationControls from './landing/PrioritizationControls';
 import OnboardingDemo from './landing/OnboardingDemo';
 import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-
-interface Project {
-  server: Server;
-  templater: Templater;
-  editor: ConfigEditor.Editor;
-}
 
 interface DemoProps {
   isEven:boolean;
@@ -82,6 +72,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   render() {
     return (
       <div className={this.props.classes.page}>
+
         <div className={this.props.classes.hero}>
           {this.renderTitle()}
           {this.renderSubTitle()}
@@ -155,7 +146,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       title: 'Analytics',
       description: 
       'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Error, aperiam. Sapiente quibusdam atque praesentium quidem nemo inventore numquam eaque aperiam? Maxime quasi laborum accusamus amet eum ea cum reprehenderit natus.',
-      initialSubPath: '/admin/demo',
+      initialSubPath: '/dashboard/demo',
       template: templater => templater.demo(),
       mock: mocker => mocker.mockAll(),
       demo: project => (<div>TODO show analytics page</div>),
@@ -163,7 +154,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   }
 
   renderDemo(demoProps:DemoProps) {
-    const projectPromise = this.getProject(demoProps.template, demoProps.mock);
+    const projectPromise = getProject(demoProps.template, demoProps.mock);
     const controls = demoProps.controls === undefined ? undefined : (
       <Promised promise={projectPromise} render={demoProps.controls} />
     );
@@ -201,36 +192,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {textContainer}
       </Grid>
     );
-  }
-
-  getProject(
-    template:((templater:Templater)=>void)|undefined = undefined,
-    mock:((mocker:DataMock)=>void)|undefined = undefined
-  ):Promise<Project> {
-    const projectId = randomUuid();
-    const server = new Server(projectId, ServerMock.get());
-    return server.dispatchAdmin()
-      .then(d => d.projectCreateAdmin({projectId: projectId})
-        .then(project =>{
-          const editor = new ConfigEditor.EditorImpl(project.config.config);
-          const templater = Templater.get(editor);
-          template && template(templater);
-          server.subscribeToChanges(editor);
-          return d.configSetAdmin({
-            projectId: projectId,
-            versionLast: project.config.version,
-            config: editor.getConfig(),
-          })
-          .then(() => mock && mock(DataMock.get(projectId)))
-          .then(() => {
-            if(server.getStore().getState().users.loggedIn.status === undefined) {
-              server.dispatch().userBind({projectId});
-            }
-          })
-          .then(() => server.dispatch().configGet({projectId: projectId}))
-          .then(() => ({server, templater, editor}));
-        })
-      );
   }
 }
 

@@ -3,7 +3,6 @@ import {
   BrowserRouter as Router,
   Route,
   Switch,
-  Redirect,
 } from 'react-router-dom'
 import App from './app/App';
 import Site from './site/Site';
@@ -17,6 +16,17 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 const theme:Theme = createMuiTheme({
   palette: {
     // type: 'dark',
+    background: {
+      default: '#fff',
+      paper: '#fff',
+    }
+  },
+  overrides: {
+    MuiAppBar: {
+      colorDefault: {
+        backgroundColor: '#fff',
+      },
+    }
   },
 });
 
@@ -34,10 +44,13 @@ class Main extends Component {
         <div style={{background: theme.palette.background.default}}>
           <Router>
             <Switch>
-              <Route path="/" exact render={props => (
+              <Route exact path="/" render={props => (
                 <Site {...props} />
               )} />
-              <Route path="/admin/:path?/:subPath*" render={props => (
+              <Route path="/(pricing|demo|contact)" render={props => (
+                <Site {...props} />
+              )} />
+              <Route path="/dashboard/:path?/:subPath*" render={props => (
                 <Admin {...props} />
               )} />
               <Route path="/:projectId" render={props => (

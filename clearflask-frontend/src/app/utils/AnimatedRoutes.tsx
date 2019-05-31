@@ -3,7 +3,6 @@ import { ReduxState } from '../../api/server';
 import { connect } from 'react-redux';
 import MuiAnimatedSwitch from '../../common/MuiAnimatedSwitch';
 import { WithTheme, withTheme } from '@material-ui/core/styles';
-import { getCustomTheme } from '../AppThemeProvider';
 import { Switch } from 'react-router';
 
 interface Props extends WithTheme {
@@ -19,9 +18,10 @@ const AnimatedPageSwitch = connect<ConnectProps,{},Props,ReduxState>((state) => 
 }})((props:PropsWithChildren<Props&ConnectProps>) => {
   const children = [
     props.children,
-    ...(props.customPageSlugs || []).map(customPageSlug => props.render(customPageSlug)),
+    ...(props.customPageSlugs || []).filter(pageSlug => !!pageSlug).map(customPageSlug => props.render(customPageSlug)),
+    props.render(''),
   ];
-  return getCustomTheme(props.theme).disableTransitions
+  return props.theme.disableTransitions
     ? <Switch>{children}</Switch>
     : <MuiAnimatedSwitch>{children}</MuiAnimatedSwitch>;
 });

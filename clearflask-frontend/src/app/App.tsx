@@ -23,7 +23,6 @@ import BankPage from './BankPage';
 import AccountPage from './AccountPage';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
 import SsoLogin from './utils/SsoLogin';
-import MuiSnackbarProvider from './utils/MuiSnackbarProvider';
 import PushNotificationListener from './utils/PushNotificationListener';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import NotificationPage from './NotificationPage';
@@ -124,23 +123,23 @@ class App extends Component<Props> {
                 </BasePage>
               )} />
             )} >
-            <Route path={`${prefixMatch}/transaction`} render={props => (
+            <Route key='transaction' path={`${prefixMatch}/transaction`} render={props => (
               <BasePage>
                 <BankPage server={this.server} />
               </BasePage>
             )} />
-            <Route path={`${prefixMatch}/notification`} render={props => (
+            <Route key='notification' path={`${prefixMatch}/notification`} render={props => (
               <BasePage>
                 <NotificationPage server={this.server} />
               </BasePage>
             )} />
-            <Route path={`${prefixMatch}/account`} render={props => (
+            <Route key='account' path={`${prefixMatch}/account`} render={props => (
               <BasePage>
                 <AccountPage server={this.server} />
               </BasePage>
             )} />
             {!isExpanded() && (
-              <Route path={`${prefixMatch}/post/:postId`} render={props => (
+              <Route key='post' path={`${prefixMatch}/post/:postId`} render={props => (
                 <BasePage>
                   <PostPage
                     postId={props.match.params['postId'] || ''}
@@ -150,7 +149,7 @@ class App extends Component<Props> {
               )} />
             )}
             {!isExpanded() && (
-              <Route path={`${prefixMatch}/*/post/:postId`} render={props => (
+              <Route key='postWildcard' path={`${prefixMatch}/*/post/:postId`} render={props => (
                 <Redirect exact to={{pathname: `${prefixMatch}/post/${props.match.params.postId}`}} />
               )} />
             )}

@@ -130,7 +130,7 @@ export default class Templater {
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: pageHomeId,
       name: 'Home',
-      slug: stringToSlug('Home'),
+      slug: '',
       description: undefined,
       panels: [
         Admin.PagePanelWithSearchToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({

@@ -15,10 +15,13 @@ import NotificationBadge from './NotificationBadge';
 const styles = (theme:Theme) => createStyles({
   indicator: {
     borderRadius: '1px',
+    bottom: 'unset',
+    top: 0,
   },
   header: {
     maxWidth: '1024px',
     margin: '0px auto',
+    padding: theme.spacing(1),
   },
   // TODO figure out how to place these AND allow scroll buttons
   // tabs: {
@@ -43,7 +46,25 @@ const styles = (theme:Theme) => createStyles({
   // },
   tabsFlexContainer: {
     alignItems: 'center',
-    ...(contentScrollApplyStyles(theme, Side.Right)),
+    ...(contentScrollApplyStyles(theme, Side.Left)),
+  },
+  grow: {
+    flexGrow: 1,
+  },
+  logoAndActions: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  logo: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: theme.spacing(1, 2, 0, 2),
+  },
+  actions: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    padding: theme.spacing(1, 2, 0, 2),
   },
 });
 
@@ -60,15 +81,12 @@ interface ConnectProps {
 
 class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps> {
   render() {
-    var currentTabValue;
-    var tabs;
-    if(!this.props.config) {
-      currentTabValue = undefined;
-      tabs = undefined;
-    } else {
-      currentTabValue = this.props.page
+    var menu;
+    if(this.props.config && this.props.config.layout.menu.length > 0) {
+      var currentTabValue = this.props.page
         ? this.props.page.slug
         : undefined;
+      var tabs;
       tabs = this.props.config.layout.menu.map(menu => {
         if(!menu.pageIds || menu.pageIds.length === 0) return null;
         if(menu.pageIds.length === 1) {
@@ -101,56 +119,9 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
           />
         );
       });
-    }
-
-    return (
-      <div className={this.props.classes.header}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'baseline',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-          }}>
-            {this.props.config && this.props.config.logoUrl && (
-              <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
-            )}
-            <Typography variant='h6'>
-              {this.props.config && this.props.config.name}
-            </Typography>
-          </div>
-          {this.props.config && this.props.loggedInUser &&
-            <div style={{
-              marginLeft: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-            }}>
-              <IconButton
-                aria-label='Balance'
-                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
-              >
-                <BalanceIcon />
-              </IconButton>
-              <IconButton
-                aria-label='Notifications'
-                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
-              >
-                <NotificationBadge server={this.props.server}>
-                  <NotificationsIcon />
-                </NotificationBadge>
-              </IconButton>
-              <IconButton
-                aria-label='Account'
-                onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/account`)}
-              >
-                <AccountIcon />
-              </IconButton>
-            </div>
-          }
-        </div>
+      menu = (
         <Tabs
+          centered
           variant='standard'
           scrollButtons='off'
           classes={{
@@ -164,7 +135,56 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
         >
           {tabs}
         </Tabs>
+      );
+    }
+
+    var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
+      <div className={this.props.classes.logo}>
+        {this.props.config.logoUrl && (
+          <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
+        )}
+        {this.props.config.name && (
+          <Typography variant='h6'>
+            {this.props.config && this.props.config.name}
+          </Typography>
+        )}
+      </div>
+    ) : undefined;
+
+    var userActions = this.props.config && this.props.loggedInUser && (
+      <div className={this.props.classes.actions}>
+        <IconButton
+          aria-label='Balance'
+          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
+        >
+          <BalanceIcon fontSize='small' />
+        </IconButton>
+        <IconButton
+          aria-label='Notifications'
+          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
+        >
+          <NotificationBadge server={this.props.server}>
+            <NotificationsIcon fontSize='small' />
+          </NotificationBadge>
+        </IconButton>
+        <IconButton
+          aria-label='Account'
+          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/account`)}
+        >
+          <AccountIcon fontSize='small' />
+        </IconButton>
+      </div>
+    );
+
+    return (
+      <div className={this.props.classes.header}>
+        <div className={this.props.classes.logoAndActions}>
+          {logo}
+          <div className={this.props.classes.grow} />
+          {userActions}
+        </div>
         <Divider />
+        {menu}
       </div>
     );
   }
@@ -177,11 +197,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
 export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
   var page:Client.Page|undefined = undefined;
   if(state.conf.status === Status.FULFILLED && state.conf.conf) {
-    if(ownProps.pageSlug === '') {
-      page = state.conf.conf.layout.pages[0];
-    } else {
-      page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
-    }
+    page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
   }
   return {
     configver: state.conf.ver, // force rerender on config change

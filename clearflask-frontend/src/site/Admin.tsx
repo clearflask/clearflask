@@ -37,13 +37,22 @@ interface State {
 
 export default class Admin extends Component<Props, State> {
   readonly serverAdmin:ServerAdmin;
+  /**
+   * TODO Brainstorm admin features:
+   * - Create/delete project
+   * - Analytics
+   * - Billing, plan, invoices, month estimate, stats
+   * - Account (email password 2fa)
+   */
   readonly menuItems:{[slug:string]:(MenuItem&{content:()=>React.ReactNode})} = {
     '': {
-      slug: '',
-      type: 'item',
-      name: 'Home',
+      type: 'item', slug: '', name: 'Home',
       content: () => (<div>This is home</div>),
-    }
+    },
+    'billing': {
+      type: 'item', slug: 'billing', name: 'Billing',
+      content: () => (<div>This is billing</div>),
+    },
   };
   projects:{[projectId:string]: Project} = {};
   
@@ -129,15 +138,16 @@ export default class Admin extends Component<Props, State> {
       <Layout
         toolbarLeft={
           <Typography variant='h6' color="inherit" noWrap>
-            Admin
+            Dashboard
           </Typography>
         }
         preview={preview}
         menu={(
           <Menu
             items={[
+              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider', text: 'Account'} as MenuDivider] : []),
               ...(Object.values(this.menuItems)),
-              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider'} as MenuDivider] : []),
+              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider', text: 'Config'} as MenuDivider] : []),
               ...(Object.keys(this.projects).map(projectId => {
                 const project = this.projects[projectId];
                 const menuProject:MenuProject = {
@@ -170,6 +180,6 @@ export default class Admin extends Component<Props, State> {
   }
 
   pageClicked(path:string, subPath:ConfigEditor.Path = []):void {
-    this.props.history.push(`/admin/${[path, ...subPath].join('/')}`);
+    this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
   }
 }

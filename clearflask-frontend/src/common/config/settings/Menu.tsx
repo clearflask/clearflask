@@ -6,6 +6,7 @@ import List, { ListProps } from '@material-ui/core/List';
 
 export interface MenuDivider {
   type: 'divider';
+  text: string;
 }
 
 export interface MenuItem {
@@ -38,7 +39,7 @@ export default class Menu extends Component<Props> {
               <ListItem selected={item.slug === this.props.activePath} button onClick={() => {
                 this.props.pageClicked(item.slug);
               }}>
-                <ListItemText style={Menu.paddingForLevel(undefined, item.offset)} primary={item.name} />
+                <ListItemText style={Menu.paddingForLevel((item.offset || 0) + 1)} primary={item.name} />
               </ListItem>
             );
           } else if(item.type === 'project') {
@@ -52,7 +53,9 @@ export default class Menu extends Component<Props> {
             );
           } else if(item.type === 'divider') {
             return (
-              <Divider style={{marginTop: '-1px'}} variant='middle' />
+              <ListItem disabled>
+                <ListItemText primary={item.text} />
+              </ListItem>
             );
           } else {
             return null;
@@ -62,9 +65,9 @@ export default class Menu extends Component<Props> {
     );
   }
 
-  static paddingForLevel(path:ConfigEditor.Path = [], offset:number = 0):React.CSSProperties|undefined {
-    const paddingLevel = path.length + offset;
-    return paddingLevel === 0 ? undefined : { paddingLeft: (paddingLevel * 10) + 'px' };
+  static paddingForLevel(offset:number = 0, path:ConfigEditor.Path = []):React.CSSProperties|undefined {
+    const paddingLevel = path.length + offset + 1;
+    return paddingLevel === 0 ? undefined : { paddingLeft: paddingLevel * 10 };
   }
 }
 
@@ -93,7 +96,7 @@ class MenuPage extends Component<PropsPage> {
         <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
           this.props.pageClicked(this.props.page.path);
         }}>
-          <ListItemText style={Menu.paddingForLevel(this.props.page.path)} primary={this.props.page.getDynamicName()} />
+          <ListItemText style={Menu.paddingForLevel(0, this.props.page.path)} primary={this.props.page.getDynamicName()} />
         </ListItem>
         <Collapse in={expanded} timeout="auto" unmountOnExit>
           {this.props.page.getChildren().all
@@ -162,7 +165,7 @@ class MenuPageGroup extends Component<PropsPageGroup> {
         <div>
           <ListItem disabled>
             <ListItemText
-              style={Menu.paddingForLevel(this.props.pageGroup.path)}
+              style={Menu.paddingForLevel(0, this.props.pageGroup.path)}
               primary={this.props.pageGroup.name} />
           </ListItem>
           {childPages.map(childPage =>

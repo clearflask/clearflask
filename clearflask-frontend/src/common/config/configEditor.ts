@@ -64,7 +64,10 @@ export interface xCfProp {
    * Example: if you set this property to 'Feature Requests',
    * the supplied path will become something like 'feature-requests'.
    */
-  slugAutoComplete?:Path;
+  slugAutoComplete?:{
+    path:Path;
+    skipFirst?:boolean;
+  };
   /** BooleanProperty only.
    * Treat false value as undefined.
    * Useful if you only need two states but don't want to waste space
@@ -1117,8 +1120,19 @@ export class EditorImpl implements Editor {
               const prevVal = (property as StringProperty).value;
               setFun(val);
               setTimeout(() => {
-                const slugProp = this.getProperty(xProp.slugAutoComplete!
-                  .map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep));
+                var lastIndex:string|number|undefined;
+                const slugProp = this.getProperty(xProp.slugAutoComplete!.path
+                  .map((pathStep, index) => {
+                    if(pathStep === '<>') {
+                      lastIndex = path[index];
+                      return path[index];
+                    } else {
+                      return pathStep;
+                    }
+                  }));
+                if(xProp.slugAutoComplete!.skipFirst && lastIndex === 0) {
+                  return;
+                }
                 const prevSlugName = stringToSlug(prevVal);
                 // Only update slug if it hasn't been changed already manually
                 if(slugProp.value === prevSlugName) {

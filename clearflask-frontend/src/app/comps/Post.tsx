@@ -27,8 +27,6 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
-import { getCustomTheme } from '../AppThemeProvider';
-import randomUuid from '../../common/util/uuid';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -887,7 +885,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 
   onExpand() {
     if(!this.props.expandable || !this.props.idea) return;
-    if(getCustomTheme(this.props.theme).disableTransitions) {
+    if(this.props.theme.disableTransitions) {
       this.props.history.push(`/${this.props.server.getProjectId()}/post/${this.props.idea.ideaId}`);
     } else {
       this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;

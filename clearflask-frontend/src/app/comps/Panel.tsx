@@ -9,6 +9,7 @@ import ErrorPage from '../ErrorPage';
 import Loading from '../utils/Loading';
 import DividerCorner from '../utils/DividerCorner';
 import ContentScroll, { Side, contentScrollApplyStyles } from '../../common/ContentScroll';
+import classNames from 'classnames';
 
 export enum Direction {
   Horizontal,
@@ -44,6 +45,7 @@ interface Props extends StateIdeas, WithStyles<typeof styles, true> {
   displayDefaults?:Client.PostDisplay;
   searchOverride?:Partial<Client.IdeaSearch>;
   direction:Direction
+  maxHeight?:string,
   onClickTag?:(tagId:string)=>void;
   onClickCategory?:(categoryId:string)=>void;
   onClickStatus?:(statusId:string)=>void;
@@ -103,7 +105,10 @@ class Panel extends Component<Props> {
         break;
     }
     content = (
-      <div className={`${this.props.classes.container} ${this.props.classes[this.props.direction]}`}>
+      <div
+        className={classNames(this.props.classes.container, this.props.classes[this.props.direction])}
+        style={{maxHeight: this.props.maxHeight}}
+      >
         {content}
       </div>
     );

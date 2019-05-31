@@ -103,6 +103,7 @@ class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
             <div className={this.props.classes.boardPanel}>
               <Panel
                 key={getSearchKey(panel.search)}
+                maxHeight='80vh'
                 direction={Direction.Vertical}
                 panel={panel}
                 server={this.props.server}

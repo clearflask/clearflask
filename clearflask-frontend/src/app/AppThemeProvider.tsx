@@ -7,15 +7,17 @@ import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 
-export interface CustomTheme {
-  disableTransitions: boolean;
+interface ThemeCustomProps {
+  disableTransitions?: boolean;
   funding?: string;
-  isInsideContainer: boolean;
+  isInsideContainer?: boolean;
 }
 
-export const getCustomTheme = (theme:Theme):Partial<CustomTheme> => 
-  theme['custom'] !== undefined ? theme['custom'] as CustomTheme : {};
- 
+declare module '@material-ui/core/styles/createMuiTheme' {
+  interface Theme extends ThemeCustomProps {}
+  interface ThemeOptions extends ThemeCustomProps {}
+}
+
 interface Props {
   supressCssBaseline?:boolean;
   isInsideContainer?:boolean;
@@ -25,20 +27,17 @@ interface Props {
   config?:Client.Config;
 }
 
-class App extends Component<Props> {
+class AppThemeProvider extends Component<Props> {
   render() {
     var theme:Theme|undefined;
     if(this.props.config) {
-      const customTheme:CustomTheme = {
+      theme = createMuiTheme({
         disableTransitions: !this.props.config.style.animation.enableTransitions,
         funding: this.props.config.style.palette.funding
           || this.props.config.style.palette.primary,
           // Optional green color
           // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
         isInsideContainer: !!this.props.isInsideContainer,
-      };
-      theme = createMuiTheme({
-        ...({custom: customTheme} as ThemeOptions),
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           ...(this.props.config.style.palette.primary ? { primary: {
@@ -50,14 +49,15 @@ class App extends Component<Props> {
           ...(this.props.config.style.palette.text ? { text: {
             primary: this.props.config.style.palette.text,
           }} : {}),
-          ...((this.props.config.style.palette.background || this.props.config.style.palette.backgroundPaper) ? { background: {
-            default: this.props.config.style.palette.background ? this.props.config.style.palette.background : undefined,
-            paper: this.props.config.style.palette.backgroundPaper ? this.props.config.style.palette.backgroundPaper : undefined,
-          }} : {}),
+          background: {
+            default: this.props.config.style.palette.background ? this.props.config.style.palette.background : '#fff',
+            paper: this.props.config.style.palette.backgroundPaper ? this.props.config.style.palette.backgroundPaper : '#fff',
+          },
         },
         typography: {
-          fontFamily: this.props.config.style.typography.fontFamily || undefined,
-          fontSize: this.props.config.style.typography.fontSize || undefined,
+          // TODO sanitize input, currently you can inject custom css with "; inject: me"
+          fontFamily: this.props.config.style.typography.fontFamily || '"Roboto", "Helvetica", "Arial", sans-serif',
+          fontSize: this.props.config.style.typography.fontSize || 14,
         },
         transitions: {
           ...(this.props.config.style.animation.enableTransitions ? {} : {
@@ -99,6 +99,7 @@ class App extends Component<Props> {
         <div style={{
           height: '100%',
           background: theme.palette.background.default,
+          color: theme.palette.text.primary,
         }}>
           {this.props.children}
         </div>
@@ -110,4 +111,4 @@ class App extends Component<Props> {
 export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => { return {
   configver: state.conf.ver, // force rerender on config change
   config: state.conf.conf,
-}})(App);
+}})(AppThemeProvider);

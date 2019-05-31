@@ -63,7 +63,7 @@ class DataMock {
       userMe,
       'Welcome to your first notification',
       'This is a long description of the notification in question',
-      '/home',
+      '/',
       );
     return Promise.resolve();
   }

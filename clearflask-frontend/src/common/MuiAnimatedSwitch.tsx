@@ -36,7 +36,6 @@ class MuiAnimatedSwitch extends Component<Props> {
           opacity: styles.opacity,
           transform: `translateY(${styles.offset}px)`
         }}}
-        style={{}}
         runOnMount
       >
         {this.props.children}

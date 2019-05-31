@@ -353,10 +353,10 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:['layout','pages','<>', 'slug'] }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Name', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:{path: ['layout','pages','<>', 'slug'], skipFirst: true} }
                 type: string
               slug:
-                x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page', placeholder: 'feature-requests' }
+                x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.', placeholder: 'feature-requests' }
                 type: string
               title:
                 x-clearflask-prop: { order: 3, name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
