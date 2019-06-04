@@ -1,22 +1,23 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../common/config/configEditor';
-import Menu, { MenuProject, MenuDivider, MenuItem } from '../common/config/settings/Menu';
+import Menu, { MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import { match } from 'react-router';
 import { History, Location } from 'history';
 import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
-import { Divider, Typography, ListItem } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import { Server } from '../api/server';
 import * as AdminClient from '../api/admin';
 import { detectEnv, Environment } from '../common/util/detectEnv';
-import ConfigView from '../common/config/settings/ConfigView';
 import ServerAdmin from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
 import Templater from '../common/config/configTemplater';
 import DataMock from '../api/dataMock';
 import ServerMock from '../api/serverMock';
+import AddIcon from '@material-ui/icons/Add';
+import randomUuid from '../common/util/uuid';
 
 export interface Project {
   configVersion:string;
@@ -35,25 +36,8 @@ interface State {
   currentPagePath:ConfigEditor.Path;
 }
 
-export default class Admin extends Component<Props, State> {
+export default class Dashboard extends Component<Props, State> {
   readonly serverAdmin:ServerAdmin;
-  /**
-   * TODO Brainstorm admin features:
-   * - Create/delete project
-   * - Analytics
-   * - Billing, plan, invoices, month estimate, stats
-   * - Account (email password 2fa)
-   */
-  readonly menuItems:{[slug:string]:(MenuItem&{content:()=>React.ReactNode})} = {
-    '': {
-      type: 'item', slug: '', name: 'Home',
-      content: () => (<div>This is home</div>),
-    },
-    'billing': {
-      type: 'item', slug: 'billing', name: 'Billing',
-      content: () => (<div>This is billing</div>),
-    },
-  };
   projects:{[projectId:string]: Project} = {};
   
   constructor(props:Props) {
@@ -87,52 +71,78 @@ export default class Admin extends Component<Props, State> {
   }
 
   loadProjects(projects:AdminClient.Projects) {
-    projects.configs.forEach(versionedConfig => {
-      const server = this.serverAdmin.createServer(versionedConfig.config.projectId);
-      const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
-      server.subscribeToChanges(editor, 200);
-      this.projects[versionedConfig.config.projectId] = {
-        configVersion: versionedConfig.version,
-        editor: editor,
-        server: server,
-      };
-    });
+    projects.configs.forEach(versionedConfig => this.loadProject(versionedConfig, true));
     this.forceUpdate();
+  }
+
+  loadProject(versionedConfig:AdminClient.VersionedConfigAdmin, suppressUpdate:boolean = false) {
+    const server = this.serverAdmin.createServer(versionedConfig.config.projectId);
+    const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
+    server.subscribeToChanges(editor, 200);
+    this.projects[versionedConfig.config.projectId] = {
+      configVersion: versionedConfig.version,
+      editor: editor,
+      server: server,
+    };
+    if(!suppressUpdate) this.forceUpdate();
   }
 
   render() {
     const activePath = this.props.match.params['path'] || '';
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
-    const activeMenuItem = this.menuItems[activePath];
     const activeProject = this.projects[activePath];
     var page;
     var preview;
-    if(activeMenuItem) {
-      page = activeMenuItem.content();
-    } else if(activeProject) {
-      try {
-        var currentPage = activeProject.editor.getPage(activeSubPath);
-      } catch(ex) {
-        return (
-          <Message innerStyle={{margin: '40px auto'}}
-            message='Oops, page failed to load'
-            variant='error'
+    var crumbs:{name:string, slug:string}[]|undefined;
+    switch(activePath) {
+      case '':
+        page = (<div>This is home</div>);
+        crumbs = [{name: 'Home', slug: activePath}];
+        break;
+      case 'projects':
+        page = (<div>This is projects</div>);
+        crumbs = [{name: 'Projects', slug: activePath}];
+        break;
+      case 'billing':
+        page = (<div>This is billing</div>);
+        crumbs = [{name: 'Billing', slug: activePath}];
+        break;
+      default:
+        const activeProject = this.projects[activePath];
+        try {
+          var currentPage = activeProject.editor.getPage(activeSubPath);
+        } catch(ex) {
+          page = (
+            <Message innerStyle={{margin: '40px auto'}}
+              message='Oops, page failed to load'
+              variant='error'
+            />
+          );
+          break;
+        }
+        var forcePath;
+        if(activeSubPath.length >= 3
+          && activeSubPath[0] === 'layout'
+          && activeSubPath[1] === 'pages') {
+          const pageIndex = activeSubPath[2];
+          forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
+        }
+        page = (
+          <Page
+            key={currentPage.key}
+            page={currentPage}
+            editor={activeProject.editor}
+            pageClicked={path => this.pageClicked(activePath, path)}
           />
         );
-      }
-      page = (
-        <Page
-          key={currentPage.key}
-          page={currentPage}
-          editor={activeProject.editor}
-          pageClicked={path => this.pageClicked(activePath, path)}
-        />
-      );
-      preview = (
-        <DemoApp
-          key={activeProject.configVersion}
-          server={activeProject.server} />
-      );
+        preview = (
+          <DemoApp
+            key={activeProject.configVersion}
+            server={activeProject.server}
+            forcePath={forcePath}
+          />
+        );
+        break;
     }
     return (
       <Layout
@@ -144,10 +154,19 @@ export default class Admin extends Component<Props, State> {
         preview={preview}
         menu={(
           <Menu
+            /**
+             * TODO Brainstorm admin features:
+             * - Create/delete project
+             * - Analytics
+             * - Billing, plan, invoices, month estimate, stats
+             * - Account (email password 2fa)
+             */
             items={[
-              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider', text: 'Account'} as MenuDivider] : []),
-              ...(Object.values(this.menuItems)),
-              ...(Object.keys(this.projects).length > 0 ? [{type: 'divider', text: 'Config'} as MenuDivider] : []),
+              { type: 'item', slug: '', name: 'Home' },
+              { type: 'heading', text: 'Account' },
+              { type: 'item', slug: 'projects', name: 'Projects', offset: 1 },
+              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 },
+              { type: 'heading', text: 'Project' },
               ...(Object.keys(this.projects).map(projectId => {
                 const project = this.projects[projectId];
                 const menuProject:MenuProject = {
@@ -157,6 +176,18 @@ export default class Admin extends Component<Props, State> {
                 };
                 return menuProject;
               })),
+              { type: 'item', offset: 1, name: (
+                  <span style={{display: 'flex', alignItems: 'center'}}>
+                    <AddIcon fontSize='inherit' />
+                    &nbsp;
+                    Create
+                  </span>
+                ), onClick: () => {
+                  this.serverAdmin.dispatchAdmin().then(d => {
+                    d.projectCreateAdmin({ projectId: 'App-' + randomUuid().substring(0,6) })
+                      .then(c => this.loadProject(c.config));
+                  });
+              } },
             ]}
             activePath={activePath}
             activeSubPath={activeSubPath}
@@ -166,7 +197,7 @@ export default class Admin extends Component<Props, State> {
       >
         {[
           <Crumbs
-            activeItem={activeMenuItem}
+            crumbs={crumbs}
             activeProject={activeProject}
             activeSubPath={activeSubPath}
             pageClicked={this.pageClicked.bind(this)}

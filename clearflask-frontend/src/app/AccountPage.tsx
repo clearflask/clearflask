@@ -55,7 +55,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
     const emailControl = this.renderEmailControl();
     return (
       <div className={this.props.classes.page}>
-        <DividerCorner title='Notification targets'>
+        <DividerCorner title='Notification destinations'>
           {browserPushControl && (
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>

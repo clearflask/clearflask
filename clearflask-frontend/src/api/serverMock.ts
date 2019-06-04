@@ -542,6 +542,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(!project) {
       const editor = new ConfigEditor.EditorImpl();
       editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
+      editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
       project = {
         config: {config: editor.getConfig(), version: randomUuid()},
         comments: [],

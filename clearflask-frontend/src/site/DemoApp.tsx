@@ -3,6 +3,8 @@ import App from '../app/App';
 import {
   MemoryRouter,
   Route,
+  withRouter,
+  RouteComponentProps,
 } from 'react-router-dom'
 import { Server } from '../api/server';
 import Templater from '../common/config/configTemplater';
@@ -19,9 +21,9 @@ export interface Project {
 
 export function getProject(
   template:((templater:Templater)=>void)|undefined = undefined,
-  mock:((mocker:DataMock)=>void)|undefined = undefined
+  mock:((mocker:DataMock)=>void)|undefined = undefined,
+  projectId:string = randomUuid(),
 ):Promise<Project> {
-  const projectId = randomUuid();
   const server = new Server(projectId, ServerMock.get());
   return server.dispatchAdmin()
     .then(d => d.projectCreateAdmin({projectId: projectId})
@@ -50,6 +52,7 @@ export function getProject(
 interface Props {
   server:Server;
   intialSubPath?:string;
+  forcePath?:string;
 }
 
 export default class DemoApp extends Component<Props> {
@@ -57,13 +60,26 @@ export default class DemoApp extends Component<Props> {
     return (
       <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}${this.props.intialSubPath || ''}`]}>
         <Route path="/:projectId" render={props => (
-          <App
-            {...props}
-            supressCssBaseline
-            isInsideContainer
-            serverOverride={this.props.server} />
+          <React.Fragment>
+            <ForceUrl forcePath={this.props.forcePath} />
+            <App
+              {...props}
+              supressCssBaseline
+              isInsideContainer
+              serverOverride={this.props.server} />
+          </React.Fragment>
         )} />
       </MemoryRouter>
     );
   }
 }
+
+var lastForcedPath;
+const ForceUrl = withRouter((props:RouteComponentProps&{forcePath?:string}) => {
+  if(props.forcePath !== undefined
+    && props.forcePath !== lastForcedPath) {
+    setTimeout(() => props.history.push(`/${props.match.params['projectId']}${props.forcePath}`), 1);
+  };
+  lastForcedPath = props.forcePath
+  return null;
+});

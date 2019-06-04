@@ -58,6 +58,8 @@ const styles = (theme:Theme) => createStyles({
  * - Choose onboarding: Mobile, Desktop
  * 
  * Analytics: TODO
+ * - Show top ideas
+ * - Show idea interest over time
  * 
  * Customization:
  * Highly customizable

@@ -58,6 +58,7 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
             if(!this.projectPromise) this.projectPromise = getProject(
               templater => templater.demo(),
               mocker => mocker.mockAll(),
+              'demo',
             );
             return (
               <Promised promise={this.projectPromise} render={project => (

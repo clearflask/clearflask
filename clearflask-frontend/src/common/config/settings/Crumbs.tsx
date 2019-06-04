@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import { Breadcrumbs, Link } from '@material-ui/core';
-import { MenuItem } from './Menu';
-import { Project } from '../../../site/Admin';
+import { Project } from '../../../site/Dashboard';
 
 interface Props {
-  activeItem?: MenuItem;
+  crumbs?:{name:string, slug:string}[];
   activeProject?: Project;
   activeSubPath?: ConfigEditor.Path;
   pageClicked:(path:string, subPath?:ConfigEditor.Path)=>void;
@@ -25,8 +24,8 @@ export default class Crumbs extends Component<Props> {
 
   render() {
     const crumbs:React.ReactNode[] = [];
-    if(this.props.activeItem) {
-      crumbs.push(this.createCrumb(this.props.activeItem.name, this.props.activeItem.slug));
+    if(this.props.crumbs) {
+      this.props.crumbs.map(crumb => this.createCrumb(crumb.name, crumb.slug));
     } else if(this.props.activeProject) {
       const subpath = this.props.activeSubPath || [];
       for(let i = 0; i <= subpath.length; i++) {
