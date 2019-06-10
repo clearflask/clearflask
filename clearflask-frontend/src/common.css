@@ -5,11 +5,6 @@ html {
   font-family: Roboto,-apple-system-body,BlinkMacSystemFont,SFUI,HelveticaNeue,Helvetica,Arial,sans-serif;
   color: #333;
   -webkit-font-smoothing: antialiased;
-  /* Firefox */
-  scrollbar-width: none;
-  /* IE 10+ */
-  -ms-overflow-style: none;
-
   height: 100%;
 }
 

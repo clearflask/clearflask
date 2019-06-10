@@ -37,7 +37,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
-    throw new Error("Method not implemented.");
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
+    return this.commentCreateAdmin({
+      ...request,
+      create: {
+        ...request.create,
+        authorUserId: loggedInUser.userId,
+      },
+    });
   }
   commentDelete(request: Client.CommentDeleteRequest): Promise<Admin.Comment> {
     return this.commentDeleteAdmin(request);
@@ -238,7 +246,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ideaId: request.ideaId,
       commentId: randomUuid(),
       created: new Date(),
-      ...(request.comment),
+      ...(request.create),
     };
     this.getProject(request.projectId).comments.push(comment);
     return this.returnLater(comment);

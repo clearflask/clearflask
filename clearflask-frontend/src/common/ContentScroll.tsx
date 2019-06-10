@@ -74,6 +74,9 @@ export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, i
     overflow: 'hidden',
     [isVertical ? 'overflowY' : 'overflowX']: 'scroll',
     backgroundAttachment: 'local, local, scroll, scroll',
+    /* Hide scrollbars */
+    scrollbarWidth: 'none', // Firefox
+    msOverflowStyle: 'none', //IE 10+
   };
 };
 

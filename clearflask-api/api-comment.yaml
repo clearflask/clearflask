@@ -120,7 +120,7 @@ components:
         in: query
         required: true
         schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+          $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
     responses:
       '200':
         content:
@@ -256,7 +256,7 @@ components:
         required: true
         schema:
           type: string
-      - name: comment
+      - name: create
         in: query
         required: true
         schema:

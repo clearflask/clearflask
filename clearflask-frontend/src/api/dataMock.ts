@@ -187,7 +187,7 @@ class DataMock {
       .then(user => ServerMock.get().commentCreateAdmin({
           projectId: this.projectId,
           ideaId: item.ideaId,
-          comment: {
+          create: {
             authorUserId: user.userId,
             content: this.mockMention(userMentionPool) + loremIpsum({
               units: 'sentences',

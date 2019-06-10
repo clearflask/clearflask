@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade } from '@material-ui/core';
+import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade, TextField } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Loader from '../utils/Loader';
 import { connect } from 'react-redux';
@@ -215,6 +215,12 @@ const styles = (theme:Theme) => createStyles({
   commentSection: {
     marginTop: theme.spacing(2),
   },
+  addCommentForm: {
+    display: 'inline-flex',
+    flexDirection: 'column',
+    margin: theme.spacing(2),
+    alignItems: 'flex-start',
+  },
   nothing: {
     margin: theme.spacing(4),
     color: theme.palette.text.hint,
@@ -272,6 +278,7 @@ interface State {
   isSubmittingDownvote?:boolean;
   isSubmittingFund?:boolean;
   isSubmittingExpression?:boolean;
+  newCommentInput?:string;
 }
 
 export const isExpanded = ():boolean => !!Post.expandedPath;
@@ -443,10 +450,54 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       });
     }
 
+    const addCommentButton = (
+      <div className={this.props.classes.addCommentForm}>
+        <TextField
+          id='createComment'
+          label='Add comment'
+          value={this.state.newCommentInput || ''}
+          onChange={e => this.setState({ newCommentInput: e.target.value })}
+          multiline
+          fullWidth={!!this.state.newCommentInput}
+        />
+        <Button
+          color='primary'
+          disabled={!this.state.newCommentInput}
+          onClick={e => {
+            const onNewCommentClick = () => {
+              this.props.server.dispatch().commentCreate({
+                projectId: this.props.server.getProjectId(),
+                ideaId: this.props.idea!.ideaId,
+                create: {
+                  content: this.state.newCommentInput!,
+                  authorUserId: this.props.loggedInUser!.userId,
+                },
+              })
+              .then(comment => {
+                this.setState({newCommentInput: undefined});
+              });
+            };
+            if(this.props.loggedInUser) {
+              onNewCommentClick();
+            } else {
+              this.onLoggedIn = onNewCommentClick;
+              this.setState({logInOpen: true});
+            }
+          }}
+          style={{
+            alignSelf: 'flex-end',
+          }}
+        >
+          Submit
+        </Button>
+      </div>
+    );
+
     // TODO infinite scroll this.props.commentCursor
     return (
       <div className={this.props.classes.commentSection}>
         <Loader loaded={!!this.props.comments}>
+          {addCommentButton}
           {this.props.comments && (this.props.comments.length > 0 ? (this.props.comments.map(comment => (
             <Comment comment={comment} />
           ))) : (
@@ -624,7 +675,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           color={iFundedThis ? 'primary' : undefined}
         >
           {fundingAllowed
-            ? <span>
+            ? <span style={{display: 'flex', alignItems: 'center'}}>
                 <AddIcon fontSize='inherit' />
                 {iFundedThis ? 'Adjust funding' : 'Fund this'}
               </span>

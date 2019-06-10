@@ -75,7 +75,9 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
   }
 
   renderAuthor() {
-    if(!this.props.comment || !this.props.comment.author) return null;
+    if(!this.props.comment
+      || !this.props.comment.author
+      || !this.props.comment.author.name) return null;
 
     return (
       <Typography className={this.props.classes.barItem} variant='caption'>

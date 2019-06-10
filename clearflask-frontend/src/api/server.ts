@@ -463,6 +463,29 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
             }, {}),
         },
       };
+    case Client.commentCreateActionStatus.Fulfilled:
+      return {
+        ...state,
+        ...(state.byIdeaId[action.meta.request.ideaId] ? {
+          byIdeaId: {
+            ...state.byIdeaId,
+            [action.meta.request.ideaId]: {
+              ...state.byIdeaId[action.meta.request.ideaId],
+              commentIds: state.byIdeaId[action.meta.request.ideaId].commentIds ? [
+                action.payload.commentId,
+                ...state.byIdeaId[action.meta.request.ideaId].commentIds!,
+              ] : undefined,
+            }
+          },
+        } : {}),
+        byId: {
+          ...state.byId,
+          [action.payload.commentId]: {
+            comment: action.payload,
+            status: Status.FULFILLED,
+          },
+        },
+      };
     default:
       return state;
   }
