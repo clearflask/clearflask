@@ -1,0 +1,52 @@
+
+components:
+  schemas:
+    AccountSignup:
+      type: object
+      properties:
+        plan:
+          type: string
+        company:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        paymentToken:
+          type: string
+    Account:
+      type: object
+      properties:
+        plans:
+          type: array
+          item:
+            type: string
+        company:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        paymentToken:
+          type: string
+
+/admin/account/signup:
+  post:
+    operationId: accountSignupAdmin
+    tags: [UserAdmin]
+    parameters:
+      - name: signup
+        in: query
+        required: true
+        schema:
+          $ref: 'api-account.yaml#/components/schemas/AccountSignup'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/Account'

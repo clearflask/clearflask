@@ -1,16 +1,11 @@
 import React, { Component } from 'react';
-import Message from './comps/Message';
 import { connect } from 'react-redux';
-import { ReduxState, Server, Status } from '../api/server';
+import { ReduxState, Server } from '../api/server';
 import * as Client from '../api/client';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { withRouter, RouteComponentProps, matchPath } from 'react-router';
-import TransactionList from './comps/TransactionList';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
-import CreditView from '../common/config/CreditView';
-import { Typography, Button, Table, TableBody, TableRow, TableCell, FormControlLabel, Switch, FormHelperText, Grid, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
-import FundingControl from './comps/FundingControl';
+import { Typography, Button, FormControlLabel, Switch, FormHelperText, Grid, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField } from '@material-ui/core';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import MobileNotification, { Status as MobileNotificationStatus, Device as MobileNotificationDevice } from '../common/notification/mobileNotification';
@@ -20,10 +15,7 @@ const styles = (theme:Theme) => createStyles({
     margin: theme.spacing(1),
   },
   item: {
-    margin: theme.spacing(2),
-  },
-  deleteButton: {
-    color: theme.palette.error.main,
+    margin: theme.spacing(4),
   },
 });
 
@@ -39,6 +31,8 @@ interface ConnectProps {
 
 interface State {
   deleteDialogOpen?:boolean;
+  displayName?:string;
+  email?:string;
 }
 
 class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&WithSnackbarProps, State> {
@@ -76,23 +70,56 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
           )}
           {emailControl && (
             <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography>
+                  Email
+                  {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
+                </Typography>
+              </Grid>
               <Grid item xs={12} sm={6}>{emailControl}</Grid>
             </Grid>
           )}
         </DividerCorner>
         <DividerCorner title='Account'>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id='displayName'
+                value={this.state.displayName === undefined
+                  ? (this.props.userMe.name || '')
+                  : (this.state.displayName || '')}
+                onChange={e => this.setState({ displayName: e.target.value })}
+              />
+              <Button aria-label="Save" color='primary' style={{visibility:
+                !this.state.displayName
+                || this.state.displayName === this.props.userMe.name
+                ? 'hidden' : undefined
+              }} onClick={() => {
+                if(!this.state.displayName
+                  || !this.props.userMe
+                  || this.state.displayName === this.props.userMe.name) {
+                  return;
+                }
+                this.props.server.dispatch().userUpdate({
+                  projectId: this.props.server.getProjectId(),
+                  userId: this.props.userMe.userId,
+                  update: { name: this.state.displayName },
+                });
+              }}>Save</Button>
+            </Grid>
+          </Grid>
+          <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Sign out of your account</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <Button className={this.props.classes.item} onClick={() => this.props.server.dispatch().userLogout({projectId: this.props.server.getProjectId()})}
+              <Button onClick={() => this.props.server.dispatch().userLogout({projectId: this.props.server.getProjectId()})}
               >Sign out</Button>
             </Grid>
           </Grid>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Delete your account</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <Button className={`${this.props.classes.item} ${this.props.classes.deleteButton}`}
+              <Button
                 onClick={() => this.setState({deleteDialogOpen: true})}
               >Delete</Button>
               <Dialog
@@ -105,7 +132,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => this.setState({deleteDialogOpen: false})}>Cancel</Button>
-                  <Button className={`${this.props.classes.item} ${this.props.classes.deleteButton}`} onClick={() => this.props.server.dispatch().userDelete({
+                  <Button style={{color: this.props.theme.palette.error.main}} onClick={() => this.props.server.dispatch().userDelete({
                       projectId: this.props.server.getProjectId(),
                       userId: this.props.userMe!.userId,
                   })}>Delete</Button>

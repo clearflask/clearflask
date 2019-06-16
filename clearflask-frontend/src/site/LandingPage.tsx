@@ -44,6 +44,10 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
+/** Landing page brainstorm v2 **
+ * See https://docs.google.com/document/d/1_WY4oOE16MYihGKqWCyAZjzUhsyuYIuTcDLQUbwjeVU/edit
+ */
+
 /** Landing page brainstorm **
  * 
  * User feedback

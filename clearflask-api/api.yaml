@@ -45,14 +45,12 @@ paths:
   /project/{projectId}/notification/{notificationId}/clear:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification~1{notificationId}~1clear'
   # api-admin.yaml
+  /admin/account/signup:
+    $ref: 'api-account.yaml#/~1admin~1account~1signup'
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
-  /admin/bind:
-    $ref: 'api-user.yaml#/~1admin~1bind'
-  /admin/login:
-    $ref: 'api-user.yaml#/~1admin~1login'
   /project/{projectId}/admin/user:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user'
   /project/{projectId}/admin/user/{userId}:

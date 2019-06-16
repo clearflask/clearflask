@@ -10,6 +10,7 @@ import DemoApp, { getProject, Project } from './DemoApp';
 import Promised from '../common/Promised';
 import App from '../app/App';
 import PricingPage from './PricingPage';
+import SignupPage from './SignupPage';
 
 interface Props {
   // Router matching
@@ -43,7 +44,6 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
                 <Button onClick={() => this.props.history.push('/')}>Home</Button>
                 <Button onClick={() => this.props.history.push('/demo')}>Demo</Button>
                 <Button onClick={() => this.props.history.push('/pricing')}>Pricing</Button>
-                <Button onClick={() => this.props.history.push('/contact')}>Contact</Button>
                 <Button onClick={() => this.props.history.push('/dashboard')}>Dashboard</Button>
               </Toolbar>
             </Container>
@@ -52,7 +52,10 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
         <div className={this.props.classes.appBarSpacer} />
         <MuiAnimatedSwitch>
           <Route exact path={'/pricing'} render={props => (
-            <PricingPage />
+            <PricingPage {...props} />
+          )} />
+          <Route exact path={'/signup'} render={props => (
+            <SignupPage {...props} />
           )} />
           <Route path={`/:projectId(demo)`} render={props => {
             if(!this.projectPromise) this.projectPromise = getProject(

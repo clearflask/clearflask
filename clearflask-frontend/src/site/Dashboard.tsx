@@ -37,7 +37,6 @@ interface State {
 }
 
 export default class Dashboard extends Component<Props, State> {
-  readonly serverAdmin:ServerAdmin;
   projects:{[projectId:string]: Project} = {};
   
   constructor(props:Props) {
@@ -46,9 +45,8 @@ export default class Dashboard extends Component<Props, State> {
     this.state = {currentPagePath: []}
 
     if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      this.serverAdmin = new ServerAdmin(ServerMock.get());
       const projectId = 'mock';
-      this.serverAdmin.dispatchAdmin()
+      ServerAdmin.get().dispatchAdmin()
         .then(d => d.projectCreateAdmin({projectId: projectId})
           .then(project =>{
             const editor = new ConfigEditor.EditorImpl(project.config.config);
@@ -63,8 +61,7 @@ export default class Dashboard extends Component<Props, State> {
           .then(() => d.configGetAllAdmin()))
         .then(this.loadProjects.bind(this));
     } else {
-      this.serverAdmin = new ServerAdmin();
-      this.serverAdmin.dispatchAdmin()
+      ServerAdmin.get().dispatchAdmin()
         .then(d => d.configGetAllAdmin())
         .then(this.loadProjects.bind(this));
     }
@@ -76,7 +73,7 @@ export default class Dashboard extends Component<Props, State> {
   }
 
   loadProject(versionedConfig:AdminClient.VersionedConfigAdmin, suppressUpdate:boolean = false) {
-    const server = this.serverAdmin.createServer(versionedConfig.config.projectId);
+    const server = ServerAdmin.get().createServer(versionedConfig.config.projectId);
     const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
     server.subscribeToChanges(editor, 200);
     this.projects[versionedConfig.config.projectId] = {
@@ -183,7 +180,7 @@ export default class Dashboard extends Component<Props, State> {
                     Create
                   </span>
                 ), onClick: () => {
-                  this.serverAdmin.dispatchAdmin().then(d => {
+                  ServerAdmin.get().dispatchAdmin().then(d => {
                     d.projectCreateAdmin({ projectId: 'App-' + randomUuid().substring(0,6) })
                       .then(c => this.loadProject(c.config));
                   });

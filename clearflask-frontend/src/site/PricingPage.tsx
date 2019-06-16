@@ -5,13 +5,16 @@ import CheckIcon from '@material-ui/icons/CheckRounded';
 import HelpPopover from '../common/HelpPopover';
 import { useTheme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { History, Location } from 'history';
+import { PRE_SELECTED_PLAN_NAME } from './SignupPage';
 
 /**
- * Starter
- * Regular
- * Enterprise
+ * TODO:
+ * - Add yearly pricing
+ * - show credits for future development (get credits for yearly in full year)
+ * - Add high user limit (5k active users), add new tier with a contact button
  */
-const tiers:{
+export const Tiers:{
   price: number|string,
   priceUnit: string,
   subPrice?: number|string,
@@ -23,24 +26,26 @@ const tiers:{
 }[] = [
   {
     title: 'Starter',
-    price: '$50',
+    price: '$55',
     priceUnit: '/month',
     description: [
       '1 Project',
-      'Unlimited content',
       'Unlimited users',
+      'Unlimited content',
+      '$5 support credits',
     ],
     buttonText: 'Get started',
     buttonVariant: 'text',
   },
   {
     title: 'Full',
-    price: '$150',
+    price: '$175',
     priceUnit: '/month',
     description: [
       'Unlimited projects, users',
       'Crowd-funding',
       'Analytics',
+      '$25 support credits',
     ],
     buttonText: 'Get started',
     buttonVariant: 'text',
@@ -53,7 +58,7 @@ const tiers:{
     subPriceUnit: '/agent',
     description: [
       'Multi-Agent Access',
-      'Support',
+      '99.5% SLA',
       'Integrations',
       'API Access',
       'Whitelabel',
@@ -86,13 +91,17 @@ const styles = (theme:Theme) => createStyles({
 const T = true;
 const F = false;
 
-class LandingPage extends Component<WithStyles<typeof styles, true>> {
+interface Props {
+  history:History;
+}
+
+class LandingPage extends Component<Props&WithStyles<typeof styles, true>> {
   render() {
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
           <Grid container spacing={5} alignItems='stretch'>
-            {tiers.map((tier, index) => (
+            {Tiers.map((tier, index) => (
               <Grid item key={tier.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                 <Card raised>
                   <CardHeader
@@ -123,7 +132,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
                     ))}
                   </CardContent>
                   <CardActions>
-                    <Button fullWidth variant={tier.buttonVariant} color="primary">
+                    <Button fullWidth variant={tier.buttonVariant} color="primary"
+                      onClick={() => this.props.history.push('/signup', {[PRE_SELECTED_PLAN_NAME]: tier.title})}>
                       {tier.buttonText}
                     </Button>
                   </CardActions>

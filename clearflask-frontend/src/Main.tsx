@@ -47,7 +47,7 @@ class Main extends Component {
               <Route exact path="/" render={props => (
                 <Site {...props} />
               )} />
-              <Route path="/(pricing|demo|contact)" render={props => (
+              <Route path="/(pricing|demo|signup)" render={props => (
                 <Site {...props} />
               )} />
               <Route path="/dashboard/:path?/:subPath*" render={props => (

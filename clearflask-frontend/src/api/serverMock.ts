@@ -12,7 +12,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = false;
 
-  // Mock database
+  // Mock account database
+  readonly dbMain:{
+    accounts: 
+  } = {};
+  // Mock project database
   readonly db:{
     [projectId:string]: {
       loggedInUser?:Admin.User; // Mock server-side cookie data
@@ -366,13 +370,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userGetAdmin(request: Admin.UserGetAdminRequest): Promise<Admin.UserAdmin> {
     throw new Error("Method not implemented.");
   }
-  userBindAdmin(): Promise<Admin.UserMeWithBalance> {
-    throw new Error("Method not implemented.");
-  }
-  userLoginAdmin(request: Admin.UserLoginAdminRequest): Promise<Admin.UserMeWithBalance> {
-    throw new Error("Method not implemented.");
-  }
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
+    throw new Error("Method not implemented.");
+  }
+  userSignupAdmin(request: Admin.UserSignupAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
@@ -494,8 +495,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         if(!expressionsSet.has(expression)) return;
         expressionsSet.delete(expression);
         if(expressing && expressing.limitEmojiSet) {
-          const weight = expressing.limitEmojiSet.find(e => e.display === expression)!.weight;
-          idea.expressionsValue! -= weight;
+          const emoji = expressing.limitEmojiSet.find(e => e.display === expression);
+          if(!emoji) return;
+          idea.expressionsValue! -= emoji.weight;
         }
         const ideaExpressionIndex = idea.expressions!.findIndex(e => e.display === expression);
         const ideaExpression = ideaExpressionIndex !== -1 ? idea.expressions[ideaExpressionIndex] : undefined;

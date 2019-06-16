@@ -19,7 +19,7 @@ interface Props {
   isPaper?:boolean;
 }
 
-const radialSize = 12;
+const radialSize = 15;
 
 export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, isVertical:boolean = false, isPaper:boolean = false):React.CSSProperties => {
   const backgroundColor = isPaper ? theme.palette.background.paper : theme.palette.background.default;
