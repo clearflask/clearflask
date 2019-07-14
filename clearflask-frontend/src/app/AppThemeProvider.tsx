@@ -87,6 +87,11 @@ class AppThemeProvider extends Component<Props> {
               disableEnforceFocus: true,
             } : {}),
           },
+          MuiButtonBase: {
+            ...(!this.props.config.style.animation.enableTransitions ? {
+              disableRipple: true,
+            } : {}),
+          },
         },
       })
     } else {

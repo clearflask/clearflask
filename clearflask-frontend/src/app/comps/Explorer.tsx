@@ -354,8 +354,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                         return (
                           <div {...menuProps} className={this.props.classes.menuContainer}>
                             <div style={{
-                              mozColumns: `150px`,
-                              webkitColumns: `150px`,
+                              MozColumns: `150px`,
+                              WebkitColumns: `150px`,
                               columns: `150px`,
                             }}>
                               {menuItems}

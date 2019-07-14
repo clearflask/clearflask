@@ -133,8 +133,8 @@ export default class Property extends Component<Props> {
               style: {
                 minWidth: Property.inputMinWidth,
                 width: this.props.width,
-                readonly: prop.subType === ConfigEditor.PropSubType.Emoji,
               },
+              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
             }}
             FormHelperTextProps={{
               style: {

@@ -154,18 +154,18 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
     var userActions = this.props.config && this.props.loggedInUser && (
       <div className={this.props.classes.actions}>
         <IconButton
-          aria-label='Balance'
-          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
-        >
-          <BalanceIcon fontSize='small' />
-        </IconButton>
-        <IconButton
           aria-label='Notifications'
           onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
         >
           <NotificationBadge server={this.props.server}>
             <NotificationsIcon fontSize='small' />
           </NotificationBadge>
+        </IconButton>
+        <IconButton
+          aria-label='Balance'
+          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
+        >
+          <BalanceIcon fontSize='small' />
         </IconButton>
         <IconButton
           aria-label='Account'

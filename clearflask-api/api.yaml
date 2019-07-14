@@ -47,6 +47,10 @@ paths:
   # api-admin.yaml
   /admin/account/signup:
     $ref: 'api-account.yaml#/~1admin~1account~1signup'
+  /admin/account/bind:
+    $ref: 'api-account.yaml#/~1admin~1account~1bind'
+  /admin/account/login:
+    $ref: 'api-account.yaml#/~1admin~1account~1login'
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:

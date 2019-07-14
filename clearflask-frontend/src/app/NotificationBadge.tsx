@@ -21,7 +21,7 @@ class NotificationBadge extends Component<Props&ConnectProps> {
       <Badge
         badgeContent={this.props.notifications ? this.props.notifications.length : 0}
         color='secondary'
-        max={3}
+        max={999}
       >
         {this.props.children}
       </Badge>

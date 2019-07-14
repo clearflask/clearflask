@@ -10,7 +10,7 @@ import SnackbarContent from '@material-ui/core/SnackbarContent';
 import WarningIcon from '@material-ui/icons/Warning';
 
 interface Props {
-  innerStyle:React.CSSProperties;
+  innerStyle?:React.CSSProperties;
   message:React.ReactNode|string,
   onClose?:()=>void,
   variant:'success'|'warning'|'error'|'info',
@@ -22,7 +22,7 @@ class Message extends Component<Props> {
     warning: WarningIcon,
     error: ErrorIcon,
     info: InfoIcon,
-  };
+};
   readonly styles = {
     success: {
       backgroundColor: green[600],
@@ -61,7 +61,7 @@ class Message extends Component<Props> {
             {this.props.message}
           </span>
         }
-        action={!!this.props.onClose && [
+        action={!!this.props.onClose ? (
           <IconButton
             key="close"
             aria-label="Close"
@@ -69,8 +69,8 @@ class Message extends Component<Props> {
             onClick={this.props.onClose}
           >
             <CloseIcon style={this.styles.icon} />
-          </IconButton>,
-        ]}
+          </IconButton>
+        ) : undefined}
         {...this.props}
       />
     );

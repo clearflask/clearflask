@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { Typography, Grid } from '@material-ui/core';
+import { Typography, Grid, Box, Container } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import DemoApp, { getProject, Project } from './DemoApp';
+import DemoApp, { getProject, Project, deleteProject } from './DemoApp';
 import Templater from '../common/config/configTemplater';
 import DataMock from '../api/dataMock';
 import Promised from '../common/Promised';
@@ -74,14 +74,21 @@ const styles = (theme:Theme) => createStyles({
  * 
  */
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
+  demoProjectIds:string[] = [];
+
+  componentWillUnmount() {
+    this.demoProjectIds.forEach(deleteProject);
+  }
 
   render() {
     return (
       <div className={this.props.classes.page}>
 
         <div className={this.props.classes.hero}>
-          {this.renderTitle()}
-          {this.renderSubTitle()}
+          <Container maxWidth='md'>
+            {this.renderTitle()}
+            {this.renderSubTitle()}
+          </Container>
         </div>
 
         {this.renderPrioritization(true)}
@@ -161,6 +168,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
   renderDemo(demoProps:DemoProps) {
     const projectPromise = getProject(demoProps.template, demoProps.mock);
+    projectPromise.then(project => this.demoProjectIds.push(project.server.getProjectId()));
     const controls = demoProps.controls === undefined ? undefined : (
       <Promised promise={projectPromise} render={demoProps.controls} />
     );

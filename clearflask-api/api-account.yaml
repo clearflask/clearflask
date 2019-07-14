@@ -1,7 +1,38 @@
 
 components:
   schemas:
-    AccountSignup:
+    Plan:
+      type: object
+      required:
+        - planid
+        - title
+      properties:
+        planid:
+          type: string
+        title:
+          type: string
+        price:
+          type: string
+        period:
+          type: string
+          enum:
+            - Monthly
+            - Yearly
+        perks:
+          type: array
+          items:
+            type: string
+    AccountLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AccountSignupAdmin:
       type: object
       properties:
         plan:
@@ -16,13 +47,13 @@ components:
           type: string
         paymentToken:
           type: string
-    Account:
+    AccountAdmin:
       type: object
       properties:
         plans:
           type: array
-          item:
-            type: string
+          items:
+            $ref: 'api-account.yaml#/components/schemas/Plan'
         company:
           type: string
         name:
@@ -31,22 +62,48 @@ components:
           type: string
         phone:
           type: string
-        paymentToken:
-          type: string
 
 /admin/account/signup:
   post:
     operationId: accountSignupAdmin
-    tags: [UserAdmin]
+    tags: [AccountAdmin]
     parameters:
       - name: signup
         in: query
         required: true
         schema:
-          $ref: 'api-account.yaml#/components/schemas/AccountSignup'
+          $ref: 'api-account.yaml#/components/schemas/AccountSignupAdmin'
     responses:
       '200':
         content:
           application/json:
             schema:
-              $ref: 'api-account.yaml#/components/schemas/Account'
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/bind:
+  post:
+    operationId: accountBindAdmin
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/admin/account/login:
+  post:
+    operationId: accountLoginAdmin
+    tags: [AccountAdmin]
+    parameters:
+      - name: credentials
+        in: query
+        required: true
+        schema:
+          $ref: 'api-account.yaml#/components/schemas/AccountLogin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'

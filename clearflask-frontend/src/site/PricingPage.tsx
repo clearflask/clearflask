@@ -17,54 +17,47 @@ import { PRE_SELECTED_PLAN_NAME } from './SignupPage';
 export const Tiers:{
   price: number|string,
   priceUnit: string,
-  subPrice?: number|string,
-  subPriceUnit?: string,
   title: string,
   description: string[],
   buttonText: string,
-  buttonVariant?: 'text' | 'outlined' | 'contained',
 }[] = [
   {
-    title: 'Starter',
-    price: '$55',
+    title: 'Basic',
+    price: '$45',
     priceUnit: '/month',
     description: [
       '1 Project',
       'Unlimited users',
       'Unlimited content',
-      '$5 support credits',
+      '1/2 hour feature dev support',
     ],
     buttonText: 'Get started',
-    buttonVariant: 'text',
   },
   {
-    title: 'Full',
+    title: 'Analytic',
     price: '$175',
     priceUnit: '/month',
     description: [
       'Unlimited projects, users',
       'Crowd-funding',
       'Analytics',
-      '$25 support credits',
+      '3 hours feature dev support',
     ],
     buttonText: 'Get started',
-    buttonVariant: 'text',
   },
   {
-    title: 'Enterprise',
-    price: '$250',
+    title: 'Full',
+    price: '$300',
     priceUnit: '/month',
-    subPrice: '+$10',
-    subPriceUnit: '/agent',
     description: [
       'Multi-Agent Access',
       '99.5% SLA',
       'Integrations',
       'API Access',
       'Whitelabel',
+      '6 hours feature dev support',
     ],
     buttonText: 'Get started',
-    buttonVariant: 'text',
   },
 ];
 
@@ -115,12 +108,6 @@ class LandingPage extends Component<Props&WithStyles<typeof styles, true>> {
                       <Typography component="h2" variant="h3" color="textPrimary">{tier.price}</Typography>
                       <Typography variant="h6" color="textSecondary">{tier.priceUnit}</Typography>
                     </div>
-                    {tier.subPrice && (
-                      <div className={this.props.classes.cardPricing}>
-                        <Typography component="h3" variant="h4" color="textPrimary">{tier.subPrice}</Typography>
-                        <Typography variant="h6" color="textSecondary">{tier.subPriceUnit}</Typography>
-                      </div>
-                    )}
                     {tier.description.map(line => (
                       <div style={{display: 'flex', alignItems: 'center'}}>
                         <CheckIcon fontSize='inherit' />
@@ -132,7 +119,7 @@ class LandingPage extends Component<Props&WithStyles<typeof styles, true>> {
                     ))}
                   </CardContent>
                   <CardActions>
-                    <Button fullWidth variant={tier.buttonVariant} color="primary"
+                    <Button fullWidth variant='text' color="primary"
                       onClick={() => this.props.history.push('/signup', {[PRE_SELECTED_PLAN_NAME]: tier.title})}>
                       {tier.buttonText}
                     </Button>

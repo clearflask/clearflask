@@ -41,7 +41,7 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
       ? props.location.state[PRE_SELECTED_PLAN_NAME]
       : undefined;
     this.state = {
-      step: preSelectedPlan ? 1 : 0,
+      step: 0,
       plan: preSelectedPlan,
     };
   }
@@ -87,12 +87,6 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
                             <Typography variant="h4" color="textPrimary">{tier.price}</Typography>
                             <Typography variant="h6" color="textSecondary">{tier.priceUnit}</Typography>
                           </Box>
-                          {tier.subPrice && (
-                            <Box display='flex' alignItems='baseline' justifyContent='center'>
-                              <Typography variant="h5" color="textPrimary">{tier.subPrice}</Typography>
-                              <Typography variant="h6" color="textSecondary">{tier.subPriceUnit}</Typography>
-                            </Box>
-                          )}
                           {tier.description.map(line => (
                             <div style={{display: 'flex', alignItems: 'center'}}>
                               <CheckIcon fontSize='inherit' />
@@ -104,14 +98,14 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
                           ))}
                         </CardContent>
                         <CardActions>
-                          <Button fullWidth variant={tier.buttonVariant} color='primary' onClick={() => {
+                          <Button fullWidth variant={this.state.plan === tier.title ? 'contained' : 'text'} color='primary' onClick={() => {
                             this.setState({
                               plan: tier.title,
                               step: this.state.step + 1,
                             });
-                          }}>
-                            Select
-                          </Button>
+                          }}>{this.state.plan === tier.title
+                            ? 'continue'
+                            : 'select'}</Button>
                         </CardActions>
                       </Card>
                     </Grid>
@@ -188,7 +182,7 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
 
   signUp() {
     ServerAdmin.get().dispatchAdmin().then(d => {
-      d.userSignupAdmin({signup: {
+      d.accountSignupAdmin({signup: {
         plan: this.state.plan!,
         company: this.state.company!,
         name: this.state.name!,

@@ -215,7 +215,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           }}
           classes={{
             container: this.props.classes.slider,
-            thumbWrapper: transitionClassName,
+            thumb: transitionClassName,
             trackBefore: transitionClassName,
             trackAfter: transitionClassName,
           }}

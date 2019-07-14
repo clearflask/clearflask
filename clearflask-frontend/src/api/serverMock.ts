@@ -13,9 +13,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   hasLatency:boolean = false;
 
   // Mock account database
-  readonly dbMain:{
-    accounts: 
-  } = {};
+  // readonly dbMain:{
+  // } = {};
   // Mock project database
   readonly db:{
     [projectId:string]: {
@@ -40,6 +39,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.hasLatency = enabled;
   }
 
+  accountBindAdmin(): Promise<Admin.AccountAdmin> {
+    throw new Error("Method not implemented.");
+  }
+  accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
+    throw new Error("Method not implemented.");
+  }
+  accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
+    throw new Error("Method not implemented.");
+  }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if(!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -373,9 +381,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
     throw new Error("Method not implemented.");
   }
-  userSignupAdmin(request: Admin.UserSignupAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
     const user = this.getImmutable(
       this.getProject(request.projectId).users,
@@ -566,6 +571,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.db[projectId] = project;
     }
     return project;
+  }
+
+  deleteProject(projectId:string) {
+    delete this.db[projectId];
   }
 
   calcScore(idea:Admin.IdeaAdmin) {

@@ -49,6 +49,10 @@ export function getProject(
     );
 }
 
+export function deleteProject(projectId:string) {
+  ServerMock.get().deleteProject(projectId);
+}
+
 interface Props {
   server:Server;
   intialSubPath?:string;
