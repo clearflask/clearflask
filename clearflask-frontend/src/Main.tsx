@@ -37,7 +37,7 @@ class Main extends Component {
 
   render() {
     return (
-      <React.StrictMode>
+      // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
       <MuiSnackbarProvider>
         <CssBaseline />
@@ -61,7 +61,7 @@ class Main extends Component {
         </div>
       </MuiSnackbarProvider>
       </MuiThemeProvider>
-      </React.StrictMode>
+      // </React.StrictMode>
     );
   }
 }

@@ -112,7 +112,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTitle() {
     return (
       <Typography variant='h3' component='h1'>
-        Give valuable customers a proportionate voice to drive your product
+        Give most valuable customers a proportionate voice to drive your product
       </Typography>
     );
   }
