@@ -1,9 +1,10 @@
 import React from 'react';
-import { StripeProvider} from 'react-stripe-elements';
+import { StripeProvider, Elements, injectStripe, ReactStripeElements } from 'react-stripe-elements';
 
 interface Props {
   stripeKey:string;
-  onReady?:(stripe:stripe.Stripe)=>void;
+  onStripeReady?:(stripe:stripe.Stripe)=>void;
+  onStripeElementsReady?:(stripeElements:ReactStripeElements.StripeProps)=>void;
   onError?:OnErrorEventHandler;
 }
 
@@ -14,6 +15,7 @@ interface State {
 export default class StripeProviderProvider extends React.Component<Props,State> {
   state:State={};
   static stripeScriptElement;
+  stripeElementsReady:boolean = false
 
   componentDidMount() {
     const onWindowStripeReady = () => {
@@ -21,7 +23,7 @@ export default class StripeProviderProvider extends React.Component<Props,State>
       this.setState({
         stripe: stripe,
       });
-      this.props.onReady && this.props.onReady(stripe);
+      this.props.onStripeReady && this.props.onStripeReady(stripe);
     }
     if (window['Stripe']) {
       onWindowStripeReady()
@@ -40,16 +42,39 @@ export default class StripeProviderProvider extends React.Component<Props,State>
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if(this.props.onReady && prevState.stripe === undefined && this.state.stripe !== undefined) {
-      this.props.onReady(this.state.stripe);
+    if(this.props.onStripeReady && prevState.stripe === undefined && this.state.stripe !== undefined) {
+      this.props.onStripeReady(this.state.stripe);
     }
   }
 
   render() {
     return (
       <StripeProvider stripe={this.state.stripe || null}>
-        {this.props.children}
+        <Elements>
+          <ExposeStripeElements onElementsStripe={this.onElementsStripe.bind(this)}>
+            {this.props.children}
+          </ExposeStripeElements>
+        </Elements>
       </StripeProvider>
     );
   }
+
+  onElementsStripe(stripeElements:ReactStripeElements.StripeProps) {
+    if(!this.stripeElementsReady) {
+      this.props.onStripeElementsReady && this.props.onStripeElementsReady(stripeElements);
+    }
+    this.stripeElementsReady = true;
+  }
 }
+
+interface ExposeStripeElementsProps extends ReactStripeElements.InjectedStripeProps {
+  onElementsStripe?:(stripeElements:ReactStripeElements.StripeProps)=>void;
+  children:any;
+}
+
+const ExposeStripeElements = injectStripe((props:ExposeStripeElementsProps) => {
+  if(props.stripe && props.onElementsStripe) {
+    props.onElementsStripe(props.stripe);
+  }
+  return props.children;
+});

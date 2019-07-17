@@ -47,7 +47,7 @@ export default class StripeElementWrapper extends PureComponent<StripeElementWra
   render() {
     return (
       <div>
-        <FormControl fullWidth error={!!this.state.error}>
+        <FormControl fullWidth required error={!!this.state.error}>
           <InputLabel
             focused={this.state.focused}
             shrink={this.state.focused || !this.state.empty}
