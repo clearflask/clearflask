@@ -674,19 +674,10 @@ components:
           $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
         version:
           type: string
-    Projects:
-      type: object
-      required:
-        - configs
-      properties:
-        configs:
-          type: array
-          items:
-            $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
 
 /project/{projectId}/config:
   get:
-    operationId: configGet
+    operationId: configGetAndUserBind
     tags: [Project]
     parameters:
       - name: projectId
@@ -699,12 +690,18 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
+              title: ConfigAndBindResult
+              type: object
+              required:
+                - config
+              properties:
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:
   get:
-    operationId: configGetAllAdmin
+    operationId: configGetAllAndAccountBindAdmin
     tags: [ProjectAdmin]
     parameters:
     responses:
@@ -712,7 +709,20 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-project.yaml#/components/schemas/Projects'
+              title: ConfigAllAndAccountResult
+              type: object
+              required:
+                - configs
+                - account
+              properties:
+                configs:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                account:
+                  $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/admin:
   post:
     operationId: projectCreateAdmin

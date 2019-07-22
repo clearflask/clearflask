@@ -38,12 +38,7 @@ export function getProject(
           config: editor.getConfig(),
         })
         .then(() => mock && mock(DataMock.get(projectId)))
-        .then(() => {
-          if(server.getStore().getState().users.loggedIn.status === undefined) {
-            server.dispatch().userBind({projectId});
-          }
-        })
-        .then(() => server.dispatch().configGet({projectId: projectId}))
+        .then(() => server.dispatch().configGetAndUserBind({projectId: projectId}))
         .then(() => ({server, templater, editor}));
       })
     );

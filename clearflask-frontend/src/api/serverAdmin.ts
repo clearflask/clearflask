@@ -1,9 +1,12 @@
 import React from 'react';
 import * as Client from './client';
 import * as Admin from './admin';
-import { Server } from './server';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { Server, Status } from './server';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import ServerMock from './serverMock';
+import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
+import thunk from 'redux-thunk';
+import reduxPromiseMiddleware from 'redux-promise-middleware';
 
 export default class ServerAdmin {
   static instance:ServerAdmin|undefined;
@@ -12,6 +15,7 @@ export default class ServerAdmin {
   readonly projectIdToServer:{[projectId:string]:Server} = {};
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
+  readonly store:Store<ReduxStateAdmin>;
 
   constructor(apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     if(ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
@@ -19,6 +23,20 @@ export default class ServerAdmin {
     const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
+
+    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
+    if(!isProd()) {
+      const composeEnhancers =
+        typeof window === 'object' &&
+        window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */})
+          : compose;
+      storeMiddleware = composeEnhancers(storeMiddleware);
+    }
+    this.store = createStore(
+      reducersAdmin,
+      ServerAdmin._initialState(),
+      storeMiddleware);
   }
 
   static get():ServerAdmin {
@@ -30,6 +48,10 @@ export default class ServerAdmin {
       }
     }
     return ServerAdmin.instance;
+  }
+
+  getStore():Store<ReduxStateAdmin> {
+    return this.store;
   }
 
   getServers():Server[] {
@@ -51,7 +73,80 @@ export default class ServerAdmin {
     return this.projectIdToServer[projectId];
   }
 
+  static _initialState():any {
+    const state:ReduxStateAdmin = {
+      account: stateAccountDefault,
+      plans: statePlansDefault,
+    };
+    return state;
+  }
+
   async _dispatch(msg:any):Promise<any>{
     return await msg.payload;
   }
 }
+
+export interface StateAccount {
+  account:{
+    status?:Status;
+    account?:Admin.AccountAdmin;
+  };
+}
+const stateAccountDefault = {
+  account: {},
+};
+function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.Actions):StateAccount {
+  switch (action.type) {
+    default:
+      return state;
+  }
+}
+
+export interface StatePlans {
+  plans:{
+    status?:Status;
+    plans?:Admin.Plan[];
+  };
+}
+const statePlansDefault = {
+  plans: {},
+};
+function reducerPlans(state:StatePlans = statePlansDefault, action:Admin.Actions):StatePlans {
+  switch (action.type) {
+    case Admin.plansGetActionStatus.Pending:
+      return {
+        ...state,
+        plans: {
+          ...state.plans,
+          status: Status.PENDING,
+        },
+      };
+    case Admin.plansGetActionStatus.Rejected:
+      return {
+        ...state,
+        plans: {
+          ...state.plans,
+          status: Status.REJECTED,
+        },
+      };
+    case Admin.plansGetActionStatus.Fulfilled:
+      return {
+        ...state,
+        plans: {
+          status: Status.FULFILLED,
+          plans: action.payload.plans,
+        },
+      };
+    default:
+      return state;
+  }
+}
+
+export interface ReduxStateAdmin {
+  account:StateAccount;
+  plans:StatePlans;
+}
+export const reducersAdmin = combineReducers({
+  account: reducerAccount,
+  plans: reducerPlans,
+});

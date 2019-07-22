@@ -5,6 +5,63 @@ import * as ConfigEditor from '../common/config/configEditor';
 import stringToSlug from '../common/util/slugger';
 import WebNotification from '../common/notification/webNotification';
 
+const AvailablePlans:{[planid:string]:Admin.Plan} = {
+  '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7': {
+    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Basic', pricing: {price: 50, period: Admin.PlanPricingPeriodEnum.Yearly},
+    perks: [
+      {desc: 'Unlimited users', terms: 'description'},
+      {desc: 'Simple user voting', terms: 'description'},
+      {desc: '1 hour dev credits', terms: 'description'},
+    ],
+  },
+  '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
+    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic', pricing: {price: 80, period: Admin.PlanPricingPeriodEnum.Monthly},
+    perks: [
+      {desc: 'Unlimited users', terms: 'description'},
+      {desc: 'Simple user voting', terms: 'description'},
+      {desc: '1 hour dev credits', terms: 'description'},
+    ],
+  },
+  'CDBF4982-1805-4352-8A57-824AFB565973': {
+    planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic', pricing: {price: 300, period: Admin.PlanPricingPeriodEnum.Yearly},
+    perks: [
+      {desc: 'Content analytics and search', terms: 'description'},
+      {desc: 'Crowd-funding', terms: 'description'},
+      {desc: 'Unlimited projects, users', terms: 'description'},
+      {desc: '10 hours dev credits', terms: 'description'},
+    ],
+  },
+  '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A': {
+    planid: '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A', title: 'Analytic', pricing: {price: 450, period: Admin.PlanPricingPeriodEnum.Monthly},
+    perks: [
+      {desc: 'Content analytics and search', terms: 'description'},
+      {desc: 'Crowd-funding', terms: 'description'},
+      {desc: 'Unlimited projects, users', terms: 'description'},
+      {desc: '1 hours dev credits', terms: 'description'},
+    ],
+  },
+  '1D57B5BB-BBD2-4127-B75F-FCFAD78DEAD3': {
+    planid: '1D57B5BB-BBD2-4127-B75F-FCFAD78DEAD3', title: 'Enterprise',
+    perks: [
+      {desc: 'Multi-Agent Access', terms: 'description'},
+      {desc: 'Whitelabel', terms: 'description'},
+      {desc: 'Integrations, API Access', terms: 'description'},
+      {desc: 'Dedicated/Onsite hosting', terms: 'description'},
+      {desc: 'Custom SLA', terms: 'description'},
+    ],
+  },
+  '597099E1-83B3-40AC-8AC3-52E9BF59A562': {
+    planid: '597099E1-83B3-40AC-8AC3-52E9BF59A562', title: 'Enterprise',
+    perks: [
+      {desc: 'Multi-Agent Access', terms: 'description'},
+      {desc: 'Whitelabel', terms: 'description'},
+      {desc: 'Integrations, API Access', terms: 'description'},
+      {desc: 'Dedicated/Onsite hosting', terms: 'description'},
+      {desc: 'Custom SLA', terms: 'description'},
+    ],
+  },
+};
+
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
 
@@ -12,13 +69,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = false;
 
-  // Mock account database
-  // readonly dbMain:{
-  // } = {};
+  // Mock account login (server-side cookie data)
+  loggedInAccount?:Admin.AccountAdmin = undefined;
   // Mock project database
   readonly db:{
     [projectId:string]: {
-      loggedInUser?:Admin.User; // Mock server-side cookie data
+      loggedInUser?:Admin.UserAdmin; // Mock server-side cookie data
       config: Admin.VersionedConfigAdmin,
       comments: Admin.Comment[];
       ideas: Admin.IdeaAdmin[];
@@ -39,6 +95,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.hasLatency = enabled;
   }
 
+  plansGet(): Promise<Admin.PlansGetResponse> {
+    return this.returnLater({ plans: Object.values(AvailablePlans) });
+  }
   accountBindAdmin(): Promise<Admin.AccountAdmin> {
     throw new Error("Method not implemented.");
   }
@@ -46,7 +105,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
-    throw new Error("Method not implemented.");
+    const plan = AvailablePlans[request.signup.planid];
+    if(!plan) return this.throwLater(404, 'Requested plan could not be found');
+    const account:Admin.AccountAdmin = {
+      plans: [],
+      company: request.signup.company,
+      name: request.signup.name,
+      email: request.signup.email,
+      phone: request.signup.phone,
+    };
+    this.loggedInAccount = account;
+    return this.returnLater(account);
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -147,8 +216,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
     throw new Error("Method not implemented.");
   }
-  configGet(request: Client.ConfigGetRequest): Promise<Client.VersionedConfig> {
-    return this.configGetAdmin(request);
+  configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
+    if(!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    return this.returnLater({
+      config: this.getProject(request.projectId).config,
+      user: loggedInUser ? {
+        ...loggedInUser,
+        balance: this.getProject(request.projectId).balances[loggedInUser.userId] || 0,
+      } : undefined,
+    });
   }
   userCreate(request: Client.UserCreateRequest, isSso?:boolean): Promise<Client.UserMeWithBalance> {
     return this.userCreateAdmin(request, isSso).then(user => {
@@ -169,15 +246,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
     return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
-  }
-  userBind(request: Client.UserBindRequest): Promise<Client.UserMeWithBalance> {
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    return loggedInUser
-      ? this.returnLater({
-        ...loggedInUser,
-        balance: this.getProject(request.projectId).balances[loggedInUser.userId],
-      })
-      : this.throwLater(404, 'User not logged in');
   }
   userLogin(request: Client.UserLoginRequest): Promise<Client.UserMeWithBalance> {
     throw new Error("Method not implemented.");
@@ -339,9 +407,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.getProject(request.projectId).config);
   }
-  configGetAllAdmin(): Promise<Admin.Projects> {
+  configGetAllAndAccountBindAdmin(): Promise<Admin.ConfigAllAndAccountResult> {
+    if(!this.loggedInAccount) return this.throwLater(404, 'Not logged in');
     return this.returnLater({
       configs: Object.values(this.db).map(p => p.config),
+      account: this.loggedInAccount,
     });
   }
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {

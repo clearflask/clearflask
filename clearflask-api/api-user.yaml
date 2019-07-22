@@ -119,24 +119,6 @@ components:
         browserPushToken:
           type: string
 
-/project/{projectId}/bind:
-  post:
-    operationId: userBind
-    tags: [User]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/login:
   post:
     operationId: userLogin
@@ -321,6 +303,8 @@ components:
             schema:
               title: UserSearchResponse
               type: object
+              required:
+                - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -328,8 +312,6 @@ components:
                   type: array
                   items:
                     $ref: 'api-user.yaml#/components/schemas/UserAdmin'
-              required:
-                - results
   post:
     operationId: userCreateAdmin
     tags: [UserAdmin]

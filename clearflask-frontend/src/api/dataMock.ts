@@ -68,6 +68,20 @@ class DataMock {
     return Promise.resolve();
   }
 
+  mockAccountCreate():Promise<Admin.AccountAdmin> {
+    return ServerMock.get().accountSignupAdmin({
+      signup: {
+        planid: '1',
+        company: 'A.C.M.E. LLC',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '89032789',
+        password: 'password',
+        paymentToken: 'fakeToken',
+      }
+    });
+  }
+
   mockLoggedIn():Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,

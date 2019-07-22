@@ -131,7 +131,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       title: 'Give users ability to convey the value of features',
       description: 'Feature prioritization is critical to your success.'
         + ' Give users proportionate amount of credits based on their value to you.'
-        + ' Alterntatively, let users support your development by purchasing credits to choose which feature you build next.',
+        + ' Alternatively, let users support your development by purchasing credits to choose which feature you build next.',
       initialSubPath: '/embed/demo',
       template: templater => templater.demoPrioritization(),
       mock: mocker => mocker.demoPrioritization(),

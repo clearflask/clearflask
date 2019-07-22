@@ -7,50 +7,10 @@ import { useTheme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { History, Location } from 'history';
 import { PRE_SELECTED_PLAN_NAME, PRE_SELECTED_BILLING_PERIOD_IS_YEARLY } from './SignupPage';
-
-/**
- * TODO:
- * - Add yearly pricing
- * - show credits for future development (get credits for yearly in full year)
- * - Add high user limit (5k active users), add new tier with a contact button
- */
-type Tier = {
-  price: (isYearly:boolean) => number|'contact',
-  title: string,
-  description: (isYearly:boolean) => string[],
-};
-export const Tiers:Tier[] = [
-  {
-    title: 'Basic',
-    price: (isYearly) => isYearly ? 50 : 80,
-    description: (isYearly) => [
-      'Unlimited users',
-      'Simple user voting',
-      `${isYearly ? '1 hour' : '5 min'} feature credits`,
-    ],
-  },
-  {
-    title: 'Pro',
-    price: (isYearly) => isYearly ? 300 : 450,
-    description: (isYearly) => [
-      'Content analytics and search',
-      'Crowd-funding',
-      'Unlimited projects, users',
-      `${isYearly ? '10 hours' : '1 hour'} feature credits`,
-    ],
-  },
-  {
-    title: 'Enterprise',
-    price: (isYearly) => 'contact',
-    description: (isYearly) => [
-      'Multi-Agent Access',
-      'Whitelabel',
-      'Integrations, API Access',
-      'Dedicated/Onsite hosting',
-      'Custom SLA',
-    ],
-  },
-];
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import { connect } from 'react-redux';
+import * as Admin from '../api/admin';
+import Loader from '../app/utils/Loader';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -78,15 +38,23 @@ const F = false;
 interface Props {
   history:History;
 }
+interface ConnectProps {
+  plans?:Admin.Plan[];
+}
 interface State {
   isYearly:boolean;
 }
 
-class LandingPage extends Component<Props&WithStyles<typeof styles, true>, State> {
+class LandingPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
   state:State = {
     isYearly: true
   };
   render() {
+    const plans = this.props.plans ? this.props.plans
+      .filter(plan => !plan.pricing
+        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === Admin.PlanPricingPeriodEnum.Yearly)
+      : [];
+
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
@@ -104,52 +72,52 @@ class LandingPage extends Component<Props&WithStyles<typeof styles, true>, State
           />
         </Container>
         <Container maxWidth='md'>
-          <Grid container spacing={5} alignItems='stretch'>
-            {Tiers.map((tier, index) => (
-              <Grid item key={tier.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
-                <Card raised>
-                  <CardHeader
-                    title={tier.title}
-                    titleTypographyProps={{ align: 'center' }}
-                    subheaderTypographyProps={{ align: 'center' }}
-                    className={this.props.classes.cardHeader}
-                  />
-                  <CardContent>
-                    <div className={this.props.classes.cardPricing}>
-                      {tier.price(this.state.isYearly) !== 'contact' ? (
-                        <React.Fragment>
-                          <Typography component="h2" variant="h3" color="textPrimary">{tier.price(this.state.isYearly)}</Typography>
-                          <Typography variant="h6" color="textSecondary">/month</Typography>
-                        </React.Fragment>
-                      ) : (
-                        <Typography component="h2" variant="h4" color="textPrimary">Contact us</Typography>
-                      )}
-                    </div>
-                    {tier.description(this.state.isYearly).map(line => (
-                      <div style={{display: 'flex', alignItems: 'center'}}>
-                        <CheckIcon fontSize='inherit' />
-                        &nbsp;
-                        <Typography variant="subtitle1" key={line}>
-                          {line}
-                        </Typography>
+          <Loader loaded={!!this.props.plans}>
+            <Grid container spacing={5} alignItems='stretch'>
+              {plans.map((plan, index) => (
+                <Grid item key={plan.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
+                  <Card raised>
+                    <CardHeader
+                      title={plan.title}
+                      titleTypographyProps={{ align: 'center' }}
+                      subheaderTypographyProps={{ align: 'center' }}
+                      className={this.props.classes.cardHeader}
+                    />
+                    <CardContent>
+                      <div className={this.props.classes.cardPricing}>
+                        {plan.pricing ? (
+                          <React.Fragment>
+                            <Typography component="h2" variant="h3" color="textPrimary">{plan.pricing.price}</Typography>
+                            <Typography variant="h6" color="textSecondary">{plan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? '/Year' : '/Month'}</Typography>
+                          </React.Fragment>
+                        ) : (
+                          <Typography component="h2" variant="h4" color="textPrimary">Contact us</Typography>
+                        )}
                       </div>
-                    ))}
-                  </CardContent>
-                  <CardActions>
-                    <Button fullWidth variant='text' color="primary"
-                      onClick={() => tier.price(this.state.isYearly) === 'contact'
-                        ? this.props.history.push('/contact')
-                        : this.props.history.push('/signup', {
-                          [PRE_SELECTED_PLAN_NAME]: tier.title,
-                          [PRE_SELECTED_BILLING_PERIOD_IS_YEARLY]: this.state.isYearly,})
-                    }>
-                      {tier.price(this.state.isYearly) === 'contact' ? 'Contact us' : 'Get started'}
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                      {plan.perks.map(perk => (
+                        <div key={perk.desc} style={{display: 'flex', alignItems: 'center'}}>
+                          <CheckIcon fontSize='inherit' />
+                          &nbsp;
+                          <Typography variant="subtitle1">{perk.desc}</Typography>
+                        </div>
+                      ))}
+                    </CardContent>
+                    <CardActions>
+                      <Button fullWidth variant='text' color="primary"
+                        onClick={() => plan.pricing
+                          ? this.props.history.push('/contact')
+                          : this.props.history.push('/signup', {
+                            [PRE_SELECTED_PLAN_NAME]: plan.title,
+                            [PRE_SELECTED_BILLING_PERIOD_IS_YEARLY]: this.state.isYearly,})
+                      }>
+                        {plan.pricing ? 'Get started' : 'Contact us'}
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Loader>
         </Container>
         <br />
         <br />
@@ -190,8 +158,8 @@ const FeatureList = (props:{
           <TableRow>
             <TableCell key='feature'><Typography variant='h6'>{props.name}</Typography></TableCell>
             <TableCell key='plan1'>Starter</TableCell>
-            <TableCell key='plan1'>Full</TableCell>
-            <TableCell key='plan1'>Enterprise</TableCell>
+            <TableCell key='plan2'>Full</TableCell>
+            <TableCell key='plan3'>Enterprise</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -214,7 +182,7 @@ const FeatureListItem = (props:{
         {props.helpText && (<HelpPopover description={props.helpText} />)}
       </TableCell>
       {props.planContents.map(content => (
-        <TableCell key='plan1'>
+        <TableCell>
           {content === T
             ? (<CheckIcon fontSize='inherit' />)
             : content}
@@ -224,4 +192,9 @@ const FeatureListItem = (props:{
   );
 }
 
-export default withStyles(styles, { withTheme: true })(LandingPage);
+export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
+  if(state.plans.plans.status === undefined) {
+    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
+  }
+  return { plans: state.plans.plans.plans };
+})(withStyles(styles, { withTheme: true })(LandingPage));

@@ -6,22 +6,39 @@ components:
       required:
         - planid
         - title
+        - period
+        - perks
       properties:
         planid:
           type: string
         title:
           type: string
-        price:
-          type: string
-        period:
-          type: string
-          enum:
-            - Monthly
-            - Yearly
+        # If not set, show "Contact us"
+        pricing:
+          type: object
+          required:
+            - price
+            - period
+          properties:
+            price:
+              type: number
+            period:
+              type: string
+              enum:
+                - Monthly
+                - Yearly
         perks:
           type: array
           items:
-            type: string
+            type: object
+            required:
+              - desc
+              - terms
+            properties:
+              desc:
+                type: string
+              terms:
+                type: string
     AccountLogin:
       type: object
       required:
@@ -34,8 +51,15 @@ components:
           type: string
     AccountSignupAdmin:
       type: object
+      required:
+       - planid
+       - company
+       - name
+       - email
+       - password
+       - paymentToken
       properties:
-        plan:
+        planid:
           type: string
         company:
           type: string
@@ -43,12 +67,19 @@ components:
           type: string
         email:
           type: string
+        password:
+          type: string
         phone:
           type: string
         paymentToken:
           type: string
     AccountAdmin:
       type: object
+      required:
+       - plans
+       - company
+       - name
+       - email
       properties:
         plans:
           type: array
@@ -63,6 +94,25 @@ components:
         phone:
           type: string
 
+/admin/plan:
+  get:
+    operationId: plansGet
+    tags: [Plan]
+    parameters:
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: PlansGetResponse
+              type: object
+              required:
+                - plans
+              properties:
+                plans:
+                  type: array
+                  items:
+                    $ref: 'api-account.yaml#/components/schemas/Plan'
 /admin/account/signup:
   post:
     operationId: accountSignupAdmin

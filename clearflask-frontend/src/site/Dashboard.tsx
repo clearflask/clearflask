@@ -58,17 +58,19 @@ export default class Dashboard extends Component<Props, State> {
             });
           })
           .then(() => DataMock.get(projectId).mockAll())
-          .then(() => d.configGetAllAdmin()))
+          .then(() => d.configGetAllAndAccountBindAdmin()))
+        .then((result:AdminClient.ConfigAllAndAccountResult) => result.configs)
         .then(this.loadProjects.bind(this));
     } else {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.configGetAllAdmin())
+        .then(d => d.configGetAllAndAccountBindAdmin())
+        .then((result:AdminClient.ConfigAllAndAccountResult) => result.configs)
         .then(this.loadProjects.bind(this));
     }
   }
 
-  loadProjects(projects:AdminClient.Projects) {
-    projects.configs.forEach(versionedConfig => this.loadProject(versionedConfig, true));
+  loadProjects(configs:AdminClient.VersionedConfigAdmin[]) {
+    configs.forEach(versionedConfig => this.loadProject(versionedConfig, true));
     this.forceUpdate();
   }
 

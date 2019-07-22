@@ -1,16 +1,19 @@
 import React, { Component } from 'react';
-import { Typography, Grid, Button, Container, Card, CardHeader, CardContent, CardActions, Stepper, StepLabel, StepContent, Step, Box, TextField, Link, InputAdornment, IconButton, Table, TableBody, TableRow, TableCell, FormHelperText } from '@material-ui/core';
+import { Typography, Grid, Button, Container, Card, CardHeader, CardContent, CardActions, Stepper, StepLabel, StepContent, Step, Box, TextField, Link, InputAdornment, IconButton, Table, TableBody, TableRow, TableCell, FormHelperText, FormControlLabel, Switch } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
-import { Tiers } from './PricingPage';
 import { History, Location } from 'history';
-import ServerAdmin from '../api/serverAdmin';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import StripeProviderProvider from '../common/stripe/StripeProviderProvider';
 import { CardNumberElement, CardExpiryElement, CardCVCElement, ReactStripeElements } from 'react-stripe-elements';
 import Loader from '../app/utils/Loader';
 import StripeElementWrapper from '../common/stripe/StripeElementWrapper';
+import Message from '../app/comps/Message';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import { connect } from 'react-redux';
+import * as Admin from '../api/admin';
+import { saltHashPassword } from '../common/util/auth';
 
 export const PRE_SELECTED_PLAN_NAME = 'preSelectedPlanName';
 export const PRE_SELECTED_BILLING_PERIOD_IS_YEARLY = 'preSelectedBillingPeriodIsYearly';
@@ -44,7 +47,9 @@ interface Props {
   history:History;
   location:Location;
 }
-
+interface ConnectProps {
+  plans?:Admin.Plan[];
+}
 interface State {
   error?:string;
   step:number;
@@ -64,7 +69,7 @@ interface State {
   cardCvcValid?:boolean;
 }
 
-class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State> {
+class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
@@ -83,6 +88,10 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
   }
 
   render() {
+    const plans = this.props.plans
+      ? this.props.plans.filter(plan => (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === Admin.PlanPricingPeriodEnum.Yearly)
+      : [];
+
     const planStepCompleted = !!this.state.plan;
     const accountStepCompleted = !!this.state.company && !!this.state.name && !!this.state.email && !!this.state.pass;
     const billingStepCompleted = !!this.state.stripe && !!this.state.cardValid && !!this.state.cardExpiryValid && !!this.state.cardCvcValid;
@@ -98,44 +107,53 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
                 </Link>
               </StepLabel>
               <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
-                <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
-                  {Tiers.map((tier, index) => (
-                    <Grid item key={tier.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
-                      <Card>
-                        <CardHeader
-                          title={tier.title}
-                          titleTypographyProps={{ align: 'center' }}
-                          subheaderTypographyProps={{ align: 'center' }}
-                        />
-                        <CardContent>
-                          <Box display='flex' alignItems='baseline' justifyContent='center'>
-                            <Typography variant="h4" color="textPrimary">{tier.price(this.state.billingIsYearly)}</Typography>
-                            <Typography variant="h6" color="textSecondary">/monthly</Typography>
-                          </Box>
-                          {tier.description(this.state.billingIsYearly).map(line => (
-                            <div style={{display: 'flex', alignItems: 'center'}}>
-                              <CheckIcon fontSize='inherit' />
-                              &nbsp;
-                              <Typography variant="subtitle1" key={line}>
-                                {line}
-                              </Typography>
-                            </div>
-                          ))}
-                        </CardContent>
-                        <CardActions>
-                          <Button fullWidth variant={this.state.plan === tier.title ? 'contained' : 'text'} color='primary' onClick={() => {
-                            this.setState({
-                              plan: tier.title,
-                              step: this.state.step + 1,
-                            });
-                          }}>{this.state.plan === tier.title
-                            ? 'continue'
-                            : 'select'}</Button>
-                        </CardActions>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
+                <Loader loaded={!!this.props.plans}>
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        checked={this.state.billingIsYearly}
+                        onChange={(e, checked) => this.setState({billingIsYearly: !this.state.billingIsYearly})}
+                        color='default'
+                      />
+                    )}
+                    label={(<FormHelperText component='span'>{this.state.billingIsYearly ? 'Yearly billing' : 'Monthly billing'}</FormHelperText>)}
+                  />
+                  <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
+                    {plans.map((plan, index) => (
+                      <Grid item key={plan.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
+                        <Card>
+                          <CardHeader
+                            title={plan.title}
+                            titleTypographyProps={{ align: 'center' }}
+                            subheaderTypographyProps={{ align: 'center' }}
+                          />
+                          <CardContent>
+                            <Box display='flex' alignItems='baseline' justifyContent='center'>
+                              <Typography variant="h4" color="textPrimary">{plan.pricing!.price}</Typography>
+                              <Typography variant="h6" color="textSecondary">{plan.pricing!.period === Admin.PlanPricingPeriodEnum.Yearly ? '/Year' : '/Month'}</Typography>
+                            </Box>
+                            {plan.perks.map(perk => (
+                              <div style={{display: 'flex', alignItems: 'center'}}>
+                                <Typography variant="subtitle1">{perk.desc}</Typography>
+                                <Typography variant='body1'>{perk.terms}</Typography>
+                              </div>
+                            ))}
+                          </CardContent>
+                          <CardActions>
+                            <Button fullWidth variant={this.state.plan === plan.title ? 'contained' : 'text'} color='primary' onClick={() => {
+                              this.setState({
+                                plan: plan.title,
+                                step: this.state.step + 1,
+                              });
+                            }}>{this.state.plan === plan.title
+                              ? 'continue'
+                              : 'select'}</Button>
+                          </CardActions>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Loader>
               </StepContent>
             </Step>
             <Step key='account' completed={accountStepCompleted}>
@@ -277,7 +295,9 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
                     color='primary'
                     disabled={this.state.isSubmitting || !billingStepCompleted || !accountStepCompleted || !planStepCompleted}
                   >Submit</Button>
-                  {this.state.error && (<FormHelperText error>{this.state.error}</FormHelperText>)}
+                </Box>
+                <Box display='flex' className={this.props.classes.item}>
+                  {this.state.error && (<Message message={this.state.error} variant='error' />)}
                 </Box>
               </StepContent>
             </Step>
@@ -292,36 +312,41 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
       this.setState({error: 'Our payment processor has not initialized'});
       return;
     }
+
+    this.setState({isSubmitting: true});
     
-    var token:ReactStripeElements.TokenResponse;
+    var tokenResponse:ReactStripeElements.TokenResponse;
     try {
-      token = await this.state.stripe.createToken();
+      tokenResponse = await this.state.stripe.createToken();
     } catch(err) {
-      this.setState({error: 'Failed to tokenize billing information'});
+      this.setState({error: 'Failed to tokenize billing information',
+        isSubmitting: false});
       return;
     };
     
-    if(token.error) {
-      this.setState({error: 'Failed to retrieve billing token: ' + token.error.message || token.error.type});
+    if(tokenResponse.error) {
+      this.setState({error: 'Failed to retrieve billing token: ' + tokenResponse.error.message || tokenResponse.error.type,
+        isSubmitting: false});
       return;
     }
 
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
       await dispatchAdmin.accountSignupAdmin({signup: {
-          plan: this.state.plan!,
+          planid: this.state.plan!,
           company: this.state.company!,
           name: this.state.name!,
           email: this.state.email!,
           phone: this.state.phone,
-          paymentToken: 'TODO',
+          password: saltHashPassword(this.state.pass!),
+          paymentToken: JSON.stringify(tokenResponse.token!),
         }});
     } catch (err) {
       this.setState({
-        step: this.state.step - 1,
         error: (err.json && err.json.userFacingMessage)
           ? err.json.userFacingMessage
-          : JSON.stringify(err),
+          : 'Failed to signup: ' + JSON.stringify(err),
+          isSubmitting: false
       });
       return;
     }
@@ -329,4 +354,9 @@ class SignupPage extends Component<Props&WithStyles<typeof styles, true>, State>
   }
 }
 
-export default withStyles(styles, { withTheme: true })(SignupPage);
+export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
+  if(state.plans.plans.status === undefined) {
+    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
+  }
+  return { plans: state.plans.plans.plans };
+})(withStyles(styles, { withTheme: true })(SignupPage));

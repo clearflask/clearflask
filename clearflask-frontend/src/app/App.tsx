@@ -66,10 +66,7 @@ class App extends Component<Props> {
           })
           .then(() => DataMock.get(projectId).mockAll())
           .then(() => {
-            this.server.dispatch().configGet({projectId: projectId});
-            if(this.server.getStore().getState().users.loggedIn.status === undefined) {
-              this.server.dispatch().userBind({projectId: this.server.getProjectId()});
-            }
+            this.server.dispatch().configGetAndUserBind({projectId: projectId});
           })
           .then(() => {if(projectId === 'mock-latency') ServerMock.get().setLatency(true)})
         );
@@ -78,10 +75,7 @@ class App extends Component<Props> {
     }
 
     if(!supressConfigGetAndBind && this.server.getStore().getState().conf.status === undefined) {
-      this.server.dispatch().configGet({projectId: this.server.getProjectId()});
-      if(this.server.getStore().getState().users.loggedIn.status === undefined) {
-        this.server.dispatch().userBind({projectId: this.server.getProjectId()});
-      }
+      this.server.dispatch().configGetAndUserBind({projectId: this.server.getProjectId()});
     }
   }
 

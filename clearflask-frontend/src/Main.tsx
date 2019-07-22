@@ -12,6 +12,8 @@ import Dashboard from './site/Dashboard';
 import {closeLoadingScreen} from './common/loadingScreen';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import { Provider } from 'react-redux';
+import ServerAdmin from './api/serverAdmin';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -38,6 +40,7 @@ class Main extends Component {
   render() {
     return (
       // <React.StrictMode>
+      <Provider store={ServerAdmin.get().getStore()}>
       <MuiThemeProvider theme={theme}>
       <MuiSnackbarProvider>
         <CssBaseline />
@@ -61,6 +64,7 @@ class Main extends Component {
         </div>
       </MuiSnackbarProvider>
       </MuiThemeProvider>
+      </Provider>
       // </React.StrictMode>
     );
   }

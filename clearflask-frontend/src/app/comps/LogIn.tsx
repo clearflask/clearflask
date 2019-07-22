@@ -20,6 +20,7 @@ import { WithWidth } from '@material-ui/core/withWidth';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { DialogProps } from '@material-ui/core/Dialog';
+import { saltHashPassword } from '../../common/util/auth';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
@@ -333,7 +334,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
       create: {
         name: this.state.displayName,
         email: this.state.email,
-        password: this.state.pass,
+        password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
         iosPushToken: this.state.notificationDataIos,
         androidPushToken: this.state.notificationDataAndroid,
         browserPushToken: this.state.notificationDataBrowser,

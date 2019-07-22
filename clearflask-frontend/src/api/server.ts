@@ -27,25 +27,19 @@ export class Server {
   constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     this.projectId = projectId;
 
-    if(isProd()) {
-      this.store = createStore(
-        reducers,
-        Server.initialState(this.projectId),
-        applyMiddleware(thunk, reduxPromiseMiddleware));
-    } else {
+    var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
+    if(!isProd()) {
       const composeEnhancers =
         typeof window === 'object' &&
         window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
           ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */})
           : compose;
-      const enhancer = composeEnhancers(
-        applyMiddleware(thunk, reduxPromiseMiddleware),
-      );
-      this.store = createStore(
-        reducers,
-        Server.initialState(this.projectId),
-        enhancer);
+      storeMiddleware = composeEnhancers(storeMiddleware);
     }
+    this.store = createStore(
+      reducers,
+      Server.initialState(this.projectId),
+      storeMiddleware);
 
     const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
     this.dispatcherClient = dispatchers.client;
@@ -135,10 +129,6 @@ export class Server {
     try {
     var result = await this.store.dispatch(msg);
     } catch(err) {
-      // Error exceptions
-      if((msg.type === Client.Action.userBind || msg.type === 'userBindAdmin') && err.status === 404) {
-        throw err;
-      }
       var errorMsg;
       if(err.json && err.json.userFacingMessage) {
         errorMsg = err.json.userFacingMessage;
@@ -183,17 +173,22 @@ export interface StateConf {
 }
 function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
   switch (action.type) {
-    case Client.configGetActionStatus.Pending:
+    case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
     // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
-    case 'configGetAdmin_FULFILLED' as Client.configGetActionStatus.Fulfilled:
-    case Client.configGetActionStatus.Fulfilled:
+    case 'configGetAdmin_FULFILLED' as any:
       return {
         status: Status.FULFILLED,
-        conf: action.payload.config,
-        ver: action.payload.version,
+        conf: (action as any).payload.config,
+        ver: (action as any).payload.version,
       };
-    case Client.configGetActionStatus.Rejected:
+    case Client.configGetAndUserBindActionStatus.Fulfilled:
+      return {
+        status: Status.FULFILLED,
+        conf: action.payload.config.config,
+        ver: action.payload.config.version,
+      };
+    case Client.configGetAndUserBindActionStatus.Rejected:
       return { status: Status.REJECTED };
     default:
       return state;
@@ -577,11 +572,26 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
           }
         }
       };
+    case Client.configGetAndUserBindActionStatus.Fulfilled:
+      if(!action.payload.user) return state;
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.user.userId]: {
+            user: action.payload.user,
+            status: Status.FULFILLED,
+          }
+        },
+        loggedIn: {
+          user: action.payload.user,
+          status: Status.FULFILLED,
+        },
+      };
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
-    case Client.userBindActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
@@ -824,9 +834,17 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
           transactionSearch: {},
         } : {}),
       };
+    case Client.configGetAndUserBindActionStatus.Fulfilled:
+      if(!action.payload.user) return state;
+      return {
+        ...state,
+        myBalance: {
+          status: Status.FULFILLED,
+          balance: action.payload.user.balance,
+        },
+      };
     case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
-    case Client.userBindActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
       return {
         ...state,
