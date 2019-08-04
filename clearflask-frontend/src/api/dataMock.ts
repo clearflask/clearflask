@@ -51,7 +51,8 @@ class DataMock {
   }
 
   mockAll():Promise<any> {
-    return this.mockLoggedIn()
+    return this.mockAccountCreate()
+    .then(this.mockLoggedIn.bind(this))
     .then(userMe =>
       this.mockItems(userMe)
       .then(() => this.mockNotification(userMe)));

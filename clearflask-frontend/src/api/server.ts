@@ -9,6 +9,7 @@ import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import randomUuid from '../common/util/uuid';
 import debounce from '../common/util/debounce';
+import ServerAdmin from './serverAdmin';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -41,7 +42,9 @@ export class Server {
       Server.initialState(this.projectId),
       storeMiddleware);
 
-    const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
+    const dispatchers = Server.getDispatchers(
+      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers),
+      apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
   }
@@ -122,25 +125,7 @@ export class Server {
       },
       payload: { config: config, version: randomUuid() },
     };
-    this._dispatch(msg);
-  }
-
-  async _dispatch(msg:any):Promise<any>{
-    try {
-    var result = await this.store.dispatch(msg);
-    } catch(err) {
-      var errorMsg;
-      if(err.json && err.json.userFacingMessage) {
-        errorMsg = err.json.userFacingMessage;
-      } else if(msg && msg.meta && msg.meta.action) {
-        errorMsg = `Failed to process: ${msg.meta.action}`;
-      } else {
-        errorMsg = `Unknown error processing: ${JSON.stringify(msg)}`;
-      }
-      this.errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg));
-      throw err;
-    }
-    return result.value;
+    ServerAdmin._dispatch(msg, this.store, this.errorSubscribers);
   }
 }
 

@@ -91,6 +91,17 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           </Container>
         </div>
 
+        {/* TODO show different workflows:
+          - External:
+            - Based on monetary customer value, ie:
+              - Purchasable for real money
+              - Based on customer plan
+            - Other virtual value
+              - 
+          - Internal:
+            - Payment processor middleman. Set credit value and options to choose
+            - Length of account duration (x credits per month)
+            - 
         {this.renderPrioritization(true)}
         {this.renderOnboarding(false)}
         {this.renderAnalytics(true)}

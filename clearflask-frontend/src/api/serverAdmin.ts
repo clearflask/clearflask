@@ -8,6 +8,8 @@ import { Store, createStore, compose, applyMiddleware, combineReducers } from 'r
 import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 
+type ErrorSubscribers = ((msg:string)=>void)[];
+
 export default class ServerAdmin {
   static instance:ServerAdmin|undefined;
 
@@ -16,11 +18,14 @@ export default class ServerAdmin {
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
   readonly store:Store<ReduxStateAdmin>;
+  readonly errorSubscribers:ErrorSubscribers = [];
 
   constructor(apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     if(ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
     this.apiOverride = apiOverride;
-    const dispatchers = Server.getDispatchers(this._dispatch.bind(this), apiOverride);
+    const dispatchers = Server.getDispatchers(
+      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers),
+      apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
 
@@ -58,12 +63,34 @@ export default class ServerAdmin {
     return Object.values(this.projectIdToServer);
   }
 
+  subscribeToErrors(subscriber:((msg:string)=>void)) {
+    this.errorSubscribers.push(subscriber);
+  }
+
   dispatch(projectId?:string):Client.Dispatcher {
     return projectId === undefined ? this.dispatcherClient : this.projectIdToServer[projectId].dispatch();
   }
 
   dispatchAdmin(projectId?:string):Promise<Admin.Dispatcher> {
     return projectId === undefined ? this.dispatcherAdmin : this.projectIdToServer[projectId].dispatchAdmin();
+  }
+
+  static async _dispatch(msg:any, store:Store, errorSubscribers:ErrorSubscribers):Promise<any>{
+    try {
+      var result = await store.dispatch(msg);
+    } catch(err) {
+      var errorMsg;
+      if(err.json && err.json.userFacingMessage) {
+        errorMsg = err.json.userFacingMessage;
+      } else if(msg && msg.meta && msg.meta.action) {
+        errorMsg = `Failed to process: ${msg.meta.action}`;
+      } else {
+        errorMsg = `Unknown error processing: ${JSON.stringify(msg)}`;
+      }
+      errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg));
+      throw err;
+    }
+    return result.value;
   }
 
   createServer(projectId:string):Server {
@@ -79,10 +106,6 @@ export default class ServerAdmin {
       plans: statePlansDefault,
     };
     return state;
-  }
-
-  async _dispatch(msg:any):Promise<any>{
-    return await msg.payload;
   }
 }
 
