@@ -45,14 +45,14 @@ interface State {
   isYearly:boolean;
 }
 
-class LandingPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
+class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
   state:State = {
     isYearly: true
   };
   render() {
     const plans = this.props.plans ? this.props.plans
       .filter(plan => !plan.pricing
-        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === Admin.PlanPricingPeriodEnum.Yearly)
+        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === plan.pricing.period)
       : [];
 
     return (
@@ -75,7 +75,7 @@ class LandingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
           <Loader loaded={!!this.props.plans}>
             <Grid container spacing={5} alignItems='stretch'>
               {plans.map((plan, index) => (
-                <Grid item key={plan.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
+                <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <Card raised>
                     <CardHeader
                       title={plan.title}
@@ -84,16 +84,25 @@ class LandingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                       className={this.props.classes.cardHeader}
                     />
                     <CardContent>
-                      <div className={this.props.classes.cardPricing}>
-                        {plan.pricing ? (
-                          <React.Fragment>
-                            <Typography component="h2" variant="h3" color="textPrimary">{plan.pricing.price}</Typography>
-                            <Typography variant="h6" color="textSecondary">{plan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? '/Year' : '/Month'}</Typography>
-                          </React.Fragment>
+                      {plan.pricing ? (
+                        <React.Fragment>
+                          <div className={this.props.classes.cardPricing}>
+                            <Typography component='h2' variant='h6' color='textSecondary' style={{alignSelf: 'end'}}>{'$'}</Typography>
+                            <Typography component='h2' variant='h3'>{plan.pricing.price}</Typography>
+                            <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
+                          </div>
+                          <div className={this.props.classes.cardPricing}>
+                            <Typography component='h3'>{
+                              plan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly
+                                ? ('$' + (plan.pricing.price * 12) + ' billed yearly')
+                                : 'billed monthly'}</Typography>
+                          </div>
+                        </React.Fragment>
                         ) : (
-                          <Typography component="h2" variant="h4" color="textPrimary">Contact us</Typography>
+                          <div className={this.props.classes.cardPricing}>
+                           <Typography component="h2" variant="h4" color="textPrimary">Contact us</Typography>
+                          </div>
                         )}
-                      </div>
                       {plan.perks.map(perk => (
                         <div key={perk.desc} style={{display: 'flex', alignItems: 'center'}}>
                           <CheckIcon fontSize='inherit' />
@@ -104,7 +113,7 @@ class LandingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                     </CardContent>
                     <CardActions>
                       <Button fullWidth variant='text' color="primary"
-                        onClick={() => plan.pricing
+                        onClick={() => !plan.pricing
                           ? this.props.history.push('/contact')
                           : this.props.history.push('/signup', {
                             [PRE_SELECTED_PLAN_NAME]: plan.title,
@@ -197,4 +206,4 @@ export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) 
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
   return { plans: state.plans.plans.plans };
-})(withStyles(styles, { withTheme: true })(LandingPage));
+})(withStyles(styles, { withTheme: true })(PricingPage));

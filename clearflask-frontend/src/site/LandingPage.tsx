@@ -102,6 +102,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             - Payment processor middleman. Set credit value and options to choose
             - Length of account duration (x credits per month)
             - 
+        */}
         {this.renderPrioritization(true)}
         {this.renderOnboarding(false)}
         {this.renderAnalytics(true)}
