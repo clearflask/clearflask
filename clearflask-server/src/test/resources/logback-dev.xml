@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true" scan="true" scanPeriod="60 seconds">
+    <jmxConfigurator/>
+
+    <property name="logs-folder" value="${catalina.base}/logs"/>
+
+    <!-- Enable logging during shutdown https://stackoverflow.com/questions/37557754/logging-from-servlet-context-destroyed-event -->
+    <context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <contextName>${appName}</contextName>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${logs-folder}/cleaflask.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${logs-folder}/cleaflask.%d{yyyy-MM-dd}.%i.log.gz</FileNamePattern>
+            <MaxHistory>30</MaxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ch.qos.logback" level="INFO"/>
+    <logger name="com.kik.config.ice" level="INFO"/>
+    <logger name="org.reflections.Reflections" level="INFO"/>
+
+    <root level="TRACE">
+        <!-- Log to STDERR also for docker to pick up -->
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
