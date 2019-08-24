@@ -14,9 +14,9 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { connect } from 'react-redux';
 import * as Admin from '../api/admin';
 import { saltHashPassword } from '../common/util/auth';
+import PricingPlan from './PricingPlan';
 
-export const PRE_SELECTED_PLAN_NAME = 'preSelectedPlanName';
-export const PRE_SELECTED_BILLING_PERIOD_IS_YEARLY = 'preSelectedBillingPeriodIsYearly';
+export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -54,7 +54,7 @@ interface State {
   error?:string;
   step:number;
   isSubmitting?:boolean;
-  plan?:string;
+  planId?:string;
   billingIsYearly:boolean;
   company?:string;
   name?:string;
@@ -75,24 +75,29 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
     super(props);
 
     var billingIsYearly = true;
-    var plan;
-    if(props.location && props.location.state && props.location.state[PRE_SELECTED_PLAN_NAME]) {
-      plan = props.location.state[PRE_SELECTED_PLAN_NAME];
-      billingIsYearly = !!props.location.state[PRE_SELECTED_BILLING_PERIOD_IS_YEARLY];
+    var planId;
+    if(props.location && props.location.state && props.location.state[PRE_SELECTED_PLAN_ID]) {
+      planId = props.location.state[PRE_SELECTED_PLAN_ID];
+      if(props.plans && props.plans[planId] && props.plans[planId].pricing) {
+        billingIsYearly = props.plans[planId].pricing!.period === Admin.PlanPricingPeriodEnum.Yearly;
+      }
     }
     this.state = {
       step: 0,
-      plan: plan,
+      planId: planId,
       billingIsYearly: billingIsYearly,
     };
   }
 
   render() {
+    const selectedPlan = this.state.planId && this.props.plans && this.props.plans.find(plan =>
+      plan.planid === this.state.planId);
+
     const plans = this.props.plans
-      ? this.props.plans.filter(plan => (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === Admin.PlanPricingPeriodEnum.Yearly)
+      ? this.props.plans.filter(plan => !!plan.pricing && plan.pricing.period === (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly))
       : [];
 
-    const planStepCompleted = !!this.state.plan;
+    const planStepCompleted = !!this.state.planId && !!selectedPlan;
     const accountStepCompleted = !!this.state.company && !!this.state.name && !!this.state.email && !!this.state.pass;
     const billingStepCompleted = !!this.state.stripe && !!this.state.cardValid && !!this.state.cardExpiryValid && !!this.state.cardCvcValid;
 
@@ -120,36 +125,18 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                   />
                   <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
                     {plans.map((plan, index) => (
-                      <Grid item key={plan.title} xs={12} sm={index === 2 ? 12 : 6} md={4}>
-                        <Card>
-                          <CardHeader
-                            title={plan.title}
-                            titleTypographyProps={{ align: 'center' }}
-                            subheaderTypographyProps={{ align: 'center' }}
-                          />
-                          <CardContent>
-                            <Box display='flex' alignItems='baseline' justifyContent='center'>
-                              <Typography variant="h4" color="textPrimary">{plan.pricing!.price}</Typography>
-                              <Typography variant="h6" color="textSecondary">{plan.pricing!.period === Admin.PlanPricingPeriodEnum.Yearly ? '/Year' : '/Month'}</Typography>
-                            </Box>
-                            {plan.perks.map(perk => (
-                              <div style={{display: 'flex', alignItems: 'center'}}>
-                                <Typography variant="subtitle1">{perk.desc}</Typography>
-                                <Typography variant='body1'>{perk.terms}</Typography>
-                              </div>
-                            ))}
-                          </CardContent>
-                          <CardActions>
-                            <Button fullWidth variant={this.state.plan === plan.title ? 'contained' : 'text'} color='primary' onClick={() => {
-                              this.setState({
-                                plan: plan.title,
-                                step: this.state.step + 1,
-                              });
-                            }}>{this.state.plan === plan.title
-                              ? 'continue'
-                              : 'select'}</Button>
-                          </CardActions>
-                        </Card>
+                      <Grid item key={plan.title} xs={12} sm={6}>
+                        <PricingPlan
+                          plan={plan}
+                          history={this.props.history}
+                          actionTitle={this.state.planId === plan.planid ? 'continue' : 'select'}
+                          actionOnClick={() => this.setState({
+                            planId: plan.planid,
+                            step: this.state.step + 1,
+                          })}
+                          selected={this.state.planId === plan.planid}
+                          expanded
+                        />
                       </Grid>
                     ))}
                   </Grid>
@@ -270,7 +257,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                   <Table>
                     <TableBody>
                       {[
-                        {name: 'Plan', value: this.state.plan ? `${this.state.plan} (${this.state.billingIsYearly ? 'Yearly' : 'Monthly'})` : 'No plan selected', error: !this.state.plan},
+                        {name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Monthly'})` : 'No plan selected', error: !selectedPlan},
                         {name: 'Company', value: this.state.company || 'Missing company name', error: !this.state.company},
                         {name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name},
                         {name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped'},
@@ -333,7 +320,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
       await dispatchAdmin.accountSignupAdmin({signup: {
-          planid: this.state.plan!,
+          planid: this.state.planId!,
           company: this.state.company!,
           name: this.state.name!,
           email: this.state.email!,
