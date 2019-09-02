@@ -34,7 +34,7 @@ interface Props extends ListProps {
 export default class Menu extends Component<Props> {
   render() {
     return (
-      <List component='nav' style={{padding: '0px'}}>
+      <List dense component='nav' style={{padding: '0px'}}>
         {this.props.items.map(item => {
           if(item.type === 'item') {
             return (

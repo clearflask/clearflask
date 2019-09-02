@@ -205,7 +205,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
+        allowSearch: false,
         allowCreate: false,
         panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [articleCategoryId],

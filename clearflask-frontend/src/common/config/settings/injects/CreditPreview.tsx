@@ -33,24 +33,24 @@ class CreditPreview extends Component<Props> {
     const dataRow:React.ReactNode[] = [];
     headerRow.push((
       <TableCell key='credit' align='right' className={this.props.classes.headerCell}>
-        Credit
+        Preview
       </TableCell>
     ));
     dataRow.push((
       <TableCell key='preview' align='right' className={this.props.classes.headerCell}>
-        Preview
+        Value
       </TableCell>
     ));
     const credits = this.props.editor.getConfig().credits;
     this.getEdgeCases().forEach(preview => {
       headerRow.push((
         <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
-          {preview}
+          <CreditView val={preview} credits={credits} />
         </TableCell>
       ));
       dataRow.push((
         <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
-          <CreditView val={preview} credits={credits} />
+          {preview}
         </TableCell>
       ));
     });
