@@ -129,6 +129,7 @@ export interface StatePlans {
   plans:{
     status?:Status;
     plans?:Admin.Plan[];
+    featuresTable?:Admin.FeaturesTable;
   };
 }
 const statePlansDefault = {
@@ -158,6 +159,7 @@ function reducerPlans(state:StatePlans = statePlansDefault, action:Admin.Actions
         plans: {
           status: Status.FULFILLED,
           plans: action.payload.plans,
+          featuresTable: action.payload.featuresTable,
         },
       };
     default:

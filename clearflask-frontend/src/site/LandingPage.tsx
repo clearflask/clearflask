@@ -107,6 +107,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderOnboarding(false)}
         {this.renderAnalytics(true)}
 
+        {/* Feedback loop: collect -> analyze -> implement
+          Notify throughout all stages: discuss, roadmap, notify) */}
+
         {/* Major templates (Feature ranking, blog, knowledge base, bug bounty, forum, FAQ, etc...)
         all-in-one customer feedback */}
         {/* Onboarding, minimal friction (SSO, email, Mobile push, Browser push, anonymous; email,pass,user req/opt)*/}

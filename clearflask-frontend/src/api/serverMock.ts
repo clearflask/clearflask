@@ -15,11 +15,11 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
     ],
   },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
-    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic', pricing: {price: 80, period: Admin.PlanPricingPeriodEnum.Monthly},
+    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic', pricing: {price: 80, period: Admin.PlanPricingPeriodEnum.Quarterly},
     perks: [
       {desc: 'Unlimited users', terms: 'description'},
       {desc: 'Simple user voting', terms: 'description'},
-      {desc: '5 minute credit', terms: 'description'},
+      {desc: '15 minute credit', terms: 'description'},
     ],
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
@@ -32,7 +32,7 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
     ],
   },
   '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A': {
-    planid: '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A', title: 'Analytic', pricing: {price: 450, period: Admin.PlanPricingPeriodEnum.Monthly},
+    planid: '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A', title: 'Analytic', pricing: {price: 450, period: Admin.PlanPricingPeriodEnum.Quarterly},
     perks: [
       {desc: 'Content analytics and search', terms: 'description'},
       {desc: 'Crowd-funding', terms: 'description'},
@@ -50,6 +50,22 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
       {desc: 'Custom SLA', terms: 'description'},
     ],
   },
+};
+const FeaturesTable:Admin.FeaturesTable = {
+  plans: [ 'Basic', 'Analytic', 'Enterprise'],
+  features:[
+    {feature: 'Projects', values: ['1','Unlimited','Unlimited']},
+    {feature: 'Active users', values: ['Unlimited','Unlimited','Unlimited']},
+    {feature: 'User submitted content', values: ['Unlimited','Unlimited','Unlimited']},
+    {feature: 'Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...', values: ['Yes', 'Yes', 'Yes']},
+    {feature: 'Voting and Emoji expressions', values: ['No', 'Yes', 'Yes']},
+    {feature: 'Credit system / Crowd-funding', values: ['No', 'Yes', 'Yes']},
+    {feature: 'Analytics', values: ['No', 'No', 'Yes']},
+    {feature: 'Multi agent access', values: ['No', 'No', 'Yes']},
+    {feature: 'Integrations', values: ['No', 'No', 'Yes']},
+    {feature: 'API access', values: ['No', 'No', 'Yes']},
+    {feature: 'Whitelabel', values: ['No', 'No', 'Yes']},
+  ],
 };
 
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
@@ -86,7 +102,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   plansGet(): Promise<Admin.PlansGetResponse> {
-    return this.returnLater({ plans: Object.values(AvailablePlans) });
+    return this.returnLater({
+      plans: Object.values(AvailablePlans),
+      featuresTable: FeaturesTable,
+    });
   }
   accountBindAdmin(): Promise<Admin.AccountAdmin> {
     throw new Error("Method not implemented.");

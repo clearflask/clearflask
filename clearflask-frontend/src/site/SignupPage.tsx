@@ -94,7 +94,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       plan.planid === this.state.planId);
 
     const plans = this.props.plans
-      ? this.props.plans.filter(plan => !!plan.pricing && plan.pricing.period === (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly))
+      ? this.props.plans.filter(plan => !!plan.pricing && plan.pricing.period === (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Quarterly))
       : [];
 
     const planStepCompleted = !!this.state.planId && !!selectedPlan;
@@ -121,7 +121,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                         color='default'
                       />
                     )}
-                    label={(<FormHelperText component='span'>{this.state.billingIsYearly ? 'Yearly billing' : 'Monthly billing'}</FormHelperText>)}
+                    label={(<FormHelperText component='span'>{this.state.billingIsYearly ? 'Yearly billing' : 'Quarterly billing'}</FormHelperText>)}
                   />
                   <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
                     {plans.map((plan, index) => (
@@ -257,7 +257,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                   <Table>
                     <TableBody>
                       {[
-                        {name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Monthly'})` : 'No plan selected', error: !selectedPlan},
+                        {name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Quarterly'})` : 'No plan selected', error: !selectedPlan},
                         {name: 'Company', value: this.state.company || 'Missing company name', error: !this.state.company},
                         {name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name},
                         {name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped'},

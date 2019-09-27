@@ -45,7 +45,8 @@ class PricingPlan extends Component<Props&WithStyles<typeof styles, true>> {
                 <Typography component='h3'>{
                   this.props.plan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly
                     ? ('$' + (this.props.plan.pricing.price * 12) + ' billed yearly')
-                    : 'billed monthly'}</Typography>
+                    : ('$' + (this.props.plan.pricing.price * 3) + ' billed quarterly')
+                }</Typography>
               </div>
             </React.Fragment>
             ) : (

@@ -25,7 +25,7 @@ components:
             period:
               type: string
               enum:
-                - Monthly
+                - Quarterly
                 - Yearly
         perks:
           type: array
@@ -39,6 +39,30 @@ components:
                 type: string
               terms:
                 type: string
+    FeaturesTable:
+      type: object
+      required:
+        - plans
+        - features
+      properties:
+        plans:
+          type: array
+          items:
+            type: string
+        features:
+          type: array
+          items:
+            type: object
+            required:
+              - feature
+              - values
+            properties:
+              feature:
+                type: string
+              values:
+                type: array
+                items:
+                  type: string
     AccountLogin:
       type: object
       required:
@@ -108,11 +132,14 @@ components:
               type: object
               required:
                 - plans
+                - featuresTable
               properties:
                 plans:
                   type: array
                   items:
                     $ref: 'api-account.yaml#/components/schemas/Plan'
+                featuresTable:
+                  $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
 /admin/account/signup:
   post:
     operationId: accountSignupAdmin

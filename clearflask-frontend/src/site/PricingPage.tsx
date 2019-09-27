@@ -27,6 +27,7 @@ interface Props {
 }
 interface ConnectProps {
   plans?:Admin.Plan[];
+  featuresTable?:Admin.FeaturesTable;
 }
 interface State {
   isYearly:boolean;
@@ -39,7 +40,7 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
   render() {
     const plans = this.props.plans ? this.props.plans
       .filter(plan => !plan.pricing
-        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Monthly) === plan.pricing.period)
+        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Quarterly) === plan.pricing.period)
       : [];
 
     return (
@@ -55,7 +56,7 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 color='default'
               />
             )}
-            label={(<FormHelperText component='span'>{this.state.isYearly ? 'Yearly billing' : 'Monthly billing'}</FormHelperText>)}
+            label={(<FormHelperText component='span'>{this.state.isYearly ? 'Yearly billing' : 'Quarterly billing'}</FormHelperText>)}
           />
         </Container>
         <Container maxWidth='md'>
@@ -80,22 +81,26 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
         <br />
         <br />
         <Container maxWidth='md'>
-          <FeatureList name='Features' planNames={['Starter', 'Pro', 'Whatever']}>
-            <FeatureListItem planContents={['1','Unlimited','Unlimited']} name='Projects' />
-            <FeatureListItem planContents={['Unlimited','Unlimited','Unlimited']} name='Active users' />
-            <FeatureListItem planContents={['Unlimited','Unlimited','Unlimited']} name='User submitted content' />
-            <FeatureListItem planContents={[T,T,T]} name='Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...' />
-            <FeatureListItem planContents={[T,T,T]} name='Voting and Emoji expressions' />
-            <FeatureListItem planContents={[F,T,T]} name='Credit system / Crowd-funding' />
-            <FeatureListItem planContents={[F,T,T]} name='Analytics' />
-            <FeatureListItem planContents={[F,F,T]} name='Multi agent access' />
-            <FeatureListItem planContents={[F,F,T]} name='Integrations' />
-            <FeatureListItem planContents={[F,F,T]} name='API access' />
-            <FeatureListItem planContents={[F,F,T]} name='Whitelabel' />
-          </FeatureList>
+          {this.props.featuresTable && (
+            <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
+              {this.props.featuresTable.features.map(feature => (
+                <FeatureListItem planContents={this.mapFeaturesTableValues(feature.values)} name={feature.feature} />
+              ))}
+            </FeatureList>
+          )}
         </Container>
       </div>
     );
+  }
+
+  mapFeaturesTableValues(values:string[]):(string|boolean)[] {
+    return values.map(value => {
+      switch(value) {
+        case 'Yes': return T;
+        case 'No': return F;
+        default: return value;
+      }
+    });
   }
 }
 
@@ -114,9 +119,9 @@ const FeatureList = (props:{
         <TableHead>
           <TableRow>
             <TableCell key='feature'><Typography variant='h6'>{props.name}</Typography></TableCell>
-            <TableCell key='plan1'>Starter</TableCell>
-            <TableCell key='plan2'>Full</TableCell>
-            <TableCell key='plan3'>Enterprise</TableCell>
+            {props.planNames.map(planName => (
+              <TableCell key={planName}>{planName}</TableCell>
+            ))}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -153,5 +158,8 @@ export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) 
   if(state.plans.plans.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
-  return { plans: state.plans.plans.plans };
+  return {
+    plans: state.plans.plans.plans,
+    featuresTable: state.plans.plans.featuresTable,
+  };
 })(withStyles(styles, { withTheme: true })(PricingPage));
