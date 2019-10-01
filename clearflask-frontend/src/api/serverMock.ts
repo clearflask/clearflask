@@ -113,6 +113,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     throw new Error("Method not implemented.");
   }
+  accountLogoutAdmin(): Promise<void> {
+    this.loggedInAccount = undefined;
+    return this.returnLater(undefined);
+  }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const plan = AvailablePlans[request.signup.planid];
     if(!plan) return this.throwLater(404, 'Requested plan could not be found');

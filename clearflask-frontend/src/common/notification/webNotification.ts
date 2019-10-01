@@ -1,5 +1,4 @@
-import { isProd, detectEnv, Environment } from "../util/detectEnv";
-import { string } from "prop-types";
+import { detectEnv, Environment } from "../util/detectEnv";
 
 const KEY_PUBLIC = 'TODO';
 const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';

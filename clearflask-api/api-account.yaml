@@ -184,3 +184,10 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/logout:
+  post:
+    operationId: accountLogoutAdmin
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

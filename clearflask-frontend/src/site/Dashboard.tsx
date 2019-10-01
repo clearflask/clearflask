@@ -2,94 +2,75 @@ import React, { Component } from 'react';
 import * as ConfigEditor from '../common/config/configEditor';
 import Menu, { MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
-import { match } from 'react-router';
-import { History, Location } from 'history';
+import { RouteComponentProps } from 'react-router';
 import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
-import { Typography } from '@material-ui/core';
-import { Server } from '../api/server';
+import { Typography, IconButton } from '@material-ui/core';
 import * as AdminClient from '../api/admin';
 import { detectEnv, Environment } from '../common/util/detectEnv';
-import ServerAdmin from '../api/serverAdmin';
+import ServerAdmin, { ReduxStateAdmin, Project } from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
 import Templater from '../common/config/configTemplater';
 import DataMock from '../api/dataMock';
-import ServerMock from '../api/serverMock';
 import AddIcon from '@material-ui/icons/Add';
 import randomUuid from '../common/util/uuid';
-
-export interface Project {
-  configVersion:string;
-  editor:ConfigEditor.Editor;
-  server:Server;
-}
+import LogoutIcon from '@material-ui/icons/ExitToApp';
+import { connect } from 'react-redux';
+import { Status } from '../api/server';
+import ErrorPage from '../app/ErrorPage';
 
 interface Props {
-  // Router matching
-  match:match;
-  history:History;
-  location:Location;
+}
+interface ConnectProps {
+  configsStatus?:Status;
+  configs?:AdminClient.VersionedConfigAdmin[];
 }
 
 interface State {
   currentPagePath:ConfigEditor.Path;
 }
 
-export default class Dashboard extends Component<Props, State> {
-  projects:{[projectId:string]: Project} = {};
-  
-  constructor(props:Props) {
+class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State> {
+
+  constructor(props) {
     super(props);
 
-    this.state = {currentPagePath: []}
-
-    if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      const projectId = 'mock';
-      ServerAdmin.get().dispatchAdmin()
-        .then(d => d.projectCreateAdmin({projectId: projectId})
-          .then(project =>{
-            const editor = new ConfigEditor.EditorImpl(project.config.config);
-            Templater.get(editor).demo();
-            return d.configSetAdmin({
-              projectId: projectId,
-              versionLast: project.config.version,
-              config: editor.getConfig(),
-            });
-          })
-          .then(() => DataMock.get(projectId).mockAll())
-          .then(() => d.configGetAllAndAccountBindAdmin()))
-        .then((result:AdminClient.ConfigAllAndAccountResult) => result.configs)
-        .then(this.loadProjects.bind(this));
-    } else {
-      ServerAdmin.get().dispatchAdmin()
-        .then(d => d.configGetAllAndAccountBindAdmin())
-        .then((result:AdminClient.ConfigAllAndAccountResult) => result.configs)
-        .then(this.loadProjects.bind(this));
+    if(!props.configsStatus) {
+      if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+        const projectId = 'mock';
+        ServerAdmin.get().dispatchAdmin()
+          .then(d => d.projectCreateAdmin({projectId: projectId})
+            .then(project =>{
+              const editor = new ConfigEditor.EditorImpl(project.config.config);
+              Templater.get(editor).demo();
+              return d.configSetAdmin({
+                projectId: projectId,
+                versionLast: project.config.version,
+                config: editor.getConfig(),
+              });
+            })
+            .then(() => DataMock.get(projectId).mockAll())
+            .then(() => d.configGetAllAndAccountBindAdmin()));
+      } else {
+        ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndAccountBindAdmin());
+      }
     }
-  }
 
-  loadProjects(configs:AdminClient.VersionedConfigAdmin[]) {
-    configs.forEach(versionedConfig => this.loadProject(versionedConfig, true));
-    this.forceUpdate();
-  }
-
-  loadProject(versionedConfig:AdminClient.VersionedConfigAdmin, suppressUpdate:boolean = false) {
-    const server = ServerAdmin.get().createServer(versionedConfig.config.projectId);
-    const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
-    server.subscribeToChanges(editor, 200);
-    this.projects[versionedConfig.config.projectId] = {
-      configVersion: versionedConfig.version,
-      editor: editor,
-      server: server,
-    };
-    if(!suppressUpdate) this.forceUpdate();
+    this.state = {currentPagePath: []};
   }
 
   render() {
+    if(this.props.configsStatus === Status.REJECTED) {
+      return (<ErrorPage msg='Failed to load, please refresh.' />);
+    } else if(this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
+      return 'please login';
+    }
+    const projects = this.props.configs.map(c => ServerAdmin.get().getProject(c));
+
     const activePath = this.props.match.params['path'] || '';
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
-    const activeProject = this.projects[activePath];
+    const activeProject = projects.find(p => p.projectId === activePath);
     var page;
     var preview;
     var crumbs:{name:string, slug:string}[]|undefined;
@@ -107,7 +88,15 @@ export default class Dashboard extends Component<Props, State> {
         crumbs = [{name: 'Billing', slug: activePath}];
         break;
       default:
-        const activeProject = this.projects[activePath];
+        if(activeProject === undefined) {
+          page = (
+            <Message innerStyle={{margin: '40px auto'}}
+            message='Oops, cannot find project'
+              variant='error'
+            />
+          );
+          break;
+        }
         try {
           var currentPage = activeProject.editor.getPage(activeSubPath);
         } catch(ex) {
@@ -150,6 +139,15 @@ export default class Dashboard extends Component<Props, State> {
             Dashboard
           </Typography>
         }
+        toolbarRight={
+          <IconButton
+            color="inherit"
+            aria-label="Preview changes"
+            onClick={() => ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin())}
+          >
+            <LogoutIcon />
+          </IconButton>
+        }
         preview={preview}
         menu={(
           <Menu
@@ -166,8 +164,7 @@ export default class Dashboard extends Component<Props, State> {
               { type: 'item', slug: 'projects', name: 'Projects', offset: 1 },
               { type: 'item', slug: 'billing', name: 'Billing', offset: 1 },
               { type: 'heading', text: 'Project' },
-              ...(Object.keys(this.projects).map(projectId => {
-                const project = this.projects[projectId];
+              ...(projects.map(project => {
                 const menuProject:MenuProject = {
                   type: 'project',
                   projectId: project.server.getProjectId(),
@@ -183,8 +180,7 @@ export default class Dashboard extends Component<Props, State> {
                   </span>
                 ), onClick: () => {
                   ServerAdmin.get().dispatchAdmin().then(d => {
-                    d.projectCreateAdmin({ projectId: 'App-' + randomUuid().substring(0,6) })
-                      .then(c => this.loadProject(c.config));
+                    d.projectCreateAdmin({ projectId: 'App-' + randomUuid().substring(0,6) });
                   });
               } },
             ]}
@@ -213,3 +209,12 @@ export default class Dashboard extends Component<Props, State> {
     this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
   }
 }
+
+
+export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
+  const connectProps:ConnectProps = {
+    configsStatus: state.configs.configs.status,
+    configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
+  };
+  return connectProps;
+}, null, null, { forwardRef: true })(Dashboard);

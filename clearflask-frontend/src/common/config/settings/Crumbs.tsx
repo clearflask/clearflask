@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import { Breadcrumbs, Link } from '@material-ui/core';
-import { Project } from '../../../site/Dashboard';
+import { Project } from '../../../api/serverAdmin';
 
 interface Props {
   crumbs?:{name:string, slug:string}[];

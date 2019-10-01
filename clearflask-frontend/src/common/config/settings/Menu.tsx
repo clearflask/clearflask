@@ -42,7 +42,7 @@ export default class Menu extends Component<Props> {
                 if(item.onClick) {
                   item.onClick();
                 }
-                if(item.slug) {
+                if(item.slug !== undefined) {
                   this.props.pageClicked(item.slug);
                 }
               }}>

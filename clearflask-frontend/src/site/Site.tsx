@@ -11,6 +11,8 @@ import Promised from '../common/Promised';
 import App from '../app/App';
 import PricingPage from './PricingPage';
 import SignupPage from './SignupPage';
+import { Provider } from 'react-redux';
+import ServerAdmin from '../api/serverAdmin';
 
 interface Props {
   // Router matching
@@ -35,8 +37,8 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
   render() {
     return (
       <React.Fragment>
-        <HideOnScroll>
-          <AppBar color='inherit' elevation={1}>
+        {/* <HideOnScroll> */}
+          <AppBar position='relative' color='inherit' elevation={1}>
             <Container maxWidth='md'>
               <Toolbar className={this.props.classes.toolbar}>
                 <Typography variant="h6">Clear Flask</Typography>
@@ -48,7 +50,7 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
               </Toolbar>
             </Container>
           </AppBar>
-        </HideOnScroll>
+        {/* </HideOnScroll> */}
         <div className={this.props.classes.appBarSpacer} />
         <MuiAnimatedSwitch>
           <Route exact path={'/pricing'} render={props => (

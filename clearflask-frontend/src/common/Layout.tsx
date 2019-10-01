@@ -99,8 +99,9 @@ class Layout extends Component<Props, State> {
             >
               <MenuIcon />
             </IconButton>
-            {this.props.toolbarLeft} 
+            {this.props.toolbarLeft}
             <div className={classes.grow} />
+            {this.props.toolbarRight}
             {this.props.preview && (
               <IconButton
                 color="inherit"

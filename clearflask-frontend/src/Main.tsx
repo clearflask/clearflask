@@ -15,6 +15,7 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Provider } from 'react-redux';
 import ServerAdmin from './api/serverAdmin';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
+import { detectEnv } from './common/util/detectEnv';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -41,7 +42,6 @@ class Main extends Component {
   render() {
     return (
       // <React.StrictMode>
-      <Provider store={ServerAdmin.get().getStore()}>
       <MuiThemeProvider theme={theme}>
       <MuiSnackbarProvider>
         <CssBaseline />
@@ -50,13 +50,19 @@ class Main extends Component {
           <Router>
             <Switch>
               <Route exact path="/" render={props => (
-                <Site {...props} />
+                <Provider store={ServerAdmin.get().getStore()}>
+                  <Site {...props} />
+                </Provider>
               )} />
               <Route path="/(pricing|demo|signup)" render={props => (
-                <Site {...props} />
+                <Provider store={ServerAdmin.get().getStore()}>
+                  <Site {...props} />
+                </Provider>
               )} />
               <Route path="/dashboard/:path?/:subPath*" render={props => (
-                <Dashboard {...props} />
+                <Provider store={ServerAdmin.get().getStore()}>
+                  <Dashboard {...props} />
+                </Provider>
               )} />
               <Route path="/:projectId" render={props => (
                 <App {...props} />
@@ -66,7 +72,6 @@ class Main extends Component {
         </div>
       </MuiSnackbarProvider>
       </MuiThemeProvider>
-      </Provider>
       // </React.StrictMode>
     );
   }
