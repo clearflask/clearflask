@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { match, Route } from 'react-router';
+import { match, Route, RouteComponentProps } from 'react-router';
 import { History, Location } from 'history';
 import LandingPage from './LandingPage';
 import { Slide, AppBar, Container, Toolbar, Typography, Button } from '@material-ui/core';
@@ -11,15 +11,7 @@ import Promised from '../common/Promised';
 import App from '../app/App';
 import PricingPage from './PricingPage';
 import SignupPage from './SignupPage';
-import { Provider } from 'react-redux';
-import ServerAdmin from '../api/serverAdmin';
-
-interface Props {
-  // Router matching
-  match:match;
-  history:History;
-  location:Location;
-}
+import SigninPage from './SigninPage';
 
 const styles = (theme:Theme) => createStyles({
   toolbar: {
@@ -31,7 +23,7 @@ const styles = (theme:Theme) => createStyles({
   appBarSpacer: theme.mixins.toolbar,
 });
 
-class Site extends Component<Props&WithStyles<typeof styles, true>> {
+class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>> {
   projectPromise:undefined|Promise<Project>;
 
   render() {
@@ -53,6 +45,9 @@ class Site extends Component<Props&WithStyles<typeof styles, true>> {
         {/* </HideOnScroll> */}
         <div className={this.props.classes.appBarSpacer} />
         <MuiAnimatedSwitch>
+          <Route exact path={'/login'} render={props => (
+            <SigninPage {...props} />
+          )} />
           <Route exact path={'/pricing'} render={props => (
             <PricingPage {...props} />
           )} />

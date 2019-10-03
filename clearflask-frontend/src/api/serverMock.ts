@@ -76,7 +76,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   hasLatency:boolean = false;
 
   // Mock account login (server-side cookie data)
-  loggedInAccount?:Admin.AccountAdmin = undefined;
+  loggedIn:boolean = false;
+  account?:Admin.AccountAdmin = undefined;
+  accountPass?:string = undefined;
   // Mock project database
   readonly db:{
     [projectId:string]: {
@@ -108,13 +110,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   accountBindAdmin(): Promise<Admin.AccountAdmin> {
-    throw new Error("Method not implemented.");
+    if(!this.loggedIn || !this.account) return this.throwLater(403, 'Not logged in');
+    return this.returnLater(this.account);
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
-    throw new Error("Method not implemented.");
+    if(!this.account
+      || request.credentials.email !== this.account.email
+      || request.credentials.password !== this.accountPass) {
+      return this.throwLater(403, 'Username or email incorrect');
+    }
+    this.loggedIn = true;
+    return this.returnLater(this.account);
   }
   accountLogoutAdmin(): Promise<void> {
-    this.loggedInAccount = undefined;
+    this.loggedIn = false;
     return this.returnLater(undefined);
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
@@ -127,7 +136,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       email: request.signup.email,
       phone: request.signup.phone,
     };
-    this.loggedInAccount = account;
+    this.accountPass = request.signup.password;
+    this.account = account;
+    this.loggedIn = true;
     return this.returnLater(account);
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
@@ -420,11 +431,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.getProject(request.projectId).config);
   }
-  configGetAllAndAccountBindAdmin(): Promise<Admin.ConfigAllAndAccountResult> {
-    if(!this.loggedInAccount) return this.throwLater(404, 'Not logged in');
+  configGetAllAdmin(): Promise<Admin.ConfigGetAllResult> {
+    if(!this.loggedIn) return this.throwLater(403, 'Not logged in');
     return this.returnLater({
       configs: Object.values(this.db).map(p => p.config),
-      account: this.loggedInAccount,
     });
   }
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {

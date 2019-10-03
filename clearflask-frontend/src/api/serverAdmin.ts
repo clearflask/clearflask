@@ -167,12 +167,12 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
           account: action.payload,
         },
       };
-    case Admin.configGetAllAndAccountBindAdminActionStatus.Fulfilled:
+    case Admin.accountBindAdminActionStatus.Fulfilled:
       return {
         ...state,
         account: {
           status: Status.FULFILLED,
-          account: action.payload.account,
+          account: action.payload,
         },
       };
     case Admin.accountLogoutAdminActionStatus.Pending:
@@ -237,7 +237,7 @@ const stateConfigsDefault = {
 };
 function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.Actions):StateConfigs {
   switch (action.type) {
-    case Admin.configGetAllAndAccountBindAdminActionStatus.Pending:
+    case Admin.configGetAllAdminActionStatus.Pending:
       return {
         ...state,
         configs: {
@@ -245,7 +245,7 @@ function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.A
           status: Status.PENDING,
         },
       };
-    case Admin.configGetAllAndAccountBindAdminActionStatus.Pending:
+    case Admin.configGetAllAdminActionStatus.Rejected:
       return {
         ...state,
         configs: {
@@ -253,7 +253,7 @@ function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.A
           status: Status.REJECTED,
         },
       };
-    case Admin.configGetAllAndAccountBindAdminActionStatus.Fulfilled:
+    case Admin.configGetAllAdminActionStatus.Fulfilled:
       return {
         ...state,
         configs: {

@@ -7,9 +7,6 @@ import BasePage from './BasePage';
 import { Provider } from 'react-redux';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import ServerMock from '../api/serverMock';
-import DataMock from '../api/dataMock';
-import Templater from '../common/config/configTemplater';
-import * as ConfigEditor from '../common/config/configEditor';
 import AppThemeProvider from './AppThemeProvider';
 import {
   Route,
@@ -46,35 +43,16 @@ class App extends Component<Props> {
 
     this.state = {};
 
-    var supressConfigGetAndBind = false;
     const projectId = this.props.match.params['projectId'];
     if(this.props.serverOverride) { 
       this.server = this.props.serverOverride;
     } else if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      supressConfigGetAndBind = true;
       this.server = new Server(projectId, ServerMock.get());
-      this.server.dispatchAdmin()
-        .then(d => d.projectCreateAdmin({projectId: projectId})
-          .then(project =>{
-            const editor = new ConfigEditor.EditorImpl(project.config.config);
-            Templater.get(editor).demo();
-            return d.configSetAdmin({
-              projectId: projectId,
-              versionLast: project.config.version,
-              config: editor.getConfig(),
-            });
-          })
-          .then(() => DataMock.get(projectId).mockAll())
-          .then(() => {
-            this.server.dispatch().configGetAndUserBind({projectId: projectId});
-          })
-          .then(() => {if(projectId === 'mock-latency') ServerMock.get().setLatency(true)})
-        );
     } else {
       this.server = new Server(projectId);
     }
 
-    if(!supressConfigGetAndBind && this.server.getStore().getState().conf.status === undefined) {
+    if(this.server.getStore().getState().conf.status === undefined) {
       this.server.dispatch().configGetAndUserBind({projectId: this.server.getProjectId()});
     }
   }

@@ -15,7 +15,6 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Provider } from 'react-redux';
 import ServerAdmin from './api/serverAdmin';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
-import { detectEnv } from './common/util/detectEnv';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -54,7 +53,7 @@ class Main extends Component {
                   <Site {...props} />
                 </Provider>
               )} />
-              <Route path="/(pricing|demo|signup)" render={props => (
+              <Route path="/(pricing|demo|signup|login)" render={props => (
                 <Provider store={ServerAdmin.get().getStore()}>
                   <Site {...props} />
                 </Provider>

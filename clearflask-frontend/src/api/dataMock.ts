@@ -75,9 +75,9 @@ class DataMock {
         planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7',
         company: 'A.C.M.E. LLC',
         name: 'John Doe',
-        email: 'john.doe@example.com',
+        email: 'a@a.a',
         phone: '89032789',
-        password: 'password',
+        password: 'pass',
         paymentToken: 'fakeToken',
       }
     });

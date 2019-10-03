@@ -2,27 +2,25 @@ import React, { Component } from 'react';
 import * as ConfigEditor from '../common/config/configEditor';
 import Menu, { MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
-import { RouteComponentProps } from 'react-router';
+import { RouteComponentProps, Redirect } from 'react-router';
 import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
 import { Typography, IconButton } from '@material-ui/core';
 import * as AdminClient from '../api/admin';
-import { detectEnv, Environment } from '../common/util/detectEnv';
 import ServerAdmin, { ReduxStateAdmin, Project } from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
-import Templater from '../common/config/configTemplater';
-import DataMock from '../api/dataMock';
 import AddIcon from '@material-ui/icons/Add';
 import randomUuid from '../common/util/uuid';
-import LogoutIcon from '@material-ui/icons/ExitToApp';
 import { connect } from 'react-redux';
 import { Status } from '../api/server';
 import ErrorPage from '../app/ErrorPage';
+import LogoutIcon from '../common/icon/LogoutIcon';
 
 interface Props {
 }
 interface ConnectProps {
+  isLoggedIn?:boolean;
   configsStatus?:Status;
   configs?:AdminClient.VersionedConfigAdmin[];
 }
@@ -36,35 +34,21 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
   constructor(props) {
     super(props);
 
-    if(!props.configsStatus) {
-      if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-        const projectId = 'mock';
-        ServerAdmin.get().dispatchAdmin()
-          .then(d => d.projectCreateAdmin({projectId: projectId})
-            .then(project =>{
-              const editor = new ConfigEditor.EditorImpl(project.config.config);
-              Templater.get(editor).demo();
-              return d.configSetAdmin({
-                projectId: projectId,
-                versionLast: project.config.version,
-                config: editor.getConfig(),
-              });
-            })
-            .then(() => DataMock.get(projectId).mockAll())
-            .then(() => d.configGetAllAndAccountBindAdmin()));
-      } else {
-        ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndAccountBindAdmin());
-      }
+    if(props.isLoggedIn && !props.configsStatus) {
+      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
     }
 
     this.state = {currentPagePath: []};
   }
 
   render() {
-    if(this.props.configsStatus === Status.REJECTED) {
+    if(!this.props.isLoggedIn) {
+      return (<Redirect to={{
+        pathname: "/login",
+        state: {ADMIN_LOGIN_REDIRECT_TO: this.props.location}
+      }} />);
+    } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
       return (<ErrorPage msg='Failed to load, please refresh.' />);
-    } else if(this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
-      return 'please login';
     }
     const projects = this.props.configs.map(c => ServerAdmin.get().getProject(c));
 
@@ -213,6 +197,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
 
 export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
   const connectProps:ConnectProps = {
+    isLoggedIn: state.account.account.status === Status.FULFILLED,
     configsStatus: state.configs.configs.status,
     configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
   };

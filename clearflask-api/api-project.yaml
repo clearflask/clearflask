@@ -703,7 +703,7 @@ components:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:
   get:
-    operationId: configGetAllAndAccountBindAdmin
+    operationId: configGetAllAdmin
     tags: [ProjectAdmin]
     parameters:
     responses:
@@ -711,20 +711,15 @@ components:
         content:
           application/json:
             schema:
-              title: ConfigAllAndAccountResult
+              title: ConfigGetAllResult
               type: object
               required:
                 - configs
-                - account
               properties:
                 configs:
                   type: array
                   items:
                     $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
-                account:
-                  $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/admin:
   post:
     operationId: projectCreateAdmin
