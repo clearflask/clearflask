@@ -1,4 +1,4 @@
-import Schema from '../../api/schema/schema-1.0.0.json';
+import Schema from '../../api/schema/schema.json';
 import { Config } from '../../api/admin/models/Config.js';
 import randomUuid from '../util/uuid';
 import { ConfigAdmin } from '../../api/admin/index.js';

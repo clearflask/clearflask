@@ -45,7 +45,8 @@
                 <configuration>
                     <descriptors>
                         <descriptor>${project.basedir}/src/main/assembly/schema.xml</descriptor>
-                        <descriptor>${project.basedir}/src/main/assembly/frontend.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/frontend-admin.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/frontend-client.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/docs.xml</descriptor>
                     </descriptors>
                 </configuration>

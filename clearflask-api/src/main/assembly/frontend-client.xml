@@ -1,19 +1,15 @@
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
-    <id>frontend-admin</id>
+    <id>frontend-client</id>
     <includeBaseDirectory>false</includeBaseDirectory>
     <formats>
         <format>tar.gz</format>
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${openapi.targetDirectory}/frontend-admin</directory>
-            <outputDirectory>/admin</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${openapi.targetDirectory}/frontend-client</directory>
-            <outputDirectory>/client</outputDirectory>
+            <directory>${openapi.targetDirectory}/frontend-client/src</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

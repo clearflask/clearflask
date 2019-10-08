@@ -13,7 +13,7 @@ function isBeta():boolean {
     if(!isProd()) {
       betaCache = true;
     } else {
-      betaCache = location.search.substr(1).split("&").includes('beta');
+      betaCache = window.location.search.substr(1).split("&").includes('beta');
     }
   }
   return betaCache;
@@ -21,7 +21,7 @@ function isBeta():boolean {
 
 function detectEnv():Environment {
   if(envCache === undefined) {
-    if(location.hostname.match('clearflask.com')) {
+    if(window.location.hostname.match('clearflask.com')) {
       envCache = Environment.PRODUCTION;
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       envCache = Environment.DEVELOPMENT_FRONTEND;
