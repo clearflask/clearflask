@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TableHead, TableRow, TableCell, Checkbox, Paper, Button, withStyles, Theme, createStyles, WithStyles } from '@material-ui/core';
-import Property from './Property';
-import TableProp from './TableProp';
+import { Typography, Paper, Button, withStyles, Theme, createStyles, WithStyles } from '@material-ui/core';
 import Templater from '../configTemplater';
 
 const styles = (theme: Theme) => createStyles({

@@ -1,0 +1,22 @@
+package {{package}};
+
+import com.google.gson.annotations.SerializedName;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.time.OffsetDateTime;
+import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+{{#models}}
+{{#model}}
+{{#isEnum}}
+{{>enumOuterClass}}
+{{/isEnum}}
+{{^isEnum}}
+{{>pojo}}
+{{/isEnum}}
+{{/model}}
+{{/models}}

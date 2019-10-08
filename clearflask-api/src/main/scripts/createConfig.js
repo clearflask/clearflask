@@ -1,8 +1,8 @@
 const SwaggerParser = require('swagger-parser');
 const fs = require('fs');
 
-const SPEC_LOCATION = './api.yaml';
-const SAVE_LOCATION = '../clearflask-frontend/src/api/schema';
+const SPEC_LOCATION = process.argv[2];
+const SAVE_LOCATION = process.argv[3];
 const CONF_PATH = [
   'paths',
   '/project/{projectId}/admin/config',
@@ -39,7 +39,7 @@ SwaggerParser.dereference(SPEC_LOCATION, function(err, api) {
         process.exit(3);
       }
 
-      filePath = `${SAVE_LOCATION}/schema-${api.info.version}.json`;
+      filePath = `${SAVE_LOCATION}/schema.json`;
       fs.writeFile(filePath, JSON.stringify(configSchema), function(err) {
         if(err) {
           console.log('Failed writing config schema to file %s. Err: %s', filePath, err);

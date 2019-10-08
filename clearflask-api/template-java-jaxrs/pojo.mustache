@@ -1,0 +1,22 @@
+{{#discriminator}}{{>typeInfoAnnotation}}{{/discriminator}}{{#description}}
+    /**
+    * {{{description}}}
+    */
+{{/description}}
+@Getter
+@ToString(callSuper = true)
+@EqualsAndHashCode()
+public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
+{{#vars}}{{#isEnum}}{{^isContainer}}
+    {{>enumClass}}{{/isContainer}}{{#isContainer}}{{#mostInnerItems}}
+    {{>enumClass}}{{/mostInnerItems}}{{/isContainer}}{{/isEnum}}
+{{#description}}
+    /**
+    * {{{description}}}
+    */
+{{/description}}
+    @SerializedName("{{name}}")
+{{#isContainer}}    private final {{{datatypeWithEnum}}} {{name}} = {{#required}}{{{defaultValue}}}{{/required}}{{^required}}null{{/required}};
+{{/isContainer}}{{^isContainer}}    private final {{{datatypeWithEnum}}} {{name}} = {{#defaultValue}}{{{.}}}{{/defaultValue}}{{^defaultValue}}null{{/defaultValue}};
+{{/isContainer}}{{/vars}}
+}
