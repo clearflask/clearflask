@@ -24,12 +24,12 @@ npm-run-dev-frontend:
 
 tomcat-run-dev:
 	docker run --rm --name clearflask-webserver \
-	-e clearflask_ENVIRONMENT=DEVELOPMENT_LOCAL \
+	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-p 80:8080 \
 	-v `pwd`/clearflask-server/target/clearflask-server-0.1:/usr/local/tomcat/webapps/ROOT \
 	-v `pwd`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	us.gcr.io/com-smotana-clearflask/clearflask-webserver
+	tomcat:9-jre10-slim
 
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \
