@@ -1,16 +1,21 @@
 package com.smotana.clearflask.web.filter;
 
-import com.smotana.clearflask.core.VeruvInjector;
+import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 
 @Slf4j
 public class NoCacheFilter implements Filter {
 
     public NoCacheFilter() {
-        VeruvInjector.INSTANCE.get().injectMembers(this);
+        ServiceInjector.INSTANCE.get().injectMembers(this);
     }
 
     public void doFilter(ServletRequest request, ServletResponse response,

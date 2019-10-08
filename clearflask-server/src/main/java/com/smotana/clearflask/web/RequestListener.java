@@ -7,7 +7,7 @@ import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
-public class VeruvRequestListener implements ServletRequestListener {
+public class RequestListener implements ServletRequestListener {
     public static final String REMOTE_ADDR_ATTR = "remoteAddr";
 
     @Override

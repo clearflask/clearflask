@@ -2,12 +2,8 @@ package com.smotana.clearflask.web.filter;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
-import com.smotana.clearflask.core.ClearFlaskInjector;
-import com.smotana.clearflask.core.VeruvInjector;
-
-
-
- import lombok.extern.slf4j.Slf4j;
+import com.smotana.clearflask.core.ServiceInjector;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -17,10 +13,10 @@ import javax.servlet.http.HttpServletResponse;
 public class HttpRedirectorFilter implements Filter {
 
     @Inject
-    private ClearFlaskInjector.Environment env;
+    private ServiceInjector.Environment env;
 
     public HttpRedirectorFilter() {
-        ClearFlaskInjector.INSTANCE.get().injectMembers(this);
+        ServiceInjector.INSTANCE.get().injectMembers(this);
     }
 
     public void doFilter(ServletRequest request, ServletResponse response,

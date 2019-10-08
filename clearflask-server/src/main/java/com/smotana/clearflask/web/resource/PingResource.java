@@ -14,7 +14,7 @@ import javax.ws.rs.core.MediaType;
 @Slf4j
 @Singleton
 @Path("/")
-public class PingResource extends AbstractVeruvResource {
+public class PingResource extends AbstractClearflaskResource {
 
     @Context
     private HttpServletRequest request;

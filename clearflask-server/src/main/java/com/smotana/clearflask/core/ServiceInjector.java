@@ -2,7 +2,11 @@ package com.smotana.clearflask.core;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ServiceManager;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.convert.ConfigValueConverters;
@@ -13,7 +17,7 @@ import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.GsonProvider;
-import com.smotana.clearflask.web.api.AccountAdminResource;
+import com.smotana.clearflask.web.resource.api.AccountResource;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +27,7 @@ import java.time.Duration;
 
 @Slf4j
 @NoArgsConstructor
-public enum ClearFlaskInjector {
+public enum ServiceInjector {
     INSTANCE;
 
     public enum Environment {
@@ -46,7 +50,7 @@ public enum ClearFlaskInjector {
 
     public Injector get() {
         if (injector == null) {
-            synchronized (ClearFlaskInjector.class) {
+            synchronized (ServiceInjector.class) {
                 if (injector == null) {
                     Environment env = detectEnvironment();
                     log.info("Detected environment {}", env.name());
@@ -96,7 +100,7 @@ public enum ClearFlaskInjector {
                 bind(Duration.class).annotatedWith(Names.named(FileDynamicConfigSource.POLL_INTERVAL_NAME)).toInstance(Duration.ofSeconds(10));
 
                 // API endpoints
-                bind(AccountAdminResource.class);
+                bind(AccountResource.class);
 
                 switch (env) {
                     case UNIT_TEST:
