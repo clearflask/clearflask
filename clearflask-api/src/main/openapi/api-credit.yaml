@@ -1,10 +1,9 @@
-
 components:
   schemas:
     Balance:
       type: object
       required:
-        - balance
+      - balance
       properties:
         balance:
           type: number
@@ -28,16 +27,16 @@ components:
       required:
     TransactionSearchAdmin:
       allOf:
-        - $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
-        - type: object
-          properties:
-            filterUserIds:
-              type: array
-              items:
-                type: string
-            filterTargetId:
+      - $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
+      - type: object
+        properties:
+          filterUserIds:
+            type: array
+            items:
               type: string
-          required:
+          filterTargetId:
+            type: string
+        required:
     Transaction:
       type: object
       properties:
@@ -66,16 +65,16 @@ components:
           description: Optional user facing explanation of the transaction.
           type: string
       required:
-        - userId
-        - transactionId
-        - created
-        - amount
-        - balance
-        - transactionType
+      - userId
+      - transactionId
+      - created
+      - amount
+      - balance
+      - transactionType
     TransactionCreateAdmin:
       type: object
       required:
-        - amount
+      - amount
       properties:
         amount:
           type: number
@@ -85,10 +84,10 @@ components:
     TransactionType:
       type: string
       enum:
-        - Vote
-        - Income
-        - Adjustment
-        - Other
+      - Vote
+      - Income
+      - Adjustment
+      - Other
       description: >-
         Transaction type
         * Vote - Balance changes due to funding an idea
@@ -101,25 +100,25 @@ components:
     operationId: transactionSearch
     tags: [Credit]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
     responses:
       '200':
         content:
@@ -137,28 +136,28 @@ components:
                 balance:
                   $ref: 'api-credit.yaml#/components/schemas/Balance'
               required:
-                - results
-                - balance
+              - results
+              - balance
 /project/{projectId}/admin/user/{userId}/transaction:
   post:
     operationId: transactionCreateAdmin
     tags: [CreditAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: transaction
-        in: query
-        required: true
-        schema:
-          $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: transaction
+      in: query
+      required: true
+      schema:
+        $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
     responses:
       '200':
         content:
@@ -170,20 +169,20 @@ components:
     operationId: transactionSearchAdmin
     tags: [CreditAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-credit.yaml#/components/schemas/TransactionSearchAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-credit.yaml#/components/schemas/TransactionSearchAdmin'
     responses:
       '200':
         content:
@@ -201,4 +200,4 @@ components:
                 balance:
                   $ref: 'api-credit.yaml#/components/schemas/Balance'
               required:
-                - results
+              - results

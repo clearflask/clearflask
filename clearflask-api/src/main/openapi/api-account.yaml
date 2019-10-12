@@ -1,13 +1,12 @@
-
 components:
   schemas:
     Plan:
       type: object
       required:
-        - planid
-        - title
-        - period
-        - perks
+      - planid
+      - title
+      - period
+      - perks
       properties:
         planid:
           type: string
@@ -17,23 +16,25 @@ components:
         pricing:
           type: object
           required:
-            - price
-            - period
+          - price
+          - period
           properties:
             price:
-              type: number
+              type: integer
+              format: int64
             period:
               type: string
               enum:
-                - Quarterly
-                - Yearly
+              - Quarterly
+              - Yearly
         perks:
           type: array
           items:
+            title: PlanPerk
             type: object
             required:
-              - desc
-              - terms
+            - desc
+            - terms
             properties:
               desc:
                 type: string
@@ -42,8 +43,8 @@ components:
     FeaturesTable:
       type: object
       required:
-        - plans
-        - features
+      - plans
+      - features
       properties:
         plans:
           type: array
@@ -54,8 +55,8 @@ components:
           items:
             type: object
             required:
-              - feature
-              - values
+            - feature
+            - values
             properties:
               feature:
                 type: string
@@ -66,8 +67,8 @@ components:
     AccountLogin:
       type: object
       required:
-        - email
-        - password
+      - email
+      - password
       properties:
         email:
           type: string
@@ -76,12 +77,12 @@ components:
     AccountSignupAdmin:
       type: object
       required:
-       - planid
-       - company
-       - name
-       - email
-       - password
-       - paymentToken
+      - planid
+      - company
+      - name
+      - email
+      - password
+      - paymentToken
       properties:
         planid:
           type: string
@@ -100,10 +101,10 @@ components:
     AccountAdmin:
       type: object
       required:
-       - plans
-       - company
-       - name
-       - email
+      - plans
+      - company
+      - name
+      - email
       properties:
         plans:
           type: array
@@ -131,8 +132,8 @@ components:
               title: PlansGetResponse
               type: object
               required:
-                - plans
-                - featuresTable
+              - plans
+              - featuresTable
               properties:
                 plans:
                   type: array
@@ -145,11 +146,11 @@ components:
     operationId: accountSignupAdmin
     tags: [AccountAdmin]
     parameters:
-      - name: signup
-        in: query
-        required: true
-        schema:
-          $ref: 'api-account.yaml#/components/schemas/AccountSignupAdmin'
+    - name: signup
+      in: query
+      required: true
+      schema:
+        $ref: 'api-account.yaml#/components/schemas/AccountSignupAdmin'
     responses:
       '200':
         content:
@@ -173,11 +174,11 @@ components:
     operationId: accountLoginAdmin
     tags: [AccountAdmin]
     parameters:
-      - name: credentials
-        in: query
-        required: true
-        schema:
-          $ref: 'api-account.yaml#/components/schemas/AccountLogin'
+    - name: credentials
+      in: query
+      required: true
+      schema:
+        $ref: 'api-account.yaml#/components/schemas/AccountLogin'
     responses:
       '200':
         content:

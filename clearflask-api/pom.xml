@@ -37,6 +37,7 @@
                         <argument>${openapi.sourceDirectory}</argument>
                         <argument>${project.build.scriptSourceDirectory}</argument>
                         <argument>${openapi.targetDirectory}</argument>
+                        <argument>${project.basedir}/src/main/template</argument>
                     </arguments>
                 </configuration>
             </plugin>

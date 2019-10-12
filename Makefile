@@ -52,7 +52,7 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	  ssl_certificate /etc/nginx/conf.d/cert.pem;
 	  ssl_certificate_key /etc/nginx/conf.d/key.pem;
 	  location / {
-	     proxy_pass http://host.docker.internal:8080;
+	     proxy_pass http://host.docker.internal:80;
 	     proxy_http_version 1.1;
 	     proxy_set_header Upgrade $http_upgrade;
 	     proxy_set_header Connection "upgrade";

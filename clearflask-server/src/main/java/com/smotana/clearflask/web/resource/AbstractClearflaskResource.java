@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
 @Singleton
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class AbstractClearflaskResource implements MessageBodyWriter<Object>,
+public abstract class AbstractClearflaskResource implements MessageBodyWriter<Object>,
         MessageBodyReader<Object> {
 
     @Inject

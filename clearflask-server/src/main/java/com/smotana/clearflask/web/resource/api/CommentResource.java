@@ -13,9 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.Path;
 
 @Slf4j
 @Singleton
+@Path("/v1")
 public class CommentResource extends AbstractClearflaskResource implements CommentAdminApi, CommentApi {
 
     @Override

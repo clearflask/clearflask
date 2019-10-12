@@ -1,4 +1,3 @@
-
 components:
   schemas:
     ConfigTest:
@@ -6,25 +5,25 @@ components:
       title: Test
       type: object
       required:
-        - emojiReq
-        - stringReq
-        - datetimeReq
-        - timeReq
-        - dateReq
-        - idReq
-        - numberReq
-        - integerReq
-        - enumReq
-        - booleanReq
-        - colorReq
-        - arrayOfUniqueEnumReq
-        - arrayOfStringReq
-        - arrayOfObjectReq
-        - linkReq
-        - linkMultiReq
-        - objectReq
-        - objectNestedReq
-        - groupReq
+      - emojiReq
+      - stringReq
+      - datetimeReq
+      - timeReq
+      - dateReq
+      - idReq
+      - numberReq
+      - integerReq
+      - enumReq
+      - booleanReq
+      - colorReq
+      - arrayOfUniqueEnumReq
+      - arrayOfStringReq
+      - arrayOfObjectReq
+      - linkReq
+      - linkMultiReq
+      - objectReq
+      - objectNestedReq
+      - groupReq
       properties:
         stringReq:
           x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
@@ -209,31 +208,31 @@ components:
           x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: object
           required:
-            - objectNestedReq
+          - objectNestedReq
           properties:
             objectNestedReq:
               x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
               type: object
               required:
-                - objectNestedReq
+              - objectNestedReq
               properties:
                 objectNestedReq:
                   x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                   type: object
                   required:
-                    - objectNestedReq
+                  - objectNestedReq
                   properties:
                     objectNestedReq:
                       x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                       type: object
                       required:
-                        - objectNestedReq
+                      - objectNestedReq
                       properties:
                         objectNestedReq:
                           x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                           type: object
                           required:
-                            - stringReq
+                          - stringReq
                           properties:
                             stringReq:
                               x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
@@ -291,24 +290,24 @@ components:
           items:
             type: object
             required:
-              - emojiReq
-              - stringReq
-              - datetimeReq
-              - timeReq
-              - dateReq
-              - idReq
-              - numberReq
-              - integerReq
-              - enumReq
-              - booleanReq
-              - colorReq
-              - arrayOfUniqueEnumReq
-              - arrayOfStringReq
-              - arrayOfObjectReq
-              - linkReq
-              - linkMultiReq
-              - objectReq
-              - objectNestedReq
+            - emojiReq
+            - stringReq
+            - datetimeReq
+            - timeReq
+            - dateReq
+            - idReq
+            - numberReq
+            - integerReq
+            - enumReq
+            - booleanReq
+            - colorReq
+            - arrayOfUniqueEnumReq
+            - arrayOfStringReq
+            - arrayOfObjectReq
+            - linkReq
+            - linkMultiReq
+            - objectReq
+            - objectNestedReq
             properties:
               stringReq:
                 x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }
@@ -488,31 +487,31 @@ components:
                 x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: object
                 required:
-                  - objectNestedReq
+                - objectNestedReq
                 properties:
                   objectNestedReq:
                     x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                     type: object
                     required:
-                      - objectNestedReq
+                    - objectNestedReq
                     properties:
                       objectNestedReq:
                         x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                         type: object
                         required:
-                          - objectNestedReq
+                        - objectNestedReq
                         properties:
                           objectNestedReq:
                             x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                             type: object
                             required:
-                              - objectNestedReq
+                            - objectNestedReq
                             properties:
                               objectNestedReq:
                                 x-clearflask-prop: { order: 10, name: 'ObjectNested required', description: 'Description description description.', placeholder: 'Placeholder' }
                                 type: object
                                 required:
-                                  - stringReq
+                                - stringReq
                                 properties:
                                   stringReq:
                                     x-clearflask-prop: { order: 1, name: 'String required', description: 'Description description description.', placeholder: 'Placeholder' }

@@ -57,7 +57,7 @@ export class Server {
     if(!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
     } else if(detectEnv() === Environment.DEVELOPMENT_LOCAL) {
-      apiConf.basePath = Client.BASE_PATH.replace(/api\.clearflask\.com/, 'localhost');
+      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
     }
 
     const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
@@ -114,7 +114,7 @@ export class Server {
     this.errorSubscribers.push(subscriber);
   }
 
-  overrideConfig(config:Admin.Config):void {
+  overrideConfig(config:Admin.ConfigAdmin):void {
     const msg:Admin.configGetAdminActionFulfilled = {
       type: Admin.configGetAdminActionStatus.Fulfilled,
       meta: {

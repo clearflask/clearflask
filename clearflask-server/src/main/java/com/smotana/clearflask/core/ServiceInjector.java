@@ -17,7 +17,9 @@ import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.web.resource.PingResource;
 import com.smotana.clearflask.web.resource.api.AccountResource;
+import com.smotana.clearflask.web.resource.api.PlanResource;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -100,7 +102,9 @@ public enum ServiceInjector {
                 bind(Duration.class).annotatedWith(Names.named(FileDynamicConfigSource.POLL_INTERVAL_NAME)).toInstance(Duration.ofSeconds(10));
 
                 // API endpoints
+                bind(PingResource.class);
                 bind(AccountResource.class);
+                bind(PlanResource.class);
 
                 switch (env) {
                     case UNIT_TEST:

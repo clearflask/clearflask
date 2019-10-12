@@ -3,9 +3,7 @@
     * {{{description}}}
     */
 {{/description}}
-@Getter
-@ToString(callSuper = true)
-@EqualsAndHashCode()
+@Value
 public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
 {{#vars}}{{#isEnum}}{{^isContainer}}
     {{>enumClass}}{{/isContainer}}{{#isContainer}}{{#mostInnerItems}}
@@ -15,8 +13,7 @@ public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
     * {{{description}}}
     */
 {{/description}}
-    @SerializedName("{{name}}")
-{{#isContainer}}    private final {{{datatypeWithEnum}}} {{name}} = {{#required}}{{{defaultValue}}}{{/required}}{{^required}}null{{/required}};
-{{/isContainer}}{{^isContainer}}    private final {{{datatypeWithEnum}}} {{name}} = {{#defaultValue}}{{{.}}}{{/defaultValue}}{{^defaultValue}}null{{/defaultValue}};
-{{/isContainer}}{{/vars}}
-}
+{{#required}}    @NonNull
+{{/required}}    @SerializedName("{{name}}")
+    private final {{{datatypeWithEnum}}} {{name}};
+{{/vars}}}

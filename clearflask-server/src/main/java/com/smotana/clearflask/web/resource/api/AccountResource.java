@@ -10,10 +10,12 @@ import org.apache.commons.lang.NotImplementedException;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 
 @Slf4j
 @Singleton
+@Path("/v1")
 public class AccountResource extends AbstractClearflaskResource implements AccountAdminApi {
 
     @Context

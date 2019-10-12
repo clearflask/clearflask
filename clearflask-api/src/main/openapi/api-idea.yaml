@@ -1,4 +1,3 @@
-
 components:
   schemas:
     IdeaSearch:
@@ -8,10 +7,10 @@ components:
         sortBy:
           x-clearflask-prop: { name: 'Sort', description: 'Display ideas sorted' }
           type: string
-          enum: 
-            - Trending
-            - Top
-            - New
+          enum:
+          - Trending
+          - Top
+          - New
         filterCategoryIds:
           x-clearflask-prop: { name: 'Group', description: 'Display only ideas from these groups' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
@@ -44,22 +43,22 @@ components:
           type: integer
     IdeaSearchAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
-        - type: object
-          properties:
-            filterCreatedStart:
-              type: string
-              format: date-time
-            filterCreatedEnd:
-              type: string
-              format: date-time
-            filterLastActivityStart:
-              type: string
-              format: date-time
-            filterLastActivityEnd:
-              type: string
-              format: date-time
-          required:
+      - $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+      - type: object
+        properties:
+          filterCreatedStart:
+            type: string
+            format: date-time
+          filterCreatedEnd:
+            type: string
+            format: date-time
+          filterLastActivityStart:
+            type: string
+            format: date-time
+          filterLastActivityEnd:
+            type: string
+            format: date-time
+        required:
     Idea:
       type: object
       properties:
@@ -103,48 +102,49 @@ components:
             type: object
             title: ExpressionCounts
             required:
-              - display
-              - count
+            - display
+            - count
             properties:
               display:
                 type: string
               count:
                 type: integer
       required:
-        - ideaId
-        - authorUserId
-        - created
-        - title
-        - categoryId
-        - tagIds
+      - ideaId
+      - authorUserId
+      - created
+      - title
+      - categoryId
+      - tagIds
     IdeaWithAuthorAndVote:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/Idea'
-        - type: object
-          required:
-           - author
-          properties:
-            author:
-              $ref: 'api-user.yaml#/components/schemas/User'
-            vote:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
+      - $ref: 'api-idea.yaml#/components/schemas/Idea'
+      - type: object
+        required:
+        - author
+        properties:
+          author:
+            $ref: 'api-user.yaml#/components/schemas/User'
+          vote:
+            $ref: 'api-vote.yaml#/components/schemas/Vote'
     IdeaAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/Idea'
-        - type: object
-          properties:
-          required:
+      - $ref: 'api-idea.yaml#/components/schemas/Idea'
+      - type: object
+        properties:
+          dummyField: # Add field so java generation doesn't use model inheritance
+            type: string
     IdeaWithAuthorAndVoteAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
-        - type: object
-          required:
-           - author
-          properties:
-            author:
-              $ref: 'api-user.yaml#/components/schemas/User'
-            vote:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
+      - $ref: 'api-idea.yaml#/components/schemas/IdeaAdmin'
+      - type: object
+        required:
+        - author
+        properties:
+          author:
+            $ref: 'api-user.yaml#/components/schemas/User'
+          vote:
+            $ref: 'api-vote.yaml#/components/schemas/Vote'
     IdeaCreate:
       type: object
       properties:
@@ -161,23 +161,22 @@ components:
           items:
             type: string
       required:
-        - authorUserId
-        - title
-        - categoryId
-        - tagIds
+      - authorUserId
+      - title
+      - categoryId
+      - tagIds
     IdeaCreateAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
-        - type: object
-          properties:
-            created:
-              type: string
-              format: date-time
-            statusId:
-              type: string
-            creditGoal:
-              type: number
-          required:
+      - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
+      - type: object
+        properties:
+          created:
+            type: string
+            format: date-time
+          statusId:
+            type: string
+          creditGoal:
+            type: number
     IdeaUpdate:
       type: object
       properties:
@@ -189,41 +188,41 @@ components:
             type: string
     IdeaUpdateAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
-        - type: object
-          properties:
-            title:
+      - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
+      - type: object
+        properties:
+          title:
+            type: string
+          statusId:
+            type: string
+          categoryId:
+            type: string
+          tagIds:
+            type: array
+            items:
               type: string
-            statusId:
-              type: string
-            categoryId:
-              type: string
-            tagIds:
-              type: array
-              items:
-                type: string
-            creditGoal:
-              type: number
+          creditGoal:
+            type: number
 
 /project/{projectId}/idea:
   get:
     operationId: ideaSearch
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
     responses:
       '200':
         content:
@@ -239,21 +238,21 @@ components:
                   items:
                     $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVote'
               required:
-                - results
+              - results
   post:
     operationId: ideaCreate
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: create
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: create
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
     responses:
       '200':
         content:
@@ -265,16 +264,16 @@ components:
     operationId: ideaGet
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         content:
@@ -287,21 +286,21 @@ components:
     operationId: ideaUpdate
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: update
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: update
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
     responses:
       '200':
         content:
@@ -314,16 +313,16 @@ components:
     operationId: ideaDelete
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -334,20 +333,20 @@ components:
     operationId: ideaSearchAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
     responses:
       '200':
         content:
@@ -363,21 +362,21 @@ components:
                   items:
                     $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVoteAdmin'
               required:
-                - results
+              - results
   post:
     operationId: ideaCreateAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: create
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: create
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
     responses:
       '200':
         content:
@@ -388,16 +387,16 @@ components:
     operationId: ideaDeleteBulkAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaSearchAdmin'
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -408,16 +407,16 @@ components:
     operationId: ideaGetAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         content:
@@ -430,21 +429,21 @@ components:
     operationId: ideaUpdateAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: update
-        in: query
-        required: true
-        schema:
-          $ref: 'api-idea.yaml#/components/schemas/IdeaUpdateAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: update
+      in: query
+      required: true
+      schema:
+        $ref: 'api-idea.yaml#/components/schemas/IdeaUpdateAdmin'
     responses:
       '200':
         content:
@@ -457,16 +456,16 @@ components:
     operationId: ideaDeleteAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'

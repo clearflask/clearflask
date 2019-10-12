@@ -5,17 +5,18 @@ set -ex
 OPENAPI_SOURCE_DIR=$1
 SCRIPTS_DIR=$2
 OPENAPI_TARGET_DIR=$3
+TEMPLATE_SOURCE_DIR=$4
 
 # Client API
 openapi-generator generate \
-    -t template-typescript-fetch \
+    -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-client.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-client &
 
 # Admin API
 openapi-generator generate \
-    -t template-typescript-fetch \
+    -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-admin.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-admin &
@@ -31,8 +32,8 @@ node ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TAR
 
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
 openapi-generator generate \
-    -t template-java-jaxrs \
-    --ignore-file-override=template-java-jaxrs/.openapi-generator-ignore \
+    -t ${TEMPLATE_SOURCE_DIR}/java-jaxrs \
+    --ignore-file-override=${TEMPLATE_SOURCE_DIR}/java-jaxrs/.openapi-generator-ignore \
     -i ${OPENAPI_SOURCE_DIR}/api.yaml \
     -g jaxrs-cxf \
     --additional-properties=java8=true \

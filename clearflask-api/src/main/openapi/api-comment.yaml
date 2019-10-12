@@ -1,4 +1,3 @@
-
 components:
   schemas:
     CommentSearchAdmin:
@@ -30,16 +29,16 @@ components:
         content:
           type: string
       required:
-        - ideaId
-        - commentId
-        - created
+      - ideaId
+      - commentId
+      - created
     CommentWithAuthor:
       allOf:
-        - $ref: 'api-comment.yaml#/components/schemas/Comment'
-        - type: object
-          properties:
-            author:
-              $ref: 'api-user.yaml#/components/schemas/User'
+      - $ref: 'api-comment.yaml#/components/schemas/Comment'
+      - type: object
+        properties:
+          author:
+            $ref: 'api-user.yaml#/components/schemas/User'
     CommentCreate:
       type: object
       properties:
@@ -50,17 +49,17 @@ components:
         content:
           type: string
       required:
-        - authorUserId
-        - content
+      - authorUserId
+      - content
     CommentCreateAdmin:
       allOf:
-        - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
-        - type: object
-          properties:
-            created:
-              type: string
-              format: date-time
-          required:
+      - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
+      - type: object
+        properties:
+          created:
+            type: string
+            format: date-time
+        required:
     CommentUpdate:
       type: object
       properties:
@@ -72,20 +71,20 @@ components:
     operationId: commentList
     tags: [Comment]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
     responses:
       '200':
         content:
@@ -101,26 +100,26 @@ components:
                   items:
                     $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
               required:
-                - results
+              - results
   post:
     operationId: commentCreate
     tags: [Comment]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: create
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: create
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
     responses:
       '200':
         content:
@@ -132,26 +131,26 @@ components:
     operationId: commentUpdate
     tags: [Comment]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: update
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: update
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
     responses:
       '200':
         content:
@@ -164,21 +163,21 @@ components:
     operationId: commentDelete
     tags: [Comment]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         content:
@@ -192,20 +191,20 @@ components:
     operationId: commentSearchAdmin
     tags: [CommentAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
     responses:
       '200':
         content:
@@ -221,21 +220,21 @@ components:
                   items:
                     $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
               required:
-                - results
+              - results
   delete:
     operationId: commentDeleteBulkAdmin
     tags: [CommentAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: search
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: search
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -246,21 +245,21 @@ components:
     operationId: commentCreateAdmin
     tags: [CommentAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: create
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: create
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
     responses:
       '200':
         content:
@@ -272,26 +271,26 @@ components:
     operationId: commentUpdateAdmin
     tags: [CommentAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ideaId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: update
-        in: query
-        required: true
-        schema:
-          $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: update
+      in: query
+      required: true
+      schema:
+        $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
     responses:
       '200':
         content:
@@ -304,16 +303,16 @@ components:
     operationId: commentDeleteAdmin
     tags: [CommentAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: commentId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         content:
