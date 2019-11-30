@@ -15,6 +15,11 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
+import com.smotana.clearflask.store.dynamo.ProductionDynamoDbProvider;
+import com.smotana.clearflask.store.elastic.InMemoryElasticSearchProvider;
+import com.smotana.clearflask.store.elastic.ProductionElasticSearchProvider;
+import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.resource.PingResource;
@@ -88,6 +93,9 @@ public enum ServiceInjector {
                 install(ServiceManagerProvider.module());
                 install(GsonProvider.module());
 
+                // Stores
+                install(DynamoProjectStore.module());
+
                 // Configuration
                 install(ConfigSystem.module());
                 install(SimpleConfigNamingStrategy.module());
@@ -109,10 +117,14 @@ public enum ServiceInjector {
                 switch (env) {
                     case UNIT_TEST:
                     case DEVELOPMENT_LOCAL:
+                        install(InMemoryDynamoDbProvider.module());
+                        install(InMemoryElasticSearchProvider.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;
                     case PRODUCTION_AWS:
+                        install(ProductionDynamoDbProvider.module());
+                        install(ProductionElasticSearchProvider.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 "/opt/clearflask/config-prod.cfg");
                         break;
