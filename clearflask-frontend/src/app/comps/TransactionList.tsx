@@ -111,13 +111,13 @@ export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
     ownProps.server.dispatch().transactionSearch({
       projectId: ownProps.server.getProjectId(),
       userId: userId,
-      search: search,
+      transactionSearch: search,
     });
   } else if(userId && state.credits.transactionSearch.cursor && state.credits.transactionSearch.searchKey === searchKey) {
     getNextTransactions = () => ownProps.server.dispatch().transactionSearch({
       projectId: ownProps.server.getProjectId(),
       userId: userId,
-      search: search,
+      transactionSearch: search,
       cursor: state.credits.transactionSearch.cursor,
     });
   }

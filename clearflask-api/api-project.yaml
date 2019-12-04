@@ -789,11 +789,12 @@ components:
       required: true
       schema:
         type: string
-    - name: config
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
     responses:
       '200':
         content:

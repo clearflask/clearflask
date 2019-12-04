@@ -468,7 +468,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               this.props.server.dispatch().commentCreate({
                 projectId: this.props.server.getProjectId(),
                 ideaId: this.props.idea!.ideaId,
-                create: {
+                commentCreate: {
                   content: this.state.newCommentInput!,
                   authorUserId: this.props.loggedInUser!.userId,
                 },
@@ -976,7 +976,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       if(ownProps.variant === 'page') {
         ownProps.server.dispatch().voteGetOwn({
           projectId: state.projectId,
-          ideaIds: [ownProps.idea.ideaId],
+          voteGetOwn: { ideaIds: [ownProps.idea.ideaId] },
         });
       }
     } else {
@@ -1001,7 +1001,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     commentCursor: commentCursor,
     updateVote: (voteUpdate:Partial<Client.VoteUpdate>):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
-      update: {
+      voteUpdate: {
         ideaId: ownProps.idea!.ideaId,
         voterUserId: state.users.loggedIn.user!.userId,
         ...voteUpdate,

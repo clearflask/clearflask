@@ -331,7 +331,7 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     this.setState({isSubmitting: true});
     this.props.server.dispatch().userCreate({
       projectId: this.props.server.getProjectId(),
-      create: {
+      userCreate: {
         name: this.state.displayName,
         email: this.state.email,
         password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,

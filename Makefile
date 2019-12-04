@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 10
-_run-dev: tomcat-run-dev nginx-run
+_run-dev: tomcat-run-dev nginx-run dynamo-run elastic-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 10
@@ -23,13 +23,26 @@ npm-run-dev-frontend:
 	cd clearflask-frontend && npm start
 
 tomcat-run-dev:
+	rm -fr `pwd`/clearflask-server/target/ROOT
+	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
 	docker run --rm --name clearflask-webserver \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-p 80:8080 \
-	-v `pwd`/clearflask-server/target/clearflask-server-0.1:/usr/local/tomcat/webapps/ROOT \
+	-v `pwd`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \
 	-v `pwd`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	tomcat:9-jre10-slim
+
+elastic-run:
+	docker run --rm --name clearflask-elastic \
+	-p 9200:9200 \
+	-e "discovery.type=single-node" \
+	docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+
+dynamo-run:
+	docker run --rm --name clearflask-dynamo \
+	-p 7000:8000 \
+	amazon/dynamodb-local
 
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \

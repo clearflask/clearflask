@@ -115,11 +115,12 @@ components:
       required: true
       schema:
         type: string
-    - name: create
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
     responses:
       '200':
         content:
@@ -146,11 +147,12 @@ components:
       required: true
       schema:
         type: string
-    - name: update
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
     responses:
       '200':
         content:
@@ -200,11 +202,12 @@ components:
       in: query
       schema:
         $ref: 'api-client.yaml#/components/schemas/Cursor'
-    - name: search
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
     responses:
       '200':
         content:
@@ -230,11 +233,12 @@ components:
       required: true
       schema:
         type: string
-    - name: search
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -255,11 +259,12 @@ components:
       required: true
       schema:
         type: string
-    - name: create
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
     responses:
       '200':
         content:
@@ -286,11 +291,12 @@ components:
       required: true
       schema:
         type: string
-    - name: update
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
     responses:
       '200':
         content:

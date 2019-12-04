@@ -90,7 +90,7 @@ class SigninPage extends Component<RouteComponentProps&ConnectProps&WithStyles<t
 
   onSubmit() {
     this.setState({isSubmitting: true});
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAdmin({credentials: {
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAdmin({accountLogin: {
       email: this.state.email || '',
       password: this.state.pass || '',
     }})).then(() => {

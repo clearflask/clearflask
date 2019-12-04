@@ -24,7 +24,6 @@ public class NoCacheFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Expires", "0");
-        res.setHeader("test", "test");
 
         chain.doFilter(request, response);
     }

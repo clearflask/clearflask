@@ -295,7 +295,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     balance: state.credits.myBalance.balance || 0,
     updateVote: (ideaId:string, voteUpdate:Partial<Client.VoteUpdate>):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
-      update: {
+      voteUpdate: {
         ideaId: ideaId,
         voterUserId: state.users.loggedIn.user!.userId,
         ...voteUpdate,
@@ -304,7 +304,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     callOnMount: () => {
       ownProps.server.dispatch().ideaSearch({
         projectId: state.projectId,
-        search: search,
+        ideaSearch: search,
       });
     }
   };

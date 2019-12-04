@@ -114,11 +114,12 @@ components:
       in: query
       schema:
         $ref: 'api-client.yaml#/components/schemas/Cursor'
-    - name: search
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
     responses:
       '200':
         content:
@@ -153,11 +154,12 @@ components:
       required: true
       schema:
         type: string
-    - name: transaction
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
     responses:
       '200':
         content:
@@ -178,11 +180,12 @@ components:
       in: query
       schema:
         $ref: 'api-client.yaml#/components/schemas/Cursor'
-    - name: search
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-credit.yaml#/components/schemas/TransactionSearchAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-credit.yaml#/components/schemas/TransactionSearchAdmin'
     responses:
       '200':
         content:

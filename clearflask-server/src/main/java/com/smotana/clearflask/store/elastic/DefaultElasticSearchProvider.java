@@ -9,6 +9,8 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
@@ -17,10 +19,15 @@ import java.util.Optional;
 
 @Log4j2
 @Singleton
-public class ProductionElasticSearchProvider extends AbstractIdleService implements Provider<RestClient> {
+public class DefaultElasticSearchProvider extends AbstractIdleService implements Provider<RestClient> {
 
-    private static String AES_ENDPOINT = "https://domain.us-west-1.es.amazonaws.com";
+    private interface Config {
+        @NoDefaultValue
+        String serviceEndpoint();
+    }
 
+    @Inject
+    private Config config;
     @Inject
     private AWSCredentialsProvider AwsCredentialsProvider;
 
@@ -28,7 +35,9 @@ public class ProductionElasticSearchProvider extends AbstractIdleService impleme
 
     @Override
     public RestClient get() {
-        restClientOpt = Optional.of(RestClient.builder(HttpHost.create(AES_ENDPOINT)).build());
+        restClientOpt = Optional.of(RestClient
+                .builder(HttpHost.create(config.serviceEndpoint()))
+                .build());
         return restClientOpt.get();
     }
 
@@ -47,8 +56,9 @@ public class ProductionElasticSearchProvider extends AbstractIdleService impleme
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(RestClient.class).toProvider(ProductionElasticSearchProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(ProductionElasticSearchProvider.class);
+                bind(RestClient.class).toProvider(DefaultElasticSearchProvider.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DefaultElasticSearchProvider.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

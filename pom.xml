@@ -128,6 +128,11 @@
                 <version>2.8.5</version>
             </dependency>
             <dependency>
+                <groupId>com.dampcake</groupId>
+                <artifactId>gson-immutable</artifactId>
+                <version>1.2</version>
+            </dependency>
+            <dependency>
                 <groupId>io.reactivex.rxjava2</groupId>
                 <artifactId>rxjava</artifactId>
                 <version>2.2.2</version>
@@ -260,6 +265,17 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>DynamoDBLocal</artifactId>
                 <version>1.11.477</version>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>sqlite4java</artifactId>
+                <version>1.0.392</version>
+            </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>libsqlite4java-osx</artifactId>
+                <version>1.0.392</version>
+                <type>dylib</type>
             </dependency>
 
             <dependency>

@@ -141,7 +141,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
   if(!bySearch) {
     ownProps.server.dispatch().ideaSearch({
       projectId: state.projectId,
-      search: newProps.searchMerged,
+      ideaSearch: newProps.searchMerged,
     });
   } else {
     const missingVotesByIdeaIds:string[] = [];
@@ -157,7 +157,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     if(missingVotesByIdeaIds.length > 0) {
       ownProps.server.dispatch().voteGetOwn({
         projectId: state.projectId,
-        ideaIds: missingVotesByIdeaIds,
+        voteGetOwn: { ideaIds: missingVotesByIdeaIds },
       });
     }
   }

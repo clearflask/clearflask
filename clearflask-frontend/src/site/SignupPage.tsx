@@ -319,7 +319,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
 
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
-      await dispatchAdmin.accountSignupAdmin({signup: {
+      await dispatchAdmin.accountSignupAdmin({accountSignupAdmin: {
           planid: this.state.planId!,
           company: this.state.company!,
           name: this.state.name!,

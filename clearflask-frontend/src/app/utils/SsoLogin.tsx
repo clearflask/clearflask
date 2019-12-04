@@ -22,7 +22,7 @@ const SsoLogin = connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => 
 
   props.server.dispatch().userSsoCreateOrLogin({
     projectId: props.server.getProjectId(),
-    token: sso,
+    userSsoCreateOrLogin: { token: sso },
   });
 
   return null;

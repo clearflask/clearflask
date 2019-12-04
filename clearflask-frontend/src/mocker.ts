@@ -15,7 +15,7 @@ export function mock():Promise<any> {
           return d.configSetAdmin({
             projectId: projectId,
             versionLast: project.config.version,
-            config: editor.getConfig(),
+            configAdmin: editor.getConfig(),
           });
         })
         .then(() => DataMock.get(projectId).mockAll())

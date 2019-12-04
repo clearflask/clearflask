@@ -19,7 +19,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import java.util.Optional;
 
 @Singleton
-public class ProductionDynamoDbProvider extends AbstractIdleService implements Provider<AmazonDynamoDB> {
+public class DefaultDynamoDbProvider extends AbstractIdleService implements Provider<AmazonDynamoDB> {
 
     private interface Config {
         @DefaultValue("")
@@ -64,8 +64,8 @@ public class ProductionDynamoDbProvider extends AbstractIdleService implements P
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(AmazonDynamoDB.class).toProvider(ProductionDynamoDbProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(ProductionDynamoDbProvider.class);
+                bind(AmazonDynamoDB.class).toProvider(DefaultDynamoDbProvider.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DefaultDynamoDbProvider.class);
                 install(ConfigSystem.configModule(Config.class));
 
                 install(DocumentDynamoDbProvider.module());

@@ -145,12 +145,12 @@ components:
   post:
     operationId: accountSignupAdmin
     tags: [AccountAdmin]
-    parameters:
-    - name: signup
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-account.yaml#/components/schemas/AccountSignupAdmin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountSignupAdmin'
     responses:
       '200':
         content:
@@ -173,12 +173,12 @@ components:
   post:
     operationId: accountLoginAdmin
     tags: [AccountAdmin]
-    parameters:
-    - name: credentials
-      in: query
+    requestBody:
       required: true
-      schema:
-        $ref: 'api-account.yaml#/components/schemas/AccountLogin'
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountLogin'
     responses:
       '200':
         content:

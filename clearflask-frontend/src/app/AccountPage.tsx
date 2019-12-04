@@ -104,7 +104,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 this.props.server.dispatch().userUpdate({
                   projectId: this.props.server.getProjectId(),
                   userId: this.props.userMe.userId,
-                  update: { name: this.state.displayName },
+                  userUpdate: { name: this.state.displayName },
                 });
               }}>Save</Button>
             </Grid>
@@ -191,7 +191,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                     this.props.server.dispatch().userUpdate({
                       projectId: this.props.server.getProjectId(),
                       userId: this.props.userMe!.userId,
-                      update: { browserPushToken: r.token },
+                      userUpdate: { browserPushToken: r.token },
                     });
                   } else if(r.type === 'error') {
                     if(r.userFacingMsg) {
@@ -204,7 +204,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 this.props.server.dispatch().userUpdate({
                   projectId: this.props.server.getProjectId(),
                   userId: this.props.userMe!.userId,
-                  update: { browserPushToken: '' },
+                  userUpdate: { browserPushToken: '' },
                 });
               }
             }}
@@ -270,7 +270,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                     this.props.server.dispatch().userUpdate({
                       projectId: this.props.server.getProjectId(),
                       userId: this.props.userMe!.userId,
-                      update: device === MobileNotificationDevice.Android
+                      userUpdate: device === MobileNotificationDevice.Android
                         ? { androidPushToken: r.token }
                         : { iosPushToken: r.token },
                     });
@@ -285,7 +285,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 this.props.server.dispatch().userUpdate({
                   projectId: this.props.server.getProjectId(),
                   userId: this.props.userMe!.userId,
-                  update: device === MobileNotificationDevice.Android
+                  userUpdate: device === MobileNotificationDevice.Android
                   ? { androidPushToken: '' }
                   : { iosPushToken: '' },
                 });
@@ -331,7 +331,7 @@ class AccountPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
               this.props.server.dispatch().userUpdate({
                 projectId: this.props.server.getProjectId(),
                 userId: this.props.userMe!.userId,
-                update: { emailNotify: checked },
+                userUpdate: { emailNotify: checked },
               });
             }}
           />

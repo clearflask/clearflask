@@ -22,11 +22,6 @@ import javax.validation.Valid;
  {{/appDescription}}
  */
 {{/appName}}
-@Path("{{^useAnnotatedBasePath}}/{{/useAnnotatedBasePath}}{{#useAnnotatedBasePath}}{{contextPath}}{{/useAnnotatedBasePath}}")
-{{#addConsumesProducesJson}}
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-{{/addConsumesProducesJson}}
 public interface {{classname}}  {
 {{#operations}}
 {{#operation}}
@@ -43,12 +38,8 @@ public interface {{classname}}  {
     {{/summary}}
     @{{httpMethod}}
     {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
-{{#hasConsumes}}
-    @Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} })
-{{/hasConsumes}}
-{{#hasProduces}}
-    @Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} })
-{{/hasProduces}}
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     {{>returnTypes}} {{operationId}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
 {{/operation}}
 }

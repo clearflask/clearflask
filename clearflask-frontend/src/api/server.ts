@@ -56,8 +56,8 @@ export class Server {
     const apiConf:Client.ConfigurationParameters = {};
     if(!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
-    } else if(detectEnv() === Environment.DEVELOPMENT_LOCAL) {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
+    } else if(detectEnv() === Environment.PRODUCTION) {
+      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}://${window.location.host}`);
     }
 
     const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
@@ -231,7 +231,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
     case Client.ideaSearchActionStatus.Pending:
-      searchKey = getSearchKey(action.meta.request.search);
+      searchKey = getSearchKey(action.meta.request.ideaSearch);
       return {
         ...state,
         bySearch: {
@@ -243,7 +243,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         }
       };
     case Client.ideaSearchActionStatus.Rejected:
-      searchKey = getSearchKey(action.meta.request.search);
+      searchKey = getSearchKey(action.meta.request.ideaSearch);
       return {
         ...state,
         bySearch: {
@@ -255,7 +255,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         }
       };
     case Client.ideaSearchActionStatus.Fulfilled:
-      searchKey = getSearchKey(action.meta.request.search);
+      searchKey = getSearchKey(action.meta.request.ideaSearch);
       return {
         ...state,
         byId: {
@@ -292,14 +292,14 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
       // All of this below fakes the vote counts before server returns a real value
       // In case of rejection, it undoes the faking
       const isPending = action.type === Client.voteUpdateActionStatus.Pending;
-      const idea = state.byId[action.meta.request.update.ideaId];
+      const idea = state.byId[action.meta.request.voteUpdate.ideaId];
       if(!idea || !idea.idea) return state;
-      state.byId[action.meta.request.update.ideaId] = idea;
+      state.byId[action.meta.request.voteUpdate.ideaId] = idea;
       const previousVote = action.meta['previousVote'] || {};
       if(previousVote === undefined ) throw Error('voteUpdate expecting previousVote in extra meta, set to null if not present');
-      const fromVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? previousVote : action.meta.request.update;
-      const toVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? action.meta.request.update : previousVote;
-      if(action.meta.request.update.fundAmount !== undefined) {
+      const fromVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? previousVote : action.meta.request.voteUpdate;
+      const toVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? action.meta.request.voteUpdate : previousVote;
+      if(action.meta.request.voteUpdate.fundAmount !== undefined) {
         const fundDiff = (toVote.fundAmount || 0) - (fromVote.fundAmount || 0);
         if(fundDiff !== 0) {
           idea.idea.funded = (idea.idea.funded || 0) + fundDiff;
@@ -308,7 +308,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           }
         }
       }
-      if(action.meta.request.update.vote !== undefined) {
+      if(action.meta.request.voteUpdate.vote !== undefined) {
         const fromVoteVal = (fromVote.vote === Client.VoteVoteEnum.Upvote ? 1 : (fromVote.vote === Client.VoteVoteEnum.Downvote ? -1 : 0));
         const toVoteVal = (toVote.vote === Client.VoteVoteEnum.Upvote ? 1 : (toVote.vote === Client.VoteVoteEnum.Downvote ? -1 : 0));
         const voteDiff = toVoteVal - fromVoteVal;
@@ -320,9 +320,9 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           }
         }
       }
-      if(action.meta.request.update.expressions !== undefined) {
-        const addExpressions = isPending ? action.meta.request.update.expressions.add : action.meta.request.update.expressions.remove;
-        const removeExpressions = isPending ? action.meta.request.update.expressions.remove : action.meta.request.update.expressions.add;
+      if(action.meta.request.voteUpdate.expressions !== undefined) {
+        const addExpressions = isPending ? action.meta.request.voteUpdate.expressions.add : action.meta.request.voteUpdate.expressions.remove;
+        const removeExpressions = isPending ? action.meta.request.voteUpdate.expressions.remove : action.meta.request.voteUpdate.expressions.add;
         const addedExpressions = new Set<string>();
         idea.idea.expressions = (idea.idea.expressions || []).map(expression => {
           const newExpression = {...expression};
@@ -350,8 +350,8 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.update.ideaId]: {
-            ...state.byId[action.meta.request.update.ideaId],
+          [action.meta.request.voteUpdate.ideaId]: {
+            ...state.byId[action.meta.request.voteUpdate.ideaId],
             idea: idea.idea,
           }
         }
@@ -621,7 +621,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         byIdeaId: {
           ...state.byIdeaId,
-          ...action.meta.request.ideaIds.reduce(
+          ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = {
                 status: Status.PENDING,
@@ -635,7 +635,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         byIdeaId: {
           ...state.byIdeaId,
-          ...action.meta.request.ideaIds.reduce(
+          ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = {
                 status: Status.REJECTED,
@@ -649,7 +649,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         byIdeaId: {
           ...state.byIdeaId,
-          ...action.meta.request.ideaIds.reduce(
+          ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = {
                 status: Status.FULFILLED,
@@ -671,17 +671,17 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         byIdeaId: {
           ...state.byIdeaId,
-          [action.meta.request.update.ideaId]: {
-            ...state.byIdeaId[action.meta.request.update.ideaId],
+          [action.meta.request.voteUpdate.ideaId]: {
+            ...state.byIdeaId[action.meta.request.voteUpdate.ideaId],
             ...(action.meta['previousVote'] !== undefined // Fake vote assuming server will accept it
               ? {vote: {
-                ...(state.byIdeaId[action.meta.request.update.ideaId] ? state.byIdeaId[action.meta.request.update.ideaId].vote : {}),
-                ...(action.meta.request.update.fundAmount ? {fundAmount: action.meta.request.update.fundAmount} : {}),
-                ...(action.meta.request.update.vote ? {fundAmount: action.meta.request.update.vote} : {}),
-                ...(action.meta.request.update.expressions ? {expressions: [...new Set<string>([
-                  ...(state.byIdeaId[action.meta.request.update.ideaId] && state.byIdeaId[action.meta.request.update.ideaId].vote && state.byIdeaId[action.meta.request.update.ideaId].vote!.expressions || []),
-                  ...(action.meta.request.update.expressions && action.meta.request.update.expressions.add || [])
-                ])].filter(e => !action.meta.request.update.expressions || !action.meta.request.update.expressions.remove || !action.meta.request.update.expressions.remove.includes(e) )} : {}),
+                ...(state.byIdeaId[action.meta.request.voteUpdate.ideaId] ? state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote : {}),
+                ...(action.meta.request.voteUpdate.fundAmount ? {fundAmount: action.meta.request.voteUpdate.fundAmount} : {}),
+                ...(action.meta.request.voteUpdate.vote ? {fundAmount: action.meta.request.voteUpdate.vote} : {}),
+                ...(action.meta.request.voteUpdate.expressions ? {expressions: [...new Set<string>([
+                  ...(state.byIdeaId[action.meta.request.voteUpdate.ideaId] && state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote && state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote!.expressions || []),
+                  ...(action.meta.request.voteUpdate.expressions && action.meta.request.voteUpdate.expressions.add || [])
+                ])].filter(e => !action.meta.request.voteUpdate.expressions || !action.meta.request.voteUpdate.expressions.remove || !action.meta.request.voteUpdate.expressions.remove.includes(e) )} : {}),
               } as Client.Vote}
               : {}),
             status: Status.PENDING,
@@ -693,8 +693,8 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         byIdeaId: {
           ...state.byIdeaId,
-          [action.meta.request.update.ideaId]: {
-            ...state.byIdeaId[action.meta.request.update.ideaId],
+          [action.meta.request.voteUpdate.ideaId]: {
+            ...state.byIdeaId[action.meta.request.voteUpdate.ideaId],
             ...(action.meta['previousVote'] !== undefined ? {vote: action.meta['previousVote']} : {}), // Undo fake vote
             status: Status.REJECTED,
           },
@@ -774,7 +774,7 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
         transactionSearch: {
           ...state.transactionSearch,
           status: Status.PENDING,
-          searchKey: getTransactionSearchKey(action.meta.request.search),
+          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
         },
       };
     case Client.transactionSearchActionStatus.Rejected:
@@ -783,7 +783,7 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
         transactionSearch: {
           ...state.transactionSearch,
           status: Status.REJECTED,
-          searchKey: getTransactionSearchKey(action.meta.request.search),
+          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
         },
       };
     case Client.transactionSearchActionStatus.Fulfilled:
@@ -791,7 +791,7 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
         ...state,
         transactionSearch: {
           status: Status.FULFILLED,
-          searchKey: getTransactionSearchKey(action.meta.request.search),
+          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
           transactions: (action.meta.request.cursor !== undefined && action.meta.request.cursor === state.transactionSearch.cursor)
             ? [ // Append results
               ...(state.transactionSearch.transactions || []),

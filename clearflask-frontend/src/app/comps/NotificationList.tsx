@@ -83,7 +83,7 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
   clickNotification(notification:Client.Notification) {
     this.props.server.dispatch().notificationClear({
       projectId: this.props.server.getProjectId(),
-      userId: this.props.userId!,
+      notificationClear: { userId: this.props.userId! },
       notificationId: notification.notificationId,
     });
     this.props.history.push(notification.url);

@@ -1,18 +1,23 @@
 package com.smotana.clearflask.store.impl;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Expected;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Service;
 import com.google.gson.Gson;
@@ -32,14 +37,16 @@ import java.util.Optional;
 
 @Singleton
 public class DynamoProjectStore extends AbstractIdleService implements ProjectStore {
+
     private interface Config {
-        @DefaultValue("project")
-        String projectTableName();
+        @DefaultValue("true")
+        boolean enableConfigCacheRead();
 
         @DefaultValue("PT1M")
-        Duration versionedConfigAdminCacheExpireAfterWrite();
+        Duration configCacheExpireAfterWrite();
     }
 
+    private static final String PROJECT_TABLE = "project";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_VERSION = "version";
     private static final String PROJECT_DATA = "data";
@@ -47,7 +54,9 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
     @Inject
     private Config config;
     @Inject
-    private DynamoDB dynamo;
+    private AmazonDynamoDB dynamo;
+    @Inject
+    private DynamoDB dynamoDoc;
     @Inject
     private Gson gson;
 
@@ -57,21 +66,20 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
     @Override
     protected void startUp() throws Exception {
         versionedConfigAdminCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(config.versionedConfigAdminCacheExpireAfterWrite())
+                .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
-        projectTable = dynamo.getTable(config.projectTableName());
         try {
-            projectTable.describe();
-        } catch (ResourceNotFoundException ex) {
             dynamo.createTable(new CreateTableRequest()
-                    .withTableName(config.projectTableName())
+                    .withTableName(PROJECT_TABLE)
                     .withKeySchema(ImmutableList.of(
                             new KeySchemaElement().withAttributeName(PROJECT_ID).withKeyType(KeyType.HASH)))
                     .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName(PROJECT_VERSION).withAttributeType(ScalarAttributeType.N),
-                            new AttributeDefinition().withAttributeName(PROJECT_DATA).withAttributeType(ScalarAttributeType.S))));
+                            new AttributeDefinition().withAttributeName(PROJECT_ID).withAttributeType(ScalarAttributeType.S)))
+                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
+        } catch (ResourceInUseException ex) {
         }
+        projectTable = dynamoDoc.getTable(PROJECT_TABLE);
     }
 
     @Override
@@ -80,7 +88,7 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
 
     @Override
     public Optional<VersionedConfigAdmin> getConfig(String projectId, boolean useCache) {
-        if (useCache) {
+        if (config.enableConfigCacheRead() && useCache) {
             final Optional<VersionedConfigAdmin> versionedConfigAdminCachedOpt = versionedConfigAdminCache.getIfPresent(projectId);
             //noinspection OptionalAssignedToNull
             if (versionedConfigAdminCachedOpt != null) {
@@ -88,15 +96,15 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
             }
         }
 
-        final Item item = projectTable.getItem(PROJECT_ID, projectId);
+        GetItemResult item = dynamo.getItem(PROJECT_TABLE, ImmutableMap.of(PROJECT_ID, new AttributeValue(projectId)));
 
         final Optional<VersionedConfigAdmin> versionedConfigAdminOpt;
-        if (item == null) {
+        if (item.getItem() == null) {
             versionedConfigAdminOpt = Optional.empty();
         } else {
             versionedConfigAdminOpt = Optional.of(new VersionedConfigAdmin(
-                    gson.fromJson(item.getString(PROJECT_VERSION), ConfigAdmin.class),
-                    item.getString(PROJECT_VERSION)));
+                    gson.fromJson(item.getItem().get(PROJECT_VERSION).getS(), ConfigAdmin.class),
+                    item.getItem().get(PROJECT_VERSION).getS()));
         }
 
         versionedConfigAdminCache.put(projectId, versionedConfigAdminOpt);
@@ -110,7 +118,6 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
                 .withPrimaryKey(PROJECT_ID, projectId)
                 .withString(PROJECT_VERSION, versionedConfigAdmin.getVersion())
                 .withString(PROJECT_DATA, gson.toJson(versionedConfigAdmin.getConfig())));
-        // TODO check result
         versionedConfigAdminCache.invalidate(projectId);
     }
 
@@ -121,7 +128,6 @@ public class DynamoProjectStore extends AbstractIdleService implements ProjectSt
                         .withString(PROJECT_VERSION, versionedConfigAdmin.getVersion())
                         .withString(PROJECT_DATA, gson.toJson(versionedConfigAdmin.getConfig())),
                 new Expected(PROJECT_VERSION).eq(previousVersion));
-        // TODO check result
         versionedConfigAdminCache.invalidate(projectId);
     }
 

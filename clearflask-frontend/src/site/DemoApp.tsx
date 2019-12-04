@@ -35,7 +35,7 @@ export function getProject(
         return d.configSetAdmin({
           projectId: projectId,
           versionLast: project.config.version,
-          config: editor.getConfig(),
+          configAdmin: editor.getConfig(),
         })
         .then(() => mock && mock(DataMock.get(projectId)))
         .then(() => server.dispatch().configGetAndUserBind({projectId: projectId}))

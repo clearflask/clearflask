@@ -406,7 +406,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     this.setState({newItemIsSubmitting: true});
     this.props.server.dispatch().ideaCreate({
       projectId: this.props.server.getProjectId(),
-      create: {
+      ideaCreate: {
         authorUserId: this.props.loggedInUserId!,
         title: this.state.newItemTitle!,
         description: this.state.newItemDescription,

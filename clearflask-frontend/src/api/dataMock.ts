@@ -23,7 +23,7 @@ class DataMock {
       .then(user =>
       ServerMock.get().ideaCreateAdmin({
         projectId: this.projectId,
-        create: {
+        ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Support Jira integration',
           description: 'I would like to be able to synchronize user ideas with my Jira board',
@@ -71,7 +71,7 @@ class DataMock {
 
   mockAccountCreate():Promise<Admin.AccountAdmin> {
     return ServerMock.get().accountSignupAdmin({
-      signup: {
+      accountSignupAdmin: {
         planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7',
         company: 'A.C.M.E. LLC',
         name: 'John Doe',
@@ -86,7 +86,7 @@ class DataMock {
   mockLoggedIn():Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
-      create: {
+      userCreate: {
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: 'password',
@@ -97,7 +97,7 @@ class DataMock {
       ServerMock.get().transactionCreateAdmin({
         projectId: this.projectId,
         userId: userMe.userId,
-        transaction: {
+        transactionCreateAdmin: {
           amount: 100,
           summary: 'Mock amount given, spend it wisely',
         },
@@ -129,7 +129,7 @@ class DataMock {
   mockUser(name?:string):Promise<Admin.UserAdmin> {
     return ServerMock.get().userCreateAdmin({
       projectId: this.projectId,
-      create: {
+      userCreateAdmin: {
         name: name || loremIpsum({
           units: 'words',
           count: 2,
@@ -142,7 +142,7 @@ class DataMock {
   mockIdea(versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, status:Admin.IdeaStatus|undefined, user:Admin.User):Promise<any> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
-      create: {
+      ideaCreateAdmin: {
         ...this.fakeMockIdeaData(category),
         authorUserId: user.userId,
         title: loremIpsum({
@@ -202,7 +202,7 @@ class DataMock {
       .then(user => ServerMock.get().commentCreateAdmin({
           projectId: this.projectId,
           ideaId: item.ideaId,
-          create: {
+          commentCreateAdmin: {
             authorUserId: user.userId,
             content: this.mockMention(userMentionPool) + loremIpsum({
               units: 'sentences',
@@ -226,7 +226,7 @@ class DataMock {
               projectId: this.projectId,
               ideaId: item.ideaId,
               commentId: comment.commentId,
-              update: { content: this.mockMention(userMentionPool) + loremIpsum({
+              commentUpdate: { content: this.mockMention(userMentionPool) + loremIpsum({
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
               })}
