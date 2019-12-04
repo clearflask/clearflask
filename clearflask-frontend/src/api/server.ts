@@ -56,8 +56,8 @@ export class Server {
     const apiConf:Client.ConfigurationParameters = {};
     if(!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
-    } else if(detectEnv() === Environment.PRODUCTION) {
-      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}://${window.location.host}`);
+    } else {
+      apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
     }
 
     const dispatcherClient = new Client.Dispatcher(dispatcherDelegate,
