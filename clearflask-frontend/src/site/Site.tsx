@@ -33,6 +33,12 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
           <AppBar position='relative' color='inherit' elevation={1}>
             <Container maxWidth='md'>
               <Toolbar className={this.props.classes.toolbar}>
+                <img
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                  }}
+                  src='/clearflask-logo.png' />
                 <Typography variant="h6">Clear Flask</Typography>
                 <div className={this.props.classes.grow} />
                 <Button onClick={() => this.props.history.push('/')}>Home</Button>

@@ -87,6 +87,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         <div className={this.props.classes.hero}>
           <Container maxWidth='md'>
             {this.renderTitle()}
+            <img
+              style={{
+                position: 'absolute',
+                width: '300px',
+                height: '300px',
+                transform: 'translateY(-50%) translateX(-75%)',
+              }}
+              src='/clearflask-logo.png' />
             {this.renderSubTitle()}
           </Container>
         </div>
