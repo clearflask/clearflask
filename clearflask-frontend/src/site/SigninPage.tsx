@@ -33,7 +33,13 @@ class SigninPage extends Component<RouteComponentProps&ConnectProps&WithStyles<t
     super(props);
 
     if(props.accountStatus === undefined) {
-      ServerAdmin.get().dispatchAdmin().then(d => d.accountBindAdmin());
+      ServerAdmin.get().dispatchAdmin()
+      .then(d => d.accountBindAdmin())
+      .catch((e) => {
+        if(e.status !== 403) {
+          throw e;
+        }
+      });
     }
 
     this.state = {};

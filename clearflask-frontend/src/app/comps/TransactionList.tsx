@@ -5,7 +5,7 @@ import { ReduxState, Server, Status, getTransactionSearchKey } from '../../api/s
 import * as Client from '../../api/client';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { withRouter, RouteComponentProps } from 'react-router';
-import ErrorPage from '../ErrorPage';
+import ErrorMsg from '../ErrorMsg';
 import { Table, TableBody, TableRow, TableCell, TableHead, Button, Typography } from '@material-ui/core';
 import CreditView from '../../common/config/CreditView';
 import TimeAgo from 'react-timeago'
@@ -41,7 +41,7 @@ class TransactionList extends Component<Props&ConnectProps&WithStyles<typeof sty
 
   render() {
     if(!this.props.isLoggedIn) {
-      return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
+      return (<ErrorMsg msg='You need to log in to see your balance' variant='info' />);
     }
     return (
       <div className={this.props.className}>

@@ -5,7 +5,7 @@ import { ReduxState, Server, Status, getTransactionSearchKey } from '../../api/s
 import * as Client from '../../api/client';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { withRouter, RouteComponentProps } from 'react-router';
-import ErrorPage from '../ErrorPage';
+import ErrorMsg from '../ErrorMsg';
 import { Table, TableBody, TableRow, TableCell, TableHead, Button, Typography, CardActionArea } from '@material-ui/core';
 import CreditView from '../../common/config/CreditView';
 import TimeAgo from 'react-timeago'
@@ -37,7 +37,7 @@ interface ConnectProps {
 class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps> {
   render() {
     if(!this.props.userId) {
-      return (<ErrorPage msg='You need to log in to see your notifications' variant='info' />);
+      return (<ErrorMsg msg='You need to log in to see your notifications' variant='info' />);
     }
     const hasNotifications = this.props.notifications && this.props.notifications.length > 0;
     return (

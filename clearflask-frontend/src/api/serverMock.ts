@@ -110,7 +110,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   accountBindAdmin(): Promise<Admin.AccountAdmin> {
-    if(!this.loggedIn || !this.account) return this.throwLater(403, 'Not logged in');
+    if(!this.loggedIn || !this.account) return this.throwLater(403);
     return this.returnLater(this.account);
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
@@ -734,9 +734,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     await this.waitLatency();
     throw {
       status: httpStatus,
-      json: Admin.ErrorResponseToJSON({
+      json: () => Promise.resolve(Admin.ErrorResponseToJSON({
         userFacingMessage: userFacingMessage,
-      }),
+      })),
     };
   }
 

@@ -7,7 +7,7 @@ interface Props {
   variant?:'success'|'warning'|'error'|'info';
 }
 
-export default class ErrorPage extends Component<Props> {
+export default class ErrorMsg extends Component<Props> {
   readonly styles = {
     message: {
       margin: '40px auto',
@@ -23,7 +23,7 @@ export default class ErrorPage extends Component<Props> {
         justifyContent='center'
         alignItems='center'
         width='100%'
-        height='100vh'
+        height='100%'
       >
         <Message innerStyle={this.styles.message}
           message={this.props.msg}

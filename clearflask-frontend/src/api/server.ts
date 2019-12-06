@@ -23,7 +23,7 @@ export class Server {
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
-  readonly errorSubscribers:((msg:string)=>void)[] = [];
+  readonly errorSubscribers:((errorMsg:string, isUserFacing:boolean)=>void)[] = [];
 
   constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     this.projectId = projectId;
@@ -110,7 +110,7 @@ export class Server {
     }
   }
 
-  subscribeToErrors(subscriber:((msg:string)=>void)) {
+  subscribeToErrors(subscriber:((errorMsg:string, isUserFacing:boolean)=>void)) {
     this.errorSubscribers.push(subscriber);
   }
 

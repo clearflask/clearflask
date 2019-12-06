@@ -7,16 +7,20 @@ import CloseIcon from '@material-ui/icons/Close';
 
 const ServerErrorNotifier = (props:({server:Server|ServerAdmin})) => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-  props.server.subscribeToErrors(errorMsg =>
-    enqueueSnackbar(errorMsg, {
-      variant: 'error',
-      preventDuplicate: false,
-      action: (key) => (
-        <IconButton aria-label="Close" color="inherit" onClick={() => closeSnackbar(key)}>
-          <CloseIcon fontSize='small' />
-        </IconButton>
-      ),
-    }))
+  props.server.subscribeToErrors((errorMsg, isUserFacing) => {
+    console.log("Server error: " + errorMsg);
+    if(isUserFacing) {
+      enqueueSnackbar(errorMsg, {
+        variant: 'error',
+        preventDuplicate: false,
+        action: (key) => (
+          <IconButton aria-label="Close" color="inherit" onClick={() => closeSnackbar(key)}>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        ),
+      });
+    }
+  })
   return null;
 };
 

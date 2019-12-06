@@ -9,7 +9,7 @@ import thunk from 'redux-thunk';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
 import * as ConfigEditor from '../common/config/configEditor';
 
-type ErrorSubscribers = ((msg:string)=>void)[];
+type ErrorSubscribers = ((msg:string, isUserFacing:boolean)=>void)[];
 
 export interface Project {
   projectId:string;
@@ -71,7 +71,7 @@ export default class ServerAdmin {
     return Object.values(this.projects).map(p => p.server);
   }
 
-  subscribeToErrors(subscriber:((msg:string)=>void)) {
+  subscribeToErrors(subscriber:((msg:string, isUserFacing:boolean)=>void)) {
     this.errorSubscribers.push(subscriber);
   }
 
@@ -86,17 +86,25 @@ export default class ServerAdmin {
   static async _dispatch(msg:any, store:Store, errorSubscribers:ErrorSubscribers):Promise<any>{
     try {
       var result = await store.dispatch(msg);
-    } catch(err) {
+    } catch(response) {
+      var body = await response.json();
       var errorMsg;
-      if(err.json && err.json.userFacingMessage) {
-        errorMsg = err.json.userFacingMessage;
-      } else if(msg && msg.meta && msg.meta.action) {
-        errorMsg = `Failed to process: ${msg.meta.action}`;
+      var isUserFacing = false;
+      var action = msg && msg.meta && msg.meta.action || 'unknown action';
+      if(body && body.userFacingMessage) {
+        errorMsg = body.userFacingMessage;
+        isUserFacing = true;
+      } else if(response.status && response.status >= 100 && response.status < 500) {
+        errorMsg = `${response.status} failed ${action}`;
+      } else if(response.status && response.status >= 500 && response.status < 600) {
+        errorMsg = `${response.status} failed ${action}`;
+        isUserFacing = true;
       } else {
-        errorMsg = `Unknown error processing: ${JSON.stringify(msg)}`;
+        errorMsg = `Connection failure processing ${action}`;
+        isUserFacing = true;
       }
-      errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg));
-      throw err;
+      errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
+      throw response;
     }
     return result.value;
   }

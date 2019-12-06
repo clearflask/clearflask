@@ -5,7 +5,7 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import * as Client from '../../api/client';
 import { connect } from 'react-redux';
 import { Typography, Divider } from '@material-ui/core';
-import ErrorPage from '../ErrorPage';
+import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import DividerCorner from '../utils/DividerCorner';
 import ContentScroll, { Side, contentScrollApplyStyles } from '../../common/ContentScroll';
@@ -62,7 +62,7 @@ class Panel extends Component<Props> {
       default:
       case Status.REJECTED:
         content = (
-          <ErrorPage msg='Failed to load' />
+          <ErrorMsg msg='Failed to load' />
         );
         break;
       case Status.PENDING:

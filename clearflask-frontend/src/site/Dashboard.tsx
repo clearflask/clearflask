@@ -14,8 +14,8 @@ import AddIcon from '@material-ui/icons/Add';
 import randomUuid from '../common/util/uuid';
 import { connect } from 'react-redux';
 import { Status } from '../api/server';
-import ErrorPage from '../app/ErrorPage';
 import LogoutIcon from '../common/icon/LogoutIcon';
+import LoadingPage from '../app/LoadingPage';
 
 interface Props {
 }
@@ -48,7 +48,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         state: {ADMIN_LOGIN_REDIRECT_TO: this.props.location}
       }} />);
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
-      return (<ErrorPage msg='Failed to load, please refresh.' />);
+      return (<LoadingPage />);
     }
     const projects = this.props.configs.map(c => ServerAdmin.get().getProject(c));
 
