@@ -27,14 +27,14 @@ import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Service;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +46,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 @Slf4j
 @Singleton
-public class DynamoAccountStore extends AbstractIdleService implements AccountStore {
+public class DynamoAccountStore extends ManagedService implements AccountStore {
 
     private static final String ACCOUNT_TABLE = "account";
     private static final String EMAIL_ACCOUNT_TABLE = "emailAccount";
@@ -69,7 +69,7 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
     private Table sessionTable;
 
     @Override
-    protected void startUp() throws Exception {
+    protected void serviceStart() throws Exception {
         try {
             dynamo.createTable(new CreateTableRequest()
                     .withTableName(ACCOUNT_TABLE)
@@ -118,10 +118,6 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
     }
 
     @Override
-    protected void shutDown() throws Exception {
-    }
-
-    @Override
     public Optional<Account> getAccount(String accountId) {
         final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
 
@@ -162,19 +158,80 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
     }
 
     @Override
-    public void updateAccountPlanIds(String accountId, ImmutableSet<String> planIds) {
+    public void addAccountPlanId(String accountId, String planId) {
         final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
         checkNotNull(item);
         Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
         Account accountUpdated = new Account(
                 account.getAccountId(),
-                planIds,
+                ImmutableSet.<String>builder().addAll(account.getPlanIds()).add(planId).build(),
                 account.getCompany(),
                 account.getName(),
                 account.getEmail(),
                 account.getPassword(),
                 account.getPhone(),
-                account.getPaymentToken());
+                account.getPaymentToken(),
+                account.getProjectIds());
+        accountTable.updateItem(ACCOUNT_ID, accountId,
+                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
+                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+    }
+
+    @Override
+    public void removeAccountPlanId(String accountId, String planId) {
+        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
+        checkNotNull(item);
+        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
+        Account accountUpdated = new Account(
+                account.getAccountId(),
+                ImmutableSet.copyOf(Sets.difference(account.getPlanIds(), ImmutableSet.of(planId))),
+                account.getCompany(),
+                account.getName(),
+                account.getEmail(),
+                account.getPassword(),
+                account.getPhone(),
+                account.getPaymentToken(),
+                account.getProjectIds());
+        accountTable.updateItem(ACCOUNT_ID, accountId,
+                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
+                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+    }
+
+    @Override
+    public void addAccountProjectId(String accountId, String projectId) {
+        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
+        checkNotNull(item);
+        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
+        Account accountUpdated = new Account(
+                account.getAccountId(),
+                account.getProjectIds(),
+                account.getCompany(),
+                account.getName(),
+                account.getEmail(),
+                account.getPassword(),
+                account.getPhone(),
+                account.getPaymentToken(),
+                ImmutableSet.<String>builder().addAll(account.getProjectIds()).add(projectId).build());
+        accountTable.updateItem(ACCOUNT_ID, accountId,
+                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
+                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+    }
+
+    @Override
+    public void removeAccountProjectId(String accountId, String projectId) {
+        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
+        checkNotNull(item);
+        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
+        Account accountUpdated = new Account(
+                account.getAccountId(),
+                account.getProjectIds(),
+                account.getCompany(),
+                account.getName(),
+                account.getEmail(),
+                account.getPassword(),
+                account.getPhone(),
+                account.getPaymentToken(),
+                ImmutableSet.copyOf(Sets.difference(account.getProjectIds(), ImmutableSet.of(projectId))));
         accountTable.updateItem(ACCOUNT_ID, accountId,
                 ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
                 new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
@@ -193,7 +250,8 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
                 account.getEmail(),
                 account.getPassword(),
                 account.getPhone(),
-                account.getPaymentToken());
+                account.getPaymentToken(),
+                account.getProjectIds());
         accountTable.updateItem(ACCOUNT_ID, accountId,
                 ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
                 new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
@@ -212,7 +270,8 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
                 account.getEmail(),
                 password,
                 account.getPhone(),
-                account.getPaymentToken());
+                account.getPaymentToken(),
+                account.getProjectIds());
         accountTable.updateItem(ACCOUNT_ID, accountId,
                 ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
                 new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
@@ -232,7 +291,8 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
                 email,
                 account.getPassword(),
                 account.getPhone(),
-                account.getPaymentToken());
+                account.getPaymentToken(),
+                account.getProjectIds());
         dynamo.transactWriteItems(new TransactWriteItemsRequest()
                 .withTransactItems(
                         new TransactWriteItem().withPut(new Put()
@@ -337,7 +397,7 @@ public class DynamoAccountStore extends AbstractIdleService implements AccountSt
             @Override
             protected void configure() {
                 bind(AccountStore.class).to(DynamoAccountStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DynamoAccountStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoAccountStore.class);
             }
         };
     }

@@ -39,7 +39,8 @@ public class AccountStoreTest extends AbstractTest {
                 "my@email.com",
                 "password",
                 "123456",
-                "paymentToken");
+                "paymentToken",
+                ImmutableSet.of());
         store.createAccount(account);
         assertTrue(store.getAccountByEmail(account.getEmail()).isPresent());
         assertEquals(account, store.getAccountByEmail(account.getEmail()).get());
@@ -74,7 +75,8 @@ public class AccountStoreTest extends AbstractTest {
                 "my@email.com",
                 "password",
                 "123456",
-                "paymentToken");
+                "paymentToken",
+                ImmutableSet.of());
         store.createAccount(account);
 
         AccountStore.Session session1 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));

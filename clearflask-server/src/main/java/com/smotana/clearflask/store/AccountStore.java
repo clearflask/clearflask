@@ -16,7 +16,13 @@ public interface AccountStore {
 
     void createAccount(Account account);
 
-    void updateAccountPlanIds(String accountId, ImmutableSet<String> planIds);
+    void addAccountPlanId(String accountId, String planId);
+
+    void removeAccountPlanId(String accountId, String planId);
+
+    void addAccountProjectId(String accountId, String projectId);
+
+    void removeAccountProjectId(String accountId, String projectId);
 
     void updateAccountName(String accountId, String name);
 
@@ -85,5 +91,9 @@ public interface AccountStore {
         @NonNull
         @SerializedName("paymentToken")
         private final String paymentToken;
+
+        @NonNull
+        @SerializedName("projectIds")
+        private final ImmutableSet<String> projectIds;
     }
 }

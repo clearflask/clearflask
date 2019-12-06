@@ -3,11 +3,9 @@ package com.smotana.clearflask.store.impl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.api.model.FeaturesTable;
 import com.smotana.clearflask.api.model.FeaturesTableFeatures;
 import com.smotana.clearflask.api.model.Plan;
@@ -90,7 +88,6 @@ public class StaticPlanStore implements PlanStore {
             @Override
             protected void configure() {
                 bind(PlanStore.class).to(StaticPlanStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DynamoProjectStore.class);
             }
         };
     }

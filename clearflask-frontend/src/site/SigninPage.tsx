@@ -7,6 +7,7 @@ import { RouteComponentProps, Redirect } from 'react-router';
 import { Status } from '../api/server';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { saltHashPassword } from '../common/util/auth';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
@@ -92,7 +93,7 @@ class SigninPage extends Component<RouteComponentProps&ConnectProps&WithStyles<t
     this.setState({isSubmitting: true});
     ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAdmin({accountLogin: {
       email: this.state.email || '',
-      password: this.state.pass || '',
+      password: saltHashPassword(this.state.pass || ''),
     }})).then(() => {
     }).catch((e) => {
       this.setState({isSubmitting: false});

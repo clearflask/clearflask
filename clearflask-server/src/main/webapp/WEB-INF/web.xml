@@ -97,10 +97,6 @@
         <listener-class>com.smotana.clearflask.web.ContextListener</listener-class>
     </listener>
 
-    <listener>
-        <listener-class>com.smotana.clearflask.web.RequestListener</listener-class>
-    </listener>
-
     <servlet>
         <display-name>clearflask</display-name>
         <servlet-name>ClearflaskApplication</servlet-name>

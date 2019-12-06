@@ -28,9 +28,10 @@ import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.PingResource;
-import com.smotana.clearflask.web.resource.api.AccountResource;
-import com.smotana.clearflask.web.resource.api.PlanResource;
+import com.smotana.clearflask.web.resource.PlanResource;
+import com.smotana.clearflask.web.resource.ProjectResource;
 import com.smotana.clearflask.web.security.AuthCookieUtil;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,6 +123,7 @@ public enum ServiceInjector {
                 bind(PingResource.class);
                 install(AccountResource.module());
                 bind(PlanResource.class);
+                bind(ProjectResource.class);
 
                 // Other
                 bind(AuthCookieUtil.class);
@@ -137,6 +139,7 @@ public enum ServiceInjector {
                         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
                         install(DefaultDynamoDbProvider.module());
                         install(DefaultElasticSearchProvider.module());
+                        install(DemoData.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;

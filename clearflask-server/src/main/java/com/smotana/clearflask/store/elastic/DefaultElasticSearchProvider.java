@@ -1,8 +1,6 @@
 package com.smotana.clearflask.store.elastic;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -11,6 +9,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
@@ -19,7 +18,7 @@ import java.util.Optional;
 
 @Log4j2
 @Singleton
-public class DefaultElasticSearchProvider extends AbstractIdleService implements Provider<RestClient> {
+public class DefaultElasticSearchProvider extends ManagedService implements Provider<RestClient> {
 
     private interface Config {
         @NoDefaultValue
@@ -42,11 +41,7 @@ public class DefaultElasticSearchProvider extends AbstractIdleService implements
     }
 
     @Override
-    protected void startUp() throws Exception {
-    }
-
-    @Override
-    protected void shutDown() throws Exception {
+    protected void serviceStop() throws Exception {
         if (this.restClientOpt.isPresent()) {
             restClientOpt.get().close();
         }
@@ -57,7 +52,7 @@ public class DefaultElasticSearchProvider extends AbstractIdleService implements
             @Override
             protected void configure() {
                 bind(RestClient.class).toProvider(DefaultElasticSearchProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DefaultElasticSearchProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultElasticSearchProvider.class);
                 install(ConfigSystem.configModule(Config.class));
             }
         };

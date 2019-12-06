@@ -1,4 +1,4 @@
-package com.smotana.clearflask.web.resource.api;
+package com.smotana.clearflask.web.resource;
 
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.PlansGetResponse;
@@ -13,7 +13,7 @@ import javax.ws.rs.Path;
 @Slf4j
 @Singleton
 @Path("/v1")
-public class PlanResource implements PlanApi {
+public class PlanResource extends AbstractResource implements PlanApi {
 
     @Inject
     private PlanStore planStore;

@@ -1,4 +1,4 @@
-package com.smotana.clearflask.web.resource;
+package com.smotana.clearflask.web;
 
 
 import com.google.common.base.Charsets;

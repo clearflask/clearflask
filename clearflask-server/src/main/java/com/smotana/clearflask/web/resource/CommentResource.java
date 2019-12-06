@@ -1,4 +1,4 @@
-package com.smotana.clearflask.web.resource.api;
+package com.smotana.clearflask.web.resource;
 
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
@@ -19,7 +19,7 @@ import javax.ws.rs.Path;
 @Slf4j
 @Singleton
 @Path("/v1")
-public class CommentResource implements CommentAdminApi, CommentApi {
+public class CommentResource extends AbstractResource implements CommentAdminApi, CommentApi {
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override

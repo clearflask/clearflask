@@ -5,8 +5,6 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.base.Strings;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Service;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -15,11 +13,12 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.core.ManagedService;
 
 import java.util.Optional;
 
 @Singleton
-public class DefaultDynamoDbProvider extends AbstractIdleService implements Provider<AmazonDynamoDB> {
+public class DefaultDynamoDbProvider extends ManagedService implements Provider<AmazonDynamoDB> {
 
     private interface Config {
         @DefaultValue("")
@@ -52,11 +51,7 @@ public class DefaultDynamoDbProvider extends AbstractIdleService implements Prov
     }
 
     @Override
-    protected void startUp() throws Exception {
-    }
-
-    @Override
-    protected void shutDown() throws Exception {
+    protected void serviceStop() throws Exception {
         amazonDynamoDBOpt.ifPresent(AmazonDynamoDB::shutdown);
     }
 
@@ -65,7 +60,7 @@ public class DefaultDynamoDbProvider extends AbstractIdleService implements Prov
             @Override
             protected void configure() {
                 bind(AmazonDynamoDB.class).toProvider(DefaultDynamoDbProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), Service.class).addBinding().to(DefaultDynamoDbProvider.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultDynamoDbProvider.class);
                 install(ConfigSystem.configModule(Config.class));
 
                 install(DocumentDynamoDbProvider.module());
