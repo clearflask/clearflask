@@ -21,6 +21,7 @@ import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.InMemoryElasticSearchProvider;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
@@ -105,6 +106,7 @@ public enum ServiceInjector {
                 install(DynamoProjectStore.module());
                 install(DynamoAccountStore.module());
                 install(StaticPlanStore.module());
+                install(DynamoMapperImpl.module());
 
                 // Configuration
                 install(ConfigSystem.module());

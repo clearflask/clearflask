@@ -106,14 +106,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.PROJECT_USER:
             case Role.IDEA_OWNER:
             case Role.COMMENT_OWNER:
-            case Role.PLAN_BASIC:
+            case Role.PROJECT_OWNER_PLAN_BASIC:
 //                accountOpt = accountStore.getAccount(authCookie.getAccountId());
 //                if (!accountOpt.isPresent()) {
 //                    return false;
 //                }
 //                break;
-            case Role.PLAN_ANALYTIC:
-            case Role.PLAN_ENTERPRISE:
+            case Role.PROJECT_OWNER_PLAN_ANALYTIC:
+            case Role.PROJECT_OWNER_PLAN_ENTERPRISE:
                 // TODO
                 return false;
         }

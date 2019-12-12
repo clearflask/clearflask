@@ -254,11 +254,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       } : undefined,
     });
   }
-  userCreate(request: Client.UserCreateRequest, isSso?:boolean): Promise<Client.UserMeWithBalance> {
+  userCreate(request: Client.UserCreateRequest): Promise<Client.UserMeWithBalance> {
     return this.userCreateAdmin({
       projectId: request.projectId,
       userCreateAdmin: request.userCreate,
-    }, isSso).then(user => {
+    }).then(user => {
       this.getProject(request.projectId).loggedInUser = user;
       return user;
     });
@@ -303,7 +303,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.userCreate({
       projectId: request.projectId,
       userCreate: typeof token === 'object' ? {...token} : {},
-    }, true);
+    });
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
     return this.userUpdateAdmin(request)
@@ -454,7 +454,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       config: this.getProject(request.projectId).config,
     });
   }
-  userCreateAdmin(request: Admin.UserCreateAdminRequest, isSso?:boolean): Promise<Admin.UserAdmin> {
+  userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user:Admin.UserAdmin = {
       userId: randomUuid(),
       balance: 0,
@@ -462,7 +462,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       iosPush: !!request.userCreateAdmin.iosPushToken,
       androidPush: !!request.userCreateAdmin.androidPushToken,
       browserPush: !!request.userCreateAdmin.browserPushToken,
-      isSso: !!isSso,
       ...request.userCreateAdmin,
     };
     this.getProject(request.projectId).users.push(user);

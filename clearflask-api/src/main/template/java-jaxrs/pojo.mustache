@@ -4,6 +4,8 @@
     */
 {{/description}}
 @Value
+@Builder(toBuilder = true)
+@AllArgsConstructor
 public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
 {{#vars}}{{#isEnum}}{{^isContainer}}
     {{>enumClass}}{{/isContainer}}{{#isContainer}}{{#mostInnerItems}}

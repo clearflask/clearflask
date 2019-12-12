@@ -1,7 +1,11 @@
 package com.smotana.clearflask.store;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -43,14 +47,16 @@ public interface AccountStore {
     void revokeSessions(String accountId, String sessionToLeave);
 
     @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoDBDocument
     class Session {
 
         @NonNull
-        @SerializedName("sessionId")
+        @DynamoDBHashKey(attributeName = "sessionId")
         private final String sessionId;
 
         @NonNull
-        @SerializedName("aid")
         private final String accountId;
 
         @NonNull
@@ -59,6 +65,8 @@ public interface AccountStore {
     }
 
     @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
     class Account {
 
         @NonNull

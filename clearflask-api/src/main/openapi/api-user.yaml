@@ -45,14 +45,11 @@ components:
       - $ref: 'api-user.yaml#/components/schemas/User'
       - type: object
         required:
-        - isSso
         - iosPush
         - androidPush
         - browserPush
         - emailNotify
         properties:
-          isSso:
-            type: boolean
           email:
             type: string
           emailNotify:

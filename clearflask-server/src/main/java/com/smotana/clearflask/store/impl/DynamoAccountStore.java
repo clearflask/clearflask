@@ -162,6 +162,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
         final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
         checkNotNull(item);
         Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
+        account.toBuilder()
+                .planIds(ImmutableSet.<String>builder().addAll(account.getPlanIds()).add(planId).build())
+                .build();
         Account accountUpdated = new Account(
                 account.getAccountId(),
                 ImmutableSet.<String>builder().addAll(account.getPlanIds()).add(planId).build(),
