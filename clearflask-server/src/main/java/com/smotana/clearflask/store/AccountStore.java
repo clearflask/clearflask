@@ -1,9 +1,6 @@
 package com.smotana.clearflask.store;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -49,18 +46,15 @@ public interface AccountStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoDBDocument
     class Session {
 
         @NonNull
-        @DynamoDBHashKey(attributeName = "sessionId")
         private final String sessionId;
 
         @NonNull
         private final String accountId;
 
         @NonNull
-        @SerializedName("expiry")
         private final Instant expiry;
     }
 
@@ -70,38 +64,28 @@ public interface AccountStore {
     class Account {
 
         @NonNull
-        @SerializedName("aid")
         private final String accountId;
 
         @NonNull
-        @SerializedName("plans")
         private final ImmutableSet<String> planIds;
 
         @NonNull
-        @SerializedName("company")
         private final String company;
 
         @NonNull
-        @SerializedName("name")
         private final String name;
 
         @NonNull
-        @SerializedName("email")
         private final String email;
 
         @NonNull
-        @SerializedName("password")
         private final String password;
 
-        @SerializedName("phone")
         private final String phone;
 
         @NonNull
-        @SerializedName("paymentToken")
         private final String paymentToken;
 
-        @NonNull
-        @SerializedName("projectIds")
         private final ImmutableSet<String> projectIds;
     }
 }

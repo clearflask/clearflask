@@ -4,9 +4,19 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerItem;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -14,15 +24,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.text.ParseException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+@Slf4j
 @Singleton
 public class DynamoMapperImpl implements DynamoMapper {
 
@@ -35,35 +46,49 @@ public class DynamoMapperImpl implements DynamoMapper {
             checkState(Modifier.isFinal(field.getModifiers()),
                     "Cannot map class %s to item,field %s is not final",
                     object.getClass().getSimpleName(), field.getName());
-            DynamoConvertersProxy.MarshallerItem m = findInClassSet(
-                    field.getType(),
-                    Set.class.isAssignableFrom(field.getType()) ? converters.mis : converters.mic);
             field.setAccessible(true);
+            Object val;
             try {
-                m.marshall(field.get(object), field.getName(), item);
+                val = field.get(object);
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
+            if (val == null) {
+                item.withNull(field.getName());
+            } else {
+                Optional<Class> collectionClazz = getCollectionClazz(field.getType());
+                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
+                findMarshallerItem(collectionClazz, itemClazz)
+                        .marshall(val, field.getName(), item);
+            }
         }
+        log.trace("toItem class {} item {}", object.getClass().getSimpleName(), item);
         return item;
     }
 
     @Override
     public <T> T fromItem(Item item, Class<T> objectClazz) {
-        Constructor<T> constructor = findConstructor(objectClazz);
-        Object[] args = new Object[constructor.getParameterCount()];
-        Parameter[] parameters = constructor.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            DynamoConvertersProxy.UnMarshallerItem u = findInClassSet(
-                    parameter.getType(),
-                    Set.class.isAssignableFrom(parameter.getType()) ? converters.uis : converters.uic);
-            args[i] = u.unmarshall(parameter.getName(), item);
+        log.trace("fromItem class {} item {}", objectClazz.getSimpleName(), item);
+        if (item == null) {
+            return null;
         }
 
+        List<Object> args = Lists.newArrayList();
+        for (Field field : objectClazz.getDeclaredFields()) {
+            Optional<Class> collectionClazz = getCollectionClazz(field.getType());
+            if (!collectionClazz.isPresent() && (!item.isPresent(field.getName()) || item.isNull(field.getName()))) {
+                args.add(null);
+            } else {
+                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
+                args.add(findUnMarshallerItem(collectionClazz, itemClazz)
+                        .unmarshall(field.getName(), item));
+            }
+        }
+
+        Constructor<T> constructor = findConstructor(objectClazz, args.size());
         constructor.setAccessible(true);
         try {
-            return (T) constructor.newInstance(args);
+            return constructor.newInstance(args.toArray());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
@@ -76,53 +101,147 @@ public class DynamoMapperImpl implements DynamoMapper {
             checkState(Modifier.isFinal(field.getModifiers()),
                     "Cannot map class %s to item,field %s is not final",
                     object.getClass().getSimpleName(), field.getName());
-            DynamoConvertersProxy.MarshallerAttrVal m = findInClassSet(
-                    field.getType(),
-                    Set.class.isAssignableFrom(field.getType()) ? converters.mas : converters.mac);
             field.setAccessible(true);
-            AttributeValue value;
+            Object val;
             try {
-                value = m.marshall(field.get(object));
+                val = field.get(object);
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
-            mapBuilder.put(field.getName(), value);
+            AttributeValue attrVal;
+            if (val == null) {
+                attrVal = new AttributeValue().withNULL(true);
+            } else {
+                Optional<Class> collectionClazz = getCollectionClazz(field.getType());
+                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
+                attrVal = findMarshallerAttrVal(collectionClazz, itemClazz)
+                        .marshall(val);
+            }
+            mapBuilder.put(field.getName(), attrVal);
         }
-        return mapBuilder.build();
+        ImmutableMap<String, AttributeValue> map = mapBuilder.build();
+        log.trace("toAttrMap map {}", map);
+        return map;
     }
 
     @Override
     public <T> T fromAttrMap(ImmutableMap<String, AttributeValue> attrMap, Class<T> objectClazz) {
-        Constructor<T> constructor = findConstructor(objectClazz);
-        Object[] args = new Object[constructor.getParameterCount()];
-        Parameter[] parameters = constructor.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            DynamoConvertersProxy.UnMarshallerAttrVal u = findInClassSet(
-                    parameter.getType(),
-                    Set.class.isAssignableFrom(parameter.getType()) ? converters.uas : converters.uac);
-            args[i] = u.unmarshall(checkNotNull(attrMap.get(parameter.getName())));
+        if (attrMap == null) {
+            return null;
         }
 
+        List<Object> args = Lists.newArrayList();
+        for (Field field : objectClazz.getDeclaredFields()) {
+            Optional<Class> collectionClazz = getCollectionClazz(field.getType());
+            AttributeValue attrVal = attrMap.get(field.getName());
+            if (!collectionClazz.isPresent() && (attrVal == null || attrVal.isNULL())) {
+                args.add(null);
+                continue;
+            }
+            Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
+            args.add(findUnMarshallerAttrVal(collectionClazz, itemClazz)
+                    .unmarshall(checkNotNull(attrVal)));
+        }
+
+        Constructor<T> constructor = findConstructor(objectClazz, args.size());
         constructor.setAccessible(true);
         try {
-            return constructor.newInstance(args);
+            return constructor.newInstance(args.toArray());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private <T> Constructor<T> findConstructor(Class<T> objectClazz) {
-        Constructor<?> constructor = null;
+    @Override
+    public Object toDynamoValue(Object object) {
+        Optional<Class> collectionClazz = getCollectionClazz(object.getClass());
+        Class itemClazz;
+        if (collectionClazz.isPresent()) {
+            itemClazz = ((Collection<?>) object).stream()
+                    .filter(Objects::nonNull)
+                    .map(i -> (Class) i.getClass())
+                    .findAny()
+                    .orElse(Object.class);
+        } else {
+            itemClazz = object.getClass();
+        }
+        return findMarshallerAttrVal(collectionClazz, itemClazz)
+                .marshall(object);
+    }
+
+    private <T> Constructor<T> findConstructor(Class<T> objectClazz, long expectedArgCount) {
         for (Constructor<?> constructorPotential : objectClazz.getDeclaredConstructors()) {
-            if (constructor == null) {
-                constructor = constructorPotential;
-            } else if (constructor.getParameterCount() < constructorPotential.getParameterCount()) {
-                constructor = constructorPotential;
+            if (constructorPotential.getParameterCount() == expectedArgCount) {
+                return (Constructor<T>) constructorPotential;
             }
         }
-        checkState(constructor != null, "Cannot find constructor for class %s", objectClazz.getSimpleName());
-        return (Constructor<T>) constructor;
+        throw new IllegalStateException("Cannot find constructor for class " + objectClazz.getSimpleName());
+    }
+
+    private Optional<Class> getCollectionClazz(Class<?> clazz) {
+        return Collection.class.isAssignableFrom(clazz)
+                ? Optional.of(clazz)
+                : Optional.empty();
+    }
+
+    private Class getCollectionGeneric(Parameter parameter) {
+        if (Map.class.isAssignableFrom(parameter.getType())) {
+            return ((Class) ((ParameterizedType) parameter.getParameterizedType())
+                    .getActualTypeArguments()[1]);
+        } else {
+            return ((Class) ((ParameterizedType) parameter.getParameterizedType())
+                    .getActualTypeArguments()[0]);
+        }
+    }
+
+    private Class getCollectionGeneric(Field field) {
+        if (Map.class.isAssignableFrom(field.getType())) {
+            return ((Class) ((ParameterizedType) field.getGenericType())
+                    .getActualTypeArguments()[1]);
+        } else {
+            return ((Class) ((ParameterizedType) field.getGenericType())
+                    .getActualTypeArguments()[0]);
+        }
+    }
+
+    private MarshallerItem findMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
+        MarshallerItem f = findInClassSet(itemClazz, converters.mip);
+        if (collectionClazz.isPresent()) {
+            CollectionMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.mic);
+            return (o, a, i) -> fc.marshall(o, a, i, f);
+        } else {
+            return f;
+        }
+    }
+
+    private UnMarshallerItem findUnMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
+        UnMarshallerItem f = findInClassSet(itemClazz, converters.uip);
+        if (collectionClazz.isPresent()) {
+            CollectionUnMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.uic);
+            return (a, i) -> fc.unmarshall(a, i, f);
+        } else {
+            return f;
+        }
+    }
+
+    private MarshallerAttrVal findMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
+        MarshallerAttrVal f = findInClassSet(itemClazz, converters.map);
+        if (collectionClazz.isPresent()) {
+            CollectionMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.mac);
+            return o -> fc.marshall(o, f);
+        } else {
+            return f;
+        }
+    }
+
+    private UnMarshallerAttrVal findUnMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
+        UnMarshallerAttrVal f = findInClassSet(itemClazz, converters.uap);
+        if (collectionClazz.isPresent()) {
+            CollectionUnMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.uac);
+            return a -> fc.unmarshall(a, f);
+        } else {
+            return f;
+        }
     }
 
     private <T> T findInClassSet(Class clazz, ImmutableSet<Map.Entry<Class<?>, T>> set) {
@@ -131,41 +250,7 @@ public class DynamoMapperImpl implements DynamoMapper {
                 return entry.getValue();
             }
         }
-        throw new IllegalStateException("None found");
-    }
-
-    private <T> T findMarshaller(Field field, ImmutableSet<Entry<Class<?>, T>> mars, ImmutableSet<Entry<Class<?>, T>> marSets) throws IllegalAccessException, ParseException {
-        T marshaller = null;
-        Class<?> fieldType = field.getType();
-        if (Set.class.isAssignableFrom(fieldType)) {
-            // Find set generic class
-            Class<?> setClazz;
-            Type genericType = field.getGenericType();
-            if (genericType instanceof ParameterizedType) {
-                Type setType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-                if (setType.toString().equals("byte[]")) {
-                    setClazz = byte[].class;
-                } else {
-                    setClazz = (Class<?>) setType;
-                }
-            } else {
-                setClazz = Object.class;
-            }
-
-            for (Entry<Class<?>, T> marSetEntry : mars) {
-                if (marSetEntry.getKey().isAssignableFrom(setClazz)) {
-                    return marSetEntry.getValue();
-                }
-            }
-        } else {
-            for (Entry<Class<?>, T> marSetEntry : marSets) {
-                if (marSetEntry.getKey().isAssignableFrom(fieldType)) {
-                    return marSetEntry.getValue();
-                }
-            }
-        }
-
-        throw new IllegalStateException("Cannot find (un)marshaller");
+        throw new IllegalStateException("None found for class " + clazz.getSimpleName());
     }
 
     public static Module module() {

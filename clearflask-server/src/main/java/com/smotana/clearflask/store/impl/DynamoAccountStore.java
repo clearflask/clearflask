@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Expected;
-import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
@@ -23,12 +22,10 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -36,33 +33,43 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 @Slf4j
 @Singleton
 public class DynamoAccountStore extends ManagedService implements AccountStore {
 
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    public static class EmailAccount {
+
+        @NonNull
+        private final String accountId;
+
+        @NonNull
+        private final String email;
+    }
+
     private static final String ACCOUNT_TABLE = "account";
     private static final String EMAIL_ACCOUNT_TABLE = "emailAccount";
-    private static final String ACCOUNT_ID = "aid";
-    private static final String ACCOUNT_EMAIL = "email";
-    private static final String ACCOUNT_DATA = "data";
     private static final String SESSION_TABLE = "session";
-    private static final String SESSION_ID = "sid";
-    private static final String SESSION_EXPIRY = "ttl";
 
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
-    private Gson gson;
+    private DynamoMapper dynamoMapper;
 
     private Table accountTable;
     private Table emailAccountTable;
@@ -74,9 +81,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
             dynamo.createTable(new CreateTableRequest()
                     .withTableName(ACCOUNT_TABLE)
                     .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName(ACCOUNT_ID).withKeyType(KeyType.HASH)))
+                            new KeySchemaElement().withAttributeName("accountId").withKeyType(KeyType.HASH)))
                     .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName(ACCOUNT_ID).withAttributeType(ScalarAttributeType.S)))
+                            new AttributeDefinition().withAttributeName("accountId").withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
         } catch (ResourceNotFoundException ex) {
             // Table exists
@@ -87,9 +94,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
             dynamo.createTable(new CreateTableRequest()
                     .withTableName(EMAIL_ACCOUNT_TABLE)
                     .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName(ACCOUNT_EMAIL).withKeyType(KeyType.HASH)))
+                            new KeySchemaElement().withAttributeName("email").withKeyType(KeyType.HASH)))
                     .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName(ACCOUNT_EMAIL).withAttributeType(ScalarAttributeType.S)))
+                            new AttributeDefinition().withAttributeName("email").withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
         } catch (ResourceNotFoundException ex) {
             // Table exists
@@ -100,17 +107,17 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
             dynamo.createTable(new CreateTableRequest()
                     .withTableName(SESSION_TABLE)
                     .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName(ACCOUNT_ID).withKeyType(KeyType.HASH),
-                            new KeySchemaElement().withAttributeName(SESSION_ID).withKeyType(KeyType.RANGE)))
+                            new KeySchemaElement().withAttributeName("accountId").withKeyType(KeyType.HASH),
+                            new KeySchemaElement().withAttributeName("sessionId").withKeyType(KeyType.RANGE)))
                     .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName(ACCOUNT_ID).withAttributeType(ScalarAttributeType.S),
-                            new AttributeDefinition().withAttributeName(SESSION_ID).withAttributeType(ScalarAttributeType.S)))
+                            new AttributeDefinition().withAttributeName("accountId").withAttributeType(ScalarAttributeType.S),
+                            new AttributeDefinition().withAttributeName("sessionId").withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
             dynamo.updateTimeToLive(new UpdateTimeToLiveRequest()
                     .withTableName(SESSION_TABLE)
                     .withTimeToLiveSpecification(new TimeToLiveSpecification()
                             .withEnabled(true)
-                            .withAttributeName(SESSION_EXPIRY)));
+                            .withAttributeName("expiry")));
         } catch (ResourceNotFoundException ex) {
             // Table exists
         }
@@ -119,27 +126,18 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
 
     @Override
     public Optional<Account> getAccount(String accountId) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-
-        final Optional<Account> accountOpt;
-        if (item == null) {
-            accountOpt = Optional.empty();
-        } else {
-            accountOpt = Optional.of(gson.fromJson(item.getString(ACCOUNT_DATA), Account.class));
-        }
-
-        return accountOpt;
+        return Optional.ofNullable(dynamoMapper.fromItem(
+                accountTable.getItem("accountId", accountId),
+                Account.class));
     }
 
     @Override
     public Optional<Account> getAccountByEmail(String email) {
-        final Item item = emailAccountTable.getItem(ACCOUNT_EMAIL, email);
-
-        if (item == null) {
-            return Optional.empty();
-        }
-
-        return getAccount(item.getString(ACCOUNT_ID));
+        return Optional.ofNullable(dynamoMapper.fromItem(
+                emailAccountTable.getItem("email", email),
+                EmailAccount.class))
+                .map(session -> getAccount(session.getAccountId())
+                        .orElseThrow(() -> new IllegalStateException("EmailAccount entry exists but Account doesn't for email " + email)));
     }
 
     @Override
@@ -147,219 +145,134 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
         dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
                 new TransactWriteItem().withPut(new Put()
                         .withTableName(EMAIL_ACCOUNT_TABLE)
-                        .addItemEntry(ACCOUNT_EMAIL, new AttributeValue(account.getEmail()))
-                        .addItemEntry(ACCOUNT_ID, new AttributeValue(account.getAccountId()))
-                        .withConditionExpression("attribute_not_exists(" + ACCOUNT_EMAIL + ")")),
+                        .withItem(dynamoMapper.toAttrMap(EmailAccount.builder()
+                                .email(account.getEmail())
+                                .accountId(account.getAccountId())
+                                .build()))
+                        .withConditionExpression("attribute_not_exists(email)")),
                 new TransactWriteItem().withPut(new Put()
                         .withTableName(ACCOUNT_TABLE)
-                        .addItemEntry(ACCOUNT_ID, new AttributeValue(account.getAccountId()))
-                        .addItemEntry(ACCOUNT_DATA, new AttributeValue(gson.toJson(account)))
-                        .withConditionExpression("attribute_not_exists(" + ACCOUNT_ID + ")"))));
+                        .withItem(dynamoMapper.toAttrMap(account))
+                        .withConditionExpression("attribute_not_exists(accountId)"))));
     }
 
     @Override
     public void addAccountPlanId(String accountId, String planId) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        account.toBuilder()
-                .planIds(ImmutableSet.<String>builder().addAll(account.getPlanIds()).add(planId).build())
-                .build();
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                ImmutableSet.<String>builder().addAll(account.getPlanIds()).add(planId).build(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                account.getProjectIds());
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("planIds").addElements(planId));
     }
 
     @Override
     public void removeAccountPlanId(String accountId, String planId) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                ImmutableSet.copyOf(Sets.difference(account.getPlanIds(), ImmutableSet.of(planId))),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                account.getProjectIds());
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("planIds").removeElements(planId));
     }
 
     @Override
     public void addAccountProjectId(String accountId, String projectId) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                account.getProjectIds(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                ImmutableSet.<String>builder().addAll(account.getProjectIds()).add(projectId).build());
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("projectIds").addElements(projectId));
     }
 
     @Override
     public void removeAccountProjectId(String accountId, String projectId) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                account.getProjectIds(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                ImmutableSet.copyOf(Sets.difference(account.getProjectIds(), ImmutableSet.of(projectId))));
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("projectIds").removeElements(projectId));
     }
 
     @Override
     public void updateAccountName(String accountId, String name) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                account.getPlanIds(),
-                account.getCompany(),
-                name,
-                account.getEmail(),
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                account.getProjectIds());
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("name").put(name));
     }
 
     @Override
     public void updateAccountPassword(String accountId, String password) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item);
-        Account account = gson.fromJson(item.getString(ACCOUNT_DATA), Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                account.getPlanIds(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                password,
-                account.getPhone(),
-                account.getPaymentToken(),
-                account.getProjectIds());
-        accountTable.updateItem(ACCOUNT_ID, accountId,
-                ImmutableList.of(new Expected(ACCOUNT_DATA).eq(item.getString(ACCOUNT_DATA))),
-                new AttributeUpdate(ACCOUNT_DATA).put(gson.toJson(accountUpdated)));
+        accountTable.updateItem("accountId", accountId,
+                ImmutableList.of(new Expected("accountId").exists()),
+                new AttributeUpdate("password").put(password));
     }
 
     @Override
     public void updateAccountEmail(String accountId, String previousEmail, String email) {
-        final Item item = accountTable.getItem(ACCOUNT_ID, accountId);
-        checkNotNull(item, "Cannot update email on non-existent account");
-        String accountJson = item.getString(ACCOUNT_DATA);
-        Account account = gson.fromJson(accountJson, Account.class);
-        Account accountUpdated = new Account(
-                account.getAccountId(),
-                account.getPlanIds(),
-                account.getCompany(),
-                account.getName(),
-                email,
-                account.getPassword(),
-                account.getPhone(),
-                account.getPaymentToken(),
-                account.getProjectIds());
         dynamo.transactWriteItems(new TransactWriteItemsRequest()
                 .withTransactItems(
-                        new TransactWriteItem().withPut(new Put()
+                        new TransactWriteItem().withUpdate(new Update()
                                 .withTableName(ACCOUNT_TABLE)
-                                .withConditionExpression("#d = :d")
-                                .withExpressionAttributeNames(ImmutableMap.of("#d", ACCOUNT_DATA))
-                                .withExpressionAttributeValues(ImmutableMap.of(":d", new AttributeValue(accountJson)))
-                                .withItem(ImmutableMap.of(
-                                        ACCOUNT_ID, new AttributeValue(accountId),
-                                        ACCOUNT_DATA, new AttributeValue(gson.toJson(accountUpdated))))),
+                                .withKey(ImmutableMap.of("accountId", new AttributeValue(accountId)))
+                                .withUpdateExpression("SET #email = :emailNew")
+                                .withConditionExpression("#email = :emailOld")
+                                .withExpressionAttributeNames(ImmutableMap.of("#email", "email"))
+                                .withExpressionAttributeValues(ImmutableMap.of(
+                                        ":emailOld", new AttributeValue(previousEmail),
+                                        ":emailNew", new AttributeValue(email)))),
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(EMAIL_ACCOUNT_TABLE)
-                                .withConditionExpression("#e = :e")
-                                .withExpressionAttributeNames(ImmutableMap.of("#e", ACCOUNT_EMAIL))
-                                .withExpressionAttributeValues(ImmutableMap.of(":e", new AttributeValue(previousEmail)))
-                                .addKeyEntry(ACCOUNT_EMAIL, new AttributeValue(previousEmail))),
+                                .addKeyEntry("email", new AttributeValue(previousEmail))
+                                .withConditionExpression("#email = :emailOld")
+                                .withExpressionAttributeNames(ImmutableMap.of("#email", "email"))
+                                .withExpressionAttributeValues(ImmutableMap.of(":emailOld", new AttributeValue(previousEmail)))),
                         new TransactWriteItem().withPut(new Put()
                                 .withTableName(EMAIL_ACCOUNT_TABLE)
-                                .withItem(ImmutableMap.of(
-                                        ACCOUNT_EMAIL, new AttributeValue(email),
-                                        ACCOUNT_ID, new AttributeValue(accountId))))
+                                .withItem(dynamoMapper.toAttrMap(EmailAccount.builder()
+                                        .email(email)
+                                        .accountId(accountId)
+                                        .build())))
                 ));
         revokeSessions(accountId);
     }
 
+    // TODO
     @Override
     public Session createSession(String accountId, Instant expiry) {
-        String sessionId = UUID.randomUUID().toString();
-        sessionTable.putItem(new Item()
-                .withPrimaryKey(ACCOUNT_ID, accountId, SESSION_ID, sessionId)
-                .withLong(SESSION_EXPIRY, expiry.toEpochMilli()));
-        return new Session(sessionId, accountId, expiry);
+        Session session = Session.builder()
+                .sessionId(UUID.randomUUID().toString())
+                .accountId(accountId)
+                .expiry(expiry)
+                .build();
+        sessionTable.putItem(dynamoMapper.toItem(session));
+        return session;
     }
 
     @Override
     public Optional<Session> getSession(String accountId, String sessionId) {
-        final Item session = sessionTable.getItem(ACCOUNT_ID, accountId, SESSION_ID, sessionId);
+        Optional<Session> session = Optional.ofNullable(dynamoMapper.fromItem(
+                sessionTable.getItem(
+                        "accountId", accountId,
+                        "sessionId", sessionId),
+                Session.class));
 
-        if (session == null) {
-            return Optional.empty();
+        if (session.isPresent() && session.get().getExpiry().isBefore(Instant.now())) {
+            log.trace("DynamoDB has an expired session with expiry {}", session.get().getExpiry());
+            session = Optional.empty();
         }
 
-        if (session.getLong(SESSION_EXPIRY) < System.currentTimeMillis()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new Session(
-                sessionId,
-                accountId,
-                Instant.ofEpochMilli(session.getLong(SESSION_EXPIRY))
-        ));
+        return session;
     }
 
     @Override
     public Session refreshSession(String accountId, String sessionId, Instant expiry) {
-        sessionTable.putItem(new Item()
-                .withPrimaryKey(ACCOUNT_ID, accountId, SESSION_ID, sessionId)
-                .withLong(SESSION_EXPIRY, expiry.toEpochMilli()));
-        return new Session(sessionId, accountId, expiry);
+        Session session = Session.builder()
+                .sessionId(sessionId)
+                .accountId(accountId)
+                .expiry(expiry)
+                .build();
+        sessionTable.updateItem(
+                "accountId", accountId,
+                "sessionId", sessionId,
+                new AttributeUpdate("expiry")
+                        .put(dynamoMapper.toDynamoValue(expiry)));
+        return session;
     }
 
     @Override
     public void revokeSession(String accountId, String sessionId) {
-        sessionTable.deleteItem(ACCOUNT_ID, accountId, SESSION_ID, sessionId);
+        sessionTable.deleteItem("accountId", accountId, "sessionId", sessionId);
     }
 
     @Override
@@ -376,17 +289,17 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
         QuerySpec querySpec = new QuerySpec()
                 .withMaxPageSize(25)
                 .withKeyConditionExpression("#i = :i")
-                .withNameMap(ImmutableMap.of("#i", ACCOUNT_ID))
+                .withNameMap(ImmutableMap.of("#i", "accountId"))
                 .withValueMap(ImmutableMap.of(":i", accountId));
         ItemCollection<QueryOutcome> items = sessionTable.query(querySpec);
         items.pages().forEach(page -> {
             TableWriteItems tableWriteItems = new TableWriteItems(SESSION_TABLE);
             page.forEach(item -> {
-                String sessionId = item.getString(SESSION_ID);
-                if (sessionToLeaveOpt.isPresent() && sessionToLeaveOpt.get().equals(sessionId)) {
+                Session session = dynamoMapper.fromItem(item, Session.class);
+                if (sessionToLeaveOpt.isPresent() && sessionToLeaveOpt.get().equals(session.getSessionId())) {
                     return;
                 }
-                tableWriteItems.addHashAndRangePrimaryKeyToDelete(ACCOUNT_ID, accountId, SESSION_ID, sessionId);
+                tableWriteItems.addHashAndRangePrimaryKeyToDelete("accountId", accountId, "sessionId", session.getSessionId());
             });
             if (tableWriteItems.getPrimaryKeysToDelete() == null || tableWriteItems.getPrimaryKeysToDelete().size() <= 0) {
                 return;

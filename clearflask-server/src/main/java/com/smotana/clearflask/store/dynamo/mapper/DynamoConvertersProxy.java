@@ -1,57 +1,35 @@
 package com.smotana.clearflask.store.dynamo.mapper;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.BooleanToBooleanMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ByteArraySetToBinarySetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ByteArrayToBinaryMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ByteBufferSetToBinarySetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ByteBufferToBinaryMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.CalendarSetToStringSetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.CalendarToStringMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.CollectionToListMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.DateSetToStringSetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.DateToStringMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.MapToMapMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.NumberSetToNumberSetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.NumberToNumberMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ObjectToMapMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.ObjectToStringMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.StringSetToStringSetMarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.StringToStringMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.marshallers.UUIDSetToStringSetMarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.BigDecimalSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.BigDecimalUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.BigIntegerSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.BigIntegerUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.BooleanUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteArraySetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteArrayUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteBufferSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteBufferUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ByteUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.CalendarSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.CalendarUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DateSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DateUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DoubleSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DoubleUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.FloatSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.FloatUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.IntegerSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.IntegerUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ListUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.LongSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.LongUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.MapUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ShortSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ShortUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.StringSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.StringUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.UUIDSetUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.UUIDUnmarshaller;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.util.DateUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import lombok.Value;
@@ -60,6 +38,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -67,225 +46,283 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 public class DynamoConvertersProxy {
+
+    private static Converters convertersCache = null;
 
     @Value
     public static class Converters {
         /** Marshaller for Item Scalar */
-        public final ImmutableSet<Map.Entry<Class<?>, MarshallerItem>> mic;
+        public final ImmutableSet<Map.Entry<Class<?>, MarshallerItem>> mip;
         /** UnMarshaller for Item Scalar */
-        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerItem>> uic;
-        /** Marshaller for Item Set */
-        public final ImmutableSet<Map.Entry<Class<?>, MarshallerItem>> mis;
-        /** UnMarshaller for Item Set */
-        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerItem>> uis;
+        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerItem>> uip;
         /** Marshaller for AttributeValue Scalar */
-        public final ImmutableSet<Map.Entry<Class<?>, MarshallerAttrVal>> mac;
+        public final ImmutableSet<Map.Entry<Class<?>, MarshallerAttrVal>> map;
         /** UnMarshaller for AttributeValue Scalar */
-        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerAttrVal>> uac;
-        /** Marshaller for AttributeValue Set */
-        public final ImmutableSet<Map.Entry<Class<?>, MarshallerAttrVal>> mas;
-        /** UnMarshaller for AttributeValue Set */
-        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerAttrVal>> uas;
+        public final ImmutableSet<Map.Entry<Class<?>, UnMarshallerAttrVal>> uap;
+        /** Marshaller for Item Collection */
+        public final ImmutableSet<Map.Entry<Class<?>, CollectionMarshallerItem>> mic;
+        /** UnMarshaller for Item Collection */
+        public final ImmutableSet<Map.Entry<Class<?>, CollectionUnMarshallerItem>> uic;
+        /** Marshaller for AttributeValue Collection */
+        public final ImmutableSet<Map.Entry<Class<?>, CollectionMarshallerAttrVal>> mac;
+        /** UnMarshaller for AttributeValue Collection */
+        public final ImmutableSet<Map.Entry<Class<?>, CollectionUnMarshallerAttrVal>> uac;
     }
 
     public static Converters proxy() {
-        ImmutableMap.Builder<Class<?>, MarshallerItem> mic = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, UnMarshallerItem> uic = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, MarshallerItem> mis = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, UnMarshallerItem> uis = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, MarshallerAttrVal> mac = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, UnMarshallerAttrVal> uac = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, MarshallerAttrVal> mas = new ImmutableMap.Builder<>();
-        ImmutableMap.Builder<Class<?>, UnMarshallerAttrVal> uas = new ImmutableMap.Builder<>();
+        if (convertersCache != null) {
+            return convertersCache;
+        }
 
-        mac.put(Date.class, DateToStringMarshaller.instance()::marshall);
-        mic.put(Date.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date((Date) o)));
-        mac.put(Calendar.class, CalendarToStringMarshaller.instance()::marshall);
-        mic.put(Calendar.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date(((Calendar) o).getTime())));
-        mac.put(Boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
-        mic.put(Boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
-        mac.put(boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
-        mic.put(boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
-        mac.put(Number.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(Number.class, (o, a, i) -> i.withNumber(a, (Number) o));
-        mac.put(byte.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(byte.class, (o, a, i) -> i.withNumber(a, (byte) o));
-        mac.put(short.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(short.class, (o, a, i) -> i.withNumber(a, (short) o));
-        mac.put(int.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(int.class, (o, a, i) -> i.withNumber(a, (int) o));
-        mac.put(long.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(long.class, (o, a, i) -> i.withNumber(a, (long) o));
-        mac.put(float.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(float.class, (o, a, i) -> i.withNumber(a, (float) o));
-        mac.put(double.class, NumberToNumberMarshaller.instance()::marshall);
-        mic.put(double.class, (o, a, i) -> i.withDouble(a, (double) o));
-        mac.put(String.class, StringToStringMarshaller.instance()::marshall);
-        mic.put(String.class, (o, a, i) -> i.withString(a, (String) o));
-        mac.put(UUID.class, ObjectToStringMarshaller.instance()::marshall);
-        mic.put(UUID.class, (o, a, i) -> i.withString(a, o.toString()));
-        mac.put(ByteBuffer.class, ByteBufferToBinaryMarshaller.instance()::marshall);
-        mic.put(ByteBuffer.class, (o, a, i) -> i.withBinary(a, (ByteBuffer) o));
-        mac.put(byte[].class, ByteArrayToBinaryMarshaller.instance()::marshall);
-        mic.put(byte[].class, (o, a, i) -> i.withBinary(a, (byte[]) o));
-        mac.put(List.class, CollectionToListMarshaller.instance()::marshall);
-        mic.put(List.class, (o, a, i) -> i.withList(a, (List) o));
-        mac.put(Map.class, MapToMapMarshaller.instance()::marshall);
-        mic.put(Map.class, (o, a, i) -> i.withMap(a, (Map) o));
-        mac.put(Object.class, ObjectToMapMarshaller.instance()::marshall);
-        mic.put(Object.class, (o, a, i) -> i.with(a, o));
+        ImmutableMap.Builder<Class<?>, MarshallerItem> mip = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, UnMarshallerItem> uip = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, MarshallerAttrVal> map = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, UnMarshallerAttrVal> uap = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, CollectionMarshallerItem> mic = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, CollectionUnMarshallerItem> uic = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, CollectionMarshallerAttrVal> mac = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<Class<?>, CollectionUnMarshallerAttrVal> uac = new ImmutableMap.Builder<>();
 
-        mas.put(Date.class, DateSetToStringSetMarshaller.instance()::marshall);
-        mis.put(Date.class, (o, a, i) -> i.withStringSet(a, ((Set<Date>) o).stream().map(DateUtils::formatISO8601Date).collect(Collectors.toSet())));
-        mas.put(Calendar.class, CalendarSetToStringSetMarshaller.instance()::marshall);
-        mis.put(Calendar.class, (o, a, i) -> i.withStringSet(a, ((Set<Calendar>) o).stream().map(Calendar::getTime).map(DateUtils::formatISO8601Date).collect(Collectors.toSet())));
-        mas.put(Number.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(Date.class, (o, a, i) -> i.withStringSet(a, ((Set<Date>) o).stream().map(DateUtils::formatISO8601Date).collect(Collectors.toSet())));
-        mas.put(byte.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(byte.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(short.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(short.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(int.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(int.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(long.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(long.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(float.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(float.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(double.class, NumberSetToNumberSetMarshaller.instance()::marshall);
-        mis.put(double.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends Number>) o).stream().map(Number::toString).collect(Collectors.toSet())));
-        mas.put(String.class, StringSetToStringSetMarshaller.instance()::marshall);
-        mis.put(String.class, (o, a, i) -> i.withStringSet(a, (Set<String>) o));
-        mas.put(UUID.class, UUIDSetToStringSetMarshaller.instance()::marshall);
-        mis.put(UUID.class, (o, a, i) -> i.withStringSet(a, ((Set<? extends UUID>) o).stream().map(UUID::toString).collect(Collectors.toSet())));
-        mas.put(ByteBuffer.class, ByteBufferSetToBinarySetMarshaller.instance()::marshall);
-        mis.put(ByteBuffer.class, (o, a, i) -> i.withByteBufferSet(a, ((Set<ByteBuffer>) o)));
-        mas.put(byte[].class, ByteArraySetToBinarySetMarshaller.instance()::marshall);
-        mis.put(byte[].class, (o, a, i) -> i.withBinarySet(a, (Set<byte[]>) o));
-        mas.put(Object.class, CollectionToListMarshaller.instance()::marshall);
-        mis.put(Object.class, (o, a, i) -> i.with(a, o));
+        map.put(Date.class, DateToStringMarshaller.instance()::marshall);
+        mip.put(Date.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date((Date) o)));
+        map.put(Calendar.class, CalendarToStringMarshaller.instance()::marshall);
+        mip.put(Calendar.class, (o, a, i) -> i.withString(a, DateUtils.formatISO8601Date(((Calendar) o).getTime())));
+        map.put(Boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
+        mip.put(Boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
+        map.put(boolean.class, BooleanToBooleanMarshaller.instance()::marshall);
+        mip.put(boolean.class, (o, a, i) -> i.withBoolean(a, (boolean) o));
+        map.put(Number.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(Number.class, (o, a, i) -> i.withNumber(a, (Number) o));
+        map.put(byte.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(byte.class, (o, a, i) -> i.withNumber(a, (byte) o));
+        map.put(short.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(short.class, (o, a, i) -> i.withNumber(a, (short) o));
+        map.put(int.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(int.class, (o, a, i) -> i.withNumber(a, (int) o));
+        map.put(long.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(long.class, (o, a, i) -> i.withNumber(a, (long) o));
+        map.put(float.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(float.class, (o, a, i) -> i.withNumber(a, (float) o));
+        map.put(double.class, NumberToNumberMarshaller.instance()::marshall);
+        mip.put(double.class, (o, a, i) -> i.withDouble(a, (double) o));
+        map.put(String.class, StringToStringMarshaller.instance()::marshall);
+        mip.put(String.class, (o, a, i) -> i.withString(a, (String) o));
+        map.put(UUID.class, ObjectToStringMarshaller.instance()::marshall);
+        mip.put(UUID.class, (o, a, i) -> i.withString(a, o.toString()));
+        map.put(ByteBuffer.class, ByteBufferToBinaryMarshaller.instance()::marshall);
+        mip.put(ByteBuffer.class, (o, a, i) -> i.withBinary(a, (ByteBuffer) o));
+        map.put(byte[].class, ByteArrayToBinaryMarshaller.instance()::marshall);
+        mip.put(byte[].class, (o, a, i) -> i.withBinary(a, (byte[]) o));
+        map.put(Instant.class, o -> new AttributeValue().withN(Long.toString(((Instant) o).toEpochMilli())));
+        mip.put(Instant.class, (o, a, i) -> i.withLong(a, ((Instant) o).toEpochMilli()));
 
-        uac.put(double.class, DoubleUnmarshaller.instance()::unmarshall);
-        uic.put(double.class, (a, i) -> i.getDouble(a));
-        uac.put(Double.class, DoubleUnmarshaller.instance()::unmarshall);
-        uic.put(Double.class, (a, i) -> i.getDouble(a));
-        uac.put(BigDecimal.class, BigDecimalUnmarshaller.instance()::unmarshall);
-        uic.put(BigDecimal.class, (a, i) -> i.getDouble(a));
-        uac.put(BigInteger.class, BigIntegerUnmarshaller.instance()::unmarshall);
-        uic.put(BigInteger.class, (a, i) -> i.getBigInteger(a));
-        uac.put(int.class, IntegerUnmarshaller.instance()::unmarshall);
-        uic.put(int.class, (a, i) -> i.getInt(a));
-        uac.put(Integer.class, IntegerUnmarshaller.instance()::unmarshall);
-        uic.put(Integer.class, (a, i) -> i.getInt(a));
-        uac.put(float.class, FloatUnmarshaller.instance()::unmarshall);
-        uic.put(float.class, (a, i) -> i.getFloat(a));
-        uac.put(Float.class, FloatUnmarshaller.instance()::unmarshall);
-        uic.put(Float.class, (a, i) -> i.getFloat(a));
-        uac.put(byte.class, ByteUnmarshaller.instance()::unmarshall);
-        uic.put(byte.class, (a, i) -> i.getNumber(a));
-        uac.put(Byte.class, ByteUnmarshaller.instance()::unmarshall);
-        uic.put(Byte.class, (a, i) -> i.getNumber(a));
-        uac.put(long.class, LongUnmarshaller.instance()::unmarshall);
-        uic.put(long.class, (a, i) -> i.getLong(a));
-        uac.put(Long.class, LongUnmarshaller.instance()::unmarshall);
-        uic.put(Long.class, (a, i) -> i.getLong(a));
-        uac.put(short.class, ShortUnmarshaller.instance()::unmarshall);
-        uic.put(short.class, (a, i) -> i.getShort(a));
-        uac.put(Short.class, ShortUnmarshaller.instance()::unmarshall);
-        uic.put(Short.class, (a, i) -> i.getShort(a));
-        uac.put(boolean.class, BooleanUnmarshaller.instance()::unmarshall);
-        uic.put(boolean.class, (a, i) -> i.getBoolean(a));
-        uac.put(Boolean.class, BooleanUnmarshaller.instance()::unmarshall);
-        uic.put(Boolean.class, (a, i) -> i.getBoolean(a));
-        uac.put(Date.class, DateUnmarshaller.instance()::unmarshall);
-        uic.put(Date.class, (a, i) -> DateUtils.parseISO8601Date(i.getString(a)));
-        uac.put(Calendar.class, CalendarUnmarshaller.instance()::unmarshall);
-        uic.put(Calendar.class, (a, i) -> {
+        uap.put(double.class, DoubleUnmarshaller.instance()::unmarshall);
+        uip.put(double.class, (a, i) -> i.getDouble(a));
+        uap.put(Double.class, DoubleUnmarshaller.instance()::unmarshall);
+        uip.put(Double.class, (a, i) -> i.getDouble(a));
+        uap.put(BigDecimal.class, BigDecimalUnmarshaller.instance()::unmarshall);
+        uip.put(BigDecimal.class, (a, i) -> i.getDouble(a));
+        uap.put(BigInteger.class, BigIntegerUnmarshaller.instance()::unmarshall);
+        uip.put(BigInteger.class, (a, i) -> i.getBigInteger(a));
+        uap.put(int.class, IntegerUnmarshaller.instance()::unmarshall);
+        uip.put(int.class, (a, i) -> i.getInt(a));
+        uap.put(Integer.class, IntegerUnmarshaller.instance()::unmarshall);
+        uip.put(Integer.class, (a, i) -> i.getInt(a));
+        uap.put(float.class, FloatUnmarshaller.instance()::unmarshall);
+        uip.put(float.class, (a, i) -> i.getFloat(a));
+        uap.put(Float.class, FloatUnmarshaller.instance()::unmarshall);
+        uip.put(Float.class, (a, i) -> i.getFloat(a));
+        uap.put(byte.class, ByteUnmarshaller.instance()::unmarshall);
+        uip.put(byte.class, (a, i) -> i.getNumber(a));
+        uap.put(Byte.class, ByteUnmarshaller.instance()::unmarshall);
+        uip.put(Byte.class, (a, i) -> i.getNumber(a));
+        uap.put(long.class, LongUnmarshaller.instance()::unmarshall);
+        uip.put(long.class, (a, i) -> i.getLong(a));
+        uap.put(Long.class, LongUnmarshaller.instance()::unmarshall);
+        uip.put(Long.class, (a, i) -> i.getLong(a));
+        uap.put(short.class, ShortUnmarshaller.instance()::unmarshall);
+        uip.put(short.class, (a, i) -> i.getShort(a));
+        uap.put(Short.class, ShortUnmarshaller.instance()::unmarshall);
+        uip.put(Short.class, (a, i) -> i.getShort(a));
+        uap.put(boolean.class, BooleanUnmarshaller.instance()::unmarshall);
+        uip.put(boolean.class, (a, i) -> i.getBoolean(a));
+        uap.put(Boolean.class, BooleanUnmarshaller.instance()::unmarshall);
+        uip.put(Boolean.class, (a, i) -> i.getBoolean(a));
+        uap.put(Date.class, DateUnmarshaller.instance()::unmarshall);
+        uip.put(Date.class, (a, i) -> DateUtils.parseISO8601Date(i.getString(a)));
+        uap.put(Calendar.class, CalendarUnmarshaller.instance()::unmarshall);
+        uip.put(Calendar.class, (a, i) -> {
             Calendar cal = GregorianCalendar.getInstance();
             cal.setTime(DateUtils.parseISO8601Date(i.getString(a)));
             return cal;
         });
-        uac.put(ByteBuffer.class, ByteBufferUnmarshaller.instance()::unmarshall);
-        uic.put(ByteBuffer.class, (a, i) -> i.getByteBuffer(a));
-        uac.put(byte[].class, ByteArrayUnmarshaller.instance()::unmarshall);
-        uic.put(byte[].class, (a, i) -> i.getBinary(a));
-        uac.put(UUID.class, UUIDUnmarshaller.instance()::unmarshall);
-        uic.put(UUID.class, (a, i) -> UUID.fromString(i.getString(a)));
-        uac.put(String.class, StringUnmarshaller.instance()::unmarshall);
-        uic.put(String.class, (a, i) -> i.getString(a));
-        uac.put(List.class, value -> {
+        uap.put(ByteBuffer.class, ByteBufferUnmarshaller.instance()::unmarshall);
+        uip.put(ByteBuffer.class, (a, i) -> i.getByteBuffer(a));
+        uap.put(byte[].class, ByteArrayUnmarshaller.instance()::unmarshall);
+        uip.put(byte[].class, (a, i) -> i.getBinary(a));
+        uap.put(UUID.class, UUIDUnmarshaller.instance()::unmarshall);
+        uip.put(UUID.class, (a, i) -> UUID.fromString(i.getString(a)));
+        uap.put(String.class, StringUnmarshaller.instance()::unmarshall);
+        uip.put(String.class, (a, i) -> i.getString(a));
+        uap.put(List.class, value -> {
             try {
                 return ListUnmarshaller.instance().unmarshall(value);
             } catch (ParseException ex) {
                 throw new RuntimeException(ex);
             }
         });
-        uic.put(List.class, (a, i) -> i.getList(a));
-        uac.put(Map.class, value -> {
+        uip.put(List.class, (a, i) -> i.getList(a));
+        uap.put(Map.class, value -> {
             try {
                 return MapUnmarshaller.instance().unmarshall(value);
             } catch (ParseException ex) {
                 throw new RuntimeException(ex);
             }
         });
-        uic.put(Map.class, (a, i) -> i.getMap(a));
+        uip.put(Map.class, (a, i) -> i.getMap(a));
+        uap.put(Instant.class, a -> Instant.ofEpochMilli(Long.parseLong(a.getN())));
+        uip.put(Instant.class, (a, i) -> Instant.ofEpochMilli(i.getLong(a)));
 
-        uas.put(double.class, DoubleSetUnmarshaller.instance()::unmarshall);
-        uis.put(double.class, (a, i) -> i.getStringSet(a).stream().map(Double::valueOf).collect(Collectors.toSet()));
-        uas.put(Double.class, DoubleSetUnmarshaller.instance()::unmarshall);
-        uis.put(Double.class, (a, i) -> i.getStringSet(a).stream().map(Double::valueOf).collect(Collectors.toSet()));
-        uas.put(BigDecimal.class, BigDecimalSetUnmarshaller.instance()::unmarshall);
-        uis.put(BigDecimal.class, (a, i) -> i.getStringSet(a).stream().map(BigDecimal::new).collect(Collectors.toSet()));
-        uas.put(BigInteger.class, BigIntegerSetUnmarshaller.instance()::unmarshall);
-        uis.put(BigInteger.class, (a, i) -> i.getStringSet(a).stream().map(BigInteger::new).collect(Collectors.toSet()));
-        uas.put(int.class, IntegerSetUnmarshaller.instance()::unmarshall);
-        uis.put(int.class, (a, i) -> i.getStringSet(a).stream().map(Integer::valueOf).collect(Collectors.toSet()));
-        uas.put(Integer.class, IntegerSetUnmarshaller.instance()::unmarshall);
-        uis.put(Integer.class, (a, i) -> i.getStringSet(a).stream().map(Integer::valueOf).collect(Collectors.toSet()));
-        uas.put(float.class, FloatSetUnmarshaller.instance()::unmarshall);
-        uis.put(float.class, (a, i) -> i.getStringSet(a).stream().map(Float::valueOf).collect(Collectors.toSet()));
-        uas.put(Float.class, FloatSetUnmarshaller.instance()::unmarshall);
-        uis.put(Float.class, (a, i) -> i.getStringSet(a).stream().map(Float::valueOf).collect(Collectors.toSet()));
-        uas.put(byte.class, ByteSetUnmarshaller.instance()::unmarshall);
-        uis.put(byte.class, (a, i) -> i.getStringSet(a).stream().map(Byte::valueOf).collect(Collectors.toSet()));
-        uas.put(Byte.class, ByteSetUnmarshaller.instance()::unmarshall);
-        uis.put(Byte.class, (a, i) -> i.getStringSet(a).stream().map(Byte::valueOf).collect(Collectors.toSet()));
-        uas.put(long.class, LongSetUnmarshaller.instance()::unmarshall);
-        uis.put(long.class, (a, i) -> i.getStringSet(a).stream().map(Long::valueOf).collect(Collectors.toSet()));
-        uas.put(Long.class, LongSetUnmarshaller.instance()::unmarshall);
-        uis.put(Long.class, (a, i) -> i.getStringSet(a).stream().map(Long::valueOf).collect(Collectors.toSet()));
-        uas.put(short.class, ShortSetUnmarshaller.instance()::unmarshall);
-        uis.put(short.class, (a, i) -> i.getStringSet(a).stream().map(Short::valueOf).collect(Collectors.toSet()));
-        uas.put(Short.class, ShortSetUnmarshaller.instance()::unmarshall);
-        uis.put(Short.class, (a, i) -> i.getStringSet(a).stream().map(Short::valueOf).collect(Collectors.toSet()));
-        uas.put(Date.class, DateSetUnmarshaller.instance()::unmarshall);
-        uis.put(Date.class, (a, i) -> i.getStringSet(a).stream().map(DateUtils::parseISO8601Date).collect(Collectors.toSet()));
-        uas.put(Calendar.class, CalendarSetUnmarshaller.instance()::unmarshall);
-        uis.put(Calendar.class, (a, i) -> i.getStringSet(a).stream().map(DateUtils::parseISO8601Date).map(date -> {
-            Calendar cal = GregorianCalendar.getInstance();
-            cal.setTime(date);
-            return cal;
-        }).collect(Collectors.toSet()));
-        uas.put(ByteBuffer.class, ByteBufferSetUnmarshaller.instance()::unmarshall);
-        uis.put(ByteBuffer.class, (a, i) -> i.getByteBufferSet(a));
-        uas.put(byte[].class, ByteArraySetUnmarshaller.instance()::unmarshall);
-        uis.put(byte[].class, (a, i) -> i.getBinarySet(a));
-        uas.put(UUID.class, UUIDSetUnmarshaller.instance()::unmarshall);
-        uis.put(UUID.class, (a, i) -> i.getStringSet(a).stream().map(UUID::fromString).collect(Collectors.toSet()));
-        uas.put(String.class, StringSetUnmarshaller.instance()::unmarshall);
-        uis.put(String.class, (a, i) -> i.getStringSet(a));
+        mic.put(List.class, (o, a, i, m) -> {
+            Item itemProxy = new Item();
+            i.withList(a, ((List<?>) o).stream()
+                    .map(i2 -> {
+                        m.marshall(i2, "a", itemProxy);
+                        return itemProxy.get("a");
+                    })
+                    .collect(ImmutableList.toImmutableList()));
+        });
+        uic.put(List.class, (a, i, u) -> {
+            Item itemProxy = new Item();
+            return i.getList(a).stream()
+                    .map(i2 -> {
+                        itemProxy.with("a", i2);
+                        return u.unmarshall("a", itemProxy);
+                    })
+                    .collect(ImmutableList.toImmutableList());
+        });
+        mac.put(List.class, (o, m) -> new AttributeValue().withL(((List<?>) o).stream()
+                .map(m::marshall)
+                .collect(ImmutableList.toImmutableList())));
+        uac.put(List.class, (a, u) -> a.getL().stream()
+                .map(u::unmarshall)
+                .collect(ImmutableList.toImmutableList()));
 
-        return new Converters(
+        mic.put(Map.class, (o, a, i, m) -> {
+            Item itemProxy = new Item();
+            i.withMap(a, ((Map<?, ?>) o).entrySet().stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            e -> (String) e.getKey(),
+                            e -> {
+                                m.marshall(e.getValue(), "a", itemProxy);
+                                return itemProxy.get("a");
+                            }
+                    )));
+        });
+        uic.put(Map.class, (a, i, u) -> {
+            Item itemProxy = new Item();
+            return i.getMap(a).entrySet().stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            e -> (String) e.getKey(),
+                            e -> {
+                                itemProxy.with("a", e.getValue());
+                                return u.unmarshall("a", itemProxy);
+                            }
+                    ));
+        });
+        mac.put(Map.class, (o, m) -> new AttributeValue().withM(((Map<?, ?>) o).entrySet().stream()
+                .collect(ImmutableMap.toImmutableMap(
+                        e -> (String) e.getKey(),
+                        e -> m.marshall(e.getValue())
+                ))));
+        uac.put(Map.class, (a, u) -> a.getM().entrySet().stream()
+                .collect(ImmutableMap.toImmutableMap(
+                        e -> (String) e.getKey(),
+                        e -> u.unmarshall(e.getValue())
+                )));
+
+
+        mic.put(Set.class, (o, a, i, m) -> {
+            if (((Set<?>) o).isEmpty()) {
+                return;
+            }
+            Item itemProxy = new Item();
+            i.with(a, ((Set<?>) o).stream()
+                    .map(i2 -> {
+                        m.marshall(i2, "a", itemProxy);
+                        return itemProxy.get("a");
+                    })
+                    .collect(ImmutableSet.toImmutableSet()));
+        });
+        uic.put(Set.class, (a, i, u) -> {
+            if (i.isNull(a)) {
+                return ImmutableSet.of();
+            }
+            Item itemProxy = new Item();
+            return ((Set<?>) i.get(a)).stream()
+                    .map(i2 -> {
+                        itemProxy.with("a", i2);
+                        return u.unmarshall("a", itemProxy);
+                    })
+                    .collect(ImmutableSet.toImmutableSet());
+        });
+        mac.put(Set.class, (o, m) -> {
+            if (((Set<?>) o).isEmpty()) {
+                return new AttributeValue().withNULL(true);
+            }
+            int[] setType = {0};
+            ImmutableSet<?> set = ((Set<?>) o).stream()
+                    .map(m::marshall)
+                    .map(v -> {
+                        if (!Strings.isNullOrEmpty(v.getS())) {
+                            setType[0] = 0;
+                            return v.getS();
+                        } else if (!Strings.isNullOrEmpty(v.getN())) {
+                            setType[0] = 1;
+                            return v.getN();
+                        } else if (v.getB() != null) {
+                            setType[0] = 2;
+                            return v.getB();
+                        } else if (v.getNULL() != null) {
+                            throw new IllegalStateException("Set cannot have null item");
+                        } else {
+                            throw new IllegalStateException("Set of unsupported type: " + v.toString());
+                        }
+                    })
+                    .collect(ImmutableSet.toImmutableSet());
+            if (setType[0] == 0) {
+                return new AttributeValue().withSS((ImmutableSet<String>) set);
+            } else if (setType[0] == 1) {
+                return new AttributeValue().withNS((ImmutableSet<String>) set);
+            } else {
+                return new AttributeValue().withBS((ImmutableSet<ByteBuffer>) set);
+            }
+        });
+        uac.put(Set.class, (a, u) -> {
+            if (a.getSS() != null) {
+                return a.getSS().stream().map(i -> u.unmarshall(new AttributeValue().withS(i))).collect(ImmutableSet.toImmutableSet());
+            } else if (a.getNS() != null) {
+                return a.getNS().stream().map(i -> u.unmarshall(new AttributeValue().withN(i))).collect(ImmutableSet.toImmutableSet());
+            } else if (a.getBS() != null) {
+                return a.getBS().stream().map(i -> u.unmarshall(new AttributeValue().withB(i))).collect(ImmutableSet.toImmutableSet());
+            } else {
+                return ImmutableSet.of();
+            }
+        });
+
+        convertersCache = new Converters(
+                mip.build().entrySet(),
+                uip.build().entrySet(),
+                map.build().entrySet(),
+                uap.build().entrySet(),
                 mic.build().entrySet(),
                 uic.build().entrySet(),
-                mis.build().entrySet(),
-                uis.build().entrySet(),
                 mac.build().entrySet(),
-                uac.build().entrySet(),
-                mas.build().entrySet(),
-                uas.build().entrySet());
+                uac.build().entrySet());
+        return convertersCache;
     }
 
     @FunctionalInterface
@@ -306,5 +343,25 @@ public class DynamoConvertersProxy {
     @FunctionalInterface
     public interface UnMarshallerItem {
         Object unmarshall(String attrName, Item item);
+    }
+
+    @FunctionalInterface
+    public interface CollectionMarshallerAttrVal {
+        AttributeValue marshall(Object object, MarshallerAttrVal marshaller);
+    }
+
+    @FunctionalInterface
+    public interface CollectionUnMarshallerAttrVal {
+        Object unmarshall(AttributeValue attributeValue, UnMarshallerAttrVal unMarshaller);
+    }
+
+    @FunctionalInterface
+    public interface CollectionMarshallerItem {
+        void marshall(Object object, String attrName, Item item, MarshallerItem marshaller);
+    }
+
+    @FunctionalInterface
+    public interface CollectionUnMarshallerItem {
+        Object unmarshall(String attrName, Item item, UnMarshallerItem unMarshaller);
     }
 }

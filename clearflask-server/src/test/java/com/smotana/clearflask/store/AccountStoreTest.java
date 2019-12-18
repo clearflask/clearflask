@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class AccountStoreTest extends AbstractTest {
 
         install(DynamoAccountStore.module());
         install(InMemoryDynamoDbProvider.module());
+        install(DynamoMapperImpl.module());
     }
 
     @Test

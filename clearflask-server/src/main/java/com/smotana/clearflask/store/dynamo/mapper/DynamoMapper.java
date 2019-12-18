@@ -13,4 +13,6 @@ public interface DynamoMapper {
     ImmutableMap<String, AttributeValue> toAttrMap(Object obj);
 
     <T> T fromAttrMap(ImmutableMap<String, AttributeValue> attrMap, Class<T> objClazz);
+
+    Object toDynamoValue(Object object);
 }
