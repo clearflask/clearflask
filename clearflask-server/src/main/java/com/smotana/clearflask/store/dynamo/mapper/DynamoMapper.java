@@ -4,6 +4,8 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Map;
+
 public interface DynamoMapper {
 
     Item toItem(Object obj);
@@ -12,7 +14,7 @@ public interface DynamoMapper {
 
     ImmutableMap<String, AttributeValue> toAttrMap(Object obj);
 
-    <T> T fromAttrMap(ImmutableMap<String, AttributeValue> attrMap, Class<T> objClazz);
+    <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objClazz);
 
     Object toDynamoValue(Object object);
 }

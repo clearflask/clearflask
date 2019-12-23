@@ -31,7 +31,7 @@ public class AccountStoreTest extends AbstractTest {
         install(DynamoMapperImpl.module());
     }
 
-    @Test
+    @Test(timeout = 5_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
                 UUID.randomUUID().toString(),
@@ -67,7 +67,7 @@ public class AccountStoreTest extends AbstractTest {
         assertFalse(store.getSession(account.getAccountId(), session.getSessionId()).isPresent());
     }
 
-    @Test
+    @Test(timeout = 5_000L)
     public void testSession() throws Exception {
         Account account = new Account(
                 UUID.randomUUID().toString(),

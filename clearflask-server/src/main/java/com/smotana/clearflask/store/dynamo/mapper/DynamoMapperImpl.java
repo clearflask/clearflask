@@ -85,11 +85,11 @@ public class DynamoMapperImpl implements DynamoMapper {
             }
         }
 
-        Constructor<T> constructor = findConstructor(objectClazz, args.size());
+        Constructor<T> constructor = findConstructor(objectClazz, args);
         constructor.setAccessible(true);
         try {
             return constructor.newInstance(args.toArray());
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -125,7 +125,7 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     @Override
-    public <T> T fromAttrMap(ImmutableMap<String, AttributeValue> attrMap, Class<T> objectClazz) {
+    public <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objectClazz) {
         if (attrMap == null) {
             return null;
         }
@@ -134,7 +134,7 @@ public class DynamoMapperImpl implements DynamoMapper {
         for (Field field : objectClazz.getDeclaredFields()) {
             Optional<Class> collectionClazz = getCollectionClazz(field.getType());
             AttributeValue attrVal = attrMap.get(field.getName());
-            if (!collectionClazz.isPresent() && (attrVal == null || attrVal.isNULL())) {
+            if (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE)) {
                 args.add(null);
                 continue;
             }
@@ -143,7 +143,7 @@ public class DynamoMapperImpl implements DynamoMapper {
                     .unmarshall(checkNotNull(attrVal)));
         }
 
-        Constructor<T> constructor = findConstructor(objectClazz, args.size());
+        Constructor<T> constructor = findConstructor(objectClazz, args);
         constructor.setAccessible(true);
         try {
             return constructor.newInstance(args.toArray());
@@ -169,11 +169,14 @@ public class DynamoMapperImpl implements DynamoMapper {
                 .marshall(object);
     }
 
-    private <T> Constructor<T> findConstructor(Class<T> objectClazz, long expectedArgCount) {
+    private <T> Constructor<T> findConstructor(Class<T> objectClazz, List<Object> args) {
+        OUTER:
         for (Constructor<?> constructorPotential : objectClazz.getDeclaredConstructors()) {
-            if (constructorPotential.getParameterCount() == expectedArgCount) {
-                return (Constructor<T>) constructorPotential;
+            // Let's only check for args size and assume all types are good...
+            if (constructorPotential.getParameterCount() != args.size()) {
+                continue;
             }
+            return (Constructor<T>) constructorPotential;
         }
         throw new IllegalStateException("Cannot find constructor for class " + objectClazz.getSimpleName());
     }

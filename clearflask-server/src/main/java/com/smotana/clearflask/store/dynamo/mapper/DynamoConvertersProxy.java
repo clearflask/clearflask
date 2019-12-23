@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import lombok.Value;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -116,15 +117,17 @@ public class DynamoConvertersProxy {
         mip.put(ByteBuffer.class, (o, a, i) -> i.withBinary(a, (ByteBuffer) o));
         map.put(byte[].class, ByteArrayToBinaryMarshaller.instance()::marshall);
         mip.put(byte[].class, (o, a, i) -> i.withBinary(a, (byte[]) o));
-        map.put(Instant.class, o -> new AttributeValue().withN(Long.toString(((Instant) o).toEpochMilli())));
-        mip.put(Instant.class, (o, a, i) -> i.withLong(a, ((Instant) o).toEpochMilli()));
+        map.put(Byte[].class, o -> ByteArrayToBinaryMarshaller.instance().marshall(ArrayUtils.toPrimitive((Byte[]) o)));
+        mip.put(Byte[].class, (o, a, i) -> i.withBinary(a, ArrayUtils.toPrimitive((Byte[]) o)));
+        map.put(Instant.class, o -> new AttributeValue().withS(((Instant) o).toString()));
+        mip.put(Instant.class, (o, a, i) -> i.withString(a, ((Instant) o).toString()));
 
         uap.put(double.class, DoubleUnmarshaller.instance()::unmarshall);
         uip.put(double.class, (a, i) -> i.getDouble(a));
         uap.put(Double.class, DoubleUnmarshaller.instance()::unmarshall);
         uip.put(Double.class, (a, i) -> i.getDouble(a));
         uap.put(BigDecimal.class, BigDecimalUnmarshaller.instance()::unmarshall);
-        uip.put(BigDecimal.class, (a, i) -> i.getDouble(a));
+        uip.put(BigDecimal.class, (a, i) -> i.getNumber(a));
         uap.put(BigInteger.class, BigIntegerUnmarshaller.instance()::unmarshall);
         uip.put(BigInteger.class, (a, i) -> i.getBigInteger(a));
         uap.put(int.class, IntegerUnmarshaller.instance()::unmarshall);
@@ -136,9 +139,9 @@ public class DynamoConvertersProxy {
         uap.put(Float.class, FloatUnmarshaller.instance()::unmarshall);
         uip.put(Float.class, (a, i) -> i.getFloat(a));
         uap.put(byte.class, ByteUnmarshaller.instance()::unmarshall);
-        uip.put(byte.class, (a, i) -> i.getNumber(a));
+        uip.put(byte.class, (a, i) -> i.getNumber(a).byteValue());
         uap.put(Byte.class, ByteUnmarshaller.instance()::unmarshall);
-        uip.put(Byte.class, (a, i) -> i.getNumber(a));
+        uip.put(Byte.class, (a, i) -> i.getNumber(a).byteValue());
         uap.put(long.class, LongUnmarshaller.instance()::unmarshall);
         uip.put(long.class, (a, i) -> i.getLong(a));
         uap.put(Long.class, LongUnmarshaller.instance()::unmarshall);
@@ -163,6 +166,8 @@ public class DynamoConvertersProxy {
         uip.put(ByteBuffer.class, (a, i) -> i.getByteBuffer(a));
         uap.put(byte[].class, ByteArrayUnmarshaller.instance()::unmarshall);
         uip.put(byte[].class, (a, i) -> i.getBinary(a));
+        uap.put(Byte[].class, v -> ArrayUtils.toObject((byte[]) ByteArrayUnmarshaller.instance().unmarshall(v)));
+        uip.put(Byte[].class, (a, i) -> ArrayUtils.toObject(i.getBinary(a)));
         uap.put(UUID.class, UUIDUnmarshaller.instance()::unmarshall);
         uip.put(UUID.class, (a, i) -> UUID.fromString(i.getString(a)));
         uap.put(String.class, StringUnmarshaller.instance()::unmarshall);
@@ -183,8 +188,8 @@ public class DynamoConvertersProxy {
             }
         });
         uip.put(Map.class, (a, i) -> i.getMap(a));
-        uap.put(Instant.class, a -> Instant.ofEpochMilli(Long.parseLong(a.getN())));
-        uip.put(Instant.class, (a, i) -> Instant.ofEpochMilli(i.getLong(a)));
+        uap.put(Instant.class, a -> Instant.parse(a.getS()));
+        uip.put(Instant.class, (a, i) -> Instant.parse(i.getString(a)));
 
         mic.put(List.class, (o, a, i, m) -> {
             Item itemProxy = new Item();
