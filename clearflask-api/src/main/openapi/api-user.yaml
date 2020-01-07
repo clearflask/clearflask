@@ -8,25 +8,25 @@ components:
         password:
           type: string
       required:
-      - email
-      - password
+        - email
+        - password
     UserSearchAdmin:
       type: object
       properties:
         sortBy:
           type: string
           enum:
-          - Created
-          - LastActive
-          - FundedIdeas
-          - SupportedIdeas
-          - FundedAmount
-          - FundsAvailable
+            - Created
+            - LastActive
+            - FundedIdeas
+            - SupportedIdeas
+            - FundedAmount
+            - FundsAvailable
         sortOrder:
           type: string
           enum:
-          - Asc
-          - Desc
+            - Asc
+            - Desc
         searchText:
           type: string
           description: Search by name and email.
@@ -34,7 +34,7 @@ components:
     User:
       type: object
       required:
-      - userId
+        - userId
       properties:
         userId:
           type: string
@@ -42,41 +42,41 @@ components:
           type: string
     UserMe:
       allOf:
-      - $ref: 'api-user.yaml#/components/schemas/User'
-      - type: object
-        required:
-        - iosPush
-        - androidPush
-        - browserPush
-        - emailNotify
-        properties:
-          email:
-            type: string
-          emailNotify:
-            type: boolean
-          iosPush:
-            type: boolean
-          androidPush:
-            type: boolean
-          browserPush:
-            type: boolean
+        - $ref: 'api-user.yaml#/components/schemas/User'
+        - type: object
+          required:
+            - iosPush
+            - androidPush
+            - browserPush
+            - emailNotify
+          properties:
+            email:
+              type: string
+            emailNotify:
+              type: boolean
+            iosPush:
+              type: boolean
+            androidPush:
+              type: boolean
+            browserPush:
+              type: boolean
     UserMeWithBalance:
       allOf:
-      - $ref: 'api-user.yaml#/components/schemas/UserMe'
-      - $ref: 'api-credit.yaml#/components/schemas/Balance'
+        - $ref: 'api-user.yaml#/components/schemas/UserMe'
+        - $ref: 'api-credit.yaml#/components/schemas/Balance'
     UserAdmin:
       allOf:
-      - $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
-      - type: object
-        properties:
-          email:
-            type: string
-          iosPushToken:
-            type: string
-          androidPushToken:
-            type: string
-          browserPushToken:
-            type: string
+        - $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+        - type: object
+          properties:
+            email:
+              type: string
+            iosPushToken:
+              type: string
+            androidPushToken:
+              type: string
+            browserPushToken:
+              type: string
     UserCreate:
       type: object
       properties:
@@ -94,11 +94,11 @@ components:
           type: string
     UserCreateAdmin:
       allOf:
-      - $ref: 'api-user.yaml#/components/schemas/UserCreate'
-      - type: object
-        properties:
-          dummyField: # Add field so java generation doesn't use model inheritance
-            type: string
+        - $ref: 'api-user.yaml#/components/schemas/UserCreate'
+        - type: object
+          properties:
+            balance:
+              type: number
     UserUpdate:
       type: object
       properties:
@@ -122,11 +122,11 @@ components:
     operationId: userLogin
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -144,11 +144,11 @@ components:
     operationId: userDelete
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -157,11 +157,11 @@ components:
     operationId: userLogout
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -170,11 +170,11 @@ components:
     operationId: userSsoCreateOrLogin
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -183,7 +183,7 @@ components:
             type: object
             title: userSsoCreateOrLogin
             required:
-            - token
+              - token
             properties:
               token:
                 type: string
@@ -198,11 +198,11 @@ components:
     operationId: userCreate
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -220,16 +220,16 @@ components:
     operationId: userGet
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -242,16 +242,16 @@ components:
     operationId: userUpdate
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -270,16 +270,16 @@ components:
     operationId: userDelete
     tags: [User]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -290,15 +290,15 @@ components:
     operationId: userSearchAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -313,7 +313,7 @@ components:
               title: UserSearchResponse
               type: object
               required:
-              - results
+                - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -325,11 +325,11 @@ components:
     operationId: userCreateAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -346,11 +346,11 @@ components:
     operationId: userDeleteBulkAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -367,16 +367,16 @@ components:
     operationId: userGetAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -389,16 +389,16 @@ components:
     operationId: userUpdateAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -417,16 +417,16 @@ components:
     operationId: userDeleteAdmin
     tags: [UserAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'

@@ -34,7 +34,7 @@ public class ServiceManagerProvider implements Provider<ServiceManager> {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(ServiceManager.class).toProvider(ServiceManagerProvider.class).in(Singleton.class);
+                bind(ServiceManager.class).toProvider(ServiceManagerProvider.class).asEagerSingleton();
             }
         };
     }

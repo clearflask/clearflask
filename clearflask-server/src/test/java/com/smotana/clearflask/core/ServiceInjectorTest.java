@@ -1,19 +1,22 @@
 package com.smotana.clearflask.core;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.web.resource.PingResource;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.CommentResource;
+import com.smotana.clearflask.web.resource.PingResource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Arrays;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -25,9 +28,11 @@ public class ServiceInjectorTest {
         this.env = env;
     }
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameters(name = "{0}")
     public static Iterable<Object> data() {
-        return ImmutableList.copyOf(Environment.values());
+        return Arrays.stream(Environment.values())
+                .filter(Predicates.not(Environment.TEST::equals))
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     @Test(timeout = 5_000L)

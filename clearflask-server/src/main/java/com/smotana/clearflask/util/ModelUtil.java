@@ -38,10 +38,9 @@ public class ModelUtil {
                         new Palette(false, null, null, null, null, null, null),
                         new Typography(null, null)),
                 new Users(
-                        null,
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
-                                new NotificationMethods(null, true, false, null, null))),
+                                new NotificationMethods(null, true, false, null))),
                 null
         ), createConfigVersion());
     }

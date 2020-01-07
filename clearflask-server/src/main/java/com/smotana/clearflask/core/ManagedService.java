@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.google.common.util.concurrent.Service;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,9 +15,9 @@ import static com.google.common.base.Preconditions.checkState;
 public abstract class ManagedService extends AbstractIdleService {
 
     @Inject
-    private Set<ManagedService> managedServices;
+    private Provider<Set<ManagedService>> managedServicesProvider;
     @Inject
-    private Set<Service> services;
+    private Provider<Set<Service>> servicesProvider;
 
     /** Override to supply set of dependencies */
     protected ImmutableSet<Class> serviceDependencies() {
@@ -49,7 +50,7 @@ public abstract class ManagedService extends AbstractIdleService {
     private void awaitDependencies(boolean awaitRunning) {
         ImmutableSet<Class> dependencies = serviceDependencies();
         for (Class dependency : dependencies) {
-            ImmutableSet<Service> dependantServices = Stream.concat(services.stream(), managedServices.stream())
+            ImmutableSet<Service> dependantServices = Stream.concat(servicesProvider.get().stream(), managedServicesProvider.get().stream())
                     .filter(s -> {
                         Class<? extends Service> sClazz = s.getClass();
                         return dependencies.stream().anyMatch(dClazz -> dClazz.isAssignableFrom(sClazz));

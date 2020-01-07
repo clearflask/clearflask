@@ -1,108 +1,162 @@
 package com.smotana.clearflask.store;
 
-import com.google.gson.annotations.SerializedName;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 public interface UserStore {
 
-    Optional<User> getUser(String userId);
+    Optional<User> getUser(String projectId, String userId);
 
-    Optional<User> getUserByEmail(String email);
+    ImmutableList<User> getUsers(String projectId, String... userIds);
 
-    Optional<User> getUserByPushToken(String pushToken);
+    Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
-    void createUser(User user);
+    UserAndIndexingFuture<IndexResponse> createUser(User user);
 
-    void updateAccountName(String accountId, String name);
+    Future<List<DeleteResponse>> deleteUsers(String projectId, String... userIds);
 
-    void updateAccountPassword(String accountId, String password);
+    UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    void updateAccountEmail(String accountId, String previousEmail, String email);
+    ImmutableList<User> searchUsers(String projectId, UserSearchAdmin parameters);
 
-    Session createSession(String accountId, Instant expiry);
+    UserSession createSession(String projectId, String userId, Instant expiry);
 
-    Optional<Session> getSession(String accountId, String sessionId);
+    Optional<UserSession> getSession(String projectId, String userId, String sessionId);
 
-    Session refreshSession(String accountId, String sessionId, Instant expiry);
+    UserSession refreshSession(String projectId, String userId, String sessionId, Instant expiry);
 
-    void revokeSession(String accountId, String sessionId);
+    void revokeSession(String projectId, String userId, String sessionId);
 
-    void revokeSessions(String accountId);
+    void revokeSessions(String projectId, String userId);
 
-    void revokeSessions(String accountId, String sessionToLeave);
+    void revokeSessions(String projectId, String userId, String sessionToLeave);
 
     @Value
-    class Session {
+    class UserAndIndexingFuture<T> {
+        private final User user;
+        private final Future<T> indexingFuture;
+    }
+
+    enum IdentifierType {
+        EMAIL("e"),
+        IOS_PUSH("i"),
+        ANDROID_PUSH("a"),
+        BROWSER_PUSH("b");
+
+        private final String type;
+
+        IdentifierType(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "userId"})
+    class UserSession {
 
         @NonNull
-        @SerializedName("sessionId")
+        private final String projectId;
+
+        @NonNull
+        private final String userId;
+
+        @NonNull
         private final String sessionId;
 
         @NonNull
-        @SerializedName("aid")
-        private final String accountId;
-
-        @NonNull
-        @SerializedName("expiry")
         private final Instant expiry;
     }
 
     @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "userId"})
     class User {
 
-        private static final String USER_ID = "uid";
         @NonNull
-        @SerializedName(USER_ID)
-        private final String userId;
+        private final String projectId;
 
-        private static final String NAME = "name";
-        @SerializedName(NAME)
+        @NonNull
+        private final transient String userId;
+
         private final String name;
 
-        private static final String EMAIL = "email";
-        @SerializedName(EMAIL)
         private final String email;
 
-        private static final String EMAIL_NOTIFY = "emailNotify";
-        @NonNull
-        @SerializedName(EMAIL_NOTIFY)
-        private final Boolean emailNotify;
+        private final transient String password;
 
-        private static final String IOS_PUSH = "iosPush";
         @NonNull
-        @SerializedName(IOS_PUSH)
-        private final Boolean iosPush;
+        private final boolean emailNotify;
 
-        private static final String ANDROID_PUSH = "androidPush";
-        @NonNull
-        @SerializedName(ANDROID_PUSH)
-        private final Boolean androidPush;
-
-        private static final String BROWSER_PUSH = "browserPush";
-        @NonNull
-        @SerializedName(BROWSER_PUSH)
-        private final Boolean browserPush;
-
-        private static final String BALANCE = "balance";
-        @NonNull
-        @SerializedName(BALANCE)
         private final BigDecimal balance;
 
-        private static final String IOS_PUSH_TOKEN = "iosPushToken";
-        @SerializedName(IOS_PUSH_TOKEN)
-        private final String iosPushToken;
+        private final transient String iosPushToken;
 
-        private static final String ANDROID_PUSH_TOKEN = "androidPushToken";
-        @SerializedName(ANDROID_PUSH_TOKEN)
-        private final String androidPushToken;
+        private final transient String androidPushToken;
 
-        private static final String BROWSER_PUSH_TOKEN = "browserPushToken";
-        @SerializedName(BROWSER_PUSH_TOKEN)
-        private final String browserPushToken;
+        private final transient String browserPushToken;
+
+        public UserMe toUserMe() {
+            return new UserMe(
+                    this.getUserId(),
+                    this.getName(),
+                    this.getEmail(),
+                    this.isEmailNotify(),
+                    !Strings.isNullOrEmpty(this.getIosPushToken()),
+                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(this.getBrowserPushToken()));
+        }
+
+        public UserMeWithBalance toUserMeWithBalance() {
+            return new UserMeWithBalance(
+                    this.getUserId(),
+                    this.getName(),
+                    this.getEmail(),
+                    this.isEmailNotify(),
+                    !Strings.isNullOrEmpty(this.getIosPushToken()),
+                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
+                    this.getBalance());
+        }
+
+        public UserAdmin toUserAdmin() {
+            return new UserAdmin(
+                    this.getUserId(),
+                    this.getName(),
+                    this.getEmail(),
+                    this.isEmailNotify(),
+                    !Strings.isNullOrEmpty(this.getIosPushToken()),
+                    !Strings.isNullOrEmpty(this.getAndroidPushToken()),
+                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
+                    this.getBalance(),
+                    this.getIosPushToken(),
+                    this.getAndroidPushToken(),
+                    this.getBrowserPushToken());
+        }
     }
 }

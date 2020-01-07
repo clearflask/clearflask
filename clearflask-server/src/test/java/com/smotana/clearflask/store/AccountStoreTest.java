@@ -52,8 +52,12 @@ public class AccountStoreTest extends AbstractTest {
         assertEquals(newName, store.getAccountByEmail(account.getEmail()).get().getName());
 
         String newPass = "password2";
-        store.updateAccountPassword(account.getAccountId(), newPass);
+        AccountStore.Session session1 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
+        AccountStore.Session session2 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
+        store.updateAccountPassword(account.getAccountId(), newPass, session1.getSessionId());
         assertEquals(newPass, store.getAccountByEmail(account.getEmail()).get().getPassword());
+        assertTrue(store.getSession(account.getAccountId(), session1.getSessionId()).isPresent());
+        assertFalse(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
 
         AccountStore.Session session = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
         assertTrue(store.getSession(account.getAccountId(), session.getSessionId()).isPresent());
@@ -105,6 +109,11 @@ public class AccountStoreTest extends AbstractTest {
         store.revokeSessions(account.getAccountId(), session3.getSessionId());
         assertFalse(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
         assertTrue(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
+
+        Instant refreshedExpiry = Instant.ofEpochMilli(System.currentTimeMillis()).plus(2, ChronoUnit.DAYS);
+        store.refreshSession(account.getAccountId(), session3.getSessionId(), refreshedExpiry);
+        assertTrue(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
+        assertEquals(refreshedExpiry, store.getSession(account.getAccountId(), session3.getSessionId()).get().getExpiry());
 
         store.revokeSessions(account.getAccountId());
         assertFalse(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());

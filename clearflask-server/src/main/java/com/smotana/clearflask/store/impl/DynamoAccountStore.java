@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
@@ -18,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -54,15 +56,15 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     public static class EmailAccount {
 
         @NonNull
-        private final String accountId;
+        private final String email;
 
         @NonNull
-        private final String email;
+        private final String accountId;
     }
 
     private static final String ACCOUNT_TABLE = "account";
-    private static final String EMAIL_ACCOUNT_TABLE = "emailAccount";
-    private static final String SESSION_TABLE = "session";
+    private static final String EMAIL_ACCOUNT_TABLE = "emailToAccount";
+    private static final String SESSION_TABLE = "accountSession";
 
     @Inject
     private AmazonDynamoDB dynamo;
@@ -85,8 +87,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
                     .withAttributeDefinitions(ImmutableList.of(
                             new AttributeDefinition().withAttributeName("accountId").withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
+            log.debug("Table {} created", ACCOUNT_TABLE);
         } catch (ResourceNotFoundException ex) {
-            // Table exists
+            log.debug("Table {} already exists", ACCOUNT_TABLE);
         }
         accountTable = dynamoDoc.getTable(ACCOUNT_TABLE);
 
@@ -98,8 +101,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
                     .withAttributeDefinitions(ImmutableList.of(
                             new AttributeDefinition().withAttributeName("email").withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
+            log.debug("Table {} created", EMAIL_ACCOUNT_TABLE);
         } catch (ResourceNotFoundException ex) {
-            // Table exists
+            log.debug("Table {} already exists", EMAIL_ACCOUNT_TABLE);
         }
         emailAccountTable = dynamoDoc.getTable(EMAIL_ACCOUNT_TABLE);
 
@@ -118,8 +122,9 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
                     .withTimeToLiveSpecification(new TimeToLiveSpecification()
                             .withEnabled(true)
                             .withAttributeName("expiry")));
+            log.debug("Table {} created", SESSION_TABLE);
         } catch (ResourceNotFoundException ex) {
-            // Table exists
+            log.debug("Table {} already exists", SESSION_TABLE);
         }
         sessionTable = dynamoDoc.getTable(SESSION_TABLE);
     }
@@ -192,10 +197,11 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     }
 
     @Override
-    public void updateAccountPassword(String accountId, String password) {
+    public void updateAccountPassword(String accountId, String password, String sessionIdToLeave) {
         accountTable.updateItem("accountId", accountId,
                 ImmutableList.of(new Expected("accountId").exists()),
                 new AttributeUpdate("password").put(password));
+        revokeSessions(accountId, sessionIdToLeave);
     }
 
     @Override
@@ -248,7 +254,7 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
                 Session.class));
 
         if (session.isPresent() && session.get().getExpiry().isBefore(Instant.now())) {
-            log.trace("DynamoDB has an expired session with expiry {}", session.get().getExpiry());
+            log.trace("DynamoDB has an expired account session with expiry {}", session.get().getExpiry());
             session = Optional.empty();
         }
 
@@ -257,17 +263,14 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
 
     @Override
     public Session refreshSession(String accountId, String sessionId, Instant expiry) {
-        Session session = Session.builder()
-                .sessionId(sessionId)
-                .accountId(accountId)
-                .expiry(expiry)
-                .build();
-        sessionTable.updateItem(
-                "accountId", accountId,
-                "sessionId", sessionId,
-                new AttributeUpdate("expiry")
-                        .put(dynamoMapper.toDynamoValue(expiry)));
-        return session;
+        return dynamoMapper.fromItem(sessionTable.updateItem(new UpdateItemSpec()
+                .withPrimaryKey(
+                        "accountId", accountId,
+                        "sessionId", sessionId)
+                .withAttributeUpdate(new AttributeUpdate("expiry")
+                        .put(dynamoMapper.toDynamoValue(expiry)))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem(), Session.class);
     }
 
     @Override

@@ -19,9 +19,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DateUnmarsha
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.DoubleUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.FloatUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.IntegerUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ListUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.LongUnmarshaller;
-import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.MapUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.ShortUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.StringUnmarshaller;
 import com.amazonaws.services.dynamodbv2.datamodeling.unmarshallers.UUIDUnmarshaller;
@@ -38,9 +36,9 @@ import org.apache.commons.lang.ArrayUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.text.ParseException;
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -172,78 +170,94 @@ public class DynamoConvertersProxy {
         uip.put(UUID.class, (a, i) -> UUID.fromString(i.getString(a)));
         uap.put(String.class, StringUnmarshaller.instance()::unmarshall);
         uip.put(String.class, (a, i) -> i.getString(a));
-        uap.put(List.class, value -> {
-            try {
-                return ListUnmarshaller.instance().unmarshall(value);
-            } catch (ParseException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        uip.put(List.class, (a, i) -> i.getList(a));
-        uap.put(Map.class, value -> {
-            try {
-                return MapUnmarshaller.instance().unmarshall(value);
-            } catch (ParseException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
-        uip.put(Map.class, (a, i) -> i.getMap(a));
+//        uap.put(List.class, value -> {
+//            try {
+//                return ListUnmarshaller.instance().unmarshall(value);
+//            } catch (ParseException ex) {
+//                throw new RuntimeException(ex);
+//            }
+//        });
+//        uip.put(List.class, (a, i) -> i.getList(a));
+//        uap.put(Map.class, value -> {
+//            try {
+//                return MapUnmarshaller.instance().unmarshall(value);
+//            } catch (ParseException ex) {
+//                throw new RuntimeException(ex);
+//            }
+//        });
+//        uip.put(Map.class, (a, i) -> i.getMap(a));
         uap.put(Instant.class, a -> Instant.parse(a.getS()));
         uip.put(Instant.class, (a, i) -> Instant.parse(i.getString(a)));
 
         mic.put(List.class, (o, a, i, m) -> {
-            Item itemProxy = new Item();
-            i.withList(a, ((List<?>) o).stream()
-                    .map(i2 -> {
-                        m.marshall(i2, "a", itemProxy);
-                        return itemProxy.get("a");
-                    })
-                    .collect(ImmutableList.toImmutableList()));
+            if (o == null) {
+                i.withNull(a);
+            } else {
+                Item itemProxy = new Item();
+                i.withList(a, ((List<?>) o).stream()
+                        .map(i2 -> {
+                            m.marshall(i2, "a", itemProxy);
+                            return itemProxy.get("a");
+                        })
+                        .collect(ImmutableList.toImmutableList()));
+            }
         });
         uic.put(List.class, (a, i, u) -> {
-            Item itemProxy = new Item();
-            return i.getList(a).stream()
-                    .map(i2 -> {
-                        itemProxy.with("a", i2);
-                        return u.unmarshall("a", itemProxy);
-                    })
-                    .collect(ImmutableList.toImmutableList());
+            if (i.isNull(a)) {
+                return null;
+            } else {
+                Item itemProxy = new Item();
+                return i.getList(a).stream()
+                        .map(i2 -> {
+                            itemProxy.with("a", i2);
+                            return u.unmarshall("a", itemProxy);
+                        })
+                        .collect(ImmutableList.toImmutableList());
+            }
         });
-        mac.put(List.class, (o, m) -> new AttributeValue().withL(((List<?>) o).stream()
+        mac.put(List.class, (o, m) -> o == null ? new AttributeValue().withNULL(Boolean.TRUE) : new AttributeValue().withL(((List<?>) o).stream()
                 .map(m::marshall)
                 .collect(ImmutableList.toImmutableList())));
-        uac.put(List.class, (a, u) -> a.getL().stream()
+        uac.put(List.class, (a, u) -> a.getNULL() == Boolean.TRUE ? null : a.getL().stream()
                 .map(u::unmarshall)
                 .collect(ImmutableList.toImmutableList()));
 
         mic.put(Map.class, (o, a, i, m) -> {
-            Item itemProxy = new Item();
-            i.withMap(a, ((Map<?, ?>) o).entrySet().stream()
-                    .collect(ImmutableMap.toImmutableMap(
-                            e -> (String) e.getKey(),
-                            e -> {
-                                m.marshall(e.getValue(), "a", itemProxy);
-                                return itemProxy.get("a");
-                            }
-                    )));
+            if (o == null) {
+                i.withNull(a);
+            } else {
+                Item itemProxy = new Item();
+                i.withMap(a, ((Map<?, ?>) o).entrySet().stream()
+                        .collect(ImmutableMap.toImmutableMap(
+                                e -> (String) e.getKey(),
+                                e -> {
+                                    m.marshall(e.getValue(), "a", itemProxy);
+                                    return itemProxy.get("a");
+                                }
+                        )));
+            }
         });
         uic.put(Map.class, (a, i, u) -> {
-            Item itemProxy = new Item();
-            return i.getMap(a).entrySet().stream()
-                    .collect(ImmutableMap.toImmutableMap(
-                            e -> (String) e.getKey(),
-                            e -> {
-                                itemProxy.with("a", e.getValue());
-                                return u.unmarshall("a", itemProxy);
-                            }
-                    ));
+            if (i.isNull(a)) {
+                return null;
+            } else {
+                Item itemProxy = new Item();
+                return i.getMap(a).entrySet().stream()
+                        .collect(ImmutableMap.toImmutableMap(
+                                e -> (String) e.getKey(),
+                                e -> {
+                                    itemProxy.with("a", e.getValue());
+                                    return u.unmarshall("a", itemProxy);
+                                }
+                        ));
+            }
         });
-        mac.put(Map.class, (o, m) -> new AttributeValue().withM(((Map<?, ?>) o).entrySet().stream()
+        mac.put(Map.class, (o, m) -> o == null ? new AttributeValue().withNULL(Boolean.TRUE) : new AttributeValue().withM(((Map<?, ?>) o).entrySet().stream()
                 .collect(ImmutableMap.toImmutableMap(
                         e -> (String) e.getKey(),
                         e -> m.marshall(e.getValue())
                 ))));
-        uac.put(Map.class, (a, u) -> a.getM().entrySet().stream()
+        uac.put(Map.class, (a, u) -> a.getNULL() == Boolean.TRUE ? null : a.getM().entrySet().stream()
                 .collect(ImmutableMap.toImmutableMap(
                         e -> (String) e.getKey(),
                         e -> u.unmarshall(e.getValue())
@@ -251,7 +265,12 @@ public class DynamoConvertersProxy {
 
 
         mic.put(Set.class, (o, a, i, m) -> {
+            if (o == null) {
+                i.withNull(a);
+                return;
+            }
             if (((Set<?>) o).isEmpty()) {
+                i.withList(a, ImmutableList.of());
                 return;
             }
             Item itemProxy = new Item();
@@ -264,6 +283,9 @@ public class DynamoConvertersProxy {
         });
         uic.put(Set.class, (a, i, u) -> {
             if (i.isNull(a)) {
+                return null;
+            }
+            if (((Collection<?>) i.get(a)).isEmpty()) {
                 return ImmutableSet.of();
             }
             Item itemProxy = new Item();
@@ -275,8 +297,11 @@ public class DynamoConvertersProxy {
                     .collect(ImmutableSet.toImmutableSet());
         });
         mac.put(Set.class, (o, m) -> {
+            if (o == null) {
+                return new AttributeValue().withNULL(Boolean.TRUE);
+            }
             if (((Set<?>) o).isEmpty()) {
-                return new AttributeValue().withNULL(true);
+                return new AttributeValue().withL();
             }
             int[] setType = {0};
             ImmutableSet<?> set = ((Set<?>) o).stream()
@@ -307,7 +332,11 @@ public class DynamoConvertersProxy {
             }
         });
         uac.put(Set.class, (a, u) -> {
-            if (a.getSS() != null) {
+            if (a.getNULL() == Boolean.TRUE) {
+                return null;
+            } else if (a.getL() != null && a.getL().isEmpty()) {
+                return ImmutableSet.of();
+            } else if (a.getSS() != null) {
                 return a.getSS().stream().map(i -> u.unmarshall(new AttributeValue().withS(i))).collect(ImmutableSet.toImmutableSet());
             } else if (a.getNS() != null) {
                 return a.getNS().stream().map(i -> u.unmarshall(new AttributeValue().withN(i))).collect(ImmutableSet.toImmutableSet());

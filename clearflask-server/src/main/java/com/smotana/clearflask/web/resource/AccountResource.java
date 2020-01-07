@@ -17,8 +17,7 @@ import com.smotana.clearflask.store.AccountStore.Session;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AuthCookieValue;
+import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -59,14 +57,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private PlanStore planStore;
     @Inject
-    private AuthCookieUtil authCookieUtil;
-    @Inject
     private PasswordUtil passwordUtil;
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Override
     public AccountAdmin accountBindAdmin() {
-        Session session = getExtendedPrincipal().orElseThrow(InternalServerErrorException::new).getSession();
+        Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
 
         // Token refresh
         if (session.getExpiry().isAfter(Instant.now().plus(config.sessionRenewIfExpiringIn()))) {
@@ -84,6 +80,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.info("Account bind on valid session to non-existent account, revoking all sessions; accountId {} sessionId {}",
                     session.getAccountId(), session.getSessionId());
             accountStore.revokeSessions(session.getAccountId());
+            unsetAuthCookie();
             throw new ForbiddenException();
         }
         Account account = accountOpt.get();
@@ -111,13 +108,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.info("Account login incorrect password for email {}", credentials.getEmail());
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
         }
+        log.debug("Successful account login for email {}", credentials.getEmail());
 
         Session session = accountStore.createSession(
                 account.getAccountId(),
                 Instant.now().plus(config.sessionExpiry()));
         setAuthCookie(session);
 
-        log.debug("Successful account login for email {}", credentials.getEmail());
         return new AccountAdmin(
                 planStore.mapIdsToPlans(account.getPlanIds()).asList(),
                 account.getCompany(),
@@ -131,10 +128,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     public void accountLogoutAdmin() {
         Optional<ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
         if (!extendedPrincipal.isPresent()) {
-            log.trace("Cannot logout, already not logged in");
+            log.trace("Cannot logout account, already not logged in");
             return;
         }
-        Session session = extendedPrincipal.get().getSession();
+        Session session = extendedPrincipal.get().getAccountSessionOpt().get();
 
         log.debug("Logout session for account {}", session.getAccountId());
         accountStore.revokeSession(session.getAccountId(), session.getSessionId());
@@ -188,11 +185,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         log.trace("Setting account auth cookie for account {}", session.getAccountId());
         RealCookie.builder()
                 .name(ACCOUNT_AUTH_COOKIE_NAME)
-                .value(new AuthCookieValue(
-                        AuthCookieUtil.Type.ACCOUNT,
+                .value(new AccountAuthCookie(
                         session.getSessionId(),
-                        session.getAccountId(),
-                        null))
+                        session.getAccountId()))
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)

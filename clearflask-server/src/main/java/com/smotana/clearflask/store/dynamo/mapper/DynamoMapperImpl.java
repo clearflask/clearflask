@@ -16,7 +16,10 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.Marshall
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerItem;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerItem;
+import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -24,14 +27,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 @Slf4j
 @Singleton
@@ -41,6 +45,8 @@ public class DynamoMapperImpl implements DynamoMapper {
 
     @Override
     public Item toItem(Object object) {
+        Optional<CompoundPrimaryKey> compoundPrimaryKeyOpt = Optional.ofNullable(object.getClass().getDeclaredAnnotation(CompoundPrimaryKey.class));
+        String[] compoundPrimaryKeyValues = compoundPrimaryKeyOpt.map(compoundPrimaryKey -> new String[compoundPrimaryKey.primaryKeys().length]).orElse(null);
         Item item = new Item();
         for (Field field : object.getClass().getDeclaredFields()) {
             checkState(Modifier.isFinal(field.getModifiers()),
@@ -53,7 +59,14 @@ public class DynamoMapperImpl implements DynamoMapper {
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
-            if (val == null) {
+            int primaryKeyIndex = compoundPrimaryKeyOpt
+                    .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
+                    .orElse(-1);
+            if (primaryKeyIndex != -1) {
+                checkState(val != null);
+                checkState(field.getType() == String.class);
+                compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
+            } else if (val == null) {
                 item.withNull(field.getName());
             } else {
                 Optional<Class> collectionClazz = getCollectionClazz(field.getType());
@@ -62,19 +75,38 @@ public class DynamoMapperImpl implements DynamoMapper {
                         .marshall(val, field.getName(), item);
             }
         }
-        log.trace("toItem class {} item {}", object.getClass().getSimpleName(), item);
+        compoundPrimaryKeyOpt.ifPresent(compoundPrimaryKey -> item.withString(
+                compoundPrimaryKey.key(),
+                StringSerdeUtil.mergeStrings(compoundPrimaryKeyValues)));
+        log.trace("toItem {} {}", object.getClass().getSimpleName(), item);
         return item;
     }
 
     @Override
     public <T> T fromItem(Item item, Class<T> objectClazz) {
-        log.trace("fromItem class {} item {}", objectClazz.getSimpleName(), item);
+        log.trace("fromItem {} {}", objectClazz.getSimpleName(), item);
         if (item == null) {
             return null;
         }
 
+        ImmutableMap<String, String> primaryKeys = Optional.ofNullable(objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class))
+                .map(compoundPrimaryKey -> {
+                    String[] primaryKeyValues = StringSerdeUtil.unMergeString(item.getString(compoundPrimaryKey.key()));
+                    checkState(primaryKeyValues.length == compoundPrimaryKey.primaryKeys().length);
+                    ImmutableMap.Builder<String, String> primaryKeysBuilder = ImmutableMap.builderWithExpectedSize(compoundPrimaryKey.primaryKeys().length);
+                    for (int i = 0; i < primaryKeyValues.length; i++) {
+                        primaryKeysBuilder.put(compoundPrimaryKey.primaryKeys()[i], primaryKeyValues[i]);
+                    }
+                    return primaryKeysBuilder.build();
+                })
+                .orElse(ImmutableMap.of());
+
         List<Object> args = Lists.newArrayList();
         for (Field field : objectClazz.getDeclaredFields()) {
+            if (primaryKeys.containsKey(field.getName())) {
+                args.add(primaryKeys.get(field.getName()));
+                continue;
+            }
             Optional<Class> collectionClazz = getCollectionClazz(field.getType());
             if (!collectionClazz.isPresent() && (!item.isPresent(field.getName()) || item.isNull(field.getName()))) {
                 args.add(null);
@@ -96,6 +128,8 @@ public class DynamoMapperImpl implements DynamoMapper {
 
     @Override
     public ImmutableMap<String, AttributeValue> toAttrMap(Object object) {
+        Optional<CompoundPrimaryKey> compoundPrimaryKeyOpt = Optional.ofNullable(object.getClass().getDeclaredAnnotation(CompoundPrimaryKey.class));
+        String[] compoundPrimaryKeyValues = compoundPrimaryKeyOpt.map(compoundPrimaryKey -> new String[compoundPrimaryKey.primaryKeys().length]).orElse(null);
         ImmutableMap.Builder<String, AttributeValue> mapBuilder = ImmutableMap.builder();
         for (Field field : object.getClass().getDeclaredFields()) {
             checkState(Modifier.isFinal(field.getModifiers()),
@@ -108,39 +142,63 @@ public class DynamoMapperImpl implements DynamoMapper {
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
-            AttributeValue attrVal;
-            if (val == null) {
-                attrVal = new AttributeValue().withNULL(true);
+            int primaryKeyIndex = compoundPrimaryKeyOpt
+                    .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
+                    .orElse(-1);
+            if (primaryKeyIndex != -1) {
+                checkState(val != null);
+                checkState(field.getType() == String.class);
+                compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
+            } else if (val == null) {
+                mapBuilder.put(field.getName(), new AttributeValue().withNULL(true));
             } else {
                 Optional<Class> collectionClazz = getCollectionClazz(field.getType());
                 Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                attrVal = findMarshallerAttrVal(collectionClazz, itemClazz)
-                        .marshall(val);
+                mapBuilder.put(field.getName(), findMarshallerAttrVal(collectionClazz, itemClazz).marshall(val));
             }
-            mapBuilder.put(field.getName(), attrVal);
         }
+        compoundPrimaryKeyOpt.ifPresent(compoundPrimaryKey -> mapBuilder.put(
+                compoundPrimaryKey.key(),
+                new AttributeValue().withS(StringSerdeUtil.mergeStrings(compoundPrimaryKeyValues))));
         ImmutableMap<String, AttributeValue> map = mapBuilder.build();
-        log.trace("toAttrMap map {}", map);
+        log.trace("toAttrMap {} {}", object.getClass().getSimpleName(), map);
         return map;
     }
 
     @Override
     public <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objectClazz) {
+        log.trace("fromAttrMap {} {}", objectClazz.getSimpleName(), attrMap);
         if (attrMap == null) {
             return null;
         }
 
+        ImmutableMap<String, String> primaryKeys = Optional.ofNullable(objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class))
+                .map(compoundPrimaryKey -> {
+                    String[] primaryKeyValues = StringSerdeUtil.unMergeString(attrMap.get(compoundPrimaryKey.key()).getS());
+                    checkState(primaryKeyValues.length == compoundPrimaryKey.primaryKeys().length);
+                    ImmutableMap.Builder<String, String> primaryKeysBuilder = ImmutableMap.builderWithExpectedSize(compoundPrimaryKey.primaryKeys().length);
+                    for (int i = 0; i < primaryKeyValues.length; i++) {
+                        primaryKeysBuilder.put(compoundPrimaryKey.primaryKeys()[i], primaryKeyValues[i]);
+                    }
+                    return primaryKeysBuilder.build();
+                })
+                .orElse(ImmutableMap.of());
+
         List<Object> args = Lists.newArrayList();
         for (Field field : objectClazz.getDeclaredFields()) {
+            if (primaryKeys.containsKey(field.getName())) {
+                args.add(primaryKeys.get(field.getName()));
+                continue;
+            }
             Optional<Class> collectionClazz = getCollectionClazz(field.getType());
             AttributeValue attrVal = attrMap.get(field.getName());
             if (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE)) {
                 args.add(null);
-                continue;
+            } else {
+                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
+                args.add(findUnMarshallerAttrVal(collectionClazz, itemClazz)
+                        .unmarshall(checkNotNull(attrVal)));
             }
-            Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-            args.add(findUnMarshallerAttrVal(collectionClazz, itemClazz)
-                    .unmarshall(checkNotNull(attrVal)));
         }
 
         Constructor<T> constructor = findConstructor(objectClazz, args);
@@ -150,6 +208,19 @@ public class DynamoMapperImpl implements DynamoMapper {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    @Override
+    public String getCompoundPrimaryKey(ImmutableMap<String, String> keys, Class<?> objectClazz) {
+        CompoundPrimaryKey compoundPrimaryKey = objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class);
+        checkState(compoundPrimaryKey != null);
+        checkArgument(keys.size() == compoundPrimaryKey.primaryKeys().length);
+        String primaryKey = StringSerdeUtil.mergeStrings(Arrays.stream(compoundPrimaryKey
+                .primaryKeys())
+                .map(key -> checkNotNull(keys.get(key), "getCompoundPrimaryKey key %s is not found", key))
+                .toArray(String[]::new));
+        log.trace("getCompoundPrimaryKey {} {}", objectClazz.getSimpleName(), primaryKey);
+        return primaryKey;
     }
 
     @Override
@@ -165,8 +236,9 @@ public class DynamoMapperImpl implements DynamoMapper {
         } else {
             itemClazz = object.getClass();
         }
-        return findMarshallerAttrVal(collectionClazz, itemClazz)
-                .marshall(object);
+        Item tempItem = new Item();
+        findMarshallerItem(collectionClazz, itemClazz).marshall(object, "tempAttr", tempItem);
+        return tempItem.get("tempAttr");
     }
 
     private <T> Constructor<T> findConstructor(Class<T> objectClazz, List<Object> args) {
@@ -174,6 +246,7 @@ public class DynamoMapperImpl implements DynamoMapper {
         for (Constructor<?> constructorPotential : objectClazz.getDeclaredConstructors()) {
             // Let's only check for args size and assume all types are good...
             if (constructorPotential.getParameterCount() != args.size()) {
+                log.trace("Unsuitable constructor {}", constructorPotential);
                 continue;
             }
             return (Constructor<T>) constructorPotential;
@@ -182,7 +255,7 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private Optional<Class> getCollectionClazz(Class<?> clazz) {
-        return Collection.class.isAssignableFrom(clazz)
+        return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz)
                 ? Optional.of(clazz)
                 : Optional.empty();
     }
@@ -207,10 +280,16 @@ public class DynamoMapperImpl implements DynamoMapper {
         }
     }
 
+
+    private final MarshallerItem GsonMarshallerItem = (o, a, i) -> i.withString(a, GsonProvider.GSON.toJson(o));
+    private final MarshallerAttrVal GsonMarshallerAttrVal = o -> new AttributeValue().withS(GsonProvider.GSON.toJson(o));
+    private final Function<Class, UnMarshallerAttrVal> GsonUnMarshallerAttrVal = k -> a -> GsonProvider.GSON.fromJson(a.getS(), k);
+    private final Function<Class, UnMarshallerItem> GsonUnMarshallerItem = k -> (a, i) -> GsonProvider.GSON.fromJson(i.getString(a), k);
+
     private MarshallerItem findMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
-        MarshallerItem f = findInClassSet(itemClazz, converters.mip);
+        MarshallerItem f = findInClassSet(itemClazz, converters.mip).orElse(GsonMarshallerItem);
         if (collectionClazz.isPresent()) {
-            CollectionMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.mic);
+            CollectionMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.mic).get();
             return (o, a, i) -> fc.marshall(o, a, i, f);
         } else {
             return f;
@@ -218,9 +297,9 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private UnMarshallerItem findUnMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
-        UnMarshallerItem f = findInClassSet(itemClazz, converters.uip);
+        UnMarshallerItem f = findInClassSet(itemClazz, converters.uip).orElseGet(() -> GsonUnMarshallerItem.apply(itemClazz));
         if (collectionClazz.isPresent()) {
-            CollectionUnMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.uic);
+            CollectionUnMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.uic).get();
             return (a, i) -> fc.unmarshall(a, i, f);
         } else {
             return f;
@@ -228,9 +307,9 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private MarshallerAttrVal findMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
-        MarshallerAttrVal f = findInClassSet(itemClazz, converters.map);
+        MarshallerAttrVal f = findInClassSet(itemClazz, converters.map).orElse(GsonMarshallerAttrVal);
         if (collectionClazz.isPresent()) {
-            CollectionMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.mac);
+            CollectionMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.mac).get();
             return o -> fc.marshall(o, f);
         } else {
             return f;
@@ -238,22 +317,22 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private UnMarshallerAttrVal findUnMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
-        UnMarshallerAttrVal f = findInClassSet(itemClazz, converters.uap);
+        UnMarshallerAttrVal f = findInClassSet(itemClazz, converters.uap).orElseGet(() -> GsonUnMarshallerAttrVal.apply(itemClazz));
         if (collectionClazz.isPresent()) {
-            CollectionUnMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.uac);
+            CollectionUnMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.uac).get();
             return a -> fc.unmarshall(a, f);
         } else {
             return f;
         }
     }
 
-    private <T> T findInClassSet(Class clazz, ImmutableSet<Map.Entry<Class<?>, T>> set) {
+    private <T> Optional<T> findInClassSet(Class clazz, ImmutableSet<Map.Entry<Class<?>, T>> set) {
         for (Map.Entry<Class<?>, T> entry : set) {
             if (entry.getKey().isAssignableFrom(clazz)) {
-                return entry.getValue();
+                return Optional.of(entry.getValue());
             }
         }
-        throw new IllegalStateException("None found for class " + clazz.getSimpleName());
+        return Optional.empty();
     }
 
     public static Module module() {

@@ -44,7 +44,7 @@ public abstract class AbstractTest extends AbstractModule {
                         new AbstractModule() {
                             @Override
                             protected void configure() {
-                                bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.UNIT_TEST);
+                                bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.DEVELOPMENT_LOCAL);
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
                                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);
@@ -71,6 +71,7 @@ public abstract class AbstractTest extends AbstractModule {
     }
 
     protected void configure() {
+        super.configure();
     }
 
     protected void configUnset(Class configClass, String methodName) throws NoSuchMethodException, ConfigException {

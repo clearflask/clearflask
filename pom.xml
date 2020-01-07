@@ -20,12 +20,14 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
         <stripe.version>7.0.0</stripe.version>
+        <elastic.version>7.1.0</elastic.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
         <!-- If I still can't upgrade to 2.27+,
              try downgrading to 2.22.2 if this gets resolved:
              https://github.com/oracle/oci-java-sdk/issues/78 -->
         <jersey.version>2.27</jersey.version>
+        <awssdk.version>1.11.700</awssdk.version>
         <hk2.version>2.5.0-b62</hk2.version>
         <jjwt.version>0.10.5</jjwt.version>
     </properties>
@@ -49,6 +51,34 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.0.0-M4</version>
+                    <configuration>
+                        <parallel>classesAndMethods</parallel>
+                        <threadCount>1</threadCount>
+                        <perCoreThreadCount>true</perCoreThreadCount>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.0.0-M4</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.alexcojocaru</groupId>
+                    <artifactId>elasticsearch-maven-plugin</artifactId>
+                    <version>6.16</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.0.1</version>
                 </plugin>
@@ -66,10 +96,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>3.0.0</version>
-                </plugin>
-                <plugin>
-                    <artifactId>protobuf-maven-plugin</artifactId>
-                    <version>0.6.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>dockerfile-maven-plugin</artifactId>
@@ -254,17 +280,16 @@
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
-                <artifactId>transport</artifactId>
-                <version>7.4.0</version>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>${elastic.version}</version>
             </dependency>
             <dependency>
-                <groupId>software.amazon.awssdk</groupId>
-                <artifactId>dynamodb</artifactId>
-            </dependency>
-            <dependency>
+                <!-- Ensures all AWS SDKs are version compatible -->
                 <groupId>com.amazonaws</groupId>
-                <artifactId>DynamoDBLocal</artifactId>
-                <version>1.11.477</version>
+                <artifactId>aws-java-sdk-bom</artifactId>
+                <version>${awssdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.almworks.sqlite4java</groupId>
@@ -412,6 +437,24 @@
                 <artifactId>mockito-core</artifactId>
                 <scope>test</scope>
                 <version>2.23.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch.test</groupId>
+                <artifactId>framework</artifactId>
+                <version>${elastic.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-test-framework</artifactId>
+                <version>8.0.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>DynamoDBLocal</artifactId>
+                <version>1.11.477</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

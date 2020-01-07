@@ -27,7 +27,7 @@ public interface AccountStore {
 
     void updateAccountName(String accountId, String name);
 
-    void updateAccountPassword(String accountId, String password);
+    void updateAccountPassword(String accountId, String password, String sessionIdToLeave);
 
     void updateAccountEmail(String accountId, String previousEmail, String email);
 
@@ -47,12 +47,11 @@ public interface AccountStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     class Session {
+        @NonNull
+        private final String accountId;
 
         @NonNull
         private final String sessionId;
-
-        @NonNull
-        private final String accountId;
 
         @NonNull
         private final Instant expiry;

@@ -32,28 +32,28 @@ public class StaticPlanStore implements PlanStore {
                     new PlanPerk("15 minute credit", "description"))),
             "CDBF4982-1805-4352-8A57-824AFB565973", new Plan("CDBF4982-1805-4352-8A57-824AFB565973", "Analytic",
                     new PlanPricing(300L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
-                    new PlanPerk("Content analytics and search", "description"),
-                    new PlanPerk("Crowd-funding", "description"),
+                    new PlanPerk("Analytics and insights", "description"),
+                    new PlanPerk("Credit system", "description"),
                     new PlanPerk("Unlimited projects", "description"),
                     new PlanPerk("10 hour credit", "description"))),
             "89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A", new Plan("89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A", "Analytic",
                     new PlanPricing(450L, PlanPricing.PeriodEnum.QUARTERLY), ImmutableList.of(
-                    new PlanPerk("Content analytics and search", "description"),
-                    new PlanPerk("Crowd-funding", "description"),
+                    new PlanPerk("Analytics and insights", "description"),
+                    new PlanPerk("Credit system", "description"),
                     new PlanPerk("Unlimited projects", "description"),
                     new PlanPerk("1 hour credit", "description"))),
             "597099E1-83B3-40AC-8AC3-52E9BF59A562", new Plan("597099E1-83B3-40AC-8AC3-52E9BF59A562", "Enterprise",
                     null, ImmutableList.of(
                     new PlanPerk("Multi-Agent Access", "description"),
-                    new PlanPerk("Whitelabel", "description"),
+                    new PlanPerk("White-label", "description"),
                     new PlanPerk("Integrations, API Access", "description"),
                     new PlanPerk("Dedicated/Onsite hosting", "description"),
                     new PlanPerk("Custom SLA", "description"))));
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
             ImmutableList.of("Basic", "Analytic", "Enterprise"),
             ImmutableList.of(
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("1", "Unlimited", "Unlimited")),
                     new FeaturesTableFeatures("Active users", ImmutableList.of("Unlimited", "Unlimited", "Unlimited")),
+                    new FeaturesTableFeatures("Projects", ImmutableList.of("Unlimited", "Unlimited", "Unlimited")),
                     new FeaturesTableFeatures("User submitted content", ImmutableList.of("Unlimited", "Unlimited", "Unlimited")),
                     new FeaturesTableFeatures("Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...", ImmutableList.of("Yes", "Yes", "Yes")),
                     new FeaturesTableFeatures("Voting and Emoji expressions", ImmutableList.of("No", "Yes", "Yes")),

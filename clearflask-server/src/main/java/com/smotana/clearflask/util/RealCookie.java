@@ -3,7 +3,8 @@ package com.smotana.clearflask.util;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.smotana.clearflask.web.security.AuthCookieUtil;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AuthCookieValue;
+import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
+import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -80,10 +81,6 @@ public final class RealCookie {
         this.additionalProperties = additionalProperties;
     }
 
-    public @NonNull AuthCookieValue getValueAsAuthCookie() {
-        return AuthCookieUtil.decode(this.value).orElseThrow(IllegalStateException::new);
-    }
-
     public void addToResponse(HttpServletResponse response) {
         response.addHeader("Set-Cookie", toHeaderString());
     }
@@ -157,8 +154,13 @@ public final class RealCookie {
             return this;
         }
 
-        public RealCookieBuilder value(@NonNull AuthCookieValue value) {
-            this.value = AuthCookieUtil.encode(value);
+        public RealCookieBuilder value(@NonNull UserAuthCookie cookie) {
+            this.value = AuthCookieUtil.encode(cookie);
+            return this;
+        }
+
+        public RealCookieBuilder value(@NonNull AccountAuthCookie cookie) {
+            this.value = AuthCookieUtil.encode(cookie);
             return this;
         }
 

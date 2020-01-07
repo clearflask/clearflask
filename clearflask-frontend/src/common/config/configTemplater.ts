@@ -77,8 +77,6 @@ export default class Templater {
   }
 
   baseFeatures() {
-    // Enable SSO
-    this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'singleSignOn']).set(true);
     // Enable display name
     this._get<ConfigEditor.EnumProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(Admin.AccountFieldsDisplayNameEnum.None);
 

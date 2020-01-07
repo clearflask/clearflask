@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.security;
 
-import com.smotana.clearflask.store.AccountStore.Session;
+import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.UserStore;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 @Value
@@ -19,7 +21,9 @@ public class ExtendedSecurityContext implements SecurityContext {
         @NonNull
         private final String name;
         @NonNull
-        private final Session session;
+        private final Optional<AccountStore.Session> accountSessionOpt;
+        @NonNull
+        private final Optional<UserStore.UserSession> userSessionOpt;
     }
 
     private final Principal userPrincipal;
@@ -35,9 +39,17 @@ public class ExtendedSecurityContext implements SecurityContext {
         this.requestContext = requestContext;
     }
 
-    public static ExtendedSecurityContext authenticated(@NonNull Session session, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext authenticated(@NonNull Optional<AccountStore.Session> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+        String name;
+        if (accountSession.isPresent()) {
+            name = accountSession.get().getAccountId();
+        } else if (userSession.isPresent()) {
+            name = userSession.get().getUserId();
+        } else {
+            throw new IllegalArgumentException("Either account or user session must be present");
+        }
         return new ExtendedSecurityContext(
-                new ExtendedPrincipal(session.getAccountId(), session),
+                new ExtendedPrincipal(name, accountSession, userSession),
                 userHasRolePredicate,
                 requestContext);
     }

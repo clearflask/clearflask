@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -16,10 +17,8 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.ModelUtil;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.common.util.set.Sets;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -36,8 +35,6 @@ import java.util.Optional;
 @Path("/v1")
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
-    @Inject
-    private AuthCookieUtil authCookieUtil;
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -69,7 +66,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @RolesAllowed({Role.ADMINISTRATOR})
     @Override
     public ConfigGetAllResult configGetAllAdmin() {
-        Session session = getExtendedPrincipal().orElseThrow(InternalServerErrorException::new).getSession();
+        Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
         Account account = accountStore.getAccount(session.getAccountId()).orElseThrow(() -> {
             log.error("Account not found for session, account {}", session.getAccountId());
             return new InternalServerErrorException();

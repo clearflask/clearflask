@@ -20,11 +20,10 @@ import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
-import com.smotana.clearflask.store.elastic.InMemoryElasticSearchProvider;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.util.BeanUtil;
@@ -33,7 +32,7 @@ import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.PingResource;
 import com.smotana.clearflask.web.resource.PlanResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
+import com.smotana.clearflask.web.resource.UserResource;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +46,7 @@ public enum ServiceInjector {
     INSTANCE;
 
     public enum Environment {
-        UNIT_TEST(false),
+        TEST(false),
         DEVELOPMENT_LOCAL(false),
         PRODUCTION_AWS(true);
 
@@ -105,6 +104,7 @@ public enum ServiceInjector {
                 // Stores
                 install(DynamoProjectStore.module());
                 install(DynamoAccountStore.module());
+                install(DynamoElasticUserStore.module());
                 install(StaticPlanStore.module());
                 install(DynamoMapperImpl.module());
 
@@ -123,20 +123,12 @@ public enum ServiceInjector {
 
                 // API endpoints
                 bind(PingResource.class);
+                install(UserResource.module());
                 install(AccountResource.module());
                 bind(PlanResource.class);
                 bind(ProjectResource.class);
 
-                // Other
-                bind(AuthCookieUtil.class);
-
                 switch (env) {
-                    case UNIT_TEST:
-                        install(InMemoryDynamoDbProvider.module());
-                        install(InMemoryElasticSearchProvider.module());
-                        bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
-                                getClass().getClassLoader().getResource("config-local.cfg").getPath());
-                        break;
                     case DEVELOPMENT_LOCAL:
                         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
                         install(DefaultDynamoDbProvider.module());

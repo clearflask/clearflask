@@ -16,5 +16,7 @@ public interface DynamoMapper {
 
     <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objClazz);
 
+    String getCompoundPrimaryKey(ImmutableMap<String, String> keys, Class<?> objClazz);
+
     Object toDynamoValue(Object object);
 }

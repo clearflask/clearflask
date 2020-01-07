@@ -127,18 +127,11 @@
         </dependency>
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
-            <artifactId>transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>bom</artifactId>
-            <version>2.9.21</version>
-            <type>pom</type>
-            <scope>import</scope>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>DynamoDBLocal</artifactId>
+            <artifactId>aws-java-sdk-dynamodb</artifactId>
         </dependency>
         <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
@@ -255,21 +248,61 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.test</groupId>
+            <artifactId>framework</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-test-framework</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>DynamoDBLocal</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.plugin</groupId>
+            <artifactId>transport-netty4-client</artifactId>
+            <version>5.1.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.alexcojocaru</groupId>
+                <artifactId>elasticsearch-maven-plugin</artifactId>
                 <configuration>
-                    <protoSourceRoot>${basedir}/src/main/resources/proto</protoSourceRoot>
-                    <protocExecutable>/usr/local/bin/protoc</protocExecutable>
+                    <version>7.1.0</version>
+                    <clusterName>test</clusterName>
+                    <transportPort>9300</transportPort>
+                    <httpPort>9200</httpPort>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>start-elasticsearch</id>
+                        <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>compile</goal>
+                            <goal>runforked</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop-elasticsearch</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
                         </goals>
                     </execution>
                 </executions>

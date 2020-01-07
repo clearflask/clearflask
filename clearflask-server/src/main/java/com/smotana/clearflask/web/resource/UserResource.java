@@ -1,11 +1,13 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
+import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserCreate;
@@ -16,15 +18,15 @@ import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchResponse;
 import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.AccountStore.Session;
-import com.smotana.clearflask.store.PlanStore;
+import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AuthCookieValue;
+import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.NotImplementedException;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -32,8 +34,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.Valid;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -48,105 +54,179 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         Duration sessionRenewIfExpiringIn();
     }
 
-    public static final String ACCOUNT_AUTH_COOKIE_NAME = "cf_usr_auth";
+    public static final String USER_AUTH_COOKIE_NAME = "cf_usr_auth";
 
     @Inject
     private Config config;
     @Inject
-    private AccountStore accountStore;
+    private UserStore userStore;
     @Inject
-    private PlanStore planStore;
-    @Inject
-    private AuthCookieUtil authCookieUtil;
+    private ProjectStore projectStore;
     @Inject
     private PasswordUtil passwordUtil;
 
     @PermitAll
     @Override
     public UserMeWithBalance userCreate(String projectId, @Valid UserCreate userCreate) {
-        return null;
-    }
-
-    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
-    @Override
-    public void userDelete(String projectId, String userId) {
-
-    }
-
-    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
-    @Override
-    public User userGet(String projectId, String userId) {
-        return null;
-    }
-
-    @PermitAll
-    @Override
-    public UserMeWithBalance userLogin(String projectId, @Valid UserLogin userLogin) {
-        return null;
-    }
-
-    @PermitAll
-    @Override
-    public void userLogout(String projectId) {
-
-    }
-
-    @Override
-    public UserMeWithBalance userSsoCreateOrLogin(String projectId, @Valid UserSsoCreateOrLogin userSsoCreateOrLogin) {
-        return null;
-    }
-
-    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
-    @Override
-    public UserMeWithBalance userUpdate(String projectId, String userId, @Valid UserUpdate userUpdate) {
-        return null;
+        String userId = UUID.randomUUID().toString();
+        Optional<String> passwordHashed = Optional.empty();
+        if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
+            passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
+        }
+        UserStore.User user = new UserStore.User(
+                projectId,
+                userId,
+                userCreate.getName(),
+                userCreate.getEmail(),
+                passwordHashed.orElse(null),
+                userCreate.getEmail() != null,
+                null,
+                userCreate.getIosPushToken(),
+                userCreate.getAndroidPushToken(),
+                userCreate.getBrowserPushToken());
+        userStore.createUser(user);
+        return user.toUserMeWithBalance();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public UserAdmin userCreateAdmin(String projectId, @Valid UserCreateAdmin userCreateAdmin) {
-        return null;
+        String userId = UUID.randomUUID().toString();
+        Optional<String> passwordHashed = Optional.empty();
+        if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
+            passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
+        }
+        UserStore.User user = new UserStore.User(
+                projectId,
+                userId,
+                userCreateAdmin.getName(),
+                userCreateAdmin.getEmail(),
+                passwordHashed.orElse(null),
+                userCreateAdmin.getEmail() != null,
+                userCreateAdmin.getBalance(),
+                userCreateAdmin.getIosPushToken(),
+                userCreateAdmin.getAndroidPushToken(),
+                userCreateAdmin.getBrowserPushToken());
+        userStore.createUser(user);
+        return user.toUserAdmin();
+    }
+
+    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
+    @Override
+    public void userDelete(String projectId, String userId) {
+        userStore.deleteUsers(projectId, userId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
-
+        userStore.deleteUsers(projectId, userId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public void userDeleteBulkAdmin(String projectId, @Valid UserSearchAdmin userSearchAdmin) {
-
+        throw new NotImplementedException();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
     @Override
-    public UserAdmin userGetAdmin(String projectId, String userId) {
-        return null;
+    public User userGet(String projectId, String userId) {
+        UserStore.User user = userStore.getUser(projectId, userId).get();
+        return new User(user.getUserId(), user.getName());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @PermitAll
     @Override
-    public UserSearchResponse userSearchAdmin(String projectId, @Valid UserSearchAdmin userSearchAdmin, String cursor) {
-        return null;
+    public UserMeWithBalance userLogin(String projectId, @Valid UserLogin userLogin) {
+        Optional<UserStore.User> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
+        if (!userOpt.isPresent()) {
+            log.info("User login with non-existent email {}", userLogin.getEmail());
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+        }
+        UserStore.User user = userOpt.get();
+
+
+        String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
+        if (Strings.isNullOrEmpty(user.getPassword())) {
+            // Password-less user
+        } else if (!user.getPassword().equals(passwordSupplied)) {
+            log.info("Account login incorrect password for email {}", user.getEmail());
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+        }
+        log.debug("Successful user login for email {}", userLogin.getEmail());
+
+        UserStore.UserSession session = userStore.createSession(
+                projectId,
+                user.getUserId(),
+                Instant.now().plus(config.sessionExpiry()));
+        setAuthCookie(projectId, session);
+
+        return user.toUserMeWithBalance();
+    }
+
+    @PermitAll
+    @Override
+    public void userLogout(String projectId) {
+        Optional<ExtendedSecurityContext.ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
+        if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getUserSessionOpt().isPresent()) {
+            log.trace("Cannot logout user, already not logged in");
+            return;
+        }
+        UserStore.UserSession session = extendedPrincipal.get().getUserSessionOpt().get();
+
+        log.debug("Logout session for user {}", session.getUserId());
+        userStore.revokeSession(
+                projectId,
+                session.getUserId(),
+                session.getSessionId());
+
+        unsetAuthCookie();
+    }
+
+    @Override
+    public UserMeWithBalance userSsoCreateOrLogin(String projectId, @Valid UserSsoCreateOrLogin userSsoCreateOrLogin) {
+        throw new NotImplementedException();
+        // TODO not yet implemented on client nor server
+//        projectStore.getConfigAdmin(projectId).orElseThrow(InternalServerErrorException::new)
+    }
+
+    @RolesAllowed({Role.PROJECT_USER})
+    @Override
+    public UserMeWithBalance userUpdate(String projectId, String userId, @Valid UserUpdate userUpdate) {
+        // TODO Sanity check userUpdate
+        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserMeWithBalance();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, @Valid UserUpdate userUpdate) {
-        return null;
+        // TODO Sanity check userUpdate
+        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserAdmin();
     }
 
-    private void setAuthCookie(Session session) {
-        log.trace("Setting account auth cookie for account {}", session.getAccountId());
+    @RolesAllowed({Role.PROJECT_OWNER})
+    @Override
+    public UserAdmin userGetAdmin(String projectId, String userId) {
+        return userStore.getUser(projectId, userId)
+                .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("User not found")).build()))
+                .toUserAdmin();
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER})
+    @Override
+    public UserSearchResponse userSearchAdmin(String projectId, @Valid UserSearchAdmin userSearchAdmin, String cursor) {
+        throw new NotImplementedException();
+    }
+
+    private void setAuthCookie(String projectId, UserStore.UserSession session) {
+        log.trace("Setting user auth cookie for user id {}", session.getUserId());
         RealCookie.builder()
-                .name(ACCOUNT_AUTH_COOKIE_NAME)
-                .value(new AuthCookieValue(
-                        AuthCookieUtil.Type.ACCOUNT,
+                .name(USER_AUTH_COOKIE_NAME)
+                .value(new UserAuthCookie(
                         session.getSessionId(),
-                        session.getAccountId(),
-                        null))
+                        projectId,
+                        session.getUserId()))
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)
@@ -157,9 +237,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     private void unsetAuthCookie() {
-        log.trace("Removing account auth cookie");
+        log.trace("Removing user auth cookie");
         RealCookie.builder()
-                .name(ACCOUNT_AUTH_COOKIE_NAME)
+                .name(USER_AUTH_COOKIE_NAME)
                 .value("")
                 .path("/")
                 .secure(securityContext.isSecure())

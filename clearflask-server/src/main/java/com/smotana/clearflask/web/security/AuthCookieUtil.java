@@ -1,8 +1,6 @@
 package com.smotana.clearflask.web.security;
 
-import com.google.common.base.Strings;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -10,58 +8,56 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Optional;
 
 @Slf4j
-@Singleton
 public class AuthCookieUtil {
 
-    public enum Type {
-        ACCOUNT,
-        USER
-    }
-
     @Value
-    public static class AuthCookieValue {
-        @NonNull
-        private final Type type;
-
+    public static class AccountAuthCookie {
         @NonNull
         private final String sessionId;
 
-        /** Set if Type is ACCOUNT */
+        @NonNull
         private final String accountId;
+    }
 
-        /** Set if Type is USER */
+    @Value
+    public static class UserAuthCookie {
+        @NonNull
+        private final String sessionId;
+
+        @NonNull
         private final String projectId;
+
+        @NonNull
+        private final String userId;
     }
 
-    @Inject
     private AuthCookieUtil() {
+        // Disable ctor
     }
 
-    public static String encode(AuthCookieValue authCookieValue) {
-        return authCookieValue.getType().name() + ":" + authCookieValue.getSessionId() + ":" + (authCookieValue.getType() == Type.ACCOUNT ? authCookieValue.getAccountId() : authCookieValue.getProjectId());
+    public static String encode(AccountAuthCookie cookie) {
+        return StringSerdeUtil.mergeStrings(cookie.getSessionId(), cookie.getAccountId());
     }
 
-    public static Optional<AuthCookieValue> decode(String value) {
-        if (Strings.isNullOrEmpty(value)) {
-            log.trace("AuthCookie has empty value");
+    public static String encode(UserAuthCookie cookie) {
+        return StringSerdeUtil.mergeStrings(cookie.getSessionId(), cookie.getProjectId(), cookie.getUserId());
+    }
+
+    public static Optional<AccountAuthCookie> decodeAccount(String value) {
+        String[] parts = StringSerdeUtil.unMergeString(value);
+        if (parts.length != 2) {
+            log.warn("AuthCookie has {} parts, expecting 2", parts.length);
             return Optional.empty();
         }
-        String[] parts = value.split(":");
+        return Optional.of(new AccountAuthCookie(parts[0], parts[1]));
+    }
+
+    public static Optional<UserAuthCookie> decodeUser(String value) {
+        String[] parts = StringSerdeUtil.unMergeString(value);
         if (parts.length != 3) {
             log.warn("AuthCookie has {} parts, expecting 3", parts.length);
             return Optional.empty();
         }
-        Type type;
-        try {
-            type = Type.valueOf(parts[0]);
-        } catch (IllegalArgumentException ex) {
-            log.warn("AuthCookie has unknown type {}", parts[0]);
-            return Optional.empty();
-        }
-        return Optional.of(new AuthCookieValue(
-                type,
-                parts[1],
-                type == Type.ACCOUNT ? parts[2] : null,
-                type == Type.USER ? parts[2] : null));
+        return Optional.of(new UserAuthCookie(parts[0], parts[1], parts[2]));
     }
 }

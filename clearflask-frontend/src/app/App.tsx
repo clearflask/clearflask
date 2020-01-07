@@ -65,7 +65,7 @@ class App extends Component<Props> {
       <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
         <PushNotificationListener server={this.server} />
         <ServerErrorNotifier server={this.server} />
-        <SsoLogin server={this.server} />
+        {/* SSO not yet suppported <SsoLogin server={this.server} /> */}
         <div
           id={appRootId}
           style={{

@@ -15,9 +15,12 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.ModelUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -34,7 +37,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -83,7 +88,14 @@ public class DynamoMapperTest extends AbstractTest {
         private final ByteBuffer ByteBuffer;
         private final byte[] byteArray;
         private final Byte[] byteArrayObj;
-        private final Instant Instant;
+        private final Instant instant;
+        private final VersionedConfigAdmin versionedConfigAdmin;
+        private final List<UUID> list;
+        private final Map<String, Boolean> map;
+        private final Set<Instant> set;
+        private final ImmutableList<String> immutableList;
+        private final ImmutableMap<String, Long> immutableMap;
+        private final ImmutableSet<String> immutableSet;
     }
 
     @Parameters(name = "{0} {1}")
@@ -109,7 +121,17 @@ public class DynamoMapperTest extends AbstractTest {
                 {"ByteBuffer", ByteBuffer.wrap(new byte[]{6, 2, -34, 127})},
                 {"byteArray", new byte[]{6, 2, -34, 127}},
                 {"byteArrayObj", new Byte[]{6, 2, -34, 127}},
-                {"Instant", Instant.now().plus(300, ChronoUnit.DAYS)}
+                {"instant", Instant.now().plus(300, ChronoUnit.DAYS)},
+                {"versionedConfigAdmin", ModelUtil.createEmptyConfig("myProjectId")},
+                {"list", ImmutableList.of(UUID.randomUUID(), UUID.randomUUID())},
+                {"map", ImmutableMap.of("a", true, "c", false, "b", true)},
+                {"set", ImmutableSet.of(Instant.now(), Instant.now().plus(1, ChronoUnit.HOURS), Instant.now().minus(3, ChronoUnit.SECONDS))},
+                {"immutableList", ImmutableList.of("a", "c", "b")},
+                {"immutableMap", ImmutableMap.of("a", 1L, "c", 3L, "b", 2L)},
+                {"immutableSet", ImmutableSet.of("a", "c", "b")},
+                {"immutableList", ImmutableList.of()},
+                {"immutableMap", ImmutableMap.of()},
+                {"immutableSet", ImmutableSet.of()}
         });
     }
 
@@ -141,7 +163,7 @@ public class DynamoMapperTest extends AbstractTest {
         install(DynamoMapperImpl.module());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 20_000L)
     public void fromItemToItem() throws Exception {
         Data dataExpected = getExpectedData();
 
@@ -149,13 +171,13 @@ public class DynamoMapperTest extends AbstractTest {
         testTable.putItem(itemExpected);
 
         Item itemActual = testTable.getItem("id", dataExpected.getId());
-        Data dataActual = mapper.fromItem(itemActual, Data.class);
+        Data dataActual = mapper.fromItem(itemActual, dataExpected.getClass());
 
         assertEquals(dataExpected, dataActual);
     }
 
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 20_000L)
     public void fromAttrMapToAttrMap() throws Exception {
         Data dataExpected = getExpectedData();
 
@@ -168,13 +190,13 @@ public class DynamoMapperTest extends AbstractTest {
                 .withTableName(TEST_TABLE)
                 .withKey(ImmutableMap.of("id", new AttributeValue(dataExpected.getId()))))
                 .getItem();
-        Data dataActual = mapper.fromAttrMap(attrMapActual, Data.class);
+        Data dataActual = mapper.fromAttrMap(attrMapActual, dataExpected.getClass());
 
         assertEquals(dataExpected, dataActual);
     }
 
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 20_000L)
     public void fromItemToAttrMap() throws Exception {
         Data dataExpected = getExpectedData();
 
@@ -185,13 +207,12 @@ public class DynamoMapperTest extends AbstractTest {
                 .withTableName(TEST_TABLE)
                 .withKey(ImmutableMap.of("id", new AttributeValue(dataExpected.getId()))))
                 .getItem();
-        Data dataActual = mapper.fromAttrMap(attrMapActual, Data.class);
+        Data dataActual = mapper.fromAttrMap(attrMapActual, dataExpected.getClass());
 
         assertEquals(dataExpected, dataActual);
     }
 
-
-    @Test(timeout = 5_000L)
+    @Test(timeout = 20_000L)
     public void fromAttrMapToItem() throws Exception {
         Data dataExpected = getExpectedData();
 
@@ -202,7 +223,7 @@ public class DynamoMapperTest extends AbstractTest {
 
 
         Item itemActual = testTable.getItem("id", dataExpected.getId());
-        Data dataActual = mapper.fromItem(itemActual, Data.class);
+        Data dataActual = mapper.fromItem(itemActual, dataExpected.getClass());
 
         assertEquals(dataExpected, dataActual);
     }

@@ -1,6 +1,5 @@
 package com.smotana.clearflask.store.elastic;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -10,33 +9,32 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 
 import java.util.Optional;
 
-@Log4j2
+@Slf4j
 @Singleton
-public class DefaultElasticSearchProvider extends ManagedService implements Provider<RestClient> {
+public class DefaultElasticSearchProvider extends ManagedService implements Provider<RestHighLevelClient> {
 
-    private interface Config {
+    public interface Config {
         @NoDefaultValue
         String serviceEndpoint();
     }
 
     @Inject
     private Config config;
-    @Inject
-    private AWSCredentialsProvider AwsCredentialsProvider;
 
-    private Optional<RestClient> restClientOpt = Optional.empty();
+    private Optional<RestHighLevelClient> restClientOpt = Optional.empty();
 
     @Override
-    public RestClient get() {
-        restClientOpt = Optional.of(RestClient
-                .builder(HttpHost.create(config.serviceEndpoint()))
-                .build());
+    public RestHighLevelClient get() {
+        if (restClientOpt.isPresent()) return restClientOpt.get();
+        restClientOpt = Optional.of(new RestHighLevelClient(RestClient
+                .builder(HttpHost.create(config.serviceEndpoint()))));
         return restClientOpt.get();
     }
 
@@ -51,9 +49,9 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(RestClient.class).toProvider(DefaultElasticSearchProvider.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultElasticSearchProvider.class);
+                bind(RestHighLevelClient.class).toProvider(DefaultElasticSearchProvider.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DefaultElasticSearchProvider.class);
             }
         };
     }

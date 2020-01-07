@@ -5,15 +5,15 @@ components:
       description: Config properties visible both to client app and admins.
       type: object
       required:
-      - test
-      - projectId
-      - name
-      - slug
-      - credits
-      - layout
-      - content
-      - style
-      - users
+        - test
+        - projectId
+        - name
+        - slug
+        - credits
+        - layout
+        - content
+        - style
+        - users
       properties:
         # TODO remove test page
         # test:
@@ -49,7 +49,7 @@ components:
       title: CreditFormatter
       type: object
       required:
-      - increment
+        - increment
       properties:
         increment:
           x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
@@ -92,30 +92,23 @@ components:
       title: Users
       type: object
       required:
-      - displayName
-      - onboarding
+        - displayName
+        - onboarding
       properties:
-        oauth:
-          x-clearflask-page: { order: 15, name: 'OAuth' }
-          title: OAuth
-          type: object
-          properties:
-            test:
-              type: string
         onboarding:
           x-clearflask-page: { order: 15, name: 'Onboarding' }
           title: Onboarding
           type: object
           required:
-          - accountFields
-          - notificationMethods
+            - accountFields
+            - notificationMethods
           properties:
             accountFields:
               x-clearflask-prop: { order: 1, name: 'Account fields to collect' }
               title: AccountFields
               type: object
               required:
-              - displayName
+                - displayName
               properties:
                 displayName:
                   x-clearflask-prop: { order: 1, name: 'Display name', defaultValue: 'None' }
@@ -126,15 +119,15 @@ components:
               title: NotificationMethods
               type: object
               required:
-              - browserPush
-              - mobilePush
+                - browserPush
+                - mobilePush
               properties:
                 anonymous:
                   x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }
                   type: object
                   title: AnonymousSignup
                   required:
-                  - onlyShowIfPushNotAvailable
+                    - onlyShowIfPushNotAvailable
                   properties:
                     onlyShowIfPushNotAvailable:
                       x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only allow this option if neither Mobile Push nor Web Notifications are available.' }
@@ -150,8 +143,8 @@ components:
                   type: object
                   title: EmailSignup
                   required:
-                  - confirmEmails
-                  - password
+                    - confirmEmails
+                    - password
                   properties:
                     confirmEmails:
                       x-clearflask-prop: { order: 1, name: 'Confirm emails' }
@@ -160,28 +153,29 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'Optional' }
                       type: string
                       enum: [None, Optional, Required]
-                singleSignOn:
-                  x-clearflask-prop: { order: 1, name: 'Single sign-on', defaultValue: false }
-                  title: singleSignOn
-                  type: object
-                  properties:
-                    redirectUrl:
-                      type: string
+    #                TODO not yet supported
+    #                singleSignOn:
+    #                  x-clearflask-prop: { order: 1, name: 'Single sign-on', defaultValue: false }
+    #                  title: singleSignOn
+    #                  type: object
+    #                  properties:
+    #                    redirectUrl:
+    #                      type: string
     style:
       x-clearflask-page: { order: 14, name: 'Style', description: 'Adjust the look and feel to match your style.' }
       title: Style
       type: object
       required:
-      - palette
-      - typography
-      - animation
+        - palette
+        - typography
+        - animation
       properties:
         animation:
           x-clearflask-prop: { order: 1, name: 'Animation' }
           title: Animation
           type: object
           required:
-          - enableTransitions
+            - enableTransitions
           properties:
             enableTransitions:
               x-clearflask-prop: { order: 1, name: 'Enable animation', defaultValue: true }
@@ -191,7 +185,7 @@ components:
           title: Palette
           type: object
           required:
-          - darkMode
+            - darkMode
           properties:
             darkMode:
               x-clearflask-prop: { order: 1, name: 'Dark mode' }
@@ -236,15 +230,15 @@ components:
       title: Support
       type: object
       required:
-      - comment
+        - comment
       properties:
         fund:
           x-clearflask-prop: { order: 1, name: 'Enable funding' }
           title: Funding
           type: object
           required:
-          - showFunds
-          - showFunders
+            - showFunds
+            - showFunders
           properties:
             showFunds:
               x-clearflask-prop: { order: 1, name: 'Show funds', description: '' }
@@ -257,9 +251,9 @@ components:
           title: Voting
           type: object
           required:
-          - enableDownvotes
-          - showVotes
-          - showVoters
+            - enableDownvotes
+            - showVotes
+            - showVoters
           properties:
             enableDownvotes:
               x-clearflask-prop: { order: 1, name: 'Enable downvoting', description: '' }
@@ -286,10 +280,10 @@ components:
                 title: Expression
                 type: object
                 required:
-                - expressionId
-                - weight
-                - display
-                - text
+                  - expressionId
+                  - weight
+                  - display
+                  - text
                 properties:
                   display:
                     x-clearflask-prop: { order: 1, name: 'Display', subType: 'emoji' }
@@ -311,8 +305,8 @@ components:
       title: Layout
       type: object
       required:
-      - pages
-      - menu
+        - pages
+        - menu
       properties:
         menu:
           x-clearflask-prop: { order: 2, name: 'Tabs', description: 'Customize menu tabs with buttons and dropdowns. Each item represents a tab.' }
@@ -321,8 +315,8 @@ components:
             title: Menu
             type: object
             required:
-            - menuId
-            - pageIds
+              - menuId
+              - pageIds
             properties:
               menuId:
                 x-clearflask-prop: { subType: 'id' }
@@ -344,11 +338,11 @@ components:
             title: Page
             type: object
             required:
-            - pageId
-            - name
-            - slug
-            - components
-            - panels
+              - pageId
+              - name
+              - slug
+              - components
+              - panels
             properties:
               pageId:
                 x-clearflask-prop: { subType: 'id' }
@@ -379,7 +373,7 @@ components:
       title: Workflow
       type: object
       required:
-      - statuses
+        - statuses
       properties:
         entryStatus:
           x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
@@ -393,12 +387,12 @@ components:
             title: IdeaStatus
             type: object
             required:
-            - statusId
-            - name
-            - disableFunding
-            - disableSupport
-            - disableIdeaEdits
-            - disableComments
+              - statusId
+              - name
+              - disableFunding
+              - disableSupport
+              - disableIdeaEdits
+              - disableComments
             properties:
               statusId:
                 x-clearflask-prop: { subType: 'id' }
@@ -432,8 +426,8 @@ components:
       title: Tagging
       type: object
       required:
-      - tags
-      - tagGroups
+        - tags
+        - tagGroups
       properties:
         tags:
           x-clearflask-prop: { order: 1, name: 'Tags', description: 'Tags' }
@@ -442,8 +436,8 @@ components:
             title: Tag
             type: object
             required:
-            - tagId
-            - name
+              - tagId
+              - name
             properties:
               tagId:
                 x-clearflask-prop: { subType: 'id' }
@@ -462,10 +456,10 @@ components:
             title: TagGroup
             type: object
             required:
-            - tagGroupId
-            - name
-            - userSettable
-            - tagIds
+              - tagGroupId
+              - name
+              - userSettable
+              - tagIds
             properties:
               tagGroupId:
                 x-clearflask-prop: { subType: 'id' }
@@ -493,7 +487,7 @@ components:
       title: Content
       type: object
       required:
-      - categories
+        - categories
       properties:
         categories:
           x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames:['name'] }
@@ -503,13 +497,13 @@ components:
             title: Category
             type: object
             required:
-            - categoryId
-            - name
-            - userCreatable
-            - workflow
-            - support
-            - tagging
-            - visibility
+              - categoryId
+              - name
+              - userCreatable
+              - workflow
+              - support
+              - tagging
+              - visibility
             properties:
               categoryId:
                 x-clearflask-prop: { subType: 'id' }
@@ -533,19 +527,19 @@ components:
                 x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users' }
                 type: string
                 enum:
-                - Public
-                - PublicOrPrivate
-                - Private
+                  - Public
+                  - PublicOrPrivate
+                  - Private
     ConfigAdmin:
       description: >-
         All Config properties available for admins.
         Used for both reading and writing.
       allOf:
-      - $ref: 'api-project.yaml#/components/schemas/Config'
-      - type: object
-        properties:
-          dummyField: # Add field so java generation doesn't use model inheritance
-            type: string
+        - $ref: 'api-project.yaml#/components/schemas/Config'
+        - type: object
+          properties:
+            dummyField: # Add field so java generation doesn't use model inheritance
+              type: string
       # TODO OAuth
       # TODO Email/Push notifications
       # TODO Credit income
@@ -564,11 +558,11 @@ components:
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanel'
       required:
-      - panels
+        - panels
     PagePanelWithSearch:
       allOf:
-      - $ref: 'api-project.yaml#/components/schemas/PagePanel'
-      - $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
     PostDisplay:
       x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
       type: object
@@ -617,8 +611,8 @@ components:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object
       required:
-      - search
-      - display
+        - search
+        - display
       properties:
         title:
           type: string
@@ -645,9 +639,9 @@ components:
       x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
       type: object
       required:
-      - allowSearch
-      - allowCreate
-      - panel
+        - allowSearch
+        - allowCreate
+        - panel
       properties:
         allowSearch:
           x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
@@ -660,8 +654,8 @@ components:
     VersionedConfig:
       type: object
       required:
-      - version
-      - config
+        - version
+        - config
       properties:
         config:
           $ref: 'api-project.yaml#/components/schemas/Config'
@@ -670,8 +664,8 @@ components:
     VersionedConfigAdmin:
       type: object
       required:
-      - version
-      - config
+        - version
+        - config
       properties:
         config:
           $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
@@ -683,11 +677,11 @@ components:
     operationId: configGetAndUserBind
     tags: [Project]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -696,7 +690,7 @@ components:
               title: ConfigAndBindResult
               type: object
               required:
-              - config
+                - config
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
@@ -715,7 +709,7 @@ components:
               title: ConfigGetAllResult
               type: object
               required:
-              - configs
+                - configs
               properties:
                 configs:
                   type: array
@@ -726,11 +720,11 @@ components:
     operationId: projectCreateAdmin
     tags: [ProjectAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -739,8 +733,8 @@ components:
               title: NewProjectResult
               type: object
               required:
-              - projectId
-              - config
+                - projectId
+                - config
               properties:
                 projectId:
                   type: string
@@ -751,11 +745,11 @@ components:
     operationId: configGetAdmin
     tags: [ProjectAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -768,16 +762,16 @@ components:
     operationId: configSetAdmin
     tags: [ProjectAdmin]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: versionLast
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionLast
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:

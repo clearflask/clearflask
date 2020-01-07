@@ -37,7 +37,7 @@ elastic-run:
 	docker run --rm --name clearflask-elastic \
 	-p 9200:9200 \
 	-e "discovery.type=single-node" \
-	docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+	docker.elastic.co/elasticsearch/elasticsearch:7.1.0
 
 dynamo-run:
 	docker run --rm --name clearflask-dynamo \

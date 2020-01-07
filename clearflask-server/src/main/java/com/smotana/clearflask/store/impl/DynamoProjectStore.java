@@ -14,7 +14,7 @@ import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -33,12 +33,14 @@ import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.ProjectStore;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Singleton
 public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
@@ -81,7 +83,9 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                     .withAttributeDefinitions(ImmutableList.of(
                             new AttributeDefinition().withAttributeName(PROJECT_ID).withAttributeType(ScalarAttributeType.S)))
                     .withBillingMode(BillingMode.PAY_PER_REQUEST));
-        } catch (ResourceInUseException ex) {
+            log.debug("Table {} created", PROJECT_TABLE);
+        } catch (ResourceNotFoundException ex) {
+            log.debug("Table {} already exists", PROJECT_TABLE);
         }
         projectTable = dynamoDoc.getTable(PROJECT_TABLE);
     }

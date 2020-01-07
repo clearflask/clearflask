@@ -161,10 +161,10 @@ class DataMock {
         created: new Date(Math.random() * new Date().getTime()),
       },
     })
-    .then((item:Admin.IdeaAdmin) => this.mockCommentsAndExpression([user], versionedConfig, category, item))
+    .then((item:Admin.Idea) => this.mockCommentsAndExpression([user], versionedConfig, category, item))
   }
 
-  fakeMockIdeaData(category:Admin.Category):Partial<Admin.IdeaAdmin> {
+  fakeMockIdeaData(category:Admin.Category):Partial<Admin.Idea> {
     return {
       ...(Math.random() < 0.5 ? {
         funded: Math.round(Math.random() * 500),
@@ -196,7 +196,7 @@ class DataMock {
     return expressions;
   }
 
-  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.IdeaAdmin, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
+  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.Idea, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
     return this.mockUser()
       .then(user => (userMentionPool.push(user), user))
       .then(user => ServerMock.get().commentCreateAdmin({

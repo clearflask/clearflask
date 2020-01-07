@@ -85,7 +85,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       loggedInUser?:Admin.UserAdmin; // Mock server-side cookie data
       config: Admin.VersionedConfigAdmin,
       comments: Admin.Comment[];
-      ideas: Admin.IdeaAdmin[];
+      ideas: Admin.Idea[];
       users: Admin.UserAdmin[];
       votes: Admin.Vote[];
       transactions: Admin.Transaction[];
@@ -198,8 +198,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.ideaGetAdmin(request);
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
-    const allIdeas:Admin.IdeaAdmin[] = this.getProject(request.projectId).ideas;
-    const ideas:Admin.IdeaAdmin[] = request.ideaSearch.fundedByMeAndActive
+    const allIdeas:Admin.Idea[] = this.getProject(request.projectId).ideas;
+    const ideas:Admin.Idea[] = request.ideaSearch.fundedByMeAndActive
       ? this.getProject(request.projectId).votes
         .filter(v => v.fundAmount && v.fundAmount > 0)
         .map(v => allIdeas.find(i => i.ideaId === v.ideaId)!)
@@ -403,8 +403,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {
     throw new Error("Method not implemented.");
   }
-  ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaAdmin> {
-    const idea:Admin.IdeaAdmin = {
+  ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.Idea> {
+    const idea:Admin.Idea = {
       ideaId: stringToSlug(request.ideaCreateAdmin.title + '-' + randomUuid().substring(0,5)),
       created: new Date(),
       ...(request.ideaCreateAdmin),
@@ -430,7 +430,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
     throw new Error("Method not implemented.");
   }
-  ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.IdeaAdmin> {
+  ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.Idea> {
     throw new Error("Method not implemented.");
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
@@ -675,11 +675,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     delete this.db[projectId];
   }
 
-  calcScore(idea:Admin.IdeaAdmin) {
+  calcScore(idea:Admin.Idea) {
     return (idea.fundersCount || 0) + (idea.voteValue || 0) + (idea.funded || 0) + (idea.expressionsValue || 0) + 1;
   }
 
-  calcTrendingScore(idea:Admin.IdeaAdmin) {
+  calcTrendingScore(idea:Admin.Idea) {
     var score = this.calcScore(idea);
     var order = Math.log(Math.max(score, 1));
     var seconds = idea.created.getTime() - 1134028003;
