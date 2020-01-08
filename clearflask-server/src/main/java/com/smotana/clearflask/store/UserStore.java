@@ -15,6 +15,7 @@ import lombok.Value;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,6 +24,8 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 
 public interface UserStore {
+
+    Future<CreateIndexResponse> createIndex(String projectId);
 
     Optional<User> getUser(String projectId, String userId);
 
@@ -36,7 +39,7 @@ public interface UserStore {
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    ImmutableList<User> searchUsers(String projectId, UserSearchAdmin parameters);
+    SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, Optional<String> cursorOpt);
 
     UserSession createSession(String projectId, String userId, Instant expiry);
 
@@ -49,6 +52,12 @@ public interface UserStore {
     void revokeSessions(String projectId, String userId);
 
     void revokeSessions(String projectId, String userId, String sessionToLeave);
+
+    @Value
+    class SearchUsersResponse {
+        private final ImmutableList<User> users;
+        private final Optional<String> cursorOpt;
+    }
 
     @Value
     class UserAndIndexingFuture<T> {

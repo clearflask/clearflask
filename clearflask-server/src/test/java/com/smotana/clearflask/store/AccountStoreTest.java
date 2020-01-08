@@ -7,12 +7,12 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +34,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
-                UUID.randomUUID().toString(),
+                IdUtil.randomId(),
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",
@@ -74,7 +74,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testSession() throws Exception {
         Account account = new Account(
-                UUID.randomUUID().toString(),
+                IdUtil.randomId(),
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",

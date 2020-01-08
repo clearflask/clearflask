@@ -36,6 +36,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -44,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -237,7 +237,7 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     @Override
     public Session createSession(String accountId, Instant expiry) {
         Session session = Session.builder()
-                .sessionId(UUID.randomUUID().toString())
+                .sessionId(IdUtil.randomId())
                 .accountId(accountId)
                 .expiry(expiry)
                 .build();

@@ -9,14 +9,15 @@ import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
-import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
 import com.smotana.clearflask.store.PlanStore;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
@@ -28,12 +29,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -99,14 +98,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Optional<Account> accountOpt = accountStore.getAccountByEmail(credentials.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", credentials.getEmail());
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         Account account = accountOpt.get();
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getAccountId());
         if (!account.getPassword().equals(passwordSupplied)) {
             log.info("Account login incorrect password for email {}", credentials.getEmail());
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful account login for email {}", credentials.getEmail());
 
@@ -146,13 +145,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!planOpt.isPresent()) {
             log.error("Signup for plan that does not exist, planid {} email {} company {} phone {}",
                     signup.getPlanid(), signup.getEmail(), signup.getCompany(), signup.getPhone());
-            throw new WebApplicationException(Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse("Plan does not exist")).build());
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan does not exist");
         }
         Plan plan = planOpt.get();
 
-        String accountId = UUID.randomUUID().toString();
+        String accountId = IdUtil.randomId();
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), accountId);
         Account account = new Account(
                 accountId,

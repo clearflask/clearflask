@@ -1,13 +1,13 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserCreate;
@@ -20,26 +20,26 @@ import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
+import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.NotImplementedException;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.Valid;
 import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -67,8 +67,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     @PermitAll
     @Override
-    public UserMeWithBalance userCreate(String projectId, @Valid UserCreate userCreate) {
-        String userId = UUID.randomUUID().toString();
+    public UserMeWithBalance userCreate(String projectId, UserCreate userCreate) {
+        String userId = IdUtil.randomId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
@@ -90,8 +90,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
-    public UserAdmin userCreateAdmin(String projectId, @Valid UserCreateAdmin userCreateAdmin) {
-        String userId = UUID.randomUUID().toString();
+    public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
+        String userId = IdUtil.randomId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
@@ -111,7 +111,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserAdmin();
     }
 
-    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_USER})
     @Override
     public void userDelete(String projectId, String userId) {
         userStore.deleteUsers(projectId, userId);
@@ -125,7 +125,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
-    public void userDeleteBulkAdmin(String projectId, @Valid UserSearchAdmin userSearchAdmin) {
+    public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
         throw new NotImplementedException();
     }
 
@@ -138,11 +138,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     @PermitAll
     @Override
-    public UserMeWithBalance userLogin(String projectId, @Valid UserLogin userLogin) {
+    public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
         Optional<UserStore.User> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
         if (!userOpt.isPresent()) {
             log.info("User login with non-existent email {}", userLogin.getEmail());
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         UserStore.User user = userOpt.get();
 
@@ -152,7 +152,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             // Password-less user
         } else if (!user.getPassword().equals(passwordSupplied)) {
             log.info("Account login incorrect password for email {}", user.getEmail());
-            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorResponse("Email or password incorrect")).build());
+            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful user login for email {}", userLogin.getEmail());
 
@@ -185,7 +185,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @Override
-    public UserMeWithBalance userSsoCreateOrLogin(String projectId, @Valid UserSsoCreateOrLogin userSsoCreateOrLogin) {
+    public UserMeWithBalance userSsoCreateOrLogin(String projectId, UserSsoCreateOrLogin userSsoCreateOrLogin) {
         throw new NotImplementedException();
         // TODO not yet implemented on client nor server
 //        projectStore.getConfigAdmin(projectId).orElseThrow(InternalServerErrorException::new)
@@ -193,14 +193,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     @RolesAllowed({Role.PROJECT_USER})
     @Override
-    public UserMeWithBalance userUpdate(String projectId, String userId, @Valid UserUpdate userUpdate) {
+    public UserMeWithBalance userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
         return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserMeWithBalance();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
-    public UserAdmin userUpdateAdmin(String projectId, String userId, @Valid UserUpdate userUpdate) {
+    public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
         return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserAdmin();
     }
@@ -209,14 +209,23 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {
         return userStore.getUser(projectId, userId)
-                .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("User not found")).build()))
+                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"))
                 .toUserAdmin();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
-    public UserSearchResponse userSearchAdmin(String projectId, @Valid UserSearchAdmin userSearchAdmin, String cursor) {
-        throw new NotImplementedException();
+    public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {
+        SearchUsersResponse searchUsersResponse = userStore.searchUsers(
+                projectId,
+                userSearchAdmin,
+                Optional.ofNullable(Strings.emptyToNull(cursor)));
+
+        return new UserSearchResponse(
+                searchUsersResponse.getCursorOpt().orElse(null),
+                searchUsersResponse.getUsers().stream()
+                        .map(UserStore.User::toUserAdmin)
+                        .collect(ImmutableList.toImmutableList()));
     }
 
     private void setAuthCookie(String projectId, UserStore.UserSession session) {

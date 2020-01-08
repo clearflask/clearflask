@@ -27,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
@@ -35,6 +36,8 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.core.ManagedService;
@@ -42,7 +45,10 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.elastic.ActionListeners;
+import com.smotana.clearflask.util.Elastics;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.NotImplementedException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -55,26 +61,45 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.Future;
 
 @Slf4j
 @Singleton
 public class DynamoElasticUserStore extends ManagedService implements UserStore {
+
+    public interface Config {
+        /** Intended for tests. Force immediate index refresh after write request. */
+        @DefaultValue("false")
+        boolean elasticForceRefresh();
+
+        @DefaultValue("10")
+        int elasticPageSize();
+
+        @DefaultValue("PT1M")
+        Duration elasticScrollKeepAlive();
+    }
 
     @Value
     @Builder(toBuilder = true)
@@ -92,10 +117,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         private final String userId;
     }
 
+    private static final String USER_INDEX = "user";
     private static final String USER_TABLE = "user";
     private static final String IDENTIFIER_USER_TABLE = "identifierToUser";
     private static final String SESSION_TABLE = "userSession";
 
+    @Inject
+    private Config config;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -104,6 +132,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private DynamoMapper dynamoMapper;
     @Inject
     private RestHighLevelClient elastic;
+    @Inject
+    private Elastics elastics;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -166,6 +196,27 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
+    public Future<CreateIndexResponse> createIndex(String projectId) {
+        SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
+        elastic.indices().createAsync(new CreateIndexRequest(elastics.getIndexName(USER_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
+                "dynamic", "false",
+                "properties", ImmutableMap.builder()
+                        // TODO explore index_prefixes and norms for name and email
+                        .put("name", ImmutableMap.of(
+                                "type", "text",
+                                "index_prefixes", ImmutableMap.of()))
+                        .put("email", ImmutableMap.of(
+                                "type", "text",
+                                "index_prefixes", ImmutableMap.of()))
+                        .put("balance", ImmutableMap.of(
+                                "type", "float"))
+                        .build())), XContentType.JSON),
+                RequestOptions.DEFAULT,
+                ActionListeners.fromFuture(indexingFuture));
+        return indexingFuture;
+    }
+
+    @Override
     public Optional<User> getUser(String projectId, String userId) {
         log.trace("getUser projectId {} userId {}", projectId, userId);
         return Optional.ofNullable(dynamoMapper.fromItem(
@@ -179,15 +230,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
     @Override
     public ImmutableList<User> getUsers(String projectId, String... userIds) {
-        return getUsersByIds(projectId, Arrays.stream(userIds)
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", Arrays.stream(userIds)
                 .map(uid -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                         "projectId", projectId,
                         "userId", uid), User.class))
-                .toArray(String[]::new));
-    }
-
-    private ImmutableList<User> getUsersByIds(String projectId, String... ids) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", (Object[]) ids))
+                .toArray()))
                 .getTableItems()
                 .values()
                 .stream()
@@ -227,11 +274,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         .toArray(TransactWriteItem[]::new)));
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indexAsync(new IndexRequest("user")
-                        .id(dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                                "projectId", user.getProjectId(),
-                                "userId", user.getUserId()), User.class))
-                        .source(gson.toJson(user), XContentType.JSON),
+        elastic.indexAsync(new IndexRequest(elastics.getIndexName(USER_INDEX, user.getProjectId()))
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                        .id(user.getUserId())
+                        .source(gson.toJson(ImmutableMap.of(
+                                "name", user.getName(),
+                                "email", user.getEmail(),
+                                "balance", user.getBalance()
+                        )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
 
@@ -281,12 +331,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         Future<List<DeleteResponse>> indexingFutures = Futures.allAsList(users.stream().map(user -> {
             SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
-            elastic.deleteAsync(new DeleteRequest("user",
-                            dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                                    "projectId", user.getProjectId(),
-                                    "userId", user.getUserId()), User.class)),
-                    RequestOptions.DEFAULT,
-                    ActionListeners.fromFuture(indexingFuture));
+            elastic.deleteAsync(new DeleteRequest(elastics.getIndexName(USER_INDEX, projectId), user.getUserId())
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             return indexingFuture;
         }).collect(ImmutableList.toImmutableList()));
 
@@ -300,16 +347,16 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "projectId", projectId,
                         "userId", userId), User.class))
                 .withReturnValues(ReturnValue.ALL_NEW);
-        boolean updateElastic = false;
+        HashMap<Object, Object> indexUpdates = Maps.newHashMap();
         if (updates.getName() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("name")
                     .put(dynamoMapper.toDynamoValue(updates.getName())));
-            updateElastic = true;
+            indexUpdates.put("name", updates.getName());
         }
         if (updates.getEmail() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("email")
                     .put(dynamoMapper.toDynamoValue(updates.getEmail())));
-            updateElastic = true;
+            indexUpdates.put("email", updates.getEmail());
         }
         if (updates.getPassword() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("password")
@@ -318,7 +365,6 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (updates.getEmailNotify() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("emailNotify")
                     .put(dynamoMapper.toDynamoValue(updates.getEmailNotify())));
-            updateElastic = true;
         }
         if (updates.getIosPushToken() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken")
@@ -335,15 +381,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         User user = dynamoMapper.fromItem(userTable.updateItem(updateItemSpec).getItem(), User.class);
 
-        if (updateElastic) {
+        if (!indexUpdates.isEmpty()) {
             SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
-            elastic.updateAsync(new UpdateRequest("user",
-                            dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                                    "projectId", user.getProjectId(),
-                                    "userId", user.getUserId()), User.class))
-                            .upsert(gson.toJson(user), XContentType.JSON),
-                    RequestOptions.DEFAULT,
-                    ActionListeners.fromFuture(indexingFuture));
+            elastic.updateAsync(new UpdateRequest(elastics.getIndexName(USER_INDEX, projectId), user.getUserId())
+                            .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             return new UserAndIndexingFuture(user, indexingFuture);
         } else {
             return new UserAndIndexingFuture(user, Futures.immediateFuture(null));
@@ -352,29 +395,42 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public ImmutableList<User> searchUsers(String projectId, UserSearchAdmin parameters) {
+    public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, Optional<String> cursorOpt) {
+        if (userSearchAdmin.getSortBy() != null
+                || userSearchAdmin.getSortOrder() != null) {
+            throw new NotImplementedException();
+        }
+
         SearchResponse searchResponse;
         try {
-            searchResponse = elastic.search(new SearchRequest("user").source(new SearchSourceBuilder()
-//                            .fetchSource(false)
-                            .query(QueryBuilders
-                                    .boolQuery()
-                                    .filter(QueryBuilders.termQuery("project_id", projectId))
-                                    .should(QueryBuilders.matchQuery("name", parameters.getSearchText()).fuzziness("AUTO"))
-                                    .should(QueryBuilders.matchQuery("email", parameters.getSearchText()).fuzziness("AUTO"))
-                                    .minimumShouldMatch(1)
-                            )),
-                    RequestOptions.DEFAULT);
+            if (cursorOpt.isPresent()) {
+                searchResponse = elastic.scroll(new SearchScrollRequest(cursorOpt.get()), RequestOptions.DEFAULT);
+            } else {
+                searchResponse = elastic.search(new SearchRequest(elastics.getIndexName(USER_INDEX, projectId))
+                                .scroll(TimeValue.timeValueMillis(config.elasticScrollKeepAlive().toMillis()))
+                                .source(new SearchSourceBuilder()
+                                        .size(config.elasticPageSize())
+                                        .fetchSource(false)
+                                        .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                                                .field("email", 3f)
+                                                .fuzziness("AUTO"))),
+                        RequestOptions.DEFAULT);
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+        log.trace("searchUsers results {} query '{}'", searchResponse.getHits().getHits().length, userSearchAdmin.getSearchText());
         if (searchResponse.getHits().getHits().length == 0) {
-            return ImmutableList.of();
+            return new SearchUsersResponse(ImmutableList.of(), Optional.empty());
         }
-        log.trace("searchUsers results {}", (Object) searchResponse.getHits().getHits());
-        return getUsersByIds(projectId, Arrays.stream(searchResponse.getHits().getHits())
-                .map(hit -> hit.field("_id").<String>getValue())
-                .toArray(String[]::new));
+
+        ImmutableList<User> users = getUsers(projectId, Arrays.stream(searchResponse.getHits().getHits())
+                .map(SearchHit::getId).toArray(String[]::new));
+
+        return new SearchUsersResponse(
+                users,
+                Optional.ofNullable(searchResponse.getScrollId())
+        );
     }
 
     @Override
@@ -382,7 +438,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         UserSession session = UserSession.builder()
                 .projectId(projectId)
                 .userId(userId)
-                .sessionId(UUID.randomUUID().toString())
+                .sessionId(IdUtil.randomId())
                 .expiry(expiry)
                 .build();
         sessionTable.putItem(dynamoMapper.toItem(session));
@@ -489,6 +545,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             protected void configure() {
                 bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

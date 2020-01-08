@@ -7,7 +7,6 @@ import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ConfigAndBindResult;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
-import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.VersionedConfig;
@@ -16,7 +15,9 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
@@ -39,13 +39,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private ProjectStore projectStore;
     @Inject
     private AccountStore accountStore;
+    @Inject
+    private UserStore userStore;
 
     @PermitAll
     @Override
     public ConfigAndBindResult configGetAndUserBind(String projectId) {
         Optional<VersionedConfig> configOpt = projectStore.getConfig(projectId, true);
         if (!configOpt.isPresent()) {
-            throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Project not found")).build());
+            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
 
         UserMeWithBalance user = null; // TODO add binding here
@@ -58,7 +60,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public VersionedConfigAdmin configGetAdmin(String projectId) {
         Optional<VersionedConfigAdmin> configAdminOpt = projectStore.getConfigAdmin(projectId);
         if (!configAdminOpt.isPresent()) {
-            throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(new ErrorResponse("Project not found")).build());
+            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
         return configAdminOpt.get();
     }
@@ -91,8 +93,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @RolesAllowed({Role.ADMINISTRATOR})
     @Override
     public NewProjectResult projectCreateAdmin(String projectId) {
+        // TODO sanity check, projectId alphanumeric
         VersionedConfigAdmin configAdmin = ModelUtil.createEmptyConfig(projectId);
         projectStore.createConfig(projectId, configAdmin);
+        userStore.createIndex(projectId);
         return new NewProjectResult(projectId, configAdmin);
     }
 }

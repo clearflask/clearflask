@@ -12,13 +12,13 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 
 import javax.inject.Singleton;
 import java.util.Base64;
 import java.util.Comparator;
-import java.util.UUID;
 
 @Singleton
 public class DemoData extends ManagedService {
@@ -49,7 +49,7 @@ public class DemoData extends ManagedService {
                 .max(Comparator.comparing(p -> p.getPricing().getPrice()))
                 .get();
 
-        String accountId = UUID.randomUUID().toString();
+        String accountId = IdUtil.randomId();
         String password = passwordUtil.saltHashPassword(
                 PasswordUtil.Type.ACCOUNT,
                 // Salt taken from client side (src/common/util/auth.ts)

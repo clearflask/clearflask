@@ -20,7 +20,7 @@ import java.util.Optional;
 @Singleton
 public class DefaultDynamoDbProvider extends ManagedService implements Provider<AmazonDynamoDB> {
 
-    private interface Config {
+    public interface Config {
         @DefaultValue("")
         String serviceEndpoint();
 

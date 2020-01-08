@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -230,7 +231,7 @@ public class DynamoMapperTest extends AbstractTest {
 
     private Data getExpectedData() throws Exception {
         Data.DataBuilder dataBuilder = Data.builder();
-        dataBuilder.id(UUID.randomUUID().toString());
+        dataBuilder.id(IdUtil.randomId());
         Arrays.stream(dataBuilder.getClass().getMethods())
                 .filter(m -> m.getName().equals(fieldName))
                 .findAny()

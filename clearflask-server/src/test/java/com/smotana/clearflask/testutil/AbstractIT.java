@@ -8,7 +8,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.Before;
@@ -42,6 +42,7 @@ public abstract class AbstractIT extends AbstractTest {
 
     @Before
     public void clearElasticIndices() throws Exception {
-        elastic.indices().flush(new FlushRequest(), RequestOptions.DEFAULT);
+        elastic.indices().delete(new DeleteIndexRequest()
+                .indices("_all"), RequestOptions.DEFAULT);
     }
 }
