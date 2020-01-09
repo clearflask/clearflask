@@ -29,17 +29,17 @@ public interface UserStore {
 
     Optional<User> getUser(String projectId, String userId);
 
-    ImmutableList<User> getUsers(String projectId, String... userIds);
+    ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds);
 
     Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
     UserAndIndexingFuture<IndexResponse> createUser(User user);
 
-    Future<List<DeleteResponse>> deleteUsers(String projectId, String... userIds);
+    Future<List<DeleteResponse>> deleteUsers(String projectId, ImmutableList<String> userIds);
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, Optional<String> cursorOpt);
+    SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 
     UserSession createSession(String projectId, String userId, Instant expiry);
 
@@ -55,7 +55,7 @@ public interface UserStore {
 
     @Value
     class SearchUsersResponse {
-        private final ImmutableList<User> users;
+        private final ImmutableList<String> userIds;
         private final Optional<String> cursorOpt;
     }
 

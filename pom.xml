@@ -78,6 +78,10 @@
                     <version>6.16</version>
                 </plugin>
                 <plugin>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>0.6.1</version>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.0.1</version>
@@ -380,7 +384,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>3.6.1</version>
+                <version>3.11.1</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

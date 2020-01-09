@@ -36,6 +36,8 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
@@ -45,10 +47,11 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.elastic.ActionListeners;
-import com.smotana.clearflask.util.Elastics;
+import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
-import com.smotana.clearflask.web.NotImplementedException;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -60,8 +63,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -69,14 +70,13 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
-import java.io.IOException;
-import java.time.Duration;
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -93,12 +93,6 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         /** Intended for tests. Force immediate index refresh after write request. */
         @DefaultValue("false")
         boolean elasticForceRefresh();
-
-        @DefaultValue("10")
-        int elasticPageSize();
-
-        @DefaultValue("PT1M")
-        Duration elasticScrollKeepAlive();
     }
 
     @Value
@@ -125,6 +119,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private Config config;
     @Inject
+    @Named("user")
+    private ConfigSearch configSearch;
+    @Inject
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoDB dynamoDoc;
@@ -133,7 +130,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Inject
     private RestHighLevelClient elastic;
     @Inject
-    private Elastics elastics;
+    private ElasticUtil elasticUtil;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -198,7 +195,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     @Override
     public Future<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indices().createAsync(new CreateIndexRequest(elastics.getIndexName(USER_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
+        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                 "dynamic", "false",
                 "properties", ImmutableMap.builder()
                         // TODO explore index_prefixes and norms for name and email
@@ -229,8 +226,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public ImmutableList<User> getUsers(String projectId, String... userIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", Arrays.stream(userIds)
+    public ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds) {
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", userIds.stream()
                 .map(uid -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                         "projectId", projectId,
                         "userId", uid), User.class))
@@ -274,7 +271,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         .toArray(TransactWriteItem[]::new)));
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indexAsync(new IndexRequest(elastics.getIndexName(USER_INDEX, user.getProjectId()))
+        elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                         .id(user.getUserId())
                         .source(gson.toJson(ImmutableMap.of(
@@ -289,7 +286,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public Future<List<DeleteResponse>> deleteUsers(String projectId, String... userIds) {
+    public Future<List<DeleteResponse>> deleteUsers(String projectId, ImmutableList<String> userIds) {
         ImmutableList<User> users = getUsers(projectId, userIds);
         dynamoDoc.batchWriteItem(new TableWriteItems(USER_TABLE).withPrimaryKeysToDelete(users
                 .stream()
@@ -331,7 +328,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         Future<List<DeleteResponse>> indexingFutures = Futures.allAsList(users.stream().map(user -> {
             SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
-            elastic.deleteAsync(new DeleteRequest(elastics.getIndexName(USER_INDEX, projectId), user.getUserId())
+            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId())
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
             return indexingFuture;
@@ -383,7 +380,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
 
         if (!indexUpdates.isEmpty()) {
             SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
-            elastic.updateAsync(new UpdateRequest(elastics.getIndexName(USER_INDEX, projectId), user.getUserId())
+            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId())
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
@@ -395,42 +392,63 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, Optional<String> cursorOpt) {
-        if (userSearchAdmin.getSortBy() != null
-                || userSearchAdmin.getSortOrder() != null) {
-            throw new NotImplementedException();
+    public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
+        Optional<SortOrder> sortOrderOpt;
+        if (userSearchAdmin.getSortBy() != null) {
+            switch (userSearchAdmin.getSortOrder()) {
+                case ASC:
+                    sortOrderOpt = Optional.of(SortOrder.ASC);
+                    break;
+                case DESC:
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
+            }
+        } else {
+            sortOrderOpt = Optional.empty();
         }
 
-        SearchResponse searchResponse;
-        try {
-            if (cursorOpt.isPresent()) {
-                searchResponse = elastic.scroll(new SearchScrollRequest(cursorOpt.get()), RequestOptions.DEFAULT);
-            } else {
-                searchResponse = elastic.search(new SearchRequest(elastics.getIndexName(USER_INDEX, projectId))
-                                .scroll(TimeValue.timeValueMillis(config.elasticScrollKeepAlive().toMillis()))
-                                .source(new SearchSourceBuilder()
-                                        .size(config.elasticPageSize())
-                                        .fetchSource(false)
-                                        .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                                                .field("email", 3f)
-                                                .fuzziness("AUTO"))),
-                        RequestOptions.DEFAULT);
+        Optional<String> sortFieldOpt;
+        if (userSearchAdmin.getSortBy() != null) {
+            switch (userSearchAdmin.getSortBy()) {
+                case CREATED:
+                    sortFieldOpt = Optional.of("created");
+                    break;
+                case FUNDSAVAILABLE:
+                    sortFieldOpt = Optional.of("balance");
+                    break;
+                case FUNDEDIDEAS:
+                case SUPPORTEDIDEAS:
+                case FUNDEDAMOUNT:
+                case LASTACTIVE:
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
             }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        } else {
+            sortFieldOpt = Optional.empty();
         }
-        log.trace("searchUsers results {} query '{}'", searchResponse.getHits().getHits().length, userSearchAdmin.getSearchText());
-        if (searchResponse.getHits().getHits().length == 0) {
+
+        ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
+                new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
+                        .source(new SearchSourceBuilder()
+                                .fetchSource(false)
+                                .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                                        .field("email", 3f)
+                                        .fuzziness("AUTO"))),
+                cursorOpt, sortFieldOpt, sortOrderOpt, useAccurateCursor, configSearch);
+
+        SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
+        log.trace("searchUsers hitsSize {} query {}", hits.length, userSearchAdmin.getSearchText());
+        if (hits.length == 0) {
             return new SearchUsersResponse(ImmutableList.of(), Optional.empty());
         }
 
-        ImmutableList<User> users = getUsers(projectId, Arrays.stream(searchResponse.getHits().getHits())
-                .map(SearchHit::getId).toArray(String[]::new));
+        ImmutableList<String> userIds = Arrays.stream(hits)
+                .map(SearchHit::getId)
+                .collect(ImmutableList.toImmutableList());
 
-        return new SearchUsersResponse(
-                users,
-                Optional.ofNullable(searchResponse.getScrollId())
-        );
+        return new SearchUsersResponse(userIds, searchResponseWithCursor.getCursorOpt());
     }
 
     @Override
@@ -546,6 +564,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class);
                 install(ConfigSystem.configModule(Config.class));
+                install(ConfigSystem.configModule(ConfigSearch.class, Names.named("user")));
             }
         };
     }

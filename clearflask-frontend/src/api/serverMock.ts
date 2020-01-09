@@ -418,7 +418,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAndVoteAdmin> {
+  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAndVote> {
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
     if(!idea) return this.throwLater(404, 'Idea not found');
     const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);

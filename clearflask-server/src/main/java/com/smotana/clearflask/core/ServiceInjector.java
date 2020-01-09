@@ -27,6 +27,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.util.BeanUtil;
+import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.PingResource;
@@ -107,6 +108,8 @@ public enum ServiceInjector {
                 install(DynamoElasticUserStore.module());
                 install(StaticPlanStore.module());
                 install(DynamoMapperImpl.module());
+
+                install(ElasticUtil.module());
 
                 // Configuration
                 install(ConfigSystem.module());

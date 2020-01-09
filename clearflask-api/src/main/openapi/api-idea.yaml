@@ -127,17 +127,6 @@ components:
               $ref: 'api-user.yaml#/components/schemas/User'
             vote:
               $ref: 'api-vote.yaml#/components/schemas/Vote'
-    IdeaWithAuthorAndVoteAdmin:
-      allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/Idea'
-        - type: object
-          required:
-            - author
-          properties:
-            author:
-              $ref: 'api-user.yaml#/components/schemas/User'
-            vote:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
     IdeaCreate:
       type: object
       properties:
@@ -170,6 +159,8 @@ components:
               type: string
             creditGoal:
               type: number
+            fundGoal:
+              type: number
     IdeaUpdate:
       type: object
       properties:
@@ -195,6 +186,8 @@ components:
               items:
                 type: string
             creditGoal:
+              type: number
+            fundGoal:
               type: number
 
 /project/{projectId}/idea:
@@ -357,7 +350,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVoteAdmin'
+                    $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVote'
               required:
                 - results
   post:
@@ -421,7 +414,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVoteAdmin'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithAuthorAndVote'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:

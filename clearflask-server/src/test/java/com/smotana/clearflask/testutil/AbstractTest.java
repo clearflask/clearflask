@@ -1,6 +1,5 @@
 package com.smotana.clearflask.testutil;
 
-import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
@@ -14,6 +13,7 @@ import com.kik.config.ice.ConfigConfigurator;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.naming.ConfigNamingStrategy;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
+import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.ServiceManagerProvider;
 import com.smotana.clearflask.util.GsonProvider;
@@ -48,6 +48,7 @@ public abstract class AbstractTest extends AbstractModule {
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
                                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);
+                                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class);
                                 install(ConfigConfigurator.testModules());
                             }
                         }
@@ -75,28 +76,27 @@ public abstract class AbstractTest extends AbstractModule {
     }
 
     protected void configUnset(Class configClass, String methodName) throws NoSuchMethodException, ConfigException {
-        configSet(configClass, methodName, Optional.empty());
+        configSet(configClass, methodName, Optional.empty(), Optional.empty());
+    }
+
+    protected void configUnset(Class configClass, String methodName, String scope) throws NoSuchMethodException, ConfigException {
+        configSet(configClass, methodName, Optional.empty(), Optional.of(scope));
     }
 
     protected void configSet(Class configClass, String methodName, String value) throws NoSuchMethodException, ConfigException {
-        configSet(configClass, methodName, Optional.of(value));
+        configSet(configClass, methodName, Optional.of(value), Optional.empty());
     }
 
-    private void configSet(Class configClass, String methodName, Optional<String> valueOpt) throws NoSuchMethodException, ConfigException {
+    protected void configSet(Class configClass, String methodName, String value, String scope) throws NoSuchMethodException, ConfigException {
+        configSet(configClass, methodName, Optional.of(value), Optional.of(scope));
+    }
+
+    private void configSet(Class configClass, String methodName, Optional<String> valueOpt, Optional<String> scopeOpt) throws NoSuchMethodException, ConfigException {
         // TODO support scope as well
-        String configName = configNamingStrategy.methodToFlatName(configClass.getMethod(methodName), Optional.empty());
+        String configName = configNamingStrategy.methodToFlatName(configClass.getMethod(methodName), scopeOpt);
         configSource.fireEvent(configName, valueOpt);
     }
 
-    private static final class NoOpService extends AbstractService {
-        @Override
-        protected void doStart() {
-            notifyStarted();
-        }
-
-        @Override
-        protected void doStop() {
-            notifyStopped();
-        }
+    private static final class NoOpService extends ManagedService {
     }
 }

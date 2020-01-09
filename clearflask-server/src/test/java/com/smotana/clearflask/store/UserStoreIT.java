@@ -3,6 +3,7 @@ package com.smotana.clearflask.store;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
@@ -13,7 +14,10 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.testutil.AbstractIT;
+import com.smotana.clearflask.util.DefaultServerSecret;
+import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -38,10 +42,14 @@ public class UserStoreIT extends AbstractIT {
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
-                DynamoElasticUserStore.module()
+                DynamoElasticUserStore.module(),
+                ElasticUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
+                    om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
+                }));
                 install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
@@ -76,7 +84,7 @@ public class UserStoreIT extends AbstractIT {
         assertTrue(store.getUserByIdentifier(user.getProjectId(), UserStore.IdentifierType.IOS_PUSH, user.getIosPushToken()).isPresent());
         assertEquals(user, store.getUserByIdentifier(user.getProjectId(), UserStore.IdentifierType.IOS_PUSH, user.getIosPushToken()).get());
 
-        assertEquals(ImmutableList.of(user), store.getUsers(user.getProjectId(), user.getUserId()));
+        assertEquals(ImmutableList.of(user), store.getUsers(user.getProjectId(), ImmutableList.of(user.getUserId())));
 
         User userUpdated = user.toBuilder()
                 .name("joe")
@@ -98,7 +106,7 @@ public class UserStoreIT extends AbstractIT {
                 .build()).getIndexingFuture().get();
         assertEquals(userUpdated, store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).get());
 
-        store.deleteUsers(userUpdated.getProjectId(), userUpdated.getUserId()).get();
+        store.deleteUsers(userUpdated.getProjectId(), ImmutableList.of(userUpdated.getUserId())).get();
         assertFalse(store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).isPresent());
     }
 
@@ -143,22 +151,34 @@ public class UserStoreIT extends AbstractIT {
         store.createUser(user1).getIndexingFuture().get();
         store.createUser(user2).getIndexingFuture().get();
         store.createUser(user3).getIndexingFuture().get();
-        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), Optional.empty()).getUsers().size());
-        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), Optional.empty()).getUsers().size());
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), Optional.empty()).getUsers().size());
-        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), Optional.empty()).getUsers().size());
+        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), false, Optional.empty()).getUserIds().size());
+        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty()).getUserIds().size());
+        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty()).getUserIds().size());
+        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty()).getUserIds().size());
         store.updateUser(projectId, user1.getUserId(), UserUpdate.builder()
                 .name("bubbbe").build())
                 .getIndexingFuture().get();
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), Optional.empty()).getUsers().size());
+        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty()).getUserIds().size());
 
-        configSet(DynamoElasticUserStore.Config.class, "elasticPageSize", "2");
-        UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), Optional.empty());
-        assertEquals(2, searchResponse.getUsers().size());
-        assertTrue(searchResponse.getCursorOpt().isPresent());
-        UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), searchResponse.getCursorOpt());
-        assertEquals(1, searchResponse2.getUsers().size());
-        assertFalse(searchResponse2.getCursorOpt().isPresent());
+        {
+            configSet(ElasticUtil.ConfigSearch.class, "elasticPageSize", "2", "user");
+            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, Optional.empty());
+            assertEquals(2, searchResponse.getUserIds().size());
+            assertTrue(searchResponse.getCursorOpt().isPresent());
+            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, searchResponse.getCursorOpt());
+            assertEquals(1, searchResponse2.getUserIds().size());
+            assertFalse(searchResponse2.getCursorOpt().isPresent());
+        }
+
+        {
+            configSet(ElasticUtil.ConfigSearch.class, "elasticScrollSize", "2", "user");
+            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty());
+            assertEquals(2, searchResponse.getUserIds().size());
+            assertTrue(searchResponse.getCursorOpt().isPresent());
+            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, searchResponse.getCursorOpt());
+            assertEquals(1, searchResponse2.getUserIds().size());
+            assertFalse(searchResponse2.getCursorOpt().isPresent());
+        }
     }
 
     @Test(timeout = 5_000L)

@@ -114,19 +114,27 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Override
     public void userDelete(String projectId, String userId) {
-        userStore.deleteUsers(projectId, userId);
+        userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
-        userStore.deleteUsers(projectId, userId);
+        userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Override
     public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
-        throw new NotImplementedException();
+        UserStore.SearchUsersResponse searchResponse = null;
+        do {
+            searchResponse = userStore.searchUsers(
+                    projectId,
+                    userSearchAdmin,
+                    true,
+                    searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
+            userStore.deleteUsers(projectId, searchResponse.getUserIds());
+        } while (!searchResponse.getCursorOpt().isPresent());
     }
 
     @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
@@ -219,11 +227,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         SearchUsersResponse searchUsersResponse = userStore.searchUsers(
                 projectId,
                 userSearchAdmin,
+                false,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
+
+        ImmutableList<UserStore.User> users = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
 
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
-                searchUsersResponse.getUsers().stream()
+                users.stream()
                         .map(UserStore.User::toUserAdmin)
                         .collect(ImmutableList.toImmutableList()));
     }
