@@ -183,8 +183,6 @@ components:
               type: array
               items:
                 type: string
-            creditGoal:
-              type: number
             fundGoal:
               type: number
 

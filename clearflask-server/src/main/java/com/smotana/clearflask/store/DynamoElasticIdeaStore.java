@@ -352,7 +352,6 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 null,
                 null,
                 null,
-                null,
                 null));
     }
 
