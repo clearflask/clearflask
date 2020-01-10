@@ -19,6 +19,7 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.store.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
@@ -30,6 +31,7 @@ import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.resource.AccountResource;
+import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.PingResource;
 import com.smotana.clearflask.web.resource.PlanResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
@@ -106,6 +108,7 @@ public enum ServiceInjector {
                 install(DynamoProjectStore.module());
                 install(DynamoAccountStore.module());
                 install(DynamoElasticUserStore.module());
+                install(DynamoElasticIdeaStore.module());
                 install(StaticPlanStore.module());
                 install(DynamoMapperImpl.module());
 
@@ -128,6 +131,7 @@ public enum ServiceInjector {
                 bind(PingResource.class);
                 install(UserResource.module());
                 install(AccountResource.module());
+                install(IdeaResource.module());
                 bind(PlanResource.class);
                 bind(ProjectResource.class);
 

@@ -52,6 +52,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
         @DefaultValue("P290D")
         Duration sessionRenewIfExpiringIn();
+
+        @DefaultValue(value = "10", innerType = Integer.class)
+        Optional<Integer> searchPageSize();
     }
 
     public static final String USER_AUTH_COOKIE_NAME = "cf_usr_auth";
@@ -83,7 +86,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 userCreate.getIosPushToken(),
                 userCreate.getAndroidPushToken(),
-                userCreate.getBrowserPushToken());
+                userCreate.getBrowserPushToken(),
+                Instant.now());
         userStore.createUser(user);
         return user.toUserMeWithBalance();
     }
@@ -106,7 +110,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getBalance(),
                 userCreateAdmin.getIosPushToken(),
                 userCreateAdmin.getAndroidPushToken(),
-                userCreateAdmin.getBrowserPushToken());
+                userCreateAdmin.getBrowserPushToken(),
+                Instant.now());
         userStore.createUser(user);
         return user.toUserAdmin();
     }
@@ -132,7 +137,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     projectId,
                     userSearchAdmin,
                     true,
-                    searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
+                    searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt(),
+                    Optional.empty());
             userStore.deleteUsers(projectId, searchResponse.getUserIds());
         } while (!searchResponse.getCursorOpt().isPresent());
     }
@@ -228,7 +234,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 userSearchAdmin,
                 false,
-                Optional.ofNullable(Strings.emptyToNull(cursor)));
+                Optional.ofNullable(Strings.emptyToNull(cursor)),
+                config.searchPageSize());
 
         ImmutableList<UserStore.User> users = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
 

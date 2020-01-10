@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 
 import java.time.Instant;
@@ -78,6 +79,7 @@ public interface AccountStore {
         private final String email;
 
         @NonNull
+        @ToString.Exclude
         private final String password;
 
         private final String phone;

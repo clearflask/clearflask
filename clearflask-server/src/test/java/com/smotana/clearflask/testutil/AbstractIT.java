@@ -14,7 +14,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
+import java.net.ConnectException;
+
 import static com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope.Scope.NONE;
+import static org.junit.Assert.fail;
 
 @Slf4j
 @RunWith(RandomizedRunner.class)
@@ -42,7 +45,16 @@ public abstract class AbstractIT extends AbstractTest {
 
     @Before
     public void clearElasticIndices() throws Exception {
-        elastic.indices().delete(new DeleteIndexRequest()
-                .indices("_all"), RequestOptions.DEFAULT);
+        try {
+            elastic.indices().delete(new DeleteIndexRequest()
+                    .indices("_all"), RequestOptions.DEFAULT);
+        } catch (ConnectException ex) {
+            if ("Connection refused".equals(ex.getMessage())) {
+                log.error("Failed to connect to local ElasticSearch", ex);
+                fail("Failed to connect to local ElasticSearch instance for Integration Testing, did you forget to start it?");
+            } else {
+                throw ex;
+            }
+        }
     }
 }

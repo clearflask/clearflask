@@ -75,6 +75,7 @@ public class ServerSecretTest extends AbstractTest {
         assertEquals(expected, actualOne);
         assertEquals(expected, actualTwo);
         assertNotEquals(cipherTextOne, cipherTextTwo);
+        assertNotEquals(serverSecretOne.encryptString(expected), serverSecretOne.encryptString(expected));
     }
 
     public static String getRandomSharedKey() {

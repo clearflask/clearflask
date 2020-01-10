@@ -36,6 +36,7 @@ openapi-generator generate \
     --ignore-file-override=${TEMPLATE_SOURCE_DIR}/java-jaxrs/.openapi-generator-ignore \
     -i ${OPENAPI_SOURCE_DIR}/api.yaml \
     -g jaxrs-cxf \
+    --type-mappings=OffsetDateTime=Instant \
     --additional-properties=java8=true \
     --additional-properties=modelPackage=com.smotana.clearflask.api.model \
     --additional-properties=apiPackage=com.smotana.clearflask.api \

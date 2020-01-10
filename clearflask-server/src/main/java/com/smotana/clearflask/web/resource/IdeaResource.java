@@ -3,9 +3,9 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
 import com.smotana.clearflask.api.model.Idea;
@@ -20,8 +20,10 @@ import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,11 +42,6 @@ import java.util.Optional;
 @Path("/v1")
 public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdminApi {
 
-    public interface Config {
-    }
-
-    @Inject
-    private Config config;
     @Inject
     private IdeaStore ideaStore;
 
@@ -65,7 +62,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
-                0L,
+                ImmutableSet.of(),
                 0L,
                 0L,
                 BigDecimal.ZERO,
@@ -81,7 +78,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 projectId,
                 IdUtil.randomId(),
                 ideaCreateAdmin.getAuthorUserId(),
-                ideaCreateAdmin.getCreated().toInstant(),
+                ideaCreateAdmin.getCreated(),
                 ideaCreateAdmin.getTitle(),
                 Strings.emptyToNull(ideaCreateAdmin.getDescription()),
                 ideaCreateAdmin.getCategoryId(),
@@ -90,7 +87,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 BigDecimal.ZERO,
                 ideaCreateAdmin.getFundGoal(),
-                0L,
+                ImmutableSet.of(),
                 0L,
                 0L,
                 BigDecimal.ZERO,
@@ -118,9 +115,13 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @PermitAll
     @Override
     public IdeaSearchResponse ideaSearch(String projectId, IdeaSearch ideaSearch, String cursor) {
+        Optional<String> userIdOpt = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId);
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 ideaSearch,
+                userIdOpt,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
 
         ImmutableList<IdeaStore.IdeaModel> ideas = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
@@ -138,6 +139,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 ideaSearchAdmin,
+                false,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
 
         ImmutableList<IdeaStore.IdeaModel> ideas = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
@@ -180,7 +182,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         do {
             searchResponse = ideaStore.searchIdeas(
                     projectId,
-                    ideaSearchAdmin,
+                    ideaSearchAdmin.toBuilder().limit(DefaultDynamoDbProvider.DYNAMO_BATCH_MAX_SIZE).build(),
+                    true,
                     searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());
         } while (!searchResponse.getCursorOpt().isPresent());
@@ -191,7 +194,6 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             @Override
             protected void configure() {
                 bind(IdeaResource.class);
-                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

@@ -2,6 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
@@ -11,21 +12,22 @@ import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
-import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 public interface UserStore {
 
-    Future<CreateIndexResponse> createIndex(String projectId);
+    ListenableFuture<CreateIndexResponse> createIndex(String projectId);
+
+    UserAndIndexingFuture<IndexResponse> createUser(User user);
 
     Optional<User> getUser(String projectId, String userId);
 
@@ -33,13 +35,11 @@ public interface UserStore {
 
     Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
-    UserAndIndexingFuture<IndexResponse> createUser(User user);
-
-    Future<List<DeleteResponse>> deleteUsers(String projectId, ImmutableList<String> userIds);
+    SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
+    ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableList<String> userIds);
 
     UserSession createSession(String projectId, String userId, Instant expiry);
 
@@ -62,7 +62,7 @@ public interface UserStore {
     @Value
     class UserAndIndexingFuture<T> {
         private final User user;
-        private final Future<T> indexingFuture;
+        private final ListenableFuture<T> indexingFuture;
     }
 
     enum IdentifierType {
@@ -111,24 +111,27 @@ public interface UserStore {
         private final String projectId;
 
         @NonNull
-        private final transient String userId;
+        private final String userId;
 
         private final String name;
 
         private final String email;
 
-        private final transient String password;
+        @ToString.Exclude
+        private final String password;
 
         @NonNull
         private final boolean emailNotify;
 
         private final BigDecimal balance;
 
-        private final transient String iosPushToken;
+        private final String iosPushToken;
 
-        private final transient String androidPushToken;
+        private final String androidPushToken;
 
-        private final transient String browserPushToken;
+        private final String browserPushToken;
+
+        private final Instant created;
 
         public UserMe toUserMe() {
             return new UserMe(
@@ -165,7 +168,8 @@ public interface UserStore {
                     this.getBalance(),
                     this.getIosPushToken(),
                     this.getAndroidPushToken(),
-                    this.getBrowserPushToken());
+                    this.getBrowserPushToken(),
+                    this.getCreated());
         }
     }
 }

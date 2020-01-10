@@ -164,15 +164,13 @@ components:
     IdeaUpdate:
       type: object
       properties:
+        title:
+          type: string
         description:
           type: string
-        tagIds:
-          type: array
-          items:
-            type: string
     IdeaUpdateAdmin:
       allOf:
-        - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
+        - $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
         - type: object
           properties:
             title:

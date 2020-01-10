@@ -69,7 +69,8 @@ public class UserStoreIT extends AbstractIT {
                 BigDecimal.ONE,
                 "myIosPushToken",
                 "myAndroidPushToken",
-                "myBrowserPushToken");
+                "myBrowserPushToken",
+                Instant.now());
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
@@ -123,7 +124,8 @@ public class UserStoreIT extends AbstractIT {
                 BigDecimal.ONE,
                 "myIosPushToken1",
                 "myAndroidPushToken1",
-                "myBrowserPushToken1");
+                "myBrowserPushToken1",
+                Instant.now());
         User user2 = new User(
                 projectId,
                 IdUtil.randomId(),
@@ -134,7 +136,8 @@ public class UserStoreIT extends AbstractIT {
                 BigDecimal.ONE,
                 "myIosPushToken2",
                 "myAndroidPushToken2",
-                "myBrowserPushToken2");
+                "myBrowserPushToken2",
+                Instant.now().minus(1, ChronoUnit.DAYS));
         User user3 = new User(
                 projectId,
                 IdUtil.randomId(),
@@ -145,37 +148,38 @@ public class UserStoreIT extends AbstractIT {
                 BigDecimal.ONE,
                 "myIosPushToken3",
                 "myAndroidPushToken3",
-                "myBrowserPushToken3");
+                "myBrowserPushToken3",
+                Instant.now().minus(2, ChronoUnit.DAYS));
 
         store.createIndex(projectId).get().index();
         store.createUser(user1).getIndexingFuture().get();
         store.createUser(user2).getIndexingFuture().get();
         store.createUser(user3).getIndexingFuture().get();
-        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), false, Optional.empty()).getUserIds().size());
-        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty()).getUserIds().size());
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty()).getUserIds().size());
-        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty()).getUserIds().size());
+        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("john").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+        assertEquals(3, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
+        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
+        assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
         store.updateUser(projectId, user1.getUserId(), UserUpdate.builder()
                 .name("bubbbe").build())
                 .getIndexingFuture().get();
-        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty()).getUserIds().size());
+        assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
 
         {
-            configSet(ElasticUtil.ConfigSearch.class, "elasticPageSize", "2", "user");
-            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, Optional.empty());
+            configSet(ElasticUtil.ConfigSearch.class, "pageSizeDefault", "2", "user");
+            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, Optional.empty(), Optional.of(2));
             assertEquals(2, searchResponse.getUserIds().size());
             assertTrue(searchResponse.getCursorOpt().isPresent());
-            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, searchResponse.getCursorOpt());
+            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), false, searchResponse.getCursorOpt(), Optional.of(2));
             assertEquals(1, searchResponse2.getUserIds().size());
             assertFalse(searchResponse2.getCursorOpt().isPresent());
         }
 
         {
-            configSet(ElasticUtil.ConfigSearch.class, "elasticScrollSize", "2", "user");
-            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty());
+            configSet(ElasticUtil.ConfigSearch.class, "scrollSizeDefault", "2", "user");
+            UserStore.SearchUsersResponse searchResponse = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, Optional.empty(), Optional.of(2));
             assertEquals(2, searchResponse.getUserIds().size());
             assertTrue(searchResponse.getCursorOpt().isPresent());
-            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, searchResponse.getCursorOpt());
+            UserStore.SearchUsersResponse searchResponse2 = store.searchUsers(projectId, UserSearchAdmin.builder().searchText("example.com").build(), true, searchResponse.getCursorOpt(), Optional.of(2));
             assertEquals(1, searchResponse2.getUserIds().size());
             assertFalse(searchResponse2.getCursorOpt().isPresent());
         }
@@ -193,7 +197,8 @@ public class UserStoreIT extends AbstractIT {
                 BigDecimal.ONE,
                 "myIosPushToken",
                 "myAndroidPushToken",
-                "myBrowserPushToken");
+                "myBrowserPushToken",
+                Instant.now());
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();

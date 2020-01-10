@@ -2,6 +2,8 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
@@ -14,18 +16,20 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 
 public interface IdeaStore {
+
+    ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
     IdeaAndIndexingFuture<IndexResponse> createIdea(IdeaModel idea);
 
@@ -33,17 +37,17 @@ public interface IdeaStore {
 
     ImmutableList<IdeaModel> getIdeas(String projectId, ImmutableList<String> ideaIds);
 
-    SearchResponse searchIdeas(String projectId, IdeaSearch parameters, Optional<String> cursor);
+    SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
 
-    SearchResponse searchIdeas(String projectId, IdeaSearchAdmin parameters, Optional<String> cursor);
+    SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate updates);
+    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin updates);
+    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
 
-    Future<DeleteResponse> deleteIdea(String projectId, String ideaId);
+    ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
 
-    Future<List<DeleteResponse>> deleteIdeas(String projectId, ImmutableList<String> ideaIds);
+    ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableList<String> ideaIds);
 
     @Value
     class SearchResponse {
@@ -54,7 +58,7 @@ public interface IdeaStore {
     @Value
     class IdeaAndIndexingFuture<T> {
         private final IdeaModel idea;
-        private final Future<T> indexingFuture;
+        private final ListenableFuture<T> indexingFuture;
     }
 
     @Value
@@ -95,7 +99,7 @@ public interface IdeaStore {
 
         private final BigDecimal fundGoal;
 
-        private final long fundersCount;
+        private final ImmutableSet<String> funderUserIds;
 
         private final long voteValue;
 

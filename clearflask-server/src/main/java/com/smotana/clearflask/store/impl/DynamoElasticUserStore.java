@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
@@ -58,8 +59,9 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -80,10 +82,9 @@ import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 @Slf4j
 @Singleton
@@ -193,7 +194,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public Future<CreateIndexResponse> createIndex(String projectId) {
+    public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
         elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
                 "dynamic", "false",
@@ -206,51 +207,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
                         .put("balance", ImmutableMap.of(
-                                "type", "float"))
+                                "type", "double"))
                         .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
-    }
-
-    @Override
-    public Optional<User> getUser(String projectId, String userId) {
-        log.trace("getUser projectId {} userId {}", projectId, userId);
-        return Optional.ofNullable(dynamoMapper.fromItem(
-                userTable.getItem(
-                        "id",
-                        dynamoMapper.getCompoundPrimaryKey(
-                                ImmutableMap.of("projectId", projectId, "userId", userId),
-                                User.class)),
-                User.class));
-    }
-
-    @Override
-    public ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", userIds.stream()
-                .map(uid -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "projectId", projectId,
-                        "userId", uid), User.class))
-                .toArray()))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
-                .map(i -> dynamoMapper.fromItem(i, User.class))
-                .collect(ImmutableList.toImmutableList());
-    }
-
-    @Override
-    public Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier) {
-        return Optional.ofNullable(dynamoMapper.fromItem(
-                identifierUserTable.getItem(
-                        "id",
-                        dynamoMapper.getCompoundPrimaryKey(
-                                ImmutableMap.of("type", type.getType(), "identifier", identifier),
-                                IdentifierUser.class)),
-                IdentifierUser.class))
-                .map(identifierUser -> getUser(projectId, identifierUser.getUserId())
-                        .orElseThrow(() -> new IllegalStateException("IdentifierUser entry exists but User doesn't for type " + type.getType() + " identifier " + identifier)));
     }
 
     @Override
@@ -282,59 +243,104 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
 
-        return new UserAndIndexingFuture(user, indexingFuture);
+        return new UserAndIndexingFuture<>(user, indexingFuture);
     }
 
     @Override
-    public Future<List<DeleteResponse>> deleteUsers(String projectId, ImmutableList<String> userIds) {
-        ImmutableList<User> users = getUsers(projectId, userIds);
-        dynamoDoc.batchWriteItem(new TableWriteItems(USER_TABLE).withPrimaryKeysToDelete(users
-                .stream()
-                .map(User::getUserId)
-                .map(uid -> new PrimaryKey(
-                        "id",
-                        dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                                "projectId", projectId,
-                                "userId", uid), User.class)))
-                .toArray(PrimaryKey[]::new)));
+    public Optional<User> getUser(String projectId, String userId) {
+        log.trace("getUser projectId {} userId {}", projectId, userId);
+        return Optional.ofNullable(dynamoMapper.fromItem(userTable.getItem("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                "projectId", projectId,
+                "userId", userId
+        ), User.class)), User.class));
+    }
 
-        List<PrimaryKey> identifierPrimaryKeys = Lists.newArrayList();
-        for (User user : users) {
-            if (!Strings.isNullOrEmpty(user.getEmail())) {
-                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "type", IdentifierType.EMAIL.getType(),
-                        "identifier", user.getEmail()), IdentifierUser.class)));
+    @Override
+    public ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds) {
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", userIds.stream()
+                .map(uid -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "projectId", projectId,
+                        "userId", uid), User.class))
+                .toArray()))
+                .getTableItems()
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .map(i -> dynamoMapper.fromItem(i, User.class))
+                .collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier) {
+        return Optional.ofNullable(dynamoMapper.fromItem(
+                identifierUserTable.getItem(
+                        "id",
+                        dynamoMapper.getCompoundPrimaryKey(
+                                ImmutableMap.of("type", type.getType(), "identifier", identifier),
+                                IdentifierUser.class)),
+                IdentifierUser.class))
+                .map(identifierUser -> getUser(projectId, identifierUser.getUserId())
+                        .orElseThrow(() -> new IllegalStateException("IdentifierUser entry exists but User doesn't for type " + type.getType() + " identifier " + identifier)));
+    }
+
+    @Override
+    public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        Optional<SortOrder> sortOrderOpt;
+        if (userSearchAdmin.getSortBy() != null) {
+            switch (userSearchAdmin.getSortOrder()) {
+                case ASC:
+                    sortOrderOpt = Optional.of(SortOrder.ASC);
+                    break;
+                case DESC:
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                            "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
             }
-            if (!Strings.isNullOrEmpty(user.getAndroidPushToken())) {
-                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "type", IdentifierType.ANDROID_PUSH.getType(),
-                        "identifier", user.getAndroidPushToken()), IdentifierUser.class)));
-            }
-            if (!Strings.isNullOrEmpty(user.getIosPushToken())) {
-                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "type", IdentifierType.IOS_PUSH.getType(),
-                        "identifier", user.getIosPushToken()), IdentifierUser.class)));
-            }
-            if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
-                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "type", IdentifierType.BROWSER_PUSH.getType(),
-                        "identifier", user.getBrowserPushToken()), IdentifierUser.class)));
-            }
+        } else {
+            sortOrderOpt = Optional.empty();
         }
 
-        dynamoDoc.batchWriteItem(new TableWriteItems(IDENTIFIER_USER_TABLE).withPrimaryKeysToDelete(identifierPrimaryKeys.toArray(new PrimaryKey[0])));
+        ImmutableList<String> sortFields;
+        if (userSearchAdmin.getSortBy() != null) {
+            switch (userSearchAdmin.getSortBy()) {
+                case CREATED:
+                    sortFields = ImmutableList.of("created");
+                    break;
+                case FUNDSAVAILABLE:
+                    sortFields = ImmutableList.of("balance");
+                    break;
+                case FUNDEDIDEAS:
+                case SUPPORTEDIDEAS:
+                case FUNDEDAMOUNT:
+                case LASTACTIVE:
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                            "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
+            }
+        } else {
+            sortFields = ImmutableList.of();
+        }
 
-        users.forEach(user -> revokeSessions(projectId, user.getUserId()));
+        ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
+                new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
+                        .source(new SearchSourceBuilder()
+                                .fetchSource(false)
+                                .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                                        .fuzziness("AUTO"))),
+                cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, pageSizeOpt, configSearch);
 
-        Future<List<DeleteResponse>> indexingFutures = Futures.allAsList(users.stream().map(user -> {
-            SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
-            elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId())
-                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
-                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return indexingFuture;
-        }).collect(ImmutableList.toImmutableList()));
+        SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
+        if (hits.length == 0) {
+            return new SearchUsersResponse(ImmutableList.of(), Optional.empty());
+        }
 
-        return indexingFutures;
+        ImmutableList<String> userIds = Arrays.stream(hits)
+                .map(SearchHit::getId)
+                .collect(ImmutableList.toImmutableList());
+
+        return new SearchUsersResponse(userIds, searchResponseWithCursor.getCursorOpt());
     }
 
     @Override
@@ -344,7 +350,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         "projectId", projectId,
                         "userId", userId), User.class))
                 .withReturnValues(ReturnValue.ALL_NEW);
-        HashMap<Object, Object> indexUpdates = Maps.newHashMap();
+        Map<String, Object> indexUpdates = Maps.newHashMap();
         if (updates.getName() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("name")
                     .put(dynamoMapper.toDynamoValue(updates.getName())));
@@ -384,71 +390,62 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new UserAndIndexingFuture(user, indexingFuture);
+            return new UserAndIndexingFuture<>(user, indexingFuture);
         } else {
-            return new UserAndIndexingFuture(user, Futures.immediateFuture(null));
+            return new UserAndIndexingFuture<>(user, Futures.immediateFuture(null));
         }
-
     }
 
     @Override
-    public SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
-        Optional<SortOrder> sortOrderOpt;
-        if (userSearchAdmin.getSortBy() != null) {
-            switch (userSearchAdmin.getSortOrder()) {
-                case ASC:
-                    sortOrderOpt = Optional.of(SortOrder.ASC);
-                    break;
-                case DESC:
-                    sortOrderOpt = Optional.of(SortOrder.DESC);
-                    break;
-                default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Sort order '" + userSearchAdmin.getSortOrder() + "' not supported");
+    public ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableList<String> userIds) {
+        ImmutableList<User> users = getUsers(projectId, userIds);
+        dynamoDoc.batchWriteItem(new TableWriteItems(USER_TABLE).withPrimaryKeysToDelete(users
+                .stream()
+                .map(User::getUserId)
+                .map(uid -> new PrimaryKey(
+                        "id",
+                        dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                                "projectId", projectId,
+                                "userId", uid), User.class)))
+                .toArray(PrimaryKey[]::new)));
+
+        List<PrimaryKey> identifierPrimaryKeys = Lists.newArrayList();
+        for (User user : users) {
+            if (!Strings.isNullOrEmpty(user.getEmail())) {
+                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "type", IdentifierType.EMAIL.getType(),
+                        "identifier", user.getEmail()), IdentifierUser.class)));
             }
-        } else {
-            sortOrderOpt = Optional.empty();
-        }
-
-        Optional<String> sortFieldOpt;
-        if (userSearchAdmin.getSortBy() != null) {
-            switch (userSearchAdmin.getSortBy()) {
-                case CREATED:
-                    sortFieldOpt = Optional.of("created");
-                    break;
-                case FUNDSAVAILABLE:
-                    sortFieldOpt = Optional.of("balance");
-                    break;
-                case FUNDEDIDEAS:
-                case SUPPORTEDIDEAS:
-                case FUNDEDAMOUNT:
-                case LASTACTIVE:
-                default:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Sorting by '" + userSearchAdmin.getSortBy() + "' not supported");
+            if (!Strings.isNullOrEmpty(user.getAndroidPushToken())) {
+                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "type", IdentifierType.ANDROID_PUSH.getType(),
+                        "identifier", user.getAndroidPushToken()), IdentifierUser.class)));
             }
-        } else {
-            sortFieldOpt = Optional.empty();
+            if (!Strings.isNullOrEmpty(user.getIosPushToken())) {
+                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "type", IdentifierType.IOS_PUSH.getType(),
+                        "identifier", user.getIosPushToken()), IdentifierUser.class)));
+            }
+            if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
+                identifierPrimaryKeys.add(new PrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "type", IdentifierType.BROWSER_PUSH.getType(),
+                        "identifier", user.getBrowserPushToken()), IdentifierUser.class)));
+            }
         }
 
-        ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
-                new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
-                        .source(new SearchSourceBuilder()
-                                .fetchSource(false)
-                                .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                                        .field("email", 3f)
-                                        .fuzziness("AUTO"))),
-                cursorOpt, sortFieldOpt, sortOrderOpt, useAccurateCursor, configSearch);
+        dynamoDoc.batchWriteItem(new TableWriteItems(IDENTIFIER_USER_TABLE).withPrimaryKeysToDelete(identifierPrimaryKeys.toArray(new PrimaryKey[0])));
 
-        SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
-        log.trace("searchUsers hitsSize {} query {}", hits.length, userSearchAdmin.getSearchText());
-        if (hits.length == 0) {
-            return new SearchUsersResponse(ImmutableList.of(), Optional.empty());
-        }
+        users.forEach(user -> revokeSessions(projectId, user.getUserId()));
 
-        ImmutableList<String> userIds = Arrays.stream(hits)
-                .map(SearchHit::getId)
-                .collect(ImmutableList.toImmutableList());
+        SettableFuture<BulkResponse> indexingFuture = SettableFuture.create();
+        elastic.bulkAsync(new BulkRequest()
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                        .add(users.stream()
+                                .map(user -> new DeleteRequest(elasticUtil.getIndexName(USER_INDEX, projectId), user.getUserId()))
+                                .collect(ImmutableList.toImmutableList())),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
-        return new SearchUsersResponse(userIds, searchResponseWithCursor.getCursorOpt());
+        return indexingFuture;
     }
 
     @Override

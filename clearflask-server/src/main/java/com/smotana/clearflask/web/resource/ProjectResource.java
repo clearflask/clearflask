@@ -2,6 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -41,6 +42,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private UserStore ideaStore;
 
     @PermitAll
     @Override
@@ -96,7 +99,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         // TODO sanity check, projectId alphanumeric
         VersionedConfigAdmin configAdmin = ModelUtil.createEmptyConfig(projectId);
         projectStore.createConfig(projectId, configAdmin);
-        userStore.createIndex(projectId);
+        Futures.allAsList(
+                userStore.createIndex(projectId),
+                ideaStore.createIndex(projectId)
+        );
         return new NewProjectResult(projectId, configAdmin);
     }
 }

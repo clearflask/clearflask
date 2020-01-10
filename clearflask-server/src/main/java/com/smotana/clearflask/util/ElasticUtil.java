@@ -1,6 +1,7 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -9,6 +10,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +36,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class ElasticUtil {
 
     public interface ConfigSearch {
-        @DefaultValue("10")
-        int elasticPageSize();
+        @DefaultValue("100")
+        int pageSizeMax();
 
+        @DefaultValue(DefaultDynamoDbProvider.DYNAMO_BATCH_MAX_SIZE_STR)
+        int pageSizeDefault();
+
+        /** DynamoDB max batch size is 25 */
         @DefaultValue("25")
-        int elasticScrollSize();
+        int scrollSizeDefault();
 
         @DefaultValue("PT1M")
         Duration elasticScrollKeepAlive();
@@ -72,15 +78,23 @@ public class ElasticUtil {
     public SearchResponseWithCursor searchWithCursor(
             SearchRequest searchRequest,
             Optional<String> cursorOpt,
-            Optional<String> sortFieldOpt,
+            ImmutableList<String> sortFields,
             Optional<SortOrder> sortOrderOpt,
             boolean useAccurateCursor,
+            Optional<Integer> sizeOpt,
             ConfigSearch configSearch) {
         checkArgument(searchRequest.source() != null);
 
         Optional<String> cursorDecryptedOpt = cursorOpt.map(serverSecretCursor::decryptString);
 
-        PaginationType paginationType = choosePaginationType(useAccurateCursor, sortFieldOpt);
+        int paginationSize;
+        if (sizeOpt.isPresent()) {
+            paginationSize = MathUtil.minmax(1, sizeOpt.get(), useAccurateCursor ? Integer.MAX_VALUE : configSearch.pageSizeMax());
+        } else {
+            paginationSize = useAccurateCursor ? configSearch.scrollSizeDefault() : configSearch.pageSizeDefault();
+        }
+
+        PaginationType paginationType = choosePaginationType(useAccurateCursor, sortFields);
         SearchResponse searchResponse;
         try {
             if (useAccurateCursor && cursorDecryptedOpt.isPresent()) {
@@ -90,12 +104,14 @@ public class ElasticUtil {
                         RequestOptions.DEFAULT);
             } else {
                 // Set sorting and order
-                sortFieldOpt.ifPresent(sortField -> searchRequest.source().sort(SortBuilders
-                        .fieldSort(sortField)
-                        .order(sortOrderOpt.orElse(SortOrder.ASC))));
+                for (String sortField : sortFields) {
+                    searchRequest.source().sort(SortBuilders
+                            .fieldSort(sortField)
+                            .order(sortOrderOpt.orElse(SortOrder.ASC)));
+                }
 
-                // Set page size
-                searchRequest.source().size(useAccurateCursor ? configSearch.elasticScrollSize() : configSearch.elasticPageSize());
+                // Set page paginationSize
+                searchRequest.source().size(paginationSize);
 
                 // Set cursor
                 switch (paginationType) {
@@ -121,29 +137,34 @@ public class ElasticUtil {
         SearchHit[] hits = searchResponse.getHits().getHits();
 
         // Get new cursor
+        boolean mayHaveMoreResults = hits.length >= paginationSize;
         Optional<String> cursorOptNew = Optional.empty();
         switch (paginationType) {
             case SCROLL:
-                if (hits.length >= configSearch.elasticPageSize()) {
+                if (mayHaveMoreResults) {
                     cursorOptNew = Optional.ofNullable(searchResponse.getScrollId());
                 } else {
-                    elastic.clearScrollAsync(new ClearScrollRequest(), RequestOptions.DEFAULT,
+                    ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+                    clearScrollRequest.addScrollId(searchResponse.getScrollId());
+                    elastic.clearScrollAsync(clearScrollRequest, RequestOptions.DEFAULT,
                             ActionListeners.onFailure(ex -> log.warn("Failed to clear scroll", ex)));
                 }
                 break;
             case SEARCH_AFTER:
-                if (hits.length >= configSearch.elasticPageSize()) {
+                if (mayHaveMoreResults) {
                     cursorOptNew = Optional.of(gson.toJson(
                             hits[hits.length - 1].getSortValues()));
                 }
                 break;
             case FROM:
-                if (hits.length >= configSearch.elasticPageSize()) {
+                if (mayHaveMoreResults) {
                     cursorOptNew = Optional.of(gson.toJson(
                             Math.max(searchRequest.source().from(), 0) + hits.length));
                 }
                 break;
         }
+
+        log.trace("search query: {}\nresult: {}", searchRequest, hits);
 
         return new SearchResponseWithCursor(
                 searchResponse,
@@ -152,11 +173,11 @@ public class ElasticUtil {
 
     private PaginationType choosePaginationType(
             boolean useAccurateCursor,
-            Optional<String> sortFieldOpt) {
+            ImmutableList<String> sortFields) {
         if (useAccurateCursor) {
             // Since we want accurate pagination, use scroll pagination
             return PaginationType.SCROLL;
-        } else if (sortFieldOpt.isPresent()) {
+        } else if (!sortFields.isEmpty()) {
             // Since sort fields are present, use search_after pagination
             return PaginationType.SEARCH_AFTER;
         } else {
