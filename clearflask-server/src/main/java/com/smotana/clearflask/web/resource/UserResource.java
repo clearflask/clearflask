@@ -18,6 +18,7 @@ import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchResponse;
 import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
@@ -69,6 +70,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private PasswordUtil passwordUtil;
 
     @PermitAll
+    @Limit(requiredPermits = 100)
     @Override
     public UserMeWithBalance userCreate(String projectId, UserCreate userCreate) {
         String userId = IdUtil.randomId();
@@ -93,6 +95,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
         String userId = IdUtil.randomId();
@@ -117,18 +120,21 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 1)
     @Override
     public void userDelete(String projectId, String userId) {
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
         UserStore.SearchUsersResponse searchResponse = null;
@@ -144,6 +150,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public User userGet(String projectId, String userId) {
         UserStore.User user = userStore.getUser(projectId, userId).get();
@@ -151,6 +158,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
         Optional<UserStore.User> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
@@ -180,6 +188,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @PermitAll
+    @Limit(requiredPermits = 1)
     @Override
     public void userLogout(String projectId) {
         Optional<ExtendedSecurityContext.ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
@@ -198,6 +207,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         unsetAuthCookie();
     }
 
+    @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 100)
     @Override
     public UserMeWithBalance userSsoCreateOrLogin(String projectId, UserSsoCreateOrLogin userSsoCreateOrLogin) {
         throw new NotImplementedException();
@@ -206,6 +217,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 1)
     @Override
     public UserMeWithBalance userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
@@ -213,6 +225,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
@@ -220,6 +233,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {
         return userStore.getUser(projectId, userId)
@@ -228,6 +242,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {
         SearchUsersResponse searchUsersResponse = userStore.searchUsers(

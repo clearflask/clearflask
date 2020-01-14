@@ -10,6 +10,7 @@ import com.google.inject.Stage;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
+import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.exception.ConfigException;
 import com.kik.config.ice.naming.ConfigNamingStrategy;
 import com.kik.config.ice.source.DebugDynamicConfigSource;
@@ -50,6 +51,7 @@ public abstract class AbstractTest extends AbstractModule {
                                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);
                                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(NoOpService.class);
                                 install(ConfigConfigurator.testModules());
+                                install(MoreConfigValueConverters.module());
                             }
                         }
                 ).with(AbstractTest.this));

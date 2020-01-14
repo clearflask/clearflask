@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web;
 
 import com.smotana.clearflask.core.ServiceInjector;
+import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -20,6 +21,7 @@ public class Application extends ResourceConfig {
         packages(getClass().getPackage().getName());
 
         register(RolesAllowedDynamicFeature.class);
+        register(LimiterDynamicFeature.class);
 
         log.info("Initializing HK2-Guice bridge");
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);

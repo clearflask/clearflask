@@ -14,6 +14,8 @@
     </appender>
 
     <logger name="ch.qos.logback" level="INFO"/>
+    <logger name="com.kik.config.ice" level="INFO"/>
+    <logger name="org.reflections.Reflections" level="INFO"/>
 
     <root level="TRACE">
         <appender-ref ref="CONSOLE"/>

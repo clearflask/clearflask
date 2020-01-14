@@ -24,7 +24,7 @@ public class PingResource {
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
     public String ping() {
-        log.debug("ping from {}", request.getRemoteAddr());
+        log.debug("ping from {} {}", request.getRemoteAddr(), request.getHeader("x-forwarded-for"));
         return "pong";
     }
 }

@@ -2,6 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.PlanStore;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +20,7 @@ public class PlanResource extends AbstractResource implements PlanApi {
     private PlanStore planStore;
 
     @PermitAll
+    @Limit(requiredPermits = 1)
     @Override
     public PlansGetResponse plansGet() {
         return planStore.plansGet();

@@ -5,6 +5,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -14,11 +15,16 @@ import com.google.inject.Stage;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.convert.ConfigValueConverters;
+import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.kik.config.ice.interceptor.NoopConfigValueInterceptor;
 import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.security.limiter.TieredWebLimiter;
+import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
+import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
+import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -103,6 +109,7 @@ public enum ServiceInjector {
 
                 install(ServiceManagerProvider.module());
                 install(GsonProvider.module());
+                install(GuavaRateLimiters.module());
 
                 // Stores
                 install(DynamoProjectStore.module());
@@ -114,10 +121,17 @@ public enum ServiceInjector {
 
                 install(ElasticUtil.module());
 
+                // Security
+                install(TieredWebLimiter.module());
+                install(LocalRateLimiter.module());
+                install(LocalChallengeLimiter.module());
+                install(CaptchaChallenger.module());
+
                 // Configuration
                 install(ConfigSystem.module());
                 install(SimpleConfigNamingStrategy.module());
                 install(ConfigValueConverters.module());
+                install(MoreConfigValueConverters.module());
                 install(NoopConfigValueInterceptor.module());
                 bind(ConfigDescriptorHolder.class);
                 // Need to handle re-registering beans if tomcat doesn't restart between loading app again

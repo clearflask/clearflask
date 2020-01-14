@@ -17,6 +17,7 @@ import com.smotana.clearflask.api.model.IdeaSearchResponse;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
+import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.UserStore.UserSession;
@@ -46,6 +47,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private IdeaStore ideaStore;
 
     @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 30)
     @Override
     public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserSession session = getExtendedPrincipal().get().getUserSessionOpt().get();
@@ -72,6 +74,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public Idea ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
         IdeaStore.IdeaModel ideaModel = ideaStore.createIdea(new IdeaStore.IdeaModel(
@@ -97,6 +100,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @PermitAll
+    @Limit(requiredPermits = 1)
     @Override
     public IdeaWithAuthorAndVote ideaGet(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
@@ -105,6 +109,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public IdeaWithAuthorAndVote ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
@@ -113,6 +118,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @PermitAll
+    @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearch(String projectId, IdeaSearch ideaSearch, String cursor) {
         Optional<String> userIdOpt = getExtendedPrincipal()
@@ -134,6 +140,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
         SearchResponse searchResponse = ideaStore.searchIdeas(
@@ -152,30 +159,35 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdate(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdate).getIdea().toIdea();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin).getIdea().toIdea();
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public void ideaDelete(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteBulkAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin) {
         SearchResponse searchResponse = null;

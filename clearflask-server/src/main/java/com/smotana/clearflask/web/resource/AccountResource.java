@@ -10,6 +10,7 @@ import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
@@ -59,6 +60,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private PasswordUtil passwordUtil;
 
     @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 10)
     @Override
     public AccountAdmin accountBindAdmin() {
         Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
@@ -93,6 +95,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public AccountAdmin accountLoginAdmin(AccountLogin credentials) {
         Optional<Account> accountOpt = accountStore.getAccountByEmail(credentials.getEmail());
@@ -123,6 +126,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @PermitAll
+    @Limit(requiredPermits = 1)
     @Override
     public void accountLogoutAdmin() {
         Optional<ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
@@ -139,6 +143,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 1)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
         Optional<Plan> planOpt = planStore.getPlan(signup.getPlanid());

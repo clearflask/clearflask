@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
@@ -46,6 +47,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private UserStore ideaStore;
 
     @PermitAll
+    @Limit(requiredPermits = 10)
     @Override
     public ConfigAndBindResult configGetAndUserBind(String projectId) {
         Optional<VersionedConfig> configOpt = projectStore.getConfig(projectId, true);
@@ -59,6 +61,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configGetAdmin(String projectId) {
         Optional<VersionedConfigAdmin> configAdminOpt = projectStore.getConfigAdmin(projectId);
@@ -69,6 +72,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
     @Override
     public ConfigGetAllResult configGetAllAdmin() {
         Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
@@ -86,6 +90,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, String versionLast, ConfigAdmin configAdmin) {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, ModelUtil.createConfigVersion());
@@ -94,6 +99,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
     @Override
     public NewProjectResult projectCreateAdmin(String projectId) {
         // TODO sanity check, projectId alphanumeric
