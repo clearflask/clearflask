@@ -135,7 +135,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       phone: request.accountSignupAdmin.phone,
-    };
+  };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
     this.loggedIn = true;
@@ -733,6 +733,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     await this.waitLatency();
     throw {
       status: httpStatus,
+      json: () => Promise.resolve(Admin.ErrorResponseToJSON({
+        userFacingMessage: userFacingMessage,
+      })),
+    };
+  }
+
+  async rateLimitLater(captcha?:boolean, userFacingMessage?:string):Promise<any> {
+    console.log('Server THROW: rateLimit captcha:', captcha);
+    await this.waitLatency();
+    var headers = new Map<string, string>();
+    if(captcha) {
+      headers.set('x-cf-challenge', JSON.stringify({
+        version: 'RECAPTCHA_V2',
+        // Recaptcha 'clearflask-localhost' site key
+        challenge: '6Lcnvs4UAAAAAG2X4PqlukwjGIhgR_A_oXDt3XU2'
+      }));
+    }
+    throw {
+      status: 429,
+      headers: headers,
       json: () => Promise.resolve(Admin.ErrorResponseToJSON({
         userFacingMessage: userFacingMessage,
       })),

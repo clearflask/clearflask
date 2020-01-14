@@ -15,6 +15,7 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Provider } from 'react-redux';
 import ServerAdmin from './api/serverAdmin';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
+import CaptchaChallenger from './app/utils/CaptchaChallenger';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -45,6 +46,7 @@ class Main extends Component {
       <MuiSnackbarProvider>
         <CssBaseline />
         <ServerErrorNotifier server={ServerAdmin.get()} />
+        <CaptchaChallenger server={ServerAdmin.get()} />
         <div style={{background: theme.palette.background.default}}>
           <Router>
             <Switch>

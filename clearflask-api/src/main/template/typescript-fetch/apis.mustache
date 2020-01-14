@@ -39,7 +39,7 @@ export interface {{classname}}Interface {
      * {{&summary}}
      {{/summary}}
      */
-    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request{{/allParams.0}}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
     {{/operation}}
 }
 
@@ -57,7 +57,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request{{/allParams.0}}): Promise<runtime.ApiResponse<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>> {
+    async {{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}>> {
         {{#allParams}}
         {{#required}}
         if (requestParameters.{{paramName}} === null || requestParameters.{{paramName}} === undefined) {
@@ -97,7 +97,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
 
         {{/isListContainer}}
         {{/queryParams}}
-        const headerParameters: runtime.HTTPHeaders = {};
+        const headerParameters: runtime.HTTPHeaders = headerExtra || {};
 
         {{#bodyParam}}
         {{^consumes}}
@@ -244,13 +244,13 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request{{/allParams.0}}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    async {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
         {{#returnType}}
-        const response = await this.{{nickname}}Raw({{#allParams.0}}requestParameters{{/allParams.0}});
+        const response = await this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}}headerExtra);
         return await response.value();
         {{/returnType}}
         {{^returnType}}
-        await this.{{nickname}}Raw({{#allParams.0}}requestParameters{{/allParams.0}});
+        await this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}}headerExtra);
         {{/returnType}}
     }
 

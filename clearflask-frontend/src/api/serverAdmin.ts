@@ -10,6 +10,7 @@ import reduxPromiseMiddleware from 'redux-promise-middleware';
 import * as ConfigEditor from '../common/config/configEditor';
 
 type ErrorSubscribers = ((msg:string, isUserFacing:boolean)=>void)[];
+type ChallengeSubscriber = ((challenge:string)=>Promise<string|undefined>);
 
 export interface Project {
   projectId:string;
@@ -27,12 +28,13 @@ export default class ServerAdmin {
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
   readonly store:Store<ReduxStateAdmin>;
   readonly errorSubscribers:ErrorSubscribers = [];
+  challengeSubscriber?:ChallengeSubscriber;
 
   constructor(apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     if(ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
     this.apiOverride = apiOverride;
     const dispatchers = Server.getDispatchers(
-      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers),
+      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber),
       apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
@@ -75,6 +77,10 @@ export default class ServerAdmin {
     this.errorSubscribers.push(subscriber);
   }
 
+  subscribeChallenger(subscriber:ChallengeSubscriber) {
+    this.challengeSubscriber = subscriber;
+  }
+
   dispatch(projectId?:string):Client.Dispatcher {
     return projectId === undefined ? this.dispatcherClient : this.projects[projectId].server.dispatch();
   }
@@ -83,10 +89,23 @@ export default class ServerAdmin {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
   }
 
-  static async _dispatch(msg:any, store:Store, errorSubscribers:ErrorSubscribers):Promise<any>{
+  static async _dispatch(msg:any, store:Store, errorSubscribers:ErrorSubscribers, challengeSubscriber?:ChallengeSubscriber):Promise<any>{
     try {
       var result = await store.dispatch(msg);
     } catch(response) {
+      console.log("Dispatch error: ", response);
+      if(response.status === 429 && response.headers && !!response.headers.get('x-cf-challenge')) {
+        if(!challengeSubscriber) {
+          errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
+          throw response;
+        }
+        var solution:string|undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
+        if(solution) {
+          return msg.meta.retry({'x-cf-solution': solution});
+        } else {
+          throw response;
+        }
+      }
       var body = await response.json();
       var errorMsg;
       var isUserFacing = false;

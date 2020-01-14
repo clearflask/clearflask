@@ -24,6 +24,7 @@ export class Server {
   readonly dispatcherClient:Client.Dispatcher;
   readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
   readonly errorSubscribers:((errorMsg:string, isUserFacing:boolean)=>void)[] = [];
+  challengeSubscriber?:((challenge:string)=>Promise<string|undefined>);
 
   constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
     this.projectId = projectId;
@@ -43,7 +44,7 @@ export class Server {
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
-      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers),
+      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber),
       apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
@@ -114,6 +115,10 @@ export class Server {
     this.errorSubscribers.push(subscriber);
   }
 
+  subscribeChallenger(subscriber:((challenge:string)=>Promise<string|undefined>)) {
+    this.challengeSubscriber = subscriber;
+  }
+
   overrideConfig(config:Admin.ConfigAdmin):void {
     const msg:Admin.configGetAdminActionFulfilled = {
       type: Admin.configGetAdminActionStatus.Fulfilled,
@@ -125,7 +130,7 @@ export class Server {
       },
       payload: { config: config, version: randomUuid() },
     };
-    ServerAdmin._dispatch(msg, this.store, this.errorSubscribers);
+    ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber);
   }
 }
 

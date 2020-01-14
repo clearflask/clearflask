@@ -23,6 +23,7 @@ import SsoLogin from './utils/SsoLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import NotificationPage from './NotificationPage';
+import CaptchaChallenger from './utils/CaptchaChallenger';
 
 interface Props {
   serverOverride?:Server;
@@ -65,6 +66,7 @@ class App extends Component<Props> {
       <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
         <PushNotificationListener server={this.server} />
         <ServerErrorNotifier server={this.server} />
+        <CaptchaChallenger server={this.server} />
         {/* SSO not yet suppported <SsoLogin server={this.server} /> */}
         <div
           id={appRootId}

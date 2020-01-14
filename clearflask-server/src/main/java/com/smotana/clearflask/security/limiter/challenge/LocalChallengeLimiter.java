@@ -19,8 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 public class LocalChallengeLimiter implements ChallengeLimiter {
 
     public interface Config {
-        // TODO Enable after client supports captcha challenges
-        @DefaultValue("false")
+        @DefaultValue("true")
         boolean enabled();
 
         @DefaultValue("PT15M")
