@@ -360,29 +360,44 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             indexUpdates.put("name", updates.getName());
         }
         if (updates.getEmail() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("email")
-                    .put(dynamoMapper.toDynamoValue(updates.getEmail())));
+            if (updates.getEmail().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("email").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("email").put(dynamoMapper.toDynamoValue(updates.getEmail())));
+            }
             indexUpdates.put("email", updates.getEmail());
         }
         if (updates.getPassword() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("password")
-                    .put(dynamoMapper.toDynamoValue(updates.getPassword())));
+            if (updates.getPassword().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("password").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("password").put(dynamoMapper.toDynamoValue(updates.getPassword())));
+            }
         }
         if (updates.getEmailNotify() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("emailNotify")
                     .put(dynamoMapper.toDynamoValue(updates.getEmailNotify())));
         }
         if (updates.getIosPushToken() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken")
-                    .put(dynamoMapper.toDynamoValue(updates.getIosPushToken())));
+            if (updates.getIosPushToken().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken").put(dynamoMapper.toDynamoValue(updates.getIosPushToken())));
+            }
         }
         if (updates.getAndroidPushToken() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("androidPushToken")
-                    .put(dynamoMapper.toDynamoValue(updates.getAndroidPushToken())));
+            if (updates.getAndroidPushToken().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("androidPushToken").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("androidPushToken").put(dynamoMapper.toDynamoValue(updates.getAndroidPushToken())));
+            }
         }
         if (updates.getBrowserPushToken() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken")
-                    .put(dynamoMapper.toDynamoValue(updates.getBrowserPushToken())));
+            if (updates.getBrowserPushToken().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken").put(dynamoMapper.toDynamoValue(updates.getBrowserPushToken())));
+            }
         }
 
         User user = dynamoMapper.fromItem(userTable.updateItem(updateItemSpec).getItem(), User.class);

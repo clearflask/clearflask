@@ -23,6 +23,7 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.util.Types;
+import nl.martijndwars.webpush.Urgency;
 
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -34,6 +35,14 @@ import java.util.Set;
  * Extends {@link com.kik.config.ice.convert.ConfigValueConverters} with additional converters.
  */
 public class MoreConfigValueConverters {
+
+    public static <T extends Enum<T>> T toGenericEnum(Class<T> enumClazz, String input) {
+        if (Strings.isNullOrEmpty(input)) {
+            return null;
+        }
+        return Enum.valueOf(enumClazz, input);
+    }
+
     public static List<Duration> toDurationList(String input) {
         if (Strings.isNullOrEmpty(input)) {
             return null;
@@ -61,6 +70,12 @@ public class MoreConfigValueConverters {
     }
 
     public static Module module() {
+        return module(ImmutableSet.of(
+                Urgency.class
+        ));
+    }
+
+    public static Module module(ImmutableSet<Class<? extends Enum<?>>> enumClazzes) {
         return new AbstractModule() {
             @Override
             protected void configure() {
@@ -70,6 +85,10 @@ public class MoreConfigValueConverters {
                 };
 
                 MapBinder<TypeLiteral<?>, ConfigValueConverter<?>> mapBinder = MapBinder.newMapBinder(binder(), typeType, converterType);
+
+                for (Class<? extends Enum> enumClazz : enumClazzes) {
+                    bindEnum(enumClazz, mapBinder);
+                }
 
                 final TypeLiteral<List<Duration>> listOfDurationType = new TypeLiteral<List<Duration>>() {
                 };
@@ -115,6 +134,14 @@ public class MoreConfigValueConverters {
                 // Bind for individual injection
                 bind((TypeLiteral<ConfigValueConverter<T>>) TypeLiteral.get(Types.newParameterizedType(ConfigValueConverter.class, convertToType.getType()))).toInstance(converterInstance);
             }
+
+            private <T extends Enum<T>> void bindEnum(
+                    Class<T> enumClazz,
+                    MapBinder<TypeLiteral<?>, ConfigValueConverter<?>> mapBinder) {
+                ConfigValueConverter<T> converterInstance = s -> MoreConfigValueConverters.toGenericEnum(enumClazz, s);
+                bindConverter(enumClazz, mapBinder, converterInstance);
+            }
+
         };
     }
 }

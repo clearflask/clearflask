@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store;
+package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
@@ -39,6 +39,7 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;

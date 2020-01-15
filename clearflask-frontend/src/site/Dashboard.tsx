@@ -164,7 +164,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
                   </span>
                 ), onClick: () => {
                   ServerAdmin.get().dispatchAdmin().then(d => {
-                    d.projectCreateAdmin({ projectId: 'App-' + randomUuid().substring(0,6) });
+                    d.projectCreateAdmin({ projectId: 'project-' + randomUuid().substring(0,6) });
                   });
               } },
             ]}

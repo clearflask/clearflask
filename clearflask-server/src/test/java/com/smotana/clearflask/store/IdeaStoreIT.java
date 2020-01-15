@@ -15,6 +15,7 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;

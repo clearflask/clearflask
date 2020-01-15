@@ -134,6 +134,10 @@
             <artifactId>aws-java-sdk-dynamodb</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sesv2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
             <artifactId>sqlite4java</artifactId>
         </dependency>
@@ -221,6 +225,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>nl.martijndwars</groupId>
+            <artifactId>web-push</artifactId>
         </dependency>
         <!-- test-only deps -->
         <dependency>
