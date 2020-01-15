@@ -1,5 +1,6 @@
 package com.smotana.clearflask.store;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -35,7 +36,7 @@ public interface IdeaStore {
 
     Optional<IdeaModel> getIdea(String projectId, String ideaId);
 
-    ImmutableList<IdeaModel> getIdeas(String projectId, ImmutableList<String> ideaIds);
+    ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
     SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
 
@@ -47,7 +48,7 @@ public interface IdeaStore {
 
     ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
 
-    ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableList<String> ideaIds);
+    ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
     @Value
     class SearchResponse {
@@ -90,7 +91,7 @@ public interface IdeaStore {
         private final String statusId;
 
         @NonNull
-        private final ImmutableList<String> tagIds;
+        private final ImmutableSet<String> tagIds;
 
         @NonNull
         private final long commentCount;
@@ -99,6 +100,7 @@ public interface IdeaStore {
 
         private final BigDecimal fundGoal;
 
+        @NonNull
         private final ImmutableSet<String> funderUserIds;
 
         private final long voteValue;

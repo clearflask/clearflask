@@ -64,6 +64,20 @@ import java.util.Optional;
 @Slf4j
 public class LimiterDynamicFeature implements DynamicFeature {
 
+    private enum TargetType {
+        IP,
+        SESSION_PRINCIPAL
+    }
+
+    @Inject
+    private ServiceInjector.Environment env;
+    @Inject
+    private Limiter limiter;
+    @Context
+    private ResourceInfo resourceInfo;
+    @Context
+    private HttpServletRequest request;
+
     @Override
     public void configure(final ResourceInfo resourceInfo, final FeatureContext configuration) {
         Optional<Limit> limitOpt = getAnnotation(Limit.class, resourceInfo);
@@ -73,7 +87,7 @@ public class LimiterDynamicFeature implements DynamicFeature {
         Limit limit = limitOpt.get();
 
         configuration.register(
-                new LimiterFilter(LimiterDynamicFeature.LimiterFilter.TargetType.IP, limit),
+                new LimiterFilter(TargetType.IP, limit),
                 // Execute before authentication
                 Priorities.AUTHENTICATION - 10);
 
@@ -83,7 +97,7 @@ public class LimiterDynamicFeature implements DynamicFeature {
         }
 
         configuration.register(
-                new LimiterFilter(LimiterDynamicFeature.LimiterFilter.TargetType.SESSION_PRINCIPAL, limit),
+                new LimiterFilter(TargetType.SESSION_PRINCIPAL, limit),
                 // Execute after authentication
                 Priorities.AUTHENTICATION + 10);
     }
@@ -104,24 +118,10 @@ public class LimiterDynamicFeature implements DynamicFeature {
         return Optional.empty();
     }
 
-    public static class LimiterFilter implements ContainerRequestFilter {
-
-        private enum TargetType {
-            IP,
-            SESSION_PRINCIPAL
-        }
+    public class LimiterFilter implements ContainerRequestFilter {
 
         private final TargetType targetType;
         private final Limit limit;
-
-        @Inject
-        private ServiceInjector.Environment env;
-        @Inject
-        private Limiter limiter;
-        @Context
-        private ResourceInfo resourceInfo;
-        @Context
-        private HttpServletRequest request;
 
         private LimiterFilter(TargetType targetType, Limit limit) {
             this.targetType = targetType;

@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -44,31 +45,46 @@ public class AccountStoreTest extends AbstractTest {
                 "paymentToken",
                 ImmutableSet.of());
         store.createAccount(account);
-        assertTrue(store.getAccountByEmail(account.getEmail()).isPresent());
-        assertEquals(account, store.getAccountByEmail(account.getEmail()).get());
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
-        String newName = "name2";
-        store.updateAccountName(account.getAccountId(), newName);
-        assertEquals(newName, store.getAccountByEmail(account.getEmail()).get().getName());
+        account = account.toBuilder()
+                .name("name2")
+                .build();
+        store.updateAccountName(account.getAccountId(), account.getName());
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
-        String newPass = "password2";
         AccountStore.Session session1 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
         AccountStore.Session session2 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        store.updateAccountPassword(account.getAccountId(), newPass, session1.getSessionId());
-        assertEquals(newPass, store.getAccountByEmail(account.getEmail()).get().getPassword());
-        assertTrue(store.getSession(account.getAccountId(), session1.getSessionId()).isPresent());
-        assertFalse(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
+        account = account.toBuilder()
+                .password("password2")
+                .build();
+        store.updateAccountPassword(account.getAccountId(), account.getPassword(), session1.getSessionId());
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        assertEquals(Optional.of(session1), store.getSession(account.getAccountId(), session1.getSessionId()));
+        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session2.getSessionId()));
+
+        String projectId = IdUtil.randomId();
+        account = account.toBuilder()
+                .projectIds(ImmutableSet.<String>builder()
+                        .add(projectId)
+                        .addAll(account.getProjectIds())
+                        .build())
+                .build();
+        store.addAccountProjectId(account.getAccountId(), projectId);
+        assertEquals(Optional.of(account), store.getAccount(account.getAccountId()));
 
         AccountStore.Session session = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
         assertTrue(store.getSession(account.getAccountId(), session.getSessionId()).isPresent());
 
-        String newEmail = "new@email.com";
-        store.updateAccountEmail(account.getAccountId(), account.getEmail(), newEmail);
-        assertFalse(store.getAccountByEmail(account.getEmail()).isPresent());
-        assertTrue(store.getAccountByEmail(newEmail).isPresent());
-        assertEquals(newEmail, store.getAccountByEmail(newEmail).get().getEmail());
-        assertEquals(newName, store.getAccountByEmail(newEmail).get().getName());
-        assertFalse(store.getSession(account.getAccountId(), session.getSessionId()).isPresent());
+        String oldEmail = account.getEmail();
+        account = account.toBuilder()
+                .email("new@email.com")
+                .build();
+        store.updateAccountEmail(account.getAccountId(), oldEmail, account.getEmail());
+        assertEquals(Optional.empty(), store.getAccountByEmail(oldEmail));
+        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session.getSessionId()));
+        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session2.getSessionId()));
     }
 
     @Test(timeout = 5_000L)

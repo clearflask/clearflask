@@ -69,7 +69,7 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea2).getIndexingFuture().get();
         assertEquals(Optional.of(idea), store.getIdea(projectId, idea.getIdeaId()));
         assertEquals(Optional.of(idea2), store.getIdea(projectId, idea2.getIdeaId()));
-        assertEquals(ImmutableList.of(idea, idea2), store.getIdeas(projectId, ImmutableList.of(idea.getIdeaId(), idea2.getIdeaId())));
+        assertEquals(ImmutableSet.of(idea2, idea), ImmutableSet.copyOf(store.getIdeas(projectId, ImmutableList.of(idea2.getIdeaId(), idea.getIdeaId())).values()));
 
         IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description("newDescription").build();
         store.updateIdea(projectId, idea.getIdeaId(), IdeaUpdate.builder()
@@ -92,7 +92,7 @@ public class IdeaStoreIT extends AbstractIT {
 
         store.deleteIdea(projectId, ideaUpdated.getIdeaId()).get();
         assertEquals(Optional.empty(), store.getIdea(projectId, ideaUpdated.getIdeaId()));
-        store.deleteIdeas(projectId, ImmutableList.of(idea2Updated.getIdeaId())).get();
+        store.deleteIdeas(projectId, ImmutableSet.of(idea2Updated.getIdeaId())).get();
         assertEquals(Optional.empty(), store.getIdea(projectId, idea2Updated.getIdeaId()));
     }
 
@@ -136,7 +136,7 @@ public class IdeaStoreIT extends AbstractIT {
                 .filterStatusIds(ImmutableList.of(idea2.getStatusId(), idea3.getStatusId()))
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterTagIds(ImmutableList.of(idea1.getTagIds().iterator().next(), idea2.getTagIds().get(0)))
+                .filterTagIds(ImmutableList.of(idea1.getTagIds().iterator().next(), idea2.getTagIds().iterator().next()))
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .searchText("aaaaaaaaaaaaaa")
@@ -193,7 +193,7 @@ public class IdeaStoreIT extends AbstractIT {
                 "description",
                 IdUtil.randomId(),
                 IdUtil.randomId(),
-                ImmutableList.of(IdUtil.randomId(), IdUtil.randomId()),
+                ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
                 0L,
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(100),

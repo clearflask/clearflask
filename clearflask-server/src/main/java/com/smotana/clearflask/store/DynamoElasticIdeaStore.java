@@ -17,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -211,7 +212,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     @Override
-    public ImmutableList<IdeaModel> getIdeas(String projectId, ImmutableList<String> ideaIds) {
+    public ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds) {
         return dynamoDoc.batchGetItem(new TableKeysAndAttributes(IDEA_TABLE).withHashOnlyKeys("id", ideaIds.stream()
                 .map(ideaId -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                         "projectId", projectId,
@@ -222,7 +223,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .stream()
                 .flatMap(Collection::stream)
                 .map(i -> dynamoMapper.fromItem(i, IdeaModel.class))
-                .collect(ImmutableList.toImmutableList());
+                .collect(ImmutableMap.toImmutableMap(
+                        IdeaModel::getIdeaId,
+                        i -> i));
     }
 
     @Override
@@ -425,7 +428,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     @Override
-    public ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableList<String> ideaIds) {
+    public ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds) {
         ImmutableList<String> ideaCompoundIds = ideaIds.stream()
                 .map(ideaId -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                         "projectId", projectId,

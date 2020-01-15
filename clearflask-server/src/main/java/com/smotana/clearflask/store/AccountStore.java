@@ -87,6 +87,7 @@ public interface AccountStore {
         @NonNull
         private final String paymentToken;
 
+        @NonNull
         private final ImmutableSet<String> projectIds;
     }
 }

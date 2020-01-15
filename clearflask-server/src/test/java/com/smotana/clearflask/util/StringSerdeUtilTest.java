@@ -25,6 +25,7 @@ public class StringSerdeUtilTest {
         return new Object[][]{
                 {new String[]{}},
                 {new String[]{"a"}},
+                {new String[]{"1c9292364aaa485ebeb0911c593e24df", "41f739088dfc457782b46c396ed00992"}},
                 {new String[]{"a", "b"}},
                 {new String[]{"a", "b", "c"}},
                 {new String[]{"a" + ESCAPER, "a"}},

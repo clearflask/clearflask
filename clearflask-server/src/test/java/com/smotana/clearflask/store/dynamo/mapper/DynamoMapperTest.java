@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
@@ -93,9 +94,11 @@ public class DynamoMapperTest extends AbstractTest {
         private final VersionedConfigAdmin versionedConfigAdmin;
         private final List<UUID> list;
         private final Map<String, Boolean> map;
+        @NonNull
         private final Set<Instant> set;
         private final ImmutableList<String> immutableList;
         private final ImmutableMap<String, Long> immutableMap;
+        @NonNull
         private final ImmutableSet<String> immutableSet;
     }
 
@@ -231,7 +234,9 @@ public class DynamoMapperTest extends AbstractTest {
 
     private Data getExpectedData() throws Exception {
         Data.DataBuilder dataBuilder = Data.builder();
-        dataBuilder.id(IdUtil.randomId());
+        dataBuilder.id(IdUtil.randomId())
+                .set(Sets.newHashSet())
+                .immutableSet(ImmutableSet.of());
         Arrays.stream(dataBuilder.getClass().getMethods())
                 .filter(m -> m.getName().equals(fieldName))
                 .findAny()

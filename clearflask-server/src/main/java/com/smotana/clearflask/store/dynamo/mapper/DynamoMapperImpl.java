@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.*;
@@ -59,6 +60,11 @@ public class DynamoMapperImpl implements DynamoMapper {
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
+            if (val == null && Set.class.isAssignableFrom(field.getType())) {
+                log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                        field.getName(), object.getClass().getSimpleName());
+            }
             int primaryKeyIndex = compoundPrimaryKeyOpt
                     .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
                     .orElse(-1);
@@ -67,7 +73,7 @@ public class DynamoMapperImpl implements DynamoMapper {
                 checkState(field.getType() == String.class);
                 compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
             } else if (val == null) {
-                item.withNull(field.getName());
+                // Omit on null
             } else {
                 Optional<Class> collectionClazz = getCollectionClazz(field.getType());
                 Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
@@ -142,6 +148,11 @@ public class DynamoMapperImpl implements DynamoMapper {
             } catch (IllegalAccessException ex) {
                 throw new IllegalStateException(ex);
             }
+            if (val == null && Set.class.isAssignableFrom(field.getType())) {
+                log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                        field.getName(), object.getClass().getSimpleName());
+            }
             int primaryKeyIndex = compoundPrimaryKeyOpt
                     .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
                     .orElse(-1);
@@ -150,11 +161,14 @@ public class DynamoMapperImpl implements DynamoMapper {
                 checkState(field.getType() == String.class);
                 compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
             } else if (val == null) {
-                mapBuilder.put(field.getName(), new AttributeValue().withNULL(true));
+                // Omit on null
             } else {
                 Optional<Class> collectionClazz = getCollectionClazz(field.getType());
                 Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                mapBuilder.put(field.getName(), findMarshallerAttrVal(collectionClazz, itemClazz).marshall(val));
+                AttributeValue valMarshalled = findMarshallerAttrVal(collectionClazz, itemClazz).marshall(val);
+                if (valMarshalled != null) {
+                    mapBuilder.put(field.getName(), valMarshalled);
+                }
             }
         }
         compoundPrimaryKeyOpt.ifPresent(compoundPrimaryKey -> mapBuilder.put(
@@ -197,7 +211,7 @@ public class DynamoMapperImpl implements DynamoMapper {
             } else {
                 Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
                 args.add(findUnMarshallerAttrVal(collectionClazz, itemClazz)
-                        .unmarshall(checkNotNull(attrVal)));
+                        .unmarshall(attrVal));
             }
         }
 
@@ -252,6 +266,10 @@ public class DynamoMapperImpl implements DynamoMapper {
             return (Constructor<T>) constructorPotential;
         }
         throw new IllegalStateException("Cannot find constructor for class " + objectClazz.getSimpleName());
+    }
+
+    private boolean isSetClazz(Class<?> clazz) {
+        return Set.class.isAssignableFrom(clazz);
     }
 
     private Optional<Class> getCollectionClazz(Class<?> clazz) {

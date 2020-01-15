@@ -8,7 +8,7 @@ import java.util.List;
 @Slf4j
 public class StringSerdeUtil {
 
-    public final static char DELIMITER = ',';
+    public final static char DELIMITER = ';';
     public final static char ESCAPER = '\\';
 
     private StringSerdeUtil() {
@@ -71,6 +71,6 @@ public class StringSerdeUtil {
             }
         }
         results.add(result.toString());
-        return results.toArray(new String[results.size()]);
+        return results.toArray(new String[0]);
     }
 }

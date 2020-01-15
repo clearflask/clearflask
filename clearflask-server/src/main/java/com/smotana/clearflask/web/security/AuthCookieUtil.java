@@ -46,7 +46,7 @@ public class AuthCookieUtil {
     public static Optional<AccountAuthCookie> decodeAccount(String value) {
         String[] parts = StringSerdeUtil.unMergeString(value);
         if (parts.length != 2) {
-            log.warn("AuthCookie has {} parts, expecting 2", parts.length);
+            log.warn("AuthCookie has {} parts, expecting 2 for: {}", parts.length, value);
             return Optional.empty();
         }
         return Optional.of(new AccountAuthCookie(parts[0], parts[1]));
@@ -55,7 +55,7 @@ public class AuthCookieUtil {
     public static Optional<UserAuthCookie> decodeUser(String value) {
         String[] parts = StringSerdeUtil.unMergeString(value);
         if (parts.length != 3) {
-            log.warn("AuthCookie has {} parts, expecting 3", parts.length);
+            log.warn("AuthCookie has {} parts, expecting 3 for: {}", parts.length, value);
             return Optional.empty();
         }
         return Optional.of(new UserAuthCookie(parts[0], parts[1], parts[2]));

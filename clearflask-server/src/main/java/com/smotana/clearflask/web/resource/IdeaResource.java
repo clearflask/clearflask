@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
@@ -36,6 +37,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -51,7 +53,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserSession session = getExtendedPrincipal().get().getUserSessionOpt().get();
-        IdeaStore.IdeaModel ideaModel = ideaStore.createIdea(new IdeaStore.IdeaModel(
+        IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
                 projectId,
                 IdUtil.randomId(),
                 session.getUserId(),
@@ -60,7 +62,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 Strings.emptyToNull(ideaCreate.getDescription()),
                 ideaCreate.getCategoryId(),
                 null,
-                ImmutableList.copyOf(ideaCreate.getTagIds()),
+                ImmutableSet.copyOf(ideaCreate.getTagIds()),
                 0L,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
@@ -77,7 +79,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
-        IdeaStore.IdeaModel ideaModel = ideaStore.createIdea(new IdeaStore.IdeaModel(
+        IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
                 projectId,
                 IdUtil.randomId(),
                 ideaCreateAdmin.getAuthorUserId(),
@@ -86,7 +88,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 Strings.emptyToNull(ideaCreateAdmin.getDescription()),
                 ideaCreateAdmin.getCategoryId(),
                 ideaCreateAdmin.getStatusId(),
-                ImmutableList.copyOf(ideaCreateAdmin.getTagIds()),
+                ImmutableSet.copyOf(ideaCreateAdmin.getTagIds()),
                 0L,
                 BigDecimal.ZERO,
                 ideaCreateAdmin.getFundGoal(),
@@ -104,7 +106,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaWithAuthorAndVote ideaGet(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
-                .map(IdeaStore.IdeaModel::toIdeaWithAuthorAndVote)
+                .map(IdeaModel::toIdeaWithAuthorAndVote)
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -113,7 +115,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public IdeaWithAuthorAndVote ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
-                .map(IdeaStore.IdeaModel::toIdeaWithAuthorAndVote)
+                .map(IdeaModel::toIdeaWithAuthorAndVote)
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -130,12 +132,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 userIdOpt,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
 
-        ImmutableList<IdeaStore.IdeaModel> ideas = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
+        ImmutableMap<String, IdeaModel> ideasById = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
 
         return new IdeaSearchResponse(
                 searchResponse.getCursorOpt().orElse(null),
-                ideas.stream()
-                        .map(IdeaStore.IdeaModel::toIdeaWithAuthorAndVote)
+                searchResponse.getIdeaIds().stream()
+                        .map(ideasById::get)
+                        .filter(Objects::nonNull)
+                        .map(IdeaModel::toIdeaWithAuthorAndVote)
                         .collect(ImmutableList.toImmutableList()));
     }
 
@@ -149,12 +153,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 false,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
 
-        ImmutableList<IdeaStore.IdeaModel> ideas = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
+        ImmutableMap<String, IdeaModel> ideasById = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
 
         return new IdeaSearchResponse(
                 searchResponse.getCursorOpt().orElse(null),
-                ideas.stream()
-                        .map(IdeaStore.IdeaModel::toIdeaWithAuthorAndVote)
+                searchResponse.getIdeaIds().stream()
+                        .map(ideasById::get)
+                        .filter(Objects::nonNull)
+                        .map(IdeaModel::toIdeaWithAuthorAndVote)
                         .collect(ImmutableList.toImmutableList()));
     }
 

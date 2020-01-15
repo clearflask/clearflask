@@ -2,6 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
@@ -40,6 +41,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -252,11 +254,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(Strings.emptyToNull(cursor)),
                 config.searchPageSize());
 
-        ImmutableList<UserStore.User> users = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
+        ImmutableMap<String, UserStore.User> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
 
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
-                users.stream()
+                searchUsersResponse.getUserIds().stream()
+                        .map(usersById::get)
+                        .filter(Objects::nonNull)
                         .map(UserStore.User::toUserAdmin)
                         .collect(ImmutableList.toImmutableList()));
     }

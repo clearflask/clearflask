@@ -10,6 +10,8 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
@@ -177,9 +179,11 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
 
     @Override
     public void addAccountProjectId(String accountId, String projectId) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("projectIds").addElements(projectId));
+        accountTable.updateItem(new UpdateItemSpec()
+                .withPrimaryKey("accountId", accountId)
+                .withUpdateExpression("ADD #projectIds :projectIds")
+                .withNameMap(new NameMap().with("#projectIds", "projectIds"))
+                .withValueMap(new ValueMap().withStringSet(":projectIds", projectId)));
     }
 
     @Override

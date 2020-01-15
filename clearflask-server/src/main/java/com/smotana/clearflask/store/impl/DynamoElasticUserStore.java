@@ -25,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -256,7 +257,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds) {
+    public ImmutableMap<String, User> getUsers(String projectId, ImmutableCollection<String> userIds) {
         return dynamoDoc.batchGetItem(new TableKeysAndAttributes(USER_TABLE).withHashOnlyKeys("id", userIds.stream()
                 .map(uid -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                         "projectId", projectId,
@@ -267,7 +268,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 .stream()
                 .flatMap(Collection::stream)
                 .map(i -> dynamoMapper.fromItem(i, User.class))
-                .collect(ImmutableList.toImmutableList());
+                .collect(ImmutableMap.toImmutableMap(
+                        User::getUserId,
+                        i -> i));
     }
 
     @Override
@@ -397,8 +400,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
-    public ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableList<String> userIds) {
-        ImmutableList<User> users = getUsers(projectId, userIds);
+    public ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds) {
+        ImmutableCollection<User> users = getUsers(projectId, userIds).values();
         dynamoDoc.batchWriteItem(new TableWriteItems(USER_TABLE).withPrimaryKeysToDelete(users
                 .stream()
                 .map(User::getUserId)

@@ -1,6 +1,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
@@ -85,7 +86,7 @@ public class UserStoreIT extends AbstractIT {
         assertTrue(store.getUserByIdentifier(user.getProjectId(), UserStore.IdentifierType.IOS_PUSH, user.getIosPushToken()).isPresent());
         assertEquals(user, store.getUserByIdentifier(user.getProjectId(), UserStore.IdentifierType.IOS_PUSH, user.getIosPushToken()).get());
 
-        assertEquals(ImmutableList.of(user), store.getUsers(user.getProjectId(), ImmutableList.of(user.getUserId())));
+        assertEquals(ImmutableSet.of(user), store.getUsers(user.getProjectId(), ImmutableList.of(user.getUserId())).values());
 
         User userUpdated = user.toBuilder()
                 .name("joe")

@@ -1,7 +1,9 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserMe;
@@ -31,7 +33,7 @@ public interface UserStore {
 
     Optional<User> getUser(String projectId, String userId);
 
-    ImmutableList<User> getUsers(String projectId, ImmutableList<String> userIds);
+    ImmutableMap<String, User> getUsers(String projectId, ImmutableCollection<String> userIds);
 
     Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
@@ -39,7 +41,7 @@ public interface UserStore {
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableList<String> userIds);
+    ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
     UserSession createSession(String projectId, String userId, Instant expiry);
 
