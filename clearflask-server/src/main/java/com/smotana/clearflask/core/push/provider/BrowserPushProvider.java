@@ -11,7 +11,6 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.core.push.NotificationService.NotificationModel;
 import com.smotana.clearflask.core.push.PushProvider;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.LogUtil;

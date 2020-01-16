@@ -192,6 +192,7 @@ public class IdeaStoreIT extends AbstractIT {
                 Instant.now(),
                 "title",
                 "description",
+                "response",
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),

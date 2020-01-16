@@ -27,7 +27,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.core.push.NotificationService.NotificationModel;
 import com.smotana.clearflask.core.push.PushProvider;
 import com.smotana.clearflask.util.LogUtil;
 import lombok.extern.slf4j.Slf4j;

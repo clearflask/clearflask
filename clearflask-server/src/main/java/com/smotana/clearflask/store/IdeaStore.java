@@ -85,6 +85,8 @@ public interface IdeaStore {
 
         private final String description;
 
+        private final String response;
+
         @NonNull
         private final String categoryId;
 

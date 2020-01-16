@@ -144,6 +144,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .put("description", ImmutableMap.of(
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
+                        .put("response", ImmutableMap.of(
+                                "type", "text",
+                                "index_prefixes", ImmutableMap.of()))
                         .put("categoryId", ImmutableMap.of(
                                 "type", "keyword"))
                         .put("statusId", ImmutableMap.of(
@@ -186,6 +189,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                                 .put("lastActivity", idea.getCreated())
                                 .put("title", idea.getTitle())
                                 .put("description", idea.getDescription())
+                                .put("response", idea.getResponse())
                                 .put("categoryId", idea.getCategoryId())
                                 .put("statusId", idea.getStatusId())
                                 .put("tagIds", idea.getTagIds())
@@ -289,7 +293,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
             query.should(QueryBuilders.multiMatchQuery(ideaSearchAdmin.getSearchText(),
-                    "title", "description")
+                    "title", "description", "response")
                     .field("title", 3f)
                     .fuzziness("AUTO"));
         }
@@ -356,6 +360,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 null,
                 null,
                 null,
+                null,
                 null));
     }
 
@@ -376,6 +381,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
                     .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getDescription())));
             indexUpdates.put("description", ideaUpdateAdmin.getDescription());
+        }
+        if (ideaUpdateAdmin.getResponse() != null) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
+                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getResponse())));
+            indexUpdates.put("response", ideaUpdateAdmin.getResponse());
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade, TextField } from '@material-ui/core';
+import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade, TextField, Paper } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Loader from '../utils/Loader';
 import { connect } from 'react-redux';
@@ -27,6 +27,7 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
+import Message from './Message';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -62,6 +63,14 @@ const styles = (theme:Theme) => createStyles({
     '&:hover $title': {
       textDecoration: 'underline',
     },
+  },
+  responseContainer: {
+    margin: theme.spacing(0.5),
+    padding: theme.spacing(0.5, 1),
+  },
+  responsePrefixText: {
+    fontSize: '0.8rem',
+    color: theme.palette.grey[500],
   },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -124,6 +133,7 @@ const styles = (theme:Theme) => createStyles({
     borderColor: 'rgba(0,0,0,0)',
   },
   expression: {
+    filter: theme.expressionGrayscale ? `grayscale(${theme.expressionGrayscale}%)` : undefined,
     lineHeight: 1.15,
     fontSize: 16,
     display: 'inline-block',
@@ -181,6 +191,9 @@ const styles = (theme:Theme) => createStyles({
   expressionPicker: {
     '& .emoji-mart' : {
       color: theme.palette.text.primary + '!important',
+    },
+    '& .emoji-mart-emoji' : {
+      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)`+ '!important') : undefined,
     },
     '& .emoji-mart-anchor-icon svg' : {
       fill: theme.palette.text.hint + '!important',
@@ -346,6 +359,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               >
                 {this.renderTitle(variant)}
                 {this.renderDescription(variant)}
+                {this.renderResponse(variant)}
               </CardActionArea>
             </div>
             {this.renderBottomBar(variant)}
@@ -486,6 +500,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           }}
           style={{
             alignSelf: 'flex-end',
+            visibility: !this.state.newCommentInput ? 'hidden' : undefined,
           }}
         >
           Submit
@@ -931,6 +946,24 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}
       </Typography>
+    );
+  }
+
+  renderResponse(variant:PostVariant) {
+    if(variant !== 'page' && this.props.display && this.props.display.showResponse === false
+      || !this.props.idea
+      || !this.props.idea.response) return null;
+    return (
+      <Paper elevation={0} className={this.props.classes.responseContainer}>
+          <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
+            Reply:&nbsp;&nbsp;
+          </Typography>  
+          <Typography variant='body1' component={'span'}>
+            {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
+              ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
+              : this.props.idea.response}
+          </Typography>  
+      </Paper>
     );
   }
 

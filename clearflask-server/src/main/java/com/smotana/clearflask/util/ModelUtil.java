@@ -35,7 +35,7 @@ public class ModelUtil {
                 new Credits(new BigDecimal("0.01"), null),
                 new Style(
                         new Animation(true),
-                        new Palette(false, null, null, null, null, null, null),
+                        new Palette(false, null, null, null, null, null, null, null),
                         new Typography(null, null)),
                 new Users(
                         new Onboarding(

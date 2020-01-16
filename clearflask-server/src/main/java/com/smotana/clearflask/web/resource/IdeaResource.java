@@ -49,7 +49,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private IdeaStore ideaStore;
 
     @RolesAllowed({Role.PROJECT_USER})
-    @Limit(requiredPermits = 30)
+    @Limit(requiredPermits = 30, challengeAfter = 10)
     @Override
     public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserSession session = getExtendedPrincipal().get().getUserSessionOpt().get();
@@ -60,6 +60,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 Instant.now(),
                 ideaCreate.getTitle(),
                 Strings.emptyToNull(ideaCreate.getDescription()),
+                null,
                 ideaCreate.getCategoryId(),
                 null,
                 ImmutableSet.copyOf(ideaCreate.getTagIds()),
@@ -83,9 +84,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 projectId,
                 IdUtil.randomId(),
                 ideaCreateAdmin.getAuthorUserId(),
-                ideaCreateAdmin.getCreated(),
+                Instant.now(),
                 ideaCreateAdmin.getTitle(),
                 Strings.emptyToNull(ideaCreateAdmin.getDescription()),
+                Strings.emptyToNull(ideaCreateAdmin.getResponse()),
                 ideaCreateAdmin.getCategoryId(),
                 ideaCreateAdmin.getStatusId(),
                 ImmutableSet.copyOf(ideaCreateAdmin.getTagIds()),

@@ -73,6 +73,8 @@ components:
           type: string
         description:
           type: string
+        response:
+          type: string
         categoryId:
           type: string
         statusId:
@@ -152,9 +154,8 @@ components:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreate'
         - type: object
           properties:
-            created:
+            response:
               type: string
-              format: date-time
             statusId:
               type: string
             creditGoal:
@@ -174,6 +175,8 @@ components:
         - type: object
           properties:
             title:
+              type: string
+            response:
               type: string
             statusId:
               type: string

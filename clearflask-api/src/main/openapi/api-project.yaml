@@ -210,8 +210,12 @@ components:
               x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color' }
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            expressionColor:
+              x-clearflask-prop: { order: 7, name: 'Expression color' }
+              type: string
+              enum: [Color, Washed, Gray]
             funding:
-              x-clearflask-prop: { order: 7, subType: 'color', name: 'Funding progress bar color' }
+              x-clearflask-prop: { order: 8, subType: 'color', name: 'Funding progress bar color' }
               type: string
               pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
@@ -574,35 +578,41 @@ components:
         descriptionTruncateLines:
           x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
           type: number
+        responseTruncateLines:
+          x-clearflask-prop: { order: 2, name: 'Response maximum lines', placeholder: 1}
+          type: number
         showDescription:
-          x-clearflask-prop: { order: 3, name: 'Force show Description' }
+          x-clearflask-prop: { order: 3, name: 'Force show description' }
+          type: boolean
+        showResponse:
+          x-clearflask-prop: { order: 4, name: 'Force show response' }
           type: boolean
         showCommentCount:
-          x-clearflask-prop: { order: 4, name: 'Force show Comment Count' }
+          x-clearflask-prop: { order: 5, name: 'Force show comment count' }
           type: boolean
         showCategoryName:
-          x-clearflask-prop: { order: 5, name: 'Force show CategoryName' }
+          x-clearflask-prop: { order: 6, name: 'Force show category name' }
           type: boolean
         showCreated:
-          x-clearflask-prop: { order: 6, name: 'Force show Created' }
+          x-clearflask-prop: { order: 7, name: 'Force show created' }
           type: boolean
         showAuthor:
-          x-clearflask-prop: { order: 7, name: 'Force show Author' }
+          x-clearflask-prop: { order: 8, name: 'Force show author' }
           type: boolean
         showStatus:
-          x-clearflask-prop: { order: 8, name: 'Force show Status' }
+          x-clearflask-prop: { order: 9, name: 'Force show status' }
           type: boolean
         showTags:
-          x-clearflask-prop: { order: 9, name: 'Force show Tags' }
+          x-clearflask-prop: { order: 10, name: 'Force show tags' }
           type: boolean
         showVoting:
-          x-clearflask-prop: { order: 10, name: 'Force show Voting' }
+          x-clearflask-prop: { order: 11, name: 'Force show voting' }
           type: boolean
         showFunding:
-          x-clearflask-prop: { order: 11, name: 'Force show Funding' }
+          x-clearflask-prop: { order: 12, name: 'Force show funding' }
           type: boolean
         showExpression:
-          x-clearflask-prop: { order: 12, name: 'Force show Expression' }
+          x-clearflask-prop: { order: 13, name: 'Force show expression' }
           type: boolean
         disableExpand:
           x-clearflask-hide: true

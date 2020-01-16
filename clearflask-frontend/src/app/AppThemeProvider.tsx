@@ -11,6 +11,7 @@ interface ThemeCustomProps {
   disableTransitions?: boolean;
   funding?: string;
   isInsideContainer?: boolean;
+  expressionGrayscale?: number;
 }
 
 declare module '@material-ui/core/styles/createMuiTheme' {
@@ -29,6 +30,15 @@ interface Props {
 
 class AppThemeProvider extends Component<Props> {
   render() {
+    var expressionGrayscale:number|undefined = undefined;
+    switch(this.props.config && this.props.config.style.palette.expressionColor) {
+      case Client.PaletteExpressionColorEnum.Gray:
+        expressionGrayscale = 100;
+         break;
+      case Client.PaletteExpressionColorEnum.Washed:
+        expressionGrayscale = 50;
+        break;
+    }
     var theme:Theme|undefined;
     if(this.props.config) {
       theme = createMuiTheme({
@@ -38,6 +48,7 @@ class AppThemeProvider extends Component<Props> {
           // Optional green color
           // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
         isInsideContainer: !!this.props.isInsideContainer,
+        expressionGrayscale: expressionGrayscale,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           ...(this.props.config.style.palette.primary ? { primary: {

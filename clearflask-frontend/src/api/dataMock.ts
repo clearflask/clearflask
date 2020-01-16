@@ -29,7 +29,6 @@ class DataMock {
           description: 'I would like to be able to synchronize user ideas with my Jira board',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
-          created: new Date(),
           ...{ // Fake data
             funded: 12,
             fundersCount: 5,
@@ -153,12 +152,15 @@ class DataMock {
           units: 'paragraphs',
           count: Math.round(Math.random() * 3 + 1),
         }),
+        response: Math.random() < 0.3 ? undefined : loremIpsum({
+          units: 'words',
+          count: Math.round(Math.random() * 10 + 3),
+        }),
         categoryId: category.categoryId,
         tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
           .filter(t => Math.random() < 0.3)
           .map(t => t.tagId),
         statusId: status ? status.statusId : undefined,
-        created: new Date(Math.random() * new Date().getTime()),
       },
     })
     .then((item:Admin.Idea) => this.mockCommentsAndExpression([user], versionedConfig, category, item))
