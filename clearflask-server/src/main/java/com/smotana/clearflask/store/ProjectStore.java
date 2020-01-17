@@ -3,10 +3,15 @@ package com.smotana.clearflask.store;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.util.IdUtil;
 
 import java.util.Optional;
 
 public interface ProjectStore {
+
+    default String genProjectId() {
+        return IdUtil.randomId();
+    }
 
     Optional<VersionedConfig> getConfig(String projectId, boolean useCache);
 

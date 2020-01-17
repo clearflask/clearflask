@@ -15,7 +15,6 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.Session;
 import com.smotana.clearflask.store.PlanStore;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -154,7 +153,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         Plan plan = planOpt.get();
 
-        String accountId = IdUtil.randomId();
+        String accountId = accountStore.genAccountId();
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), accountId);
         Account account = new Account(
                 accountId,

@@ -62,7 +62,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<AccountAuthCookie> authCookieOpt = AuthCookieUtil.decodeAccount(cookie.getValue());
         if (!authCookieOpt.isPresent()) {
-            log.info("AuthCookie for account session was not parsed correctly");
+            log.warn("AuthCookie for account session was not parsed correctly");
             return Optional.empty();
         }
         AccountAuthCookie authCookie = authCookieOpt.get();
@@ -86,7 +86,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<UserAuthCookie> authCookieOpt = AuthCookieUtil.decodeUser(cookie.getValue());
         if (!authCookieOpt.isPresent()) {
-            log.info("AuthCookie for user session was not parsed correctly");
+            log.warn("AuthCookie for user session was not parsed correctly");
             return Optional.empty();
         }
         UserAuthCookie authCookie = authCookieOpt.get();

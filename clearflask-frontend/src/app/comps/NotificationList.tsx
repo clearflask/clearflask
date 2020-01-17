@@ -83,16 +83,20 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
   clickNotification(notification:Client.Notification) {
     this.props.server.dispatch().notificationClear({
       projectId: this.props.server.getProjectId(),
-      notificationClear: { userId: this.props.userId! },
       notificationId: notification.notificationId,
     });
-    this.props.history.push(notification.url);
+    if(notification.relatedIdeaId) {
+      if(notification.relatedCommentId) {
+        this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`);
+      } else {
+        this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}`);
+      }
+    }
   }
 
   clearAll() {
     this.props.server.dispatch().notificationClearAll({
       projectId: this.props.server.getProjectId(),
-      userId: this.props.userId!,
     });
   }
 }

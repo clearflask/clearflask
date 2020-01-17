@@ -11,6 +11,7 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -27,6 +28,10 @@ import java.util.Optional;
 
 public interface UserStore {
 
+    default String genUserId() {
+        return IdUtil.randomId();
+    }
+
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
     UserAndIndexingFuture<IndexResponse> createUser(User user);
@@ -42,6 +47,10 @@ public interface UserStore {
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
+
+    default String genUserSessionId() {
+        return IdUtil.randomAscId();
+    }
 
     UserSession createSession(String projectId, String userId, Instant expiry);
 

@@ -8,7 +8,6 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -193,7 +192,6 @@ public class ElasticUtil {
             @Override
             protected void configure() {
                 bind(ElasticUtil.class).asEagerSingleton();
-                install(DefaultServerSecret.module(Names.named("cursor")));
             }
         };
     }

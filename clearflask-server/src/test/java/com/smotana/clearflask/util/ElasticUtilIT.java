@@ -58,6 +58,7 @@ public class ElasticUtilIT extends AbstractIT {
 
         install(Modules.override(
                 ElasticUtil.module(),
+                DefaultServerSecret.module(Names.named("cursor")),
                 GsonProvider.module(),
                 ConfigSystem.configModule(ConfigSearch.class, Names.named("ElasticUtilIT"))
         ).with(new AbstractModule() {

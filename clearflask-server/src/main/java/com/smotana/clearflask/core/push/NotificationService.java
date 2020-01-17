@@ -4,9 +4,7 @@ import com.smotana.clearflask.store.IdeaStore;
 
 public interface NotificationService {
 
-    void onStatusChanged(IdeaStore.IdeaModel idea);
-
-    void onAdminResponse(IdeaStore.IdeaModel idea);
+    void onStatusOrResponseChanged(IdeaStore.IdeaModel idea, boolean statusChanged, boolean responseChanged);
 
     void onCommentReply(IdeaStore.IdeaModel idea);
 }

@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -29,6 +30,14 @@ import java.util.Optional;
 
 
 public interface IdeaStore {
+
+    default String genIdeaId(String title) {
+        // Idea id is shown in the URL, for SEO, make it somewhat readable
+        return String.format("%1.3s-%s",
+                title.replaceAll("[^0-9a-z]+", "-"),
+                RandomStringUtils.randomAlphanumeric(3))
+                .toLowerCase();
+    }
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 

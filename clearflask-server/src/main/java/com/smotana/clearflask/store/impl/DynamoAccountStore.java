@@ -38,7 +38,6 @@ import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -241,7 +240,7 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     @Override
     public Session createSession(String accountId, Instant expiry) {
         Session session = Session.builder()
-                .sessionId(IdUtil.randomId())
+                .sessionId(genSessionId())
                 .accountId(accountId)
                 .expiry(expiry)
                 .build();
@@ -293,12 +292,11 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     }
 
     private void revokeSessions(String accountId, Optional<String> sessionToLeaveOpt) {
-        QuerySpec querySpec = new QuerySpec()
+        ItemCollection<QueryOutcome> items = sessionTable.query(new QuerySpec()
                 .withMaxPageSize(25)
                 .withKeyConditionExpression("#i = :i")
                 .withNameMap(ImmutableMap.of("#i", "accountId"))
-                .withValueMap(ImmutableMap.of(":i", accountId));
-        ItemCollection<QueryOutcome> items = sessionTable.query(querySpec);
+                .withValueMap(ImmutableMap.of(":i", accountId)));
         items.pages().forEach(page -> {
             TableWriteItems tableWriteItems = new TableWriteItems(SESSION_TABLE);
             page.forEach(item -> {

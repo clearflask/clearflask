@@ -23,7 +23,6 @@ import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -75,7 +74,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserMeWithBalance userCreate(String projectId, UserCreate userCreate) {
-        String userId = IdUtil.randomId();
+        String userId = userStore.genUserId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
@@ -100,7 +99,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
-        String userId = IdUtil.randomId();
+        String userId = userStore.genUserId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));

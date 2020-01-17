@@ -188,6 +188,9 @@ components:
                 type: string
             fundGoal:
               type: number
+            suppressNotifications:
+              description: Suppresses notifications if status or response was changed
+              type: boolean
 
 /project/{projectId}/idea:
   get:

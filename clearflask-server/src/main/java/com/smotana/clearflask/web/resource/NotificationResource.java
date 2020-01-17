@@ -1,33 +1,53 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.NotificationApi;
-import com.smotana.clearflask.api.model.NotificationClear;
 import com.smotana.clearflask.api.model.NotificationSearchResponse;
+import com.smotana.clearflask.store.NotificationStore;
+import com.smotana.clearflask.store.NotificationStore.NotificationModel;
+import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
+import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.Path;
+import java.util.Optional;
 
-// TODO
 @Slf4j
 @Singleton
 @Path("/v1")
 public class NotificationResource extends AbstractResource implements NotificationApi {
 
-    @Override
-    public void notificationClear(String projectId, String notificationId, @Valid NotificationClear notificationClear) {
+    @Inject
+    private NotificationStore notificationStore;
 
+    @Override
+    @RolesAllowed({Role.PROJECT_USER})
+    public void notificationClear(String projectId, String notificationId) {
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        notificationStore.notificationClear(projectId, userId, notificationId);
     }
 
     @Override
-    public void notificationClearAll(String projectId, @NotNull String userId) {
-
+    @RolesAllowed({Role.PROJECT_USER})
+    public void notificationClearAll(String projectId) {
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        notificationStore.notificationClearAll(projectId, userId);
     }
 
     @Override
-    public NotificationSearchResponse notificationSearch(String projectId, @NotNull String userId, String cursor) {
-        return null;
+    @RolesAllowed({Role.PROJECT_USER})
+    public NotificationSearchResponse notificationSearch(String projectId, String cursor) {
+        String userId = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt).map(UserSession::getUserId).get();
+        NotificationStore.NotificationListResponse response = notificationStore.notificationList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
+        return new NotificationSearchResponse(
+                response.getCursorOpt().orElse(null),
+                response.getNotifications().stream()
+                        .map(NotificationModel::toNotification)
+                        .collect(ImmutableList.toImmutableList()));
     }
 }

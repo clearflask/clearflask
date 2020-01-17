@@ -108,7 +108,6 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     private Table ideaTable;
 
-
     @Override
     protected void serviceStart() throws Exception {
         try {
@@ -357,6 +356,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
                 ideaUpdate.getTitle(),
                 ideaUpdate.getDescription(),
+                null,
                 null,
                 null,
                 null,

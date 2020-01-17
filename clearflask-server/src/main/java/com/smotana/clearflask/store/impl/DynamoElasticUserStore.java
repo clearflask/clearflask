@@ -51,7 +51,6 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.AllArgsConstructor;
@@ -471,7 +470,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         UserSession session = UserSession.builder()
                 .projectId(projectId)
                 .userId(userId)
-                .sessionId(IdUtil.randomId())
+                .sessionId(genUserSessionId())
                 .expiry(expiry)
                 .build();
         sessionTable.putItem(dynamoMapper.toItem(session));
@@ -533,12 +532,11 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         String id = dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
                 "projectId", projectId,
                 "userId", userId), UserSession.class);
-        QuerySpec querySpec = new QuerySpec()
+        ItemCollection<QueryOutcome> items = sessionTable.query(new QuerySpec()
                 .withMaxPageSize(25)
                 .withKeyConditionExpression("#i = :i")
                 .withNameMap(ImmutableMap.of("#i", "id"))
-                .withValueMap(ImmutableMap.of(":i", id));
-        ItemCollection<QueryOutcome> items = sessionTable.query(querySpec);
+                .withValueMap(ImmutableMap.of(":i", id)));
         items.pages().forEach(page -> {
             TableWriteItems tableWriteItems = new TableWriteItems(SESSION_TABLE);
             page.forEach(item -> {

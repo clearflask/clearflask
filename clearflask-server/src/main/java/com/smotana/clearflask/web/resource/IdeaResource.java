@@ -17,13 +17,13 @@ import com.smotana.clearflask.api.model.IdeaSearchResponse;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
@@ -46,6 +46,8 @@ import java.util.Optional;
 public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdminApi {
 
     @Inject
+    private NotificationService notificationService;
+    @Inject
     private IdeaStore ideaStore;
 
     @RolesAllowed({Role.PROJECT_USER})
@@ -55,7 +57,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         UserSession session = getExtendedPrincipal().get().getUserSessionOpt().get();
         IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
                 projectId,
-                IdUtil.randomId(),
+                ideaStore.genIdeaId(ideaCreate.getTitle()),
                 session.getUserId(),
                 Instant.now(),
                 ideaCreate.getTitle(),
@@ -82,7 +84,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
         IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
                 projectId,
-                IdUtil.randomId(),
+                ideaStore.genIdeaId(ideaCreateAdmin.getTitle()),
                 ideaCreateAdmin.getAuthorUserId(),
                 Instant.now(),
                 ideaCreateAdmin.getTitle(),
@@ -177,7 +179,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
-        return ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin).getIdea().toIdea();
+        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin).getIdea();
+        if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
+            boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
+            boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
+            if (statusChanged || responseChanged) {
+                notificationService.onStatusOrResponseChanged(idea, statusChanged, responseChanged);
+            }
+        }
+        return idea.toIdea();
     }
 
     @RolesAllowed({Role.IDEA_OWNER})

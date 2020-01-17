@@ -56,10 +56,9 @@ components:
       - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
       - type: object
         properties:
-          created:
-            type: string
-            format: date-time
-        required:
+          suppressNotifications:
+            description: Suppresses notifications
+            type: boolean
     CommentUpdate:
       type: object
       properties:

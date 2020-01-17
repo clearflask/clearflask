@@ -44,7 +44,8 @@ public class UserStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticUserStore.module(),
-                ElasticUtil.module()
+                ElasticUtil.module(),
+                DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
@@ -61,7 +62,7 @@ public class UserStoreIT extends AbstractIT {
     @Test(timeout = 5_000L)
     public void testUser() throws Exception {
         User user = new User(
-                IdUtil.randomId(),
+                store.genUserId(),
                 IdUtil.randomId(),
                 "john",
                 "john.doe@example.com",
@@ -117,7 +118,7 @@ public class UserStoreIT extends AbstractIT {
         String projectId = IdUtil.randomId();
         User user1 = new User(
                 projectId,
-                IdUtil.randomId(),
+                store.genUserId(),
                 "john",
                 "john.doe@example.com",
                 "password",
@@ -129,7 +130,7 @@ public class UserStoreIT extends AbstractIT {
                 Instant.now());
         User user2 = new User(
                 projectId,
-                IdUtil.randomId(),
+                store.genUserId(),
                 "matt",
                 "matt@example.com",
                 "jilasjdklad",
@@ -141,7 +142,7 @@ public class UserStoreIT extends AbstractIT {
                 Instant.now().minus(1, ChronoUnit.DAYS));
         User user3 = new User(
                 projectId,
-                IdUtil.randomId(),
+                store.genUserId(),
                 "Bobby",
                 "bobby@example.com",
                 "fawferfva",
@@ -190,7 +191,7 @@ public class UserStoreIT extends AbstractIT {
     public void testUserSession() throws Exception {
         User user = new User(
                 IdUtil.randomId(),
-                "myUserId",
+                store.genUserId(),
                 "john",
                 "john.doe@example.com",
                 "password",

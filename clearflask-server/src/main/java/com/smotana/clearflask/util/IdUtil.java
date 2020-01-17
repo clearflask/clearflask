@@ -12,4 +12,8 @@ public class IdUtil {
     public static String randomId() {
         return UUID.randomUUID().toString().replace("-", "");
     }
+
+    public static String randomAscId() {
+        return UUIDGen.getTimeUUID().toString().replace("-", "");
+    }
 }

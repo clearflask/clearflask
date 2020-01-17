@@ -35,7 +35,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
-                IdUtil.randomId(),
+                store.genAccountId(),
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",
@@ -90,7 +90,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testSession() throws Exception {
         Account account = new Account(
-                IdUtil.randomId(),
+                store.genAccountId(),
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",

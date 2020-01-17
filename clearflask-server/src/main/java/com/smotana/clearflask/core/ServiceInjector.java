@@ -21,6 +21,9 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
+import com.smotana.clearflask.core.push.MultiPushProviderImpl;
+import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
@@ -31,9 +34,11 @@ import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoNotificationStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.util.BeanUtil;
+import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -116,10 +121,16 @@ public enum ServiceInjector {
                 install(DynamoAccountStore.module());
                 install(DynamoElasticUserStore.module());
                 install(DynamoElasticIdeaStore.module());
+                install(DynamoNotificationStore.module());
                 install(StaticPlanStore.module());
                 install(DynamoMapperImpl.module());
-
                 install(ElasticUtil.module());
+                install(DefaultServerSecret.module(Names.named("cursor")));
+
+                // Notification
+                install(NotificationServiceImpl.module());
+                install(MultiPushProviderImpl.module());
+                install(AmazonSimpleEmailServiceProvider.module());
 
                 // Security
                 install(TieredWebLimiter.module());

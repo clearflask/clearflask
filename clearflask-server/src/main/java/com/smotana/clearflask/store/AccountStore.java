@@ -1,6 +1,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -11,6 +12,10 @@ import java.time.Instant;
 import java.util.Optional;
 
 public interface AccountStore {
+
+    default String genAccountId() {
+        return IdUtil.randomId();
+    }
 
     Optional<Account> getAccount(String accountId);
 
@@ -31,6 +36,10 @@ public interface AccountStore {
     void updateAccountPassword(String accountId, String password, String sessionIdToLeave);
 
     void updateAccountEmail(String accountId, String previousEmail, String email);
+
+    default String genSessionId() {
+        return IdUtil.randomAscId();
+    }
 
     Session createSession(String accountId, Instant expiry);
 

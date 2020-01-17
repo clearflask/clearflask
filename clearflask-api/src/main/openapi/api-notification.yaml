@@ -6,10 +6,8 @@ components:
       - projectId
       - notificationId
       - userId
-      - type
       - created
-      - title
-      - url
+      - description
       properties:
         projectId:
           type: string
@@ -17,27 +15,14 @@ components:
           type: string
         userId:
           type: string
-        type:
-          type: string
-          enum:
-          - IdeaStatusChange
-          - CommentMention
-          - AdminResponse
-          - Other
         relatedIdeaId:
-          type: string
-        relatedUserId:
           type: string
         relatedCommentId:
           type: string
         created:
           type: string
           format: date-time
-        title:
-          type: string
         description:
-          type: string
-        url:
           type: string
 
 /project/{projectId}/notification:
@@ -47,11 +32,6 @@ components:
     parameters:
     - name: projectId
       in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: query
       required: true
       schema:
         type: string
@@ -85,11 +65,6 @@ components:
       required: true
       schema:
         type: string
-    - name: userId
-      in: query
-      required: true
-      schema:
-        type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -108,18 +83,6 @@ components:
       required: true
       schema:
         type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            title: notificationClear
-            required:
-            - userId
-            properties:
-              userId:
-                type: string
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'

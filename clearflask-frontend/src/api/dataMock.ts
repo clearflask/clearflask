@@ -62,9 +62,7 @@ class DataMock {
       this.projectId,
       userMe,
       'Welcome to your first notification',
-      'This is a long description of the notification in question',
-      '/',
-      );
+    );
     return Promise.resolve();
   }
 

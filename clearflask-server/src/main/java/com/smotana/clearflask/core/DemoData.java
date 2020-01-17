@@ -12,7 +12,6 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 
@@ -49,7 +48,7 @@ public class DemoData extends ManagedService {
                 .max(Comparator.comparing(p -> p.getPricing().getPrice()))
                 .get();
 
-        String accountId = IdUtil.randomId();
+        String accountId = accountStore.genAccountId();
         String password = passwordUtil.saltHashPassword(
                 PasswordUtil.Type.ACCOUNT,
                 // Salt taken from client side (src/common/util/auth.ts)

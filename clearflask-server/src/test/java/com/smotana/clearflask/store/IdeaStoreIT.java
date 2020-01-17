@@ -46,7 +46,8 @@ public class IdeaStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticIdeaStore.module(),
-                ElasticUtil.module()
+                ElasticUtil.module(),
+                DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
@@ -187,7 +188,7 @@ public class IdeaStoreIT extends AbstractIT {
     private IdeaModel getRandomIdea(String projectId) {
         return new IdeaModel(
                 projectId,
-                IdUtil.randomId(),
+                store.genIdeaId(" this !@#$%^&*()is my title 9032 "),
                 IdUtil.randomId(),
                 Instant.now(),
                 "title",

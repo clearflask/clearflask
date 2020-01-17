@@ -331,7 +331,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   notificationClear(request: Client.NotificationClearRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    if(!loggedInUser || request.notificationClear.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId
         || notification.notificationId !== request.notificationId);
@@ -339,7 +339,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    if(!loggedInUser || request.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId);
     return this.returnLater(undefined);
@@ -623,16 +623,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   // **** Private methods
 
-  addNotification(projectId:string, user:Admin.User, title:string, description:string, url:string) {
+  addNotification(projectId:string, user:Admin.User, description:string, relatedIdeaId?:string, relatedCommentId?:string) {
     this.getProject(projectId).notifications.push({
       projectId,
       notificationId: randomUuid(),
       userId: user.userId,
-      type: Client.NotificationTypeEnum.Other,
+      relatedIdeaId,
+      relatedCommentId,
       created: new Date(),
-      title,
       description,
-      url,
     });
   }
 
