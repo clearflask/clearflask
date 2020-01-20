@@ -209,7 +209,6 @@ class DataMock {
               count: Math.round(Math.random() * 3 + 1),
             }),
             parentCommentId: parentComment ? parentComment.commentId : undefined,
-            created: new Date(Math.random() * new Date().getTime()),
           },
         }))
         .then(comment => {

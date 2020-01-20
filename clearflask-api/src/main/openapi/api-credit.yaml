@@ -87,7 +87,6 @@ components:
       - Vote
       - Income
       - Adjustment
-      - Other
       description: >-
         Transaction type
         * Vote - Balance changes due to funding an idea

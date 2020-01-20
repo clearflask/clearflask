@@ -58,7 +58,6 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
                     onClick={() => this.clickNotification(notification)}
                   >
                     <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
-                    <TableCell key='title'><Typography>{notification.title}</Typography></TableCell>
                     <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
                   </TableRow>
                 ))}
@@ -107,12 +106,10 @@ export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
   if(userId && state.notifications.notificationSearch.status === undefined) {
     ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
-      userId: userId,
     });
   } else if(userId && state.notifications.notificationSearch.cursor) {
     getNextNotifications = () => ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
-      userId: userId,
       cursor: state.notifications.notificationSearch.cursor,
     });
   }

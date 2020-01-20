@@ -34,7 +34,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
   if(userId && state.notifications.notificationSearch.status === undefined) {
     ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
-      userId: userId,
     });
   }
   return {

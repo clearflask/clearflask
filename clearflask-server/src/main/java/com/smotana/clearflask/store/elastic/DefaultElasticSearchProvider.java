@@ -1,5 +1,8 @@
 package com.smotana.clearflask.store.elastic;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -11,10 +14,16 @@ import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 @Singleton
@@ -36,6 +45,20 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))));
         return restClientOpt.get();
+    }
+
+    @Override
+    protected void serviceStart() throws Exception {
+        checkState(restClientOpt.isPresent());
+        Futures.allAsList(Arrays.stream(ElasticScript.values())
+                .map(script -> {
+                    SettableFuture<AcknowledgedResponse> scriptsFuture = SettableFuture.create();
+                    restClientOpt.get().putScriptAsync(script.toPutStoredScriptRequest(),
+                            RequestOptions.DEFAULT, ActionListeners.fromFuture(scriptsFuture));
+                    return scriptsFuture;
+                })
+                .collect(ImmutableSet.toImmutableSet()))
+                .get(1, TimeUnit.MINUTES);
     }
 
     @Override

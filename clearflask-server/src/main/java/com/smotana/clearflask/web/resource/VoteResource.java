@@ -7,6 +7,7 @@ import com.smotana.clearflask.api.model.VoteGetOwnResponse;
 import com.smotana.clearflask.api.model.VoteSearchAdmin;
 import com.smotana.clearflask.api.model.VoteSearchResponse;
 import com.smotana.clearflask.api.model.VoteUpdate;
+import com.smotana.clearflask.api.model.VoteUpdateAdmin;
 import com.smotana.clearflask.api.model.VoteUpdateAdminResponse;
 import com.smotana.clearflask.api.model.VoteUpdateResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     }
 
     @Override
-    public VoteUpdateAdminResponse voteUpdateAdmin(String projectId, @Valid VoteUpdate voteUpdate) {
+    public VoteUpdateAdminResponse voteUpdateAdmin(String projectId, @Valid VoteUpdateAdmin voteUpdateAdmin) {
         return null;
     }
 

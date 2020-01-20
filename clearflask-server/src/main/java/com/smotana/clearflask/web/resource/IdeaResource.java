@@ -212,7 +212,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         do {
             searchResponse = ideaStore.searchIdeas(
                     projectId,
-                    ideaSearchAdmin.toBuilder().limit(DefaultDynamoDbProvider.DYNAMO_BATCH_MAX_SIZE).build(),
+                    ideaSearchAdmin.toBuilder().limit(DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE).build(),
                     true,
                     searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());

@@ -19,7 +19,6 @@ export default class PushNotificationListener extends Component<Props> {
       && loggedInUser.status === Status.FULFILLED && loggedInUser.user && loggedInUser.user.userId) {
       this.props.server.dispatch().notificationSearch({
         projectId: this.props.server.getProjectId(),
-        userId: loggedInUser.user.userId,
       });
     }
   }

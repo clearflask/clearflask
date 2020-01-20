@@ -19,7 +19,24 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
 
-// TODO
+/**
+ * TODO
+ *
+ * search()
+ * 4
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * -
+ * SearchAfter
+ */
 @Slf4j
 @Singleton
 @Path("/v1")
@@ -56,14 +73,6 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public CommentSearchResponse commentSearchAdmin(String projectId, CommentSearchAdmin search, String cursor) {
-        // TODO implement
-        return null;
-    }
-
-    @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
-    @Override
-    public Comment commentUpdateAdmin(String projectId, String ideaId, String commentId, CommentUpdate update) {
         // TODO implement
         return null;
     }

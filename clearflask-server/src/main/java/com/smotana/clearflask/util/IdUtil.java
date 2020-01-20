@@ -1,6 +1,7 @@
 package com.smotana.clearflask.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.RandomStringUtils;
 
 import java.util.UUID;
 
@@ -15,5 +16,12 @@ public class IdUtil {
 
     public static String randomAscId() {
         return UUIDGen.getTimeUUID().toString().replace("-", "");
+    }
+
+    public static String contentUnique(String content) {
+        return String.format("%1.3s-%s",
+                content.replaceAll("[^0-9a-z]+", "-"),
+                RandomStringUtils.randomAlphanumeric(3))
+                .toLowerCase();
     }
 }

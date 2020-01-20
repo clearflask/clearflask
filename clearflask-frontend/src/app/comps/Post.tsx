@@ -1036,7 +1036,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       projectId: state.projectId,
       voteUpdate: {
         ideaId: ownProps.idea!.ideaId,
-        voterUserId: state.users.loggedIn.user!.userId,
         ...voteUpdate,
       },
     }, {previousVote: vote || null}),

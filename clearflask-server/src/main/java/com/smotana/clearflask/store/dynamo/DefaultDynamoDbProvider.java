@@ -20,8 +20,9 @@ import java.util.Optional;
 @Singleton
 public class DefaultDynamoDbProvider extends ManagedService implements Provider<AmazonDynamoDB> {
 
-    public static final int DYNAMO_BATCH_MAX_SIZE = 25;
-    public static final String DYNAMO_BATCH_MAX_SIZE_STR = "25";
+    public static final int DYNAMO_READ_BATCH_MAX_SIZE = 100;
+    public static final int DYNAMO_WRITE_BATCH_MAX_SIZE = 25;
+    public static final String DYNAMO_WRITE_BATCH_MAX_SIZE_STR = "25";
 
     public interface Config {
         @DefaultValue("")

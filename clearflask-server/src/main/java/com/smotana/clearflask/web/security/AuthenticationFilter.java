@@ -1,6 +1,9 @@
 package com.smotana.clearflask.web.security;
 
+import com.google.common.base.Strings;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
@@ -28,6 +31,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private IdeaStore ideaStore;
+    @Inject
+    private PlanStore planStore;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -112,6 +119,32 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     private boolean hasRoleInternal(String role, Optional<AccountStore.Session> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
         log.trace("Checking if user has role {}", role);
+
+        Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
+        Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
+        Optional<String> pathParamAccountIdOpt = getPathParameter(requestContext, "accountId");
+
+        if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
+                && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
+            log.warn("Potential attack attempt, projectId {} in path param mismatches user {} session projectId {} for method {}",
+                    pathParamProjectIdOpt.get(), userSession.get().getUserId(), userSession.get().getProjectId(), requestContext.getMethod());
+            return false;
+        }
+
+        if (pathParamUserIdOpt.isPresent() && userSession.isPresent()
+                && !userSession.get().getUserId().equals(pathParamUserIdOpt.get())) {
+            log.warn("Potential attack attempt, userId {} in path param mismatches user session {} for method {}",
+                    pathParamUserIdOpt.get(), userSession.get().getUserId(), requestContext.getMethod());
+            return false;
+        }
+
+        if (pathParamAccountIdOpt.isPresent() && accountSession.isPresent()
+                && !accountSession.get().getAccountId().equals(pathParamAccountIdOpt.get())) {
+            log.warn("Potential attack attempt, accountId {} in path param mismatches account session {} for method {}",
+                    pathParamAccountIdOpt.get(), accountSession.get().getAccountId(), requestContext.getMethod());
+            return false;
+        }
+
         Optional<AccountStore.Account> accountOpt;
         switch (role) {
             case Role.ADMINISTRATOR:
@@ -119,36 +152,38 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.USER:
                 return userSession.isPresent();
             case Role.PROJECT_OWNER:
-                if (!accountSession.isPresent()) {
+                if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
                     return false;
                 }
-
-                List<String> projectIdParams = requestContext.getUriInfo().getPathParameters().get("project");
-                if (projectIdParams == null || projectIdParams.size() != 1) {
-                    return false;
-                }
-                String projectId = projectIdParams.get(0);
-
                 accountOpt = accountStore.getAccount(accountSession.get().getAccountId());
                 if (!accountOpt.isPresent()) {
                     return false;
                 }
-
-                return accountOpt.get().getProjectIds().stream().anyMatch(projectId::equals);
-            default:
+                return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
             case Role.PROJECT_USER:
+                return userSession.isPresent() && pathParamProjectIdOpt.isPresent();
             case Role.IDEA_OWNER:
+                Optional<String> pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
+                if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent()) {
+                    return false;
+                }
+                Optional<IdeaStore.IdeaModel> idea = ideaStore.getIdea(userSession.get().getProjectId(), pathParamIdeaIdOpt.get());
+                return idea.isPresent() && idea.get().getAuthorUserId().equals(userSession.get().getUserId());
             case Role.COMMENT_OWNER:
-            case Role.PROJECT_OWNER_PLAN_BASIC:
-//                accountOpt = accountStore.getAccount(authCookie.getAccountId());
-//                if (!accountOpt.isPresent()) {
-//                    return false;
-//                }
-//                break;
-            case Role.PROJECT_OWNER_PLAN_ANALYTIC:
-            case Role.PROJECT_OWNER_PLAN_ENTERPRISE:
                 // TODO
+//                Optional<String> pathParamCommentIdOpt = getPathParameter(requestContext, "commentId");
+                return false;
+            default:
+                log.warn("Unknown role {}", role);
                 return false;
         }
+    }
+
+    private Optional<String> getPathParameter(ContainerRequestContext requestContext, String name) {
+        List<String> params = requestContext.getUriInfo().getPathParameters().get(name);
+        if (params == null || params.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(Strings.emptyToNull(params.get(0)));
     }
 }

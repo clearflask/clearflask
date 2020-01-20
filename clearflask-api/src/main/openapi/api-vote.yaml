@@ -45,11 +45,8 @@ components:
       type: object
       required:
       - ideaId
-      - voterUserId
       properties:
         ideaId:
-          type: string
-        voterUserId:
           type: string
         fundAmount:
           type: number
@@ -70,6 +67,15 @@ components:
               type: array
               items:
                 type: string
+    VoteUpdateAdmin:
+      allOf:
+        - $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
+        - type: object
+          required:
+          - voterUserId
+          properties:
+            voterUserId:
+              type: string
 
 /project/{projectId}/idea/{ideaId}/vote:
   get:
@@ -216,7 +222,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
+            $ref: 'api-vote.yaml#/components/schemas/VoteUpdateAdmin'
     responses:
       '200':
         content:

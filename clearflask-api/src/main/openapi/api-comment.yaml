@@ -271,39 +271,6 @@ components:
             schema:
               $ref: 'api-comment.yaml#/components/schemas/Comment'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
-  patch:
-    operationId: commentUpdateAdmin
-    tags: [CommentAdmin]
-    parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: ideaId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: commentId
-      in: path
-      required: true
-      schema:
-        type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentUpdate'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
     operationId: commentDeleteAdmin
     tags: [CommentAdmin]

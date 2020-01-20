@@ -41,7 +41,6 @@ public class IdeaStoreIT extends AbstractIT {
     protected void configure() {
         super.configure();
 
-
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),

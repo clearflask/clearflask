@@ -22,7 +22,7 @@ import java.time.Instant;
 @Singleton
 public class GsonProvider implements Provider<Gson> {
     public static final Gson GSON = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
             .disableHtmlEscaping()
             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
             .registerTypeAdapter(Instant.class, new InstantTypeConverter())

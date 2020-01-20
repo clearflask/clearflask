@@ -166,7 +166,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ,this.DEFAULT_LIMIT, request.cursor));
   }
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.Comment> {
-    return this.commentUpdateAdmin(request);
+    const comment = this.getImmutable(
+      this.getProject(request.projectId).comments,
+      comment => comment.commentId === request.commentId);
+    comment.content = request.commentUpdate.content;
+    comment.edited = new Date();
+    return this.returnLater(comment);
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -323,8 +328,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     return this.voteUpdateAdmin({
       ...request,
-      voteUpdate: {
+      voteUpdateAdmin: {
         ...(request.voteUpdate),
+        vote: request.voteUpdate.vote as string as Admin.VoteUpdateAdminVoteEnum ,
         voterUserId: loggedInUser.userId,
       }
     });
@@ -346,7 +352,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    if(!loggedInUser || request.userId !== loggedInUser.userId) return this.throwLater(403, 'Not logged in');
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     const notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId === loggedInUser.userId);
     return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
@@ -375,14 +381,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchResponse> {
     throw new Error("Method not implemented.");
-  }
-  commentUpdateAdmin(request: Admin.CommentUpdateAdminRequest): Promise<Admin.Comment> {
-    const comment = this.getImmutable(
-      this.getProject(request.projectId).comments,
-      comment => comment.commentId === request.commentId);
-    comment.content = request.commentUpdate.content;
-    comment.edited = new Date();
-    return this.returnLater(comment);
   }
   transactionCreateAdmin(request: Admin.TransactionCreateAdminRequest): Promise<Admin.Transaction> {
     var balance = this.getProject(request.projectId).balances[request.userId] || 0;
@@ -513,38 +511,38 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.VoteUpdateAdminResponse> {
     const idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
-      idea => idea.ideaId === request.voteUpdate.ideaId);
+      idea => idea.ideaId === request.voteUpdateAdmin.ideaId);
     const vote = this.getImmutable(
       this.getProject(request.projectId).votes,
-      vote => vote.voterUserId === request.voteUpdate.voterUserId && vote.ideaId === request.voteUpdate.ideaId,
-      () => ({ ideaId: idea.ideaId, voterUserId: request.voteUpdate.voterUserId }));
+      vote => vote.voterUserId === request.voteUpdateAdmin.voterUserId && vote.ideaId === request.voteUpdateAdmin.ideaId,
+      () => ({ ideaId: idea.ideaId, voterUserId: request.voteUpdateAdmin.voterUserId }));
     var balance:number|undefined;
     var transaction:Admin.Transaction|undefined;
-    if(request.voteUpdate.fundAmount !== undefined){
-      if(request.voteUpdate.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
-      const fundDiff = request.voteUpdate.fundAmount - (vote.fundAmount || 0);
-      balance = this.getProject(request.projectId).balances[request.voteUpdate.voterUserId] || 0;
+    if(request.voteUpdateAdmin.fundAmount !== undefined){
+      if(request.voteUpdateAdmin.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
+      const fundDiff = request.voteUpdateAdmin.fundAmount - (vote.fundAmount || 0);
+      balance = this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] || 0;
       balance -= fundDiff;
       if(balance < 0) return this.throwLater(403, 'Insufficient funds');
-      const fundersCountDiff = (request.voteUpdate.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
+      const fundersCountDiff = (request.voteUpdateAdmin.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
 
       transaction = {
-        userId: request.voteUpdate.voterUserId,
+        userId: request.voteUpdateAdmin.voterUserId,
         transactionId: randomUuid(),
         created: new Date(),
         amount: fundDiff,
         balance: balance,
         transactionType: Admin.TransactionType.Vote,
-        targetId: request.voteUpdate.ideaId,
+        targetId: request.voteUpdateAdmin.ideaId,
         summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0,47) + '...' : idea.title}"`
       };
       this.getProject(request.projectId).transactions.push(transaction);
-      vote.fundAmount = request.voteUpdate.fundAmount;
-      this.getProject(request.projectId).balances[request.voteUpdate.voterUserId] = balance;
+      vote.fundAmount = request.voteUpdateAdmin.fundAmount;
+      this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] = balance;
       idea.funded = (idea.funded || 0) + fundDiff;
       if(fundersCountDiff !== 0) idea.fundersCount = (idea.fundersCount || 0) + fundersCountDiff;
     }
-    if(request.voteUpdate.vote) {
+    if(request.voteUpdateAdmin.vote) {
       var votePrevValue:number = 0;
       switch(vote.vote) {
         case Admin.VoteVoteEnum.Upvote:
@@ -555,16 +553,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           break;
       }
       var voteValue:number = 0;
-      switch(request.voteUpdate.vote) {
-        case Admin.VoteUpdateVoteEnum.Upvote:
+      switch(request.voteUpdateAdmin.vote) {
+        case Admin.VoteUpdateAdminVoteEnum.Upvote:
           voteValue = 1;
           vote.vote = Admin.VoteVoteEnum.Upvote;
           break;
-        case Admin.VoteUpdateVoteEnum.Downvote:
+        case Admin.VoteUpdateAdminVoteEnum.Downvote:
           voteValue = -1;
           vote.vote = Admin.VoteVoteEnum.Downvote;
           break;
-        case Admin.VoteUpdateVoteEnum.None:
+        case Admin.VoteUpdateAdminVoteEnum.None:
           voteValue = 0;
           vote.vote = undefined;
           break;
@@ -574,12 +572,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       const voteValueDiff = voteValue - votePrevValue;
       if(voteValueDiff !== 0) idea.voteValue = (idea.voteValue || 0) + voteValueDiff;
     }
-    if(request.voteUpdate.expressions) {
+    if(request.voteUpdateAdmin.expressions) {
       const expressionsSet = new Set<string>(vote.expressions || []);
       idea.expressionsValue = idea.expressionsValue || 0;
       idea.expressions = idea.expressions || [];
       const expressing:Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
-      request.voteUpdate.expressions.add && request.voteUpdate.expressions.add.forEach(expression => {
+      request.voteUpdateAdmin.expressions.add && request.voteUpdateAdmin.expressions.add.forEach(expression => {
         if(expressionsSet.has(expression)) return;
         expressionsSet.add(expression);
         if(expressing && expressing.limitEmojiSet) {
@@ -594,7 +592,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           ideaExpression.count += 1;
         }
       });
-      request.voteUpdate.expressions.remove && request.voteUpdate.expressions.remove.forEach(expression => {
+      request.voteUpdateAdmin.expressions.remove && request.voteUpdateAdmin.expressions.remove.forEach(expression => {
         if(!expressionsSet.has(expression)) return;
         expressionsSet.delete(expression);
         if(expressing && expressing.limitEmojiSet) {

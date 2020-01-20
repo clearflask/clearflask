@@ -416,10 +416,31 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture(idea, indexingFuture);
+            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
         }
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId) {
+        IdeaModel idea = dynamoMapper.fromItem(ideaTable.updateItem(new UpdateItemSpec()
+                .withPrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId), IdeaModel.class))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .addAttributeUpdate(new AttributeUpdate("commentCount")
+                        .addNumeric(1))).getItem(), IdeaModel.class);
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "commentCount", idea.getCommentCount()
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
     }
 
     @Override

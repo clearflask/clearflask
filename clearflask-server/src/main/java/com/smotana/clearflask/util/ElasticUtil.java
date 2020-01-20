@@ -38,7 +38,7 @@ public class ElasticUtil {
         @DefaultValue("100")
         int pageSizeMax();
 
-        @DefaultValue(DefaultDynamoDbProvider.DYNAMO_BATCH_MAX_SIZE_STR)
+        @DefaultValue(DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR)
         int pageSizeDefault();
 
         /** DynamoDB max batch size is 25 */
