@@ -116,10 +116,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "type", "keyword"))
                         .put("created", ImmutableMap.of(
                                 "type", "date",
-                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
+                                "format", "epoch_second"))
                         .put("lastActivity", ImmutableMap.of(
                                 "type", "date",
-                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
+                                "format", "epoch_second"))
                         .put("title", ImmutableMap.of(
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
@@ -170,8 +170,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .id(idea.getIdeaId())
                         .source(gson.toJson(ImmutableMap.builder()
                                 .put("authorUserId", idea.getAuthorUserId())
-                                .put("created", idea.getCreated())
-                                .put("lastActivity", idea.getCreated())
+                                .put("created", idea.getCreated().getEpochSecond())
+                                .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
                                 .put("description", idea.getDescription())
                                 .put("response", idea.getResponse())
@@ -298,10 +298,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (ideaSearchAdmin.getFilterCreatedStart() != null || ideaSearchAdmin.getFilterCreatedEnd() != null) {
             RangeQueryBuilder createdRangeQuery = QueryBuilders.rangeQuery("created");
             if (ideaSearchAdmin.getFilterCreatedStart() != null) {
-                createdRangeQuery.gte(ideaSearchAdmin.getFilterCreatedStart());
+                createdRangeQuery.gte(ideaSearchAdmin.getFilterCreatedStart().getEpochSecond());
             }
             if (ideaSearchAdmin.getFilterCreatedEnd() != null) {
-                createdRangeQuery.lte(ideaSearchAdmin.getFilterCreatedEnd());
+                createdRangeQuery.lte(ideaSearchAdmin.getFilterCreatedEnd().getEpochSecond());
             }
             query.filter(createdRangeQuery);
         }
@@ -310,10 +310,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             // TODO Decide when last activity will be updated, don't forget to update it
             RangeQueryBuilder lastActivityRangeQuery = QueryBuilders.rangeQuery("lastActivity");
             if (ideaSearchAdmin.getFilterLastActivityStart() != null) {
-                lastActivityRangeQuery.gte(ideaSearchAdmin.getFilterLastActivityStart());
+                lastActivityRangeQuery.gte(ideaSearchAdmin.getFilterLastActivityStart().getEpochSecond());
             }
             if (ideaSearchAdmin.getFilterLastActivityEnd() != null) {
-                lastActivityRangeQuery.lte(ideaSearchAdmin.getFilterLastActivityEnd());
+                lastActivityRangeQuery.lte(ideaSearchAdmin.getFilterLastActivityEnd().getEpochSecond());
             }
             query.filter(lastActivityRangeQuery);
         }

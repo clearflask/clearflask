@@ -161,10 +161,10 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 "type", "keyword"))
                         .put("created", ImmutableMap.of(
                                 "type", "date",
-                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
+                                "format", "epoch_second"))
                         .put("edited", ImmutableMap.of(
                                 "type", "date",
-                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
+                                "format", "epoch_second"))
                         .put("content", ImmutableMap.of(
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
@@ -230,8 +230,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("level", comment.getLevel())
                                 .put("childCommentCount", comment.getChildCommentCount())
                                 .put("authorUserId", orNull(comment.getAuthorUserId()))
-                                .put("created", comment.getCreated())
-                                .put("edited", orNull(comment.getEdited()))
+                                .put("created", comment.getCreated().getEpochSecond())
+                                .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
                                 .put("content", orNull(comment.getContent()))
                                 .put("upvotes", comment.getUpvotes())
                                 .put("downvotes", comment.getDownvotes())
