@@ -55,7 +55,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserSession session = getExtendedPrincipal().get().getUserSessionOpt().get();
-        IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
+        IdeaModel ideaModel = new IdeaModel(
                 projectId,
                 ideaStore.genIdeaId(ideaCreate.getTitle()),
                 session.getUserId(),
@@ -73,8 +73,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 0L,
                 BigDecimal.ZERO,
-                ImmutableMap.of()))
-                .getIdea();
+                ImmutableMap.of());
+        ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();
     }
 
@@ -82,7 +82,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
-        IdeaModel ideaModel = ideaStore.createIdea(new IdeaModel(
+        IdeaModel ideaModel = new IdeaModel(
                 projectId,
                 ideaStore.genIdeaId(ideaCreateAdmin.getTitle()),
                 ideaCreateAdmin.getAuthorUserId(),
@@ -100,8 +100,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 0L,
                 BigDecimal.ZERO,
-                ImmutableMap.of()))
-                .getIdea();
+                ImmutableMap.of());
+        ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();
     }
 
@@ -212,7 +212,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         do {
             searchResponse = ideaStore.searchIdeas(
                     projectId,
-                    ideaSearchAdmin.toBuilder().limit(DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE).build(),
+                    // TODO handle the limit somehow better here
+                    ideaSearchAdmin.toBuilder().limit(Math.min(
+                            ideaSearchAdmin.getLimit(),
+                            DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE)).build(),
                     true,
                     searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());

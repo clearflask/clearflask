@@ -26,6 +26,7 @@ public class GsonProvider implements Provider<Gson> {
             .disableHtmlEscaping()
             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+            .registerTypeAdapter(ExplicitNull.class, ExplicitNull.get())
             .create();
 
     @Override

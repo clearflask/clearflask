@@ -11,7 +11,7 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
     perks: [
       {desc: 'Unlimited users', terms: 'description'},
       {desc: 'Simple user voting', terms: 'description'},
-      {desc: '1 hour credit', terms: 'description'},
+      {desc: '1 hour feature credit', terms: 'description'},
     ],
   },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
@@ -19,7 +19,7 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
     perks: [
       {desc: 'Unlimited users', terms: 'description'},
       {desc: 'Simple user voting', terms: 'description'},
-      {desc: '15 minute credit', terms: 'description'},
+      {desc: '15 minute feature credit', terms: 'description'},
     ],
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
@@ -28,7 +28,7 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
       {desc: 'Content analytics and search', terms: 'description'},
       {desc: 'Crowd-funding', terms: 'description'},
       {desc: 'Unlimited projects, users', terms: 'description'},
-      {desc: '10 hour credit', terms: 'description'},
+      {desc: '10 hour feature credit', terms: 'description'},
     ],
   },
   '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A': {
@@ -37,7 +37,7 @@ const AvailablePlans:{[planid:string]:Admin.Plan} = {
       {desc: 'Content analytics and search', terms: 'description'},
       {desc: 'Crowd-funding', terms: 'description'},
       {desc: 'Unlimited projects, users', terms: 'description'},
-      {desc: '1 hour credit', terms: 'description'},
+      {desc: '1 hour feature credit', terms: 'description'},
     ],
   },
   '597099E1-83B3-40AC-8AC3-52E9BF59A562': {

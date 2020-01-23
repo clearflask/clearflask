@@ -27,7 +27,6 @@ import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
-import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +47,7 @@ import java.util.Optional;
 @Path("/v1")
 public class UserResource extends AbstractResource implements UserApi, UserAdminApi {
 
-    private interface Config {
+    public interface Config {
         @DefaultValue("P300D")
         Duration sessionExpiry();
 
@@ -79,7 +78,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
         }
-        UserStore.User user = new UserStore.User(
+        UserStore.UserModel user = new UserStore.UserModel(
                 projectId,
                 userId,
                 userCreate.getName(),
@@ -104,7 +103,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
         }
-        UserStore.User user = new UserStore.User(
+        UserStore.UserModel user = new UserStore.UserModel(
                 projectId,
                 userId,
                 userCreateAdmin.getName(),
@@ -154,7 +153,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public User userGet(String projectId, String userId) {
-        UserStore.User user = userStore.getUser(projectId, userId).get();
+        UserStore.UserModel user = userStore.getUser(projectId, userId).get();
         return new User(user.getUserId(), user.getName());
     }
 
@@ -162,13 +161,12 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
-        Optional<UserStore.User> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
+        Optional<UserStore.UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
         if (!userOpt.isPresent()) {
             log.info("User login with non-existent email {}", userLogin.getEmail());
             throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
-        UserStore.User user = userOpt.get();
-
+        UserStore.UserModel user = userOpt.get();
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
         if (Strings.isNullOrEmpty(user.getPassword())) {
@@ -182,7 +180,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserStore.UserSession session = userStore.createSession(
                 projectId,
                 user.getUserId(),
-                Instant.now().plus(config.sessionExpiry()));
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         setAuthCookie(projectId, session);
 
         return user.toUserMeWithBalance();
@@ -200,10 +198,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserStore.UserSession session = extendedPrincipal.get().getUserSessionOpt().get();
 
         log.debug("Logout session for user {}", session.getUserId());
-        userStore.revokeSession(
-                projectId,
-                session.getUserId(),
-                session.getSessionId());
+        userStore.revokeSession(session);
 
         unsetAuthCookie();
     }
@@ -218,7 +213,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_USER})
-    @Limit(requiredPermits = 1)
+    @Limit(requiredPermits = 1, challengeAfter = 2)
     @Override
     public UserMeWithBalance userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
@@ -253,14 +248,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(Strings.emptyToNull(cursor)),
                 config.searchPageSize());
 
-        ImmutableMap<String, UserStore.User> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
+        ImmutableMap<String, UserStore.UserModel> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
 
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
                 searchUsersResponse.getUserIds().stream()
                         .map(usersById::get)
                         .filter(Objects::nonNull)
-                        .map(UserStore.User::toUserAdmin)
+                        .map(UserStore.UserModel::toUserAdmin)
                         .collect(ImmutableList.toImmutableList()));
     }
 
@@ -268,14 +263,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.trace("Setting user auth cookie for user id {}", session.getUserId());
         RealCookie.builder()
                 .name(USER_AUTH_COOKIE_NAME)
-                .value(new UserAuthCookie(
-                        session.getSessionId(),
-                        projectId,
-                        session.getUserId()))
+                .value(session.getSessionId())
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)
-                .expiry(session.getExpiry())
+                .expiry(session.getTtlInEpochSec())
                 .sameSite(RealCookie.SameSite.STRICT)
                 .build()
                 .addToResponse(response);
@@ -289,7 +281,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)
-                .expiry(Instant.EPOCH)
+                .expiry(0L)
                 .sameSite(RealCookie.SameSite.STRICT)
                 .build()
                 .addToResponse(response);

@@ -47,7 +47,7 @@ public enum ElasticScript {
 
     public PutStoredScriptRequest toPutStoredScriptRequest() {
         PutStoredScriptRequest request = new PutStoredScriptRequest();
-        request.id("id");
+        request.id(getScriptName());
         request.content(new BytesArray(GsonProvider.GSON.toJson(ImmutableMap.of(
                 "script", ImmutableMap.of(
                         "lang", lang,
@@ -59,7 +59,7 @@ public enum ElasticScript {
     public Script toScript(Map<String, Object> params) {
         return new Script(
                 ScriptType.STORED,
-                Script.DEFAULT_SCRIPT_LANG,
+                null,
                 getScriptName(),
                 null,
                 params);

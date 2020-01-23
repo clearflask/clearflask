@@ -15,7 +15,7 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.AccountStore.Session;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ModelUtil;
@@ -75,15 +75,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public ConfigGetAllResult configGetAllAdmin() {
-        Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
-        Account account = accountStore.getAccount(session.getAccountId()).orElseThrow(() -> {
-            log.error("Account not found for session, account {}", session.getAccountId());
+        AccountSession accountSession = getExtendedPrincipal().get().getAccountSessionOpt().get();
+        Account account = accountStore.getAccount(accountSession.getEmail()).orElseThrow(() -> {
+            log.error("Account not found for session with email {}", accountSession.getEmail());
             return new InternalServerErrorException();
         });
         ImmutableSet<VersionedConfigAdmin> configAdmins = projectStore.getConfigAdmins(account.getProjectIds());
         if (account.getProjectIds().size() != configAdmins.size()) {
-            log.error("ProjectIds on account not found in project table, account {} missing projects {}",
-                    account.getAccountId(), Sets.difference(account.getProjectIds(), configAdmins.stream()
+            log.error("ProjectIds on account not found in project table, email {} missing projects {}",
+                    account.getEmail(), Sets.difference(account.getProjectIds(), configAdmins.stream()
                             .map(c -> c.getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
         return new ConfigGetAllResult(configAdmins.asList());

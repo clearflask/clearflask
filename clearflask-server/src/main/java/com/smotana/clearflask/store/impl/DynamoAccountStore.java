@@ -1,71 +1,44 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Expected;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
-import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+
 
 @Slf4j
 @Singleton
-public class DynamoAccountStore extends ManagedService implements AccountStore {
-
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    public static class EmailAccount {
-
-        @NonNull
-        private final String email;
-
-        @NonNull
-        private final String accountId;
-    }
-
-    private static final String ACCOUNT_TABLE = "account";
-    private static final String EMAIL_ACCOUNT_TABLE = "emailToAccount";
-    private static final String SESSION_TABLE = "accountSession";
+public class DynamoAccountStore implements AccountStore {
 
     @Inject
     private AmazonDynamoDB dynamo;
@@ -74,243 +47,216 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
     @Inject
     private DynamoMapper dynamoMapper;
 
-    private Table accountTable;
-    private Table emailAccountTable;
-    private Table sessionTable;
+    private TableSchema<Account> accountSchema;
+    private TableSchema<AccountSession> sessionByIdSchema;
+    private IndexSchema<AccountSession> sessionByEmailSchema;
 
-    @Override
-    protected void serviceStart() throws Exception {
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(ACCOUNT_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName("accountId").withKeyType(KeyType.HASH)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName("accountId").withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            log.debug("Table {} created", ACCOUNT_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", ACCOUNT_TABLE);
-        }
-        accountTable = dynamoDoc.getTable(ACCOUNT_TABLE);
-
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(EMAIL_ACCOUNT_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName("email").withKeyType(KeyType.HASH)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName("email").withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            log.debug("Table {} created", EMAIL_ACCOUNT_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", EMAIL_ACCOUNT_TABLE);
-        }
-        emailAccountTable = dynamoDoc.getTable(EMAIL_ACCOUNT_TABLE);
-
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(SESSION_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName("accountId").withKeyType(KeyType.HASH),
-                            new KeySchemaElement().withAttributeName("sessionId").withKeyType(KeyType.RANGE)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName("accountId").withAttributeType(ScalarAttributeType.S),
-                            new AttributeDefinition().withAttributeName("sessionId").withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            dynamo.updateTimeToLive(new UpdateTimeToLiveRequest()
-                    .withTableName(SESSION_TABLE)
-                    .withTimeToLiveSpecification(new TimeToLiveSpecification()
-                            .withEnabled(true)
-                            .withAttributeName("expiry")));
-            log.debug("Table {} created", SESSION_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", SESSION_TABLE);
-        }
-        sessionTable = dynamoDoc.getTable(SESSION_TABLE);
-    }
-
-    @Override
-    public Optional<Account> getAccount(String accountId) {
-        return Optional.ofNullable(dynamoMapper.fromItem(
-                accountTable.getItem("accountId", accountId),
-                Account.class));
-    }
-
-    @Override
-    public Optional<Account> getAccountByEmail(String email) {
-        return Optional.ofNullable(dynamoMapper.fromItem(
-                emailAccountTable.getItem("email", email),
-                EmailAccount.class))
-                .map(session -> getAccount(session.getAccountId())
-                        .orElseThrow(() -> new IllegalStateException("EmailAccount entry exists but Account doesn't for email " + email)));
+    @Inject
+    private void setup() {
+        accountSchema = dynamoMapper.parseTableSchema(Account.class);
+        sessionByIdSchema = dynamoMapper.parseTableSchema(AccountSession.class);
+        sessionByEmailSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
     }
 
     @Override
     public void createAccount(Account account) {
-        dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
-                new TransactWriteItem().withPut(new Put()
-                        .withTableName(EMAIL_ACCOUNT_TABLE)
-                        .withItem(dynamoMapper.toAttrMap(EmailAccount.builder()
-                                .email(account.getEmail())
-                                .accountId(account.getAccountId())
-                                .build()))
-                        .withConditionExpression("attribute_not_exists(email)")),
-                new TransactWriteItem().withPut(new Put()
-                        .withTableName(ACCOUNT_TABLE)
-                        .withItem(dynamoMapper.toAttrMap(account))
-                        .withConditionExpression("attribute_not_exists(accountId)"))));
+        accountSchema.table().putItem(new PutItemSpec()
+                .withItem(accountSchema.toItem(account))
+                .withConditionExpression("attribute_not_exists(#partitionKey)")
+                .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
     }
 
     @Override
-    public void addAccountPlanId(String accountId, String planId) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("planIds").addElements(planId));
+    public Optional<Account> getAccount(String email) {
+        return Optional.ofNullable(accountSchema
+                .fromItem(accountSchema
+                        .table().getItem(accountSchema
+                                .primaryKey(Map.of(
+                                        "email", email)))));
     }
 
     @Override
-    public void removeAccountPlanId(String accountId, String planId) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("planIds").removeElements(planId));
-    }
-
-    @Override
-    public void addAccountProjectId(String accountId, String projectId) {
-        accountTable.updateItem(new UpdateItemSpec()
-                .withPrimaryKey("accountId", accountId)
-                .withUpdateExpression("ADD #projectIds :projectIds")
-                .withNameMap(new NameMap().with("#projectIds", "projectIds"))
-                .withValueMap(new ValueMap().withStringSet(":projectIds", projectId)));
-    }
-
-    @Override
-    public void removeAccountProjectId(String accountId, String projectId) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("projectIds").removeElements(projectId));
-    }
-
-    @Override
-    public void updateAccountName(String accountId, String name) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("name").put(name));
-    }
-
-    @Override
-    public void updateAccountPassword(String accountId, String password, String sessionIdToLeave) {
-        accountTable.updateItem("accountId", accountId,
-                ImmutableList.of(new Expected("accountId").exists()),
-                new AttributeUpdate("password").put(password));
-        revokeSessions(accountId, sessionIdToLeave);
-    }
-
-    @Override
-    public void updateAccountEmail(String accountId, String previousEmail, String email) {
-        dynamo.transactWriteItems(new TransactWriteItemsRequest()
-                .withTransactItems(
-                        new TransactWriteItem().withUpdate(new Update()
-                                .withTableName(ACCOUNT_TABLE)
-                                .withKey(ImmutableMap.of("accountId", new AttributeValue(accountId)))
-                                .withUpdateExpression("SET #email = :emailNew")
-                                .withConditionExpression("#email = :emailOld")
-                                .withExpressionAttributeNames(ImmutableMap.of("#email", "email"))
-                                .withExpressionAttributeValues(ImmutableMap.of(
-                                        ":emailOld", new AttributeValue(previousEmail),
-                                        ":emailNew", new AttributeValue(email)))),
-                        new TransactWriteItem().withDelete(new Delete()
-                                .withTableName(EMAIL_ACCOUNT_TABLE)
-                                .addKeyEntry("email", new AttributeValue(previousEmail))
-                                .withConditionExpression("#email = :emailOld")
-                                .withExpressionAttributeNames(ImmutableMap.of("#email", "email"))
-                                .withExpressionAttributeValues(ImmutableMap.of(":emailOld", new AttributeValue(previousEmail)))),
-                        new TransactWriteItem().withPut(new Put()
-                                .withTableName(EMAIL_ACCOUNT_TABLE)
-                                .withItem(dynamoMapper.toAttrMap(EmailAccount.builder()
-                                        .email(email)
-                                        .accountId(accountId)
-                                        .build())))
-                ));
-        revokeSessions(accountId);
-    }
-
-    // TODO
-    @Override
-    public Session createSession(String accountId, Instant expiry) {
-        Session session = Session.builder()
-                .sessionId(genSessionId())
-                .accountId(accountId)
-                .expiry(expiry)
-                .build();
-        sessionTable.putItem(dynamoMapper.toItem(session));
-        return session;
-    }
-
-    @Override
-    public Optional<Session> getSession(String accountId, String sessionId) {
-        Optional<Session> session = Optional.ofNullable(dynamoMapper.fromItem(
-                sessionTable.getItem(
-                        "accountId", accountId,
-                        "sessionId", sessionId),
-                Session.class));
-
-        if (session.isPresent() && session.get().getExpiry().isBefore(Instant.now())) {
-            log.trace("DynamoDB has an expired account session with expiry {}", session.get().getExpiry());
-            session = Optional.empty();
-        }
-
-        return session;
-    }
-
-    @Override
-    public Session refreshSession(String accountId, String sessionId, Instant expiry) {
-        return dynamoMapper.fromItem(sessionTable.updateItem(new UpdateItemSpec()
-                .withPrimaryKey(
-                        "accountId", accountId,
-                        "sessionId", sessionId)
-                .withAttributeUpdate(new AttributeUpdate("expiry")
-                        .put(dynamoMapper.toDynamoValue(expiry)))
+    public Account addAccountPlanId(String email, String planId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("ADD #planIds :planId")
+                .withNameMap(new NameMap()
+                        .with("#planIds", "planIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":planId", planId))
                 .withReturnValues(ReturnValue.ALL_NEW))
-                .getItem(), Session.class);
+                .getItem());
     }
 
     @Override
-    public void revokeSession(String accountId, String sessionId) {
-        sessionTable.deleteItem("accountId", accountId, "sessionId", sessionId);
+    public Account removeAccountPlanId(String email, String planId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("DELETE #planIds :planId")
+                .withNameMap(new NameMap()
+                        .with("#planIds", "planIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":planId", planId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
     }
 
     @Override
-    public void revokeSessions(String accountId) {
-        revokeSessions(accountId, Optional.empty());
+    public Account addAccountProjectId(String email, String projectId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("ADD #projectIds :projectId")
+                .withNameMap(new NameMap()
+                        .with("#projectIds", "projectIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
     }
 
     @Override
-    public void revokeSessions(String accountId, String sessionToLeave) {
-        revokeSessions(accountId, Optional.of(sessionToLeave));
+    public Account removeAccountProjectId(String email, String projectId) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("DELETE #projectIds :projectId")
+                .withNameMap(new NameMap()
+                        .with("#projectIds", "projectIds")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
     }
 
-    private void revokeSessions(String accountId, Optional<String> sessionToLeaveOpt) {
-        ItemCollection<QueryOutcome> items = sessionTable.query(new QuerySpec()
-                .withMaxPageSize(25)
-                .withKeyConditionExpression("#i = :i")
-                .withNameMap(ImmutableMap.of("#i", "accountId"))
-                .withValueMap(ImmutableMap.of(":i", accountId)));
-        items.pages().forEach(page -> {
-            TableWriteItems tableWriteItems = new TableWriteItems(SESSION_TABLE);
-            page.forEach(item -> {
-                Session session = dynamoMapper.fromItem(item, Session.class);
-                if (sessionToLeaveOpt.isPresent() && sessionToLeaveOpt.get().equals(session.getSessionId())) {
-                    return;
-                }
-                tableWriteItems.addHashAndRangePrimaryKeyToDelete("accountId", accountId, "sessionId", session.getSessionId());
-            });
-            if (tableWriteItems.getPrimaryKeysToDelete() == null || tableWriteItems.getPrimaryKeysToDelete().size() <= 0) {
-                return;
-            }
-            dynamoDoc.batchWriteItem(tableWriteItems);
-        });
+    @Override
+    public Account updateAccountName(String email, String name) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("SET #name = :name")
+                .withNameMap(new NameMap()
+                        .with("#name", "name")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withString(":name", name))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
+    public Account updateAccountPassword(String email, String password, String sessionIdToLeave) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("SET #password = :password")
+                .withNameMap(new NameMap()
+                        .with("#password", "password")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withString(":password", password))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        revokeSessions(email, sessionIdToLeave);
+        return account;
+    }
+
+    @Override
+    public Account updateAccountEmail(String emailCurrent, String emailNew) {
+        Account accountNew = getAccount(emailCurrent).get().toBuilder().email(emailNew).build();
+        // TODO race condition here. If account gets updated here, it won't be transferred over
+        dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
+                new TransactWriteItem().withDelete(new Delete()
+                        .withTableName(accountSchema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(accountSchema.primaryKey(Map.of("email", emailCurrent))))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", accountSchema.partitionKeyName()))),
+                new TransactWriteItem().withPut(new Put()
+                        .withTableName(accountSchema.tableName())
+                        .withItem(accountSchema.toAttrMap(accountNew)))));
+        revokeSessions(emailCurrent);
+        return accountNew;
+    }
+
+    @Override
+    public void deleteAccount(String email) {
+        accountSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email))));
+        revokeSessions(email);
+    }
+
+    @Override
+    public AccountSession createSession(String email, long ttlInEpochSec) {
+        AccountSession accountSession = new AccountSession(genSessionId(), email, ttlInEpochSec);
+        sessionByIdSchema.table().putItem(new PutItemSpec()
+                .withItem(sessionByIdSchema.toItem(accountSession)));
+        return accountSession;
+    }
+
+    @Override
+    public Optional<AccountSession> getSession(String sessionId) {
+        return Optional.ofNullable(sessionByIdSchema
+                .fromItem(sessionByIdSchema
+                        .table().getItem(sessionByIdSchema
+                                .primaryKey(Map.of("sessionId", sessionId)))))
+                .filter(session -> {
+                    if (session.getTtlInEpochSec() < Instant.now().getEpochSecond()) {
+                        log.debug("DynamoDB has an expired account session with expiry {}", session.getTtlInEpochSec());
+                        return false;
+                    }
+                    return true;
+                });
+    }
+
+    @Override
+    public AccountSession refreshSession(AccountSession accountSession, long ttlInEpochSec) {
+        return sessionByIdSchema.fromItem(sessionByIdSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(sessionByIdSchema.primaryKey(accountSession))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("SET #ttlInEpochSec = :ttlInEpochSec")
+                .withNameMap(new NameMap()
+                        .with("#ttlInEpochSec", "ttlInEpochSec")
+                        .with("#partitionKey", sessionByIdSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withLong(":ttlInEpochSec", ttlInEpochSec))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
+    public void revokeSession(AccountSession accountSession) {
+        sessionByIdSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(sessionByIdSchema.primaryKey(accountSession)));
+    }
+
+    @Override
+    public void revokeSessions(String email) {
+        revokeSessions(email, Optional.empty());
+    }
+
+    @Override
+    public void revokeSessions(String email, String sessionToLeave) {
+        revokeSessions(email, Optional.of(sessionToLeave));
+    }
+
+    private void revokeSessions(String email, Optional<String> sessionToLeaveOpt) {
+        Iterables.partition(StreamSupport.stream(sessionByEmailSchema.index().query(new QuerySpec()
+                .withHashKey(sessionByEmailSchema.partitionKey(Map.of(
+                        "email", email))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(sessionByEmailSchema::fromItem)
+                .map(AccountSession::getSessionId)
+                .filter(sessionId -> !sessionToLeaveOpt.isPresent() || !sessionToLeaveOpt.get().equals(sessionId))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(sessionIdsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(sessionByIdSchema.tableName());
+                    sessionIdsBatch.stream()
+                            .map(sessionId -> sessionByIdSchema.primaryKey(Map.of(
+                                    "sessionId", sessionId)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
     }
 
     public static Module module() {
@@ -318,7 +264,6 @@ public class DynamoAccountStore extends ManagedService implements AccountStore {
             @Override
             protected void configure() {
                 bind(AccountStore.class).to(DynamoAccountStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoAccountStore.class);
             }
         };
     }

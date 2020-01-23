@@ -48,18 +48,17 @@ public class DemoData extends ManagedService {
                 .max(Comparator.comparing(p -> p.getPricing().getPrice()))
                 .get();
 
-        String accountId = accountStore.genAccountId();
+        String email = "matus@smotana.com";
         String password = passwordUtil.saltHashPassword(
                 PasswordUtil.Type.ACCOUNT,
                 // Salt taken from client side (src/common/util/auth.ts)
                 Base64.getEncoder().encodeToString(Hashing.sha512().hashString("a" + ":salt:775DFB51571649109DEB70F423AF2B86:salt:", Charsets.UTF_8).asBytes()),
-                accountId);
+                email);
         AccountStore.Account account = new AccountStore.Account(
-                accountId,
+                email,
                 ImmutableSet.of(plan.getPlanid()),
                 "Smotana",
                 "Matus Faro",
-                "matus@smotana.com",
                 password,
                 "12345678",
                 "dummy-payment-token",
@@ -67,7 +66,7 @@ public class DemoData extends ManagedService {
         accountStore.createAccount(account);
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig("smotana");
         projectStore.createConfig(versionedConfigAdmin.getConfig().getProjectId(), versionedConfigAdmin);
-        accountStore.addAccountProjectId(account.getAccountId(), versionedConfigAdmin.getConfig().getProjectId());
+        accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }
 
     public static Module module() {

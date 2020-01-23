@@ -2,9 +2,6 @@ package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
-import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -45,7 +42,7 @@ public final class RealCookie {
     private final SameSite sameSite;
 
     private final Long maxAge;
-    private final Instant expiry;
+    private final Long ttlInEpochSec;
 
     private final String comment;
 
@@ -63,7 +60,7 @@ public final class RealCookie {
             boolean secure,
             SameSite sameSite,
             Long maxAge,
-            Instant expiry,
+            Long ttlInEpochSec,
             String comment,
             @NonNull ImmutableMap<String, String> additionalProperties) {
         checkArgument(secure || sameSite != SameSite.NONE, "Cookies with SameSite=None must also specify Secure");
@@ -76,7 +73,7 @@ public final class RealCookie {
         this.secure = secure;
         this.sameSite = sameSite;
         this.maxAge = maxAge;
-        this.expiry = expiry;
+        this.ttlInEpochSec = ttlInEpochSec;
         this.comment = comment;
         this.additionalProperties = additionalProperties;
     }
@@ -129,9 +126,9 @@ public final class RealCookie {
                     break;
             }
         }
-        if (getExpiry() != null) {
+        if (getTtlInEpochSec() != null) {
             b.append("; Expires=");
-            b.append(HttpDateFormat.getPreferredDateFormat().format(Date.from(getExpiry())));
+            b.append(HttpDateFormat.getPreferredDateFormat().format(Date.from(Instant.ofEpochSecond(getTtlInEpochSec()))));
         }
         if (getAdditionalProperties().size() != 0) {
             getAdditionalProperties().forEach((key, value) -> {
@@ -146,7 +143,7 @@ public final class RealCookie {
     }
 
     public static class RealCookieBuilder {
-        private long version = 1;
+        private static long VERSION = 1;
         private Map<String, String> additionalProperties = Maps.newHashMap();
 
         public RealCookieBuilder value(@NonNull String value) {
@@ -154,27 +151,17 @@ public final class RealCookie {
             return this;
         }
 
-        public RealCookieBuilder value(@NonNull UserAuthCookie cookie) {
-            this.value = AuthCookieUtil.encode(cookie);
-            return this;
-        }
-
-        public RealCookieBuilder value(@NonNull AccountAuthCookie cookie) {
-            this.value = AuthCookieUtil.encode(cookie);
-            return this;
-        }
-
         public RealCookieBuilder maxAge(Long maxAge) {
             // For backwards compatibility, also set expiry
             if (maxAge != null && maxAge != 0) {
-                this.expiry = Instant.now().plus(maxAge, ChronoUnit.SECONDS);
+                this.ttlInEpochSec = Instant.now().plus(maxAge, ChronoUnit.SECONDS).getEpochSecond();
             }
             this.maxAge = maxAge;
             return this;
         }
 
-        public RealCookieBuilder expiry(Instant expiry) {
-            this.expiry = expiry;
+        public RealCookieBuilder expiry(long ttlInEpochSec) {
+            this.ttlInEpochSec = ttlInEpochSec;
             return this;
         }
 
@@ -184,7 +171,7 @@ public final class RealCookie {
         }
 
         public RealCookie build() {
-            return new RealCookie(name, value, path, version, domain, httpOnly, secure, sameSite, maxAge, expiry, comment, ImmutableMap.copyOf(additionalProperties));
+            return new RealCookie(name, value, path, VERSION, domain, httpOnly, secure, sameSite, maxAge, ttlInEpochSec, comment, ImmutableMap.copyOf(additionalProperties));
         }
     }
 }

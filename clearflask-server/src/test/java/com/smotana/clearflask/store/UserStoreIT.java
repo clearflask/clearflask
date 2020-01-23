@@ -9,7 +9,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.store.UserStore.User;
+import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -61,9 +61,9 @@ public class UserStoreIT extends AbstractIT {
 
     @Test(timeout = 5_000L)
     public void testUser() throws Exception {
-        User user = new User(
-                store.genUserId(),
+        UserModel user = new UserModel(
                 IdUtil.randomId(),
+                store.genUserId(),
                 "john",
                 "john.doe@example.com",
                 "password",
@@ -89,7 +89,7 @@ public class UserStoreIT extends AbstractIT {
 
         assertEquals(ImmutableSet.of(user), store.getUsers(user.getProjectId(), ImmutableList.of(user.getUserId())).values());
 
-        User userUpdated = user.toBuilder()
+        UserModel userUpdated = user.toBuilder()
                 .name("joe")
                 .email("joe.doe@example.com")
                 .password("password2")
@@ -110,13 +110,13 @@ public class UserStoreIT extends AbstractIT {
         assertEquals(userUpdated, store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).get());
 
         store.deleteUsers(userUpdated.getProjectId(), ImmutableList.of(userUpdated.getUserId())).get();
-        assertFalse(store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).isPresent());
+        assertEquals(Optional.empty(), store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()));
     }
 
     @Test(timeout = 5_000L)
     public void testSearchUsers() throws Exception {
         String projectId = IdUtil.randomId();
-        User user1 = new User(
+        UserModel user1 = new UserModel(
                 projectId,
                 store.genUserId(),
                 "john",
@@ -128,7 +128,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken1",
                 "myBrowserPushToken1",
                 Instant.now());
-        User user2 = new User(
+        UserModel user2 = new UserModel(
                 projectId,
                 store.genUserId(),
                 "matt",
@@ -140,7 +140,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken2",
                 "myBrowserPushToken2",
                 Instant.now().minus(1, ChronoUnit.DAYS));
-        User user3 = new User(
+        UserModel user3 = new UserModel(
                 projectId,
                 store.genUserId(),
                 "Bobby",
@@ -189,7 +189,7 @@ public class UserStoreIT extends AbstractIT {
 
     @Test(timeout = 5_000L)
     public void testUserSession() throws Exception {
-        User user = new User(
+        UserModel user = new UserModel(
                 IdUtil.randomId(),
                 store.genUserId(),
                 "john",
@@ -205,36 +205,36 @@ public class UserStoreIT extends AbstractIT {
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
 
-        UserSession session1 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
+        UserSession session1 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         log.info("Created session 1 {}", session1);
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session1.getSessionId()).isPresent());
-        assertEquals(session1, store.getSession(user.getProjectId(), user.getUserId(), session1.getSessionId()).get());
+        assertTrue(store.getSession(session1.getSessionId()).isPresent());
+        assertEquals(session1, store.getSession(session1.getSessionId()).get());
 
-        UserSession session2 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
+        UserSession session2 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         log.info("Created session 2 {}", session2);
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session2.getSessionId()).isPresent());
-        assertEquals(session2, store.getSession(user.getProjectId(), user.getUserId(), session2.getSessionId()).get());
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session1.getSessionId()).isPresent());
+        assertTrue(store.getSession(session2.getSessionId()).isPresent());
+        assertEquals(session2, store.getSession(session2.getSessionId()).get());
+        assertTrue(store.getSession(session1.getSessionId()).isPresent());
 
-        store.revokeSession(user.getProjectId(), user.getUserId(), session1.getSessionId());
-        assertFalse(store.getSession(user.getProjectId(), user.getUserId(), session1.getSessionId()).isPresent());
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session2.getSessionId()).isPresent());
+        store.revokeSession(session1);
+        assertFalse(store.getSession(session1.getSessionId()).isPresent());
+        assertTrue(store.getSession(session2.getSessionId()).isPresent());
 
-        UserSession session3 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).isPresent());
-        assertEquals(session3, store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).get());
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session2.getSessionId()).isPresent());
+        UserSession session3 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        assertTrue(store.getSession(session3.getSessionId()).isPresent());
+        assertEquals(session3, store.getSession(session3.getSessionId()).get());
+        assertTrue(store.getSession(session2.getSessionId()).isPresent());
 
-        store.revokeSessions(user.getProjectId(), user.getUserId(), session3.getSessionId());
-        assertFalse(store.getSession(user.getProjectId(), user.getUserId(), session2.getSessionId()).isPresent());
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).isPresent());
+        store.revokeSessions(user.getProjectId(), user.getUserId(), Optional.of(session3.getSessionId()));
+        assertFalse(store.getSession(session2.getSessionId()).isPresent());
+        assertTrue(store.getSession(session3.getSessionId()).isPresent());
 
-        Instant refreshedExpiry = Instant.ofEpochMilli(System.currentTimeMillis()).plus(2, ChronoUnit.DAYS);
-        store.refreshSession(user.getProjectId(), user.getUserId(), session3.getSessionId(), refreshedExpiry);
-        assertTrue(store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).isPresent());
-        assertEquals(refreshedExpiry, store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).get().getExpiry());
+        long refreshedExpiry = Instant.ofEpochMilli(System.currentTimeMillis()).plus(2, ChronoUnit.DAYS).getEpochSecond();
+        store.refreshSession(session3, refreshedExpiry);
+        assertTrue(store.getSession(session3.getSessionId()).isPresent());
+        assertEquals(refreshedExpiry, store.getSession(session3.getSessionId()).get().getTtlInEpochSec());
 
-        store.revokeSessions(user.getProjectId(), user.getUserId());
-        assertFalse(store.getSession(user.getProjectId(), user.getUserId(), session3.getSessionId()).isPresent());
+        store.revokeSessions(user.getProjectId(), user.getUserId(), Optional.empty());
+        assertFalse(store.getSession(session3.getSessionId()).isPresent());
     }
 }

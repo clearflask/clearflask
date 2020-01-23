@@ -35,33 +35,32 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                "my@email.com",
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",
-                "my@email.com",
                 "password",
                 "123456",
                 "paymentToken",
                 ImmutableSet.of());
         store.createAccount(account);
-        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        assertEquals(Optional.of(account), store.getAccount(account.getEmail()));
 
         account = account.toBuilder()
                 .name("name2")
                 .build();
-        store.updateAccountName(account.getAccountId(), account.getName());
-        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
+        store.updateAccountName(account.getEmail(), account.getName());
+        assertEquals(Optional.of(account), store.getAccount(account.getEmail()));
 
-        AccountStore.Session session1 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        AccountStore.Session session2 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
+        AccountStore.AccountSession accountSession1 = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        AccountStore.AccountSession accountSession2 = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         account = account.toBuilder()
                 .password("password2")
                 .build();
-        store.updateAccountPassword(account.getAccountId(), account.getPassword(), session1.getSessionId());
-        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
-        assertEquals(Optional.of(session1), store.getSession(account.getAccountId(), session1.getSessionId()));
-        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session2.getSessionId()));
+        store.updateAccountPassword(account.getEmail(), account.getPassword(), accountSession1.getSessionId());
+        assertEquals(Optional.of(account), store.getAccount(account.getEmail()));
+        assertEquals(Optional.of(accountSession1), store.getSession(accountSession1.getSessionId()));
+        assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
 
         String projectId = IdUtil.randomId();
         account = account.toBuilder()
@@ -70,68 +69,67 @@ public class AccountStoreTest extends AbstractTest {
                         .addAll(account.getProjectIds())
                         .build())
                 .build();
-        store.addAccountProjectId(account.getAccountId(), projectId);
-        assertEquals(Optional.of(account), store.getAccount(account.getAccountId()));
+        store.addAccountProjectId(account.getEmail(), projectId);
+        assertEquals(Optional.of(account), store.getAccount(account.getEmail()));
 
-        AccountStore.Session session = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        assertTrue(store.getSession(account.getAccountId(), session.getSessionId()).isPresent());
+        AccountStore.AccountSession accountSession = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        assertTrue(store.getSession(accountSession.getSessionId()).isPresent());
 
         String oldEmail = account.getEmail();
         account = account.toBuilder()
                 .email("new@email.com")
                 .build();
-        store.updateAccountEmail(account.getAccountId(), oldEmail, account.getEmail());
-        assertEquals(Optional.empty(), store.getAccountByEmail(oldEmail));
-        assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
-        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session.getSessionId()));
-        assertEquals(Optional.empty(), store.getSession(account.getAccountId(), session2.getSessionId()));
+        store.updateAccountEmail(oldEmail, account.getEmail());
+        assertEquals(Optional.empty(), store.getAccount(oldEmail));
+        assertEquals(Optional.of(account), store.getAccount(account.getEmail()));
+        assertEquals(Optional.empty(), store.getSession(accountSession.getSessionId()));
+        assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
     }
 
     @Test(timeout = 5_000L)
     public void testSession() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                "my@email.com",
                 ImmutableSet.of("planId1"),
                 "company",
                 "name",
-                "my@email.com",
                 "password",
                 "123456",
                 "paymentToken",
                 ImmutableSet.of());
         store.createAccount(account);
 
-        AccountStore.Session session1 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        log.info("Created session 1 {}", session1);
-        assertTrue(store.getSession(account.getAccountId(), session1.getSessionId()).isPresent());
-        assertEquals(session1, store.getSession(account.getAccountId(), session1.getSessionId()).get());
+        AccountStore.AccountSession accountSession1 = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        log.info("Created session 1 {}", accountSession1);
+        assertTrue(store.getSession(accountSession1.getSessionId()).isPresent());
+        assertEquals(accountSession1, store.getSession(accountSession1.getSessionId()).get());
 
-        AccountStore.Session session2 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        log.info("Created session 2 {}", session2);
-        assertTrue(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
-        assertEquals(session2, store.getSession(account.getAccountId(), session2.getSessionId()).get());
-        assertTrue(store.getSession(account.getAccountId(), session1.getSessionId()).isPresent());
+        AccountStore.AccountSession accountSession2 = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        log.info("Created session 2 {}", accountSession2);
+        assertTrue(store.getSession(accountSession2.getSessionId()).isPresent());
+        assertEquals(accountSession2, store.getSession(accountSession2.getSessionId()).get());
+        assertTrue(store.getSession(accountSession1.getSessionId()).isPresent());
 
-        store.revokeSession(account.getAccountId(), session1.getSessionId());
-        assertFalse(store.getSession(account.getAccountId(), session1.getSessionId()).isPresent());
-        assertTrue(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
+        store.revokeSession(accountSession1);
+        assertFalse(store.getSession(accountSession1.getSessionId()).isPresent());
+        assertTrue(store.getSession(accountSession2.getSessionId()).isPresent());
 
-        AccountStore.Session session3 = store.createSession(account.getAccountId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS));
-        log.info("Created session 3 {}", session3);
-        assertTrue(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
-        assertEquals(session3, store.getSession(account.getAccountId(), session3.getSessionId()).get());
-        assertTrue(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
+        AccountStore.AccountSession accountSession3 = store.createSession(account.getEmail(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        log.info("Created session 3 {}", accountSession3);
+        assertTrue(store.getSession(accountSession3.getSessionId()).isPresent());
+        assertEquals(accountSession3, store.getSession(accountSession3.getSessionId()).get());
+        assertTrue(store.getSession(accountSession2.getSessionId()).isPresent());
 
-        store.revokeSessions(account.getAccountId(), session3.getSessionId());
-        assertFalse(store.getSession(account.getAccountId(), session2.getSessionId()).isPresent());
-        assertTrue(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
+        store.revokeSessions(account.getEmail(), accountSession3.getSessionId());
+        assertFalse(store.getSession(accountSession2.getSessionId()).isPresent());
+        assertTrue(store.getSession(accountSession3.getSessionId()).isPresent());
 
-        Instant refreshedExpiry = Instant.ofEpochMilli(System.currentTimeMillis()).plus(2, ChronoUnit.DAYS);
-        store.refreshSession(account.getAccountId(), session3.getSessionId(), refreshedExpiry);
-        assertTrue(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
-        assertEquals(refreshedExpiry, store.getSession(account.getAccountId(), session3.getSessionId()).get().getExpiry());
+        long refreshedExpiry = Instant.ofEpochMilli(System.currentTimeMillis()).plus(2, ChronoUnit.DAYS).getEpochSecond();
+        store.refreshSession(accountSession3, refreshedExpiry);
+        assertTrue(store.getSession(accountSession3.getSessionId()).isPresent());
+        assertEquals(refreshedExpiry, store.getSession(accountSession3.getSessionId()).get().getTtlInEpochSec());
 
-        store.revokeSessions(account.getAccountId());
-        assertFalse(store.getSession(account.getAccountId(), session3.getSessionId()).isPresent());
+        store.revokeSessions(account.getEmail());
+        assertFalse(store.getSession(accountSession3.getSessionId()).isPresent());
     }
 }

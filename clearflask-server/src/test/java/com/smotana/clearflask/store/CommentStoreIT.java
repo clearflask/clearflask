@@ -71,15 +71,15 @@ public class CommentStoreIT extends AbstractIT {
         ideaStore.createIndex(projectId);
         String ideaId = createRandomIdea(projectId).getIdeaId();
 
-        CommentModel c0 = getRandomComment(projectId, ideaId, ImmutableList.of());
-        store.createComment(c0).getIndexingFuture().get();
+        CommentModel c0 = createRandomComment(projectId, ideaId, ImmutableList.of());
         assertEquals(Optional.of(c0), store.getComment(projectId, ideaId, c0.getCommentId()));
-        assertEquals(ImmutableSet.of(c0), store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId())).values());
+        assertEquals(ImmutableSet.of(c0), ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId())).values()));
 
         CommentModel c00 = createRandomComment(projectId, ideaId, ImmutableList.of(c0.getCommentId()));
-        store.createComment(c00).getIndexingFuture().get();
+        c0 = c0.toBuilder().childCommentCount(c0.getChildCommentCount() + 1).build();
+        assertEquals(Optional.of(c00), store.getComment(projectId, ideaId, c00.getCommentId()));
+        assertEquals(ImmutableSet.of(c0, c00), ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c00.getCommentId())).values()));
         assertEquals(Optional.of(c0), store.getComment(projectId, ideaId, c0.getCommentId()));
-        assertEquals(ImmutableSet.of(c0, c00), store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c00.getCommentId())).values());
     }
 
     @Test(timeout = 5_000L)
@@ -95,7 +95,6 @@ public class CommentStoreIT extends AbstractIT {
         String ideaId = createRandomIdea(projectId).getIdeaId();
 
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
-        store.createComment(c).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().content("newContent").build();
@@ -111,7 +110,6 @@ public class CommentStoreIT extends AbstractIT {
         String ideaId = createRandomIdea(projectId).getIdeaId();
 
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
-        store.createComment(c).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(1).build();
@@ -135,7 +133,6 @@ public class CommentStoreIT extends AbstractIT {
         String ideaId = createRandomIdea(projectId).getIdeaId();
 
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
-        store.createComment(c).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().authorUserId(null).content(null).build();
@@ -149,22 +146,20 @@ public class CommentStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         ideaStore.createIndex(projectId);
         String ideaId = createRandomIdea(projectId).getIdeaId();
+        String ideaId2 = createRandomIdea(projectId).getIdeaId();
 
         CommentModel c0 = createRandomComment(projectId, ideaId, ImmutableList.of());
         CommentModel c1 = createRandomComment(projectId, ideaId, ImmutableList.of());
         CommentModel c01 = createRandomComment(projectId, ideaId, ImmutableList.of(c0.getCommentId()));
-        CommentModel cOther = createRandomComment(projectId, IdUtil.randomId(), ImmutableList.of(c0.getCommentId()));
-        store.createComment(c0).getIndexingFuture().get();
-        store.createComment(c1).getIndexingFuture().get();
-        store.createComment(c01).getIndexingFuture().get();
-        store.createComment(cOther).getIndexingFuture().get();
-        assertEquals(ImmutableSet.of(c0, c1, c01, cOther), store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values());
+        CommentModel cOther = createRandomComment(projectId, ideaId2, ImmutableList.of());
+        c0 = c0.toBuilder().childCommentCount(c0.getChildCommentCount() + 1).build();
+        assertEquals(ImmutableSet.of(c01, c1, c0), ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values()));
 
         store.deleteComment(projectId, ideaId, c0.getCommentId()).get();
-        assertEquals(ImmutableSet.of(c1, c01, cOther), store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values());
+        assertEquals(ImmutableSet.of(c1, c01), ImmutableSet.copyOf(ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values())));
 
         store.deleteCommentsForIdea(projectId, ideaId).get();
-        assertEquals(ImmutableSet.of(cOther), store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values());
+        assertEquals(ImmutableSet.of(), ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c1.getCommentId(), c01.getCommentId(), cOther.getCommentId())).values()));
     }
 
     private CommentModel createRandomComment(String projectId, String ideaId, ImmutableList<String> parentCommentIds) throws Exception {
@@ -192,7 +187,7 @@ public class CommentStoreIT extends AbstractIT {
     private IdeaStore.IdeaModel createRandomIdea(String projectId) throws Exception {
         IdeaStore.IdeaModel idea = new IdeaStore.IdeaModel(
                 projectId,
-                ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 "),
+                ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 " + IdUtil.randomId()),
                 IdUtil.randomId(),
                 Instant.now(),
                 "title",
@@ -209,7 +204,7 @@ public class CommentStoreIT extends AbstractIT {
                 0L,
                 BigDecimal.ZERO,
                 ImmutableMap.of());
-        ideaStore.createIdea(idea).getIndexingFuture().get();
+        ideaStore.createIdea(idea).get();
         return idea;
     }
 }

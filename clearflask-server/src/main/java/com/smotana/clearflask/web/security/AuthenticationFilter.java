@@ -7,8 +7,6 @@ import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
-import com.smotana.clearflask.web.security.AuthCookieUtil.UserAuthCookie;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Priority;
@@ -42,15 +40,15 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<AccountStore.Session> accountSession = authenticateAccount(requestContext);
+        Optional<AccountStore.AccountSession> accountSession = authenticateAccount(requestContext);
         Optional<UserStore.UserSession> userSession = authenticateUser(requestContext);
 
         if (!accountSession.isPresent() && !userSession.isPresent()) {
             return ExtendedSecurityContext.notAuthenticated(requestContext);
         }
 
-        log.trace("Setting authenticated security context, account id {} user id {}",
-                accountSession.map(AccountStore.Session::getAccountId),
+        log.trace("Setting authenticated security context, email {} user id {}",
+                accountSession.map(AccountStore.AccountSession::getEmail),
                 userSession.map(UserStore.UserSession::getUserId));
         return ExtendedSecurityContext.authenticated(
                 accountSession,
@@ -59,7 +57,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 requestContext);
     }
 
-    private Optional<AccountStore.Session> authenticateAccount(ContainerRequestContext requestContext) {
+    private Optional<AccountStore.AccountSession> authenticateAccount(ContainerRequestContext requestContext) {
         Cookie cookie = requestContext.getCookies().get(AccountResource.ACCOUNT_AUTH_COOKIE_NAME);
         if (cookie == null) {
             return Optional.empty();
@@ -67,20 +65,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         // TODO check for HttpOnly, isSecure, etc...
 
-        Optional<AccountAuthCookie> authCookieOpt = AuthCookieUtil.decodeAccount(cookie.getValue());
-        if (!authCookieOpt.isPresent()) {
-            log.warn("AuthCookie for account session was not parsed correctly");
-            return Optional.empty();
-        }
-        AccountAuthCookie authCookie = authCookieOpt.get();
+        // TODO sanity check cookie.getValue()
 
-        Optional<AccountStore.Session> sessionOpt = accountStore.getSession(authCookie.getAccountId(), authCookie.getSessionId());
-        if (!sessionOpt.isPresent()) {
-            log.trace("Cookie session not found for account {}", authCookie.getAccountId());
-            return Optional.empty();
-        }
-
-        return sessionOpt;
+        return accountStore.getSession(cookie.getValue());
     }
 
     private Optional<UserStore.UserSession> authenticateUser(ContainerRequestContext requestContext) {
@@ -91,23 +78,12 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         // TODO check for HttpOnly, isSecure, etc...
 
-        Optional<UserAuthCookie> authCookieOpt = AuthCookieUtil.decodeUser(cookie.getValue());
-        if (!authCookieOpt.isPresent()) {
-            log.warn("AuthCookie for user session was not parsed correctly");
-            return Optional.empty();
-        }
-        UserAuthCookie authCookie = authCookieOpt.get();
+        // TODO sanity check cookie.getValue()
 
-        Optional<UserStore.UserSession> sessionOpt = userStore.getSession(authCookie.getProjectId(), authCookie.getUserId(), authCookie.getSessionId());
-        if (!sessionOpt.isPresent()) {
-            log.trace("Cookie session not found for project {} user {}", authCookie.getProjectId(), authCookie.getUserId());
-            return Optional.empty();
-        }
-
-        return sessionOpt;
+        return userStore.getSession(cookie.getValue());
     }
 
-    private boolean hasRole(String role, Optional<AccountStore.Session> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
+    private boolean hasRole(String role, Optional<AccountStore.AccountSession> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
         boolean hasRole = hasRoleInternal(role, accountSession, userSession, requestContext);
         if (hasRole) {
             log.trace("User does have role {}", role);
@@ -117,12 +93,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return hasRole;
     }
 
-    private boolean hasRoleInternal(String role, Optional<AccountStore.Session> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
+    private boolean hasRoleInternal(String role, Optional<AccountStore.AccountSession> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
         log.trace("Checking if user has role {}", role);
 
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
-        Optional<String> pathParamAccountIdOpt = getPathParameter(requestContext, "accountId");
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
@@ -138,13 +113,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        if (pathParamAccountIdOpt.isPresent() && accountSession.isPresent()
-                && !accountSession.get().getAccountId().equals(pathParamAccountIdOpt.get())) {
-            log.warn("Potential attack attempt, accountId {} in path param mismatches account session {} for method {}",
-                    pathParamAccountIdOpt.get(), accountSession.get().getAccountId(), requestContext.getMethod());
-            return false;
-        }
-
         Optional<AccountStore.Account> accountOpt;
         switch (role) {
             case Role.ADMINISTRATOR:
@@ -155,7 +123,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
                     return false;
                 }
-                accountOpt = accountStore.getAccount(accountSession.get().getAccountId());
+                accountOpt = accountStore.getAccount(accountSession.get().getEmail());
                 if (!accountOpt.isPresent()) {
                     return false;
                 }

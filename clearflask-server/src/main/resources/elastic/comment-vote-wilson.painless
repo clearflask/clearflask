@@ -5,15 +5,19 @@
  *   double z
  */
 
-if(params.upvoteDiff != 0) {
-    ctx._source.upvote += params.upvoteDiff;
+if(params.upvoteDiff != null && params.upvoteDiff != 0) {
+    ctx._source.upvote = ctx._source.upvote == null
+        ? params.upvoteDiff
+        : ctx._source.upvote + params.upvoteDiff;
 }
-if(params.downvoteDiff != 0) {
-    ctx._source.upvote += params.downvoteDiff;
+if(params.downvoteDiff != null && params.downvoteDiff != 0) {
+    ctx._source.downvote = ctx._source.downvote == null
+        ? params.downvoteDiff
+        : ctx._source.downvote + params.downvoteDiff;
 }
 
-int numberOfSuccesses = ctx._source.upvotes;
-int numberOfTrials = numberOfSuccesses + ctx._source.downvotes;
+int numberOfSuccesses = ctx._source.upvotes == null ? 0 : ctx._source.upvotes;
+int numberOfTrials = numberOfSuccesses + (ctx._source.downvotes == null ? 0 : ctx._source.downvotes);
 double z = params.z;
 
 // See WilsonScoreInterval.java
@@ -24,7 +28,7 @@ if (numberOfTrials == 0) {
     double mean = (double) numberOfSuccesses / (double) numberOfTrials;
     double factor = 1.0D / (1.0D + 1.0D / (double) numberOfTrials * zSquared);
     double modifiedSuccessRatio = mean + 1.0D / (double) (2 * numberOfTrials) * zSquared;
-    double difference = z * FastMath.sqrt(1.0D / (double) numberOfTrials * mean * (1.0D - mean) + 1.0D / (4.0D * FastMath.pow((double) numberOfTrials, 2)) * zSquared);
+    double difference = z * Math.sqrt(1.0D / (double) numberOfTrials * mean * (1.0D - mean) + 1.0D / (4.0D * Math.pow((double) numberOfTrials, 2)) * zSquared);
     double lowerBound = factor * (modifiedSuccessRatio - difference);
     ctx._source.score = lowerBound;
 }

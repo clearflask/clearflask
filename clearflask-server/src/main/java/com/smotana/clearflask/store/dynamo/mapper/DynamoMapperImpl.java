@@ -1,13 +1,37 @@
 package com.smotana.clearflask.store.dynamo.mapper;
 
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.Projection;
+import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerItem;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerAttrVal;
@@ -17,9 +41,9 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.Marshall
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerItem;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -27,239 +51,388 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.LongStream;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.*;
 
 @Slf4j
 @Singleton
-public class DynamoMapperImpl implements DynamoMapper {
+public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
+
+    public interface Config {
+        @DefaultValue("true")
+        boolean createTables();
+
+        @DefaultValue("1")
+        long gsiCount();
+
+        @DefaultValue("0")
+        long lsiCount();
+    }
+
+    @Inject
+    private Config config;
+    @Inject
+    private DynamoDB dynamoDoc;
 
     private final DynamoConvertersProxy.Converters converters = DynamoConvertersProxy.proxy();
+    private final MarshallerItem gsonMarshallerItem = (o, a, i) -> i.withString(a, GsonProvider.GSON.toJson(o));
+    private final MarshallerAttrVal gsonMarshallerAttrVal = o -> new AttributeValue().withS(GsonProvider.GSON.toJson(o));
+    private final Function<Class, UnMarshallerAttrVal> gsonUnMarshallerAttrVal = k -> a -> GsonProvider.GSON.fromJson(a.getS(), k);
+    private final Function<Class, UnMarshallerItem> gsonUnMarshallerItem = k -> (a, i) -> GsonProvider.GSON.fromJson(i.getString(a), k);
 
     @Override
-    public Item toItem(Object object) {
-        Optional<CompoundPrimaryKey> compoundPrimaryKeyOpt = Optional.ofNullable(object.getClass().getDeclaredAnnotation(CompoundPrimaryKey.class));
-        String[] compoundPrimaryKeyValues = compoundPrimaryKeyOpt.map(compoundPrimaryKey -> new String[compoundPrimaryKey.primaryKeys().length]).orElse(null);
-        Item item = new Item();
-        for (Field field : object.getClass().getDeclaredFields()) {
-            checkState(Modifier.isFinal(field.getModifiers()),
-                    "Cannot map class %s to item,field %s is not final",
-                    object.getClass().getSimpleName(), field.getName());
-            field.setAccessible(true);
-            Object val;
+    protected void serviceStart() throws Exception {
+        if (config.createTables()) {
             try {
-                val = field.get(object);
-            } catch (IllegalAccessException ex) {
-                throw new IllegalStateException(ex);
-            }
-            if (val == null && Set.class.isAssignableFrom(field.getType())) {
-                log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                        field.getName(), object.getClass().getSimpleName());
-            }
-            int primaryKeyIndex = compoundPrimaryKeyOpt
-                    .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
-                    .orElse(-1);
-            if (primaryKeyIndex != -1) {
-                checkState(val != null);
-                checkState(field.getType() == String.class);
-                compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
-            } else if (val == null) {
-                // Omit on null
-            } else {
-                Optional<Class> collectionClazz = getCollectionClazz(field.getType());
-                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                findMarshallerItem(collectionClazz, itemClazz)
-                        .marshall(val, field.getName(), item);
+                ArrayList<KeySchemaElement> primaryKeySchemas = Lists.newArrayList();
+                ArrayList<AttributeDefinition> primaryAttributeDefinitions = Lists.newArrayList();
+                ArrayList<LocalSecondaryIndex> localSecondaryIndexes = Lists.newArrayList();
+                ArrayList<GlobalSecondaryIndex> globalSecondaryIndexes = Lists.newArrayList();
+
+                primaryKeySchemas.add(new KeySchemaElement(getPartitionKeyName(Primary, -1), KeyType.HASH));
+                primaryAttributeDefinitions.add(new AttributeDefinition(getPartitionKeyName(Primary, -1), ScalarAttributeType.S));
+                primaryKeySchemas.add(new KeySchemaElement(getSortKeyName(Primary, -1), KeyType.RANGE));
+                primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Primary, -1), ScalarAttributeType.S));
+
+                LongStream.range(1, config.lsiCount() + 1).forEach(indexNumber -> {
+                    localSecondaryIndexes.add(new LocalSecondaryIndex()
+                            .withIndexName(getTableOrIndexName(Lsi, indexNumber))
+                            .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                            .withKeySchema(ImmutableList.of(
+                                    new KeySchemaElement(getPartitionKeyName(Lsi, indexNumber), KeyType.HASH),
+                                    new KeySchemaElement(getSortKeyName(Lsi, indexNumber), KeyType.RANGE))));
+                    primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Lsi, indexNumber), ScalarAttributeType.S));
+                });
+
+                LongStream.range(1, config.gsiCount() + 1).forEach(indexNumber -> {
+                    globalSecondaryIndexes.add(new GlobalSecondaryIndex()
+                            .withIndexName(getTableOrIndexName(Gsi, indexNumber))
+                            .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                            .withKeySchema(ImmutableList.of(
+                                    new KeySchemaElement(getPartitionKeyName(Gsi, indexNumber), KeyType.HASH),
+                                    new KeySchemaElement(getSortKeyName(Gsi, indexNumber), KeyType.RANGE))));
+                    primaryAttributeDefinitions.add(new AttributeDefinition(getPartitionKeyName(Gsi, indexNumber), ScalarAttributeType.S));
+                    primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Gsi, indexNumber), ScalarAttributeType.S));
+                });
+
+                CreateTableRequest createTableRequest = new CreateTableRequest()
+                        .withTableName(getTableOrIndexName(Primary, -1))
+                        .withKeySchema(primaryKeySchemas)
+                        .withAttributeDefinitions(primaryAttributeDefinitions)
+                        .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                if (!localSecondaryIndexes.isEmpty()) {
+                    createTableRequest.withLocalSecondaryIndexes(localSecondaryIndexes);
+                }
+                if (!globalSecondaryIndexes.isEmpty()) {
+                    createTableRequest.withGlobalSecondaryIndexes(globalSecondaryIndexes);
+                }
+                dynamoDoc.createTable(createTableRequest);
+                log.info("Table {} created", getTableOrIndexName(Primary, -1));
+            } catch (ResourceNotFoundException ex) {
+                log.trace("Table {} already exists", getTableOrIndexName(Primary, -1));
             }
         }
-        compoundPrimaryKeyOpt.ifPresent(compoundPrimaryKey -> item.withString(
-                compoundPrimaryKey.key(),
-                StringSerdeUtil.mergeStrings(compoundPrimaryKeyValues)));
-        log.trace("toItem {} {}", object.getClass().getSimpleName(), item);
-        return item;
     }
 
     @Override
-    public <T> T fromItem(Item item, Class<T> objectClazz) {
-        log.trace("fromItem {} {}", objectClazz.getSimpleName(), item);
-        if (item == null) {
-            return null;
-        }
+    public <T> TableSchema<T> parseTableSchema(Class<T> objClazz) {
+        return parseSchema(Primary, -1, objClazz);
+    }
 
-        ImmutableMap<String, String> primaryKeys = Optional.ofNullable(objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class))
-                .map(compoundPrimaryKey -> {
-                    String[] primaryKeyValues = StringSerdeUtil.unMergeString(item.getString(compoundPrimaryKey.key()));
-                    checkState(primaryKeyValues.length == compoundPrimaryKey.primaryKeys().length);
-                    ImmutableMap.Builder<String, String> primaryKeysBuilder = ImmutableMap.builderWithExpectedSize(compoundPrimaryKey.primaryKeys().length);
-                    for (int i = 0; i < primaryKeyValues.length; i++) {
-                        primaryKeysBuilder.put(compoundPrimaryKey.primaryKeys()[i], primaryKeyValues[i]);
-                    }
-                    return primaryKeysBuilder.build();
-                })
-                .orElse(ImmutableMap.of());
+    @Override
+    public <T> IndexSchema<T> parseLocalSecondaryIndexSchema(long indexNumber, Class<T> objClazz) {
+        return parseSchema(Lsi, indexNumber, objClazz);
+    }
 
-        List<Object> args = Lists.newArrayList();
-        for (Field field : objectClazz.getDeclaredFields()) {
-            if (primaryKeys.containsKey(field.getName())) {
-                args.add(primaryKeys.get(field.getName()));
-                continue;
-            }
+    @Override
+    public <T> IndexSchema<T> parseGlobalSecondaryIndexSchema(long indexNumber, Class<T> objClazz) {
+        return parseSchema(Gsi, indexNumber, objClazz);
+    }
+
+    private String getTableOrIndexName(TableType type, long indexNumber) {
+        return type == Primary
+                ? type.name().toLowerCase()
+                : type.name().toLowerCase() + indexNumber;
+    }
+
+    private String getPartitionKeyName(TableType type, long indexNumber) {
+        return type == Primary || type == Lsi
+                ? "pk"
+                : type.name().toLowerCase() + "pk" + indexNumber;
+    }
+
+    private String getSortKeyName(TableType type, long indexNumber) {
+        return type == Primary
+                ? "sk"
+                : type.name().toLowerCase() + "sk" + indexNumber;
+    }
+
+    private <T> SchemaImpl<T> parseSchema(TableType type, long indexNumber, Class<T> objClazz) {
+        DynamoTable[] dynamoTables = objClazz.getDeclaredAnnotationsByType(DynamoTable.class);
+        checkState(dynamoTables != null && dynamoTables.length > 0,
+                "Class " + objClazz + " is missing DynamoTable annotation");
+        DynamoTable dynamoTable = Arrays.stream(dynamoTables)
+                .filter(dt -> dt.type() == type)
+                .filter(dt -> dt.indexNumber() == indexNumber)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Class " + objClazz + " is missing table type " + type));
+        String[] partitionKeys = dynamoTable.partitionKeys();
+        String[] sortKeys = dynamoTable.sortKeys();
+        boolean isSortKeyStatic = !Strings.isNullOrEmpty(dynamoTable.sortStaticName());
+        String sortStaticName = dynamoTable.sortStaticName();
+        String tableName = getTableOrIndexName(type, indexNumber);
+        String partitionKeyName = getPartitionKeyName(type, indexNumber);
+        String sortKeyName = getSortKeyName(type, indexNumber);
+        KeyAttribute sortStaticNameKey = new KeyAttribute(sortKeyName, sortStaticName);
+
+        checkState(isSortKeyStatic ^ sortKeys.length > 0,
+                "Must supply either list of sort keys or a static name for class %s", objClazz);
+
+        Table table = dynamoDoc.getTable(getTableOrIndexName(Primary, -1));
+        Index index = type != Primary
+                ? table.getIndex(tableName)
+                : null;
+
+        ImmutableMap.Builder<String, MarshallerItem> fieldMarshallersBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, UnMarshallerItem> fieldUnMarshallersBuilder = ImmutableMap.builder();
+        ImmutableList.Builder<Function<Item, Object>> fromItemToCtorArgsListBuilder = ImmutableList.builder();
+        ImmutableList.Builder<Function<Map<String, AttributeValue>, Object>> fromAttrMapToCtorArgsListBuilder = ImmutableList.builder();
+        ImmutableMap.Builder<String, Function<T, Object>> objToFieldValsBuilder = ImmutableMap.builder();
+        Field[] partitionKeyFields = new Field[partitionKeys.length];
+        Field[] sortKeyFields = new Field[sortKeys.length];
+        ImmutableList.Builder<BiConsumer<Item, T>> toItemArgsBuilder = ImmutableList.builder();
+        ImmutableList.Builder<BiConsumer<ImmutableMap.Builder<String, AttributeValue>, T>> toAttrMapArgsBuilder = ImmutableList.builder();
+
+        for (Field field : objClazz.getDeclaredFields()) {
+            String fieldName = field.getName();
+            checkState(Modifier.isFinal(field.getModifiers()),
+                    "Cannot map class %s to item,field %s is not final",
+                    objClazz.getSimpleName(), fieldName);
+            field.setAccessible(true);
             Optional<Class> collectionClazz = getCollectionClazz(field.getType());
-            if (!collectionClazz.isPresent() && (!item.isPresent(field.getName()) || item.isNull(field.getName()))) {
-                args.add(null);
-            } else {
-                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                args.add(findUnMarshallerItem(collectionClazz, itemClazz)
-                        .unmarshall(field.getName(), item));
-            }
-        }
+            Class fieldClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
 
-        Constructor<T> constructor = findConstructor(objectClazz, args);
-        constructor.setAccessible(true);
-        try {
-            return constructor.newInstance(args.toArray());
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+            Function<T, Object> objToFieldVal = obj -> {
+                try {
+                    return field.get(obj);
+                } catch (IllegalAccessException ex) {
+                    throw new RuntimeException(ex);
+                }
+            };
+            objToFieldValsBuilder.put(fieldName, objToFieldVal);
 
-    @Override
-    public ImmutableMap<String, AttributeValue> toAttrMap(Object object) {
-        Optional<CompoundPrimaryKey> compoundPrimaryKeyOpt = Optional.ofNullable(object.getClass().getDeclaredAnnotation(CompoundPrimaryKey.class));
-        String[] compoundPrimaryKeyValues = compoundPrimaryKeyOpt.map(compoundPrimaryKey -> new String[compoundPrimaryKey.primaryKeys().length]).orElse(null);
-        ImmutableMap.Builder<String, AttributeValue> mapBuilder = ImmutableMap.builder();
-        for (Field field : object.getClass().getDeclaredFields()) {
-            checkState(Modifier.isFinal(field.getModifiers()),
-                    "Cannot map class %s to item,field %s is not final",
-                    object.getClass().getSimpleName(), field.getName());
-            field.setAccessible(true);
-            Object val;
-            try {
-                val = field.get(object);
-            } catch (IllegalAccessException ex) {
-                throw new IllegalStateException(ex);
-            }
-            if (val == null && Set.class.isAssignableFrom(field.getType())) {
-                log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                        field.getName(), object.getClass().getSimpleName());
-            }
-            int primaryKeyIndex = compoundPrimaryKeyOpt
-                    .map(compoundPrimaryKey -> ArrayUtils.indexOf(compoundPrimaryKeyOpt.get().primaryKeys(), field.getName()))
-                    .orElse(-1);
-            if (primaryKeyIndex != -1) {
-                checkState(val != null);
-                checkState(field.getType() == String.class);
-                compoundPrimaryKeyValues[primaryKeyIndex] = (String) val;
-            } else if (val == null) {
-                // Omit on null
-            } else {
-                Optional<Class> collectionClazz = getCollectionClazz(field.getType());
-                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                AttributeValue valMarshalled = findMarshallerAttrVal(collectionClazz, itemClazz).marshall(val);
-                if (valMarshalled != null) {
-                    mapBuilder.put(field.getName(), valMarshalled);
+            // fromItem
+            UnMarshallerItem unMarshallerItem = findUnMarshallerItem(collectionClazz, fieldClazz);
+            fromItemToCtorArgsListBuilder.add((item) ->
+                    (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
+                            ? null
+                            : unMarshallerItem.unmarshall(fieldName, item));
+
+            // fromAttrMap
+            UnMarshallerAttrVal unMarshallerAttrVal = findUnMarshallerAttrVal(collectionClazz, fieldClazz);
+            fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
+                AttributeValue attrVal = attrMap.get(fieldName);
+                return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
+                        ? null
+                        : unMarshallerAttrVal.unmarshall(attrVal);
+            });
+
+            boolean isSet = Set.class.isAssignableFrom(field.getType());
+
+            // toItem toAttrVal
+            for (int i = 0; i < partitionKeys.length; i++) {
+                if (fieldName.equals(partitionKeys[i])) {
+                    partitionKeyFields[i] = field;
                 }
             }
+            for (int i = 0; i < sortKeys.length; i++) {
+                if (fieldName.equals(sortKeys[i])) {
+                    sortKeyFields[i] = field;
+                }
+            }
+
+            // toItem
+            MarshallerItem marshallerItem = findMarshallerItem(collectionClazz, fieldClazz);
+            toItemArgsBuilder.add((item, object) -> {
+                Object val = objToFieldVal.apply(object);
+                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                            fieldName, object.getClass().getSimpleName());
+                }
+                if (val == null) {
+                    return; // Omit null
+                }
+                marshallerItem.marshall(val, fieldName, item);
+            });
+
+            // toAttrVal
+            MarshallerAttrVal marshallerAttrVal = findMarshallerAttrVal(collectionClazz, fieldClazz);
+            toAttrMapArgsBuilder.add((mapBuilder, object) -> {
+                Object val = objToFieldVal.apply(object);
+                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                            fieldName, object.getClass().getSimpleName());
+                }
+                if (val == null) {
+                    return; // Omit null
+                }
+                AttributeValue valMarsh = marshallerAttrVal.marshall(val);
+                if (valMarsh == null) {
+                    return; // Omit null
+                }
+                mapBuilder.put(fieldName, valMarsh);
+            });
+
+            // toDynamoValue fromDynamoValue
+            fieldMarshallersBuilder.put(fieldName, marshallerItem);
+            fieldUnMarshallersBuilder.put(fieldName, unMarshallerItem);
         }
-        compoundPrimaryKeyOpt.ifPresent(compoundPrimaryKey -> mapBuilder.put(
-                compoundPrimaryKey.key(),
-                new AttributeValue().withS(StringSerdeUtil.mergeStrings(compoundPrimaryKeyValues))));
-        ImmutableMap<String, AttributeValue> map = mapBuilder.build();
-        log.trace("toAttrMap {} {}", object.getClass().getSimpleName(), map);
-        return map;
-    }
 
-    @Override
-    public <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objectClazz) {
-        log.trace("fromAttrMap {} {}", objectClazz.getSimpleName(), attrMap);
-        if (attrMap == null) {
-            return null;
-        }
+        // fromItem fromAttrVal ctor
+        Constructor<T> objCtor = findConstructor(objClazz, objClazz.getDeclaredFields().length);
+        objCtor.setAccessible(true);
 
-        ImmutableMap<String, String> primaryKeys = Optional.ofNullable(objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class))
-                .map(compoundPrimaryKey -> {
-                    String[] primaryKeyValues = StringSerdeUtil.unMergeString(attrMap.get(compoundPrimaryKey.key()).getS());
-                    checkState(primaryKeyValues.length == compoundPrimaryKey.primaryKeys().length);
-                    ImmutableMap.Builder<String, String> primaryKeysBuilder = ImmutableMap.builderWithExpectedSize(compoundPrimaryKey.primaryKeys().length);
-                    for (int i = 0; i < primaryKeyValues.length; i++) {
-                        primaryKeysBuilder.put(compoundPrimaryKey.primaryKeys()[i], primaryKeyValues[i]);
-                    }
-                    return primaryKeysBuilder.build();
-                })
-                .orElse(ImmutableMap.of());
+        // fromItem
+        ImmutableList<Function<Item, Object>> fromItemToCtorArgsList = fromItemToCtorArgsListBuilder.build();
+        Function<Item, Object[]> fromItemToCtorArgs = item -> fromItemToCtorArgsList.stream()
+                .map(u -> u.apply(item))
+                .toArray();
 
-        List<Object> args = Lists.newArrayList();
-        for (Field field : objectClazz.getDeclaredFields()) {
-            if (primaryKeys.containsKey(field.getName())) {
-                args.add(primaryKeys.get(field.getName()));
+        // fromAttrMap
+        ImmutableList<Function<Map<String, AttributeValue>, Object>> fromAttrMapToCtorArgsList = fromAttrMapToCtorArgsListBuilder.build();
+        Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs = attrMap -> fromAttrMapToCtorArgsList.stream()
+                .map(u -> u.apply(attrMap))
+                .toArray();
+
+        // toItem toAttrVal keys
+        ImmutableMap<String, Function<T, Object>> objToFieldVals = objToFieldValsBuilder.build();
+        ImmutableMap.Builder<String, Function<T, String>> toItemOtherKeysMapperBuilder = ImmutableMap.builder();
+        for (DynamoTable dt : dynamoTables) {
+            if (dt == dynamoTable) {
                 continue;
             }
-            Optional<Class> collectionClazz = getCollectionClazz(field.getType());
-            AttributeValue attrVal = attrMap.get(field.getName());
-            if (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE)) {
-                args.add(null);
+            checkState(!Strings.isNullOrEmpty(dt.sortStaticName()) ^ sortKeys.length > 0,
+                    "Must supply either list of sort keys or a static name for class %s", objClazz);
+            if (dt.type() != Lsi) {
+                ImmutableList<Function<T, Object>> dtPartitionKeyMappers = Arrays.stream(dt.partitionKeys())
+                        .map(objToFieldVals::get)
+                        .map(Preconditions::checkNotNull)
+                        .collect(ImmutableList.toImmutableList());
+                toItemOtherKeysMapperBuilder.put(
+                        getPartitionKeyName(dt.type(), dt.indexNumber()),
+                        obj -> StringSerdeUtil.mergeStrings(dtPartitionKeyMappers.stream()
+                                .map(m -> m.apply(obj))
+                                .map(Object::toString)
+                                .toArray(String[]::new)));
+            }
+            if (Strings.isNullOrEmpty(dt.sortStaticName())) {
+                ImmutableList<Function<T, Object>> dtSortKeyMappers = Arrays.stream(dt.sortKeys())
+                        .map(objToFieldVals::get)
+                        .map(Preconditions::checkNotNull)
+                        .collect(ImmutableList.toImmutableList());
+                toItemOtherKeysMapperBuilder.put(
+                        getSortKeyName(dt.type(), dt.indexNumber()),
+                        obj -> StringSerdeUtil.mergeStrings(dtSortKeyMappers.stream()
+                                .map(m -> m.apply(obj))
+                                .map(Object::toString)
+                                .toArray(String[]::new)));
             } else {
-                Class itemClazz = collectionClazz.isPresent() ? getCollectionGeneric(field) : field.getType();
-                args.add(findUnMarshallerAttrVal(collectionClazz, itemClazz)
-                        .unmarshall(attrVal));
+                String dtSortStaticName = dt.sortStaticName();
+                toItemOtherKeysMapperBuilder.put(
+                        getSortKeyName(dt.type(), dt.indexNumber()),
+                        obj -> dtSortStaticName);
             }
         }
-
-        Constructor<T> constructor = findConstructor(objectClazz, args);
-        constructor.setAccessible(true);
-        try {
-            return constructor.newInstance(args.toArray());
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Override
-    public String getCompoundPrimaryKey(ImmutableMap<String, String> keys, Class<?> objectClazz) {
-        CompoundPrimaryKey compoundPrimaryKey = objectClazz.getDeclaredAnnotation(CompoundPrimaryKey.class);
-        checkState(compoundPrimaryKey != null);
-        checkArgument(keys.size() == compoundPrimaryKey.primaryKeys().length);
-        String primaryKey = StringSerdeUtil.mergeStrings(Arrays.stream(compoundPrimaryKey
-                .primaryKeys())
-                .map(key -> checkNotNull(keys.get(key), "getCompoundPrimaryKey key %s is not found", key))
+        ImmutableMap<String, Function<T, String>> toItemOtherKeysMapper = toItemOtherKeysMapperBuilder.build();
+        Function<T, String> getPartitionKeyVal = obj -> StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
+                .map(f -> {
+                    try {
+                        return checkNotNull(f.get(obj)).toString();
+                    } catch (IllegalAccessException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                })
                 .toArray(String[]::new));
-        log.trace("getCompoundPrimaryKey {} {}", objectClazz.getSimpleName(), primaryKey);
-        return primaryKey;
+        Function<T, String> getSortKeyVal = isSortKeyStatic
+                ? obj -> sortStaticName
+                : obj -> StringSerdeUtil.mergeStrings(Arrays.stream(sortKeyFields)
+                .map(f -> {
+                    try {
+                        return checkNotNull(f.get(obj)).toString();
+                    } catch (IllegalAccessException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                })
+                .toArray(String[]::new));
+
+        // toItem
+        ImmutableList<BiConsumer<Item, T>> toItemArgs = toItemArgsBuilder.build();
+        Function<T, Item> toItemMapper = obj -> {
+            Item item = new Item();
+            item.withPrimaryKey(partitionKeyName, getPartitionKeyVal.apply(obj),
+                    sortKeyName, getSortKeyVal.apply(obj));
+            toItemOtherKeysMapper.forEach(((keyName, objToKeyMapper) ->
+                    item.withString(keyName, objToKeyMapper.apply(obj))));
+            toItemArgs.forEach(m -> m.accept(item, obj));
+            return item;
+        };
+
+        // toAttrMap
+        ImmutableList<BiConsumer<ImmutableMap.Builder<String, AttributeValue>, T>> toAttrMapArgs = toAttrMapArgsBuilder.build();
+        Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper = obj -> {
+            ImmutableMap.Builder<String, AttributeValue> attrMapBuilder = ImmutableMap.builder();
+            attrMapBuilder.put(partitionKeyName, new AttributeValue(getPartitionKeyVal.apply(obj)));
+            attrMapBuilder.put(sortKeyName, new AttributeValue(getSortKeyVal.apply(obj)));
+            toItemOtherKeysMapper.forEach(((keyName, objToKeyMapper) ->
+                    attrMapBuilder.put(keyName, new AttributeValue(objToKeyMapper.apply(obj)))));
+            toAttrMapArgs.forEach(m -> m.accept(attrMapBuilder, obj));
+            return attrMapBuilder.build();
+        };
+
+        // toDynamoValue fromDynamoValue
+        ImmutableMap<String, MarshallerItem> fieldMarshallers = fieldMarshallersBuilder.build();
+        ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers = fieldUnMarshallersBuilder.build();
+
+        return new SchemaImpl<T>(
+                partitionKeys,
+                sortKeys,
+                partitionKeyFields,
+                sortKeyFields,
+                isSortKeyStatic,
+                sortStaticName,
+                sortStaticNameKey,
+                tableName,
+                partitionKeyName,
+                sortKeyName,
+                table,
+                index,
+                fieldMarshallers,
+                fieldUnMarshallers,
+                fromItemToCtorArgs,
+                fromAttrMapToCtorArgs,
+                objCtor,
+                toItemMapper,
+                toAttrMapMapper);
     }
 
-    @Override
-    public Object toDynamoValue(Object object) {
-        Optional<Class> collectionClazz = getCollectionClazz(object.getClass());
-        Class itemClazz;
-        if (collectionClazz.isPresent()) {
-            itemClazz = ((Collection<?>) object).stream()
-                    .filter(Objects::nonNull)
-                    .map(i -> (Class) i.getClass())
-                    .findAny()
-                    .orElse(Object.class);
-        } else {
-            itemClazz = object.getClass();
-        }
-        Item tempItem = new Item();
-        findMarshallerItem(collectionClazz, itemClazz).marshall(object, "tempAttr", tempItem);
-        return tempItem.get("tempAttr");
-    }
-
-    private <T> Constructor<T> findConstructor(Class<T> objectClazz, List<Object> args) {
-        OUTER:
+    private <T> Constructor<T> findConstructor(Class<T> objectClazz, int argc) {
         for (Constructor<?> constructorPotential : objectClazz.getDeclaredConstructors()) {
             // Let's only check for args size and assume all types are good...
-            if (constructorPotential.getParameterCount() != args.size()) {
+            if (constructorPotential.getParameterCount() != argc) {
                 log.trace("Unsuitable constructor {}", constructorPotential);
                 continue;
             }
@@ -298,14 +471,8 @@ public class DynamoMapperImpl implements DynamoMapper {
         }
     }
 
-
-    private final MarshallerItem GsonMarshallerItem = (o, a, i) -> i.withString(a, GsonProvider.GSON.toJson(o));
-    private final MarshallerAttrVal GsonMarshallerAttrVal = o -> new AttributeValue().withS(GsonProvider.GSON.toJson(o));
-    private final Function<Class, UnMarshallerAttrVal> GsonUnMarshallerAttrVal = k -> a -> GsonProvider.GSON.fromJson(a.getS(), k);
-    private final Function<Class, UnMarshallerItem> GsonUnMarshallerItem = k -> (a, i) -> GsonProvider.GSON.fromJson(i.getString(a), k);
-
     private MarshallerItem findMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
-        MarshallerItem f = findInClassSet(itemClazz, converters.mip).orElse(GsonMarshallerItem);
+        MarshallerItem f = findInClassSet(itemClazz, converters.mip).orElse(gsonMarshallerItem);
         if (collectionClazz.isPresent()) {
             CollectionMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.mic).get();
             return (o, a, i) -> fc.marshall(o, a, i, f);
@@ -315,7 +482,7 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private UnMarshallerItem findUnMarshallerItem(Optional<Class> collectionClazz, Class itemClazz) {
-        UnMarshallerItem f = findInClassSet(itemClazz, converters.uip).orElseGet(() -> GsonUnMarshallerItem.apply(itemClazz));
+        UnMarshallerItem f = findInClassSet(itemClazz, converters.uip).orElseGet(() -> gsonUnMarshallerItem.apply(itemClazz));
         if (collectionClazz.isPresent()) {
             CollectionUnMarshallerItem fc = findInClassSet(collectionClazz.get(), converters.uic).get();
             return (a, i) -> fc.unmarshall(a, i, f);
@@ -325,7 +492,7 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private MarshallerAttrVal findMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
-        MarshallerAttrVal f = findInClassSet(itemClazz, converters.map).orElse(GsonMarshallerAttrVal);
+        MarshallerAttrVal f = findInClassSet(itemClazz, converters.map).orElse(gsonMarshallerAttrVal);
         if (collectionClazz.isPresent()) {
             CollectionMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.mac).get();
             return o -> fc.marshall(o, f);
@@ -335,7 +502,7 @@ public class DynamoMapperImpl implements DynamoMapper {
     }
 
     private UnMarshallerAttrVal findUnMarshallerAttrVal(Optional<Class> collectionClazz, Class itemClazz) {
-        UnMarshallerAttrVal f = findInClassSet(itemClazz, converters.uap).orElseGet(() -> GsonUnMarshallerAttrVal.apply(itemClazz));
+        UnMarshallerAttrVal f = findInClassSet(itemClazz, converters.uap).orElseGet(() -> gsonUnMarshallerAttrVal.apply(itemClazz));
         if (collectionClazz.isPresent()) {
             CollectionUnMarshallerAttrVal fc = findInClassSet(collectionClazz.get(), converters.uac).get();
             return a -> fc.unmarshall(a, f);
@@ -353,11 +520,273 @@ public class DynamoMapperImpl implements DynamoMapper {
         return Optional.empty();
     }
 
+    public static class SchemaImpl<T> implements TableSchema<T>, IndexSchema<T> {
+        private final String[] partitionKeys;
+        private final String[] sortKeys;
+        private final Field[] partitionKeyFields;
+        private final Field[] sortKeyFields;
+        private final boolean isSortKeyStatic;
+        private final String sortStaticName;
+        private final KeyAttribute sortStaticNameKey;
+        private final String tableName;
+        private final String partitionKeyName;
+        private final String sortKeyName;
+        private final Table table;
+        private final Index index;
+        private final ImmutableMap<String, MarshallerItem> fieldMarshallers;
+        private final ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers;
+        private final Function<Item, Object[]> fromItemToCtorArgs;
+        private final Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs;
+        private final Constructor<T> objCtor;
+        private final Function<T, Item> toItemMapper;
+        private final Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper;
+
+        public SchemaImpl(
+                String[] partitionKeys,
+                String[] sortKeys,
+                Field[] partitionKeyFields,
+                Field[] sortKeyFields,
+                boolean isSortKeyStatic,
+                String sortStaticName,
+                KeyAttribute sortStaticNameKey,
+                String tableName,
+                String partitionKeyName,
+                String sortKeyName,
+                Table table,
+                Index index,
+                ImmutableMap<String, MarshallerItem> fieldMarshallers,
+                ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers,
+                Function<Item, Object[]> fromItemToCtorArgs,
+                Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs,
+                Constructor<T> objCtor, Function<T, Item> toItemMapper,
+                Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper) {
+            this.partitionKeys = partitionKeys;
+            this.sortKeys = sortKeys;
+            this.partitionKeyFields = partitionKeyFields;
+            this.sortKeyFields = sortKeyFields;
+            this.isSortKeyStatic = isSortKeyStatic;
+            this.sortStaticName = sortStaticName;
+            this.sortStaticNameKey = sortStaticNameKey;
+            this.tableName = tableName;
+            this.partitionKeyName = partitionKeyName;
+            this.sortKeyName = sortKeyName;
+            this.table = table;
+            this.index = index;
+            this.fieldMarshallers = fieldMarshallers;
+            this.fieldUnMarshallers = fieldUnMarshallers;
+            this.fromItemToCtorArgs = fromItemToCtorArgs;
+            this.fromAttrMapToCtorArgs = fromAttrMapToCtorArgs;
+            this.objCtor = objCtor;
+            this.toItemMapper = toItemMapper;
+            this.toAttrMapMapper = toAttrMapMapper;
+        }
+
+        @Override
+        public String tableName() {
+            return tableName;
+        }
+
+        @Override
+        public Table table() {
+            return table;
+        }
+
+        @Override
+        public String indexName() {
+            return tableName;
+        }
+
+        @Override
+        public Index index() {
+            return index;
+        }
+
+        @Override
+        public PrimaryKey primaryKey(T obj) {
+            return new PrimaryKey(partitionKey(obj), isSortKeyStatic ? sortKeyStatic() : sortKey(obj));
+        }
+
+        @Override
+        public PrimaryKey primaryKey(Map<String, Object> values) {
+            String[] partitionValues = Arrays.stream(partitionKeys)
+                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
+                    .toArray(String[]::new);
+            String sortValue;
+            if (isSortKeyStatic) {
+                sortValue = sortStaticName;
+            } else {
+                String[] sortValues = Arrays.stream(sortKeys)
+                        .map(sortKey -> checkNotNull(values.get(sortKey), "Sort key missing value for %s", sortKey).toString())
+                        .toArray(String[]::new);
+                checkState(partitionValues.length + sortValues.length >= values.size(), "Unexpected extra values, partition keys %s sort keys %s values %s", partitionKeys, sortKeys, values);
+                sortValue = StringSerdeUtil.mergeStrings(sortValues);
+            }
+            return new PrimaryKey(
+                    new KeyAttribute(
+                            partitionKeyName,
+                            StringSerdeUtil.mergeStrings(partitionValues)),
+                    new KeyAttribute(
+                            sortKeyName,
+                            sortValue));
+        }
+
+        @Override
+        public String partitionKeyName() {
+            return partitionKeyName;
+        }
+
+        @Override
+        public KeyAttribute partitionKey(T obj) {
+            return new KeyAttribute(
+                    partitionKeyName,
+                    StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
+                            .map(partitionKeyField -> {
+                                try {
+                                    return checkNotNull(partitionKeyField.get(obj),
+                                            "Partition key value null, should add @NonNull on all keys for class %s", obj)
+                                            .toString();
+                                } catch (IllegalAccessException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            })
+                            .toArray(String[]::new)));
+        }
+
+        @Override
+        public KeyAttribute partitionKey(Map<String, Object> values) {
+            String[] partitionValues = Arrays.stream(partitionKeys)
+                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
+                    .toArray(String[]::new);
+            checkState(partitionValues.length == values.size(), "Unexpected extra values, partition keys %s values %s", sortKeys, values);
+            return new KeyAttribute(
+                    partitionKeyName,
+                    StringSerdeUtil.mergeStrings(partitionValues));
+        }
+
+        @Override
+        public boolean isSortKeyStatic() {
+            return isSortKeyStatic;
+        }
+
+        @Override
+        public String sortKeyName() {
+            return sortKeyName;
+        }
+
+        @Override
+        public KeyAttribute sortKeyStatic() {
+            checkState(isSortKeyStatic, "Sort key is not static");
+            return sortStaticNameKey;
+        }
+
+        @Override
+        public KeyAttribute sortKey(T obj) {
+            checkState(!isSortKeyStatic, "Sort key is static");
+            return new KeyAttribute(
+                    sortKeyName,
+                    StringSerdeUtil.mergeStrings(Arrays.stream(sortKeyFields)
+                            .map(sortKeyField -> {
+                                try {
+                                    return checkNotNull(sortKeyField.get(obj),
+                                            "Sort key value null, should add @NonNull on all keys for class %s", obj)
+                                            .toString();
+                                } catch (IllegalAccessException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            })
+                            .toArray(String[]::new)));
+        }
+
+        @Override
+        public KeyAttribute sortKey(Map<String, Object> values) {
+            checkState(!isSortKeyStatic, "Sort key is static");
+            String[] sortValues = Arrays.stream(sortKeys)
+                    .map(sortKey -> checkNotNull(values.get(sortKey), "Sort key missing value for %s", sortKey).toString())
+                    .toArray(String[]::new);
+            checkState(sortValues.length == values.size(), "Unexpected extra values, sort keys %s values %s", sortKeys, values);
+            return new KeyAttribute(
+                    sortKeyName,
+                    StringSerdeUtil.mergeStrings(sortValues));
+        }
+
+        @Override
+        public KeyAttribute sortKeyPartial(Map<String, Object> values) {
+            String[] sortValues = Arrays.stream(sortKeys)
+                    .map(values::get)
+                    .takeWhile(Objects::nonNull)
+                    .map(Object::toString)
+                    .toArray(String[]::new);
+            checkState(sortValues.length == values.size(), "Unexpected extra values, sort key %s values %s", sortKeys, values);
+            return new KeyAttribute(
+                    sortKeyName,
+                    StringSerdeUtil.mergeStrings(sortValues));
+        }
+
+        @Override
+        public Object toDynamoValue(String fieldName, Object object) {
+            Item tempItem = new Item();
+            checkNotNull(fieldMarshallers.get(fieldName), "Unknown field name %s", fieldName)
+                    .marshall(object, "tempAttr", tempItem);
+            return tempItem.get("tempAttr");
+        }
+
+        @Override
+        public Object fromDynamoValue(String fieldName, Object object) {
+            Item tempItem = new Item();
+            tempItem.with("tempAttr", object);
+            return checkNotNull(fieldUnMarshallers.get(fieldName), "Unknown field name %s", fieldName)
+                    .unmarshall("tempAttr", tempItem);
+        }
+
+        @Override
+        public Item toItem(T object) {
+            if (object == null) {
+                return null;
+            }
+            return toItemMapper.apply(object);
+        }
+
+        @Override
+        public T fromItem(Item item) {
+            // TODO check consistency of returning values. prevent user from updating fields that are also pk or sk in GSI or LSI
+            if (item == null) {
+                return null;
+            }
+            try {
+                return objCtor.newInstance(fromItemToCtorArgs.apply(item));
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                throw new RuntimeException("Failed to construct, item: " + item.toJSON() + " objCtor: " + objCtor.toString(), ex);
+            }
+        }
+
+        @Override
+        public ImmutableMap<String, AttributeValue> toAttrMap(T object) {
+            if (object == null) {
+                return null;
+            }
+            return toAttrMapMapper.apply(object);
+        }
+
+        @Override
+        public T fromAttrMap(Map<String, AttributeValue> attrMap) {
+            if (attrMap == null) {
+                return null;
+            }
+            try {
+                return objCtor.newInstance(fromAttrMapToCtorArgs.apply(attrMap));
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override
             protected void configure() {
                 bind(DynamoMapper.class).to(DynamoMapperImpl.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoMapperImpl.class);
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

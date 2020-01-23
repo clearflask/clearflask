@@ -2,51 +2,45 @@ package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.Page;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
-import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.ServerSecret;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+
 @Slf4j
 @Singleton
-public class DynamoNotificationStore extends ManagedService implements NotificationStore {
+public class DynamoNotificationStore implements NotificationStore {
 
     public interface Config {
         @DefaultValue("10")
-        int maxResultSize();
+        int searchFetchMax();
     }
-
-    private static final String NOTIFICATION_TABLE = "notification";
 
     @Inject
     private Config config;
@@ -60,61 +54,47 @@ public class DynamoNotificationStore extends ManagedService implements Notificat
     @Named("cursor")
     private ServerSecret serverSecretCursor;
 
-    private Table notificationTable;
+    private TableSchema<NotificationModel> notificationSchema;
 
-    @Override
-    protected void serviceStart() throws Exception {
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(NOTIFICATION_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName("id").withKeyType(KeyType.HASH),
-                            new KeySchemaElement().withAttributeName("notificationId").withKeyType(KeyType.RANGE)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName("id").withAttributeType(ScalarAttributeType.S),
-                            new AttributeDefinition().withAttributeName("notificationId").withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            dynamo.updateTimeToLive(new UpdateTimeToLiveRequest()
-                    .withTableName(NOTIFICATION_TABLE)
-                    .withTimeToLiveSpecification(new TimeToLiveSpecification()
-                            .withEnabled(true)
-                            .withAttributeName("expiry")));
-            log.debug("Table {} created", NOTIFICATION_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", NOTIFICATION_TABLE);
-        }
-        notificationTable = dynamoDoc.getTable(NOTIFICATION_TABLE);
+    @Inject
+    private void setup() {
+        notificationSchema = dynamoMapper.parseTableSchema(NotificationModel.class);
     }
 
     @Override
-    public NotificationModel notificationCreate(NotificationModel notification) {
-        notificationTable.putItem(dynamoMapper.toItem(notification));
-        return notification;
+    public void notificationCreate(NotificationModel notification) {
+        notificationSchema.table().putItem(new PutItemSpec()
+                .withItem(notificationSchema.toItem(notification)));
     }
 
     @Override
     public NotificationListResponse notificationList(String projectId, String userId, Optional<String> cursorOpt) {
-        String id = dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                "projectId", projectId,
-                "userId", userId), NotificationModel.class);
-        ItemCollection<QueryOutcome> results = notificationTable.query(new QuerySpec()
-                .withHashKey("id", id)
-                .withMaxResultSize(config.maxResultSize())
+        ItemCollection<QueryOutcome> results = notificationSchema.table().query(new QuerySpec()
+                .withHashKey(notificationSchema.partitionKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId)))
+                .withFilterExpression("attribute_exists(notificationId)")
+                .withMaxPageSize(config.searchFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
-                        .map(lastEvaluatedKey -> new PrimaryKey(
-                                "id", id,
-                                "notificationId", lastEvaluatedKey))
+                        .map(lastEvaluatedKey -> notificationSchema.primaryKey(Map.of(
+                                "userId", userId,
+                                "projectId", projectId,
+                                "notificationId", lastEvaluatedKey)))
                         .orElse(null)));
-        ImmutableList<NotificationModel> notifications = StreamSupport.stream(results.pages().spliterator(), false)
-                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
-                .map(item -> dynamoMapper.fromItem(item, NotificationModel.class))
+        Page<Item, QueryOutcome> page = results.firstPage();
+        ImmutableList<NotificationModel> notifications = page
+                .getLowLevelResult()
+                .getItems()
+                .stream()
+                .map(item -> notificationSchema.fromItem(item))
                 .collect(ImmutableList.toImmutableList());
-        Optional<String> newCursorOpt = Optional.ofNullable(results.getLastLowLevelResult()
+        Optional<String> newCursorOpt = Optional.ofNullable(page
+                .getLowLevelResult()
                 .getQueryResult()
                 .getLastEvaluatedKey())
-                .map(m -> m.get("notificationId"))
+                .map(m -> m.get(notificationSchema.sortKeyName())) // notificationId
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
         return new NotificationListResponse(notifications, newCursorOpt);
@@ -122,35 +102,36 @@ public class DynamoNotificationStore extends ManagedService implements Notificat
 
     @Override
     public void notificationClear(String projectId, String userId, String notificationId) {
-        notificationTable.deleteItem(
-                "id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+        notificationSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(notificationSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "userId", userId), NotificationModel.class),
-                "notificationId", notificationId);
+                        "userId", userId,
+                        "notificationId", notificationId))));
     }
 
     @Override
     public void notificationClearAll(String projectId, String userId) {
-        String id = dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                "projectId", projectId,
-                "userId", userId), NotificationModel.class);
-        ItemCollection<QueryOutcome> items = notificationTable.query(new QuerySpec()
-                .withMaxPageSize(25)
-                .withKeyConditionExpression("#i = :i")
-                .withNameMap(ImmutableMap.of("#i", "id"))
-                .withValueMap(ImmutableMap.of(":i", id)));
-        items.pages().forEach(page -> {
-            TableWriteItems tableWriteItems = new TableWriteItems(NOTIFICATION_TABLE);
-            page.forEach(item -> {
-                tableWriteItems.addHashAndRangePrimaryKeyToDelete(
-                        "id", id,
-                        "notificationId", item.getString("notificationId"));
-            });
-            if (tableWriteItems.getPrimaryKeysToDelete() == null || tableWriteItems.getPrimaryKeysToDelete().size() <= 0) {
-                return;
-            }
-            dynamoDoc.batchWriteItem(tableWriteItems);
-        });
+        Iterables.partition(StreamSupport.stream(notificationSchema.table().query(new QuerySpec()
+                .withFilterExpression("attribute_exists(notificationId)")
+                .withHashKey(notificationSchema.partitionKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(notificationSchema::fromItem)
+                .map(NotificationModel::getNotificationId)
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(notificationIdsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(notificationSchema.tableName());
+                    notificationIdsBatch.stream()
+                            .map(notificationId -> notificationSchema.primaryKey(Map.of(
+                                    "userId", userId,
+                                    "projectId", projectId,
+                                    "notificationId", notificationId)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
     }
 
     public static Module module() {
@@ -158,7 +139,6 @@ public class DynamoNotificationStore extends ManagedService implements Notificat
             @Override
             protected void configure() {
                 bind(NotificationStore.class).to(DynamoNotificationStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoNotificationStore.class);
                 install(ConfigSystem.configModule(Config.class));
             }
         };

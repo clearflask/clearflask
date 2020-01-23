@@ -4,18 +4,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -29,7 +24,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
@@ -38,9 +32,9 @@ import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -77,7 +71,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @Singleton
-public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore {
+public class DynamoElasticIdeaStore implements IdeaStore {
 
     public interface Config {
         /** Intended for tests. Force immediate index refresh after write request. */
@@ -86,7 +80,6 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     private static final String IDEA_INDEX = "idea";
-    private static final String IDEA_TABLE = "idea";
 
     @Inject
     private Config config;
@@ -106,23 +99,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Inject
     private Gson gson;
 
-    private Table ideaTable;
+    private TableSchema<IdeaModel> ideaSchema;
 
-    @Override
-    protected void serviceStart() throws Exception {
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(IDEA_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName("id").withKeyType(KeyType.HASH)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName("id").withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            log.debug("Table {} created", IDEA_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", IDEA_TABLE);
-        }
-        ideaTable = dynamoDoc.getTable(IDEA_TABLE);
+    @Inject
+    private void setup() {
+        ideaSchema = dynamoMapper.parseTableSchema(IdeaModel.class);
     }
 
     @Override
@@ -134,9 +115,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         .put("authorUserId", ImmutableMap.of(
                                 "type", "keyword"))
                         .put("created", ImmutableMap.of(
-                                "type", "date"))
+                                "type", "date",
+                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
                         .put("lastActivity", ImmutableMap.of(
-                                "type", "date"))
+                                "type", "date",
+                                "format", "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"))
                         .put("title", ImmutableMap.of(
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
@@ -175,8 +158,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     @Override
-    public IdeaAndIndexingFuture<IndexResponse> createIdea(IdeaModel idea) {
-        ideaTable.putItem(dynamoMapper.toItem(idea));
+    public ListenableFuture<IndexResponse> createIdea(IdeaModel idea) {
+        ideaSchema.table().putItem(new PutItemSpec()
+                .withItem(ideaSchema.toItem(idea))
+                .withConditionExpression("attribute_not_exists(#partitionKey)")
+                .withNameMap(Map.of("#partitionKey", ideaSchema.partitionKeyName())));
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
         elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(IDEA_INDEX, idea.getProjectId()))
@@ -204,29 +190,29 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
 
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return indexingFuture;
     }
 
     @Override
     public Optional<IdeaModel> getIdea(String projectId, String ideaId) {
-        return Optional.ofNullable(dynamoMapper.fromItem(ideaTable.getItem("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                "projectId", projectId,
-                "ideaId", ideaId
-        ), IdeaModel.class)), IdeaModel.class));
+        return Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId))))));
     }
 
     @Override
     public ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(IDEA_TABLE).withHashOnlyKeys("id", ideaIds.stream()
-                .map(ideaId -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+                .map(ideaId -> ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "ideaId", ideaId), IdeaModel.class))
-                .toArray()))
+                        "ideaId", ideaId)))
+                .toArray(PrimaryKey[]::new)))
                 .getTableItems()
                 .values()
                 .stream()
                 .flatMap(Collection::stream)
-                .map(i -> dynamoMapper.fromItem(i, IdeaModel.class))
+                .map(ideaSchema::fromItem)
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
                         i -> i));
@@ -312,10 +298,10 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         if (ideaSearchAdmin.getFilterCreatedStart() != null || ideaSearchAdmin.getFilterCreatedEnd() != null) {
             RangeQueryBuilder createdRangeQuery = QueryBuilders.rangeQuery("created");
             if (ideaSearchAdmin.getFilterCreatedStart() != null) {
-                createdRangeQuery.gte(ideaSearchAdmin.getFilterCreatedStart().toEpochMilli());
+                createdRangeQuery.gte(ideaSearchAdmin.getFilterCreatedStart());
             }
             if (ideaSearchAdmin.getFilterCreatedEnd() != null) {
-                createdRangeQuery.lte(ideaSearchAdmin.getFilterCreatedEnd().toEpochMilli());
+                createdRangeQuery.lte(ideaSearchAdmin.getFilterCreatedEnd());
             }
             query.filter(createdRangeQuery);
         }
@@ -324,10 +310,10 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             // TODO Decide when last activity will be updated, don't forget to update it
             RangeQueryBuilder lastActivityRangeQuery = QueryBuilders.rangeQuery("lastActivity");
             if (ideaSearchAdmin.getFilterLastActivityStart() != null) {
-                lastActivityRangeQuery.gte(ideaSearchAdmin.getFilterLastActivityStart().toEpochMilli());
+                lastActivityRangeQuery.gte(ideaSearchAdmin.getFilterLastActivityStart());
             }
             if (ideaSearchAdmin.getFilterLastActivityEnd() != null) {
-                lastActivityRangeQuery.lte(ideaSearchAdmin.getFilterLastActivityEnd().toEpochMilli());
+                lastActivityRangeQuery.lte(ideaSearchAdmin.getFilterLastActivityEnd());
             }
             query.filter(lastActivityRangeQuery);
         }
@@ -367,48 +353,48 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     @Override
     public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-                .withPrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "ideaId", ideaId), IdeaModel.class))
+                        "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW);
         Map<String, Object> indexUpdates = Maps.newHashMap();
         if (ideaUpdateAdmin.getTitle() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("title")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getTitle())));
+                    .put(ideaSchema.toDynamoValue("title", ideaUpdateAdmin.getTitle())));
             indexUpdates.put("title", ideaUpdateAdmin.getTitle());
         }
         if (ideaUpdateAdmin.getDescription() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getDescription())));
+                    .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
             indexUpdates.put("description", ideaUpdateAdmin.getDescription());
         }
         if (ideaUpdateAdmin.getResponse() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getResponse())));
+                    .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
             indexUpdates.put("response", ideaUpdateAdmin.getResponse());
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getStatusId())));
+                    .put(ideaSchema.toDynamoValue("statusId", ideaUpdateAdmin.getStatusId())));
             indexUpdates.put("statusId", ideaUpdateAdmin.getStatusId());
         }
         if (ideaUpdateAdmin.getCategoryId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("categoryId")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getCategoryId())));
+                    .put(ideaSchema.toDynamoValue("categoryId", ideaUpdateAdmin.getCategoryId())));
             indexUpdates.put("categoryId", ideaUpdateAdmin.getCategoryId());
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("tagIds")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getTagIds())));
+                    .put(ideaSchema.toDynamoValue("tagIds", ideaUpdateAdmin.getTagIds())));
             indexUpdates.put("tagIds", ideaUpdateAdmin.getTagIds());
         }
         if (ideaUpdateAdmin.getFundGoal() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("fundGoal")
-                    .put(dynamoMapper.toDynamoValue(ideaUpdateAdmin.getFundGoal())));
+                    .put(ideaSchema.toDynamoValue("fundGoal", ideaUpdateAdmin.getFundGoal())));
             indexUpdates.put("fundGoal", ideaUpdateAdmin.getFundGoal());
         }
 
-        IdeaModel idea = dynamoMapper.fromItem(ideaTable.updateItem(updateItemSpec).getItem(), IdeaModel.class);
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 
         if (!indexUpdates.isEmpty()) {
             SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
@@ -424,13 +410,14 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId) {
-        IdeaModel idea = dynamoMapper.fromItem(ideaTable.updateItem(new UpdateItemSpec()
-                .withPrimaryKey("id", dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
-                        "ideaId", ideaId), IdeaModel.class))
+                        "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
-                .addAttributeUpdate(new AttributeUpdate("commentCount")
-                        .addNumeric(1))).getItem(), IdeaModel.class);
+                .withAttributeUpdate(new AttributeUpdate("commentCount")
+                        .addNumeric(1)))
+                .getItem());
 
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
@@ -445,14 +432,13 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId) {
-        String ideaCompoundId = dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                "projectId", projectId,
-                "ideaId", ideaId), IdeaModel.class);
-
-        ideaTable.deleteItem("id", ideaCompoundId);
+        ideaSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId))));
 
         SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
-        elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaCompoundId)
+        elastic.deleteAsync(new DeleteRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), ideaId)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
@@ -461,15 +447,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds) {
-        ImmutableList<String> ideaCompoundIds = ideaIds.stream()
-                .map(ideaId -> dynamoMapper.getCompoundPrimaryKey(ImmutableMap.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId), IdeaModel.class))
-                .collect(ImmutableList.toImmutableList());
-
-        dynamoDoc.batchWriteItem(new TableWriteItems(IDEA_TABLE).withPrimaryKeysToDelete(ideaCompoundIds.stream()
-                .map(ideaCompoundId -> new PrimaryKey("id", ideaCompoundId))
-                .toArray(PrimaryKey[]::new)));
+        dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
+                .withPrimaryKeysToDelete(ideaIds.stream()
+                        .map(ideaId -> ideaSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "ideaId", ideaId)))
+                        .toArray(PrimaryKey[]::new)));
 
         SettableFuture<BulkResponse> indexingFuture = SettableFuture.create();
         elastic.bulkAsync(new BulkRequest()
@@ -487,7 +470,6 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             @Override
             protected void configure() {
                 bind(IdeaStore.class).to(DynamoElasticIdeaStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticIdeaStore.class);
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("idea")));
             }

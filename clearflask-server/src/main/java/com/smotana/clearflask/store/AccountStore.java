@@ -1,6 +1,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,72 +9,72 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 
-import java.time.Instant;
 import java.util.Optional;
+
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
 public interface AccountStore {
 
-    default String genAccountId() {
-        return IdUtil.randomId();
-    }
-
-    Optional<Account> getAccount(String accountId);
-
-    Optional<Account> getAccountByEmail(String email);
-
     void createAccount(Account account);
 
-    void addAccountPlanId(String accountId, String planId);
+    Optional<Account> getAccount(String email);
 
-    void removeAccountPlanId(String accountId, String planId);
+    Account addAccountPlanId(String email, String planId);
 
-    void addAccountProjectId(String accountId, String projectId);
+    Account removeAccountPlanId(String email, String planId);
 
-    void removeAccountProjectId(String accountId, String projectId);
+    Account addAccountProjectId(String email, String projectId);
 
-    void updateAccountName(String accountId, String name);
+    Account removeAccountProjectId(String email, String projectId);
 
-    void updateAccountPassword(String accountId, String password, String sessionIdToLeave);
+    Account updateAccountName(String email, String name);
 
-    void updateAccountEmail(String accountId, String previousEmail, String email);
+    Account updateAccountPassword(String email, String password, String sessionIdToLeave);
+
+    Account updateAccountEmail(String emailCurrent, String emailNew);
+
+    void deleteAccount(String email);
 
     default String genSessionId() {
         return IdUtil.randomAscId();
     }
 
-    Session createSession(String accountId, Instant expiry);
+    AccountSession createSession(String email, long ttlInEpochSec);
 
-    Optional<Session> getSession(String accountId, String sessionId);
+    Optional<AccountSession> getSession(String sessionId);
 
-    Session refreshSession(String accountId, String sessionId, Instant expiry);
+    AccountSession refreshSession(AccountSession accountSession, long ttlInEpochSec);
 
-    void revokeSession(String accountId, String sessionId);
+    void revokeSession(AccountSession accountSession);
 
-    void revokeSessions(String accountId);
+    void revokeSessions(String email);
 
-    void revokeSessions(String accountId, String sessionToLeave);
+    void revokeSessions(String email, String sessionToLeave);
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    class Session {
-        @NonNull
-        private final String accountId;
-
+    @DynamoTable(type = Primary, partitionKeys = "sessionId", sortStaticName = "accountSessionById")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "email", sortStaticName = "accountSessionByEmail")
+    class AccountSession {
         @NonNull
         private final String sessionId;
 
         @NonNull
-        private final Instant expiry;
+        private final String email;
+
+        @NonNull
+        private final long ttlInEpochSec;
     }
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "email", sortStaticName = "account")
     class Account {
-
         @NonNull
-        private final String accountId;
+        private final String email;
 
         @NonNull
         private final ImmutableSet<String> planIds;
@@ -83,9 +84,6 @@ public interface AccountStore {
 
         @NonNull
         private final String name;
-
-        @NonNull
-        private final String email;
 
         @NonNull
         @ToString.Exclude

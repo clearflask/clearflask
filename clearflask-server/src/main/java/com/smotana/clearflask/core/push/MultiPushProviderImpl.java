@@ -24,7 +24,7 @@ public class MultiPushProviderImpl implements MultiPushProvider {
     private PushProvider pushBrowser;
 
     @Override
-    public boolean send(NotificationModel notification, UserStore.User user) {
+    public boolean send(NotificationModel notification, UserStore.UserModel user) {
         boolean atLeastOneSent = false;
         if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
             atLeastOneSent |= pushBrowser.send(notification, user.getBrowserPushToken());

@@ -46,7 +46,7 @@ public class NotificationStoreTest extends AbstractTest {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
                 install(ConfigSystem.overrideModule(DynamoNotificationStore.Config.class, om -> {
-                    om.override(om.id().maxResultSize()).withValue(10);
+                    om.override(om.id().searchFetchMax()).withValue(10);
                 }));
             }
         }));
@@ -69,7 +69,7 @@ public class NotificationStoreTest extends AbstractTest {
         store.notificationCreate(notification3);
         assertEquals(ImmutableList.of(notification3, notification2, notification1), store.notificationList(projectId, userId, Optional.empty()).getNotifications());
 
-        configSet(DynamoNotificationStore.Config.class, "maxResultSize", "2");
+        configSet(DynamoNotificationStore.Config.class, "searchFetchMax", "2");
         NotificationListResponse result = store.notificationList(projectId, userId, Optional.empty());
         assertEquals(ImmutableList.of(notification3, notification2), result.getNotifications());
         assertTrue(result.getCursorOpt().isPresent());

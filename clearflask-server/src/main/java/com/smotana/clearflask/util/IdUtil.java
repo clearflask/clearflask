@@ -20,7 +20,7 @@ public class IdUtil {
 
     public static String contentUnique(String content) {
         return String.format("%1.3s-%s",
-                content.replaceAll("[^0-9a-z]+", "-"),
+                content.trim().replaceAll("[^0-9a-z]+", "-"),
                 RandomStringUtils.randomAlphanumeric(3))
                 .toLowerCase();
     }

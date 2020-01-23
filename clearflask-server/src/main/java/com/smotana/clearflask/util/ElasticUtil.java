@@ -9,7 +9,6 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR;
 
 @Slf4j
 @Singleton
@@ -38,11 +38,10 @@ public class ElasticUtil {
         @DefaultValue("100")
         int pageSizeMax();
 
-        @DefaultValue(DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR)
+        @DefaultValue(DYNAMO_WRITE_BATCH_MAX_SIZE_STR)
         int pageSizeDefault();
 
-        /** DynamoDB max batch size is 25 */
-        @DefaultValue("25")
+        @DefaultValue(DYNAMO_WRITE_BATCH_MAX_SIZE_STR)
         int scrollSizeDefault();
 
         @DefaultValue("PT1M")

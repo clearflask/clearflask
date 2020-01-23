@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,7 +65,7 @@ public interface CommentStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "ideaId"})
+    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, sortKeys = "commentId")
     class CommentModel {
 
         @NonNull

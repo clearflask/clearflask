@@ -141,7 +141,8 @@ public class TieredWebLimiterTest extends AbstractTest {
             double qps = successesSum / 60d;
             double qpsExpected = minuteToExpectedQps.apply(i);
             assertEquals(qpsExpected, qps, 0.3);
-            log.info("{}m {}qps {}:\t{}", i, qps, successesSum, successes);
+            // Too verbose, uncomment to see better
+            //log.info("{}m {}qps {}:\t{}", i, qps, successesSum, successes);
         }
     }
 

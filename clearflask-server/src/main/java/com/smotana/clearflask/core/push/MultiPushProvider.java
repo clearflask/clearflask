@@ -5,5 +5,5 @@ import com.smotana.clearflask.store.UserStore;
 
 public interface MultiPushProvider {
 
-    boolean send(NotificationModel notification, UserStore.User user);
+    boolean send(NotificationModel notification, UserStore.UserModel user);
 }

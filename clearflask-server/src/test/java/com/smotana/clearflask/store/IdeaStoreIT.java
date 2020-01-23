@@ -66,8 +66,8 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         IdeaModel idea = getRandomIdea(projectId);
         IdeaModel idea2 = getRandomIdea(projectId);
-        store.createIdea(idea).getIndexingFuture().get();
-        store.createIdea(idea2).getIndexingFuture().get();
+        store.createIdea(idea).get();
+        store.createIdea(idea2).get();
         assertEquals(Optional.of(idea), store.getIdea(projectId, idea.getIdeaId()));
         assertEquals(Optional.of(idea2), store.getIdea(projectId, idea2.getIdeaId()));
         assertEquals(ImmutableSet.of(idea2, idea), ImmutableSet.copyOf(store.getIdeas(projectId, ImmutableList.of(idea2.getIdeaId(), idea.getIdeaId())).values()));
@@ -116,9 +116,9 @@ public class IdeaStoreIT extends AbstractIT {
                 .created(Instant.now().minus(1, ChronoUnit.DAYS))
                 .funded(BigDecimal.valueOf(20L))
                 .build();
-        store.createIdea(idea1).getIndexingFuture().get();
-        store.createIdea(idea2).getIndexingFuture().get();
-        store.createIdea(idea3).getIndexingFuture().get();
+        store.createIdea(idea1).get();
+        store.createIdea(idea2).get();
+        store.createIdea(idea3).get();
 
         // Idea Search
         assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()

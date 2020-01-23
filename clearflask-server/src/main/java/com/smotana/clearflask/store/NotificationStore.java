@@ -2,7 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.Notification;
-import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +19,7 @@ public interface NotificationStore {
         return IdUtil.randomAscId();
     }
 
-    NotificationModel notificationCreate(NotificationModel notification);
+    void notificationCreate(NotificationModel notification);
 
     NotificationListResponse notificationList(String projectId, String userId, Optional<String> cursorOpt);
 
@@ -36,7 +36,7 @@ public interface NotificationStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "userId"})
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, sortKeys = "notificationId")
     class NotificationModel {
 
         @NonNull

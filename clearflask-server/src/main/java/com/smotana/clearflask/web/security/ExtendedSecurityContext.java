@@ -21,7 +21,7 @@ public class ExtendedSecurityContext implements SecurityContext {
         @NonNull
         private final String name;
         @NonNull
-        private final Optional<AccountStore.Session> accountSessionOpt;
+        private final Optional<AccountStore.AccountSession> accountSessionOpt;
         @NonNull
         private final Optional<UserStore.UserSession> userSessionOpt;
     }
@@ -39,10 +39,10 @@ public class ExtendedSecurityContext implements SecurityContext {
         this.requestContext = requestContext;
     }
 
-    public static ExtendedSecurityContext authenticated(@NonNull Optional<AccountStore.Session> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext authenticated(@NonNull Optional<AccountStore.AccountSession> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         String name;
         if (accountSession.isPresent()) {
-            name = accountSession.get().getAccountId();
+            name = accountSession.get().getEmail();
         } else if (userSession.isPresent()) {
             name = userSession.get().getUserId();
         } else {

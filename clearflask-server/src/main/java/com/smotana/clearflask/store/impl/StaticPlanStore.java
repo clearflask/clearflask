@@ -22,12 +22,12 @@ public class StaticPlanStore implements PlanStore {
     private static final ImmutableMap<String, Plan> AVAILABLE_PlANS = ImmutableMap.of(
             "7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", new Plan("7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", "Basic",
                     new PlanPricing(50L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
-                    new PlanPerk("Unlimited users", "description"),
+                    new PlanPerk("1,000 active users", "description"),
                     new PlanPerk("Simple user voting", "description"),
                     new PlanPerk("1 hour credit", "description"))),
             "9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", new Plan("9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", "Basic",
                     new PlanPricing(80L, PlanPricing.PeriodEnum.QUARTERLY), ImmutableList.of(
-                    new PlanPerk("Unlimited users", "description"),
+                    new PlanPerk("1,000 active users", "description"),
                     new PlanPerk("Simple user voting", "description"),
                     new PlanPerk("15 minute credit", "description"))),
             "CDBF4982-1805-4352-8A57-824AFB565973", new Plan("CDBF4982-1805-4352-8A57-824AFB565973", "Analytic",

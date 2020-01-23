@@ -1,6 +1,10 @@
 package com.smotana.clearflask.store.dynamo.mapper;
 
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.collect.ImmutableMap;
 
@@ -8,15 +12,68 @@ import java.util.Map;
 
 public interface DynamoMapper {
 
-    Item toItem(Object obj);
+    <T> TableSchema<T> parseTableSchema(Class<T> objClazz);
 
-    <T> T fromItem(Item item, Class<T> objClazz);
+    <T> IndexSchema<T> parseLocalSecondaryIndexSchema(long indexNumber, Class<T> objClazz);
 
-    ImmutableMap<String, AttributeValue> toAttrMap(Object obj);
+    <T> IndexSchema<T> parseGlobalSecondaryIndexSchema(long indexNumber, Class<T> objClazz);
 
-    <T> T fromAttrMap(Map<String, AttributeValue> attrMap, Class<T> objClazz);
+    enum TableType {
+        Primary,
+        Lsi,
+        Gsi
+    }
 
-    String getCompoundPrimaryKey(ImmutableMap<String, String> keys, Class<?> objClazz);
+    interface Schema<T> {
+        PrimaryKey primaryKey(T obj);
 
-    Object toDynamoValue(Object object);
+        PrimaryKey primaryKey(Map<String, Object> values);
+
+        String partitionKeyName();
+
+        KeyAttribute partitionKey(T obj);
+
+        KeyAttribute partitionKey(Map<String, Object> values);
+
+        String sortKeyName();
+
+        boolean isSortKeyStatic();
+
+        KeyAttribute sortKeyStatic();
+
+        KeyAttribute sortKey(T obj);
+
+        KeyAttribute sortKey(Map<String, Object> values);
+
+        /**
+         * Retrieve sort key from incomplete given values.
+         * Intended to be used by a range query.
+         */
+        KeyAttribute sortKeyPartial(Map<String, Object> values);
+
+
+        Object toDynamoValue(String fieldName, Object object);
+
+        Object fromDynamoValue(String fieldName, Object object);
+
+        Item toItem(T obj);
+
+        T fromItem(Item item);
+
+        ImmutableMap<String, AttributeValue> toAttrMap(T obj);
+
+        T fromAttrMap(Map<String, AttributeValue> attrMap);
+    }
+
+    interface TableSchema<T> extends Schema<T> {
+        String tableName();
+
+        Table table();
+    }
+
+    interface IndexSchema<T> extends Schema<T> {
+        Index index();
+
+        String indexName();
+    }
 }

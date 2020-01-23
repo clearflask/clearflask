@@ -13,12 +13,11 @@ import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.AccountStore.Session;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.security.AuthCookieUtil.AccountAuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +38,7 @@ import java.util.Optional;
 @Path("/v1")
 public class AccountResource extends AbstractResource implements AccountAdminApi {
 
-    private interface Config {
+    public interface Config {
         @DefaultValue("P30D")
         Duration sessionExpiry();
 
@@ -62,24 +61,23 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10)
     @Override
     public AccountAdmin accountBindAdmin() {
-        Session session = getExtendedPrincipal().get().getAccountSessionOpt().get();
+        AccountSession accountSession = getExtendedPrincipal().get().getAccountSessionOpt().get();
 
         // Token refresh
-        if (session.getExpiry().isAfter(Instant.now().plus(config.sessionRenewIfExpiringIn()))) {
-            session = accountStore.refreshSession(
-                    session.getAccountId(),
-                    session.getSessionId(),
-                    Instant.now().plus(config.sessionExpiry()));
+        if (accountSession.getTtlInEpochSec() > Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
+            accountSession = accountStore.refreshSession(
+                    accountSession,
+                    Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            setAuthCookie(session);
+            setAuthCookie(accountSession);
         }
 
         // Fetch account
-        Optional<Account> accountOpt = accountStore.getAccount(session.getAccountId());
+        Optional<Account> accountOpt = accountStore.getAccount(accountSession.getEmail());
         if (!accountOpt.isPresent()) {
-            log.info("Account bind on valid session to non-existent account, revoking all sessions; accountId {} sessionId {}",
-                    session.getAccountId(), session.getSessionId());
-            accountStore.revokeSessions(session.getAccountId());
+            log.info("Account bind on valid session to non-existent account, revoking all sessions for email {}",
+                    accountSession.getEmail());
+            accountStore.revokeSessions(accountSession.getEmail());
             unsetAuthCookie();
             throw new ForbiddenException();
         }
@@ -97,24 +95,24 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public AccountAdmin accountLoginAdmin(AccountLogin credentials) {
-        Optional<Account> accountOpt = accountStore.getAccountByEmail(credentials.getEmail());
+        Optional<Account> accountOpt = accountStore.getAccount(credentials.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", credentials.getEmail());
             throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         Account account = accountOpt.get();
 
-        String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getAccountId());
+        String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail());
         if (!account.getPassword().equals(passwordSupplied)) {
             log.info("Account login incorrect password for email {}", credentials.getEmail());
             throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful account login for email {}", credentials.getEmail());
 
-        Session session = accountStore.createSession(
-                account.getAccountId(),
-                Instant.now().plus(config.sessionExpiry()));
-        setAuthCookie(session);
+        AccountStore.AccountSession accountSession = accountStore.createSession(
+                account.getEmail(),
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        setAuthCookie(accountSession);
 
         return new AccountAdmin(
                 planStore.mapIdsToPlans(account.getPlanIds()).asList(),
@@ -133,10 +131,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.trace("Cannot logout account, already not logged in");
             return;
         }
-        Session session = extendedPrincipal.get().getAccountSessionOpt().get();
+        AccountSession accountSession = extendedPrincipal.get().getAccountSessionOpt().get();
 
-        log.debug("Logout session for account {}", session.getAccountId());
-        accountStore.revokeSession(session.getAccountId(), session.getSessionId());
+        log.debug("Logout session for email {}", accountSession.getEmail());
+        accountStore.revokeSession(accountSession);
 
         unsetAuthCookie();
     }
@@ -153,24 +151,22 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         Plan plan = planOpt.get();
 
-        String accountId = accountStore.genAccountId();
-        String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), accountId);
+        String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
         Account account = new Account(
-                accountId,
+                signup.getEmail(),
                 ImmutableSet.of(plan.getPlanid()),
                 signup.getCompany(),
                 signup.getName(),
-                signup.getEmail(),
                 passwordHashed,
                 signup.getPhone(),
                 signup.getPaymentToken(),
                 ImmutableSet.of());
         accountStore.createAccount(account);
 
-        Session session = accountStore.createSession(
-                account.getAccountId(),
-                Instant.now().plus(config.sessionExpiry()));
-        setAuthCookie(session);
+        AccountStore.AccountSession accountSession = accountStore.createSession(
+                account.getEmail(),
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        setAuthCookie(accountSession);
 
         // TODO Stripe setup recurring billing
 
@@ -182,17 +178,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 account.getPhone());
     }
 
-    private void setAuthCookie(Session session) {
-        log.trace("Setting account auth cookie for account {}", session.getAccountId());
+    private void setAuthCookie(AccountSession accountSession) {
+        log.trace("Setting account auth cookie for email {}", accountSession.getEmail());
         RealCookie.builder()
                 .name(ACCOUNT_AUTH_COOKIE_NAME)
-                .value(new AccountAuthCookie(
-                        session.getSessionId(),
-                        session.getAccountId()))
+                .value(accountSession.getSessionId())
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)
-                .expiry(session.getExpiry())
+                .expiry(accountSession.getTtlInEpochSec())
                 .sameSite(RealCookie.SameSite.STRICT)
                 .build()
                 .addToResponse(response);
@@ -206,7 +200,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .path("/")
                 .secure(securityContext.isSecure())
                 .httpOnly(true)
-                .expiry(Instant.EPOCH)
+                .ttlInEpochSec(0L)
                 .sameSite(RealCookie.SameSite.STRICT)
                 .build()
                 .addToResponse(response);

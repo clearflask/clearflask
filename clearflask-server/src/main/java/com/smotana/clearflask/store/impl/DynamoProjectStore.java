@@ -44,7 +44,7 @@ import java.util.Optional;
 @Singleton
 public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
-    private interface Config {
+    public interface Config {
         @DefaultValue("true")
         boolean enableConfigCacheRead();
 

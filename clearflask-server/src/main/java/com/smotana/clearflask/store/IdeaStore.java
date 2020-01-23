@@ -11,7 +11,7 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
-import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.NotImplementedException;
 import lombok.AllArgsConstructor;
@@ -37,7 +37,7 @@ public interface IdeaStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
-    IdeaAndIndexingFuture<IndexResponse> createIdea(IdeaModel idea);
+    ListenableFuture<IndexResponse> createIdea(IdeaModel idea);
 
     Optional<IdeaModel> getIdea(String projectId, String ideaId);
 
@@ -72,7 +72,7 @@ public interface IdeaStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "ideaId"})
+    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, sortStaticName = "idea")
     class IdeaModel {
 
         @NonNull

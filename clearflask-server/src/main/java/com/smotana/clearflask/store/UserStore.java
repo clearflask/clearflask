@@ -10,7 +10,7 @@ import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.store.dynamo.mapper.CompoundPrimaryKey;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +26,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+
 public interface UserStore {
 
     default String genUserId() {
@@ -34,17 +37,19 @@ public interface UserStore {
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
-    UserAndIndexingFuture<IndexResponse> createUser(User user);
+    UserAndIndexingFuture<IndexResponse> createUser(UserModel user);
 
-    Optional<User> getUser(String projectId, String userId);
+    Optional<UserModel> getUser(String projectId, String userId);
 
-    ImmutableMap<String, User> getUsers(String projectId, ImmutableCollection<String> userIds);
+    ImmutableMap<String, UserModel> getUsers(String projectId, ImmutableCollection<String> userIds);
 
-    Optional<User> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
+    Optional<UserModel> getUserByIdentifier(String projectId, IdentifierType type, String identifier);
 
     SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
+
+    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, BigDecimal balanceDiff);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
@@ -52,17 +57,15 @@ public interface UserStore {
         return IdUtil.randomAscId();
     }
 
-    UserSession createSession(String projectId, String userId, Instant expiry);
+    UserSession createSession(String projectId, String userId, long ttlInEpochSec);
 
-    Optional<UserSession> getSession(String projectId, String userId, String sessionId);
+    Optional<UserSession> getSession(String sessionId);
 
-    UserSession refreshSession(String projectId, String userId, String sessionId, Instant expiry);
+    UserSession refreshSession(UserSession userSession, long ttlInEpochSec);
 
-    void revokeSession(String projectId, String userId, String sessionId);
+    void revokeSession(UserSession userSession);
 
-    void revokeSessions(String projectId, String userId);
-
-    void revokeSessions(String projectId, String userId, String sessionToLeave);
+    void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt);
 
     @Value
     class SearchUsersResponse {
@@ -72,7 +75,7 @@ public interface UserStore {
 
     @Value
     class UserAndIndexingFuture<T> {
-        private final User user;
+        private final UserModel user;
         private final ListenableFuture<T> indexingFuture;
     }
 
@@ -96,8 +99,11 @@ public interface UserStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "userId"})
+    @DynamoTable(type = Primary, partitionKeys = "sessionId", sortStaticName = "userSessionById")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "userId", sortStaticName = "userSessionByUser")
     class UserSession {
+        @NonNull
+        private final String sessionId;
 
         @NonNull
         private final String projectId;
@@ -106,17 +112,14 @@ public interface UserStore {
         private final String userId;
 
         @NonNull
-        private final String sessionId;
-
-        @NonNull
-        private final Instant expiry;
+        private final long ttlInEpochSec;
     }
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @CompoundPrimaryKey(key = "id", primaryKeys = {"projectId", "userId"})
-    class User {
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, sortStaticName = "user")
+    class UserModel {
 
         @NonNull
         private final String projectId;
