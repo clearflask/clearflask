@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 
@@ -21,6 +22,8 @@ import java.util.Comparator;
 
 @Singleton
 public class DemoData extends ManagedService {
+
+    public static final String DEMO_PROJECT_ID = "smotana";
 
     @Inject
     private ProjectStore projectStore;
@@ -39,7 +42,8 @@ public class DemoData extends ManagedService {
 
     @Override
     public ImmutableSet<Class> serviceDependencies() {
-        return ImmutableSet.of(AccountStore.class);
+        // Wait until table is created
+        return ImmutableSet.of(DynamoMapper.class);
     }
 
     private void populateData() {
@@ -64,7 +68,7 @@ public class DemoData extends ManagedService {
                 "dummy-payment-token",
                 ImmutableSet.of());
         accountStore.createAccount(account);
-        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig("smotana");
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(DEMO_PROJECT_ID);
         projectStore.createConfig(versionedConfigAdmin.getConfig().getProjectId(), versionedConfigAdmin);
         accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }

@@ -2,24 +2,13 @@ package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Expected;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
@@ -29,10 +18,18 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -40,6 +37,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+
+// TODO move to single table dynamo mapper
 @Slf4j
 @Singleton
 public class DynamoProjectStore extends ManagedService implements ProjectStore {
@@ -52,10 +52,20 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         Duration configCacheExpireAfterWrite();
     }
 
-    private static final String PROJECT_TABLE = "project";
-    private static final String PROJECT_ID = "projectId";
-    private static final String PROJECT_VERSION = "version";
-    private static final String PROJECT_DATA = "data";
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "projectId", sortStaticName = "project")
+    private static class ProjectModel {
+        @NonNull
+        private final String projectId;
+
+        @NonNull
+        private final String version;
+
+        @NonNull
+        private final String configJson;
+    }
 
     @Inject
     private Config config;
@@ -64,30 +74,21 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
+    private DynamoMapper dynamoMapper;
+    @Inject
     private Gson gson;
 
+    private TableSchema<ProjectModel> projectSchema;
     private Cache<String, Optional<VersionedConfig>> versionedConfigAdminCache;
-    private Table projectTable;
 
-    @Override
-    protected void serviceStart() throws Exception {
+
+    @Inject
+    private void setup() {
         versionedConfigAdminCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
-        try {
-            dynamo.createTable(new CreateTableRequest()
-                    .withTableName(PROJECT_TABLE)
-                    .withKeySchema(ImmutableList.of(
-                            new KeySchemaElement().withAttributeName(PROJECT_ID).withKeyType(KeyType.HASH)))
-                    .withAttributeDefinitions(ImmutableList.of(
-                            new AttributeDefinition().withAttributeName(PROJECT_ID).withAttributeType(ScalarAttributeType.S)))
-                    .withBillingMode(BillingMode.PAY_PER_REQUEST));
-            log.debug("Table {} created", PROJECT_TABLE);
-        } catch (ResourceNotFoundException ex) {
-            log.debug("Table {} already exists", PROJECT_TABLE);
-        }
-        projectTable = dynamoDoc.getTable(PROJECT_TABLE);
+        projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
     }
 
     @Override
@@ -99,63 +100,68 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                 return versionedConfigAdminCachedOpt;
             }
         }
-        final Optional<VersionedConfig> versionedConfigOpt = getConfigGeneric(projectId, VersionedConfig.class);
+        Optional<VersionedConfig> versionedConfigOpt = Optional.ofNullable(projectSchema
+                .fromItem(projectSchema.table()
+                        .getItem(projectSchema
+                                .primaryKey(Map.of(
+                                        "projectId", projectId)))))
+                .map(project -> new VersionedConfig(
+                        gson.fromJson(project.getConfigJson(), com.smotana.clearflask.api.model.Config.class),
+                        project.getVersion()));
         versionedConfigAdminCache.put(projectId, versionedConfigOpt);
         return versionedConfigOpt;
     }
 
     @Override
     public Optional<VersionedConfigAdmin> getConfigAdmin(String projectId) {
-        return getConfigGeneric(projectId, VersionedConfigAdmin.class);
-    }
-
-    private <T> Optional<T> getConfigGeneric(String projectId, Class<T> configClazz) {
-        GetItemResult item = dynamo.getItem(PROJECT_TABLE, ImmutableMap.of(PROJECT_ID, new AttributeValue(projectId)));
-
-        final Optional<T> configOpt;
-        if (item.getItem() == null) {
-            configOpt = Optional.empty();
-        } else {
-            configOpt = Optional.of(gson.fromJson(item.getItem().get(PROJECT_DATA).getS(), configClazz));
-        }
-
-        return configOpt;
+        return Optional.ofNullable(projectSchema
+                .fromItem(projectSchema.table().getItem(new GetItemSpec()
+                        .withPrimaryKey(projectSchema
+                                .primaryKey(Map.of(
+                                        "projectId", projectId)))
+                        .withConsistentRead(true))))
+                .map(project -> new VersionedConfigAdmin(
+                        gson.fromJson(project.getConfigJson(), ConfigAdmin.class),
+                        project.getVersion()));
     }
 
     @Override
     public ImmutableSet<VersionedConfigAdmin> getConfigAdmins(ImmutableSet<String> projectIds) {
-        return dynamo.batchGetItem(new BatchGetItemRequest().addRequestItemsEntry(PROJECT_TABLE, new KeysAndAttributes()
-                .withKeys(projectIds.stream()
-                        .map(projectId -> ImmutableMap.of(PROJECT_ID, new AttributeValue(projectId)))
-                        .collect(ImmutableList.toImmutableList()))
-                .withAttributesToGet(PROJECT_DATA)
-                .withConsistentRead(true)))
-                .getResponses()
-                .entrySet().stream()
-                .map(Map.Entry::getValue)
+        return dynamoDoc.batchGetItem(new BatchGetItemSpec()
+                .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
+                        .withConsistentRead(true)
+                        .withPrimaryKeys(projectIds.stream()
+                                .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
+                                .toArray(PrimaryKey[]::new))))
+                .getTableItems()
+                .values()
+                .stream()
                 .flatMap(Collection::stream)
-                .map(i -> i.get(PROJECT_DATA))
-                .map(AttributeValue::getS)
-                .map(configAdminStr -> gson.fromJson(configAdminStr, VersionedConfigAdmin.class))
+                .map(projectSchema::fromItem)
+                .map(project -> new VersionedConfigAdmin(
+                        gson.fromJson(project.getConfigJson(), ConfigAdmin.class),
+                        project.getVersion()))
                 .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override
     public void createConfig(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
-        projectTable.putItem(new Item()
-                .withPrimaryKey(PROJECT_ID, projectId)
-                .withString(PROJECT_VERSION, versionedConfigAdmin.getVersion())
-                .withString(PROJECT_DATA, gson.toJson(versionedConfigAdmin)));
+        projectSchema.table().putItem(new PutItemSpec().withItem(projectSchema.toItem(new ProjectModel(
+                projectId,
+                versionedConfigAdmin.getVersion(),
+                gson.toJson(versionedConfigAdmin.getConfig())))));
         versionedConfigAdminCache.invalidate(projectId);
     }
 
     @Override
     public void updateConfig(String projectId, String previousVersion, VersionedConfigAdmin versionedConfigAdmin) {
-        projectTable.putItem(new Item()
-                        .withPrimaryKey(PROJECT_ID, projectId)
-                        .withString(PROJECT_VERSION, versionedConfigAdmin.getVersion())
-                        .withString(PROJECT_DATA, gson.toJson(versionedConfigAdmin)),
-                new Expected(PROJECT_VERSION).eq(previousVersion));
+        projectSchema.table().putItem(new PutItemSpec()
+                .withItem(projectSchema.toItem(new ProjectModel(
+                        projectId,
+                        versionedConfigAdmin.getVersion(),
+                        gson.toJson(versionedConfigAdmin.getConfig()))))
+                .withConditionExpression("version = :previousVersion")
+                .withValueMap(Map.of(":previousVersion", previousVersion)));
         versionedConfigAdminCache.invalidate(projectId);
     }
 

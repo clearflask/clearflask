@@ -67,7 +67,6 @@ public class EmailPushProvider implements PushProvider {
 
     @Inject
     private void setup() {
-        config.rateLimitPerSecondObservable().subscribe(rateLimiter::setRate);
         config.rateLimitCapacityObservable().subscribe(c -> rateLimiter = guavaRateLimiters.create(
                 config.rateLimitPerSecond(),
                 config.rateLimitCapacity().getSeconds(),
@@ -76,6 +75,8 @@ public class EmailPushProvider implements PushProvider {
                 config.rateLimitPerSecond(),
                 config.rateLimitCapacity().getSeconds(),
                 Duration.ofMinutes(10).getSeconds());
+
+        config.rateLimitPerSecondObservable().subscribe(rateLimitPerSecond -> rateLimiter.setRate(rateLimitPerSecond));
     }
 
     @Override

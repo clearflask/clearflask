@@ -21,6 +21,7 @@ import com.smotana.clearflask.util.GsonProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.Mockito;
 
 import java.util.Optional;
 
@@ -71,6 +72,10 @@ public abstract class AbstractTest extends AbstractModule {
             serviceManager.stopAsync().awaitStopped();
             log.info("stopped services");
         }
+    }
+
+    protected void bindMock(Class clazz) {
+        bind(clazz).toInstance(Mockito.mock(clazz));
     }
 
     protected void configure() {

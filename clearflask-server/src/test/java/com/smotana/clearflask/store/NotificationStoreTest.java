@@ -16,12 +16,26 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
+import nl.martijndwars.webpush.Base64Encoder;
+import nl.martijndwars.webpush.PushService;
+import nl.martijndwars.webpush.Utils;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.junit.Test;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Security;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.stream.LongStream;
 
+import static nl.martijndwars.webpush.Utils.ALGORITHM;
+import static nl.martijndwars.webpush.Utils.CURVE;
+import static org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -102,5 +116,36 @@ public class NotificationStoreTest extends AbstractTest {
                 Instant.now().plus(1, ChronoUnit.HOURS),
                 description
         );
+    }
+
+    @Test(timeout = 5_000L)
+    public void testestset() throws Exception {
+        LongStream.range(0, 40).forEach(a -> {
+            try {
+                Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+                ECNamedCurveParameterSpec parameterSpec = ECNamedCurveTable.getParameterSpec(CURVE);
+
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER_NAME);
+                keyPairGenerator.initialize(parameterSpec);
+
+                KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+                ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+                ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
+
+                byte[] encodedPublicKey = Utils.encode(publicKey);
+                byte[] encodedPrivateKey = Utils.encode(privateKey);
+
+                String pub = Base64Encoder.encodeUrl(encodedPublicKey);
+                String pri = Base64Encoder.encodeUrl(encodedPrivateKey);
+                log.info("AAAAA pub {}", pub);
+                log.info("AAAAA pri {}", pri);
+
+                new PushService().setKeyPair(new KeyPair(Utils.loadPublicKey(pub), Utils.loadPrivateKey(pri)));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
     }
 }

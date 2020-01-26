@@ -120,7 +120,7 @@ public class BrowserPushProvider implements PushProvider {
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
             throw new RuntimeException(ex);
         }
-        checkState(!Utils.verifyKeyPair(privateKey, publicKey), "Configuration mismatch, public/private keys do not match");
+        checkState(Utils.verifyKeyPair(privateKey, publicKey), "Configuration mismatch, public/private keys do not match");
         browserPush.setKeyPair(new KeyPair(publicKey, privateKey));
     }
 
