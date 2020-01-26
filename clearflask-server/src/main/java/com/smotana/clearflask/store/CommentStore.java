@@ -5,7 +5,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.smotana.clearflask.api.model.Comment;
 import com.smotana.clearflask.api.model.CommentUpdate;
+import com.smotana.clearflask.api.model.CommentWithAuthor;
+import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -58,7 +61,7 @@ public interface CommentStore {
 
     @Value
     class CommentAndIndexingFuture<T> {
-        private final CommentModel comment;
+        private final CommentModel commentModel;
         private final ListenableFuture<T> indexingFuture;
     }
 
@@ -95,6 +98,11 @@ public interface CommentStore {
          */
         private final String authorUserId;
 
+        /**
+         * Author of the comment. If null, comment is deleted.
+         */
+        private final String authorName;
+
         @NonNull
         private final Instant created;
 
@@ -113,5 +121,30 @@ public interface CommentStore {
 
         @NonNull
         private final int downvotes;
+
+        public Comment toComment() {
+            return new Comment(
+                    getIdeaId(),
+                    getCommentId(),
+                    getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
+                    getChildCommentCount(),
+                    getAuthorUserId(),
+                    getCreated(),
+                    getEdited(),
+                    getContent());
+        }
+
+        public CommentWithAuthor toCommentWithAuthor() {
+            return new CommentWithAuthor(
+                    getIdeaId(),
+                    getCommentId(),
+                    getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
+                    getChildCommentCount(),
+                    getAuthorUserId(),
+                    getCreated(),
+                    getEdited(),
+                    getContent(),
+                    new User(getAuthorUserId(), getAuthorName()));
+        }
     }
 }

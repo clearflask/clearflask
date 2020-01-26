@@ -196,19 +196,21 @@ class DataMock {
     return expressions;
   }
 
-  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.Idea, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
+  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.Idea, level:number = 2, numComments:number = 4, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
     return this.mockUser()
       .then(user => (userMentionPool.push(user), user))
-      .then(user => ServerMock.get().commentCreateAdmin({
+      .then(user => ServerMock.get().commentCreate({
           projectId: this.projectId,
           ideaId: item.ideaId,
-          commentCreateAdmin: {
-            authorUserId: user.userId,
+          commentCreate: {
             content: this.mockMention(userMentionPool) + loremIpsum({
               units: 'sentences',
               count: Math.round(Math.random() * 3 + 1),
             }),
             parentCommentId: parentComment ? parentComment.commentId : undefined,
+          },
+          ...{ // override author
+            author: user,
           },
         }))
         .then(comment => {
@@ -245,7 +247,7 @@ class DataMock {
   }
 
   mockMention(userPool:Admin.User[]):string {
-    return Math.random() < 0.5
+    return Math.random() < 0 // TODO Mentions disabled for now
       ? '@' + userPool[Math.floor(Math.random()*userPool.length)].name + ' '
       : '';
   }

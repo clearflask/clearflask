@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserCreateAdmin;
 import com.smotana.clearflask.api.model.UserLogin;
+import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchResponse;
@@ -215,9 +216,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 1, challengeAfter = 2)
     @Override
-    public UserMeWithBalance userUpdate(String projectId, String userId, UserUpdate userUpdate) {
+    public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
-        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserMeWithBalance();
+        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserMe();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})

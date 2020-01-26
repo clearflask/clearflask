@@ -68,13 +68,17 @@ const FeaturesTable:Admin.FeaturesTable = {
   ],
 };
 
+interface CommentWithAuthorWithParentPath extends Client.CommentWithAuthor {
+  parentIdPath:string[];
+}
+
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
-
+  
   readonly BASE_LATENCY = 300;
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = false;
-
+  
   // Mock account login (server-side cookie data)
   loggedIn:boolean = false;
   account?:Admin.AccountAdmin = undefined;
@@ -84,7 +88,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     [projectId:string]: {
       loggedInUser?:Admin.UserAdmin; // Mock server-side cookie data
       config: Admin.VersionedConfigAdmin,
-      comments: Admin.Comment[];
+      comments: CommentWithAuthorWithParentPath[];
       ideas: Admin.Idea[];
       users: Admin.UserAdmin[];
       votes: Admin.Vote[];
@@ -93,6 +97,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       notifications: Client.Notification[];
     }
   } = {};
+  nextCommentId = 10000;
 
   static get():ServerMock {
     if(ServerMock.instance === undefined) ServerMock.instance = new ServerMock();
@@ -142,30 +147,66 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(account);
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    if(!loggedInUser) return this.throwLater(403, 'Not logged in');
-    return this.commentCreateAdmin({
-      ...request,
-      commentCreateAdmin: {
-        ...request.commentCreate,
-        authorUserId: loggedInUser.userId,
-      },
-    });
+    var loggedInUser;
+    if(request['author']) {
+      // Data mocking shortcut
+      loggedInUser = request['author'];
+    } else {
+      loggedInUser = this.getProject(request.projectId).loggedInUser;
+    }
+    if(!loggedInUser) return this.throwLater(403, 'Not logged in');  
+    const parentComment = request.commentCreate.parentCommentId && this.getProject(request.projectId).comments.find(c => c.commentId === request.commentCreate.parentCommentId)!;
+    const parentIdPath = request.commentCreate.parentCommentId && parentComment
+      ? [
+        ...parentComment.parentIdPath,
+        request.commentCreate.parentCommentId,
+      ]
+      : []
+    const comment:CommentWithAuthorWithParentPath = {
+      ideaId: request.ideaId,
+      commentId: '' + (this.nextCommentId++),
+      author: loggedInUser,
+      authorUserId: loggedInUser.userId,
+      created: new Date(),
+      parentIdPath: parentIdPath,
+      childCommentCount: 0,
+      ...(request.commentCreate),
+    };
+    parentComment && parentComment.childCommentCount++;
+    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
+    idea.commentCount++;
+    if(!comment.parentCommentId){
+      idea.childCommentCount++;
+    }
+    this.getProject(request.projectId).comments.push(comment);
+    return this.returnLater(comment);
   }
-  commentDelete(request: Client.CommentDeleteRequest): Promise<Admin.Comment> {
+  commentDelete(request: Client.CommentDeleteRequest): Promise<Admin.CommentWithAuthor> {
     return this.commentDeleteAdmin(request);
   }
   commentList(request: Client.CommentListRequest): Promise<Client.CommentSearchResponse> {
-    return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
+    const minCommentIdToExclude:string|'' = [
+      ...(request.commentSearch.excludeChildrenCommentIds || []),
+      ...(request.commentSearch.parentCommentId ? [request.commentSearch.parentCommentId] : []),
+    ].reduce((l,r) => l>r?l:r, '');
+    const data = this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.ideaId === request.ideaId)
+      .filter(comment => !request.commentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.commentSearch.parentCommentId)))
+      .filter(comment => !request.commentSearch.excludeChildrenCommentIds || 
+        !request.commentSearch.excludeChildrenCommentIds.some(ec => 
+          ec === comment.commentId
+          || comment.parentIdPath.some(pc => ec === pc)))
+      .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude)
       .map(comment => {return {
         ...comment,
         author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
       }})
-      ,[(l,r) => r.created.getTime() - l.created.getTime()]) // TODO improve sort
-      ,this.DEFAULT_LIMIT, request.cursor));
+      ,[(l,r) => l.created.getTime() - r.created.getTime()]);
+    return this.returnLater({
+      results: data.slice(0, Math.min(data.length, 10)),
+    });
   }
-  commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.Comment> {
+  commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.CommentWithAuthor> {
     const comment = this.getImmutable(
       this.getProject(request.projectId).comments,
       comment => comment.commentId === request.commentId);
@@ -357,30 +398,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(notification => notification.userId === loggedInUser.userId);
     return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
   }
-  commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
-    const comment:Admin.Comment = {
-      ideaId: request.ideaId,
-      commentId: randomUuid(),
-      created: new Date(),
-      ...(request.commentCreateAdmin),
-    };
-    this.getProject(request.projectId).comments.push(comment);
-    return this.returnLater(comment);
-  }
-  commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<Admin.Comment> {
+  commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<Admin.CommentWithAuthor> {
     const comment = this.getImmutable(
       this.getProject(request.projectId).comments,
       comment => comment.commentId === request.commentId);
     comment.content = undefined;
     comment.authorUserId = undefined;
+    comment.author = undefined;
     comment.edited = new Date();
     return this.returnLater(comment);
-  }
-  commentDeleteBulkAdmin(request: Admin.CommentDeleteBulkAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchResponse> {
-    throw new Error("Method not implemented.");
   }
   transactionCreateAdmin(request: Admin.TransactionCreateAdminRequest): Promise<Admin.Transaction> {
     var balance = this.getProject(request.projectId).balances[request.userId] || 0;
@@ -405,6 +431,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const idea:Admin.Idea = {
       ideaId: stringToSlug(request.ideaCreateAdmin.title + '-' + randomUuid().substring(0,5)),
       created: new Date(),
+      commentCount: 0,
+      childCommentCount: 0,
       ...(request.ideaCreateAdmin),
     };
     this.getProject(request.projectId).ideas.push(idea);

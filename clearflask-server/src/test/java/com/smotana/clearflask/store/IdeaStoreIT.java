@@ -197,6 +197,7 @@ public class IdeaStoreIT extends AbstractIT {
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
                 0L,
+                0L,
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(100),
                 ImmutableSet.of(),

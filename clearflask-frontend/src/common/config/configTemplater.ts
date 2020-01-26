@@ -80,6 +80,9 @@ export default class Templater {
     // Enable display name
     this._get<ConfigEditor.EnumProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(Admin.AccountFieldsDisplayNameEnum.None);
 
+    // Style
+    this._get<ConfigEditor.EnumProperty>(['style', 'palette', 'expressionColor']).set(Admin.PaletteExpressionColorEnum.Washed);
+
     // Categories
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     // Idea

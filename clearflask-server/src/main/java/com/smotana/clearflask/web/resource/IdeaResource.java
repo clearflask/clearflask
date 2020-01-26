@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
@@ -49,6 +50,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private NotificationService notificationService;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private CommentStore commentStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 10)
@@ -66,6 +69,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ideaCreate.getCategoryId(),
                 null,
                 ImmutableSet.copyOf(ideaCreate.getTagIds()),
+                0L,
                 0L,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
@@ -93,6 +97,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ideaCreateAdmin.getCategoryId(),
                 ideaCreateAdmin.getStatusId(),
                 ImmutableSet.copyOf(ideaCreateAdmin.getTagIds()),
+                0L,
                 0L,
                 BigDecimal.ZERO,
                 ideaCreateAdmin.getFundGoal(),
@@ -195,6 +200,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDelete(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId);
+        commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -202,6 +208,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
         ideaStore.deleteIdea(projectId, ideaId);
+        commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -219,6 +226,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     true,
                     searchResponse == null ? Optional.empty() : searchResponse.getCursorOpt());
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());
+            searchResponse.getIdeaIds().forEach(ideaId -> commentStore.deleteCommentsForIdea(projectId, ideaId));
         } while (!searchResponse.getCursorOpt().isPresent());
     }
 

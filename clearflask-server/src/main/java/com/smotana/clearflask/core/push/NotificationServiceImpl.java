@@ -6,8 +6,11 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 @Slf4j
 @Singleton
@@ -25,7 +28,7 @@ public class NotificationServiceImpl implements NotificationService {
 
 
     @Override
-    public void onStatusOrResponseChanged(IdeaStore.IdeaModel idea, boolean statusChanged, boolean responseChanged) {
+    public void onStatusOrResponseChanged(IdeaModel idea, boolean statusChanged, boolean responseChanged) {
         if (!config.enabled()) {
             return;
         }
@@ -35,7 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void onCommentReply(IdeaStore.IdeaModel idea) {
+    public void onCommentReply(IdeaModel idea, Optional<CommentModel> parentCommentOpt, CommentModel comment) {
         if (!config.enabled()) {
             return;
         }

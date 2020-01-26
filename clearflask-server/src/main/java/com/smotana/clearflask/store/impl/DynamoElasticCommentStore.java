@@ -218,7 +218,7 @@ public class DynamoElasticCommentStore implements CommentStore {
             parentIndexingFutureOpt = Optional.of(parentIndexingFuture);
         }
 
-        IdeaStore.IdeaAndIndexingFuture<UpdateResponse> incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId());
+        IdeaStore.IdeaAndIndexingFuture<UpdateResponse> incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId(), comment.getLevel() == 0);
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
         elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
@@ -433,12 +433,15 @@ public class DynamoElasticCommentStore implements CommentStore {
                         "commentId", commentId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
                 .addAttributeUpdate(new AttributeUpdate("authorUserId").delete())
-                .addAttributeUpdate(new AttributeUpdate("content").delete()))
+                .addAttributeUpdate(new AttributeUpdate("content").delete())
+                .addAttributeUpdate(new AttributeUpdate("edited")
+                        .put(commentSchema.toDynamoValue("edited", Instant.now()))))
                 .getItem());
 
         HashMap<String, Object> updates = Maps.newHashMap();
         updates.put("authorUserId", null);
         updates.put("content", null);
+        updates.put("edited", comment.getEdited().getEpochSecond());
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(updates), XContentType.JSON)
@@ -450,6 +453,7 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Override
     public ListenableFuture<DeleteResponse> deleteComment(String projectId, String ideaId, String commentId) {
+        // TODO update childCommentCount for all parents
         commentSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(commentSchema.primaryKey(ImmutableMap.of(
                         "projectId", projectId,
@@ -466,6 +470,7 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Override
     public ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId) {
+        // TODO update childCommentCount for all parents
         Iterables.partition(StreamSupport.stream(commentSchema.table().query(new QuerySpec()
                 .withHashKey(commentSchema.partitionKey(Map.of(
                         "ideaId", ideaId,

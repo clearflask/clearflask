@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @Slf4j
 public class CommentStoreIT extends AbstractIT {
@@ -132,12 +132,19 @@ public class CommentStoreIT extends AbstractIT {
         ideaStore.createIndex(projectId);
         String ideaId = createRandomIdea(projectId).getIdeaId();
 
-        CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
-        assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
+        CommentModel comment = createRandomComment(projectId, ideaId, ImmutableList.of());
+        assertEquals(Optional.of(comment), store.getComment(projectId, ideaId, comment.getCommentId()));
 
-        c = c.toBuilder().authorUserId(null).content(null).build();
-        store.markAsDeletedComment(projectId, ideaId, c.getCommentId()).getIndexingFuture().get();
-        assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
+        store.markAsDeletedComment(projectId, ideaId, comment.getCommentId()).getIndexingFuture().get();
+        Optional<CommentModel> commentActual = store.getComment(projectId, ideaId, comment.getCommentId());
+        assertTrue(commentActual.isPresent());
+        assertNotNull(commentActual.get().getEdited());
+        comment = comment.toBuilder()
+                .authorUserId(null)
+                .content(null)
+                .edited(commentActual.get().getEdited())
+                .build();
+        assertEquals(comment, commentActual.get());
     }
 
     @Test(timeout = 5_000L)
@@ -177,6 +184,7 @@ public class CommentStoreIT extends AbstractIT {
                 parentCommentIds.size(),
                 0,
                 IdUtil.randomId(),
+                IdUtil.randomId(),
                 Instant.now(),
                 null,
                 IdUtil.randomId(),
@@ -196,6 +204,7 @@ public class CommentStoreIT extends AbstractIT {
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
+                0L,
                 0L,
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(100),

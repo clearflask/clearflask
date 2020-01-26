@@ -137,6 +137,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "type", "keyword"))
                         .put("commentCount", ImmutableMap.of(
                                 "type", "long"))
+                        .put("childCommentCount", ImmutableMap.of(
+                                "type", "long"))
                         .put("funded", ImmutableMap.of(
                                 "type", "double"))
                         .put("fundGoal", ImmutableMap.of(
@@ -179,6 +181,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("statusId", idea.getStatusId())
                                 .put("tagIds", idea.getTagIds())
                                 .put("commentCount", idea.getCommentCount())
+                                .put("childCommentCount", idea.getCommentCount())
                                 .put("funded", idea.getFunded())
                                 .put("fundGoal", idea.getFundGoal())
                                 .put("funderUserIds", idea.getFunderUserIds())
@@ -409,21 +412,28 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId) {
+    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
+        ImmutableList.Builder<AttributeUpdate> attrUpdates = ImmutableList.builder();
+        attrUpdates.add(new AttributeUpdate("commentCount").addNumeric(1));
+        if (incrementChildCount) {
+            attrUpdates.add(new AttributeUpdate("childCommentCount").addNumeric(1));
+        }
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
-                .withAttributeUpdate(new AttributeUpdate("commentCount")
-                        .addNumeric(1)))
+                .withAttributeUpdate(attrUpdates.build()))
                 .getItem());
 
+        ImmutableMap.Builder<Object, Object> updates = ImmutableMap.builder();
+        updates.put("commentCount", idea.getCommentCount());
+        if (incrementChildCount) {
+            updates.put("childCommentCount", idea.getChildCommentCount());
+        }
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
-                        .doc(gson.toJson(ImmutableMap.of(
-                                "commentCount", idea.getCommentCount()
-                        )), XContentType.JSON)
+                        .doc(gson.toJson(updates.build()), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 

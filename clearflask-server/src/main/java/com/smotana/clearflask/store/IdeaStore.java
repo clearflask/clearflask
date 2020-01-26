@@ -51,7 +51,8 @@ public interface IdeaStore {
 
     IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
 
-    IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId);
+    /** Increments total comment count. If incrementChildCount is true, also increments immediate child count too. */
+    IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
     ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
 
@@ -104,6 +105,9 @@ public interface IdeaStore {
 
         @NonNull
         private final long commentCount;
+
+        @NonNull
+        private final long childCommentCount;
 
         private final BigDecimal funded;
 

@@ -28,6 +28,7 @@ import { withSnackbar, WithSnackbarProps } from 'notistack';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import Message from './Message';
+import CommentList from './CommentList';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -274,9 +275,6 @@ interface ConnectProps {
   authorUser?:Client.User;
   vote?:Client.Vote;
   loggedInUser?:Client.User;
-  commentsStatus?:Status;
-  comments?:(Client.CommentWithAuthor|undefined)[]
-  commentCursor?:string;
   updateVote: (voteUpdate:Partial<Client.VoteUpdate>)=>Promise<Client.VoteUpdateResponse>;
 }
 
@@ -457,13 +455,6 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.comment) return null;
 
-    if(!this.props.commentsStatus) {
-      this.props.server.dispatch().commentList({
-        projectId: this.props.server.getProjectId(),
-        ideaId: this.props.idea.ideaId,
-      });
-    }
-
     const addCommentButton = (
       <div className={this.props.classes.addCommentForm}>
         <TextField
@@ -484,7 +475,6 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                 ideaId: this.props.idea!.ideaId,
                 commentCreate: {
                   content: this.state.newCommentInput!,
-                  authorUserId: this.props.loggedInUser!.userId,
                 },
               })
               .then(comment => {
@@ -508,17 +498,17 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       </div>
     );
 
-    // TODO infinite scroll this.props.commentCursor
     return (
       <div className={this.props.classes.commentSection}>
-        <Loader loaded={!!this.props.comments}>
-          {addCommentButton}
-          {this.props.comments && (this.props.comments.length > 0 ? (this.props.comments.map(comment => (
-            <Comment comment={comment} />
-          ))) : (
-            <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
-          ))}
-        </Loader>
+        {addCommentButton}
+        {this.props.idea.commentCount > 0 && (
+          <CommentList
+            server={this.props.server}
+            ideaId={this.props.idea.ideaId}
+            expectedCommentCount={this.props.idea.childCommentCount}
+            parentCommentId={undefined}
+          />
+        )}
       </div>
     );
   }
@@ -954,16 +944,16 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea
       || !this.props.idea.response) return null;
     return (
-      <Paper elevation={0} className={this.props.classes.responseContainer}>
-          <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
-            Reply:&nbsp;&nbsp;
-          </Typography>  
-          <Typography variant='body1' component={'span'}>
-            {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
-              ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
-              : this.props.idea.response}
-          </Typography>  
-      </Paper>
+      <div className={this.props.classes.responseContainer}>
+        <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
+          Reply:&nbsp;&nbsp;
+        </Typography>  
+        <Typography variant='body1' component={'span'}>
+          {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
+            ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
+            : this.props.idea.response}
+        </Typography>  
+      </div>
     );
   }
 
@@ -980,7 +970,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 }
 
 export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
-  var authorUser, commentsStatus, comments, commentCursor, vote;
+  var authorUser, vote;
   if(ownProps.idea) {
     const user = state.users.byId[ownProps.idea.authorUserId];
     if(!user) {
@@ -990,18 +980,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       });
     } else {
       authorUser = user.user;
-    }
-    const commentsByIdeaId = state.comments.byIdeaId[ownProps.idea.ideaId];
-    commentsStatus = commentsByIdeaId && commentsByIdeaId.status;
-    if(commentsByIdeaId && commentsByIdeaId.status === Status.FULFILLED && commentsByIdeaId.commentIds) {
-      commentCursor = commentsByIdeaId.cursor;
-      comments = commentsByIdeaId.commentIds.map(commentId => {
-        const comment = state.comments.byId[commentId];
-        if(!comment || !comment.comment) return undefined;
-        if(!comment.comment.authorUserId) return comment.comment;
-        const commentAuthorUser = state.users.byId[comment.comment.authorUserId]
-        return {...comment.comment, author: commentAuthorUser ? commentAuthorUser.user : undefined};
-      });
     }
     const voteResult = state.votes.byIdeaId[ownProps.idea.ideaId];
     if(voteResult === undefined) {
@@ -1029,9 +1007,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    commentsStatus: commentsStatus,
-    comments: comments,
-    commentCursor: commentCursor,
     updateVote: (voteUpdate:Partial<Client.VoteUpdate>):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
       voteUpdate: {

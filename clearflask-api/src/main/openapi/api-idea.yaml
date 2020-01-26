@@ -84,6 +84,10 @@ components:
           items:
             type: string
         commentCount:
+          description: Total comment count
+          type: integer
+        childCommentCount:
+          description: Count of immediate child comments only
           type: integer
         funded:
           type: number
@@ -118,6 +122,8 @@ components:
         - title
         - categoryId
         - tagIds
+        - commentCount
+        - childCommentCount
     IdeaWithAuthorAndVote:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/Idea'

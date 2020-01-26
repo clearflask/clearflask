@@ -1,14 +1,21 @@
 components:
   schemas:
-    CommentSearchAdmin:
+    CommentSearch:
       type: object
       properties:
-        filterUserIds:
+        parentCommentId:
+          type: string
+        excludeChildrenCommentIds:
           type: array
           items:
             type: string
     Comment:
       type: object
+      required:
+      - ideaId
+      - commentId
+      - childCommentCount
+      - created
       properties:
         ideaId:
           type: string
@@ -16,6 +23,8 @@ components:
           type: string
         parentCommentId:
           type: string
+        childCommentCount:
+          type: integer
         authorUserId:
           description: Author of the comment. If null, comment is deleted
           type: string
@@ -23,15 +32,12 @@ components:
           type: string
           format: date-time
         edited:
-          description: If set, comment was last edited at this time.
+          description: If set, comment was last edited at this time. If deleted, this is deleted time.
           type: string
           format: date-time
         content:
+          description: Comment content. If null, comment is deleted
           type: string
-      required:
-      - ideaId
-      - commentId
-      - created
     CommentWithAuthor:
       allOf:
       - $ref: 'api-comment.yaml#/components/schemas/Comment'
@@ -44,18 +50,19 @@ components:
       properties:
         parentCommentId:
           type: string
-        authorUserId:
-          type: string
         content:
           type: string
       required:
-      - authorUserId
       - content
     CommentCreateAdmin:
       allOf:
       - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
       - type: object
+        required:
+        - authorUserId
         properties:
+          authorUserId:
+            type: string
           suppressNotifications:
             description: Suppresses notifications
             type: boolean
@@ -80,10 +87,12 @@ components:
       required: true
       schema:
         type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentSearch'
     responses:
       '200':
         content:
@@ -91,15 +100,13 @@ components:
             schema:
               title: CommentSearchResponse
               type: object
+              required:
+              - results
               properties:
-                cursor:
-                  $ref: 'api-client.yaml#/components/schemas/Cursor'
                 results:
                   type: array
                   items:
                     $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
-              required:
-              - results
   post:
     operationId: commentCreate
     tags: [Comment]
@@ -157,7 +164,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -184,68 +191,12 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/comment:
-  get:
-    operationId: commentSearchAdmin
-    tags: [CommentAdmin]
-    parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              title: CommentSearchResponse
-              type: object
-              properties:
-                cursor:
-                  $ref: 'api-client.yaml#/components/schemas/Cursor'
-                results:
-                  type: array
-                  items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
-              required:
-              - results
+/project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
   delete:
-    operationId: commentDeleteBulkAdmin
-    tags: [CommentAdmin]
-    parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/idea/{ideaId}/comment:
-  post:
-    operationId: commentCreateAdmin
+    operationId: commentDeleteAdmin
     tags: [CommentAdmin]
     parameters:
     - name: projectId
@@ -254,28 +205,6 @@ components:
       schema:
         type: string
     - name: ideaId
-      in: path
-      required: true
-      schema:
-        type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
-/project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
-  delete:
-    operationId: commentDeleteAdmin
-    tags: [CommentAdmin]
-    parameters:
-    - name: projectId
       in: path
       required: true
       schema:
@@ -290,6 +219,6 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

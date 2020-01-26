@@ -32,6 +32,7 @@ import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.impl.DynamoAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoNotificationStore;
@@ -122,6 +123,7 @@ public enum ServiceInjector {
                 install(DynamoElasticUserStore.module());
                 install(DynamoElasticIdeaStore.module());
                 install(DynamoNotificationStore.module());
+                install(DynamoElasticCommentStore.module());
                 install(StaticPlanStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());

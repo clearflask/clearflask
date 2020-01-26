@@ -381,34 +381,39 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
 export interface StateComments {
   byId:{[commentId:string]:{
     status:Status;
-    comment?:Client.Comment;
+    comment?:Client.CommentWithAuthor;
   }};
-  byIdeaId:{[ideaId:string]:{
+  byIdeaIdOrParentCommentId:{[ideaIdOrParentCommentId:string]:{
     status:Status;
-    commentIds?:string[];
-    cursor?:string;
+    commentIds?:Set<string>;
   }};
 }
 const stateCommentsDefault = {
   byId: {},
-  byIdeaId: {},
+  byIdeaIdOrParentCommentId: {},
 };
 function reducerComments(state:StateComments = stateCommentsDefault, action:Client.Actions):StateComments {
   switch (action.type) {
     case Client.commentListActionStatus.Pending:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.meta.request.ideaId]: { status: Status.PENDING }
+        byIdeaIdOrParentCommentId: {
+          ...state.byIdeaIdOrParentCommentId,
+          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+            status: Status.PENDING
+          }
         },
       };
     case Client.commentListActionStatus.Rejected:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.meta.request.ideaId]: { status: Status.REJECTED }
+        byIdeaIdOrParentCommentId: {
+          ...state.byIdeaIdOrParentCommentId,
+          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+            status: Status.REJECTED
+          }
         },
       };
     case Client.commentDeleteActionStatus.Fulfilled:
@@ -423,24 +428,42 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
         },
       };
     case Client.commentListActionStatus.Fulfilled:
-      return {
+      // First set state
+      var newState = {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.meta.request.ideaId]: {
-            commentIds: action.payload.results.map(comment => comment.commentId),
-            cursor: action.payload.cursor,
-            status: Status.FULFILLED,
+        byIdeaIdOrParentCommentId: {
+          ...state.byIdeaIdOrParentCommentId,
+          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+            status: Status.FULFILLED
           }
         },
+      };
+      // Then put all the comments in the right places
+      var newByIdeaIdOrParentCommentId = newState.byIdeaIdOrParentCommentId;
+      action.payload.results.forEach(comment => newState.byIdeaIdOrParentCommentId = {
+        ...newState.byIdeaIdOrParentCommentId,
+        [comment.parentCommentId || comment.ideaId]: {
+          ...newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId],
+          status: Status.FULFILLED,
+          commentIds: new Set([
+            ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]
+              ? newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId].commentIds || []
+              : []),
+              comment.commentId,
+          ]),
+        }
+      });
+      return {
+        ...newState,
+        byIdeaIdOrParentCommentId: newState.byIdeaIdOrParentCommentId,
         byId: {
-          ...state.byId,
+          ...newState.byId,
           ...action.payload.results.reduce(
             (commentsById, comment) => {
               commentsById[comment.commentId] = {
                 comment: {
                   ...comment,
-                  author: undefined, // Change CommentWithAuthor to just Comment
                 },
                 status: Status.FULFILLED,
               };
@@ -451,18 +474,17 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
     case Client.commentCreateActionStatus.Fulfilled:
       return {
         ...state,
-        ...(state.byIdeaId[action.meta.request.ideaId] ? {
-          byIdeaId: {
-            ...state.byIdeaId,
-            [action.meta.request.ideaId]: {
-              ...state.byIdeaId[action.meta.request.ideaId],
-              commentIds: state.byIdeaId[action.meta.request.ideaId].commentIds ? [
-                action.payload.commentId,
-                ...state.byIdeaId[action.meta.request.ideaId].commentIds!,
-              ] : undefined,
-            }
-          },
-        } : {}),
+        byIdeaIdOrParentCommentId: {
+          ...state.byIdeaIdOrParentCommentId,
+          [action.payload.parentCommentId || action.payload.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.payload.parentCommentId || action.payload.ideaId],
+            status: Status.FULFILLED,
+            commentIds: new Set([
+              ...(state.byIdeaIdOrParentCommentId[action.payload.parentCommentId || action.payload.ideaId] && state.byIdeaIdOrParentCommentId[action.payload.parentCommentId || action.payload.ideaId].commentIds || []),
+              action.payload.commentId,
+            ]),
+          }
+        },
         byId: {
           ...state.byId,
           [action.payload.commentId]: {

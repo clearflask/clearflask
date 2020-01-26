@@ -218,6 +218,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             thumb: transitionClassName,
             trackBefore: transitionClassName,
             trackAfter: transitionClassName,
+            ...{ // Typescript definition doesn't expose the thumbWrapper
+              thumbWrapper: transitionClassName,
+            }
           }}
         />
         <div style={{
