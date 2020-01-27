@@ -23,10 +23,13 @@ public @interface DynamoTable {
     String[] partitionKeys();
 
     /** Sort keys to be compounded together */
-    String[] sortKeys() default {};
+    String[] rangeKeys() default {};
 
-    /** Static sort name to use */
-    String sortStaticName() default "";
+    /**
+     * Prefix range key with this. If no range keys are present,
+     * this will be the sole value of the range key.
+     */
+    String rangePrefix() default "";
 
     @Target(TYPE)
     @Retention(RUNTIME)

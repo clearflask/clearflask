@@ -68,7 +68,7 @@ public interface CommentStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, sortKeys = "commentId")
+    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, rangeKeys = "commentId")
     class CommentModel {
 
         @NonNull

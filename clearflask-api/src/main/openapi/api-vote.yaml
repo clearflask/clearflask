@@ -1,5 +1,11 @@
 components:
   schemas:
+    VoteOption:
+      type: string
+      enum:
+      - upvote
+      - downvote
+      - none
     VoteSearchAdmin:
       type: object
       properties:
@@ -31,11 +37,7 @@ components:
           description: Optional amount of credits to fund.
           type: number
         vote:
-          description: Optional vote.
-          type: string
-          enum:
-          - upvote
-          - downvote
+          $ref: 'api-vote.yaml#/components/schemas/VoteOption'
         expressions:
           description: Optional expression type given.
           type: array
@@ -51,11 +53,7 @@ components:
         fundAmount:
           type: number
         vote:
-          type: string
-          enum:
-          - upvote
-          - downvote
-          - none
+          $ref: 'api-vote.yaml#/components/schemas/VoteOption'
         expressions:
           type: object
           properties:

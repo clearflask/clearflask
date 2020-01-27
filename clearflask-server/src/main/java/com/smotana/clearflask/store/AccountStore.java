@@ -55,8 +55,8 @@ public interface AccountStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "sessionId", sortStaticName = "accountSessionById")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "email", sortStaticName = "accountSessionByEmail")
+    @DynamoTable(type = Primary, partitionKeys = "sessionId", rangePrefix = "accountSessionById")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "email", rangePrefix = "accountSessionByEmail")
     class AccountSession {
         @NonNull
         private final String sessionId;
@@ -71,7 +71,7 @@ public interface AccountStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "email", sortStaticName = "account")
+    @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "account")
     class Account {
         @NonNull
         private final String email;

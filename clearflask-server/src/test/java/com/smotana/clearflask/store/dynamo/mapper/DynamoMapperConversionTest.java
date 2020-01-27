@@ -63,7 +63,7 @@ public class DynamoMapperConversionTest extends AbstractTest {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = "id", sortStaticName = "data")
+    @DynamoTable(partitionKeys = "id", rangePrefix = "data")
     public static class Data {
         @NonNull
         private final String id;

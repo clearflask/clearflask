@@ -61,10 +61,10 @@ public class DynamoMapperTest extends AbstractTest {
 
     @Value
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"f1", "f2"}, sortKeys = {"f3", "f4", "f5"})
-    @DynamoTable(type = Lsi, indexNumber = 1, partitionKeys = {"f1", "f2"}, sortKeys = {"f5", "f6"})
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"f3", "f4", "f5"}, sortKeys = {"f1", "f2"})
-    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"f1", "f3"}, sortKeys = {"f2", "f4"})
+    @DynamoTable(type = Primary, partitionKeys = {"f1", "f2"}, rangeKeys = {"f3", "f4", "f5"})
+    @DynamoTable(type = Lsi, indexNumber = 1, partitionKeys = {"f1", "f2"}, rangeKeys = {"f5", "f6"})
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"f3", "f4", "f5"}, rangeKeys = {"f1", "f2"})
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"f1", "f3"}, rangeKeys = {"f2", "f4"})
     public static class Data {
         @NonNull
         private final String f1;

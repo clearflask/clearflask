@@ -100,7 +100,7 @@ public class DynamoElasticUserStore implements UserStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"identifierHash", "type", "projectId"}, sortStaticName = "userByIdentifier")
+    @DynamoTable(type = Primary, partitionKeys = {"identifierHash", "type", "projectId"}, rangePrefix = "userByIdentifier")
     public static class IdentifierUser {
         @NonNull
         private final String type;

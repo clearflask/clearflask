@@ -35,21 +35,17 @@ public interface DynamoMapper {
 
         KeyAttribute partitionKey(Map<String, Object> values);
 
-        String sortKeyName();
+        String rangeKeyName();
 
-        boolean isSortKeyStatic();
+        KeyAttribute rangeKey(T obj);
 
-        KeyAttribute sortKeyStatic();
-
-        KeyAttribute sortKey(T obj);
-
-        KeyAttribute sortKey(Map<String, Object> values);
+        KeyAttribute rangeKey(Map<String, Object> values);
 
         /**
          * Retrieve sort key from incomplete given values.
          * Intended to be used by a range query.
          */
-        KeyAttribute sortKeyPartial(Map<String, Object> values);
+        KeyAttribute rangeKeyPartial(Map<String, Object> values);
 
 
         Object toDynamoValue(String fieldName, Object object);

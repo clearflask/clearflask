@@ -94,7 +94,7 @@ public class DynamoNotificationStore implements NotificationStore {
                 .getLowLevelResult()
                 .getQueryResult()
                 .getLastEvaluatedKey())
-                .map(m -> m.get(notificationSchema.sortKeyName())) // notificationId
+                .map(m -> m.get(notificationSchema.rangeKeyName())) // notificationId
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
         return new NotificationListResponse(notifications, newCursorOpt);

@@ -26,11 +26,11 @@ const styles = (theme:Theme) => ({
   },
   previewMobilePaper: {
     overflowY: 'scroll' as 'scroll',
-    width: '100%',
+    width: '95%',
     background: theme.palette.background.default,
   },
   appBar: {
-    zIndex: theme.zIndex.modal + 1,
+    zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
   },
   menuButton: {
     marginRight: 20,
@@ -88,7 +88,7 @@ class Layout extends Component<Props, State> {
     const { classes, theme } = this.props;
 
     return (
-      <div className={classes.root}>
+      <React.Fragment>
         <AppBar elevation={0} color='default' className={classes.appBar}>
           <Toolbar>
             <IconButton
@@ -115,6 +115,7 @@ class Layout extends Component<Props, State> {
           </Toolbar>
           <Divider /> 
         </AppBar>
+      <div className={classes.root}>
         <nav className={classes.drawer}>
           <Hidden smUp implementation='css'>
             <Drawer
@@ -188,6 +189,7 @@ class Layout extends Component<Props, State> {
           </div>
         )}
       </div>
+      </React.Fragment>
     );
   }
 

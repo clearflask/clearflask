@@ -103,8 +103,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
                 primaryKeySchemas.add(new KeySchemaElement(getPartitionKeyName(Primary, -1), KeyType.HASH));
                 primaryAttributeDefinitions.add(new AttributeDefinition(getPartitionKeyName(Primary, -1), ScalarAttributeType.S));
-                primaryKeySchemas.add(new KeySchemaElement(getSortKeyName(Primary, -1), KeyType.RANGE));
-                primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Primary, -1), ScalarAttributeType.S));
+                primaryKeySchemas.add(new KeySchemaElement(getRangeKeyName(Primary, -1), KeyType.RANGE));
+                primaryAttributeDefinitions.add(new AttributeDefinition(getRangeKeyName(Primary, -1), ScalarAttributeType.S));
 
                 LongStream.range(1, config.lsiCount() + 1).forEach(indexNumber -> {
                     localSecondaryIndexes.add(new LocalSecondaryIndex()
@@ -112,8 +112,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                             .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                             .withKeySchema(ImmutableList.of(
                                     new KeySchemaElement(getPartitionKeyName(Lsi, indexNumber), KeyType.HASH),
-                                    new KeySchemaElement(getSortKeyName(Lsi, indexNumber), KeyType.RANGE))));
-                    primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Lsi, indexNumber), ScalarAttributeType.S));
+                                    new KeySchemaElement(getRangeKeyName(Lsi, indexNumber), KeyType.RANGE))));
+                    primaryAttributeDefinitions.add(new AttributeDefinition(getRangeKeyName(Lsi, indexNumber), ScalarAttributeType.S));
                 });
 
                 LongStream.range(1, config.gsiCount() + 1).forEach(indexNumber -> {
@@ -122,9 +122,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                             .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                             .withKeySchema(ImmutableList.of(
                                     new KeySchemaElement(getPartitionKeyName(Gsi, indexNumber), KeyType.HASH),
-                                    new KeySchemaElement(getSortKeyName(Gsi, indexNumber), KeyType.RANGE))));
+                                    new KeySchemaElement(getRangeKeyName(Gsi, indexNumber), KeyType.RANGE))));
                     primaryAttributeDefinitions.add(new AttributeDefinition(getPartitionKeyName(Gsi, indexNumber), ScalarAttributeType.S));
-                    primaryAttributeDefinitions.add(new AttributeDefinition(getSortKeyName(Gsi, indexNumber), ScalarAttributeType.S));
+                    primaryAttributeDefinitions.add(new AttributeDefinition(getRangeKeyName(Gsi, indexNumber), ScalarAttributeType.S));
                 });
 
                 CreateTableRequest createTableRequest = new CreateTableRequest()
@@ -173,7 +173,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 : type.name().toLowerCase() + "pk" + indexNumber;
     }
 
-    private String getSortKeyName(TableType type, long indexNumber) {
+    private String getRangeKeyName(TableType type, long indexNumber) {
         return type == Primary
                 ? "sk"
                 : type.name().toLowerCase() + "sk" + indexNumber;
@@ -189,16 +189,11 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("Class " + objClazz + " is missing table type " + type));
         String[] partitionKeys = dynamoTable.partitionKeys();
-        String[] sortKeys = dynamoTable.sortKeys();
-        boolean isSortKeyStatic = !Strings.isNullOrEmpty(dynamoTable.sortStaticName());
-        String sortStaticName = dynamoTable.sortStaticName();
+        String[] rangeKeys = dynamoTable.rangeKeys();
+        String rangePrefix = dynamoTable.rangePrefix();
         String tableName = getTableOrIndexName(type, indexNumber);
         String partitionKeyName = getPartitionKeyName(type, indexNumber);
-        String sortKeyName = getSortKeyName(type, indexNumber);
-        KeyAttribute sortStaticNameKey = new KeyAttribute(sortKeyName, sortStaticName);
-
-        checkState(isSortKeyStatic ^ sortKeys.length > 0,
-                "Must supply either list of sort keys or a static name for class %s", objClazz);
+        String rangeKeyName = getRangeKeyName(type, indexNumber);
 
         Table table = dynamoDoc.getTable(getTableOrIndexName(Primary, -1));
         Index index = type != Primary
@@ -211,7 +206,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         ImmutableList.Builder<Function<Map<String, AttributeValue>, Object>> fromAttrMapToCtorArgsListBuilder = ImmutableList.builder();
         ImmutableMap.Builder<String, Function<T, Object>> objToFieldValsBuilder = ImmutableMap.builder();
         Field[] partitionKeyFields = new Field[partitionKeys.length];
-        Field[] sortKeyFields = new Field[sortKeys.length];
+        Field[] rangeKeyFields = new Field[rangeKeys.length];
         ImmutableList.Builder<BiConsumer<Item, T>> toItemArgsBuilder = ImmutableList.builder();
         ImmutableList.Builder<BiConsumer<ImmutableMap.Builder<String, AttributeValue>, T>> toAttrMapArgsBuilder = ImmutableList.builder();
 
@@ -257,9 +252,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     partitionKeyFields[i] = field;
                 }
             }
-            for (int i = 0; i < sortKeys.length; i++) {
-                if (fieldName.equals(sortKeys[i])) {
-                    sortKeyFields[i] = field;
+            for (int i = 0; i < rangeKeys.length; i++) {
+                if (fieldName.equals(rangeKeys[i])) {
+                    rangeKeyFields[i] = field;
                 }
             }
 
@@ -325,8 +320,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             if (dt == dynamoTable) {
                 continue;
             }
-            checkState(!Strings.isNullOrEmpty(dt.sortStaticName()) ^ sortKeys.length > 0,
-                    "Must supply either list of sort keys or a static name for class %s", objClazz);
+            checkState(!Strings.isNullOrEmpty(dt.rangePrefix()) ^ rangeKeys.length > 0,
+                    "Must supply either list of range keys or a static name for class %s", objClazz);
             if (dt.type() != Lsi) {
                 ImmutableList<Function<T, Object>> dtPartitionKeyMappers = Arrays.stream(dt.partitionKeys())
                         .map(objToFieldVals::get)
@@ -339,22 +334,22 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                                 .map(Object::toString)
                                 .toArray(String[]::new)));
             }
-            if (Strings.isNullOrEmpty(dt.sortStaticName())) {
-                ImmutableList<Function<T, Object>> dtSortKeyMappers = Arrays.stream(dt.sortKeys())
+            if (Strings.isNullOrEmpty(dt.rangePrefix())) {
+                ImmutableList<Function<T, Object>> dtRangeKeyMappers = Arrays.stream(dt.rangeKeys())
                         .map(objToFieldVals::get)
                         .map(Preconditions::checkNotNull)
                         .collect(ImmutableList.toImmutableList());
                 toItemOtherKeysMapperBuilder.put(
-                        getSortKeyName(dt.type(), dt.indexNumber()),
-                        obj -> StringSerdeUtil.mergeStrings(dtSortKeyMappers.stream()
+                        getRangeKeyName(dt.type(), dt.indexNumber()),
+                        obj -> StringSerdeUtil.mergeStrings(dtRangeKeyMappers.stream()
                                 .map(m -> m.apply(obj))
                                 .map(Object::toString)
                                 .toArray(String[]::new)));
             } else {
-                String dtSortStaticName = dt.sortStaticName();
+                String dtRangeStaticName = dt.rangePrefix();
                 toItemOtherKeysMapperBuilder.put(
-                        getSortKeyName(dt.type(), dt.indexNumber()),
-                        obj -> dtSortStaticName);
+                        getRangeKeyName(dt.type(), dt.indexNumber()),
+                        obj -> dtRangeStaticName);
             }
         }
         ImmutableMap<String, Function<T, String>> toItemOtherKeysMapper = toItemOtherKeysMapperBuilder.build();
@@ -367,9 +362,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     }
                 })
                 .toArray(String[]::new));
-        Function<T, String> getSortKeyVal = isSortKeyStatic
-                ? obj -> sortStaticName
-                : obj -> StringSerdeUtil.mergeStrings(Arrays.stream(sortKeyFields)
+        Function<T, String> getRangeKeyVal = rangeKeyFields.length <= 0
+                ? obj -> rangePrefix
+                : obj -> rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeyFields)
                 .map(f -> {
                     try {
                         return checkNotNull(f.get(obj)).toString();
@@ -384,7 +379,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         Function<T, Item> toItemMapper = obj -> {
             Item item = new Item();
             item.withPrimaryKey(partitionKeyName, getPartitionKeyVal.apply(obj),
-                    sortKeyName, getSortKeyVal.apply(obj));
+                    rangeKeyName, getRangeKeyVal.apply(obj));
             toItemOtherKeysMapper.forEach(((keyName, objToKeyMapper) ->
                     item.withString(keyName, objToKeyMapper.apply(obj))));
             toItemArgs.forEach(m -> m.accept(item, obj));
@@ -396,7 +391,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper = obj -> {
             ImmutableMap.Builder<String, AttributeValue> attrMapBuilder = ImmutableMap.builder();
             attrMapBuilder.put(partitionKeyName, new AttributeValue(getPartitionKeyVal.apply(obj)));
-            attrMapBuilder.put(sortKeyName, new AttributeValue(getSortKeyVal.apply(obj)));
+            attrMapBuilder.put(rangeKeyName, new AttributeValue(getRangeKeyVal.apply(obj)));
             toItemOtherKeysMapper.forEach(((keyName, objToKeyMapper) ->
                     attrMapBuilder.put(keyName, new AttributeValue(objToKeyMapper.apply(obj)))));
             toAttrMapArgs.forEach(m -> m.accept(attrMapBuilder, obj));
@@ -409,15 +404,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         return new SchemaImpl<T>(
                 partitionKeys,
-                sortKeys,
+                rangeKeys,
                 partitionKeyFields,
-                sortKeyFields,
-                isSortKeyStatic,
-                sortStaticName,
-                sortStaticNameKey,
+                rangeKeyFields,
+                rangePrefix,
                 tableName,
                 partitionKeyName,
-                sortKeyName,
+                rangeKeyName,
                 table,
                 index,
                 fieldMarshallers,
@@ -522,15 +515,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
     public static class SchemaImpl<T> implements TableSchema<T>, IndexSchema<T> {
         private final String[] partitionKeys;
-        private final String[] sortKeys;
+        private final String[] rangeKeys;
         private final Field[] partitionKeyFields;
-        private final Field[] sortKeyFields;
-        private final boolean isSortKeyStatic;
-        private final String sortStaticName;
-        private final KeyAttribute sortStaticNameKey;
+        private final Field[] rangeKeyFields;
+        private final String rangePrefix;
         private final String tableName;
         private final String partitionKeyName;
-        private final String sortKeyName;
+        private final String rangeKeyName;
         private final Table table;
         private final Index index;
         private final ImmutableMap<String, MarshallerItem> fieldMarshallers;
@@ -543,15 +534,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         public SchemaImpl(
                 String[] partitionKeys,
-                String[] sortKeys,
+                String[] rangeKeys,
                 Field[] partitionKeyFields,
-                Field[] sortKeyFields,
-                boolean isSortKeyStatic,
-                String sortStaticName,
-                KeyAttribute sortStaticNameKey,
+                Field[] rangeKeyFields,
+                String rangePrefix,
                 String tableName,
                 String partitionKeyName,
-                String sortKeyName,
+                String rangeKeyName,
                 Table table,
                 Index index,
                 ImmutableMap<String, MarshallerItem> fieldMarshallers,
@@ -561,15 +550,13 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 Constructor<T> objCtor, Function<T, Item> toItemMapper,
                 Function<T, ImmutableMap<String, AttributeValue>> toAttrMapMapper) {
             this.partitionKeys = partitionKeys;
-            this.sortKeys = sortKeys;
+            this.rangeKeys = rangeKeys;
             this.partitionKeyFields = partitionKeyFields;
-            this.sortKeyFields = sortKeyFields;
-            this.isSortKeyStatic = isSortKeyStatic;
-            this.sortStaticName = sortStaticName;
-            this.sortStaticNameKey = sortStaticNameKey;
+            this.rangeKeyFields = rangeKeyFields;
+            this.rangePrefix = rangePrefix;
             this.tableName = tableName;
             this.partitionKeyName = partitionKeyName;
-            this.sortKeyName = sortKeyName;
+            this.rangeKeyName = rangeKeyName;
             this.table = table;
             this.index = index;
             this.fieldMarshallers = fieldMarshallers;
@@ -603,31 +590,23 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         @Override
         public PrimaryKey primaryKey(T obj) {
-            return new PrimaryKey(partitionKey(obj), isSortKeyStatic ? sortKeyStatic() : sortKey(obj));
+            return new PrimaryKey(partitionKey(obj), rangeKey(obj));
         }
 
         @Override
         public PrimaryKey primaryKey(Map<String, Object> values) {
-            String[] partitionValues = Arrays.stream(partitionKeys)
-                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
-                    .toArray(String[]::new);
-            String sortValue;
-            if (isSortKeyStatic) {
-                sortValue = sortStaticName;
-            } else {
-                String[] sortValues = Arrays.stream(sortKeys)
-                        .map(sortKey -> checkNotNull(values.get(sortKey), "Sort key missing value for %s", sortKey).toString())
-                        .toArray(String[]::new);
-                checkState(partitionValues.length + sortValues.length >= values.size(), "Unexpected extra values, partition keys %s sort keys %s values %s", partitionKeys, sortKeys, values);
-                sortValue = StringSerdeUtil.mergeStrings(sortValues);
-            }
+            checkState(partitionKeys.length + rangeKeys.length >= values.size(), "Unexpected extra values, partition keys %s range keys %s values %s", partitionKeys, rangeKeys, values);
             return new PrimaryKey(
                     new KeyAttribute(
                             partitionKeyName,
-                            StringSerdeUtil.mergeStrings(partitionValues)),
+                            StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeys)
+                                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
+                                    .toArray(String[]::new))),
                     new KeyAttribute(
-                            sortKeyName,
-                            sortValue));
+                            rangeKeyName,
+                            rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
+                                    .map(rangeKey -> checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey).toString())
+                                    .toArray(String[]::new))));
         }
 
         @Override
@@ -657,38 +636,26 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             String[] partitionValues = Arrays.stream(partitionKeys)
                     .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
                     .toArray(String[]::new);
-            checkState(partitionValues.length == values.size(), "Unexpected extra values, partition keys %s values %s", sortKeys, values);
+            checkState(partitionValues.length == values.size(), "Unexpected extra values, partition keys %s values %s", rangeKeys, values);
             return new KeyAttribute(
                     partitionKeyName,
                     StringSerdeUtil.mergeStrings(partitionValues));
         }
 
         @Override
-        public boolean isSortKeyStatic() {
-            return isSortKeyStatic;
+        public String rangeKeyName() {
+            return rangeKeyName;
         }
 
         @Override
-        public String sortKeyName() {
-            return sortKeyName;
-        }
-
-        @Override
-        public KeyAttribute sortKeyStatic() {
-            checkState(isSortKeyStatic, "Sort key is not static");
-            return sortStaticNameKey;
-        }
-
-        @Override
-        public KeyAttribute sortKey(T obj) {
-            checkState(!isSortKeyStatic, "Sort key is static");
+        public KeyAttribute rangeKey(T obj) {
             return new KeyAttribute(
-                    sortKeyName,
-                    StringSerdeUtil.mergeStrings(Arrays.stream(sortKeyFields)
-                            .map(sortKeyField -> {
+                    rangeKeyName,
+                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeyFields)
+                            .map(rangeKeyField -> {
                                 try {
-                                    return checkNotNull(sortKeyField.get(obj),
-                                            "Sort key value null, should add @NonNull on all keys for class %s", obj)
+                                    return checkNotNull(rangeKeyField.get(obj),
+                                            "Range key value null, should add @NonNull on all keys for class %s", obj)
                                             .toString();
                                 } catch (IllegalAccessException ex) {
                                     throw new RuntimeException(ex);
@@ -698,28 +665,24 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         }
 
         @Override
-        public KeyAttribute sortKey(Map<String, Object> values) {
-            checkState(!isSortKeyStatic, "Sort key is static");
-            String[] sortValues = Arrays.stream(sortKeys)
-                    .map(sortKey -> checkNotNull(values.get(sortKey), "Sort key missing value for %s", sortKey).toString())
-                    .toArray(String[]::new);
-            checkState(sortValues.length == values.size(), "Unexpected extra values, sort keys %s values %s", sortKeys, values);
+        public KeyAttribute rangeKey(Map<String, Object> values) {
+            checkState(rangeKeys.length == values.size(), "Unexpected extra values, range keys %s values %s", rangeKeys, values);
             return new KeyAttribute(
-                    sortKeyName,
-                    StringSerdeUtil.mergeStrings(sortValues));
+                    rangeKeyName,
+                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
+                            .map(rangeKey -> checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey).toString())
+                            .toArray(String[]::new)));
         }
 
         @Override
-        public KeyAttribute sortKeyPartial(Map<String, Object> values) {
-            String[] sortValues = Arrays.stream(sortKeys)
-                    .map(values::get)
-                    .takeWhile(Objects::nonNull)
-                    .map(Object::toString)
-                    .toArray(String[]::new);
-            checkState(sortValues.length == values.size(), "Unexpected extra values, sort key %s values %s", sortKeys, values);
+        public KeyAttribute rangeKeyPartial(Map<String, Object> values) {
             return new KeyAttribute(
-                    sortKeyName,
-                    StringSerdeUtil.mergeStrings(sortValues));
+                    rangeKeyName,
+                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
+                            .map(values::get)
+                            .takeWhile(Objects::nonNull)
+                            .map(Object::toString)
+                            .toArray(String[]::new)));
         }
 
         @Override

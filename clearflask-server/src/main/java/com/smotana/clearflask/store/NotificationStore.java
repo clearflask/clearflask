@@ -36,7 +36,7 @@ public interface NotificationStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, sortKeys = "notificationId")
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangeKeys = "notificationId")
     class NotificationModel {
 
         @NonNull

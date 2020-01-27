@@ -196,7 +196,7 @@ class DataMock {
     return expressions;
   }
 
-  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.Idea, level:number = 2, numComments:number = 4, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
+  mockCommentsAndExpression(userMentionPool:Admin.User[], versionedConfig:Admin.VersionedConfigAdmin, category:Admin.Category, item:Admin.Idea, level:number = 2, numComments:number = 1, parentComment:Admin.Comment|undefined = undefined):Promise<any> {
     return this.mockUser()
       .then(user => (userMentionPool.push(user), user))
       .then(user => ServerMock.get().commentCreate({

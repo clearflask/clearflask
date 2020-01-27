@@ -73,7 +73,7 @@ public interface IdeaStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, sortStaticName = "idea")
+    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, rangePrefix = "idea")
     class IdeaModel {
 
         @NonNull

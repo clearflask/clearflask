@@ -55,7 +55,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "projectId", sortStaticName = "project")
+    @DynamoTable(type = Primary, partitionKeys = "projectId", rangePrefix = "project")
     private static class ProjectModel {
         @NonNull
         private final String projectId;

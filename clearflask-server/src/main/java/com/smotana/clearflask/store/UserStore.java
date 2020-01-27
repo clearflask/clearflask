@@ -99,8 +99,8 @@ public interface UserStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "sessionId", sortStaticName = "userSessionById")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "userId", sortStaticName = "userSessionByUser")
+    @DynamoTable(type = Primary, partitionKeys = "sessionId", rangePrefix = "userSessionById")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "userId", rangePrefix = "userSessionByUser")
     class UserSession {
         @NonNull
         private final String sessionId;
@@ -118,7 +118,7 @@ public interface UserStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, sortStaticName = "user")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "user")
     class UserModel {
 
         @NonNull
