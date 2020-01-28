@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -44,6 +45,7 @@ import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -61,6 +63,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -200,6 +203,40 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 ? table.getIndex(tableName)
                 : null;
 
+        Map<String, Function<Item, Object>> keyFromItemToVal = Maps.newHashMap();
+        Map<String, Function<Map<String, AttributeValue>, Object>> keyFromAttrMapToVal = Maps.newHashMap();
+        for (Field field : objClazz.getDeclaredFields()) {
+            for (DynamoTable dt : dynamoTables) {
+                String fieldName = field.getName();
+                Arrays.stream(dt.rangeKeys()).anyMatch(fieldName::equals);
+                int partitionKeyIndex = ArrayUtils.indexOf(dt.partitionKeys(), fieldName);
+                int rangeKeyIndex = ArrayUtils.indexOf(dt.rangeKeys(), fieldName);
+                if (partitionKeyIndex == -1 && rangeKeyIndex == -1) {
+                    continue;
+                }
+
+                Class<?> fieldClazz = field.getType();
+                String dtKeyName;
+                int dtKeyIndex;
+                if (partitionKeyIndex != -1 &&
+                        (rangeKeyIndex == -1 || dt.partitionKeys().length <= dt.rangeKeys().length)) {
+                    dtKeyName = getPartitionKeyName(dt.type(), dt.indexNumber());
+                    dtKeyIndex = partitionKeyIndex;
+                } else {
+                    dtKeyName = getRangeKeyName(dt.type(), dt.indexNumber());
+                    dtKeyIndex = rangeKeyIndex + 1; // +1 for rangePrefix
+                }
+                keyFromItemToVal.put(fieldName, (item) -> GsonProvider.GSON.fromJson(
+                        StringSerdeUtil.unMergeString(checkNotNull(item.getString(dtKeyName),
+                                "Key %s is missing trying to retrieve %s for %s", dtKeyName, fieldName, fieldClazz))
+                                [dtKeyIndex], fieldClazz));
+                keyFromAttrMapToVal.put(fieldName, (attrMap) -> GsonProvider.GSON.fromJson(
+                        StringSerdeUtil.unMergeString(checkNotNull(attrMap.get(dtKeyName),
+                                "Key %s is missing trying to retrieve %s for %s", dtKeyName, fieldName, fieldClazz)
+                                .getS())[dtKeyIndex], fieldClazz));
+            }
+        }
+
         ImmutableMap.Builder<String, MarshallerItem> fieldMarshallersBuilder = ImmutableMap.builder();
         ImmutableMap.Builder<String, UnMarshallerItem> fieldUnMarshallersBuilder = ImmutableMap.builder();
         ImmutableList.Builder<Function<Item, Object>> fromItemToCtorArgsListBuilder = ImmutableList.builder();
@@ -230,19 +267,27 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
             // fromItem
             UnMarshallerItem unMarshallerItem = findUnMarshallerItem(collectionClazz, fieldClazz);
-            fromItemToCtorArgsListBuilder.add((item) ->
-                    (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
-                            ? null
-                            : unMarshallerItem.unmarshall(fieldName, item));
+            if (keyFromItemToVal.containsKey(fieldName)) {
+                fromItemToCtorArgsListBuilder.add(keyFromItemToVal.get(fieldName));
+            } else {
+                fromItemToCtorArgsListBuilder.add((item) ->
+                        (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
+                                ? null
+                                : unMarshallerItem.unmarshall(fieldName, item));
+            }
 
             // fromAttrMap
             UnMarshallerAttrVal unMarshallerAttrVal = findUnMarshallerAttrVal(collectionClazz, fieldClazz);
-            fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
-                AttributeValue attrVal = attrMap.get(fieldName);
-                return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
-                        ? null
-                        : unMarshallerAttrVal.unmarshall(attrVal);
-            });
+            if (keyFromAttrMapToVal.containsKey(fieldName)) {
+                fromAttrMapToCtorArgsListBuilder.add(keyFromAttrMapToVal.get(fieldName));
+            } else {
+                fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
+                    AttributeValue attrVal = attrMap.get(fieldName);
+                    return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
+                            ? null
+                            : unMarshallerAttrVal.unmarshall(attrVal);
+                });
+            }
 
             boolean isSet = Set.class.isAssignableFrom(field.getType());
 
@@ -260,37 +305,41 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
             // toItem
             MarshallerItem marshallerItem = findMarshallerItem(collectionClazz, fieldClazz);
-            toItemArgsBuilder.add((item, object) -> {
-                Object val = objToFieldVal.apply(object);
-                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                            fieldName, object.getClass().getSimpleName());
-                }
-                if (val == null) {
-                    return; // Omit null
-                }
-                marshallerItem.marshall(val, fieldName, item);
-            });
+            if (!keyFromItemToVal.containsKey(fieldName)) {
+                toItemArgsBuilder.add((item, object) -> {
+                    Object val = objToFieldVal.apply(object);
+                    if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                        log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                        " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                                fieldName, object.getClass().getSimpleName());
+                    }
+                    if (val == null) {
+                        return; // Omit null
+                    }
+                    marshallerItem.marshall(val, fieldName, item);
+                });
+            }
 
             // toAttrVal
             MarshallerAttrVal marshallerAttrVal = findMarshallerAttrVal(collectionClazz, fieldClazz);
-            toAttrMapArgsBuilder.add((mapBuilder, object) -> {
-                Object val = objToFieldVal.apply(object);
-                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                            fieldName, object.getClass().getSimpleName());
-                }
-                if (val == null) {
-                    return; // Omit null
-                }
-                AttributeValue valMarsh = marshallerAttrVal.marshall(val);
-                if (valMarsh == null) {
-                    return; // Omit null
-                }
-                mapBuilder.put(fieldName, valMarsh);
-            });
+            if (!keyFromAttrMapToVal.containsKey(fieldName)) {
+                toAttrMapArgsBuilder.add((mapBuilder, object) -> {
+                    Object val = objToFieldVal.apply(object);
+                    if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                        log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                        " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                                fieldName, object.getClass().getSimpleName());
+                    }
+                    if (val == null) {
+                        return; // Omit null
+                    }
+                    AttributeValue valMarsh = marshallerAttrVal.marshall(val);
+                    if (valMarsh == null) {
+                        return; // Omit null
+                    }
+                    mapBuilder.put(fieldName, valMarsh);
+                });
+            }
 
             // toDynamoValue fromDynamoValue
             fieldMarshallersBuilder.put(fieldName, marshallerItem);
@@ -313,15 +362,15 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 .map(u -> u.apply(attrMap))
                 .toArray();
 
-        // toItem toAttrVal keys
+        // toItem toAttrVal other keys
         ImmutableMap<String, Function<T, Object>> objToFieldVals = objToFieldValsBuilder.build();
         ImmutableMap.Builder<String, Function<T, String>> toItemOtherKeysMapperBuilder = ImmutableMap.builder();
         for (DynamoTable dt : dynamoTables) {
             if (dt == dynamoTable) {
                 continue;
             }
-            checkState(!Strings.isNullOrEmpty(dt.rangePrefix()) ^ rangeKeys.length > 0,
-                    "Must supply either list of range keys or a static name for class %s", objClazz);
+            checkState(!Strings.isNullOrEmpty(dt.rangePrefix()) || rangeKeys.length > 0,
+                    "Must supply either list of range keys and/or a prefix for class %s", objClazz);
             if (dt.type() != Lsi) {
                 ImmutableList<Function<T, Object>> dtPartitionKeyMappers = Arrays.stream(dt.partitionKeys())
                         .map(objToFieldVals::get)
@@ -331,47 +380,39 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                         getPartitionKeyName(dt.type(), dt.indexNumber()),
                         obj -> StringSerdeUtil.mergeStrings(dtPartitionKeyMappers.stream()
                                 .map(m -> m.apply(obj))
-                                .map(Object::toString)
+                                .map(GsonProvider.GSON::toJson)
                                 .toArray(String[]::new)));
             }
-            if (Strings.isNullOrEmpty(dt.rangePrefix())) {
-                ImmutableList<Function<T, Object>> dtRangeKeyMappers = Arrays.stream(dt.rangeKeys())
-                        .map(objToFieldVals::get)
-                        .map(Preconditions::checkNotNull)
-                        .collect(ImmutableList.toImmutableList());
-                toItemOtherKeysMapperBuilder.put(
-                        getRangeKeyName(dt.type(), dt.indexNumber()),
-                        obj -> StringSerdeUtil.mergeStrings(dtRangeKeyMappers.stream()
-                                .map(m -> m.apply(obj))
-                                .map(Object::toString)
-                                .toArray(String[]::new)));
-            } else {
-                String dtRangeStaticName = dt.rangePrefix();
-                toItemOtherKeysMapperBuilder.put(
-                        getRangeKeyName(dt.type(), dt.indexNumber()),
-                        obj -> dtRangeStaticName);
-            }
+            String dtRangePrefix = dt.rangePrefix();
+            ImmutableList<Function<T, Object>> dtRangeKeyMappers = Arrays.stream(dt.rangeKeys())
+                    .map(objToFieldVals::get)
+                    .map(Preconditions::checkNotNull)
+                    .collect(ImmutableList.toImmutableList());
+            toItemOtherKeysMapperBuilder.put(
+                    getRangeKeyName(dt.type(), dt.indexNumber()),
+                    obj -> StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(dtRangePrefix), dtRangeKeyMappers.stream()
+                            .map(m -> m.apply(obj))
+                            .map(GsonProvider.GSON::toJson))
+                            .toArray(String[]::new)));
         }
         ImmutableMap<String, Function<T, String>> toItemOtherKeysMapper = toItemOtherKeysMapperBuilder.build();
         Function<T, String> getPartitionKeyVal = obj -> StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
                 .map(f -> {
                     try {
-                        return checkNotNull(f.get(obj)).toString();
+                        return GsonProvider.GSON.toJson(checkNotNull(f.get(obj)));
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     }
                 })
                 .toArray(String[]::new));
-        Function<T, String> getRangeKeyVal = rangeKeyFields.length <= 0
-                ? obj -> rangePrefix
-                : obj -> rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeyFields)
+        Function<T, String> getRangeKeyVal = obj -> StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeyFields)
                 .map(f -> {
                     try {
-                        return checkNotNull(f.get(obj)).toString();
+                        return GsonProvider.GSON.toJson(checkNotNull(f.get(obj)));
                     } catch (IllegalAccessException ex) {
                         throw new RuntimeException(ex);
                     }
-                })
+                }))
                 .toArray(String[]::new));
 
         // toItem
@@ -600,12 +641,12 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     new KeyAttribute(
                             partitionKeyName,
                             StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeys)
-                                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
+                                    .map(partitionKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
                                     .toArray(String[]::new))),
                     new KeyAttribute(
                             rangeKeyName,
-                            rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
-                                    .map(rangeKey -> checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey).toString())
+                            StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
+                                    .map(rangeKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
                                     .toArray(String[]::new))));
         }
 
@@ -621,9 +662,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                     StringSerdeUtil.mergeStrings(Arrays.stream(partitionKeyFields)
                             .map(partitionKeyField -> {
                                 try {
-                                    return checkNotNull(partitionKeyField.get(obj),
-                                            "Partition key value null, should add @NonNull on all keys for class %s", obj)
-                                            .toString();
+                                    return GsonProvider.GSON.toJson(checkNotNull(partitionKeyField.get(obj),
+                                            "Partition key value null, should add @NonNull on all keys for class %s", obj));
                                 } catch (IllegalAccessException ex) {
                                     throw new RuntimeException(ex);
                                 }
@@ -634,7 +674,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         @Override
         public KeyAttribute partitionKey(Map<String, Object> values) {
             String[] partitionValues = Arrays.stream(partitionKeys)
-                    .map(partitionKey -> checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey).toString())
+                    .map(partitionKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(partitionKey), "Partition key missing value for %s", partitionKey)))
                     .toArray(String[]::new);
             checkState(partitionValues.length == values.size(), "Unexpected extra values, partition keys %s values %s", rangeKeys, values);
             return new KeyAttribute(
@@ -651,16 +691,15 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         public KeyAttribute rangeKey(T obj) {
             return new KeyAttribute(
                     rangeKeyName,
-                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeyFields)
+                    StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeyFields)
                             .map(rangeKeyField -> {
                                 try {
-                                    return checkNotNull(rangeKeyField.get(obj),
-                                            "Range key value null, should add @NonNull on all keys for class %s", obj)
-                                            .toString();
+                                    return GsonProvider.GSON.toJson(checkNotNull(rangeKeyField.get(obj),
+                                            "Range key value null, should add @NonNull on all keys for class %s", obj));
                                 } catch (IllegalAccessException ex) {
                                     throw new RuntimeException(ex);
                                 }
-                            })
+                            }))
                             .toArray(String[]::new)));
         }
 
@@ -669,8 +708,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             checkState(rangeKeys.length == values.size(), "Unexpected extra values, range keys %s values %s", rangeKeys, values);
             return new KeyAttribute(
                     rangeKeyName,
-                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
-                            .map(rangeKey -> checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey).toString())
+                    StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
+                            .map(rangeKey -> GsonProvider.GSON.toJson(checkNotNull(values.get(rangeKey), "Range key missing value for %s", rangeKey))))
                             .toArray(String[]::new)));
         }
 
@@ -678,10 +717,10 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         public KeyAttribute rangeKeyPartial(Map<String, Object> values) {
             return new KeyAttribute(
                     rangeKeyName,
-                    rangeKeys.length <= 0 ? rangePrefix : rangePrefix + StringSerdeUtil.mergeStrings(Arrays.stream(rangeKeys)
+                    StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
                             .map(values::get)
                             .takeWhile(Objects::nonNull)
-                            .map(Object::toString)
+                            .map(GsonProvider.GSON::toJson))
                             .toArray(String[]::new)));
         }
 

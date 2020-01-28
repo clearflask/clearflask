@@ -51,10 +51,13 @@ public class DynamoVoteStore implements VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId"}, rangePrefix = "vote", rangeKeys = "targetId")
-    class VoteModel {
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "vote", rangeKeys = "targetId")
+    private static class VoteModel {
         @NonNull
         private final String userId;
+
+        @NonNull
+        private final String projectId;
 
         @NonNull
         private final String targetId;
@@ -66,10 +69,13 @@ public class DynamoVoteStore implements VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId"}, rangePrefix = "express", rangeKeys = "targetId")
-    class ExpressModel {
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "express", rangeKeys = "targetId")
+    private static class ExpressModel {
         @NonNull
         private final String userId;
+
+        @NonNull
+        private final String projectId;
 
         @NonNull
         private final String targetId;
@@ -81,10 +87,13 @@ public class DynamoVoteStore implements VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId"}, rangePrefix = "fund", rangeKeys = "targetId")
-    class FundModel {
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "fund", rangeKeys = "targetId")
+    private static class FundModel {
         @NonNull
         private final String userId;
+
+        @NonNull
+        private final String projectId;
 
         @NonNull
         private final String targetId;
@@ -146,6 +155,7 @@ public class DynamoVoteStore implements VoteStore {
     public Transaction ideaFund(String projectId, String userId, String ideaId, long amount, String transactionType, String summary) {
         long fundAmountPrevious = fund(projectId, userId, ideaId, amount);
         // TODO update totals
+        return null;
     }
 
     @Override
@@ -181,7 +191,7 @@ public class DynamoVoteStore implements VoteStore {
 
     private Vote vote(String projectId, String userId, String targetId, Vote vote) {
         return Optional.ofNullable(voteSchema.fromItem(voteSchema.table().putItem(new PutItemSpec()
-                .withItem(voteSchema.toItem(new VoteModel(userId, targetId, vote.getValue())))
+                .withItem(voteSchema.toItem(new VoteModel(userId, projectId, targetId, vote.getValue())))
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))
                 .map(VoteModel::getVote)
@@ -191,7 +201,7 @@ public class DynamoVoteStore implements VoteStore {
 
     private ImmutableSet<String> express(String projectId, String userId, String targetId, Optional<String> expression) {
         return Optional.ofNullable(expressSchema.fromItem(expressSchema.table().putItem(new PutItemSpec()
-                .withItem(expressSchema.toItem(new ExpressModel(userId, targetId, expression.map(ImmutableSet::of).orElse(ImmutableSet.of()))))
+                .withItem(expressSchema.toItem(new ExpressModel(userId, projectId, targetId, expression.map(ImmutableSet::of).orElse(ImmutableSet.of()))))
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))
                 .map(ExpressModel::getExpressions)
@@ -200,9 +210,6 @@ public class DynamoVoteStore implements VoteStore {
 
     private ImmutableSet<String> expressMulti(String projectId, String userId, String targetId, ImmutableSet<String> addExpressions, ImmutableSet<String> removeExpressions) {
         ImmutableList.Builder<AttributeUpdate> updatesBuilder = ImmutableList.builder();
-        // In an upsert, we need to specify all the fields in case it's created
-        updatesBuilder.add(new AttributeUpdate("projectId").put(projectId));
-        updatesBuilder.add(new AttributeUpdate("userId").put(userId));
         if (!addExpressions.isEmpty()) {
             updatesBuilder.add(new AttributeUpdate("expressions").addElements(addExpressions.toArray()));
         }
@@ -220,7 +227,7 @@ public class DynamoVoteStore implements VoteStore {
 
     private long fund(String projectId, String userId, String targetId, long amount) {
         return Optional.ofNullable(fundSchema.fromItem(fundSchema.table().putItem(new PutItemSpec()
-                .withItem(fundSchema.toItem(new FundModel(userId, targetId, amount)))
+                .withItem(fundSchema.toItem(new FundModel(userId, projectId, targetId, amount)))
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))
                 .map(FundModel::getFundAmount)
