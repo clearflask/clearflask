@@ -28,8 +28,9 @@ public @interface DynamoTable {
     /**
      * Prefix range key with this. If no range keys are present,
      * this will be the sole value of the range key.
+     * Must be unique across instance of DynamoDB table.
      */
-    String rangePrefix() default "";
+    String rangePrefix();
 
     @Target(TYPE)
     @Retention(RUNTIME)

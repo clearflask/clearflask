@@ -5,8 +5,11 @@ import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.Page;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
@@ -162,15 +165,19 @@ public class DynamoVoteStore implements VoteStore {
     public TransactionListResponse ideaFundTransactionList(String projectId, String userId, Optional<String> cursorOpt) {
         ItemCollection<QueryOutcome> results = transactionSchema.table().query(new QuerySpec()
                 .withHashKey(transactionSchema.partitionKey(Map.of(
-                        "userId", userId)))
-                .withFilterExpression("attribute_exists(transactionId)")
+                        "userId", userId,
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(transactionSchema.rangeKeyName())
+                        .beginsWith(transactionSchema.rangeValuePartial(Map.of())))
                 .withMaxPageSize(config.searchFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
-                        .map(lastEvaluatedKey -> transactionSchema.primaryKey(Map.of(
-                                "userId", userId,
-                                "transactionId", lastEvaluatedKey)))
+                        .map(lastEvaluatedKey -> new PrimaryKey(
+                                transactionSchema.partitionKey(Map.of(
+                                        "userId", userId,
+                                        "projectId", projectId)),
+                                new KeyAttribute(transactionSchema.rangeKeyName(), lastEvaluatedKey)))
                         .orElse(null)));
         Page<Item, QueryOutcome> page = results.firstPage();
         ImmutableList<Transaction> transactions = page
@@ -183,7 +190,7 @@ public class DynamoVoteStore implements VoteStore {
                 .getLowLevelResult()
                 .getQueryResult()
                 .getLastEvaluatedKey())
-                .map(m -> m.get(transactionSchema.rangeKeyName())) // transactionId
+                .map(m -> m.get(transactionSchema.rangeKeyName()))
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
         return new TransactionListResponse(transactions, newCursorOpt);
@@ -217,7 +224,10 @@ public class DynamoVoteStore implements VoteStore {
             updatesBuilder.add(new AttributeUpdate("expressions").removeElements(removeExpressions.toArray()));
         }
         return Optional.ofNullable(expressSchema.fromItem(expressSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(expressSchema.primaryKey(Map.of("userId", userId, "targetId", targetId)))
+                .withPrimaryKey(expressSchema.primaryKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId,
+                        "targetId", targetId)))
                 .withAttributeUpdate(updatesBuilder.build())
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))

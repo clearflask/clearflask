@@ -3,6 +3,7 @@ package com.smotana.clearflask.store.impl;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
@@ -241,7 +242,9 @@ public class DynamoAccountStore implements AccountStore {
     private void revokeSessions(String email, Optional<String> sessionToLeaveOpt) {
         Iterables.partition(StreamSupport.stream(sessionByEmailSchema.index().query(new QuerySpec()
                 .withHashKey(sessionByEmailSchema.partitionKey(Map.of(
-                        "email", email))))
+                        "email", email)))
+                .withRangeKeyCondition(new RangeKeyCondition(sessionByEmailSchema.rangeKeyName())
+                        .beginsWith(sessionByEmailSchema.rangeValuePartial(Map.of()))))
                 .pages()
                 .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))

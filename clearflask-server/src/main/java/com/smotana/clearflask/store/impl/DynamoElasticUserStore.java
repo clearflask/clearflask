@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
@@ -473,7 +474,9 @@ public class DynamoElasticUserStore implements UserStore {
     public void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt) {
         Iterables.partition(StreamSupport.stream(sessionByUserSchema.index().query(new QuerySpec()
                 .withHashKey(sessionByUserSchema.partitionKey(Map.of(
-                        "userId", userId))))
+                        "userId", userId)))
+                .withRangeKeyCondition(new RangeKeyCondition(sessionByUserSchema.rangeKeyName())
+                        .beginsWith(sessionByUserSchema.rangeValuePartial(Map.of()))))
                 .pages()
                 .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))

@@ -4,8 +4,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.Page;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
@@ -73,15 +76,17 @@ public class DynamoNotificationStore implements NotificationStore {
                 .withHashKey(notificationSchema.partitionKey(Map.of(
                         "userId", userId,
                         "projectId", projectId)))
-                .withFilterExpression("attribute_exists(notificationId)")
+                .withRangeKeyCondition(new RangeKeyCondition(notificationSchema.rangeKeyName())
+                        .beginsWith(notificationSchema.rangeValuePartial(Map.of())))
                 .withMaxPageSize(config.searchFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
-                        .map(lastEvaluatedKey -> notificationSchema.primaryKey(Map.of(
-                                "userId", userId,
-                                "projectId", projectId,
-                                "notificationId", lastEvaluatedKey)))
+                        .map(lastEvaluatedKey -> new PrimaryKey(
+                                notificationSchema.partitionKey(Map.of(
+                                        "userId", userId,
+                                        "projectId", projectId)),
+                                new KeyAttribute(notificationSchema.rangeKeyName(), lastEvaluatedKey)))
                         .orElse(null)));
         Page<Item, QueryOutcome> page = results.firstPage();
         ImmutableList<NotificationModel> notifications = page
@@ -94,7 +99,7 @@ public class DynamoNotificationStore implements NotificationStore {
                 .getLowLevelResult()
                 .getQueryResult()
                 .getLastEvaluatedKey())
-                .map(m -> m.get(notificationSchema.rangeKeyName())) // notificationId
+                .map(m -> m.get(notificationSchema.rangeKeyName()))
                 .map(AttributeValue::getS)
                 .map(serverSecretCursor::encryptString);
         return new NotificationListResponse(notifications, newCursorOpt);
@@ -112,10 +117,11 @@ public class DynamoNotificationStore implements NotificationStore {
     @Override
     public void notificationClearAll(String projectId, String userId) {
         Iterables.partition(StreamSupport.stream(notificationSchema.table().query(new QuerySpec()
-                .withFilterExpression("attribute_exists(notificationId)")
                 .withHashKey(notificationSchema.partitionKey(Map.of(
                         "userId", userId,
-                        "projectId", projectId))))
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(notificationSchema.rangeKeyName())
+                        .beginsWith(notificationSchema.rangeValuePartial(Map.of()))))
                 .pages()
                 .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))

@@ -329,14 +329,13 @@ public class DynamoElasticCommentStore implements CommentStore {
         } else {
             Optional<String> latestCommentIdOpt = Streams.concat(parentCommentIdOpt.stream(), excludeChildrenCommentIds.stream())
                     .max(String::compareTo);
-            QuerySpec querySpec = new QuerySpec()
+            ItemCollection<QueryOutcome> items = commentSchema.table().query(new QuerySpec()
                     .withMaxResultSize(fetchMax)
                     .withScanIndexForward(false)
-                    .withFilterExpression("attribute_exists(commentId)");
-            latestCommentIdOpt.ifPresent(latestCommentId -> querySpec
-                    .withRangeKeyCondition(new RangeKeyCondition("commentId")
-                            .ge(latestCommentId)));
-            ItemCollection<QueryOutcome> items = commentSchema.table().query(querySpec);
+                    .withRangeKeyCondition(new RangeKeyCondition(commentSchema.rangeKeyName())
+                            .ge(commentSchema.rangeKeyPartial(latestCommentIdOpt
+                                    .map(latestCommentId -> Map.of("commentId", (Object) latestCommentId))
+                                    .orElseGet(Map::of)).getValue())));
             return StreamSupport.stream(items.pages().spliterator(), false)
                     .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                     .map(item -> commentSchema.fromItem(item))
@@ -470,12 +469,12 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Override
     public ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId) {
-        // TODO update childCommentCount for all parents
         Iterables.partition(StreamSupport.stream(commentSchema.table().query(new QuerySpec()
                 .withHashKey(commentSchema.partitionKey(Map.of(
                         "ideaId", ideaId,
                         "projectId", projectId)))
-                .withFilterExpression("attribute_exists(commentId)"))
+                .withRangeKeyCondition(new RangeKeyCondition(commentSchema.rangeKeyName())
+                        .beginsWith(commentSchema.rangeValuePartial(Map.of()))))
                 .pages()
                 .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))

@@ -47,6 +47,12 @@ public interface DynamoMapper {
          */
         KeyAttribute rangeKeyPartial(Map<String, Object> values);
 
+        /**
+         * Retrieve sort key value from incomplete given values.
+         * Intended to be used by a range query.
+         */
+        String rangeValuePartial(Map<String, Object> values);
+
 
         Object toDynamoValue(String fieldName, Object object);
 

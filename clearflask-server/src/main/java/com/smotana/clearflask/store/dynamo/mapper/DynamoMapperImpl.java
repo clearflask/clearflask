@@ -94,6 +94,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
     private final MarshallerAttrVal gsonMarshallerAttrVal = o -> new AttributeValue().withS(GsonProvider.GSON.toJson(o));
     private final Function<Class, UnMarshallerAttrVal> gsonUnMarshallerAttrVal = k -> a -> GsonProvider.GSON.fromJson(a.getS(), k);
     private final Function<Class, UnMarshallerItem> gsonUnMarshallerItem = k -> (a, i) -> GsonProvider.GSON.fromJson(i.getString(a), k);
+    private final Map<String, DynamoTable> rangePrefixToDynamoTable = Maps.newHashMap();
 
     @Override
     protected void serviceStart() throws Exception {
@@ -197,6 +198,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         String tableName = getTableOrIndexName(type, indexNumber);
         String partitionKeyName = getPartitionKeyName(type, indexNumber);
         String rangeKeyName = getRangeKeyName(type, indexNumber);
+
+        DynamoTable dynamoTableOther = rangePrefixToDynamoTable.putIfAbsent(rangePrefix, dynamoTable);
+        checkState(dynamoTableOther == null || dynamoTableOther == dynamoTable, "Detected multiple schemas with same rangePrefix %s, one in %s and other in %s", rangePrefix, dynamoTable, dynamoTableOther);
 
         Table table = dynamoDoc.getTable(getTableOrIndexName(Primary, -1));
         Index index = type != Primary
@@ -722,6 +726,15 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                             .takeWhile(Objects::nonNull)
                             .map(GsonProvider.GSON::toJson))
                             .toArray(String[]::new)));
+        }
+
+        @Override
+        public String rangeValuePartial(Map<String, Object> values) {
+            return StringSerdeUtil.mergeStrings(Stream.concat(Stream.of(rangePrefix), Arrays.stream(rangeKeys)
+                    .map(values::get)
+                    .takeWhile(Objects::nonNull)
+                    .map(GsonProvider.GSON::toJson))
+                    .toArray(String[]::new));
         }
 
         @Override

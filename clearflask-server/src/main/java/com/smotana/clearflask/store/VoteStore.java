@@ -43,10 +43,13 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId"}, rangeKeys = "transactionId")
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = "transactionId")
     class Transaction {
         @NonNull
         private final String userId;
+
+        @NonNull
+        private final String projectId;
 
         @NonNull
         private final String transactionId;
