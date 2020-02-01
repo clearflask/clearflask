@@ -69,7 +69,7 @@ public class DemoData extends ManagedService {
                 ImmutableSet.of());
         accountStore.createAccount(account);
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(DEMO_PROJECT_ID);
-        projectStore.createConfig(versionedConfigAdmin.getConfig().getProjectId(), versionedConfigAdmin);
+        projectStore.createProject(versionedConfigAdmin.getConfig().getProjectId(), versionedConfigAdmin);
         accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }
 

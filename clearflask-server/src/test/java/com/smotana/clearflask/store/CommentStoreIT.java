@@ -10,11 +10,12 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.CommentStore.Vote;
+import com.smotana.clearflask.store.VoteStore.Vote;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -45,6 +46,7 @@ public class CommentStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticCommentStore.module(),
+                DynamoVoteStore.module(),
                 ElasticUtil.module(),
                 DynamoElasticIdeaStore.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
@@ -206,12 +208,12 @@ public class CommentStoreIT extends AbstractIT {
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0L,
                 BigDecimal.valueOf(100),
                 ImmutableSet.of(),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0d,
                 ImmutableMap.of());
         ideaStore.createIdea(idea).get();
         return idea;

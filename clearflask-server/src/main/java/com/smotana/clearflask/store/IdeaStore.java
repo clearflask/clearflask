@@ -11,6 +11,7 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
+import com.smotana.clearflask.store.VoteStore.Vote;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.NotImplementedException;
@@ -27,6 +28,7 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Function;
 
 
 public interface IdeaStore {
@@ -50,6 +52,16 @@ public interface IdeaStore {
     IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
     IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
+
+    IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, Vote vote);
+
+    IdeaAndIndexingFuture<UpdateResponse> expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt);
+
+    IdeaAndIndexingFuture<UpdateResponse> expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
+
+    IdeaAndIndexingFuture<UpdateResponse> expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
+
+    IdeaAndIndexingFuture<UpdateResponse> fundIdea(String projectId, String ideaId, String userId, long fundAmount, String transactionType, String summary);
 
     /** Increments total comment count. If incrementChildCount is true, also increments immediate child count too. */
     IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
@@ -109,7 +121,7 @@ public interface IdeaStore {
         @NonNull
         private final long childCommentCount;
 
-        private final BigDecimal funded;
+        private final long funded;
 
         private final BigDecimal fundGoal;
 
@@ -120,7 +132,7 @@ public interface IdeaStore {
 
         private final long votersCount;
 
-        private final BigDecimal expressionsValue;
+        private final double expressionsValue;
 
         /** Expression counts; map of expression display to count. */
         private final ImmutableMap<String, Long> expressions;

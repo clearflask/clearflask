@@ -36,6 +36,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.VoteStore.Vote;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;

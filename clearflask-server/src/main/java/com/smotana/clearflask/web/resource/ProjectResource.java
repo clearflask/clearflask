@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -10,16 +11,17 @@ import com.smotana.clearflask.api.model.ConfigAndBindResult;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,43 +52,48 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndBindResult configGetAndUserBind(String projectId) {
-        Optional<VersionedConfig> configOpt = projectStore.getConfig(projectId, true);
-        if (!configOpt.isPresent()) {
+        Optional<Project> projectOpt = projectStore.getProject(projectId, true);
+        if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
-
-        UserMeWithBalance user = null; // TODO add binding here
-
-        return new ConfigAndBindResult(configOpt.get(), user);
+        Optional<UserMeWithBalance> userMeWithBalanceOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId))
+                .map(UserStore.UserModel::toUserMeWithBalance);
+        return new ConfigAndBindResult(
+                projectOpt.get().getVersionedConfig(),
+                userMeWithBalanceOpt.orElse(null));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configGetAdmin(String projectId) {
-        Optional<VersionedConfigAdmin> configAdminOpt = projectStore.getConfigAdmin(projectId);
-        if (!configAdminOpt.isPresent()) {
+        Optional<Project> projectOpt = projectStore.getProject(projectId, false);
+        if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
-        return configAdminOpt.get();
+        return projectOpt.get().getVersionedConfigAdmin();
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
     public ConfigGetAllResult configGetAllAdmin() {
-        AccountSession accountSession = getExtendedPrincipal().get().getAccountSessionOpt().get();
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccount(accountSession.getEmail()).orElseThrow(() -> {
             log.error("Account not found for session with email {}", accountSession.getEmail());
             return new InternalServerErrorException();
         });
-        ImmutableSet<VersionedConfigAdmin> configAdmins = projectStore.getConfigAdmins(account.getProjectIds());
-        if (account.getProjectIds().size() != configAdmins.size()) {
+        ImmutableSet<Project> projects = projectStore.getProjects(account.getProjectIds(), false);
+        if (account.getProjectIds().size() != projects.size()) {
             log.error("ProjectIds on account not found in project table, email {} missing projects {}",
-                    account.getEmail(), Sets.difference(account.getProjectIds(), configAdmins.stream()
-                            .map(c -> c.getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
+                    account.getEmail(), Sets.difference(account.getProjectIds(), projects.stream()
+                            .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
-        return new ConfigGetAllResult(configAdmins.asList());
+        return new ConfigGetAllResult(projects.stream()
+                .map(Project::getVersionedConfigAdmin)
+                .collect(ImmutableList.toImmutableList()));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -104,7 +111,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public NewProjectResult projectCreateAdmin(String projectId) {
         // TODO sanity check, projectId alphanumeric
         VersionedConfigAdmin configAdmin = ModelUtil.createEmptyConfig(projectId);
-        projectStore.createConfig(projectId, configAdmin);
+        projectStore.createProject(projectId, configAdmin);
         Futures.allAsList(
                 userStore.createIndex(projectId),
                 ideaStore.createIndex(projectId)

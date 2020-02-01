@@ -9,6 +9,7 @@ import com.smotana.clearflask.api.model.Comment;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.CommentWithAuthor;
 import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.store.VoteStore.Vote;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -52,12 +53,6 @@ public interface CommentStore {
     ListenableFuture<DeleteResponse> deleteComment(String projectId, String ideaId, String commentId);
 
     ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId);
-
-    enum Vote {
-        Upvote,
-        None,
-        Downvote
-    }
 
     @Value
     class CommentAndIndexingFuture<T> {

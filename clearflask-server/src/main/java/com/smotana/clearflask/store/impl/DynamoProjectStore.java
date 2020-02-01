@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
@@ -18,7 +19,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Expression;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.ManagedService;
@@ -28,7 +31,9 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,12 +84,12 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     private Gson gson;
 
     private TableSchema<ProjectModel> projectSchema;
-    private Cache<String, Optional<VersionedConfig>> versionedConfigAdminCache;
+    private Cache<String, Optional<Project>> projectCache;
 
 
     @Inject
     private void setup() {
-        versionedConfigAdminCache = CacheBuilder.newBuilder()
+        projectCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
@@ -92,44 +97,28 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     }
 
     @Override
-    public Optional<VersionedConfig> getConfig(String projectId, boolean useCache) {
+    public Optional<Project> getProject(String projectId, boolean useCache) {
         if (config.enableConfigCacheRead() && useCache) {
-            final Optional<VersionedConfig> versionedConfigAdminCachedOpt = versionedConfigAdminCache.getIfPresent(projectId);
+            final Optional<Project> projectCachedOpt = projectCache.getIfPresent(projectId);
             //noinspection OptionalAssignedToNull
-            if (versionedConfigAdminCachedOpt != null) {
-                return versionedConfigAdminCachedOpt;
+            if (projectCachedOpt != null) {
+                return projectCachedOpt;
             }
         }
-        Optional<VersionedConfig> versionedConfigOpt = Optional.ofNullable(projectSchema
-                .fromItem(projectSchema.table()
-                        .getItem(projectSchema
-                                .primaryKey(Map.of(
-                                        "projectId", projectId)))))
-                .map(project -> new VersionedConfig(
-                        gson.fromJson(project.getConfigJson(), com.smotana.clearflask.api.model.Config.class),
-                        project.getVersion()));
-        versionedConfigAdminCache.put(projectId, versionedConfigOpt);
-        return versionedConfigOpt;
-    }
-
-    @Override
-    public Optional<VersionedConfigAdmin> getConfigAdmin(String projectId) {
-        return Optional.ofNullable(projectSchema
-                .fromItem(projectSchema.table().getItem(new GetItemSpec()
+        Optional<Project> projectOpt = Optional.ofNullable(projectSchema.fromItem(projectSchema.table()
+                .getItem(new GetItemSpec()
                         .withPrimaryKey(projectSchema
-                                .primaryKey(Map.of(
-                                        "projectId", projectId)))
-                        .withConsistentRead(true))))
-                .map(project -> new VersionedConfigAdmin(
-                        gson.fromJson(project.getConfigJson(), ConfigAdmin.class),
-                        project.getVersion()));
+                                .primaryKey(Map.of("projectId", projectId))))))
+                .map(ProjectImpl::new);
+        projectCache.put(projectId, projectOpt);
+        return projectOpt;
     }
 
     @Override
-    public ImmutableSet<VersionedConfigAdmin> getConfigAdmins(ImmutableSet<String> projectIds) {
-        return dynamoDoc.batchGetItem(new BatchGetItemSpec()
+    public ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache) {
+        ImmutableSet<Project> projects = dynamoDoc.batchGetItem(new BatchGetItemSpec()
                 .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
-                        .withConsistentRead(true)
+                        .withConsistentRead(!useCache)
                         .withPrimaryKeys(projectIds.stream()
                                 .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
                                 .toArray(PrimaryKey[]::new))))
@@ -138,19 +127,22 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(projectSchema::fromItem)
-                .map(project -> new VersionedConfigAdmin(
-                        gson.fromJson(project.getConfigJson(), ConfigAdmin.class),
-                        project.getVersion()))
+                .map(ProjectImpl::new)
                 .collect(ImmutableSet.toImmutableSet());
+        projects.forEach(project -> projectCache.put(project.getProjectId(), Optional.of(project)));
+        return projects;
     }
 
     @Override
-    public void createConfig(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
-        projectSchema.table().putItem(new PutItemSpec().withItem(projectSchema.toItem(new ProjectModel(
+    public Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
+        ProjectModel projectModel = new ProjectModel(
                 projectId,
                 versionedConfigAdmin.getVersion(),
-                gson.toJson(versionedConfigAdmin.getConfig())))));
-        versionedConfigAdminCache.invalidate(projectId);
+                gson.toJson(versionedConfigAdmin.getConfig()));
+        projectSchema.table().putItem(new PutItemSpec().withItem(projectSchema.toItem(projectModel)));
+        ProjectImpl project = new ProjectImpl(projectModel);
+        projectCache.put(projectId, Optional.of(project));
+        return project;
     }
 
     @Override
@@ -162,7 +154,61 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                         gson.toJson(versionedConfigAdmin.getConfig()))))
                 .withConditionExpression("version = :previousVersion")
                 .withValueMap(Map.of(":previousVersion", previousVersion)));
-        versionedConfigAdminCache.invalidate(projectId);
+        projectCache.invalidate(projectId);
+    }
+
+    @EqualsAndHashCode(of = {"projectId", "version"})
+    @ToString(of = {"projectId", "version"})
+    private class ProjectImpl implements Project {
+        private static final double EXPRESSION_WEIGHT_DEFAULT = 1d;
+        private final String projectId;
+        private final String version;
+        private final VersionedConfig versionedConfig;
+        private final VersionedConfigAdmin versionedConfigAdmin;
+        private final ImmutableMap<String, ImmutableMap<String, Double>> categoryExpressionToWeight;
+
+        private ProjectImpl(ProjectModel projectModel) {
+            this.projectId = projectModel.getProjectId();
+            this.version = projectModel.getVersion();
+            this.versionedConfig = new VersionedConfig(gson.fromJson(projectModel.getConfigJson(), com.smotana.clearflask.api.model.Config.class), projectModel.getVersion());
+            this.versionedConfigAdmin = new VersionedConfigAdmin(gson.fromJson(projectModel.getConfigJson(), ConfigAdmin.class), projectModel.getVersion());
+            this.categoryExpressionToWeight = this.versionedConfig.getConfig().getContent().getCategories().stream()
+                    .filter(category -> category.getSupport().getExpress() != null)
+                    .filter(category -> category.getSupport().getExpress().getLimitEmojiSet() != null)
+                    .collect(ImmutableMap.toImmutableMap(
+                            Category::getCategoryId,
+                            category -> category.getSupport().getExpress().getLimitEmojiSet().stream()
+                                    .collect(ImmutableMap.toImmutableMap(
+                                            Expression::getDisplay,
+                                            e -> e.getWeight().doubleValue()))));
+        }
+
+        @Override
+        public String getProjectId() {
+            return projectId;
+        }
+
+        @Override
+        public String getVersion() {
+            return version;
+        }
+
+        public VersionedConfig getVersionedConfig() {
+            return versionedConfig;
+        }
+
+        public VersionedConfigAdmin getVersionedConfigAdmin() {
+            return versionedConfigAdmin;
+        }
+
+        @Override
+        public double getCategoryExpressionWeight(String category, String expression) {
+            ImmutableMap<String, Double> expressionToWeight = categoryExpressionToWeight.get(category);
+            if (expressionToWeight == null) {
+                return EXPRESSION_WEIGHT_DEFAULT;
+            }
+            return expressionToWeight.getOrDefault(expression, EXPRESSION_WEIGHT_DEFAULT);
+        }
     }
 
     public static Module module() {

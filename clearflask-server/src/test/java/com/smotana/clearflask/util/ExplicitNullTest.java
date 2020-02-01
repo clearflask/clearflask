@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class GsonProviderTest extends AbstractTest {
+public class ExplicitNullTest extends AbstractTest {
 
     @Inject
     private Gson gson;

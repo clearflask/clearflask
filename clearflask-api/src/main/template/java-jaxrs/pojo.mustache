@@ -16,6 +16,7 @@ public class {{classname}}{{#parent}} extends {{{parent}}}{{/parent}} {
     */
 {{/description}}
 {{#required}}    @NonNull
+    @GsonNonNull
 {{/required}}    @SerializedName("{{name}}")
     private final {{{datatypeWithEnum}}} {{name}};
 {{/vars}}}

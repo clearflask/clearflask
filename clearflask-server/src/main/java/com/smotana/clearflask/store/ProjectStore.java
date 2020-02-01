@@ -13,13 +13,23 @@ public interface ProjectStore {
         return IdUtil.randomId();
     }
 
-    Optional<VersionedConfig> getConfig(String projectId, boolean useCache);
+    Optional<Project> getProject(String projectId, boolean useCache);
 
-    Optional<VersionedConfigAdmin> getConfigAdmin(String projectId);
+    ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);
 
-    ImmutableSet<VersionedConfigAdmin> getConfigAdmins(ImmutableSet<String> projectIds);
-
-    void createConfig(String projectId, VersionedConfigAdmin versionedConfigAdmin);
+    Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin);
 
     void updateConfig(String projectId, String previousVersion, VersionedConfigAdmin versionedConfigAdmin);
+
+    interface Project {
+        String getProjectId();
+
+        String getVersion();
+
+        VersionedConfig getVersionedConfig();
+
+        VersionedConfigAdmin getVersionedConfigAdmin();
+
+        double getCategoryExpressionWeight(String category, String expression);
+    }
 }

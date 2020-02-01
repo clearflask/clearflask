@@ -2,6 +2,7 @@ package com.smotana.clearflask.store;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -16,28 +17,121 @@ import java.util.Optional;
 
 public interface VoteStore {
 
+    /**
+     * Returns previous vote.
+     */
+    Vote vote(String projectId, String userId, String targetId, Vote vote);
+
+    ImmutableMap<String, VoteModel> voteSearch(String projectId, String userId, ImmutableSet<String> targetIds);
+
+    /**
+     * Ordered by targetId desc.
+     */
+    ListResponse<VoteModel> voteList(String projectId, String userId, Optional<String> cursorOpt);
+
+
+    /**
+     * Returns all previous expressions.
+     */
+    ImmutableSet<String> express(String projectId, String userId, String targetId, Optional<String> expression);
+
+    /**
+     * Returns all previous expressions.
+     */
+    ImmutableSet<String> expressMultiAdd(String projectId, String userId, String targetId, ImmutableSet<String> addExpressions);
+
+    /**
+     * Returns all previous expressions.
+     */
+    ImmutableSet<String> expressMultiRemove(String projectId, String userId, String targetId, ImmutableSet<String> removeExpressions);
+
+    ImmutableMap<String, ExpressModel> expressSearch(String projectId, String userId, ImmutableSet<String> targetIds);
+
+    /**
+     * Ordered by targetId desc.
+     */
+    ListResponse<ExpressModel> expressList(String projectId, String userId, Optional<String> cursorOpt);
+
+
     default String genTransactionId() {
         return IdUtil.randomAscId();
     }
 
-    void ideaVote(String projectId, String userId, String ideaId, Vote vote);
+    Transaction fund(String projectId, String userId, String targetId, long fundAmount, String transactionType, String summary);
 
-    void ideaExpress(String projectId, String userId, String ideaId, Optional<String> expression);
+    ImmutableMap<String, FundModel> fundSearch(String projectId, String userId, ImmutableSet<String> targetIds);
 
-    void ideaExpressMulti(String projectId, String userId, String ideaId, ImmutableSet<String> addExpressions, ImmutableSet<String> removeExpressions);
+    /**
+     * Ordered by targetId desc.
+     */
+    ListResponse<FundModel> fundList(String projectId, String userId, Optional<String> cursorOpt);
 
-    Transaction ideaFund(String projectId, String userId, String ideaId, long amount, String transactionType, String summary);
+    /**
+     * Ordered by created desc.
+     */
+    ListResponse<Transaction> transactionList(String projectId, String userId, Optional<String> cursorOpt);
 
-    TransactionListResponse ideaFundTransactionList(String projectId, String userId, Optional<String> cursorOpt);
-
-    void commentVote(String projectId, String userId, String commentId, Vote vote);
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    class TransactionListResponse {
-        private final ImmutableList<Transaction> transactions;
+    class ListResponse<T> {
+        private final ImmutableList<T> items;
         private final Optional<String> cursorOpt;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "vote", rangeKeys = "targetId")
+    class VoteModel {
+        @NonNull
+        private final String userId;
+
+        @NonNull
+        private final String projectId;
+
+        @NonNull
+        private final String targetId;
+
+        @NonNull
+        private final int vote; // Vote enum
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "express", rangeKeys = "targetId")
+    class ExpressModel {
+        @NonNull
+        private final String userId;
+
+        @NonNull
+        private final String projectId;
+
+        @NonNull
+        private final String targetId;
+
+        @NonNull
+        private final ImmutableSet<String> expressions;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "fund", rangeKeys = {"targetId"})
+    class FundModel {
+        @NonNull
+        private final String userId;
+
+        @NonNull
+        private final String projectId;
+
+        @NonNull
+        private final String targetId;
+
+        @NonNull
+        private final long fundAmount;
     }
 
     @Value
@@ -61,9 +155,6 @@ public interface VoteStore {
         private final long amount;
 
         @NonNull
-        private final long balance;
-
-        @NonNull
         private final String transactionType;
 
         /**
@@ -80,9 +171,9 @@ public interface VoteStore {
     }
 
     enum Vote {
-        UPVOTE(1),
-        DOWNVOTE(-1),
-        NONE(0);
+        Upvote(1),
+        Downvote(-1),
+        None(0);
 
         private int value;
 
@@ -96,11 +187,11 @@ public interface VoteStore {
 
         public VoteOption toVoteOption() {
             switch (this) {
-                case UPVOTE:
+                case Upvote:
                     return VoteOption.UPVOTE;
-                case DOWNVOTE:
+                case Downvote:
                     return VoteOption.DOWNVOTE;
-                case NONE:
+                case None:
                     return VoteOption.NONE;
                 default:
                     throw new RuntimeException("Unknown Vote: " + this);
@@ -110,11 +201,11 @@ public interface VoteStore {
         public static Vote fromVoteOption(VoteOption voteOption) {
             switch (voteOption) {
                 case UPVOTE:
-                    return Vote.UPVOTE;
+                    return Vote.Upvote;
                 case DOWNVOTE:
-                    return Vote.DOWNVOTE;
+                    return Vote.Downvote;
                 case NONE:
-                    return Vote.NONE;
+                    return Vote.None;
                 default:
                     throw new RuntimeException("Unknown VoteOption: " + voteOption);
             }
@@ -123,11 +214,11 @@ public interface VoteStore {
         public static Vote fromValue(int value) {
             switch (value) {
                 case 1:
-                    return Vote.UPVOTE;
+                    return Vote.Upvote;
                 case -1:
-                    return Vote.DOWNVOTE;
+                    return Vote.Downvote;
                 case 0:
-                    return Vote.NONE;
+                    return Vote.None;
                 default:
                     throw new RuntimeException("Unknown value: " + value);
             }

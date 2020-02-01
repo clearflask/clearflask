@@ -11,11 +11,16 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -33,10 +38,14 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.Transaction;
+import com.smotana.clearflask.store.VoteStore.Vote;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -64,9 +73,15 @@ import org.elasticsearch.search.sort.SortOrder;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.N;
+import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.SS;
 import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
@@ -85,7 +100,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private Config config;
     @Inject
     @Named("idea")
-    private ElasticUtil.ConfigSearch configSearch;
+    private ConfigSearch configSearch;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -98,6 +113,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private ElasticUtil elasticUtil;
     @Inject
     private Gson gson;
+    @Inject
+    private VoteStore voteStore;
 
     private TableSchema<IdeaModel> ideaSchema;
 
@@ -361,6 +378,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW);
         Map<String, Object> indexUpdates = Maps.newHashMap();
+
         if (ideaUpdateAdmin.getTitle() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("title")
                     .put(ideaSchema.toDynamoValue("title", ideaUpdateAdmin.getTitle())));
@@ -409,6 +427,220 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         } else {
             return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
         }
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, Vote vote) {
+        ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
+
+        Vote votePrev = voteStore.vote(projectId, userId, ideaId, vote);
+        int voteDiff = vote.getValue() - votePrev.getValue();
+        int votersCountDiff = Math.abs(vote.getValue()) - Math.abs((votePrev.getValue()));
+        if (vote == votePrev || (voteDiff == 0 && votersCountDiff == 0)) {
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        }
+
+        if (voteDiff != 0) {
+            updateExpressionBuilder.addUpdate(N("voteValue").set(N("voteValue").plus(voteDiff)));
+        }
+        if (votersCountDiff != 0) {
+            updateExpressionBuilder.addUpdate(N("votersCount").set(N("votersCount").plus(votersCountDiff)));
+        }
+
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .withExpressionSpec(updateExpressionBuilder.buildForUpdate()))
+                .getItem());
+
+        Map<String, Object> indexUpdates = Maps.newHashMap();
+        if (voteDiff != 0) {
+            indexUpdates.put("voteValue", idea.getVoteValue());
+        }
+        if (votersCountDiff != 0) {
+            indexUpdates.put("votersCount", idea.getVotersCount());
+        }
+        if (!indexUpdates.isEmpty()) {
+            SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                            .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                            .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                    RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        } else {
+            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
+        }
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt) {
+        ImmutableSet<String> expressionsPrev = voteStore.express(projectId, userId, ideaId, expressionOpt);
+        ImmutableSet<String> expressions = expressionOpt.map(ImmutableSet::of).orElse(ImmutableSet.of());
+
+        if (expressionsPrev.equals(expressions)) {
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        }
+
+        SetView<String> expressionsAdded = Sets.difference(expressions, expressionsPrev);
+        SetView<String> expressionsRemoved = Sets.difference(expressionsPrev, expressions);
+
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valMap = Maps.newHashMap();
+        valMap.put(":one", 1);
+        valMap.put(":zero", 1);
+
+        double expressionsValueDiff = 0;
+        List<String> setUpdates = Lists.newArrayList();
+
+        int expressionAddedCounter = 0;
+        for (String expressionAdded : expressionsAdded) {
+            String nameValue = "#exprAdd" + expressionAddedCounter++;
+            nameMap.put(nameValue, expressionAdded);
+            setUpdates.add("expressions." + nameValue + " = if_not_exists(expressions." + nameValue + ", :zero) + :one");
+            expressionsValueDiff += expressionToWeightMapper.apply(expressionAdded);
+        }
+
+        int expressionRemovedCounter = 0;
+        for (String expressionRemoved : expressionsRemoved) {
+            String nameValue = "#exprRem" + expressionRemovedCounter++;
+            nameMap.put(nameValue, expressionRemoved);
+            setUpdates.add("expressions." + nameValue + " = if_not_exists(expressions." + nameValue + ", :zero) - :one");
+            expressionsValueDiff -= expressionToWeightMapper.apply(expressionRemoved);
+        }
+
+        if (expressionsValueDiff != 0d) {
+            valMap.put(":expValDiff", Math.abs(expressionsValueDiff));
+            setUpdates.add("expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionsValueDiff > 0 ? "+" : "-") + " :expValDiff");
+        }
+
+        String updateExpression = "SET " + setUpdates.stream().collect(Collectors.joining(", "));
+
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .withNameMap(nameMap)
+                .withValueMap(valMap)
+                .withUpdateExpression(updateExpression))
+                .getItem());
+
+        Map<String, Object> indexUpdates = Maps.newHashMap();
+        indexUpdates.put("expressions", idea.getExpressions().keySet());
+        if (expressionsValueDiff != 0d) {
+            indexUpdates.put("expressionsValue", idea.getExpressionsValue());
+        }
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                        .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+        ImmutableSet<String> expressionsPrev = voteStore.expressMultiAdd(projectId, userId, ideaId, ImmutableSet.of(expression));
+
+        if (expressionsPrev.contains(expression)) {
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        }
+
+        double expressionValueDiff = expressionToWeightMapper.apply(expression);
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .withNameMap(Map.of("#exprAdd", expression))
+                .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
+                .withUpdateExpression("SET expressions.#exprAdd = if_not_exists(expressions.#exprAdd, :zero) + :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
+                .getItem());
+
+        Map<String, Object> indexUpdates = Maps.newHashMap();
+        indexUpdates.put("expressions", idea.getExpressions().keySet());
+        indexUpdates.put("expressionsValue", idea.getExpressionsValue());
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                        .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+        ImmutableSet<String> expressionsPrev = voteStore.expressMultiRemove(projectId, userId, ideaId, ImmutableSet.of(expression));
+
+        if (!expressionsPrev.contains(expression)) {
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        }
+
+        double expressionValueDiff = -expressionToWeightMapper.apply(expression);
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .withNameMap(Map.of("#exprRem", expression))
+                .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
+                .withUpdateExpression("SET expressions.#exprRem = if_not_exists(expressions.#exprRem, :zero) - :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
+                .getItem());
+
+        Map<String, Object> indexUpdates = Maps.newHashMap();
+        indexUpdates.put("expressions", idea.getExpressions().keySet());
+        indexUpdates.put("expressionsValue", idea.getExpressionsValue());
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                        .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+    }
+
+    @Override
+    public IdeaAndIndexingFuture<UpdateResponse> fundIdea(String projectId, String ideaId, String userId, long fundAmount, String transactionType, String summary) {
+        ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
+
+        Transaction transaction = voteStore.fund(projectId, userId, ideaId, fundAmount, transactionType, summary);
+        long fundedDiff = transaction.getAmount();
+        boolean hasFundedBefore = transaction.getAmount() != fundAmount;
+
+        if (fundedDiff == 0L) {
+            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        }
+
+        boolean funderUserIdsChanged = false;
+        updateExpressionBuilder.addUpdate(N("funded").set(N("funded").plus(fundedDiff)));
+        if (!hasFundedBefore && fundAmount != 0L) {
+            updateExpressionBuilder.addUpdate(SS("funderUserIds").append(userId));
+            funderUserIdsChanged = true;
+        } else if (fundAmount == 0L) {
+            updateExpressionBuilder.addUpdate(SS("funderUserIds").delete(userId));
+            funderUserIdsChanged = true;
+        }
+
+        IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "ideaId", ideaId)))
+                .withReturnValues(ReturnValue.ALL_NEW)
+                .withExpressionSpec(updateExpressionBuilder.buildForUpdate()))
+                .getItem());
+
+        Map<String, Object> indexUpdates = Maps.newHashMap();
+        indexUpdates.put("funded", idea.getFunded());
+        if (funderUserIdsChanged) {
+            indexUpdates.put("funderUserIds", idea.getFunderUserIds());
+        }
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
+                        .doc(gson.toJson(indexUpdates), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
     }
 
     @Override
@@ -481,7 +713,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             protected void configure() {
                 bind(IdeaStore.class).to(DynamoElasticIdeaStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("idea")));
+                install(ConfigSystem.configModule(ConfigSearch.class, Names.named("idea")));
             }
         };
     }

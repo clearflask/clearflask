@@ -71,12 +71,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.copyOf(ideaCreate.getTagIds()),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0L,
                 BigDecimal.ZERO,
                 ImmutableSet.of(),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0d,
                 ImmutableMap.of());
         ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();
@@ -99,12 +99,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.copyOf(ideaCreateAdmin.getTagIds()),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0L,
                 ideaCreateAdmin.getFundGoal(),
                 ImmutableSet.of(),
                 0L,
                 0L,
-                BigDecimal.ZERO,
+                0d,
                 ImmutableMap.of());
         ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();

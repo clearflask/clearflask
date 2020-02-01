@@ -56,15 +56,17 @@ components:
           $ref: 'api-vote.yaml#/components/schemas/VoteOption'
         expressions:
           type: object
+          required:
+          - action
+          - expression
           properties:
-            add:
-              type: array
-              items:
-                type: string
-            remove:
-              type: array
-              items:
-                type: string
+            action:
+              type: string
+              enum:
+              - add
+              - remove
+            expression:
+              type: string
     VoteUpdateAdmin:
       allOf:
         - $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
