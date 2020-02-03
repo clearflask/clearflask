@@ -53,7 +53,8 @@ components:
       properties:
         increment:
           x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
-          type: number
+          type: integer
+          format: int64
         formats:
           x-clearflask-prop: { order: 3, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
@@ -68,19 +69,24 @@ components:
             properties:
               greaterOrEqual:
                 x-clearflask-prop: { order: 3, name: 'Range: Greater than or equal', description: 'Applies this format only if credit value is greater than or equal to this value' }
-                type: number
+                type: integer
+                format: int64
               lessOrEqual:
                 x-clearflask-prop: { order: 4, name: 'Range: Less than or equal', description: 'Applies this format only if credit value is less than or equal to this value' }
-                type: number
+                type: integer
+                format: int64
               multiplier:
                 x-clearflask-prop: { order: 5, name: 'Multiplier', description: 'Multiply value before displaying' }
                 type: number
+                format: double
               minimumFractionDigits:
                 x-clearflask-prop: { order: 6, name: 'Min decimals', description: 'Minimum amount of decimals to display regardless of value' }
                 type: integer
+                format: int64
               maximumFractionDigits:
                 x-clearflask-prop: { order: 7, name: 'Max decimals', description: 'Maximum amount of decimals to display regardless of value' }
                 type: integer
+                format: int64
               prefix:
                 x-clearflask-prop: { order: 1, name: 'Prefix', description: 'Text to prepend before the value' }
                 type: string
@@ -229,6 +235,7 @@ components:
             fontSize:
               x-clearflask-prop: { order: 2, name: 'Font Size' }
               type: number
+              format: double
     support:
       x-clearflask-page: { order: 4, name: 'Support' }
       title: Support
@@ -274,8 +281,8 @@ components:
           type: object
           properties:
             limitEmojiPerIdea:
-              x-clearflask-prop: { order: 1, name: 'Limit per Idea', description: 'If set, limit the number of expressions that can be added per idea', defaultValue: 5 }
-              type: number
+              x-clearflask-prop: { order: 1, name: 'Limit one per Idea', description: 'If set, limit a single expression that can be added per idea', defaultValue: 5 }
+              type: boolean
             limitEmojiSet:
               x-clearflask-prop: { order: 2, name: 'Emoji whitelist', description: 'If enabled, limit the emojis that can be displayed. Additionally, set the weight of each emoji' }
               type: array
@@ -301,6 +308,7 @@ components:
                     minimum: -1
                     maximum: 1
                     type: number
+                    format: double
         comment:
           x-clearflask-prop: { order: 1, name: 'Enable comments', defaultValue: true }
           type: boolean
@@ -474,9 +482,11 @@ components:
               minRequired:
                 x-clearflask-prop: { order: 2, name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user' }
                 type: integer
+                format: int64
               maxRequired:
                 x-clearflask-prop: { order: 3, name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user' }
                 type: integer
+                format: int64
               userSettable:
                 x-clearflask-prop: { order: 4, name: 'User settable', description: 'Can be set by user', defaultValue: true }
                 type: boolean
@@ -574,13 +584,16 @@ components:
       properties:
         titleTruncateLines:
           x-clearflask-prop: { order: 1, name: 'Title maximum lines', placeholder: 1}
-          type: number
+          type: integer
+          format: int64
         descriptionTruncateLines:
           x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
-          type: number
+          type: integer
+          format: int64
         responseTruncateLines:
           x-clearflask-prop: { order: 2, name: 'Response maximum lines', placeholder: 1}
-          type: number
+          type: integer
+          format: int64
         showDescription:
           x-clearflask-prop: { order: 3, name: 'Force show description' }
           type: boolean

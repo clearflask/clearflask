@@ -36,7 +36,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.VoteStore.Vote;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -368,7 +368,7 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, Vote votePrev, Vote vote) {
+    public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, VoteValue votePrev, VoteValue vote) {
         checkArgument(vote != votePrev);
 
         ImmutableList.Builder<AttributeUpdate> attrUpdatesBuilder = ImmutableList.builder();

@@ -9,7 +9,7 @@ import com.smotana.clearflask.api.model.Comment;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.CommentWithAuthor;
 import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.store.VoteStore.Vote;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -46,7 +46,7 @@ public interface CommentStore {
 
     CommentAndIndexingFuture<UpdateResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
 
-    CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, Vote votePrev, Vote vote);
+    CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, VoteValue votePrev, VoteValue vote);
 
     CommentAndIndexingFuture<UpdateResponse> markAsDeletedComment(String projectId, String ideaId, String commentId);
 
@@ -86,7 +86,7 @@ public interface CommentStore {
         private final int level;
 
         @NonNull
-        private final int childCommentCount;
+        private final long childCommentCount;
 
         /**
          * Author of the comment. If null, comment is deleted.

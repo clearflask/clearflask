@@ -272,8 +272,9 @@ interface ConnectProps {
   category?:Client.Category;
   credits?:Client.Credits;
   maxFundAmountSeen:number;
-  authorUser?:Client.User;
-  vote?:Client.Vote;
+  vote?:Client.VoteOption;
+  expression?:Array<string>;
+  fundAmount?:number;
   loggedInUser?:Client.User;
   updateVote: (voteUpdate:Partial<Client.VoteUpdate>)=>Promise<Client.VoteUpdateResponse>;
 }
@@ -413,11 +414,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 
   renderAuthor(variant:PostVariant) {
     if(variant !== 'page' && this.props.display && this.props.display.showAuthor === false
-      || !this.props.authorUser) return null;
+      || !this.props.idea) return null;
 
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
-        {this.props.authorUser.name}
+        {this.props.idea.authorName}
       </Typography>
     );
   }
@@ -572,8 +573,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.vote) return null;
 
-    const upvoted:boolean = (!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Upvote) !== !!this.state.isSubmittingUpvote;
-    const downvoted:boolean = (!!this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Downvote) !== !!this.state.isSubmittingDownvote;
+    const upvoted:boolean = (this.props.vote === Client.VoteOption.Upvote) !== !!this.state.isSubmittingUpvote;
+    const downvoted:boolean = (this.props.vote === Client.VoteOption.Downvote) !== !!this.state.isSubmittingDownvote;
 
     return (
       <div style={{
@@ -588,8 +589,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             const upvote = () => {
               if(this.state.isSubmittingUpvote) return;
               this.setState({isSubmittingUpvote: true});
-              this.props.updateVote({vote: (this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Upvote)
-                ? Client.VoteUpdateVoteEnum.None : Client.VoteUpdateVoteEnum.Upvote})
+              this.props.updateVote({vote: (this.props.vote === Client.VoteOption.Upvote)
+                ? Client.VoteOption.None : Client.VoteOption.Upvote})
                 .then(()=>this.setState({isSubmittingUpvote: false}),
                   ()=>this.setState({isSubmittingUpvote: false}));
             };
@@ -614,8 +615,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               if(this.state.isSubmittingDownvote) return;
               const downvote = () => {
                 this.setState({isSubmittingDownvote: true});
-                this.props.updateVote({vote: (this.props.vote && this.props.vote.vote === Client.VoteVoteEnum.Downvote)
-                  ? Client.VoteUpdateVoteEnum.None : Client.VoteUpdateVoteEnum.Downvote})
+                this.props.updateVote({vote: (this.props.vote === Client.VoteOption.Downvote)
+                  ? Client.VoteOption.None : Client.VoteOption.Downvote})
                   .then(()=>this.setState({isSubmittingDownvote: false}),
                     ()=>this.setState({isSubmittingDownvote: false}));
               };
@@ -645,7 +646,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const fundingAllowed = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)!
         .disableFunding !== true;
-    const iFundedThis = this.props.vote && this.props.vote.fundAmount && this.props.vote.fundAmount > 0;
+    const iFundedThis = !!this.props.fundAmount && this.props.fundAmount > 0;
     const padding = this.props.theme.spacing(3);
 
     const fundThisButton = (
@@ -695,7 +696,6 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           fundingBarRef={this.fundingBarRef}
           idea={this.props.idea}
           credits={this.props.credits}
-          vote={this.props.vote}
           maxFundAmountSeen={this.props.maxFundAmountSeen}
           style={{alignSelf: 'stretch'}}
           overrideRight={fundThisButton}
@@ -723,7 +723,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             <FundingControl
               server={this.props.server}
               idea={this.props.idea}
-              vote={this.props.vote}
+              fundAmount={this.props.fundAmount}
               onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
             />
           </Popover>
@@ -770,31 +770,29 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     
     const padding = this.props.theme.spacing(0.5);
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
-    const reachedLimitPerIdea = limitEmojiPerIdea !== undefined && (this.props.vote && this.props.vote.expressions && this.props.vote.expressions.length || 0) >= limitEmojiPerIdea;
+    const reachedLimitPerIdea = limitEmojiPerIdea && (!!this.props.expression && Object.keys(this.props.expression).length || 0) > 0;
 
     const getHasExpressed = (display:string):boolean => {
-      return this.props.vote
-        && this.props.vote.expressions
-        && this.props.vote.expressions.includes(display)
+      return this.props.expression
+        && this.props.expression.includes(display)
         || false;
     };  
     const clickExpression = (display:string) => {
-      const expressionDiff:Client.VoteUpdateExpressions = {};
+      var expressionDiff:Client.VoteUpdateExpressions|undefined = undefined;
       const hasExpressed = getHasExpressed(display);
-      if(limitEmojiPerIdea === 1) {
+      if(limitEmojiPerIdea) {
         if(hasExpressed) {
-          expressionDiff.remove = [display];
+          expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Unset, expression: display};
         } else {
-          expressionDiff.add = [display];
-          expressionDiff.remove = this.props.vote && this.props.vote.expressions || undefined;
+          expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Set, expression: display};
         }
       } else if(!hasExpressed && reachedLimitPerIdea) {
         this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'warning', preventDuplicate: true });
         return;
       } else if(hasExpressed) {
-        expressionDiff.remove = [display];
+        expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Remove, expression: display};
       } else {
-        expressionDiff.add = [display];
+        expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Add, expression: display};
       }
       this.props.updateVote({ expressions: expressionDiff })
     };  
@@ -804,18 +802,18 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       : undefined;
     const unusedEmoji = new Set<string>(limitEmojiSet || []);
     const expressionsExpressed:React.ReactNode[] = [];
-    (this.props.idea.expressions || []).forEach(expression => {
+    this.props.idea.expressions && Object.entries(this.props.idea.expressions).forEach(([expression, count]) => {
       if(limitEmojiSet) {
-        if(!limitEmojiSet.has(expression.display)) {
+        if(!limitEmojiSet.has(expression)) {
           return; // expression not in the list of approved expressions
         }
-        unusedEmoji.delete(expression.display)
+        unusedEmoji.delete(expression)
       };
       expressionsExpressed.push(this.renderExpressionEmoji(
-        expression.display,
-        expression.display,
-        getHasExpressed(expression.display),
-        () => clickExpression(expression.display), expression.count));
+        expression,
+        expression,
+        getHasExpressed(expression),
+        () => clickExpression(expression), count));
     });
     const expressionsUnused:React.ReactNode[] = [...unusedEmoji].map(expressionDisplay =>
       this.renderExpressionEmoji(
@@ -970,19 +968,12 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
 }
 
 export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
-  var authorUser, vote;
+  var vote:Client.VoteOption|undefined;
+  var expression:Array<string>|undefined;
+  var fundAmount:number|undefined;
   if(ownProps.idea) {
-    const user = state.users.byId[ownProps.idea.authorUserId];
-    if(!user) {
-      ownProps.server.dispatch().userGet({
-        projectId: state.projectId,
-        userId: ownProps.idea.authorUserId,
-      });
-    } else {
-      authorUser = user.user;
-    }
-    const voteResult = state.votes.byIdeaId[ownProps.idea.ideaId];
-    if(voteResult === undefined) {
+    const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
+    if(voteStatus === undefined) {
       // Don't refresh votes if inside a panel which will refresh votes for us
       if(ownProps.variant === 'page') {
         ownProps.server.dispatch().voteGetOwn({
@@ -991,14 +982,17 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
         });
       }
     } else {
-      vote = voteResult.vote;
+      vote = state.votes.votesByIdeaId[ownProps.idea.ideaId];
+      expression = state.votes.expressionByIdeaId[ownProps.idea.ideaId];
+      fundAmount = state.votes.fundAmountByIdeaId[ownProps.idea.ideaId];
     }
   }
   return {
     configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId,
-    authorUser: authorUser,
-    vote: vote,
+    vote,
+    expression,
+    fundAmount,
     category: (ownProps.idea && state.conf.conf)
       ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
       : undefined,
@@ -1013,6 +1007,6 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
         ideaId: ownProps.idea!.ideaId,
         ...voteUpdate,
       },
-    }, {previousVote: vote || null}),
+    }),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

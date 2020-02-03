@@ -1,6 +1,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.util.IdUtil;
@@ -30,6 +31,8 @@ public interface ProjectStore {
 
         VersionedConfigAdmin getVersionedConfigAdmin();
 
-        double getCategoryExpressionWeight(String category, String expression);
+        double getCategoryExpressionWeight(String categoryId, String expression);
+
+        Optional<Category> getCategory(String categoryId);
     }
 }

@@ -101,7 +101,8 @@ components:
         - type: object
           properties:
             balance:
-              type: number
+              type: integer
+              format: int64
             created:
               type: string
               format: date-time

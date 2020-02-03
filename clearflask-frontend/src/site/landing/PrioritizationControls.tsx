@@ -100,15 +100,15 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
 
   handleChangeExpressionsLimitSingle(e, allowMultiple) {
     this.setState({expressionsAllowMultiple: allowMultiple});
-    this.props.templater.supportExpressingLimitEmojiPerIdea(0, allowMultiple ? undefined : 1);
+    this.props.templater.supportExpressingLimitEmojiPerIdea(0, !allowMultiple);
 }
 
   handleChangeExpressionsLimitEmojis(e, limitEmojis) {
     this.setState({expressionsLimitEmojis: limitEmojis});
     if(limitEmojis) {
-      this.props.templater.supportExpressingFacebookStyle(0, this.state.expressionsAllowMultiple ? undefined : 1);
+      this.props.templater.supportExpressingFacebookStyle(0, !this.state.expressionsAllowMultiple);
     } else {
-      this.props.templater.supportExpressingAllEmojis(0, this.state.expressionsAllowMultiple ? undefined : 1);
+      this.props.templater.supportExpressingAllEmojis(0, !this.state.expressionsAllowMultiple);
     }
   }
 
@@ -132,7 +132,7 @@ class PrioritizationControls extends Component<Props&WithStyles<typeof styles, t
       case 'expressions':
         this.setState({type: val});
         this.props.templater.supportNone(0);
-        this.props.templater.supportExpressingAllEmojis(0, this.state.expressionsAllowMultiple ? undefined : 1);
+        this.props.templater.supportExpressingAllEmojis(0, !this.state.expressionsAllowMultiple);
         break;
     }
   }

@@ -10,10 +10,11 @@ import Truncate from 'react-truncate';
 import { Slider } from '@material-ui/lab';
 import CreditView from '../../common/config/CreditView';
 import { withRouter, RouteComponentProps } from 'react-router';
+import minmax from '../../common/util/mathutil';
 
 interface SearchResult {
   status:Status;
-  ideas:(Client.Idea&{vote:Client.Vote}|undefined)[];
+  ideas:(Client.IdeaWithVote|undefined)[];
   cursor:string|undefined,
 }
 
@@ -48,7 +49,7 @@ interface Props {
   style?:React.CSSProperties;
   /** If you want to show a particular idea first, set idea and vote here */
   idea?:Client.Idea;
-  vote?:Client.Vote;
+  fundAmount?:number;
   onOtherFundedIdeasLoaded?:()=>void;
 }
 
@@ -58,7 +59,7 @@ interface ConnectProps {
   otherFundedIdeas:SearchResult;
   balance:number;
   maxFundAmountSeen:number;
-  updateVote: (ideaId:string, voteUpdate:Partial<Client.VoteUpdate>)=>Promise<Client.VoteUpdateResponse>;
+  updateVote: (voteUpdate:Client.VoteUpdate)=>Promise<Client.VoteUpdateResponse>;
   callOnMount: ()=>void,
 }
 
@@ -78,7 +79,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
   }
 
   static getDerivedStateFromProps(props:Props&ConnectProps&WithStyles<typeof styles, true>, state:State):Partial<State> | null {
-    var maxTarget:number = (props.vote && props.vote.fundAmount || 0);
+    var maxTarget:number = (props.fundAmount || 0);
     props.otherFundedIdeas.ideas.forEach(i =>
       maxTarget = Math.max(maxTarget, i ? (i.vote.fundAmount || 0) : 0));
     maxTarget += props.balance;
@@ -114,11 +115,10 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           <FundingBar
             idea={this.props.idea}
             credits={this.props.credits}
-            vote={this.props.vote}
             maxFundAmountSeen={this.props.maxFundAmountSeen}
             fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
           />
-          {this.renderSlider(this.props.idea, this.props.credits, this.props.vote)}
+          {this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
         </div>)}
         {msg && (
           <Typography
@@ -140,11 +140,10 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
               <FundingBar
                 idea={idea}
                 credits={this.props.credits}
-                vote={this.props.vote}
                 maxFundAmountSeen={this.props.maxFundAmountSeen}
                 fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
               />
-              {this.renderSlider(idea, this.props.credits!, idea.vote)}
+              {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
             </div>
           ))}
         </Loader>
@@ -152,9 +151,8 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     );
   }
 
-  renderSlider(idea:Client.Idea, credits:Client.Credits, vote?:Client.Vote) {
+  renderSlider(idea:Client.Idea, credits:Client.Credits, fundAmount:number) {
     const isSliding = this.state.sliderCurrentIdeaId === idea.ideaId;
-    const fundAmount = vote && vote.fundAmount || 0;
     const min = 0;
     var max = fundAmount + this.props.balance;
     if(!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
@@ -205,7 +203,10 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             this.setState({
               sliderIsSubmitting: true,
             });
-            this.props.updateVote(idea.ideaId, {fundAmount: fundAmount + Math.min(sliderFundAmountDiff, this.props.balance)})
+            this.props.updateVote({
+              ideaId: idea.ideaId,
+              fundDiff: minmax(-fundAmount, sliderFundAmountDiff, this.props.balance),
+            })
             .finally(() => this.setState({
               sliderCurrentIdeaId: undefined,
               fixedTarget: undefined,
@@ -296,13 +297,10 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       cursor: undefined,
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
-    updateVote: (ideaId:string, voteUpdate:Partial<Client.VoteUpdate>):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
+    updateVote: (voteUpdate:Client.VoteUpdate):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
-      voteUpdate: {
-        ideaId: ideaId,
-        ...voteUpdate,
-      },
-    }, {previousVote: ownProps.vote || null}),
+      voteUpdate: voteUpdate,
+    }),
     callOnMount: () => {
       ownProps.server.dispatch().ideaSearch({
         projectId: state.projectId,
@@ -320,9 +318,11 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
     .map(ideaId => {
       const idea = state.ideas.byId[ideaId];
       if(!idea || !idea.idea || idea.status !== Status.FULFILLED) return undefined;
-      const vote = state.votes.byIdeaId[ideaId];
-      if(!vote || !vote.vote) return undefined;
-      return {vote: vote.vote, ...idea.idea};
+      return {...idea.idea, vote: {
+        vote: state.votes.votesByIdeaId[ideaId],
+        expression: state.votes.expressionByIdeaId[ideaId],
+        fundAmount: state.votes.fundAmountByIdeaId[ideaId],
+      }};
     });
   }
 

@@ -25,7 +25,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Futures;
@@ -48,6 +51,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.store.elastic.ActionListeners;
+import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.PasswordUtil;
@@ -77,10 +81,10 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import javax.ws.rs.core.Response;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -96,6 +100,24 @@ public class DynamoElasticUserStore implements UserStore {
         /** Intended for tests. Force immediate index refresh after write request. */
         @DefaultValue("false")
         boolean elasticForceRefresh();
+
+        @DefaultValue("0.001")
+        double voteBloomFilterFalsePositiveProbability();
+
+        @DefaultValue("100")
+        long voteBloomFilterExpectedInsertions();
+
+        @DefaultValue("0.001")
+        double expressBloomFilterFalsePositiveProbability();
+
+        @DefaultValue("100")
+        long expressBloomFilterExpectedInsertions();
+
+        @DefaultValue("0.001")
+        double fundBloomFilterFalsePositiveProbability();
+
+        @DefaultValue("100")
+        long fundBloomFilterExpectedInsertions();
     }
 
     @Value
@@ -372,12 +394,61 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, BigDecimal balanceDiff) {
+    public UserModel userVote(String projectId, String userId, String ideaId) {
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getVoteBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.voteBloomFilterExpectedInsertions(), config.voteBloomFilterFalsePositiveProbability()));
+        boolean bloomFilterUpdated = bloomFilter.put(ideaId);
+        if (!bloomFilterUpdated) {
+            return user;
+        }
+        return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(userSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "userId", userId)))
+                .withAttributeUpdate(new AttributeUpdate("voteBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
+    public UserModel userExpress(String projectId, String userId, String ideaId) {
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getExpressBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.expressBloomFilterExpectedInsertions(), config.expressBloomFilterFalsePositiveProbability()));
+        boolean bloomFilterUpdated = bloomFilter.put(ideaId);
+        if (!bloomFilterUpdated) {
+            return user;
+        }
+        return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(userSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "userId", userId)))
+                .withAttributeUpdate(new AttributeUpdate("expressBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
+    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, String ideaId, long balanceDiff) {
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
+        boolean bloomFilterUpdated = bloomFilter.put(ideaId);
+
+        List<AttributeUpdate> attrUpdates = Lists.newArrayList();
+        attrUpdates.add(new AttributeUpdate("balance").addNumeric(balanceDiff));
+        if (bloomFilterUpdated) {
+            attrUpdates.add(new AttributeUpdate("fundBloom").put(BloomFilters.toByteArray(bloomFilter)));
+        }
         UserModel userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(userSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "userId", userId)))
-                .withAttributeUpdate(new AttributeUpdate("balance").addNumeric(balanceDiff))
+                .withAttributeUpdate(attrUpdates)
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
 

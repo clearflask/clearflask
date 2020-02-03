@@ -1,5 +1,6 @@
 package com.smotana.clearflask.store;
 
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -11,7 +12,8 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.VoteStore.ExpressModel;
 import com.smotana.clearflask.store.VoteStore.FundModel;
 import com.smotana.clearflask.store.VoteStore.ListResponse;
-import com.smotana.clearflask.store.VoteStore.Transaction;
+import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -28,7 +30,7 @@ import java.util.ListIterator;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.smotana.clearflask.store.VoteStore.Vote.*;
+import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -137,11 +139,15 @@ public class VoteStoreTest extends AbstractTest {
         String ideaId2 = IdUtil.randomAscId();
         String ideaId3 = IdUtil.randomAscId();
 
-        assertEquals(4L, store.fund(projectId, userId, ideaId1, 4L, "transaction-type1", "summary1").getAmount());
-        assertEquals(-2L, store.fund(projectId, userId, ideaId1, 2L, "transaction-type2", "summary2").getAmount());
-        assertEquals(3L, store.fund(projectId, userId, ideaId2, 3L, "transaction-type3", "summary3").getAmount());
-        assertEquals(5L, store.fund(projectId, userId, ideaId3, 5L, "transaction-type4", "summary4").getAmount());
-        assertEquals(-5L, store.fund(projectId, userId, ideaId3, 0L, "transaction-type5", "summary5").getAmount());
+        assertEquals(4L, store.fund(projectId, userId, ideaId1, 4L, "transaction-type1", "summary1").getTransaction().getAmount());
+        assertEquals(-2L, store.fund(projectId, userId, ideaId1, -2L, "transaction-type2", "summary2").getTransaction().getAmount());
+        try {
+            store.fund(projectId, userId, ideaId1, -3L, "transaction-type-fail", "summary-fail");
+            fail();
+        } catch (ConditionalCheckFailedException ex) {
+            // Expected
+        }
+        assertEquals(3L, store.fund(projectId, userId, ideaId2, 3L, "transaction-type3", "summary3").getTransaction().getAmount());
 
         ListResponse<FundModel> result = store.fundList(projectId, userId, Optional.empty());
         assertEquals(ImmutableList.of(ideaId2), result.getItems().stream().map(FundModel::getTargetId).collect(ImmutableList.toImmutableList()));
@@ -152,6 +158,9 @@ public class VoteStoreTest extends AbstractTest {
         result = store.fundList(projectId, userId, result.getCursorOpt());
         assertEquals(ImmutableList.of(), result.getItems().stream().map(FundModel::getTargetId).collect(ImmutableList.toImmutableList()));
         assertFalse(result.getCursorOpt().isPresent());
+
+        assertEquals(5L, store.fund(projectId, userId, ideaId3, 5L, "transaction-type4", "summary4").getTransaction().getAmount());
+        assertEquals(-5L, store.fund(projectId, userId, ideaId3, -5L, "transaction-type5", "summary5").getTransaction().getAmount());
 
         assertEquals(ImmutableSet.of(), store.fundSearch(projectId, userId, ImmutableSet.of("non-existent-id")).keySet());
         assertEquals(ImmutableSet.of(), store.fundSearch(projectId, userId, ImmutableSet.of(ideaId3)).keySet());
@@ -168,7 +177,7 @@ public class VoteStoreTest extends AbstractTest {
         String ideaId2 = IdUtil.randomAscId();
         String ideaId3 = IdUtil.randomAscId();
 
-        List<Transaction> expectedTransactions = Lists.newArrayList();
+        List<TransactionModel> expectedTransactions = Lists.newArrayList();
 
         assertMakeTransaction(expectedTransactions, projectId, userId, ideaId1, 4L);
         assertMakeTransaction(expectedTransactions, projectId, userId, ideaId1, 16L);
@@ -180,31 +189,32 @@ public class VoteStoreTest extends AbstractTest {
         assertMakeTransaction(expectedTransactions, projectId, userId, ideaId3, 0L);
     }
 
-    private void assertMakeTransaction(List<Transaction> expectedTransactions, String projectId, String userId, String ideaId, long fundAmount) {
+    private void assertMakeTransaction(List<TransactionModel> expectedTransactions, String projectId, String userId, String ideaId, long fundAmount) {
         String transactionType = UUID.randomUUID().toString();
         String summary = UUID.randomUUID().toString();
-        Transaction transaction = store.fund(projectId, userId, ideaId, fundAmount, transactionType, summary);
-        assertEquals(new Transaction(
+        TransactionAndFundPrevious fundResult = store.fund(projectId, userId, ideaId, fundAmount, transactionType, summary);
+        assertEquals(new TransactionModel(
                         userId,
                         projectId,
-                        transaction.getTransactionId(),
-                        transaction.getCreated(),
-                        transaction.getAmount(),
+                        fundResult.getTransaction().getTransactionId(),
+                        fundResult.getTransaction().getCreated(),
+                        fundResult.getTransaction().getAmount(),
+                        fundResult.getTransaction().getBalance(),
                         transactionType,
                         ideaId,
                         summary,
-                        transaction.getTtlInEpochSec()),
-                transaction);
-        expectedTransactions.add(transaction);
+                        fundResult.getTransaction().getTtlInEpochSec()),
+                fundResult.getTransaction());
+        expectedTransactions.add(fundResult.getTransaction());
 
-        ListIterator<Transaction> expectedTransactionIterator = expectedTransactions.listIterator(expectedTransactions.size());
+        ListIterator<TransactionModel> expectedTransactionIterator = expectedTransactions.listIterator(expectedTransactions.size());
         long pages = 0;
         Optional<String> cursor = Optional.empty();
         do {
-            ListResponse<Transaction> result = store.transactionList(projectId, userId, cursor);
+            ListResponse<TransactionModel> listResult = store.transactionList(projectId, userId, cursor);
             pages++;
-            cursor = result.getCursorOpt();
-            result.getItems().forEach(actualTransaction -> {
+            cursor = listResult.getCursorOpt();
+            listResult.getItems().forEach(actualTransaction -> {
                 assertTrue(expectedTransactionIterator.hasPrevious());
                 assertEquals(expectedTransactionIterator.previous(), actualTransaction);
             });

@@ -25,12 +25,11 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-import static com.smotana.clearflask.store.VoteStore.Vote.*;
+import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -85,7 +84,7 @@ public class IdeaStoreIT extends AbstractIT {
         IdeaModel idea2Updated = idea2.toBuilder()
                 .categoryId(IdUtil.randomId())
                 .title("newTitle")
-                .fundGoal(BigDecimal.TEN)
+                .fundGoal(10L)
                 .build();
         store.updateIdea(projectId, idea2.getIdeaId(), IdeaUpdateAdmin.builder()
                 .categoryId(idea2Updated.getCategoryId())
@@ -146,10 +145,10 @@ public class IdeaStoreIT extends AbstractIT {
                 .searchText("aaaaaaaaaaaaaa")
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(1, store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .limit(1)
+                .limit(1L)
                 .build(), false, Optional.empty()).getIdeaIds().size());
         assertEquals(2, store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .limit(2)
+                .limit(2L)
                 .build(), false, Optional.empty()).getIdeaIds().size());
         assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterCreatedStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
@@ -196,36 +195,36 @@ public class IdeaStoreIT extends AbstractIT {
         String userId1 = IdUtil.randomId();
         String userId2 = IdUtil.randomId();
 
-        assertEquals(0L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(0L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId1, Upvote).getIndexingFuture().get();
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId2, Upvote).getIndexingFuture().get();
-        assertEquals(2L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(2L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId2, Upvote).getIndexingFuture().get();
-        assertEquals(2L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(2L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId1, Downvote).getIndexingFuture().get();
-        assertEquals(2L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(0L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId1, None).getIndexingFuture().get();
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId1, None).getIndexingFuture().get();
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
 
         store.voteIdea(projectId, idea.getIdeaId(), userId2, Downvote).getIndexingFuture().get();
-        assertEquals(1L, store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
-        assertEquals(-1L, store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
+        assertEquals(Long.valueOf(-1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
     }
 
     @Test(timeout = 5_000L)
@@ -287,29 +286,30 @@ public class IdeaStoreIT extends AbstractIT {
         String userId2 = IdUtil.randomId();
 
         assertEquals(ImmutableSet.of(), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
-        assertEquals(0L, store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+        assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId1, 10L, "transactionType", "summary").getIndexingFuture().get();
         assertEquals(ImmutableSet.of(userId1), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
-        assertEquals(10L, store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+        assertEquals(Long.valueOf(10L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
-        store.fundIdea(projectId, idea.getIdeaId(), userId1, 5L, "transactionType", "summary").getIndexingFuture().get();
+        store.fundIdea(projectId, idea.getIdeaId(), userId1, -5L, "transactionType", "summary").getIndexingFuture().get();
         assertEquals(ImmutableSet.of(userId1), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
-        assertEquals(5L, store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+        assertEquals(Long.valueOf(5L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId2, 7L, "transactionType", "summary").getIndexingFuture().get();
         assertEquals(ImmutableSet.of(userId1, userId2), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
-        assertEquals(12L, store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+        assertEquals(Long.valueOf(12L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
-        store.fundIdea(projectId, idea.getIdeaId(), userId1, 0L, "transactionType", "summary").getIndexingFuture().get();
+        store.fundIdea(projectId, idea.getIdeaId(), userId1, -5L, "transactionType", "summary").getIndexingFuture().get();
         assertEquals(ImmutableSet.of(userId2), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
-        assertEquals(7L, store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
+        assertEquals(Long.valueOf(7L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
     }
 
     private IdeaModel getRandomIdea(String projectId) {
         return new IdeaModel(
                 projectId,
                 store.genIdeaId(" this !@#$%^&*()is my title 9032 "),
+                IdUtil.randomId(),
                 IdUtil.randomId(),
                 Instant.now(),
                 "title",
@@ -321,7 +321,7 @@ public class IdeaStoreIT extends AbstractIT {
                 0L,
                 0L,
                 0L,
-                BigDecimal.valueOf(100),
+                100L,
                 ImmutableSet.of(),
                 0L,
                 0L,

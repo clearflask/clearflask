@@ -59,7 +59,6 @@ interface Props {
   style?:React.CSSProperties;
   idea?:Client.Idea;
   credits?:Client.Credits;
-  vote?:Client.Vote;
   maxFundAmountSeen:number;
   fundAmountDiff?:number;
   /** If set, shown on the right side of the bar, otherwise a percentage is shown */

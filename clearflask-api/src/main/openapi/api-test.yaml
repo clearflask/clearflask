@@ -79,15 +79,19 @@ components:
         numberReq:
           x-clearflask-prop: { order: 3, name: 'Number required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: number
+          format: double
         numberOpt:
           x-clearflask-prop: { order: 3, name: 'Number optional', description: 'Description description description.', placeholder: 'Placeholder' }
           type: number
+          format: double
         integerReq:
           x-clearflask-prop: { order: 4, name: 'Integer required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: integer
+          format: int64
         integerOpt:
           x-clearflask-prop: { order: 4, name: 'Integer optional', description: 'Description description description.', placeholder: 'Placeholder' }
           type: integer
+          format: int64
         enumReq:
           x-clearflask-prop: { order: 4.5, name: 'Enum required', description: 'Description description description.', placeholder: 'Placeholder' }
           type: string
@@ -360,15 +364,19 @@ components:
               numberReq:
                 x-clearflask-prop: { order: 3, name: 'Number required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: number
+                format: double
               numberOpt:
                 x-clearflask-prop: { order: 3, name: 'Number optional', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: number
+                format: double
               integerReq:
                 x-clearflask-prop: { order: 4, name: 'Integer required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: integer
+                format: int64
               integerOpt:
                 x-clearflask-prop: { order: 4, name: 'Integer optional', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: integer
+                format: int64
               enumReq:
                 x-clearflask-prop: { order: 4.5, name: 'Enum required', description: 'Description description description.', placeholder: 'Placeholder' }
                 type: string

@@ -10,11 +10,12 @@ import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaWithAuthorAndVote;
-import com.smotana.clearflask.store.VoteStore.Vote;
+import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.Vote;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.web.NotImplementedException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -25,7 +26,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
@@ -53,7 +53,7 @@ public interface IdeaStore {
 
     IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
 
-    IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, Vote vote);
+    IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
 
     IdeaAndIndexingFuture<UpdateResponse> expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt);
 
@@ -61,7 +61,7 @@ public interface IdeaStore {
 
     IdeaAndIndexingFuture<UpdateResponse> expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
 
-    IdeaAndIndexingFuture<UpdateResponse> fundIdea(String projectId, String ideaId, String userId, long fundAmount, String transactionType, String summary);
+    IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary);
 
     /** Increments total comment count. If incrementChildCount is true, also increments immediate child count too. */
     IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
@@ -83,6 +83,13 @@ public interface IdeaStore {
     }
 
     @Value
+    class IdeaTransactionAndIndexingFuture {
+        private final IdeaModel idea;
+        private final TransactionModel transaction;
+        private final ListenableFuture<UpdateResponse> indexingFuture;
+    }
+
+    @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(partitionKeys = {"ideaId", "projectId"}, rangePrefix = "idea")
@@ -96,6 +103,9 @@ public interface IdeaStore {
 
         @NonNull
         private final String authorUserId;
+
+        @NonNull
+        private final String authorName;
 
         @NonNull
         private final Instant created;
@@ -121,28 +131,67 @@ public interface IdeaStore {
         @NonNull
         private final long childCommentCount;
 
-        private final long funded;
+        private final Long funded;
 
-        private final BigDecimal fundGoal;
+        private final Long fundGoal;
 
         @NonNull
         private final ImmutableSet<String> funderUserIds;
 
-        private final long voteValue;
+        private final Long voteValue;
 
-        private final long votersCount;
+        private final Long votersCount;
 
-        private final double expressionsValue;
+        private final Double expressionsValue;
 
         /** Expression counts; map of expression display to count. */
         private final ImmutableMap<String, Long> expressions;
 
         public Idea toIdea() {
-            throw new NotImplementedException();
+            return new Idea(
+                    getIdeaId(),
+                    getAuthorUserId(),
+                    getAuthorName(),
+                    getCreated(),
+                    getTitle(),
+                    getDescription(),
+                    getResponse(),
+                    getCategoryId(),
+                    getStatusId(),
+                    getTagIds().asList(),
+                    getCommentCount(),
+                    getChildCommentCount(),
+                    getFunded(),
+                    getFundGoal(),
+                    (long) getFunderUserIds().size(),
+                    getVoteValue(),
+                    getVotersCount(),
+                    getExpressionsValue(),
+                    getExpressions());
         }
 
-        public IdeaWithAuthorAndVote toIdeaWithAuthorAndVote() {
-            throw new NotImplementedException();
+        public IdeaWithVote toIdeaWithVote(Vote vote) {
+            return new IdeaWithVote(
+                    getIdeaId(),
+                    getAuthorUserId(),
+                    getAuthorName(),
+                    getCreated(),
+                    getTitle(),
+                    getDescription(),
+                    getResponse(),
+                    getCategoryId(),
+                    getStatusId(),
+                    getTagIds().asList(),
+                    getCommentCount(),
+                    getChildCommentCount(),
+                    getFunded(),
+                    getFundGoal(),
+                    (long) getFunderUserIds().size(),
+                    getVoteValue(),
+                    getVotersCount(),
+                    getExpressionsValue(),
+                    getExpressions(),
+                    vote);
         }
     }
 }

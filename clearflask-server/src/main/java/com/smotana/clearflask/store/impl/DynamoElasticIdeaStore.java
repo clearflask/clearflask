@@ -39,8 +39,8 @@ import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.VoteStore;
-import com.smotana.clearflask.store.VoteStore.Transaction;
-import com.smotana.clearflask.store.VoteStore.Vote;
+import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
@@ -83,6 +83,7 @@ import java.util.stream.Collectors;
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.N;
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.SS;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
 @Singleton
@@ -199,12 +200,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("tagIds", idea.getTagIds())
                                 .put("commentCount", idea.getCommentCount())
                                 .put("childCommentCount", idea.getCommentCount())
-                                .put("funded", idea.getFunded())
-                                .put("fundGoal", idea.getFundGoal())
+                                .put("funded", orNull(idea.getFunded()))
+                                .put("fundGoal", orNull(idea.getFundGoal()))
                                 .put("funderUserIds", idea.getFunderUserIds())
-                                .put("voteValue", idea.getVoteValue())
-                                .put("votersCount", idea.getVotersCount())
-                                .put("expressionsValue", idea.getExpressionsValue())
+                                .put("voteValue", orNull(idea.getVoteValue()))
+                                .put("votersCount", orNull(idea.getVotersCount()))
+                                .put("expressionsValue", orNull(idea.getExpressionsValue()))
                                 .put("expressions", idea.getExpressions().keySet())
                                 .build()), XContentType.JSON),
                 RequestOptions.DEFAULT,
@@ -342,7 +343,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).source(new SearchSourceBuilder()
                         .fetchSource(false)
                         .query(query)),
-                cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, Optional.ofNullable(ideaSearchAdmin.getLimit()), configSearch);
+                cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, Optional.ofNullable(ideaSearchAdmin.getLimit()).map(Long::intValue), configSearch);
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         log.trace("searchIdeas hitsSize {} query {}", hits.length, ideaSearchAdmin);
@@ -430,10 +431,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, Vote vote) {
+    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
         ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
 
-        Vote votePrev = voteStore.vote(projectId, userId, ideaId, vote);
+        VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         int voteDiff = vote.getValue() - votePrev.getValue();
         int votersCountDiff = Math.abs(vote.getValue()) - Math.abs((votePrev.getValue()));
         if (vote == votePrev || (voteDiff == 0 && votersCountDiff == 0)) {
@@ -457,10 +458,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         Map<String, Object> indexUpdates = Maps.newHashMap();
         if (voteDiff != 0) {
-            indexUpdates.put("voteValue", idea.getVoteValue());
+            indexUpdates.put("voteValue", orNull(idea.getVoteValue()));
         }
         if (votersCountDiff != 0) {
-            indexUpdates.put("votersCount", idea.getVotersCount());
+            indexUpdates.put("votersCount", orNull(idea.getVotersCount()));
         }
         if (!indexUpdates.isEmpty()) {
             SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
@@ -601,23 +602,23 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> fundIdea(String projectId, String ideaId, String userId, long fundAmount, String transactionType, String summary) {
+    public IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary) {
         ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
 
-        Transaction transaction = voteStore.fund(projectId, userId, ideaId, fundAmount, transactionType, summary);
-        long fundedDiff = transaction.getAmount();
-        boolean hasFundedBefore = transaction.getAmount() != fundAmount;
-
-        if (fundedDiff == 0L) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        if (fundDiff == 0L) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot fund zero");
         }
 
+        TransactionAndFundPrevious transactionAndFundPrevious = voteStore.fund(projectId, userId, ideaId, fundDiff, transactionType, summary);
+        boolean hasFundedBefore = transactionAndFundPrevious.getFundAmountPrevious() > 0L;
+        long resultingFundAmount = transactionAndFundPrevious.getFundAmountPrevious() + fundDiff;
+
         boolean funderUserIdsChanged = false;
-        updateExpressionBuilder.addUpdate(N("funded").set(N("funded").plus(fundedDiff)));
-        if (!hasFundedBefore && fundAmount != 0L) {
+        updateExpressionBuilder.addUpdate(N("funded").set(N("funded").plus(fundDiff)));
+        if (!hasFundedBefore && resultingFundAmount != 0L) {
             updateExpressionBuilder.addUpdate(SS("funderUserIds").append(userId));
             funderUserIdsChanged = true;
-        } else if (fundAmount == 0L) {
+        } else if (resultingFundAmount == 0L) {
             updateExpressionBuilder.addUpdate(SS("funderUserIds").delete(userId));
             funderUserIdsChanged = true;
         }
@@ -631,7 +632,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .getItem());
 
         Map<String, Object> indexUpdates = Maps.newHashMap();
-        indexUpdates.put("funded", idea.getFunded());
+        indexUpdates.put("funded", orNull(idea.getFunded()));
         if (funderUserIdsChanged) {
             indexUpdates.put("funderUserIds", idea.getFunderUserIds());
         }
@@ -640,7 +641,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .doc(gson.toJson(indexUpdates), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaTransactionAndIndexingFuture(
+                idea,
+                transactionAndFundPrevious.getTransaction(),
+                indexingFuture);
     }
 
     @Override

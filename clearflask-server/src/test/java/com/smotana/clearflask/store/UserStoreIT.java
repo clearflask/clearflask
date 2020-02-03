@@ -22,7 +22,6 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -68,11 +67,14 @@ public class UserStoreIT extends AbstractIT {
                 "john.doe@example.com",
                 "password",
                 true,
-                BigDecimal.ONE,
+                1L,
                 "myIosPushToken",
                 "myAndroidPushToken",
                 "myBrowserPushToken",
-                Instant.now());
+                Instant.now(),
+                null,
+                null,
+                null);
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
@@ -123,11 +125,14 @@ public class UserStoreIT extends AbstractIT {
                 "john.doe@example.com",
                 "password",
                 true,
-                BigDecimal.ONE,
+                1L,
                 "myIosPushToken1",
                 "myAndroidPushToken1",
                 "myBrowserPushToken1",
-                Instant.now());
+                Instant.now(),
+                null,
+                null,
+                null);
         UserModel user2 = new UserModel(
                 projectId,
                 store.genUserId(),
@@ -135,11 +140,14 @@ public class UserStoreIT extends AbstractIT {
                 "matt@example.com",
                 "jilasjdklad",
                 true,
-                BigDecimal.ONE,
+                1L,
                 "myIosPushToken2",
                 "myAndroidPushToken2",
                 "myBrowserPushToken2",
-                Instant.now().minus(1, ChronoUnit.DAYS));
+                Instant.now().minus(1, ChronoUnit.DAYS),
+                null,
+                null,
+                null);
         UserModel user3 = new UserModel(
                 projectId,
                 store.genUserId(),
@@ -147,11 +155,14 @@ public class UserStoreIT extends AbstractIT {
                 "bobby@example.com",
                 "fawferfva",
                 true,
-                BigDecimal.ONE,
+                1L,
                 "myIosPushToken3",
                 "myAndroidPushToken3",
                 "myBrowserPushToken3",
-                Instant.now().minus(2, ChronoUnit.DAYS));
+                Instant.now().minus(2, ChronoUnit.DAYS),
+                null,
+                null,
+                null);
 
         store.createIndex(projectId).get().index();
         store.createUser(user1).getIndexingFuture().get();
@@ -196,11 +207,14 @@ public class UserStoreIT extends AbstractIT {
                 "john.doe@example.com",
                 "password",
                 true,
-                BigDecimal.ONE,
+                1L,
                 "myIosPushToken",
                 "myAndroidPushToken",
                 "myBrowserPushToken",
-                Instant.now());
+                Instant.now(),
+                null,
+                null,
+                null);
 
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();

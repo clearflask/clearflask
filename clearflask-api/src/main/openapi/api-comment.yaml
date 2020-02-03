@@ -25,6 +25,7 @@ components:
           type: string
         childCommentCount:
           type: integer
+          format: int64
         authorUserId:
           description: Author of the comment. If null, comment is deleted
           type: string

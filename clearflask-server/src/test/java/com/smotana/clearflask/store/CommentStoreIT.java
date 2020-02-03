@@ -10,7 +10,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.VoteStore.Vote;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
@@ -24,7 +24,6 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -115,15 +114,15 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(1).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), Vote.None, Vote.Upvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.None, VoteValue.Upvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().downvotes(1).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), Vote.None, Vote.Downvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.None, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(0).downvotes(2).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), Vote.Upvote, Vote.Downvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.Upvote, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 
@@ -199,6 +198,7 @@ public class CommentStoreIT extends AbstractIT {
                 projectId,
                 ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 " + IdUtil.randomId()),
                 IdUtil.randomId(),
+                IdUtil.randomId(),
                 Instant.now(),
                 "title",
                 "description",
@@ -209,7 +209,7 @@ public class CommentStoreIT extends AbstractIT {
                 0L,
                 0L,
                 0L,
-                BigDecimal.valueOf(100),
+                100L,
                 ImmutableSet.of(),
                 0L,
                 0L,

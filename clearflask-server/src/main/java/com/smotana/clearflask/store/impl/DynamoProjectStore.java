@@ -166,6 +166,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         private final VersionedConfig versionedConfig;
         private final VersionedConfigAdmin versionedConfigAdmin;
         private final ImmutableMap<String, ImmutableMap<String, Double>> categoryExpressionToWeight;
+        private final ImmutableMap<String, Category> categories;
 
         private ProjectImpl(ProjectModel projectModel) {
             this.projectId = projectModel.getProjectId();
@@ -181,6 +182,10 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                                     .collect(ImmutableMap.toImmutableMap(
                                             Expression::getDisplay,
                                             e -> e.getWeight().doubleValue()))));
+            this.categories = this.versionedConfig.getConfig().getContent().getCategories().stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            Category::getCategoryId,
+                            c -> c));
         }
 
         @Override
@@ -208,6 +213,11 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                 return EXPRESSION_WEIGHT_DEFAULT;
             }
             return expressionToWeight.getOrDefault(expression, EXPRESSION_WEIGHT_DEFAULT);
+        }
+
+        @Override
+        public Optional<Category> getCategory(String categoryId) {
+            return Optional.ofNullable(categories.get(categoryId));
         }
     }
 

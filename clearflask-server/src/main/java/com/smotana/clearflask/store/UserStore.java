@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.smotana.clearflask.api.model.Balance;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
@@ -22,7 +23,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -49,7 +49,11 @@ public interface UserStore {
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, BigDecimal balanceDiff);
+    UserModel userVote(String projectId, String userId, String ideaId);
+
+    UserModel userExpress(String projectId, String userId, String ideaId);
+
+    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, String ideaId, long balanceDiff);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
@@ -137,7 +141,7 @@ public interface UserStore {
         @NonNull
         private final boolean emailNotify;
 
-        private final BigDecimal balance;
+        private final Long balance;
 
         private final String iosPushToken;
 
@@ -146,6 +150,12 @@ public interface UserStore {
         private final String browserPushToken;
 
         private final Instant created;
+
+        private final byte[] expressBloom;
+
+        private final byte[] fundBloom;
+
+        private final byte[] voteBloom;
 
         public UserMe toUserMe() {
             return new UserMe(
@@ -184,6 +194,10 @@ public interface UserStore {
                     this.getAndroidPushToken(),
                     this.getBrowserPushToken(),
                     this.getCreated());
+        }
+
+        public Balance toBalance() {
+            return new Balance(this.getBalance());
         }
     }
 }

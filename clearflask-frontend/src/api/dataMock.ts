@@ -184,15 +184,12 @@ class DataMock {
     };
   }
 
-  fakeExpressions(category:Admin.Category):Array<Admin.ExpressionCounts> {
-    const expressions = ((category.support.express && category.support.express.limitEmojiSet)
+  fakeExpressions(category:Admin.Category):{[key:string]:number;} {
+    const expressions:{[key:string]:number;} = {};
+    ((category.support.express && category.support.express.limitEmojiSet)
       ? category.support.express.limitEmojiSet.map(e => e.display)
       : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
-      .map(emojiDisplay => {return {
-        display: emojiDisplay,
-        count: Math.round(Math.random() * 10) + 1,
-      }});
-    expressions.sort((l,r) => r.count - l.count);
+      .forEach(emojiDisplay => expressions[emojiDisplay] = Math.round(Math.random() * 10) + 1);
     return expressions;
   }
 

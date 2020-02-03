@@ -46,9 +46,11 @@ export function {{classname}}FromJSON(json: any): {{classname}} {
         {{/isDate}}
         {{/isPrimitiveType}}
         {{^isPrimitiveType}}
-        {{#isContainer}}
+        {{#isContainer}}{{#isMapContainer}}
+        '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}Object.fromEntries(Object.entries(json['{{baseName}}']).map(([k, v]) => [k, {{#items}}{{datatype}}{{/items}}FromJSON(v)])),
+        {{/isMapContainer}}{{^isMapContainer}}
         '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}(json['{{baseName}}'] as Array<any>).map({{#items}}{{datatype}}{{/items}}FromJSON),
-        {{/isContainer}}
+        {{/isMapContainer}}{{/isContainer}}
         {{^isContainer}}
         '{{name}}': {{^required}}!exists(json, '{{baseName}}') ? undefined : {{/required}}{{datatype}}FromJSON(json['{{baseName}}']),
         {{/isContainer}}
@@ -73,9 +75,11 @@ export function {{classname}}ToJSON(value?: {{classname}}): any {
         '{{baseName}}': {{#isDate}}{{^required}}value.{{name}} === undefined ? undefined : {{/required}}value.{{name}}.toISOString().substr(0,10){{/isDate}}{{#isDateTime}}{{^required}}value.{{name}} === undefined ? undefined : {{/required}}value.{{name}}.toISOString(){{/isDateTime}}{{^isDate}}{{^isDateTime}}value.{{name}}{{/isDateTime}}{{/isDate}},
         {{/isPrimitiveType}}
         {{^isPrimitiveType}}
-        {{#isContainer}}
+        {{#isContainer}}{{#isMapContainer}}
+        '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}Object.fromEntries(Object.entries(value.{{name}}).map(([k, v]) => [k, {{#items}}{{datatype}}{{/items}}ToJSON(v)])),
+        {{/isMapContainer}}{{^isMapContainer}}
         '{{baseName}}': {{^required}}value.{{name}} === undefined ? undefined : {{/required}}(value.{{name}} as Array<any>).map({{#items}}{{datatype}}{{/items}}ToJSON),
-        {{/isContainer}}
+        {{/isMapContainer}}{{/isContainer}}
         {{^isContainer}}
         '{{baseName}}': {{datatype}}ToJSON(value.{{name}}),
         {{/isContainer}}

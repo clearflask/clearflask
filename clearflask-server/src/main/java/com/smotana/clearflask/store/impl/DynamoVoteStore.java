@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -36,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -66,20 +68,20 @@ public class DynamoVoteStore implements VoteStore {
     private TableSchema<VoteModel> voteSchema;
     private TableSchema<ExpressModel> expressSchema;
     private TableSchema<FundModel> fundSchema;
-    private TableSchema<Transaction> transactionSchema;
+    private TableSchema<TransactionModel> transactionSchema;
 
     @Inject
     private void setup() {
         voteSchema = dynamoMapper.parseTableSchema(VoteModel.class);
         expressSchema = dynamoMapper.parseTableSchema(ExpressModel.class);
         fundSchema = dynamoMapper.parseTableSchema(FundModel.class);
-        transactionSchema = dynamoMapper.parseTableSchema(Transaction.class);
+        transactionSchema = dynamoMapper.parseTableSchema(TransactionModel.class);
     }
 
     @Override
-    public Vote vote(String projectId, String userId, String targetId, Vote vote) {
+    public VoteValue vote(String projectId, String userId, String targetId, VoteValue vote) {
         return Optional.ofNullable(voteSchema.fromItem(
-                vote != Vote.None
+                vote != VoteValue.None
                         ? voteSchema.table().putItem(new PutItemSpec()
                         .withItem(voteSchema.toItem(new VoteModel(userId, projectId, targetId, vote.getValue())))
                         .withReturnValues(ReturnValue.ALL_OLD))
@@ -92,8 +94,8 @@ public class DynamoVoteStore implements VoteStore {
                         .withReturnValues(ReturnValue.ALL_OLD))
                         .getItem()))
                 .map(VoteModel::getVote)
-                .map(Vote::fromValue)
-                .orElse(Vote.None);
+                .map(VoteValue::fromValue)
+                .orElse(VoteValue.None);
     }
 
     @Override
@@ -109,7 +111,7 @@ public class DynamoVoteStore implements VoteStore {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(voteSchema::fromItem)
-                .filter(v -> v.getVote() != Vote.None.getValue())
+                .filter(v -> v.getVote() != VoteValue.None.getValue())
                 .collect(ImmutableMap.toImmutableMap(
                         VoteModel::getTargetId,
                         i -> i));
@@ -139,7 +141,7 @@ public class DynamoVoteStore implements VoteStore {
                         .getItems()
                         .stream()
                         .map(item -> voteSchema.fromItem(item))
-                        .filter(v -> v.getVote() != Vote.None.getValue())
+                        .filter(v -> v.getVote() != VoteValue.None.getValue())
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(page.getLowLevelResult()
                         .getQueryResult()
@@ -247,29 +249,35 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
-    public Transaction fund(String projectId, String userId, String targetId, long fundAmount, String transactionType, String summary) {
-        long fundAmountPrevious = Optional.ofNullable(fundSchema.fromItem(
-                fundAmount != 0L
-                        ? fundSchema.table().putItem(new PutItemSpec()
-                        .withItem(fundSchema.toItem(new FundModel(userId, projectId, targetId, fundAmount)))
-                        .withReturnValues(ReturnValue.ALL_OLD))
-                        .getItem()
-                        : fundSchema.table().deleteItem(new DeleteItemSpec()
-                        .withPrimaryKey(fundSchema.primaryKey(Map.of(
-                                "userId", userId,
-                                "projectId", projectId,
-                                "targetId", targetId)))
-                        .withReturnValues(ReturnValue.ALL_OLD))
-                        .getItem()))
+    public TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary) {
+        Optional<String> conditionExpressionOpt = Optional.empty();
+        HashMap<String, Object> valueMap = Maps.newHashMap();
+        valueMap.put(":zero", 0L);
+        valueMap.put(":fundDiff", fundDiff);
+        if (fundDiff < 0) {
+            valueMap.put(":minFundAmount", Math.abs(fundDiff));
+            conditionExpressionOpt = Optional.of("attribute_exists(fundAmount) AND fundAmount >= :minFundAmount");
+        }
+        long fundAmountPrevious = Optional.ofNullable(fundSchema.fromItem(fundSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(fundSchema.primaryKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId,
+                        "targetId", targetId)))
+                .withConditionExpression(conditionExpressionOpt.orElse(null))
+                .withUpdateExpression("SET fundAmount = if_not_exists(fundAmount, :zero) + :fundDiff")
+                .withValueMap(valueMap)
+                .withReturnValues(ReturnValue.ALL_OLD))
+                .getItem()))
                 .map(FundModel::getFundAmount)
                 .orElse(0L);
-        long fundDifference = fundAmount - fundAmountPrevious;
-        Transaction transaction = new Transaction(
+        long fundAmount = fundAmountPrevious + fundDiff;
+        TransactionModel transaction = new TransactionModel(
                 userId,
                 projectId,
                 genTransactionId(),
                 Instant.now(),
-                fundDifference,
+                fundDiff,
+                fundAmount,
                 transactionType,
                 targetId,
                 summary,
@@ -278,7 +286,7 @@ public class DynamoVoteStore implements VoteStore {
                 .withItem(transactionSchema.toItem(transaction))
                 .withConditionExpression("attribute_not_exists(#partitionKey)")
                 .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
-        return transaction;
+        return new TransactionAndFundPrevious(transaction, fundAmountPrevious);
     }
 
     @Override
@@ -335,7 +343,7 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
-    public ListResponse<Transaction> transactionList(String projectId, String userId, Optional<String> cursorOpt) {
+    public ListResponse<TransactionModel> transactionList(String projectId, String userId, Optional<String> cursorOpt) {
         Page<Item, QueryOutcome> page = transactionSchema.table().query(new QuerySpec()
                 .withHashKey(transactionSchema.partitionKey(Map.of(
                         "userId", userId,

@@ -49,6 +49,7 @@ import com.smotana.clearflask.web.resource.PingResource;
 import com.smotana.clearflask.web.resource.PlanResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
 import com.smotana.clearflask.web.resource.UserResource;
+import com.smotana.clearflask.web.resource.VoteResource;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -161,6 +162,7 @@ public enum ServiceInjector {
                 install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());
+                install(VoteResource.module());
                 bind(PlanResource.class);
                 bind(ProjectResource.class);
 

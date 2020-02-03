@@ -148,7 +148,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;
     newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
-      if(state.votes.byIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
+      if(state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
       const idea = state.ideas.byId[ideaId];
       return (idea && idea.status === Status.FULFILLED)
         ? idea.idea

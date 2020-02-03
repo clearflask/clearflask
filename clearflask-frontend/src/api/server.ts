@@ -300,56 +300,63 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
       const idea = state.byId[action.meta.request.voteUpdate.ideaId];
       if(!idea || !idea.idea) return state;
       state.byId[action.meta.request.voteUpdate.ideaId] = idea;
-      const previousVote = action.meta['previousVote'] || {};
+      const previousVote:Client.Vote = action.meta['previousVote'] || {};
       if(previousVote === undefined ) throw Error('voteUpdate expecting previousVote in extra meta, set to null if not present');
-      const fromVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? previousVote : action.meta.request.voteUpdate;
-      const toVote:Partial<Client.Vote>|Client.VoteUpdate = isPending ? action.meta.request.voteUpdate : previousVote;
-      if(action.meta.request.voteUpdate.fundAmount !== undefined) {
-        const fundDiff = (toVote.fundAmount || 0) - (fromVote.fundAmount || 0);
+      if(action.meta.request.voteUpdate.fundDiff !== undefined) {
+        const fundDiff = isPending ? action.meta.request.voteUpdate.fundDiff : -action.meta.request.voteUpdate.fundDiff;
         if(fundDiff !== 0) {
           idea.idea.funded = (idea.idea.funded || 0) + fundDiff;
-          if(!toVote.fundAmount || !fromVote.fundAmount) {
-            idea.idea.fundersCount = (idea.idea.fundersCount || 0) + (fundDiff > 0 ? 1 : -1);
-          }
+        }
+        const previousFundersCount = (previousVote.fundAmount || 0) > 0 ? 1 : 0;
+        const fundersCount = (previousVote.fundAmount || 0) + fundDiff > 0 ? 1 : 0;
+        const fundersCountDiff = isPending ? fundersCount - previousFundersCount : previousFundersCount - fundersCount;
+        if(fundersCountDiff) {
+          idea.idea.fundersCount = fundersCountDiff;
         }
       }
       if(action.meta.request.voteUpdate.vote !== undefined) {
-        const fromVoteVal = (fromVote.vote === Client.VoteVoteEnum.Upvote ? 1 : (fromVote.vote === Client.VoteVoteEnum.Downvote ? -1 : 0));
-        const toVoteVal = (toVote.vote === Client.VoteVoteEnum.Upvote ? 1 : (toVote.vote === Client.VoteVoteEnum.Downvote ? -1 : 0));
-        const voteDiff = toVoteVal - fromVoteVal;
-        const votersCountDiff = Math.abs(toVoteVal) - Math.abs(fromVoteVal);
+        const previousVoteVal = (previousVote.vote === Client.VoteOption.Upvote ? 1 : (previousVote.vote === Client.VoteOption.Downvote ? -1 : 0));
+        const voteVal = (action.meta.request.voteUpdate.vote === Client.VoteOption.Upvote ? 1 : (action.meta.request.voteUpdate.vote === Client.VoteOption.Downvote ? -1 : 0));
+        const voteDiff = isPending ? voteVal - previousVoteVal : previousVoteVal - voteVal;
         if(voteDiff !== 0) {
           idea.idea.voteValue = (idea.idea.voteValue || 0) + voteDiff;
-          if(!toVote.vote || !fromVote.vote) {
-            idea.idea.votersCount = (idea.idea.votersCount || 0) + votersCountDiff;
-          }
+        }
+        const votersCountDiff = isPending ? Math.abs(voteVal) - Math.abs(previousVoteVal) : Math.abs(previousVoteVal) - Math.abs(voteVal);
+        if(votersCountDiff !== 0) {
+          idea.idea.votersCount = (idea.idea.votersCount || 0) + votersCountDiff;
         }
       }
       if(action.meta.request.voteUpdate.expressions !== undefined) {
-        const addExpressions = isPending ? action.meta.request.voteUpdate.expressions.add : action.meta.request.voteUpdate.expressions.remove;
-        const removeExpressions = isPending ? action.meta.request.voteUpdate.expressions.remove : action.meta.request.voteUpdate.expressions.add;
-        const addedExpressions = new Set<string>();
-        idea.idea.expressions = (idea.idea.expressions || []).map(expression => {
-          const newExpression = {...expression};
-          if(addExpressions && addExpressions.includes(expression.display)) {
-            addedExpressions.add(expression.display);
-            newExpression.count++;
-          }
-          if(removeExpressions && removeExpressions.includes(expression.display)) {
-            expression.count--;
-          }
-          return newExpression;
-        });
-        if(addExpressions && addedExpressions.size !== addExpressions.length) {
-          addExpressions.forEach(expression => {
-            if(!addedExpressions.has(expression)) {
-              idea.idea!.expressions!.push({
-                display: expression,
-                count: 1,
-              });
+        const expression:string|undefined = action.meta.request.voteUpdate.expressions.expression;
+        var addExpressions:string[] = [];
+        var removeExpressions:string[] = [];
+        switch(action.meta.request.voteUpdate.expressions.action) {
+          case Client.VoteUpdateExpressionsActionEnum.Set:
+            expression && addExpressions.push(expression);
+            removeExpressions = (previousVote.expression || []).filter(e => e !== expression);
+            break;
+          case Client.VoteUpdateExpressionsActionEnum.Unset:
+            removeExpressions = (previousVote.expression || []);
+            break;
+          case Client.VoteUpdateExpressionsActionEnum.Add:
+            if(expression && !(previousVote.expression || []).includes(expression)) {
+              addExpressions.push(expression);
             }
-          })
+            break;
+          case Client.VoteUpdateExpressionsActionEnum.Remove:
+            if(expression && (previousVote.expression || []).includes(expression)) {
+              removeExpressions.push(expression);
+            }
+            break;
         }
+        (isPending ? addExpressions : removeExpressions).forEach(e => idea.idea!.expressions = {
+          ...idea.idea!.expressions,
+          e: (idea.idea!.expressions && idea.idea!.expressions[e] || 0) + 1,
+        });
+        (isPending ? addExpressions : removeExpressions).forEach(e => idea.idea!.expressions = {
+          ...idea.idea!.expressions,
+          e: (idea.idea!.expressions && idea.idea!.expressions[e] || 0) - 1,
+        });
       }
       return {
         ...state,
@@ -541,21 +548,6 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
           }
         }
       };
-    case Client.ideaSearchActionStatus.Fulfilled:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          ...action.payload.results.reduce(
-            (usersById, idea) => {
-              usersById[idea.author.userId] = {
-                user: idea.author,
-                status: Status.FULFILLED,
-              };
-              return usersById;
-            }, {}),
-        }
-      };
     case Client.commentListActionStatus.Fulfilled:
       return {
         ...state,
@@ -571,17 +563,6 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
               }
               return usersById;
             }, {}),
-        }
-      };
-    case Client.ideaGetActionStatus.Fulfilled:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          [action.payload.author.userId]: {
-            user: action.payload.author,
-            status: Status.FULFILLED,
-          }
         }
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
@@ -633,26 +614,27 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
 }
 
 export interface StateVotes {
-  byIdeaId:{[ideaId:string]:{
-    status:Status;
-    vote?:Client.Vote;
-  }};
+  statusByIdeaId:{[ideaId:string]:Status};
+  votesByIdeaId:{[ideaId:string]:Client.VoteOption};
+  expressionByIdeaId:{[ideaId:string]:Array<string>};
+  fundAmountByIdeaId:{[ideaId:string]:number};
 }
 const stateVotesDefault = {
-  byIdeaId: {},
+  statusByIdeaId: {},
+  votesByIdeaId: {},
+  expressionByIdeaId: {},
+  fundAmountByIdeaId: {},
 };
 function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Actions):StateVotes {
   switch (action.type) {
     case Client.voteGetOwnActionStatus.Pending:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
           ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
-              byIdeaId[ideaId] = {
-                status: Status.PENDING,
-              };
+              byIdeaId[ideaId] = Status.PENDING;
               return byIdeaId;
             }, {}),
         },
@@ -660,13 +642,11 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
     case Client.voteGetOwnActionStatus.Rejected:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
           ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
-              byIdeaId[ideaId] = {
-                status: Status.REJECTED,
-              };
+              byIdeaId[ideaId] = Status.REJECTED;
               return byIdeaId;
             }, {}),
         },
@@ -674,93 +654,163 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
     case Client.voteGetOwnActionStatus.Fulfilled:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
           ...action.meta.request.voteGetOwn.ideaIds.reduce(
             (byIdeaId, ideaId) => {
-              byIdeaId[ideaId] = {
-                status: Status.FULFILLED,
-              };
+              byIdeaId[ideaId] = Status.FULFILLED;
               return byIdeaId;
             }, {}),
-          ...action.payload.results.reduce(
-            (byIdeaId, vote) => {
-              byIdeaId[vote.ideaId] = {
-                status: Status.FULFILLED,
-                vote: vote,
-              };
-              return byIdeaId;
-            }, {}),
+        },
+        votesByIdeaId: {
+          ...state.votesByIdeaId,
+          ...action.payload.votesByIdeaId,
+        },
+        expressionByIdeaId: {
+          ...state.expressionByIdeaId,
+          ...action.payload.expressionByIdeaId,
+        },
+        fundAmountByIdeaId: {
+          ...state.fundAmountByIdeaId,
+          ...action.payload.fundAmountByIdeaId,
         },
       };
     case Client.voteUpdateActionStatus.Pending:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.meta.request.voteUpdate.ideaId]: {
-            ...state.byIdeaId[action.meta.request.voteUpdate.ideaId],
-            ...(action.meta['previousVote'] !== undefined // Fake vote assuming server will accept it
-              ? {vote: {
-                ...(state.byIdeaId[action.meta.request.voteUpdate.ideaId] ? state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote : {}),
-                ...(action.meta.request.voteUpdate.fundAmount ? {fundAmount: action.meta.request.voteUpdate.fundAmount} : {}),
-                ...(action.meta.request.voteUpdate.vote ? {fundAmount: action.meta.request.voteUpdate.vote} : {}),
-                ...(action.meta.request.voteUpdate.expressions ? {expressions: [...new Set<string>([
-                  ...(state.byIdeaId[action.meta.request.voteUpdate.ideaId] && state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote && state.byIdeaId[action.meta.request.voteUpdate.ideaId].vote!.expressions || []),
-                  ...(action.meta.request.voteUpdate.expressions && action.meta.request.voteUpdate.expressions.add || [])
-                ])].filter(e => !action.meta.request.voteUpdate.expressions || !action.meta.request.voteUpdate.expressions.remove || !action.meta.request.voteUpdate.expressions.remove.includes(e) )} : {}),
-              } as Client.Vote}
-              : {}),
-            status: Status.PENDING,
-          },
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
+          [action.meta.request.voteUpdate.ideaId]: Status.PENDING,
         },
+        ...(action.meta.request.voteUpdate.vote ? {
+          votesByIdeaId: {
+            ...state.votesByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: action.meta.request.voteUpdate.vote,
+          },
+        } : {}),
+        ...(action.meta.request.voteUpdate.expressions ? {
+          expressionByIdeaId: {
+            ...state.expressionByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: 
+            action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
+            && [action.meta.request.voteUpdate.expressions.expression!]
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
+              && []
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
+              && [...new Set<string>([
+                action.meta.request.voteUpdate.expressions.expression!,
+                ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
+              && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
+            || [],
+          },
+        } : {}),
+        ...(action.meta.request.voteUpdate.fundDiff ? {
+          fundAmountByIdeaId: {
+            ...state.fundAmountByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: (state.fundAmountByIdeaId[action.meta.request.voteUpdate.ideaId] || 0) + action.meta.request.voteUpdate.fundDiff,
+          },
+        } : {}),
       };
     case Client.voteUpdateActionStatus.Rejected:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.meta.request.voteUpdate.ideaId]: {
-            ...state.byIdeaId[action.meta.request.voteUpdate.ideaId],
-            ...(action.meta['previousVote'] !== undefined ? {vote: action.meta['previousVote']} : {}), // Undo fake vote
-            status: Status.REJECTED,
-          },
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
+          [action.meta.request.voteUpdate.ideaId]: Status.REJECTED,
         },
+        ...(action.meta.request.voteUpdate.vote ? {
+          votesByIdeaId: {
+            ...state.votesByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: Client.VoteOption.None,
+          },
+        } : {}),
+        ...(action.meta.request.voteUpdate.expressions ? {
+          expressionByIdeaId: {
+            ...state.expressionByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: 
+            action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
+              && []
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
+              && [...(action.meta.request.voteUpdate.expressions.expression ? [action.meta.request.voteUpdate.expressions.expression] : [])]
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
+              && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
+            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
+              && [...new Set<string>([
+                action.meta.request.voteUpdate.expressions.expression!,
+                ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
+            || [],
+          },
+        } : {}),
+        ...(action.meta.request.voteUpdate.fundDiff ? {
+          fundAmountByIdeaId: {
+            ...state.fundAmountByIdeaId,
+            [action.meta.request.voteUpdate.ideaId]: (state.fundAmountByIdeaId[action.meta.request.voteUpdate.ideaId] || 0) - action.meta.request.voteUpdate.fundDiff,
+          },
+        } : {}),
       };
     case Client.voteUpdateActionStatus.Fulfilled:
-      return {
-        ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.payload.idea.ideaId]: {
-            status: Status.FULFILLED,
-            vote: action.payload.vote,
-          },
-        },
-      };
     case Client.ideaGetActionStatus.Fulfilled:
+      const ideaId = action.type === Client.voteUpdateActionStatus.Fulfilled
+        ? action.meta.request.voteUpdate.ideaId : action.meta.request.ideaId;
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
-          [action.payload.ideaId]: {
-            status: Status.FULFILLED,
-            vote: action.payload.vote,
-          },
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
+          [ideaId]: Status.FULFILLED,
         },
+        ...(action.payload.vote.vote ? {
+          votesByIdeaId: {
+            ...state.votesByIdeaId,
+            [ideaId]: action.payload.vote.vote,
+          },
+        } : {}),
+        ...(action.payload.vote.expression ? {
+          expressionByIdeaId: {
+            ...state.expressionByIdeaId,
+            [ideaId]: action.payload.vote.expression,
+          },
+        } : {}),
+        ...(action.payload.vote.fundAmount ? {
+          fundAmountByIdeaId: {
+            ...state.fundAmountByIdeaId,
+            [ideaId]: action.payload.vote.fundAmount,
+          },
+        } : {}),
       };
     case Client.ideaSearchActionStatus.Fulfilled:
       return {
         ...state,
-        byIdeaId: {
-          ...state.byIdeaId,
+        statusByIdeaId: {
+          ...state.statusByIdeaId,
           ...action.payload.results.reduce(
             (byIdeaId, idea) => {
-              byIdeaId[idea.ideaId] = {
-                status: Status.FULFILLED,
-                vote: idea.vote,
-              };
+              byIdeaId[idea.ideaId] = Status.FULFILLED;
               return byIdeaId;
+            }, {}),
+        },
+        votesByIdeaId: {
+          ...state.votesByIdeaId,
+          ...action.payload.results.reduce(
+            (votesByIdeaId, idea) => {
+              if(idea.vote.vote) votesByIdeaId[idea.ideaId] = idea.vote.vote;
+              return votesByIdeaId;
+            }, {}),
+        },
+        expressionByIdeaId: {
+          ...state.expressionByIdeaId,
+          ...action.payload.results.reduce(
+            (expressionByIdeaId, idea) => {
+              if(idea.vote.expression) expressionByIdeaId[idea.ideaId] = idea.vote.expression;
+              return expressionByIdeaId;
+            }, {}),
+        },
+        fundAmountByIdeaId: {
+          ...state.fundAmountByIdeaId,
+          ...action.payload.results.reduce(
+            (fundAmountByIdeaId, idea) => {
+              if(idea.vote.fundAmount) fundAmountByIdeaId[idea.ideaId] = idea.vote.fundAmount;
+              return fundAmountByIdeaId;
             }, {}),
         },
       };
@@ -768,9 +818,11 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
-      return {
-        ...state,
-        byIdeaId: {}, // Clear on login/logout
+      return { // Clear on login/logout
+        statusByIdeaId: {},
+        votesByIdeaId: {},
+        expressionByIdeaId: {},
+        fundAmountByIdeaId: {},
       };
     default:
       return state;

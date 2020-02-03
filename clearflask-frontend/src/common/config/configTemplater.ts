@@ -251,14 +251,14 @@ export default class Templater {
       enableDownvotes: enableDownvotes, showVotes: true, showVoters: true,
     }));
   }
-  supportExpressingAllEmojis(categoryIndex:number, limit?:number) {
+  supportExpressingAllEmojis(categoryIndex:number, limitEmojiPerIdea?:boolean) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
   }
-  supportExpressingFacebookStyle(categoryIndex:number, limit?:number) {
+  supportExpressingFacebookStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
-    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
       Admin.ExpressionToJSON({display: '👍', text: 'Thumbs up', weight: 1}),
       Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
@@ -268,10 +268,10 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '😠', text: 'Angry', weight: -1}),
     ]);
   }
-  supportExpressingMessengerStyle(categoryIndex:number, limit?:number) {
+  supportExpressingMessengerStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
-    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
       Admin.ExpressionToJSON({display: '😍', text: 'Love', weight: 1}),
       Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
@@ -282,10 +282,10 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '👎', text: 'Thumbs down', weight: -1}),
     ]);
   }
-  supportExpressingGithubStyle(categoryIndex:number, limit?:number) {
+  supportExpressingGithubStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
-    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
       Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
       Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -1}),
@@ -297,10 +297,10 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '👀', text: 'Eyes', weight: 1}),
     ]);
   }
-  supportExpressingLimitEmojiPerIdea(categoryIndex:number, limit?:number) {
+  supportExpressingLimitEmojiPerIdea(categoryIndex:number, limitEmojiPerIdea?:boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if(expressProp.value !== true) expressProp.set(true);
-    this._get<ConfigEditor.NumberProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(limit);
+    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
   }
 
   taggingOsPlatform(categoryIndex:number) {

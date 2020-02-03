@@ -1,9 +1,12 @@
 package com.smotana.clearflask.store;
 
 
+import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.Transaction;
+import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
@@ -20,7 +23,7 @@ public interface VoteStore {
     /**
      * Returns previous vote.
      */
-    Vote vote(String projectId, String userId, String targetId, Vote vote);
+    VoteValue vote(String projectId, String userId, String targetId, VoteValue vote);
 
     ImmutableMap<String, VoteModel> voteSearch(String projectId, String userId, ImmutableSet<String> targetIds);
 
@@ -57,7 +60,7 @@ public interface VoteStore {
         return IdUtil.randomAscId();
     }
 
-    Transaction fund(String projectId, String userId, String targetId, long fundAmount, String transactionType, String summary);
+    TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary);
 
     ImmutableMap<String, FundModel> fundSearch(String projectId, String userId, ImmutableSet<String> targetIds);
 
@@ -69,8 +72,16 @@ public interface VoteStore {
     /**
      * Ordered by created desc.
      */
-    ListResponse<Transaction> transactionList(String projectId, String userId, Optional<String> cursorOpt);
+    ListResponse<TransactionModel> transactionList(String projectId, String userId, Optional<String> cursorOpt);
 
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class TransactionAndFundPrevious {
+        private final TransactionModel transaction;
+        private final long fundAmountPrevious;
+    }
 
     @Value
     @Builder(toBuilder = true)
@@ -138,7 +149,7 @@ public interface VoteStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = "transactionId")
-    class Transaction {
+    class TransactionModel {
         @NonNull
         private final String userId;
 
@@ -155,6 +166,9 @@ public interface VoteStore {
         private final long amount;
 
         @NonNull
+        private final long balance;
+
+        @NonNull
         private final String transactionType;
 
         /**
@@ -168,16 +182,29 @@ public interface VoteStore {
 
         @NonNull
         private final long ttlInEpochSec;
+
+        public Transaction toTransaction() {
+            return new Transaction(
+                    getUserId(),
+                    getTransactionId(),
+                    getCreated(),
+                    getAmount(),
+                    getBalance(),
+                    Enums.getIfPresent(TransactionType.class, getTransactionType())
+                            .or(TransactionType.ADJUSTMENT),
+                    getTargetId(),
+                    getSummary());
+        }
     }
 
-    enum Vote {
+    enum VoteValue {
         Upvote(1),
         Downvote(-1),
         None(0);
 
         private int value;
 
-        Vote(int value) {
+        VoteValue(int value) {
             this.value = value;
         }
 
@@ -198,27 +225,27 @@ public interface VoteStore {
             }
         }
 
-        public static Vote fromVoteOption(VoteOption voteOption) {
+        public static VoteValue fromVoteOption(VoteOption voteOption) {
             switch (voteOption) {
                 case UPVOTE:
-                    return Vote.Upvote;
+                    return VoteValue.Upvote;
                 case DOWNVOTE:
-                    return Vote.Downvote;
+                    return VoteValue.Downvote;
                 case NONE:
-                    return Vote.None;
+                    return VoteValue.None;
                 default:
                     throw new RuntimeException("Unknown VoteOption: " + voteOption);
             }
         }
 
-        public static Vote fromValue(int value) {
+        public static VoteValue fromValue(int value) {
             switch (value) {
                 case 1:
-                    return Vote.Upvote;
+                    return VoteValue.Upvote;
                 case -1:
-                    return Vote.Downvote;
+                    return VoteValue.Downvote;
                 case 0:
-                    return Vote.None;
+                    return VoteValue.None;
                 default:
                     throw new RuntimeException("Unknown value: " + value);
             }

@@ -72,6 +72,11 @@ interface CommentWithAuthorWithParentPath extends Client.CommentWithAuthor {
   parentIdPath:string[];
 }
 
+interface VoteWithAuthorAndIdeaId extends Admin.Vote {
+  voterUserId:string;
+  ideaId:string;
+}
+
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
   
@@ -91,7 +96,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       comments: CommentWithAuthorWithParentPath[];
       ideas: Admin.Idea[];
       users: Admin.UserAdmin[];
-      votes: Admin.Vote[];
+      votes: VoteWithAuthorAndIdeaId[];
       transactions: Admin.Transaction[];
       balances: {[userId: string]: number};
       notifications: Client.Notification[];
@@ -240,10 +245,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithAuthorAndVote> {
-    return this.ideaGetAdmin(request);
+  ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithVote> {
+    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
+    if(!idea) return this.throwLater(404, 'Idea not found');
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
+    return this.returnLater({ ...idea, vote: vote || {} }); 
   }
-  ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaSearchResponse> {
+  ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaWithVoteSearchResponse> {
     const allIdeas:Admin.Idea[] = this.getProject(request.projectId).ideas;
     const ideas:Admin.Idea[] = request.ideaSearch.fundedByMeAndActive
       ? this.getProject(request.projectId).votes
@@ -273,11 +282,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         || idea.title.indexOf(request.ideaSearch.searchText) >= 0
         || (idea.description || '').indexOf(request.ideaSearch.searchText) >= 0)
       .map(idea => {
-        const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
-        if(!author) throw Error('Author of idea not found');
         const loggedInUser = this.getProject(request.projectId).loggedInUser;
         const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
-        return { ...idea, author: author, vote: vote };
+        return { ...idea, vote: vote || {} };
       })
       ,[(l,r) => {switch(request.ideaSearch.sortBy){
           default: case Admin.IdeaSearchSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
@@ -362,7 +369,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === loggedInUser.userId && request.voteGetOwn.ideaIds.includes(vote.ideaId));
-    return this.returnLater({results: votes});
+    return this.returnLater({
+      votesByIdeaId: votes.filter(vote => vote.vote).reduce((map, vote) => (map[vote.ideaId] = vote.vote, map), {}),
+      expressionByIdeaId: votes.filter(vote => vote.expression).reduce((map, vote) => (map[vote.ideaId] = vote.expression, map), {}),
+      fundAmountByIdeaId: votes.filter(vote => vote.fundAmount).reduce((map, vote) => (map[vote.ideaId] = vote.fundAmount, map), {}),
+      results: votes
+    });
   }
   voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.VoteUpdateResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -371,7 +383,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...request,
       voteUpdateAdmin: {
         ...(request.voteUpdate),
-        vote: request.voteUpdate.vote as string as Admin.VoteUpdateAdminVoteEnum ,
+        vote: request.voteUpdate.vote,
         voterUserId: loggedInUser.userId,
       }
     });
@@ -428,11 +440,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.Idea> {
+    const author = this.getProject(request.projectId).users.find(user => user.userId === request.ideaCreateAdmin.authorUserId);
+    if(!author) return this.throwLater(404, 'Author of idea not found');
     const idea:Admin.Idea = {
       ideaId: stringToSlug(request.ideaCreateAdmin.title + '-' + randomUuid().substring(0,5)),
       created: new Date(),
       commentCount: 0,
       childCommentCount: 0,
+      authorName: author.name,
       ...(request.ideaCreateAdmin),
     };
     this.getProject(request.projectId).ideas.push(idea);
@@ -444,14 +459,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.IdeaWithAuthorAndVote> {
-    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
-    if(!idea) return this.throwLater(404, 'Idea not found');
-    const author = this.getProject(request.projectId).users.find(user => user.userId === idea.authorUserId);
-    if(!author) return this.throwLater(404, 'Author of idea not found');
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
-    return this.returnLater({ ...idea, author: author, vote: vote }); 
+  ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.Idea> {
+    return this.ideaGetAdmin(request);
   }
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
     throw new Error("Method not implemented.");
@@ -540,20 +549,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
       idea => idea.ideaId === request.voteUpdateAdmin.ideaId);
-    const vote = this.getImmutable(
+    const vote:VoteWithAuthorAndIdeaId = this.getImmutable(
       this.getProject(request.projectId).votes,
       vote => vote.voterUserId === request.voteUpdateAdmin.voterUserId && vote.ideaId === request.voteUpdateAdmin.ideaId,
       () => ({ ideaId: idea.ideaId, voterUserId: request.voteUpdateAdmin.voterUserId }));
     var balance:number|undefined;
     var transaction:Admin.Transaction|undefined;
-    if(request.voteUpdateAdmin.fundAmount !== undefined){
-      if(request.voteUpdateAdmin.fundAmount < 0) return this.throwLater(400, 'Cannot fund negative value');
-      const fundDiff = request.voteUpdateAdmin.fundAmount - (vote.fundAmount || 0);
+    if(request.voteUpdateAdmin.fundDiff !== undefined){
+      const fundDiff = request.voteUpdateAdmin.fundDiff;
+      if(fundDiff === 0) return this.throwLater(400, 'Cannot fund zero');
       balance = this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] || 0;
       balance -= fundDiff;
       if(balance < 0) return this.throwLater(403, 'Insufficient funds');
-      const fundersCountDiff = (request.voteUpdateAdmin.fundAmount > 0 ? 1 : 0) - (vote.fundAmount && vote.fundAmount > 0 ? 1 : 0)
-
+      const fundersCountDiff = ((vote.fundAmount || 0) + fundDiff > 0 ? 1 : 0) - ((vote.fundAmount || 0) > 0 ? 1 : 0)
       transaction = {
         userId: request.voteUpdateAdmin.voterUserId,
         transactionId: randomUuid(),
@@ -565,7 +573,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0,47) + '...' : idea.title}"`
       };
       this.getProject(request.projectId).transactions.push(transaction);
-      vote.fundAmount = request.voteUpdateAdmin.fundAmount;
+      vote.fundAmount = (vote.fundAmount || 0) + request.voteUpdateAdmin.fundDiff;
       this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] = balance;
       idea.funded = (idea.funded || 0) + fundDiff;
       if(fundersCountDiff !== 0) idea.fundersCount = (idea.fundersCount || 0) + fundersCountDiff;
@@ -573,24 +581,24 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(request.voteUpdateAdmin.vote) {
       var votePrevValue:number = 0;
       switch(vote.vote) {
-        case Admin.VoteVoteEnum.Upvote:
+        case Admin.VoteOption.Upvote:
           votePrevValue = 1;
           break;
-        case Admin.VoteVoteEnum.Downvote:
+        case Admin.VoteOption.Downvote:
           votePrevValue = -1;
           break;
       }
       var voteValue:number = 0;
       switch(request.voteUpdateAdmin.vote) {
-        case Admin.VoteUpdateAdminVoteEnum.Upvote:
+        case Admin.VoteOption.Upvote:
           voteValue = 1;
-          vote.vote = Admin.VoteVoteEnum.Upvote;
+          vote.vote = Admin.VoteOption.Upvote;
           break;
-        case Admin.VoteUpdateAdminVoteEnum.Downvote:
+        case Admin.VoteOption.Downvote:
           voteValue = -1;
-          vote.vote = Admin.VoteVoteEnum.Downvote;
+          vote.vote = Admin.VoteOption.Downvote;
           break;
-        case Admin.VoteUpdateAdminVoteEnum.None:
+        case Admin.VoteOption.None:
           voteValue = 0;
           vote.vote = undefined;
           break;
@@ -601,43 +609,53 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       if(voteValueDiff !== 0) idea.voteValue = (idea.voteValue || 0) + voteValueDiff;
     }
     if(request.voteUpdateAdmin.expressions) {
-      const expressionsSet = new Set<string>(vote.expressions || []);
+      var expressionsSet = new Set<string>(vote.expression || []);
       idea.expressionsValue = idea.expressionsValue || 0;
       idea.expressions = idea.expressions || [];
-      const expressing:Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
-      request.voteUpdateAdmin.expressions.add && request.voteUpdateAdmin.expressions.add.forEach(expression => {
-        if(expressionsSet.has(expression)) return;
-        expressionsSet.add(expression);
-        if(expressing && expressing.limitEmojiSet) {
-          const weight = expressing.limitEmojiSet.find(e => e.display === expression)!.weight;
-          idea.expressionsValue! += weight;
+
+      var expressionsToAdd:string[] = [];
+      var expressionsToRemove:string[] = [];
+      if(request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Set) {
+        expressionsSet = new Set<string>([request.voteUpdateAdmin.expressions.expression!]);
+        expressionsToAdd.push(request.voteUpdateAdmin.expressions.expression!);
+        expressionsToRemove = (vote.expression || []).filter(e => e !== request.voteUpdateAdmin.expressions!.expression);
+      } else if(request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Unset) {
+        expressionsSet = new Set<string>();
+        expressionsToRemove = vote.expression || [];
+      } else if(request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Add) {
+        if(!expressionsSet.has(request.voteUpdateAdmin.expressions.expression!)) {
+          expressionsToAdd.push(request.voteUpdateAdmin.expressions.expression!);
+          expressionsSet.add(request.voteUpdateAdmin.expressions.expression!);
         }
-        var ideaExpression = idea.expressions!.find(e => e.display === expression);
+      } else if(request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Remove) {
+        if(expressionsSet.has(request.voteUpdateAdmin.expressions.expression!)) {
+          expressionsToRemove.push(request.voteUpdateAdmin.expressions.expression!);
+          expressionsSet.delete(request.voteUpdateAdmin.expressions.expression!);
+        }
+      }
+
+      const expressing:Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
+      expressionsToAdd.forEach(expression => {
+        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
+        idea.expressionsValue! += weight;
+        var ideaExpression = idea.expressions.find(e => e.display === expression);
         if(!ideaExpression) {
           ideaExpression = { display: expression, count: 1};
-          idea.expressions!.push(ideaExpression);
+          idea.expressions.push(ideaExpression);
         } else {
-          ideaExpression.count += 1;
+          ideaExpression.count++;
         }
-      });
-      request.voteUpdateAdmin.expressions.remove && request.voteUpdateAdmin.expressions.remove.forEach(expression => {
-        if(!expressionsSet.has(expression)) return;
-        expressionsSet.delete(expression);
-        if(expressing && expressing.limitEmojiSet) {
-          const emoji = expressing.limitEmojiSet.find(e => e.display === expression);
-          if(!emoji) return;
-          idea.expressionsValue! -= emoji.weight;
+      })
+      expressionsToRemove.forEach(expression => {
+        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
+        idea.expressionsValue! -= weight;
+        var ideaExpression = idea.expressions.find(e => e.display === expression);
+        if(ideaExpression) {
+          ideaExpression.count--;
         }
-        const ideaExpressionIndex = idea.expressions!.findIndex(e => e.display === expression);
-        const ideaExpression = ideaExpressionIndex !== -1 ? idea.expressions[ideaExpressionIndex] : undefined;
-        if(ideaExpression && ideaExpression.count === 1) {
-          idea.expressions.splice(ideaExpressionIndex, 1);
-        } else if(ideaExpression) {
-          ideaExpression.count -= 1;
-        }
-      });
+      })
       idea.expressions.sort((l,r) => r.count - l.count);
-      vote.expressions = Array.from(expressionsSet);
+      vote.expression = Array.from(expressionsSet);
     }
     return this.returnLater({
       vote,

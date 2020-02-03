@@ -90,7 +90,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreate.getIosPushToken(),
                 userCreate.getAndroidPushToken(),
                 userCreate.getBrowserPushToken(),
-                Instant.now());
+                Instant.now(),
+                null,
+                null,
+                null);
         userStore.createUser(user);
         return user.toUserMeWithBalance();
     }
@@ -115,7 +118,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getIosPushToken(),
                 userCreateAdmin.getAndroidPushToken(),
                 userCreateAdmin.getBrowserPushToken(),
-                Instant.now());
+                Instant.now(),
+                null,
+                null,
+                null);
         userStore.createUser(user);
         return user.toUserAdmin();
     }

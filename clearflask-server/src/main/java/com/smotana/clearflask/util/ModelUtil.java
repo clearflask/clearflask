@@ -15,8 +15,6 @@ import com.smotana.clearflask.api.model.Typography;
 import com.smotana.clearflask.api.model.Users;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 
-import java.math.BigDecimal;
-
 public class ModelUtil {
 
     private ModelUtil() {
@@ -32,7 +30,7 @@ public class ModelUtil {
                 projectId,
                 new Layout(ImmutableList.of(), ImmutableList.of()),
                 new Content(ImmutableList.of()),
-                new Credits(new BigDecimal("0.01"), null),
+                new Credits(1L, null),
                 new Style(
                         new Animation(true),
                         new Palette(false, null, null, null, null, null, null, null),

@@ -6,6 +6,9 @@ components:
       - upvote
       - downvote
       - none
+    FundAmount:
+      type: integer
+      format: int64
     VoteSearchAdmin:
       type: object
       properties:
@@ -25,24 +28,16 @@ components:
       - sortBy
     Vote:
       type: object
-      required:
-      - ideaId
-      - voterUserId
       properties:
-        ideaId:
-          type: string
-        voterUserId:
-          type: string
-        fundAmount:
-          description: Optional amount of credits to fund.
-          type: number
         vote:
           $ref: 'api-vote.yaml#/components/schemas/VoteOption'
-        expressions:
-          description: Optional expression type given.
+        expression:
           type: array
+          title: Expression
           items:
             type: string
+        fundAmount:
+          $ref: 'api-vote.yaml#/components/schemas/FundAmount'
     VoteUpdate:
       type: object
       required:
@@ -50,19 +45,21 @@ components:
       properties:
         ideaId:
           type: string
-        fundAmount:
-          type: number
+        fundDiff:
+          type: integer
+          format: int64
         vote:
           $ref: 'api-vote.yaml#/components/schemas/VoteOption'
         expressions:
           type: object
           required:
           - action
-          - expression
           properties:
             action:
               type: string
               enum:
+              - set
+              - unset
               - add
               - remove
             expression:
@@ -108,13 +105,29 @@ components:
             schema:
               title: VoteGetOwnResponse
               type: object
-              properties:
-                results:
-                  type: array
-                  items:
-                    $ref: 'api-vote.yaml#/components/schemas/Vote'
               required:
-              - results
+              - votesByIdeaId
+              - expressionByIdeaId
+              - fundAmountByIdeaId
+              properties:
+                votesByIdeaId:
+                  description: Mapping ideaId to vote
+                  type: object
+                  additionalProperties:
+                    $ref: 'api-vote.yaml#/components/schemas/VoteOption'
+                expressionByIdeaId:
+                  description: Mapping ideaId to expression
+                  type: object
+                  additionalProperties:
+                    type: array
+                    title: Expression
+                    items:
+                      type: string
+                fundAmountByIdeaId:
+                  description: Mapping ideaId to fundAmount
+                  type: object
+                  additionalProperties:
+                    $ref: 'api-vote.yaml#/components/schemas/FundAmount'
   patch:
     operationId: voteUpdate
     tags: [Vote]
