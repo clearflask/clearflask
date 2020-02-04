@@ -344,12 +344,12 @@ export default class Templater {
   }
 
   creditsCurrency() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(0.01);
+    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({prefix: '$', greaterOrEqual: 100, minimumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({prefix: '$', greaterOrEqual: 1, minimumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2}),
       Admin.CreditFormatterEntryToJSON({prefix: '$', lessOrEqual: 0}),
-      Admin.CreditFormatterEntryToJSON({prefix: '¢', multiplier: 100}),
+      Admin.CreditFormatterEntryToJSON({prefix: '¢'}),
     ]);
   }
   creditsTime() {

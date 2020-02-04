@@ -167,11 +167,11 @@ class DataMock {
   fakeMockIdeaData(category:Admin.Category):Partial<Admin.Idea> {
     return {
       ...(Math.random() < 0.5 ? {
-        funded: Math.round(Math.random() * 500),
+        funded: Math.round(Math.random() * 50000),
         fundersCount: Math.round(Math.random() * 100),
       } : {}),
       ...(Math.random() < 0.5 ? {
-        fundGoal: Math.round(Math.random() * 10) * 50,
+        fundGoal: Math.round(Math.random() * 10) * 5000,
       } : {}),
       ...(Math.random() < 0.9 ? {
         votersCount: Math.round(Math.random() * 30),

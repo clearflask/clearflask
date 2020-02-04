@@ -44,6 +44,6 @@ public class ModelUtil {
     }
 
     public static String createConfigVersion() {
-        return String.valueOf(System.currentTimeMillis());
+        return IdUtil.randomAscId();
     }
 }

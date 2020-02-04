@@ -52,7 +52,7 @@ components:
         - increment
       properties:
         increment:
-          x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: '1' }
+          x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: 1 }
           type: integer
           format: int64
         formats:
@@ -281,7 +281,7 @@ components:
           type: object
           properties:
             limitEmojiPerIdea:
-              x-clearflask-prop: { order: 1, name: 'Limit one per Idea', description: 'If set, limit a single expression that can be added per idea', defaultValue: 5 }
+              x-clearflask-prop: { order: 1, name: 'Limit one per Idea', description: 'If set, limit a single expression that can be added per idea', defaultValue: true }
               type: boolean
             limitEmojiSet:
               x-clearflask-prop: { order: 2, name: 'Emoji whitelist', description: 'If enabled, limit the emojis that can be displayed. Additionally, set the weight of each emoji' }
@@ -791,7 +791,7 @@ components:
         schema:
           type: string
       - name: versionLast
-        in: path
+        in: query
         required: true
         schema:
           type: string

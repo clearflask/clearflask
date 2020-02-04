@@ -17,6 +17,9 @@ export interface Project {
   configVersion:string;
   editor:ConfigEditor.Editor;
   server:Server;
+  hasUnsavedChanges():boolean;
+  subscribeToUnsavedChanges:(subscriber:()=>void)=>()=>void;
+  resetUnsavedChanges();
 }
 
 export default class ServerAdmin {
@@ -134,12 +137,34 @@ export default class ServerAdmin {
     if(!project || versionedConfig.version !== project.configVersion) {
       const server = new Server(projectId, this.apiOverride);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
+      var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, 200);
+      const subscribers:(()=>void)[] = [];
+      editor.subscribe(() => {
+        if(!hasUnsavedChanges) {
+          hasUnsavedChanges = true;
+          subscribers.forEach(subscriber => subscriber());
+        } else {
+          hasUnsavedChanges = true;
+        }
+      });
       project = {
         projectId: projectId,
         configVersion: versionedConfig.version,
         editor: editor,
         server: server,
+        hasUnsavedChanges: () => hasUnsavedChanges,
+        subscribeToUnsavedChanges: subscriber => {
+          subscribers.push(subscriber);
+          return () => {
+            const subscriberIndex = subscribers.findIndex(subscriber);
+            if(subscriberIndex !== -1) subscribers.splice(subscriberIndex, 1);
+          };
+        },
+        resetUnsavedChanges: () => {
+          hasUnsavedChanges = false;
+          subscribers.forEach(subscriber => subscriber());
+        },
       };
       this.projects[projectId] = project;
     }

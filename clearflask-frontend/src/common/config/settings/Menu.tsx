@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { ListItem, ListItemIcon, ListItemText, ListSubheader, Divider } from '@material-ui/core';
+import { ListItem, ListItemText, Badge } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 export interface MenuHeading {
   type: 'heading';
@@ -22,7 +23,14 @@ export interface MenuProject {
   type: 'project';
   projectId: string;
   page: ConfigEditor.Page;
+  hasUnsavedChanges?: boolean;
 }
+
+const styles = (theme:Theme) => createStyles({
+  badgeDot: {
+    backgroundColor: theme.palette.text.primary,
+  },
+});
 
 interface Props extends ListProps {
   items:(MenuProject|MenuItem|MenuHeading)[];
@@ -54,6 +62,7 @@ export default class Menu extends Component<Props> {
               <MenuPage
                 key={item.page.key}
                 page={item.page}
+                hasUnsavedChanges={item.hasUnsavedChanges}
                 activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
                 pageClicked={path => this.props.pageClicked(item.projectId, path)}
               />
@@ -83,9 +92,10 @@ interface PropsPage {
   page:ConfigEditor.Page;
   activePath?:ConfigEditor.Path;
   pageClicked:(path:ConfigEditor.Path)=>void;
+  hasUnsavedChanges?: boolean;
 }
 
-class MenuPage extends Component<PropsPage> {
+class MenuPageWithoutStyle extends Component<PropsPage&WithStyles<typeof styles, true>> {
   unsubscribe?:()=>void;
 
   componentDidMount() {
@@ -103,14 +113,25 @@ class MenuPage extends Component<PropsPage> {
         <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
           this.props.pageClicked(this.props.page.path);
         }}>
-          <ListItemText style={Menu.paddingForLevel(1, this.props.page.path)} primary={this.props.page.getDynamicName()} />
+          <ListItemText style={Menu.paddingForLevel(1, this.props.page.path)} primary={(
+            <React.Fragment>
+              {this.props.page.getDynamicName()}
+              <Badge
+                variant='dot'
+                invisible={!this.props.hasUnsavedChanges}
+                classes={{dot: this.props.classes.badgeDot}}
+              >
+                &nbsp;&nbsp;
+              </Badge>
+            </React.Fragment>
+          )} />
         </ListItem>
         <Collapse in={expanded} timeout="auto" unmountOnExit>
           {this.props.page.getChildren().all
             .map(child => {
               switch(child.type) {
                 case ConfigEditor.PageType:
-                  return ( <MenuPage {...this.props} key={child.key} page={child} /> );
+                  return ( <MenuPage {...this.props} hasUnsavedChanges={false} key={child.key} page={child} /> );
                 case ConfigEditor.PageGroupType:
                   return ( <MenuPageGroup {...this.props} key={child.key} pageGroup={child} /> );
                 default:
@@ -146,6 +167,7 @@ class MenuPage extends Component<PropsPage> {
     return true;
   }
 }
+const MenuPage = withStyles(styles, { withTheme: true })(MenuPageWithoutStyle);
 
 interface PropsPageGroup {
   key:string;

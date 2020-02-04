@@ -6,7 +6,7 @@ import { RouteComponentProps, Redirect } from 'react-router';
 import Message from '../app/comps/Message';
 import DemoApp from './DemoApp';
 import Layout from '../common/Layout';
-import { Typography, IconButton } from '@material-ui/core';
+import { Typography, IconButton, Button } from '@material-ui/core';
 import * as AdminClient from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin, Project } from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
@@ -30,6 +30,7 @@ interface State {
 }
 
 class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State> {
+  unsubscribes:{[projectId:string]: ()=>void} = {};
 
   constructor(props) {
     super(props);
@@ -39,6 +40,10 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
     }
 
     this.state = {currentPagePath: []};
+  }
+
+  componentWillUnmount() {
+    Object.values(this.unsubscribes).forEach(unsubscribe => unsubscribe());
   }
 
   render() {
@@ -51,6 +56,13 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
       return (<LoadingPage />);
     }
     const projects = this.props.configs.map(c => ServerAdmin.get().getProject(c));
+    projects.forEach(project => {
+      if(!this.unsubscribes[project.projectId]) {
+        this.unsubscribes[project.projectId] = project.subscribeToUnsavedChanges(() => {
+          this.forceUpdate();
+        });
+      }
+    });
 
     const activePath = this.props.match.params['path'] || '';
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
@@ -153,6 +165,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
                   type: 'project',
                   projectId: project.server.getProjectId(),
                   page: project.editor.getPage([]),
+                  hasUnsavedChanges: project.hasUnsavedChanges(),
                 };
                 return menuProject;
               })),
@@ -173,6 +186,22 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
             pageClicked={this.pageClicked.bind(this)}
           />
         )}
+        barBottom={(activeProject && activeProject.hasUnsavedChanges()) ? (
+          <React.Fragment>
+            <Typography style={{flexGrow: 1}}>You have unsaved changes</Typography>
+            <Button color='primary' onClick={() => {
+              const currentProject = activeProject;
+              currentProject.server.dispatchAdmin().then(d => d.configSetAdmin({
+                projectId: currentProject.projectId,
+                versionLast: currentProject.configVersion,
+                configAdmin: currentProject.editor.getConfig(),
+              })
+              .then(() => {
+                currentProject.resetUnsavedChanges()
+              }));
+            }}>Publish</Button>
+          </React.Fragment>
+        ) : undefined}
       >
         {[
           <Crumbs

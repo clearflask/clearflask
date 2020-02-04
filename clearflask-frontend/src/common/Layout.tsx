@@ -1,23 +1,41 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
-import { Toolbar, IconButton, Drawer, Divider, AppBar, Hidden } from '@material-ui/core';
+import { Toolbar, IconButton, Drawer, Divider, AppBar, Hidden, Paper } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
 import { withStyles, Theme } from '@material-ui/core/styles';
 
+const MENU_WIDTH = '180px';
 const styles = (theme:Theme) => ({
   root: {
     display: 'flex',
   },
+  mainAndBarBottom: {
+    display: 'flex',
+    flexDirection: 'column' as 'column',
+    flexGrow: 1,
+    height: '100vh',
+  },
+  barBottomPaper: {
+    display: 'flex',
+    flexDirection: 'row' as 'row',
+    [theme.breakpoints.up('sm')]: {
+      left: MENU_WIDTH,
+    },
+  },
+  barBottom: {
+    flex: '1 0',
+    overflowX: 'scroll' as 'scroll',
+  },
   drawer: {
     [theme.breakpoints.up('sm')]: {
-      width: '180px',
+      width: MENU_WIDTH,
       flexShrink: 0,
     },
   },
   drawerPaper: {
-    width: '180px',
+    width: MENU_WIDTH,
   },
   previewPaper: {
     overflowY: 'scroll' as 'scroll',
@@ -48,9 +66,6 @@ const styles = (theme:Theme) => ({
     overflow: 'scroll',
     flexGrow: 1,
     padding: theme.spacing(3),
-    [theme.breakpoints.up('md')]: {
-      marginRight: '40%',
-    },
   },
   grow: {
     flexGrow: 1,
@@ -62,6 +77,7 @@ interface Props {
   toolbarRight?: React.ReactNode;
   menu: React.ReactNode;
   preview?: React.ReactNode;
+  barBottom?: React.ReactNode;
   children: React.ReactNode;
   // withStyles
   classes;
@@ -71,6 +87,7 @@ interface Props {
 interface State {
   mobileMenuOpen:boolean;
   mobilePreviewOpen:boolean;
+  previewWidth?:string;
 }
 
 class Layout extends Component<Props, State> {
@@ -81,6 +98,7 @@ class Layout extends Component<Props, State> {
     this.state = {
       mobileMenuOpen: false,
       mobilePreviewOpen: false,
+      previewWidth: '40vw',
     };
   }
 
@@ -145,12 +163,36 @@ class Layout extends Component<Props, State> {
             </Drawer>
           </Hidden>
         </nav>
-        <main className={classes.content}>
+        <div className={classes.mainAndBarBottom}>
           <div className={classes.toolbar} />
-          {this.props.children}
-        </main>
+          <main className={classes.content}>
+            {this.props.children}
+            <div className={classes.toolbar} />
+          </main>
+          {this.props.barBottom && (<div className={classes.toolbar} />)}
+          <Drawer
+            classes={{
+              paper: classes.barBottomPaper,
+            }}
+            anchor='bottom'
+            variant="persistent"
+            open={!!this.props.barBottom}
+          >
+            <Toolbar className={classes.barBottom}>
+              {this.props.barBottom}
+            </Toolbar>
+            {this.props.preview && (
+              <Hidden smDown implementation='css'>
+                <div style={{ width: this.state.previewWidth }}>&nbsp;</div>
+              </Hidden>
+            )}
+          </Drawer>
+        </div>
         {this.props.preview && (
-          <div>
+          <React.Fragment>
+            <Hidden smDown implementation='css'>
+              <div style={{ width: this.state.previewWidth }}>&nbsp;</div>
+            </Hidden>
             <Hidden mdUp implementation='css'>
               <Drawer
                 variant="temporary"
@@ -170,6 +212,9 @@ class Layout extends Component<Props, State> {
             </Hidden>
             <Hidden smDown implementation='css'>
               <Drawer
+                PaperProps={{
+                  style: {width: this.state.previewWidth}
+                }}
                 classes={{
                   paper: classes.previewPaper,
                 }}
@@ -186,7 +231,7 @@ class Layout extends Component<Props, State> {
                 </div>
               </Drawer>
             </Hidden>
-          </div>
+          </React.Fragment>
         )}
       </div>
       </React.Fragment>
