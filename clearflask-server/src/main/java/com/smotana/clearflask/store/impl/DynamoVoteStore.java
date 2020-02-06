@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,8 +33,10 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.ServerSecret;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -282,10 +285,14 @@ public class DynamoVoteStore implements VoteStore {
                 targetId,
                 summary,
                 Instant.now().plus(config.transactionExpiry()).getEpochSecond());
-        transactionSchema.table().putItem(new PutItemSpec()
-                .withItem(transactionSchema.toItem(transaction))
-                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
+        try {
+            transactionSchema.table().putItem(new PutItemSpec()
+                    .withItem(transactionSchema.toItem(transaction))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
+        }
         return new TransactionAndFundPrevious(transaction, fundAmountPrevious);
     }
 

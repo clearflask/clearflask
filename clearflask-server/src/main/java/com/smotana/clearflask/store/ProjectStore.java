@@ -14,6 +14,8 @@ public interface ProjectStore {
         return IdUtil.randomId();
     }
 
+    Optional<Project> getProjectBySlug(String slug, boolean useCache);
+
     Optional<Project> getProject(String projectId, boolean useCache);
 
     ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);

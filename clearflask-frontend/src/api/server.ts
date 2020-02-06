@@ -18,7 +18,6 @@ export enum Status {
 }
 
 export class Server {
-  readonly projectId:string;
   readonly store:Store<ReduxState>;
   readonly mockServer:ServerMock|undefined;
   readonly dispatcherClient:Client.Dispatcher;
@@ -27,8 +26,6 @@ export class Server {
   challengeSubscriber?:((challenge:string)=>Promise<string|undefined>);
 
   constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
-    this.projectId = projectId;
-
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if(!isProd()) {
       const composeEnhancers =
@@ -40,7 +37,7 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(this.projectId),
+      Server.initialState(projectId),
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
@@ -86,7 +83,7 @@ export class Server {
   }
 
   getProjectId():string {
-    return this.projectId;
+    return this.store.getState().projectId;
   }
 
   getStore():Store<ReduxState> {
@@ -125,7 +122,7 @@ export class Server {
       meta: {
         action: Admin.Action.configGetAdmin,
         request: {
-          projectId: this.projectId
+          projectId: this.getProjectId()
         },
       },
       payload: { config: config, version: randomUuid() },
@@ -154,6 +151,18 @@ export const getTransactionSearchKey = (search:Client.TransactionSearch):string 
     search.filterCreatedStart || '',
     search.filterCreatedEnd || '',
   ].join('-');
+}
+
+function reducerProjectId(projectId:string = 'unknown', action:Client.Actions):string {
+  switch (action.type) {
+    // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
+    case 'configGetAdmin_FULFILLED' as any:
+      return (action as any).payload.config.config.projectId;
+    case Client.configGetAndUserBindActionStatus.Fulfilled:
+      return action.payload.config.config.projectId;
+    default:
+      return projectId;
+  }
 }
 
 export interface StateConf {
@@ -1004,7 +1013,7 @@ export interface ReduxState {
   notifications:StateNotifications;
 }
 export const reducers = combineReducers({
-  projectId: (projectId?:string) => (projectId ? projectId : 'unknown'),
+  projectId: reducerProjectId,
   conf: reducerConf,
   ideas: reducerIdeas,
   comments: reducerComments,

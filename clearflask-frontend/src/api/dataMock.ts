@@ -1,6 +1,5 @@
 import * as Admin from "./admin";
 import ServerMock from "./serverMock";
-import { emojiIndex } from 'emoji-mart'
 import { loremIpsum } from "lorem-ipsum";
 
 class DataMock {

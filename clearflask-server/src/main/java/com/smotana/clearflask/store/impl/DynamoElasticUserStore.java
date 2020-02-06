@@ -14,6 +14,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -199,23 +200,27 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserAndIndexingFuture<IndexResponse> createUser(UserModel user) {
-        dynamo.transactWriteItems(new TransactWriteItemsRequest()
-                .withTransactItems(new TransactWriteItem().withPut(new Put()
-                        .withTableName(userSchema.tableName())
-                        .withItem(userSchema.toAttrMap(user))
-                        .withConditionExpression("attribute_not_exists(#partitionKey)")
-                        .withExpressionAttributeNames(Map.of("#partitionKey", userSchema.partitionKeyName()))))
-                .withTransactItems(getUserIdentifiers(user).entrySet().stream()
-                        .map(e -> new TransactWriteItem().withPut(new Put()
-                                .withTableName(identifierToUserIdSchema.tableName())
-                                .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
-                                        e.getKey().getType(),
-                                        e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue(),
-                                        user.getProjectId(),
-                                        user.getUserId())))
-                                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                                .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))))
-                        .toArray(TransactWriteItem[]::new)));
+        try {
+            dynamo.transactWriteItems(new TransactWriteItemsRequest()
+                    .withTransactItems(new TransactWriteItem().withPut(new Put()
+                            .withTableName(userSchema.tableName())
+                            .withItem(userSchema.toAttrMap(user))
+                            .withConditionExpression("attribute_not_exists(#partitionKey)")
+                            .withExpressionAttributeNames(Map.of("#partitionKey", userSchema.partitionKeyName()))))
+                    .withTransactItems(getUserIdentifiers(user).entrySet().stream()
+                            .map(e -> new TransactWriteItem().withPut(new Put()
+                                    .withTableName(identifierToUserIdSchema.tableName())
+                                    .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
+                                            e.getKey().getType(),
+                                            e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue(),
+                                            user.getProjectId(),
+                                            user.getUserId())))
+                                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                                    .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))))
+                            .toArray(TransactWriteItem[]::new)));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+        }
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
         elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(USER_INDEX, user.getProjectId()))

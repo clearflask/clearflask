@@ -28,11 +28,11 @@ components:
           x-clearflask-prop: { order: 2, name: 'Name', description: 'Project name visible on your page' }
           type: string
         logoUrl:
-          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url', placeholder: 'https://' }
+          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url. (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
-        projectSlug:
-          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url suffix of your project. (ie: "https://clearflask.com/<slug>")' }
+        slug:
+          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url suffix of your project. Changes may take up to a day to propagate. (ie: "https://clearflask.com/<slug>")' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'

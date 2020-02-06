@@ -5,8 +5,13 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -29,6 +34,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -37,6 +43,7 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
@@ -44,12 +51,17 @@ import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
-// TODO move to single table dynamo mapper
 @Slf4j
 @Singleton
 public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
     public interface Config {
+        @DefaultValue("true")
+        boolean enableSlugCacheRead();
+
+        @DefaultValue("P1D")
+        Duration slugCacheExpireAfterWrite();
+
         @DefaultValue("true")
         boolean enableConfigCacheRead();
 
@@ -72,6 +84,18 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         private final String configJson;
     }
 
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "slug", rangePrefix = "projectBySlug")
+    private static class SlugModel {
+        @NonNull
+        private final String slug;
+
+        @NonNull
+        private final String projectId;
+    }
+
     @Inject
     private Config config;
     @Inject
@@ -84,16 +108,38 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     private Gson gson;
 
     private TableSchema<ProjectModel> projectSchema;
+    private TableSchema<SlugModel> slugSchema;
+    private Cache<String, String> slugCache;
     private Cache<String, Optional<Project>> projectCache;
-
 
     @Inject
     private void setup() {
+        slugCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(config.configCacheExpireAfterWrite())
+                .build();
         projectCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
                 .build();
 
         projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
+        slugSchema = dynamoMapper.parseTableSchema(SlugModel.class);
+    }
+
+    @Override
+    public Optional<Project> getProjectBySlug(String slug, boolean useCache) {
+        if (config.enableSlugCacheRead() && useCache) {
+            final String projectId = slugCache.getIfPresent(slug);
+            if (projectId != null) {
+                return getProject(projectId, useCache);
+            }
+        }
+        Optional<String> projectIdOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
+                .getItem(new GetItemSpec()
+                        .withPrimaryKey(slugSchema
+                                .primaryKey(Map.of("slug", slug))))))
+                .map(SlugModel::getProjectId);
+        projectIdOpt.ifPresent(projectId -> slugCache.put(slug, projectId));
+        return projectIdOpt.flatMap(projectId -> getProject(projectId, useCache));
     }
 
     @Override
@@ -135,25 +181,64 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
     @Override
     public Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
+        SlugModel slugModel = new SlugModel(
+                versionedConfigAdmin.getConfig().getSlug(),
+                projectId);
         ProjectModel projectModel = new ProjectModel(
                 projectId,
                 versionedConfigAdmin.getVersion(),
                 gson.toJson(versionedConfigAdmin.getConfig()));
-        projectSchema.table().putItem(new PutItemSpec().withItem(projectSchema.toItem(projectModel)));
+        try {
+            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
+                    new TransactWriteItem().withPut(new Put()
+                            .withTableName(slugSchema.tableName())
+                            .withItem(slugSchema.toAttrMap(slugModel))
+                            .withConditionExpression("attribute_not_exists(#partitionKey)")
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", slugSchema.partitionKeyName()))),
+                    new TransactWriteItem().withPut(new Put()
+                            .withTableName(projectSchema.tableName())
+                            .withItem(projectSchema.toAttrMap(projectModel))
+                            .withConditionExpression("attribute_not_exists(#partitionKey)")
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName())))));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
+        }
         ProjectImpl project = new ProjectImpl(projectModel);
         projectCache.put(projectId, Optional.of(project));
+        slugCache.put(slugModel.getSlug(), projectId);
         return project;
     }
 
     @Override
     public void updateConfig(String projectId, String previousVersion, VersionedConfigAdmin versionedConfigAdmin) {
-        projectSchema.table().putItem(new PutItemSpec()
-                .withItem(projectSchema.toItem(new ProjectModel(
-                        projectId,
-                        versionedConfigAdmin.getVersion(),
-                        gson.toJson(versionedConfigAdmin.getConfig()))))
-                .withConditionExpression("version = :previousVersion")
-                .withValueMap(Map.of(":previousVersion", previousVersion)));
+        Optional<String> slugOptPrevious = Optional.ofNullable(getProject(projectId, false).get().getVersionedConfigAdmin().getConfig().getSlug());
+        Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
+        if (!slugOpt.equals(slugOptPrevious)) {
+            try {
+                slugOpt.ifPresent(slug -> slugSchema.table().putItem(new PutItemSpec()
+                        .withItem(slugSchema.toItem(new SlugModel(slug, projectId)))
+                        .withConditionExpression("attribute_not_exists(#partitionKey)")
+                        .withNameMap(Map.of("#partitionKey", slugSchema.partitionKeyName()))));
+            } catch (ConditionalCheckFailedException ex) {
+                throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
+            }
+            slugOptPrevious.ifPresent(slugPrevious -> slugSchema.table().deleteItem(new DeleteItemSpec()
+                    .withPrimaryKey(slugSchema.primaryKey(Map.of(
+                            "slug", slugPrevious)))));
+        }
+        try {
+            projectSchema.table().putItem(new PutItemSpec()
+                    .withItem(projectSchema.toItem(new ProjectModel(
+                            projectId,
+                            versionedConfigAdmin.getVersion(),
+                            gson.toJson(versionedConfigAdmin.getConfig()))))
+                    .withConditionExpression("version = :previousVersion")
+                    .withValueMap(Map.of(":previousVersion", previousVersion)));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
+        }
+        slugOptPrevious.ifPresent(slugCache::invalidate);
+        slugOpt.ifPresent(slugCache::invalidate);
         projectCache.invalidate(projectId);
     }
 

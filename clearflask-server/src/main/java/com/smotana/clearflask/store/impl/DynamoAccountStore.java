@@ -11,6 +11,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
@@ -27,8 +28,10 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -61,10 +64,15 @@ public class DynamoAccountStore implements AccountStore {
 
     @Override
     public void createAccount(Account account) {
-        accountSchema.table().putItem(new PutItemSpec()
-                .withItem(accountSchema.toItem(account))
-                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
+        try {
+            accountSchema.table().putItem(new PutItemSpec()
+                    .withItem(accountSchema.toItem(account))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
+        } catch (
+                ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Email already in use, please choose another.", ex);
+        }
     }
 
     @Override

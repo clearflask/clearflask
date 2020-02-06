@@ -10,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.google.common.base.Strings;
@@ -179,10 +180,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public ListenableFuture<IndexResponse> createIdea(IdeaModel idea) {
-        ideaSchema.table().putItem(new PutItemSpec()
-                .withItem(ideaSchema.toItem(idea))
-                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                .withNameMap(Map.of("#partitionKey", ideaSchema.partitionKeyName())));
+        try {
+            ideaSchema.table().putItem(new PutItemSpec()
+                    .withItem(ideaSchema.toItem(idea))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(Map.of("#partitionKey", ideaSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Similar title already exists, please choose another.", ex);
+        }
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
         elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(IDEA_INDEX, idea.getProjectId()))

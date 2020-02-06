@@ -7,20 +7,17 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
-import com.smotana.clearflask.core.DemoData;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
-import com.smotana.clearflask.store.impl.DynamoAccountStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.util.Optional;
 
-import static com.smotana.clearflask.core.DemoData.DEMO_PROJECT_ID;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -36,15 +33,13 @@ public class ProjectStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
-                StaticPlanStore.module(),
-                DynamoAccountStore.module(),
-                DemoData.module()
+                DynamoMapperImpl.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(DynamoProjectStore.Config.class, om -> {
                     om.override(om.id().enableConfigCacheRead()).withValue(true);
+                    om.override(om.id().enableSlugCacheRead()).withValue(true);
                 }));
             }
         }));
@@ -52,21 +47,24 @@ public class ProjectStoreTest extends AbstractTest {
 
     @Test(timeout = 5_000L)
     public void test() throws Exception {
-        assertTrue(store.getProject(DEMO_PROJECT_ID, false).isPresent());
-        assertFalse(store.getProjects(ImmutableSet.of(DEMO_PROJECT_ID), false).isEmpty());
+        String newProject = "newProject";
+        store.createProject(newProject, ModelUtil.createEmptyConfig(newProject));
 
-        Project project = store.getProject(DEMO_PROJECT_ID, true).get();
+        assertTrue(store.getProject(newProject, false).isPresent());
+        assertFalse(store.getProjects(ImmutableSet.of(newProject), false).isEmpty());
+
+        Project project = store.getProject(newProject, true).get();
         VersionedConfig c = project.getVersionedConfig();
         VersionedConfigAdmin ca = project.getVersionedConfigAdmin();
-        assertEquals(ImmutableSet.of(project), store.getProjects(ImmutableSet.of(DEMO_PROJECT_ID), false));
+        assertEquals(ImmutableSet.of(project), store.getProjects(ImmutableSet.of(newProject), false));
 
         VersionedConfigAdmin ca1 = ca.toBuilder()
                 .version("ca1")
                 .config(ca.getConfig().toBuilder()
                         .name("New name")
                         .build()).build();
-        store.updateConfig(DEMO_PROJECT_ID, ca.getVersion(), ca1);
-        assertEquals(Optional.of(ca1), store.getProject(DEMO_PROJECT_ID, false).map(Project::getVersionedConfigAdmin));
+        store.updateConfig(newProject, ca.getVersion(), ca1);
+        assertEquals(Optional.of(ca1), store.getProject(newProject, false).map(Project::getVersionedConfigAdmin));
 
         VersionedConfigAdmin ca2 = ca.toBuilder()
                 .version("ca2")
@@ -74,25 +72,19 @@ public class ProjectStoreTest extends AbstractTest {
                         .name("New name again")
                         .build()).build();
         try {
-            store.updateConfig(DEMO_PROJECT_ID, ca.getVersion(), ca2);
+            store.updateConfig(newProject, ca.getVersion(), ca2);
             fail();
         } catch (Exception ex) {
             log.info("Expected updating conflict", ex);
         }
-        assertEquals(Optional.of(ca1), store.getProject(DEMO_PROJECT_ID, false).map(Project::getVersionedConfigAdmin));
+        assertEquals(Optional.of(ca1), store.getProject(newProject, false).map(Project::getVersionedConfigAdmin));
 
         VersionedConfig c1 = c.toBuilder()
                 .version(ca1.getVersion())
                 .config(c.getConfig().toBuilder()
                         .name(ca1.getConfig().getName())
                         .build()).build();
-        assertEquals(Optional.of(c1), store.getProject(DEMO_PROJECT_ID, true).map(Project::getVersionedConfig));
-        assertEquals(Optional.of(c1), store.getProject(DEMO_PROJECT_ID, false).map(Project::getVersionedConfig));
-
-        String newProject = "new Project";
-        store.createProject(newProject, ca);
-        assertEquals(Optional.of(ca), store.getProject(newProject, false).map(Project::getVersionedConfigAdmin));
-        assertEquals(Optional.of(c), store.getProject(newProject, false).map(Project::getVersionedConfig));
-        assertEquals(Optional.of(c), store.getProject(newProject, true).map(Project::getVersionedConfig));
+        assertEquals(Optional.of(c1), store.getProject(newProject, true).map(Project::getVersionedConfig));
+        assertEquals(Optional.of(c1), store.getProject(newProject, false).map(Project::getVersionedConfig));
     }
 }

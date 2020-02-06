@@ -55,7 +55,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndBindResult configGetAndUserBind(String projectId) {
-        Optional<Project> projectOpt = projectStore.getProject(projectId, true);
+        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, true)
+                .or(() -> projectStore.getProject(projectId, true));
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
@@ -72,7 +73,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configGetAdmin(String projectId) {
-        Optional<Project> projectOpt = projectStore.getProject(projectId, false);
+        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, false)
+                .or(() -> projectStore.getProject(projectId, false));
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
