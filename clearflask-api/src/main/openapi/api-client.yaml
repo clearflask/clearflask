@@ -64,6 +64,8 @@ components:
             $ref: 'api-client.yaml#/components/schemas/ErrorResponse'
 
 paths:
+  /project/{projectId}/ideasearch:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1ideasearch'
   /project/{projectId}/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea'
   /project/{projectId}/idea/{ideaId}:
@@ -78,19 +80,21 @@ paths:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1user'
   /project/{projectId}/user/{userId}:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1user~1{userId}'
+  /project/{projectId}/idea/{ideaId}/commentsearch:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1commentsearch'
   /project/{projectId}/idea/{ideaId}/comment:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment'
   /project/{projectId}/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
-  /project/{projectId}/user/{userId}/transaction:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transaction'
+  /project/{projectId}/user/{userId}/transactionsearch:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transactionsearch'
   /project/{projectId}/idea/{ideaId}/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
   /project/{projectId}/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
-  /project/{projectId}/notification:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification'
-  /project/{projectId}/notification/clear:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification~1clear'
-  /project/{projectId}/notification/{notificationId}/clear:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification~1{notificationId}~1clear'
+  /project/{projectId}/notificationsearch:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationsearch'
+  /project/{projectId}/notificationclear:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear'
+  /project/{projectId}/notificationclear/{notificationId}/clear:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'

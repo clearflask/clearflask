@@ -978,7 +978,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       if(ownProps.variant === 'page') {
         ownProps.server.dispatch().voteGetOwn({
           projectId: state.projectId,
-          voteGetOwn: { ideaIds: [ownProps.idea.ideaId] },
+          ideaIds: [ownProps.idea.ideaId],
         });
       }
     } else {

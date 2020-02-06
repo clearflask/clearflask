@@ -292,20 +292,20 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/user:
-  get:
+/project/{projectId}/admin/usersearch:
+  post:
     operationId: userSearchAdmin
     tags: [UserAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -328,6 +328,7 @@ components:
                   type: array
                   items:
                     $ref: 'api-user.yaml#/components/schemas/UserAdmin'
+/project/{projectId}/admin/user:
   post:
     operationId: userCreateAdmin
     tags: [UserAdmin]

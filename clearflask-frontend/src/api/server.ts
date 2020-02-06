@@ -632,7 +632,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         statusByIdeaId: {
           ...state.statusByIdeaId,
-          ...action.meta.request.voteGetOwn.ideaIds.reduce(
+          ...action.meta.request.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = Status.PENDING;
               return byIdeaId;
@@ -644,7 +644,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         statusByIdeaId: {
           ...state.statusByIdeaId,
-          ...action.meta.request.voteGetOwn.ideaIds.reduce(
+          ...action.meta.request.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = Status.REJECTED;
               return byIdeaId;
@@ -656,7 +656,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...state,
         statusByIdeaId: {
           ...state.statusByIdeaId,
-          ...action.meta.request.voteGetOwn.ideaIds.reduce(
+          ...action.meta.request.ideaIds.reduce(
             (byIdeaId, ideaId) => {
               byIdeaId[ideaId] = Status.FULFILLED;
               return byIdeaId;

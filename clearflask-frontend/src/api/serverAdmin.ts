@@ -97,7 +97,7 @@ export default class ServerAdmin {
       var result = await store.dispatch(msg);
     } catch(response) {
       console.log("Dispatch error: ", response);
-      if(response.status === 429 && response.headers && !!response.headers.get('x-cf-challenge')) {
+      if(response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
         if(!challengeSubscriber) {
           errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
           throw response;
@@ -105,20 +105,21 @@ export default class ServerAdmin {
         var solution:string|undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
         if(solution) {
           return msg.meta.retry({'x-cf-solution': solution});
-        } else {
-          throw response;
         }
       }
-      var body = await response.json();
+      var body;
+      if(response && response.json) {
+        body = await response.json();
+      }
       var errorMsg;
       var isUserFacing = false;
       var action = msg && msg.meta && msg.meta.action || 'unknown action';
       if(body && body.userFacingMessage) {
         errorMsg = body.userFacingMessage;
         isUserFacing = true;
-      } else if(response.status && response.status >= 100 && response.status < 500) {
+      } else if(response.status && response.status >= 100 && response.status < 300) {
         errorMsg = `${response.status} failed ${action}`;
-      } else if(response.status && response.status >= 500 && response.status < 600) {
+      } else if(response.status && response.status >= 300 && response.status < 600) {
         errorMsg = `${response.status} failed ${action}`;
         isUserFacing = true;
       } else {
@@ -220,6 +221,7 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
         },
       };
     case Admin.accountBindAdminActionStatus.Fulfilled:
+      if(!action.payload) return state;
       return {
         ...state,
         account: {

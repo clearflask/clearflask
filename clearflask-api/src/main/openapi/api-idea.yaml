@@ -200,20 +200,20 @@ components:
               description: Suppresses notifications if status or response was changed
               type: boolean
 
-/project/{projectId}/idea:
-  get:
+/project/{projectId}/ideasearch:
+  post:
     operationId: ideaSearch
     tags: [Idea]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -236,6 +236,8 @@ components:
                     $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
               required:
                 - results
+
+/project/{projectId}/idea:
   post:
     operationId: ideaCreate
     tags: [Idea]
@@ -327,20 +329,20 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/idea:
-  get:
+/project/{projectId}/admin/idea/search:
+  post:
     operationId: ideaSearchAdmin
     tags: [IdeaAdmin]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: cursor
-        in: query
-        schema:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -363,6 +365,7 @@ components:
                     $ref: 'api-idea.yaml#/components/schemas/Idea'
               required:
                 - results
+/project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin
     tags: [IdeaAdmin]

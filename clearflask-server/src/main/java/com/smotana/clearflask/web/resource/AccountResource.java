@@ -19,11 +19,9 @@ import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
-import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ForbiddenException;
@@ -57,11 +55,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private PasswordUtil passwordUtil;
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @PermitAll
     @Limit(requiredPermits = 10)
     @Override
     public AccountAdmin accountBindAdmin() {
-        AccountSession accountSession = getExtendedPrincipal().get().getAccountSessionOpt().get();
+        Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
+        if (!accountSessionOpt.isPresent()) {
+            return null;
+        }
+        AccountSession accountSession = accountSessionOpt.get();
 
         // Token refresh
         if (accountSession.getTtlInEpochSec() > Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {

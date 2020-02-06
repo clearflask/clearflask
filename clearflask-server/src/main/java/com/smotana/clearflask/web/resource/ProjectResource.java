@@ -3,7 +3,6 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.Futures;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -16,6 +15,8 @@ import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
@@ -46,7 +47,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private UserStore userStore;
     @Inject
-    private UserStore ideaStore;
+    private IdeaStore ideaStore;
+    @Inject
+    private CommentStore commentStore;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -85,7 +88,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             log.error("Account not found for session with email {}", accountSession.getEmail());
             return new InternalServerErrorException();
         });
-        ImmutableSet<Project> projects = projectStore.getProjects(account.getProjectIds(), false);
+        ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
+                ? ImmutableSet.of()
+                : projectStore.getProjects(account.getProjectIds(), false);
         if (account.getProjectIds().size() != projects.size()) {
             log.error("ProjectIds on account not found in project table, email {} missing projects {}",
                     account.getEmail(), Sets.difference(account.getProjectIds(), projects.stream()
@@ -110,12 +115,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public NewProjectResult projectCreateAdmin(String projectId) {
         // TODO sanity check, projectId alphanumeric
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         VersionedConfigAdmin configAdmin = ModelUtil.createEmptyConfig(projectId);
         projectStore.createProject(projectId, configAdmin);
-        Futures.allAsList(
-                userStore.createIndex(projectId),
-                ideaStore.createIndex(projectId)
-        );
+        commentStore.createIndex(projectId);
+        userStore.createIndex(projectId);
+        ideaStore.createIndex(projectId);
+        accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
         return new NewProjectResult(projectId, configAdmin);
     }
 }

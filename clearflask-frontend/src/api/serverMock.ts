@@ -368,7 +368,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   voteGetOwn(request: Client.VoteGetOwnRequest): Promise<Client.VoteGetOwnResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if(!loggedInUser) return this.throwLater(403, 'Not logged in');
-    const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === loggedInUser.userId && request.voteGetOwn.ideaIds.includes(vote.ideaId));
+    const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === loggedInUser.userId && request.ideaIds.includes(vote.ideaId));
     return this.returnLater({
       votesByIdeaId: votes.filter(vote => vote.vote).reduce((map, vote) => (map[vote.ideaId] = vote.vote, map), {}),
       expressionByIdeaId: votes.filter(vote => vote.expression).reduce((map, vote) => (map[vote.ideaId] = vote.expression, map), {}),

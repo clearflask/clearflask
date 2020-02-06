@@ -8,7 +8,7 @@ import CloseIcon from '@material-ui/icons/Close';
 const ServerErrorNotifier = (props:({server:Server|ServerAdmin})) => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   props.server.subscribeToErrors((errorMsg, isUserFacing) => {
-    console.log("Server error: " + errorMsg);
+    console.log("Server error:", errorMsg);
     if(isUserFacing) {
       enqueueSnackbar(errorMsg, {
         variant: 'error',

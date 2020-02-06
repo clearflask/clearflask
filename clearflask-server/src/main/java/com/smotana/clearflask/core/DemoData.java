@@ -10,8 +10,11 @@ import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.PasswordUtil;
@@ -33,6 +36,12 @@ public class DemoData extends ManagedService {
     private PlanStore planStore;
     @Inject
     private PasswordUtil passwordUtil;
+    @Inject
+    private UserStore userStore;
+    @Inject
+    private IdeaStore ideaStore;
+    @Inject
+    private CommentStore commentStore;
 
 
     @Override
@@ -70,6 +79,9 @@ public class DemoData extends ManagedService {
         accountStore.createAccount(account);
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(DEMO_PROJECT_ID);
         projectStore.createProject(versionedConfigAdmin.getConfig().getProjectId(), versionedConfigAdmin);
+        commentStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
+        userStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
+        ideaStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
         accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }
 

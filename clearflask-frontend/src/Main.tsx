@@ -16,6 +16,7 @@ import { Provider } from 'react-redux';
 import ServerAdmin from './api/serverAdmin';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
+import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
 
 const theme:Theme = createMuiTheme({
   palette: {
@@ -45,6 +46,7 @@ class Main extends Component {
       <MuiThemeProvider theme={theme}>
       <MuiSnackbarProvider>
         <CssBaseline />
+        <EnvironmentNotifier />
         <ServerErrorNotifier server={ServerAdmin.get()} />
         <CaptchaChallenger server={ServerAdmin.get()} />
         <div style={{background: theme.palette.background.default}}>

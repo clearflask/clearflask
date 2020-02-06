@@ -100,8 +100,8 @@ components:
         * Adjustment - Typically Admin initiaited change in credit.
 
 
-/project/{projectId}/user/{userId}/transaction:
-  get:
+/project/{projectId}/user/{userId}/transactionsearch:
+  post:
     operationId: transactionSearch
     tags: [Credit]
     parameters:
@@ -171,8 +171,8 @@ components:
           application/json:
             schema:
               $ref: 'api-credit.yaml#/components/schemas/Transaction'
-/project/{projectId}/admin/transaction:
-  get:
+/project/{projectId}/admin/transaction/search:
+  post:
     operationId: transactionSearchAdmin
     tags: [CreditAdmin]
     parameters:

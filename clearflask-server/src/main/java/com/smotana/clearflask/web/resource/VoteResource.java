@@ -14,7 +14,6 @@ import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Transaction;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.Vote;
-import com.smotana.clearflask.api.model.VoteGetOwn;
 import com.smotana.clearflask.api.model.VoteGetOwnResponse;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.api.model.VoteSearchAdmin;
@@ -46,7 +45,6 @@ import org.elasticsearch.action.update.UpdateResponse;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
-import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -80,7 +78,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public void voteDeleteBulkAdmin(String projectId, @Valid VoteSearchAdmin voteSearchAdmin) {
+    public void voteDeleteBulkAdmin(String projectId, VoteSearchAdmin voteSearchAdmin) {
         // TODO
         throw new NotImplementedException();
     }
@@ -88,7 +86,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public VoteSearchResponse voteSearchAdmin(String projectId, @Valid VoteSearchAdmin voteSearchAdmin, String cursor) {
+    public VoteSearchResponse voteSearchAdmin(String projectId, VoteSearchAdmin voteSearchAdmin, String cursor) {
         // TODO
         throw new NotImplementedException();
     }
@@ -96,7 +94,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public VoteUpdateAdminResponse voteUpdateAdmin(String projectId, @Valid VoteUpdateAdmin voteUpdateAdmin) {
+    public VoteUpdateAdminResponse voteUpdateAdmin(String projectId, VoteUpdateAdmin voteUpdateAdmin) {
         // TODO
         throw new NotImplementedException();
     }
@@ -104,7 +102,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
     @Override
-    public VoteGetOwnResponse voteGetOwn(String projectId, @Valid VoteGetOwn voteGetOwn) {
+    public VoteGetOwnResponse voteGetOwn(String projectId, List<String> ideaIds) {
         UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
@@ -112,28 +110,28 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
 
         Map<String, VoteOption> votesByIdeaId = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> voteGetOwn.getIdeaIds().stream()
+                .map(bloomFilter -> ideaIds.stream()
                         .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
-                .map(ideaIds -> voteStore.voteSearch(projectId, user.getUserId(), ideaIds))
+                .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
                 .map(m -> Maps.transformValues(m, voteModel -> VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
                 .orElse(Map.of());
 
         Map<String, List<String>> expressionByIdeaId = Optional.ofNullable(user.getExpressBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> voteGetOwn.getIdeaIds().stream()
+                .map(bloomFilter -> ideaIds.stream()
                         .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
-                .map(ideaIds -> voteStore.expressSearch(projectId, user.getUserId(), ideaIds))
+                .map(ids -> voteStore.expressSearch(projectId, user.getUserId(), ids))
                 .map(m -> Maps.transformValues(m, expressModel -> (List<String>) expressModel.getExpressions().asList()))
                 .orElse(Map.of());
 
         Map<String, Long> fundAmountByIdeaId = Optional.ofNullable(user.getFundBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> voteGetOwn.getIdeaIds().stream()
+                .map(bloomFilter -> ideaIds.stream()
                         .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
-                .map(ideaIds -> voteStore.fundSearch(projectId, user.getUserId(), ideaIds))
+                .map(ids -> voteStore.fundSearch(projectId, user.getUserId(), ids))
                 .map(m -> Maps.transformValues(m, FundModel::getFundAmount))
                 .orElse(Map.of());
 
@@ -146,7 +144,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
     @Override
-    public VoteUpdateResponse voteUpdate(String projectId, @Valid VoteUpdate voteUpdate) {
+    public VoteUpdateResponse voteUpdate(String projectId, VoteUpdate voteUpdate) {
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);

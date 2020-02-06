@@ -1,6 +1,7 @@
 import { detectEnv, Environment } from "../util/detectEnv";
 
-const KEY_PUBLIC = 'TODO';
+// Also set in config-aws.cfg
+const KEY_PUBLIC = 'BP7Bm7jiQKOFKJTO2LEDVidsA_OtlHfsIeFZLZjc015R8iARXNX5QL5yWd3XGxmRkhII5kQrv97IjMQHpVJDO2U=';
 const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';
 export const KEY_DEV_PRIVATE = '6xIMnmOfFz4xxsSw1h0ZhPCYuCfed56oNA7AEOSfHWE';
 
@@ -62,6 +63,7 @@ export default class WebNotification {
         applicationServerKey: this._urlB64ToUint8Array(this._getPublicKey()),
       });
     } catch(err) {
+      console.log('Failed to subscribe to notification service', err);
       this.status = Status.Unsupported;
       return {
         type: 'error',

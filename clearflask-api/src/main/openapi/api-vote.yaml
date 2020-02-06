@@ -84,20 +84,13 @@ components:
       required: true
       schema:
         type: string
-    requestBody:
+    - name: ideaIds
+      in: query
       required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            title: voteGetOwn
-            required:
-            - ideaIds
-            properties:
-              ideaIds:
-                type: array
-                items:
-                  type: string
+      schema:
+        type: array
+        items:
+          type: string
     responses:
       '200':
         content:
@@ -164,7 +157,7 @@ components:
                   $ref: 'api-credit.yaml#/components/schemas/Transaction'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/vote:
+/project/{projectId}/admin/votesearch:
   get:
     operationId: voteSearchAdmin
     tags: [VoteAdmin]
@@ -200,6 +193,7 @@ components:
                     $ref: 'api-vote.yaml#/components/schemas/Vote'
               required:
               - results
+/project/{projectId}/admin/vote:
   delete:
     operationId: voteDeleteBulkAdmin
     tags: [VoteAdmin]

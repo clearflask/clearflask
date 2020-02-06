@@ -91,6 +91,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
 @Singleton
@@ -204,12 +205,12 @@ public class DynamoElasticUserStore implements UserStore {
                         .withItem(userSchema.toAttrMap(user))
                         .withConditionExpression("attribute_not_exists(#partitionKey)")
                         .withExpressionAttributeNames(Map.of("#partitionKey", userSchema.partitionKeyName()))))
-                .withTransactItems(getUserIdentifierHashes(user).entrySet().stream()
+                .withTransactItems(getUserIdentifiers(user).entrySet().stream()
                         .map(e -> new TransactWriteItem().withPut(new Put()
                                 .withTableName(identifierToUserIdSchema.tableName())
                                 .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
                                         e.getKey().getType(),
-                                        e.getValue(),
+                                        e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue(),
                                         user.getProjectId(),
                                         user.getUserId())))
                                 .withConditionExpression("attribute_not_exists(#partitionKey)")
@@ -221,9 +222,9 @@ public class DynamoElasticUserStore implements UserStore {
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
                         .id(user.getUserId())
                         .source(gson.toJson(ImmutableMap.of(
-                                "name", user.getName(),
-                                "email", user.getEmail(),
-                                "balance", user.getBalance()
+                                "name", orNull(user.getName()),
+                                "email", orNull(user.getEmail()),
+                                "balance", orNull(user.getBalance())
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
@@ -262,7 +263,7 @@ public class DynamoElasticUserStore implements UserStore {
                 .withPrimaryKey(identifierToUserIdSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "type", type.getType(),
-                        "identifierHash", hashIdentifier(identifier)))))))
+                        "identifierHash", type.isHashed() ? hashIdentifier(identifier) : identifier))))))
                 .map(identifierUser -> getUser(projectId, identifierUser.getUserId())
                         .orElseThrow(() -> new IllegalStateException("IdentifierUser entry exists but User doesn't for type " + type.getType() + " identifier " + identifier)));
     }
@@ -470,13 +471,13 @@ public class DynamoElasticUserStore implements UserStore {
                 .toArray(PrimaryKey[]::new)));
 
         dynamoDoc.batchWriteItem(new TableWriteItems(identifierToUserIdSchema.tableName()).withPrimaryKeysToDelete(users.stream()
-                .map(this::getUserIdentifierHashes)
+                .map(this::getUserIdentifiers)
                 .map(ImmutableMap::entrySet)
                 .flatMap(Collection::stream)
                 .map(e -> identifierToUserIdSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "type", e.getKey().getType(),
-                        "identifierHash", e.getValue())))
+                        "identifierHash", e.getKey().isHashed() ? hashIdentifier(e.getValue()) : e.getValue())))
                 .toArray(PrimaryKey[]::new)));
 
         users.stream()
@@ -570,19 +571,19 @@ public class DynamoElasticUserStore implements UserStore {
         return hashFunction.hashString(identifier, Charsets.UTF_8).toString();
     }
 
-    private ImmutableMap<IdentifierType, String> getUserIdentifierHashes(UserModel user) {
+    private ImmutableMap<IdentifierType, String> getUserIdentifiers(UserModel user) {
         ImmutableMap.Builder<IdentifierType, String> identifiersBuilder = ImmutableMap.builder();
         if (!Strings.isNullOrEmpty(user.getEmail())) {
-            identifiersBuilder.put(IdentifierType.EMAIL, hashIdentifier(user.getEmail()));
+            identifiersBuilder.put(IdentifierType.EMAIL, user.getEmail());
         }
         if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
-            identifiersBuilder.put(IdentifierType.BROWSER_PUSH, hashIdentifier(user.getBrowserPushToken()));
+            identifiersBuilder.put(IdentifierType.BROWSER_PUSH, user.getBrowserPushToken());
         }
         if (!Strings.isNullOrEmpty(user.getAndroidPushToken())) {
-            identifiersBuilder.put(IdentifierType.ANDROID_PUSH, hashIdentifier(user.getAndroidPushToken()));
+            identifiersBuilder.put(IdentifierType.ANDROID_PUSH, user.getAndroidPushToken());
         }
         if (!Strings.isNullOrEmpty(user.getIosPushToken())) {
-            identifiersBuilder.put(IdentifierType.IOS_PUSH, hashIdentifier(user.getIosPushToken()));
+            identifiersBuilder.put(IdentifierType.IOS_PUSH, user.getIosPushToken());
         }
         return identifiersBuilder.build();
     }

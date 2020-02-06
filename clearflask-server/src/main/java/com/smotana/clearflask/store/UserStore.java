@@ -84,19 +84,25 @@ public interface UserStore {
     }
 
     enum IdentifierType {
-        EMAIL("e"),
-        IOS_PUSH("i"),
-        ANDROID_PUSH("a"),
-        BROWSER_PUSH("b");
+        EMAIL("e", false),
+        IOS_PUSH("i", true),
+        ANDROID_PUSH("a", true),
+        BROWSER_PUSH("b", true);
 
         private final String type;
+        private final boolean isHashed;
 
-        IdentifierType(String type) {
+        IdentifierType(String type, boolean isHashed) {
             this.type = type;
+            this.isHashed = isHashed;
         }
 
         public String getType() {
             return type;
+        }
+
+        public boolean isHashed() {
+            return isHashed;
         }
     }
 
@@ -141,7 +147,8 @@ public interface UserStore {
         @NonNull
         private final boolean emailNotify;
 
-        private final Long balance;
+        @NonNull
+        private final long balance;
 
         private final String iosPushToken;
 

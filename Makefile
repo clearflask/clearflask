@@ -30,6 +30,7 @@ tomcat-run-dev:
 	-p 80:8080 \
 	-v `pwd`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \
 	-v `pwd`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
+	-v `pwd`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	tomcat:9-jre10-slim
 

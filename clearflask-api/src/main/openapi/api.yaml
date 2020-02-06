@@ -12,6 +12,8 @@ externalDocs:
 
 paths:
   # api-client.yaml
+  /project/{projectId}/ideasearch:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1ideasearch'
   /project/{projectId}/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1idea'
   /project/{projectId}/idea/{ideaId}:
@@ -26,22 +28,24 @@ paths:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1user'
   /project/{projectId}/user/{userId}:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1user~1{userId}'
+  /project/{projectId}/idea/{ideaId}/commentsearch:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1commentsearch'
   /project/{projectId}/idea/{ideaId}/comment:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment'
   /project/{projectId}/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
-  /project/{projectId}/user/{userId}/transaction:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transaction'
+  /project/{projectId}/user/{userId}/transactionsearch:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transactionsearch'
   /project/{projectId}/idea/{ideaId}/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
   /project/{projectId}/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
-  /project/{projectId}/notification:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification'
-  /project/{projectId}/notification/clear:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification~1clear'
-  /project/{projectId}/notification/{notificationId}/clear:
-    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notification~1{notificationId}~1clear'
+  /project/{projectId}/notificationsearch:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationsearch'
+  /project/{projectId}/notificationclear:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear'
+  /project/{projectId}/notificationclear/{notificationId}/clear:
+    $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
   # api-admin.yaml
   /admin/plan:
     $ref: 'api-account.yaml#/~1admin~1plan'
@@ -53,10 +57,14 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
   /admin/account/logout:
     $ref: 'api-account.yaml#/~1admin~1account~1logout'
+  /project/{projectId}/admin/idea/search:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1search'
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /project/{projectId}/admin/usersearch:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1usersearch'
   /project/{projectId}/admin/user:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user'
   /project/{projectId}/admin/user/{userId}:
@@ -65,8 +73,10 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/admin/user/{userId}/transaction:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1transaction'
-  /project/{projectId}/admin/transaction:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction'
+  /project/{projectId}/admin/transaction/search:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction~1search'
+  /project/{projectId}/admin/votesearch:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1votesearch'
   /project/{projectId}/admin/vote:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote'
   /project/{projectId}/admin/idea/{ideaId}/vote:

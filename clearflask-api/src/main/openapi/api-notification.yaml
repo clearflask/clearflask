@@ -25,7 +25,7 @@ components:
         description:
           type: string
 
-/project/{projectId}/notification:
+/project/{projectId}/notificationsearch:
   get:
     operationId: notificationSearch
     tags: [Notification]
@@ -55,7 +55,7 @@ components:
                   type: array
                   items:
                     $ref: 'api-notification.yaml#/components/schemas/Notification'
-/project/{projectId}/notification/clear:
+/project/{projectId}/notificationclear:
   delete:
     operationId: notificationClearAll
     tags: [Notification]
@@ -68,7 +68,7 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
-/project/{projectId}/notification/{notificationId}/clear:
+/project/{projectId}/notificationclear/{notificationId}:
   delete:
     operationId: notificationClear
     tags: [Notification]

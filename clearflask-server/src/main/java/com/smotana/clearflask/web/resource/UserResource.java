@@ -24,6 +24,7 @@ import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
+import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -79,14 +80,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
         }
-        UserStore.UserModel user = new UserStore.UserModel(
+        UserModel user = new UserModel(
                 projectId,
                 userId,
                 userCreate.getName(),
                 userCreate.getEmail(),
                 passwordHashed.orElse(null),
                 userCreate.getEmail() != null,
-                null,
+                0L,
                 userCreate.getIosPushToken(),
                 userCreate.getAndroidPushToken(),
                 userCreate.getBrowserPushToken(),
@@ -107,7 +108,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
         }
-        UserStore.UserModel user = new UserStore.UserModel(
+        UserModel user = new UserModel(
                 projectId,
                 userId,
                 userCreateAdmin.getName(),
@@ -160,7 +161,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public User userGet(String projectId, String userId) {
-        UserStore.UserModel user = userStore.getUser(projectId, userId).get();
+        UserModel user = userStore.getUser(projectId, userId).get();
         return new User(user.getUserId(), user.getName());
     }
 
@@ -168,12 +169,12 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
-        Optional<UserStore.UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
+        Optional<UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
         if (!userOpt.isPresent()) {
             log.info("User login with non-existent email {}", userLogin.getEmail());
             throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
-        UserStore.UserModel user = userOpt.get();
+        UserModel user = userOpt.get();
 
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
         if (Strings.isNullOrEmpty(user.getPassword())) {
@@ -255,14 +256,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(Strings.emptyToNull(cursor)),
                 config.searchPageSize());
 
-        ImmutableMap<String, UserStore.UserModel> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
+        ImmutableMap<String, UserModel> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
 
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
                 searchUsersResponse.getUserIds().stream()
                         .map(usersById::get)
                         .filter(Objects::nonNull)
-                        .map(UserStore.UserModel::toUserAdmin)
+                        .map(UserModel::toUserAdmin)
                         .collect(ImmutableList.toImmutableList()));
     }
 

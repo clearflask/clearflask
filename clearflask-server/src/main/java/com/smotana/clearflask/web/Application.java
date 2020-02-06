@@ -18,6 +18,7 @@ public class Application extends ResourceConfig {
     @Inject
     public Application(ServiceLocator serviceLocator) {
         super();
+        log.info("Initializing Application");
         packages(getClass().getPackage().getName());
 
         register(RolesAllowedDynamicFeature.class);

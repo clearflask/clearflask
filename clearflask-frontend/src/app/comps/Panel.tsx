@@ -157,7 +157,7 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
     if(missingVotesByIdeaIds.length > 0) {
       ownProps.server.dispatch().voteGetOwn({
         projectId: state.projectId,
-        voteGetOwn: { ideaIds: missingVotesByIdeaIds },
+        ideaIds: missingVotesByIdeaIds,
       });
     }
   }
