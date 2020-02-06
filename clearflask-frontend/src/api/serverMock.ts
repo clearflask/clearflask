@@ -119,9 +119,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       featuresTable: FeaturesTable,
     });
   }
-  accountBindAdmin(): Promise<Admin.AccountAdmin> {
-    if(!this.loggedIn || !this.account) return this.throwLater(403);
-    return this.returnLater(this.account);
+  accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
+    return this.returnLater(this.loggedIn && this.account
+      ? {account: this.account} : {});
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     if(!this.account

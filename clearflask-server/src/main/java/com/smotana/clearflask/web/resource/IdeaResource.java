@@ -167,6 +167,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ideaSearch,
                 userOpt.map(UserModel::getUserId),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
+        if (searchResponse.getIdeaIds().isEmpty()) {
+            return new IdeaWithVoteSearchResponse(null, ImmutableList.of());
+        }
 
         ImmutableMap<String, IdeaModel> ideasById = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
 

@@ -221,12 +221,12 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
         },
       };
     case Admin.accountBindAdminActionStatus.Fulfilled:
-      if(!action.payload) return state;
+      if(!action.payload.account) return state;
       return {
         ...state,
         account: {
           status: Status.FULFILLED,
-          account: action.payload,
+          account: action.payload.account,
         },
       };
     case Admin.accountLogoutAdminActionStatus.Pending:

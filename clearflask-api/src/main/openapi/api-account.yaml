@@ -166,7 +166,11 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+              title: AccountBindAdminResponse
+              type: object
+              properties:
+                account:
+                  $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /admin/account/login:

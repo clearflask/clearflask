@@ -7,6 +7,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.Plan;
@@ -24,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
@@ -58,10 +58,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public AccountAdmin accountBindAdmin() {
+    public AccountBindAdminResponse accountBindAdmin() {
         Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
         if (!accountSessionOpt.isPresent()) {
-            return null;
+            return new AccountBindAdminResponse(null);
         }
         AccountSession accountSession = accountSessionOpt.get();
 
@@ -81,16 +81,16 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession.getEmail());
             accountStore.revokeSessions(accountSession.getEmail());
             unsetAuthCookie();
-            throw new ForbiddenException();
+            return new AccountBindAdminResponse(null);
         }
         Account account = accountOpt.get();
 
-        return new AccountAdmin(
+        return new AccountBindAdminResponse(new AccountAdmin(
                 planStore.mapIdsToPlans(account.getPlanIds()).asList(),
                 account.getCompany(),
                 account.getName(),
                 account.getEmail(),
-                account.getPhone());
+                account.getPhone()));
     }
 
     @PermitAll
