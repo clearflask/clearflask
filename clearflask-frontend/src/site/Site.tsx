@@ -21,6 +21,9 @@ const styles = (theme:Theme) => createStyles({
     flexGrow: 1,
   },
   appBarSpacer: theme.mixins.toolbar,
+  appbar: {
+    borderBottom: '1px solid ' + theme.palette.grey[300],
+  },
 });
 
 class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>> {
@@ -30,7 +33,7 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
     return (
       <React.Fragment>
         {/* <HideOnScroll> */}
-          <AppBar position='relative' color='inherit' elevation={1}>
+          <AppBar position='relative' color='inherit' elevation={0} className={this.props.classes.appbar}>
             <Container maxWidth='md'>
               <Toolbar className={this.props.classes.toolbar}>
                 <img

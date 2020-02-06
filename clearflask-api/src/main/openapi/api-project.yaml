@@ -22,7 +22,7 @@ components:
           x-clearflask-prop: { subType: 'id' }
           type: string
         website:
-          x-clearflask-prop: { order: 1, name: 'Website', description: 'Your external website', placeholder: 'https://' }
+          x-clearflask-prop: { order: 1, name: 'Website', description: 'Your external website. Used for linking users back to your website. Leave blank for no link', placeholder: 'https://' }
           type: string
         name:
           x-clearflask-prop: { order: 2, name: 'Name', description: 'Project name visible on your page' }

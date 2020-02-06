@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
 import { TableHead, TableRow, TableCell, Table, Paper, TableBody, Typography, Fab, IconButton, InputLabel, FormHelperText } from '@material-ui/core';
+import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Property from './Property';
 import MoveUpIcon from '@material-ui/icons/ArrowUpward';
 import MoveDownIcon from '@material-ui/icons/ArrowDownward';
@@ -9,7 +10,21 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import AddIcon from '@material-ui/icons/AddRounded';
 
-interface Props {
+const styles = (theme:Theme) => createStyles({
+  table: {
+    border: '1px solid ' + theme.palette.grey[300],
+    display: 'inline-block',
+    marginLeft: '30px',
+    marginTop: '15px',
+  },
+  helperText: {
+    display: 'inline-flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+});
+
+  interface Props {
   styleOuter?:React.CSSProperties;
   key:string;
   data:ConfigEditor.PageGroup|ConfigEditor.ArrayProperty;
@@ -19,17 +34,8 @@ interface Props {
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
-interface State {
-}
-
-export default class TableProp extends Component<Props, State> {
+class TableProp extends Component<Props&WithStyles<typeof styles, true>> {
   unsubscribe?:()=>void;
-
-  constructor(props:Props) {
-    super(props);
-    this.state = {
-    };
-  }
 
   componentDidMount() {
     this.unsubscribe = this.props.data.subscribe(this.forceUpdate.bind(this));
@@ -89,13 +95,28 @@ export default class TableProp extends Component<Props, State> {
     return (
       <div>
         <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>
-        <div><div style={{
-          display: 'inline-flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}>
-          <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
-        </div></div>
+        {(this.props.errorMsg || this.props.helperText) && (
+          <div><div className={this.props.classes.helperText}>
+            <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
+          </div></div>
+        )}
+        {rows.length > 0 && (
+          <div className={this.props.classes.table}>
+            <Table style ={{width: 'inherit'}}>
+              {header.length > 0 && (
+                <TableHead>
+                  <TableRow key='header'>
+                    {header}
+                    <TableCell key='delete' align='center' padding='checkbox'></TableCell>
+                  </TableRow>
+                </TableHead>
+              )}
+              <TableBody>
+                {rows}
+              </TableBody>
+            </Table>
+          </div>
+        )}
         <div style={{marginLeft: '30px'}}>
           <IconButton aria-label="Add" onClick={() => {
             this.props.data.insert();
@@ -103,21 +124,6 @@ export default class TableProp extends Component<Props, State> {
             <AddIcon />
           </IconButton>
         </div>
-        <Paper elevation={2} style={{display: 'inline-block', marginLeft: '30px', marginTop: '15px'}}>
-          <Table style ={{width: 'inherit'}}>
-            {header.length > 0 && (
-              <TableHead>
-                <TableRow key='header'>
-                  {header}
-                  <TableCell key='delete' align='center' padding='checkbox'></TableCell>
-                </TableRow>
-              </TableHead>
-            )}
-            <TableBody>
-              {rows}
-            </TableBody>
-          </Table>
-        </Paper>
       </div>
     );
   }
@@ -196,3 +202,5 @@ export default class TableProp extends Component<Props, State> {
     );
   }
 }
+
+export default withStyles(styles, { withTheme: true })(TableProp)

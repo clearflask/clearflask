@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as Client from '../api/client';
-import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input } from '@material-ui/core';
+import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input, Link } from '@material-ui/core';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import AccountIcon from '@material-ui/icons/AccountCircle';
@@ -138,6 +138,14 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
       );
     }
 
+    var nameWithLink:any = this.props.config && this.props.config.name
+    if(this.props.config && this.props.config.website) {
+      nameWithLink = (
+        <Link href={this.props.config.website} rel='nofollow'>
+          {nameWithLink}
+        </Link>
+      );
+    }
     var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
       <div className={this.props.classes.logo}>
         {this.props.config.logoUrl && (

@@ -17,6 +17,9 @@ const styles = (theme:Theme) => createStyles({
   page: {
     margin: theme.spacing(2),
   },
+  box: {
+    border: '1px solid ' + theme.palette.grey[300],
+  },
 });
 
 const T = true;
@@ -104,7 +107,7 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
   }
 }
 
-const FeatureList = (props:{
+const FeatureList = withStyles(styles, { withTheme: true })((props:WithStyles<typeof styles, true>&{
   planNames:string[],
   name:string,
   children?:any,
@@ -112,7 +115,7 @@ const FeatureList = (props:{
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('sm'));
   return (
-    <Paper elevation={8}>
+    <div className={props.classes.box}>
       <Table
         size={mdUp ? 'medium' : 'small'}
       >
@@ -128,9 +131,9 @@ const FeatureList = (props:{
           {props.children}
         </TableBody>
       </Table>
-    </Paper>
+    </div>
   );
-}
+});
 
 const FeatureListItem = (props:{
   planContents:(boolean|React.ReactNode|string)[],

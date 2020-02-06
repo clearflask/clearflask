@@ -4,12 +4,13 @@ import { Typography, Paper, Button, withStyles, Theme, createStyles, WithStyles 
 import Templater from '../configTemplater';
 
 const styles = (theme: Theme) => createStyles({
-  paper: {
+  widget: {
     padding: theme.spacing(2),
     margin: theme.spacing(1),
     flex: '1 1 150px',
     minWidth: '150px',
     maxWidth: '250px',
+    border: '1px solid ' + theme.palette.grey[300],
   },
 });
 
@@ -73,17 +74,17 @@ class PresetWidget extends Component<Props> {
 
     return (
       <div style={{
-        display: 'inline-flex',
+        display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'baseline'
       }}>
         {presets.map(preset => (
-          <Paper elevation={1} className={this.props.classes.paper}>
+          <div className={this.props.classes.widget}>
             <Typography variant='h5'>{preset.title}</Typography>
             <Typography component='p'>{preset.body}</Typography>
             <Button onClick={() => preset.action(Templater.get(this.props.editor), this.props.page.path)}
             >{preset.actionTitle}</Button>
-          </Paper>
+          </div>
         ))}
       </div>
     );

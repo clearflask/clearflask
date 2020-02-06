@@ -13,6 +13,9 @@ const styles = (theme:Theme) => createStyles({
     alignItems: 'baseline',
     marginBottom: theme.spacing(2),
   },
+  box: {
+    border: '1px solid ' + theme.palette.grey[300],
+  },
 });
 
 interface Props {
@@ -27,7 +30,7 @@ interface Props {
 class PricingPlan extends Component<Props&WithStyles<typeof styles, true>> {
   render() {
     return (
-      <Card raised>
+      <Card elevation={0} className={this.props.classes.box}>
         <CardHeader
           title={this.props.plan.title}
           titleTypographyProps={{ align: 'center' }}
