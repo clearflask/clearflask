@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import * as ConfigEditor from '../configEditor';
-import { Typography, TableHead, TableRow, TableCell, Checkbox, withStyles, Link } from '@material-ui/core';
+import { Typography } from '@material-ui/core';
 import Property from './Property';
 import PresetWidget from './PresetWidget';
 import CreditPreview from './injects/CreditPreview';
-import Crumbs from './Crumbs';
+import Loading from '../../../app/utils/Loading';
 
 interface Props {
   key:string;
@@ -25,13 +25,24 @@ export default class Page extends Component<Props> {
   }
 
   render() {
+    var creditPreview = this.props.page.pathStr === 'credits'
+      && (<CreditPreview editor={this.props.editor} />);
+    var workflowPreview;
+    if(this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
+      const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'));
+      workflowPreview = (
+        <Suspense fallback={<Loading />}>
+          <WorkflowPreviewLazyCmpt editor={this.props.editor} page={this.props.page} />
+        </Suspense>
+      );
+    }
     return (
       <div>
         <Typography variant='h4' component='h1'>{this.props.page.getDynamicName()}</Typography>
         <Typography variant='body1' component='p'>{this.props.page.description}</Typography>
         <PresetWidget page={this.props.page} editor={this.props.editor} />
-        {this.props.page.pathStr === 'credits'
-          && (<CreditPreview editor={this.props.editor} />)}
+        {creditPreview}
+        {workflowPreview}
         {this.props.page.getChildren().all
           .filter(child => (child as ConfigEditor.Property).subType !== ConfigEditor.PropSubType.Id)
           .map(child => (

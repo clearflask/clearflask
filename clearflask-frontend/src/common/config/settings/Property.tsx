@@ -54,7 +54,7 @@ export default class Property extends Component<Props> {
               }}>
                 <div ref={this.colorRef} > {/* Div-wrapped so the absolutely positioned picker shows up in the right place */}
                   <ColorPicker
-                    label={!this.props.bare && name}
+                    label={!this.props.bare ? name : undefined}
                     name='color'
                     placeholder='#000'
                     defaultValue={prop.defaultValue}
