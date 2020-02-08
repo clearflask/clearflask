@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { match, Route, RouteComponentProps } from 'react-router';
 import { History, Location } from 'history';
 import LandingPage from './LandingPage';
-import { Slide, AppBar, Container, Toolbar, Typography, Button } from '@material-ui/core';
+import { Slide, AppBar, Container, Toolbar, Typography, Button, Link } from '@material-ui/core';
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
@@ -42,7 +42,12 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
                     height: '48px',
                   }}
                   src='/clearflask-logo.png' />
-                <Typography variant="h6">Clear Flask</Typography>
+                <Button
+                  style={{textTransform: 'unset'}}
+                  onClick={() => this.props.history.push('/')}
+                >
+                  <Typography variant="h6">Clear Flask</Typography>
+                </Button>
                 <div className={this.props.classes.grow} />
                 <Button onClick={() => this.props.history.push('/')}>Home</Button>
                 <Button onClick={() => this.props.history.push('/demo')}>Demo</Button>

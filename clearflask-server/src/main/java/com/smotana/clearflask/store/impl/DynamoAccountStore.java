@@ -69,8 +69,7 @@ public class DynamoAccountStore implements AccountStore {
                     .withItem(accountSchema.toItem(account))
                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                     .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
-        } catch (
-                ConditionalCheckFailedException ex) {
+        } catch (ConditionalCheckFailedException ex) {
             throw new ErrorWithMessageException(Response.Status.CONFLICT, "Email already in use, please choose another.", ex);
         }
     }

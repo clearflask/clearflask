@@ -141,7 +141,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
     var nameWithLink:any = this.props.config && this.props.config.name
     if(this.props.config && this.props.config.website) {
       nameWithLink = (
-        <Link href={this.props.config.website} rel='nofollow'>
+        <Link href={this.props.config.website} rel='noopener nofollow'>
           {nameWithLink}
         </Link>
       );

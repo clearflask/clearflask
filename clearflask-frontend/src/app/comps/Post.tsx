@@ -169,6 +169,9 @@ const styles = (theme:Theme) => createStyles({
     width: 16,
     height: 16,
   },
+  popover: {
+    outline: '1px solid ' + theme.palette.grey[300],
+  },
   moreContainer: {
     lineHeight: 'unset',
     display: 'flex',
@@ -702,6 +705,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         />
         {fundingAllowed && (
           <Popover
+            elevation={0}
             TransitionComponent={Fade}
             open={!!this.state.fundingExpanded}
             anchorReference='anchorPosition'
@@ -711,6 +715,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             transformOrigin={{ vertical: 'top', horizontal: 'left', }}
             marginThreshold={2}
             PaperProps={{
+              className: this.props.classes.popover,
               style: {
                 overflow: 'hidden',
                 width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + padding * 2 : 0,
@@ -883,6 +888,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           )}
         </div>
         <Popover
+          elevation={0}
           TransitionComponent={Fade}
           open={!!this.state.expressionExpanded}
           anchorReference='anchorPosition'
@@ -892,10 +898,10 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           transformOrigin={{ vertical: 'top', horizontal: 'left', }}
           marginThreshold={2}
           PaperProps={{
+            className: this.props.classes.popover,
             style: {
               overflow: 'hidden',
               ...(limitEmojiSet ? {} : { width: 'min-content' }),
-              borderRadius: '9px',
               padding: padding,
               paddingBottom: limitEmojiSet ? padding : 0,
             }

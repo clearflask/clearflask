@@ -321,7 +321,7 @@ components:
         - menu
       properties:
         menu:
-          x-clearflask-prop: { order: 2, name: 'Tabs', description: 'Customize menu tabs with buttons and dropdowns. Each item represents a tab.' }
+          x-clearflask-prop: { order: 2, name: 'Tabs', description: 'Customize menu tabs with buttons and dropdowns.' }
           type: array
           items:
             title: Menu
@@ -343,7 +343,7 @@ components:
                 x-clearflask-prop: { order: 1, name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
                 type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'] }
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'], description: 'List of all pages visible to users. After creating a page, add the page link to the menu below.'}
           type: array
           items:
             x-clearflask-page: { name: 'Page', description: 'Create and customize pages.', nameFromProp: 'name' }

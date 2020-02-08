@@ -2,9 +2,11 @@ package com.smotana.clearflask.web.security;
 
 import com.google.common.base.Strings;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
 import lombok.extern.slf4j.Slf4j;
@@ -40,16 +42,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<AccountStore.AccountSession> accountSession = authenticateAccount(requestContext);
-        Optional<UserStore.UserSession> userSession = authenticateUser(requestContext);
+        Optional<AccountSession> accountSession = authenticateAccount(requestContext);
+        Optional<UserSession> userSession = authenticateUser(requestContext);
 
         if (!accountSession.isPresent() && !userSession.isPresent()) {
             return ExtendedSecurityContext.notAuthenticated(requestContext);
         }
 
         log.trace("Setting authenticated security context, email {} user id {}",
-                accountSession.map(AccountStore.AccountSession::getEmail),
-                userSession.map(UserStore.UserSession::getUserId));
+                accountSession.map(AccountSession::getEmail),
+                userSession.map(UserSession::getUserId));
         return ExtendedSecurityContext.authenticated(
                 accountSession,
                 userSession,
@@ -57,7 +59,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 requestContext);
     }
 
-    private Optional<AccountStore.AccountSession> authenticateAccount(ContainerRequestContext requestContext) {
+    private Optional<AccountSession> authenticateAccount(ContainerRequestContext requestContext) {
         Cookie cookie = requestContext.getCookies().get(AccountResource.ACCOUNT_AUTH_COOKIE_NAME);
         if (cookie == null) {
             return Optional.empty();
@@ -70,7 +72,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return accountStore.getSession(cookie.getValue());
     }
 
-    private Optional<UserStore.UserSession> authenticateUser(ContainerRequestContext requestContext) {
+    private Optional<UserSession> authenticateUser(ContainerRequestContext requestContext) {
         Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME);
         if (cookie == null) {
             return Optional.empty();
@@ -83,17 +85,17 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return userStore.getSession(cookie.getValue());
     }
 
-    private boolean hasRole(String role, Optional<AccountStore.AccountSession> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
+    private boolean hasRole(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, ContainerRequestContext requestContext) {
         boolean hasRole = hasRoleInternal(role, accountSession, userSession, requestContext);
         if (hasRole) {
-            log.trace("User does have role {}", role);
+            log.debug("User does have role {}", role);
         } else {
-            log.trace("User doesn't have role {}", role);
+            log.info("User doesn't have role {}", role);
         }
         return hasRole;
     }
 
-    private boolean hasRoleInternal(String role, Optional<AccountStore.AccountSession> accountSession, Optional<UserStore.UserSession> userSession, ContainerRequestContext requestContext) {
+    private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, ContainerRequestContext requestContext) {
         log.trace("Checking if user has role {}", role);
 
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
@@ -112,6 +114,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     pathParamUserIdOpt.get(), userSession.get().getUserId(), requestContext.getMethod());
             return false;
         }
+
+        log.trace("hasRole role {} accountSession {} userSession {} projectIdParam {} userIdParam {}",
+                role, accountSession.map(AccountSession::getEmail), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
 
         Optional<AccountStore.Account> accountOpt;
         switch (role) {

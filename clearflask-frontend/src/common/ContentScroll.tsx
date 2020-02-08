@@ -69,8 +69,8 @@ export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, i
   return {
     background: `radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
       +`radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
-      +`radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${fade(theme.palette.common.black, 0.125)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%),`
-      +`radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${fade(theme.palette.common.black, 0.125)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%)`,
+      +`radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%),`
+      +`radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%)`,
     overflow: 'hidden',
     [isVertical ? 'overflowY' : 'overflowX']: 'scroll',
     backgroundAttachment: 'local, local, scroll, scroll',

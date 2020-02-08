@@ -14,11 +14,12 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
@@ -218,8 +219,11 @@ public class DynamoElasticUserStore implements UserStore {
                                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                                     .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))))
                             .toArray(TransactWriteItem[]::new)));
-        } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+        } catch (TransactionCanceledException ex) {
+            if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
+                throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+            }
+            throw ex;
         }
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();

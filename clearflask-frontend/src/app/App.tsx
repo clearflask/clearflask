@@ -19,7 +19,6 @@ import randomUuid from '../common/util/uuid';
 import BankPage from './BankPage';
 import AccountPage from './AccountPage';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
-import SsoLogin from './utils/SsoLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import NotificationPage from './NotificationPage';

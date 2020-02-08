@@ -117,23 +117,27 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
 
     var dialogContent;
     if(this.props.isLoggedIn) {
-      dialogContent = [
-        <DialogContent>
-          <DialogContentText>Oops, you are already logged in</DialogContentText>
-        </DialogContent>,
-        <DialogActions>
-          <Button onClick={this.props.onLoggedInAndClose.bind(this)}>Close</Button>
-        </DialogActions>,
-      ];
+      dialogContent = (
+        <React.Fragment>
+          <DialogContent>
+            <DialogContentText>Oops, you are already logged in</DialogContentText>
+          </DialogContent>,
+          <DialogActions>
+            <Button onClick={this.props.onLoggedInAndClose.bind(this)}>Close</Button>
+          </DialogActions>,
+        </React.Fragment>
+      );
     } else if(notifOpts.size === 0) {
-      dialogContent = [
-        <DialogContent>
-          <DialogContentText>Sign ups are currently disabled</DialogContentText>
-        </DialogContent>,
-        <DialogActions>
-          <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
-        </DialogActions>,
-      ];
+      dialogContent = (
+        <React.Fragment>
+          <DialogContent>
+            <DialogContentText>Sign ups are currently disabled</DialogContentText>
+          </DialogContent>,
+          <DialogActions>
+            <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
+          </DialogActions>,
+        </React.Fragment>
+      );
     } else {
       const onlySingleOption = notifOpts.size === 1;
       const singleColumnLayout = this.props.fullScreen || onlySingleOption;
@@ -161,151 +165,153 @@ class LogIn extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         || (selectedNotificationType === NotificationType.Ios && !this.state.notificationDataIos)
         || (selectedNotificationType === NotificationType.Browser && !this.state.notificationDataBrowser));
 
-      dialogContent = [
-        <DialogContent>
-          <div
-            className={this.props.classes.content}
-            style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
-          >
-            <List component="nav" className={this.props.classes.notificationList}>
-              <ListSubheader className={this.props.classes.noWrap} component="div">
-                {onlySingleOption ? "We'll notify you of changes" : 'Get notified of changes'}
-              </ListSubheader>
-              <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
-                <ListItem
-                  // https://github.com/mui-org/material-ui/pull/15049
-                  button={!onlySingleOption as any}
-                  selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
-                  onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
-                  disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
-                >
-                  <ListItemIcon><MobilePushIcon /></ListItemIcon>
-                  <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
-                </ListItem>
-                <Collapse in={onlySingleOptionRequiresAllow}>
-                  <Button className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
-                </Collapse>
-              </Collapse>
-              <Collapse in={notifOpts.has(NotificationType.Browser)}>
-                <ListItem
-                  button={!onlySingleOption as any}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
-                  onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
-                  disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
-                >
-                  <ListItemIcon><WebPushIcon /></ListItemIcon>
-                  <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
-                </ListItem>
-                <Collapse in={onlySingleOptionRequiresAllow}>
-                  <Button className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
-                </Collapse>
-              </Collapse>
-              <Collapse in={notifOpts.has(NotificationType.Email)}>
-                <ListItem 
-                  button={!onlySingleOption as any}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
-                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
-                  disabled={this.state.isSubmitting}
-                >
-                  <ListItemIcon><EmailIcon /></ListItemIcon>
-                  <ListItemText primary='Email' className={this.props.classes.noWrap} />
-                </ListItem>
-              </Collapse>
-              <Collapse in={notifOpts.has(NotificationType.Silent)}>
-                <ListItem
-                  button={!onlySingleOption as any}
-                  selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
-                  onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Silent}) : undefined}
-                  disabled={this.state.isSubmitting}
-                >
-                  <ListItemIcon><SilentIcon /></ListItemIcon>
-                  <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
-                </ListItem>
-              </Collapse>
-            </List>
+      dialogContent = (
+        <React.Fragment>
+          <DialogContent>
             <div
-              className={this.props.classes.accountFieldsContainer} 
-              style={{
-                maxWidth: showAccountFields ? '400px' : '0px',
-                maxHeight: showAccountFields ? '400px' : '0px',
-              }}
+              className={this.props.classes.content}
+              style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
             >
-              {!singleColumnLayout && (<Hr vertical length='25%' />)}
-              <div>
-                <ListSubheader className={this.props.classes.noWrap} component="div">Your information</ListSubheader>
-                {showDisplayNameInput && (
-                  <TextField
-                    fullWidth
-                    required={isDisplayNameRequired}
-                    value={this.state.displayName || ''}
-                    onChange={e => this.setState({displayName: e.target.value})}
-                    label='Display name'
-                    helperText={(<div className={this.props.classes.noWrap}>How others see you</div>)}
-                    margin='normal'
-                    classes={{ root: this.props.classes.noWrap }}
-                    style={{marginTop: '0px'}}
+              <List component="nav" className={this.props.classes.notificationList}>
+                <ListSubheader className={this.props.classes.noWrap} component="div">
+                  {onlySingleOption ? "We'll notify you of changes" : 'Get notified of changes'}
+                </ListSubheader>
+                <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
+                  <ListItem
+                    // https://github.com/mui-org/material-ui/pull/15049
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && (selectedNotificationType === NotificationType.Android || selectedNotificationType === NotificationType.Ios)}
+                    onClick={!onlySingleOption ? this.onClickMobileNotif.bind(this) : undefined}
+                    disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
+                  >
+                    <ListItemIcon><MobilePushIcon /></ListItemIcon>
+                    <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
+                  </ListItem>
+                  <Collapse in={onlySingleOptionRequiresAllow}>
+                    <Button className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
+                  </Collapse>
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Browser)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Browser}
+                    onClick={!onlySingleOption ? this.onClickWebNotif.bind(this) : undefined}
+                    disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
+                  >
+                    <ListItemIcon><WebPushIcon /></ListItemIcon>
+                    <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
+                  </ListItem>
+                  <Collapse in={onlySingleOptionRequiresAllow}>
+                    <Button className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
+                  </Collapse>
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Email)}>
+                  <ListItem 
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Email}
+                    onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Email}) : undefined}
                     disabled={this.state.isSubmitting}
-                  />
-                )}
-                <Collapse in={showEmailInput} unmountOnExit>
-                  <div>
+                  >
+                    <ListItemIcon><EmailIcon /></ListItemIcon>
+                    <ListItemText primary='Email' className={this.props.classes.noWrap} />
+                  </ListItem>
+                </Collapse>
+                <Collapse in={notifOpts.has(NotificationType.Silent)}>
+                  <ListItem
+                    button={!onlySingleOption as any}
+                    selected={!onlySingleOption && selectedNotificationType === NotificationType.Silent}
+                    onClick={!onlySingleOption ? e => this.setState({notificationType: NotificationType.Silent}) : undefined}
+                    disabled={this.state.isSubmitting}
+                  >
+                    <ListItemIcon><SilentIcon /></ListItemIcon>
+                    <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
+                  </ListItem>
+                </Collapse>
+              </List>
+              <div
+                className={this.props.classes.accountFieldsContainer} 
+                style={{
+                  maxWidth: showAccountFields ? '400px' : '0px',
+                  maxHeight: showAccountFields ? '400px' : '0px',
+                }}
+              >
+                {!singleColumnLayout && (<Hr vertical length='25%' />)}
+                <div>
+                  <ListSubheader className={this.props.classes.noWrap} component="div">Your information</ListSubheader>
+                  {showDisplayNameInput && (
                     <TextField
                       fullWidth
-                      required
-                      value={this.state.email || ''}
-                      onChange={e => this.setState({email: e.target.value})}
-                      label='Email'
-                      type='email'
-                      helperText={(<div className={this.props.classes.noWrap}>Where to send you notifications</div>)}
+                      required={isDisplayNameRequired}
+                      value={this.state.displayName || ''}
+                      onChange={e => this.setState({displayName: e.target.value})}
+                      label='Display name'
+                      helperText={(<div className={this.props.classes.noWrap}>How others see you</div>)}
                       margin='normal'
-                      style={{marginTop: showDisplayNameInput ? undefined : '0px'}}
+                      classes={{ root: this.props.classes.noWrap }}
+                      style={{marginTop: '0px'}}
                       disabled={this.state.isSubmitting}
                     />
-                    {showPasswordInput && (
+                  )}
+                  <Collapse in={showEmailInput} unmountOnExit>
+                    <div>
                       <TextField
                         fullWidth
-                        required={isPasswordRequired}
-                        value={this.state.pass || ''}
-                        onChange={e => this.setState({pass: e.target.value})}
-                        label='Password'
-                        helperText={(<div className={this.props.classes.noWrap}>
-                          {isPasswordRequired
-                            ? 'Secure your account'
-                            : 'Optionally secure your account'}
-                        </div>)}
-                        type={this.state.revealPassword ? 'text' : 'password'}
-                        InputProps={{ endAdornment: (
-                          <InputAdornment position='end'>
-                            <IconButton
-                              aria-label='Toggle password visibility'
-                              onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
-                            >
-                              {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                            </IconButton>
-                          </InputAdornment>
-                        )}}
+                        required
+                        value={this.state.email || ''}
+                        onChange={e => this.setState({email: e.target.value})}
+                        label='Email'
+                        type='email'
+                        helperText={(<div className={this.props.classes.noWrap}>Where to send you notifications</div>)}
                         margin='normal'
+                        style={{marginTop: showDisplayNameInput ? undefined : '0px'}}
                         disabled={this.state.isSubmitting}
                       />
-                    )}
-                  </div>
-                </Collapse>
+                      {showPasswordInput && (
+                        <TextField
+                          fullWidth
+                          required={isPasswordRequired}
+                          value={this.state.pass || ''}
+                          onChange={e => this.setState({pass: e.target.value})}
+                          label='Password'
+                          helperText={(<div className={this.props.classes.noWrap}>
+                            {isPasswordRequired
+                              ? 'Secure your account'
+                              : 'Optionally secure your account'}
+                          </div>)}
+                          type={this.state.revealPassword ? 'text' : 'password'}
+                          InputProps={{ endAdornment: (
+                            <InputAdornment position='end'>
+                              <IconButton
+                                aria-label='Toggle password visibility'
+                                onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
+                              >
+                                {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                              </IconButton>
+                            </InputAdornment>
+                          )}}
+                          margin='normal'
+                          disabled={this.state.isSubmitting}
+                        />
+                      )}
+                    </div>
+                  </Collapse>
+                </div>
               </div>
             </div>
-          </div>
-        </DialogContent>,
-        <DialogActions>
-          <Button
-            onClick={this.props.onClose.bind(this)}
-            disabled={this.state.isSubmitting}
-          >Cancel</Button>
-          <Button
-            color='primary'
-            disabled={!isSubmittable || this.state.isSubmitting}
-            onClick={this.onSubmit.bind(this)}
-          >Continue</Button>
-        </DialogActions>,
-      ];
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={this.props.onClose.bind(this)}
+              disabled={this.state.isSubmitting}
+            >Cancel</Button>
+            <Button
+              color='primary'
+              disabled={!isSubmittable || this.state.isSubmitting}
+              onClick={this.onSubmit.bind(this)}
+            >Continue</Button>
+          </DialogActions>
+        </React.Fragment>
+      );
     }
     
     return (

@@ -157,9 +157,9 @@ function reducerProjectId(projectId:string = 'unknown', action:Client.Actions):s
   switch (action.type) {
     // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
     case 'configGetAdmin_FULFILLED' as any:
-      return (action as any).payload.config.config.projectId;
+      return (action as any).payload.config.projectId || projectId;
     case Client.configGetAndUserBindActionStatus.Fulfilled:
-      return action.payload.config.config.projectId;
+      return action.payload.config.config.projectId || projectId;
     default:
       return projectId;
   }

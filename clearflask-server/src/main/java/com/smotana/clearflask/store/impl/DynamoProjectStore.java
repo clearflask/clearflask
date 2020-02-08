@@ -8,10 +8,12 @@ import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -200,8 +202,11 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                             .withItem(projectSchema.toAttrMap(projectModel))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
                             .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName())))));
-        } catch (ConditionalCheckFailedException ex) {
-            throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
+        } catch (TransactionCanceledException ex) {
+            if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
+                throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
+            }
+            throw ex;
         }
         ProjectImpl project = new ProjectImpl(projectModel);
         projectCache.put(projectId, Optional.of(project));

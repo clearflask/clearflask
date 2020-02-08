@@ -638,23 +638,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       expressionsToAdd.forEach(expression => {
         const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
         idea.expressionsValue! += weight;
-        var ideaExpression = idea.expressions.find(e => e.display === expression);
-        if(!ideaExpression) {
-          ideaExpression = { display: expression, count: 1};
-          idea.expressions.push(ideaExpression);
-        } else {
-          ideaExpression.count++;
-        }
+        idea.expressions[expression] = (idea.expressions[expression] || 0) + 1
       })
       expressionsToRemove.forEach(expression => {
         const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
         idea.expressionsValue! -= weight;
-        var ideaExpression = idea.expressions.find(e => e.display === expression);
-        if(ideaExpression) {
-          ideaExpression.count--;
-        }
+        idea.expressions[expression] = (idea.expressions[expression] || 0) - 1
+        if(idea.expressions[expression] <= 0) delete idea.expressions[expression];
       })
-      idea.expressions.sort((l,r) => r.count - l.count);
       vote.expression = Array.from(expressionsSet);
     }
     return this.returnLater({
@@ -765,7 +756,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async returnLater<T>(returnValue:T):Promise<T> {
-    console.log('Server SEND:', returnValue);
+    // console.log('Server SEND:', returnValue);
     await this.waitLatency();
     return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
   }
