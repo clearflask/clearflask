@@ -41,13 +41,14 @@ class WorkflowPreview extends Component<Props> {
     for(var i = 0; i < statusCount; i++) {
       const name = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'name']) as ConfigEditor.StringProperty).value;
       const statusId = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value;
-      // TODO use color
       const color = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
       const nextStatusIds = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
+      const isStart = statusId === entryStatusId;
       data.push({data:{
         id: statusId,
         label: name,
         color: color,
+        type: isStart ? 'circle' : 'round-rectangle',
       }});
       nextStatusIds && nextStatusIds.forEach(nextStatusId => data.push({data:{
         source: statusId,
@@ -74,16 +75,25 @@ class WorkflowPreview extends Component<Props> {
             style: {
               'label': 'data(label)',
               'font-size': 12,
-              'background-color': 'data(color)',
+              'background-color': 'white',
+              'color': 'data(color)',
+              'shape': 'data(type)',
+              'border-width': 2,
+              'border-color': '#eee',
+              'content': 'data(label)',
+              'width': '100',
+              'height': '30',
+              'text-valign': 'center',
+              'text-halign': 'center',
             }
           },{
             selector: 'edge',
             style: {
-              'width': 3,
-              'line-color': '#999',
-              'target-arrow-color': '#999',
+              'width': 2,
+              'line-color': '#eee',
+              'target-arrow-color': '#eee',
               'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier',
+              'curve-style': 'unbundled-bezier',
             }
           }]}
         />
