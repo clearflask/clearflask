@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { ListProps } from '@material-ui/core/List';
 import Select from 'react-select';
-import CreatableSelect from 'react-select/lib/Creatable';
+import CreatableSelect, { Props as SelectProps } from 'react-select/lib/Creatable';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
@@ -11,7 +11,7 @@ import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
 import { FormHelperText } from '@material-ui/core';
 import { SelectComponents, components } from 'react-select/lib/components';
-import { ActionMeta } from 'react-select/lib/types';
+import { ActionMeta, InputActionMeta } from 'react-select/lib/types';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme:Theme) => createStyles({
@@ -49,6 +49,7 @@ export type ColorLookup = { [value:string]: string; }
 
 interface Props extends ListProps, WithStyles<typeof styles, true> {
   classes; // conflict
+  className?:string;
   label?:string;
   helperText?:string;
   placeholder?:string;
@@ -63,14 +64,16 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   inputMinWidth?:string;
   overrideComponents?:Partial<SelectComponents<Label>>;
   formatCreateLabel?:(input:string)=>string;
+  onInputChange?:(newValue: string, actionMeta: InputActionMeta) => void;
   onValueChange:(labels:Label[], action: ActionMeta)=>void;
   onValueCreate?:(name:string)=>void;
 }
 
 class SelectionPicker extends Component<Props> {
   render() {
-    const selectComponentProps = {
-      options: this.props.options,
+    const selectComponentProps:SelectProps<Label> = {
+      options: this.props.options || [],
+      openOnFocus: true,
       components: {
         IndicatorSeparator: () => null,
         Control,
@@ -87,17 +90,27 @@ class SelectionPicker extends Component<Props> {
         ...this.props.overrideComponents,
       },
       commonProps: this.props,
-      value: this.props.value,
-      onChange: (value, action) => this.props.onValueChange(this.props.isMulti ? value : (value ? [value] : []), action),
+      value: this.props.value || [],
+      onChange: (value, action) => {
+        if(this.props.isMulti) {
+          this.props.onValueChange((value || []) as Label[], action);
+        } else {
+          this.props.onValueChange((value ? [value] : []) as Label[], action);
+        }
+      },
+      onInputChange: !!this.props.onInputChange ? (newValue, actionMeta) => {
+        this.props.onInputChange!(newValue, actionMeta);
+        // Prevent returning any value here as it updates inputValue without documentation
+      } : undefined,
       placeholder: this.props.placeholder || '',
-      isMulti: this.props.isMulti,
+      isMulti: !!this.props.isMulti,
       isClearable: true,
       error: !!this.props.errorMsg,
       onCreateOption: this.props.onValueCreate,
       formatCreateLabel: this.props.onValueCreate ? this.props.formatCreateLabel : undefined,
     };
     return (
-      <div>
+      <div className={this.props.className}>
         {this.props.onValueCreate
           ? (<CreatableSelect<Label> {...selectComponentProps} />)
           : (<Select<Label> {...selectComponentProps} />)}

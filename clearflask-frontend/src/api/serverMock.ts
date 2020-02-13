@@ -512,7 +512,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
-    throw new Error("Method not implemented.");
+    return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
+      .filter(user => !request.userSearchAdmin.searchText
+        || user.name && user.name.indexOf(request.userSearchAdmin.searchText) >= 0
+        || user.email && user.email.indexOf(request.userSearchAdmin.searchText) >= 0)
+      , this.DEFAULT_LIMIT, request.cursor));
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
     const user = this.getImmutable(

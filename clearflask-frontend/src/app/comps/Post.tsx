@@ -319,6 +319,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
   }
 
   render() {
+    if(!this.props.idea) return (
+      <Loader loaded={false}>
+      </Loader>
+    );
+
     var forceExpand = false;
     if(this.expandedPath) {
       if(this.expandedPath !== Post.expandedPath) {

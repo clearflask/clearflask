@@ -68,7 +68,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
       <div className={this.props.classes.container} style={this.props.style}>
         <div className={this.props.classes.selection}>
           <SelectionPicker
-            label='Filter'
+            label='Search'
             value={controls.values}
             options={controls.options}
             colorLookup={controls.colorLookup}

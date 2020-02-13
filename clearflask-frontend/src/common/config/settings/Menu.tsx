@@ -30,6 +30,16 @@ const styles = (theme:Theme) => createStyles({
   badgeDot: {
     backgroundColor: theme.palette.text.primary,
   },
+  childrenContainer: {
+    position: 'relative',
+  },
+  childrenPadder: {
+    marginLeft: 16,
+    height: '100%',
+    padding: '1px',
+    position: 'absolute',
+    borderRight: '1px solid rgba(224, 224, 224, 0.3)',
+  },
 });
 
 interface Props extends ListProps {
@@ -108,12 +118,13 @@ class MenuPageWithoutStyle extends Component<PropsPage&WithStyles<typeof styles,
 
   render() {
     const expanded = this.isExpanded(this.props.page.path);
+    const padding = Menu.paddingForLevel(1, this.props.page.path);
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
         <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
           this.props.pageClicked(this.props.page.path);
         }}>
-          <ListItemText style={Menu.paddingForLevel(1, this.props.page.path)} primary={(
+          <ListItemText style={padding} primary={(
             <React.Fragment>
               {this.props.page.getDynamicName()}
               <Badge
@@ -176,7 +187,7 @@ interface PropsPageGroup {
   pageClicked:(path:ConfigEditor.Path)=>void;
 }
 
-class MenuPageGroup extends Component<PropsPageGroup> {
+class MenuPageGroupWithoutStyle extends Component<PropsPageGroup&WithStyles<typeof styles, true>> {
   unsubscribe?:()=>void;
 
   componentDidMount() {
@@ -189,19 +200,24 @@ class MenuPageGroup extends Component<PropsPageGroup> {
 
   render() {
     const childPages = this.props.pageGroup.getChildPages();
+    const padding = Menu.paddingForLevel(1, this.props.pageGroup.path);
     return (
       <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
         <div>
           <ListItem disabled>
             <ListItemText
-              style={Menu.paddingForLevel(1, this.props.pageGroup.path)}
+              style={padding}
               primary={this.props.pageGroup.name} />
           </ListItem>
-          {childPages.map(childPage =>
-            <MenuPage {...this.props} key={childPage.key} page={childPage} />
-          )}
+          <div className={this.props.classes.childrenContainer}>
+            <div className={this.props.classes.childrenPadder} style={padding} />
+            {childPages.map(childPage =>
+              <MenuPage {...this.props} key={childPage.key} page={childPage} />
+            )}
+          </div>
         </div>
       </Collapse>
     );
   }
 }
+const MenuPageGroup = withStyles(styles, { withTheme: true })(MenuPageGroupWithoutStyle);

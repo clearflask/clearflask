@@ -1,12 +1,11 @@
 import React, { Component } from 'react';
-import { match, Route, RouteComponentProps } from 'react-router';
-import { History, Location } from 'history';
+import { Route, RouteComponentProps } from 'react-router';
 import LandingPage from './LandingPage';
 import { Slide, AppBar, Container, Toolbar, Typography, Button, Link } from '@material-ui/core';
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import DemoApp, { getProject, Project } from './DemoApp';
+import { getProject, Project } from './DemoApp';
 import Promised from '../common/Promised';
 import App from '../app/App';
 import PricingPage from './PricingPage';

@@ -16,11 +16,14 @@ import { connect } from 'react-redux';
 import { Status } from '../api/server';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import LoadingPage from '../app/LoadingPage';
+import PostsPage from './dashboard/PostsPage';
+import BasePage from '../app/BasePage';
 
 interface Props {
 }
 interface ConnectProps {
-  isLoggedIn?:boolean;
+  accountStatus?:Status;
+  account?:AdminClient.AccountAdmin;
   configsStatus?:Status;
   configs?:AdminClient.VersionedConfigAdmin[];
 }
@@ -35,7 +38,11 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
   constructor(props) {
     super(props);
 
-    if(props.isLoggedIn && !props.configsStatus) {
+    if(props.accountStatus === undefined) {
+      ServerAdmin.get().dispatchAdmin()
+        .then(d => d.accountBindAdmin()
+        .then(result => {if(result.account) d.configGetAllAdmin()}));
+    } else if(props.accountStatus === Status.FULFILLED && !props.configsStatus) {
       ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
     }
 
@@ -47,7 +54,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
   }
 
   render() {
-    if(!this.props.isLoggedIn) {
+    if(this.props.accountStatus === Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
         pathname: "/login",
         state: {ADMIN_LOGIN_REDIRECT_TO: this.props.location}
@@ -75,13 +82,29 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         page = (<div>This is home</div>);
         crumbs = [{name: 'Home', slug: activePath}];
         break;
-      case 'projects':
-        page = (<div>This is projects</div>);
-        crumbs = [{name: 'Projects', slug: activePath}];
+      case 'posts':
+        page = (<BasePage><PostsPage /></BasePage>);
+        crumbs = [{name: 'Posts', slug: activePath}];
+        break;
+      case 'comments':
+        page = (<div>This is comments</div>);
+        crumbs = [{name: 'Comments', slug: activePath}];
+        break;
+      case 'users':
+        page = (<div>This is users</div>);
+        crumbs = [{name: 'Users', slug: activePath}];
         break;
       case 'billing':
         page = (<div>This is billing</div>);
         crumbs = [{name: 'Billing', slug: activePath}];
+        break;
+      case 'account':
+        page = (<div>This is account settings</div>);
+        crumbs = [{name: 'Settings', slug: activePath}];
+        break;
+      case 'create':
+        page = (<div>This is create</div>);
+        crumbs = [{name: 'Create', slug: activePath}];
         break;
       default:
         if(activeProject === undefined) {
@@ -156,10 +179,11 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
              */
             items={[
               { type: 'item', slug: '', name: 'Home' },
-              { type: 'heading', text: 'Account' },
-              { type: 'item', slug: 'projects', name: 'Projects', offset: 1 },
-              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 },
-              { type: 'heading', text: 'Project' },
+              { type: 'heading', text: 'Explore' },
+              { type: 'item', slug: 'posts', name: 'Posts', offset: 1 },
+              { type: 'item', slug: 'comments', name: 'Comments', offset: 1 },
+              { type: 'item', slug: 'users', name: 'Users', offset: 1 },
+              { type: 'heading', text: 'Config' },
               ...(projects.map(project => {
                 const menuProject:MenuProject = {
                   type: 'project',
@@ -169,17 +193,14 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
                 };
                 return menuProject;
               })),
-              { type: 'item', offset: 1, name: (
-                  <span style={{display: 'flex', alignItems: 'center'}}>
-                    <AddIcon fontSize='inherit' />
-                    &nbsp;
-                    Create
-                  </span>
-                ), onClick: () => {
-                  ServerAdmin.get().dispatchAdmin().then(d => {
-                    d.projectCreateAdmin({ projectId: 'project-' + randomUuid().substring(0,6) });
-                  });
-              } },
+              { type: 'item', slug: 'create', name: (
+                <span style={{display: 'flex', alignItems: 'center'}}>
+                  <AddIcon fontSize='inherit' />&nbsp;Create
+                </span>
+                ), offset: 1 },
+              { type: 'heading', text: 'Account' },
+              { type: 'item', slug: 'account', name: 'Settings', offset: 1 },
+              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 },
             ]}
             activePath={activePath}
             activeSubPath={activeSubPath}
@@ -226,7 +247,8 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
 
 export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
   const connectProps:ConnectProps = {
-    isLoggedIn: state.account.account.status === Status.FULFILLED,
+    accountStatus: state.account.account.status,
+    account: state.account.account.account,
     configsStatus: state.configs.configs.status,
     configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
   };

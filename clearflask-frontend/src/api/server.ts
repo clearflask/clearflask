@@ -153,10 +153,9 @@ export const getTransactionSearchKey = (search:Client.TransactionSearch):string 
   ].join('-');
 }
 
-function reducerProjectId(projectId:string = 'unknown', action:Client.Actions):string {
+function reducerProjectId(projectId:string = 'unknown', action:Client.Actions|Admin.Actions):string {
   switch (action.type) {
-    // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
-    case 'configGetAdmin_FULFILLED' as any:
+    case Admin.configGetAdminActionStatus.Fulfilled:
       return (action as any).payload.config.projectId || projectId;
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return action.payload.config.config.projectId || projectId;
@@ -170,12 +169,11 @@ export interface StateConf {
   conf?:Client.Config;
   ver?:string;
 }
-function reducerConf(state:StateConf = {}, action:Client.Actions):StateConf {
+function reducerConf(state:StateConf = {}, action:Client.Actions|Admin.Actions):StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
-    // Quick hack to use Admin functionality without importing admin library to keep ourselves thin
-    case 'configGetAdmin_FULFILLED' as any:
+    case Admin.configGetAdminActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
         conf: (action as any).payload.config,
@@ -212,7 +210,7 @@ const stateIdeasDefault = {
   bySearch: {},
   maxFundAmountSeen: 0,
 };
-function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions):StateIdeas {
+function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions|Admin.Actions):StateIdeas {
   var searchKey;
   switch (action.type) {
     case Client.ideaGetActionStatus.Pending:
@@ -231,6 +229,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           [action.meta.request.ideaId]: { status: Status.REJECTED }
         }
       };
+    case Admin.ideaCreateAdminActionStatus.Fulfilled:
     case Client.ideaCreateActionStatus.Fulfilled:
     case Client.ideaGetActionStatus.Fulfilled:
       return {
@@ -408,7 +407,7 @@ const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
 };
-function reducerComments(state:StateComments = stateCommentsDefault, action:Client.Actions):StateComments {
+function reducerComments(state:StateComments = stateCommentsDefault, action:Client.Actions|Admin.Actions):StateComments {
   switch (action.type) {
     case Client.commentListActionStatus.Pending:
       return {
@@ -528,7 +527,7 @@ const stateUsersDefault = {
   byId: {},
   loggedIn: {},
 };
-function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Actions):StateUsers {
+function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Actions|Admin.Actions):StateUsers {
   switch (action.type) {
     case Client.userGetActionStatus.Pending:
       return {
@@ -634,7 +633,7 @@ const stateVotesDefault = {
   expressionByIdeaId: {},
   fundAmountByIdeaId: {},
 };
-function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Actions):StateVotes {
+function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Actions|Admin.Actions):StateVotes {
   switch (action.type) {
     case Client.voteGetOwnActionStatus.Pending:
       return {
@@ -854,7 +853,7 @@ const stateCreditsDefault = {
   transactionSearch: {},
   myBalance: {},
 };
-function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.Actions):StateCredits {
+function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.Actions|Admin.Actions):StateCredits {
   switch (action.type) {
     case Client.transactionSearchActionStatus.Pending:
       return {
@@ -947,7 +946,7 @@ export interface StateNotifications {
 const stateNotificationsDefault = {
   notificationSearch: {},
 };
-function reducerNotifications(state:StateNotifications = stateNotificationsDefault, action:Client.Actions):StateNotifications {
+function reducerNotifications(state:StateNotifications = stateNotificationsDefault, action:Client.Actions|Admin.Actions):StateNotifications {
   switch (action.type) {
     case Client.notificationSearchActionStatus.Pending:
       return {

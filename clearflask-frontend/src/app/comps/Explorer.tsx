@@ -1,16 +1,19 @@
 import React, { Component } from 'react';
-import { Server, getSearchKey, ReduxState, Status } from '../../api/server';
+import { Server, getSearchKey, ReduxState } from '../../api/server';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import * as Client from '../../api/client';
+import * as Admin from '../../api/admin';
 import Panel, { Direction } from './Panel';
-import { Typography, TextField, Divider, Grow, Button, Select, MenuItem, FormControl, FormHelperText } from '@material-ui/core';
+import { Typography, TextField, Grow, Button, Select, MenuItem, FormControl, FormHelperText } from '@material-ui/core';
 import DividerCorner from '../utils/DividerCorner';
 import { connect } from 'react-redux';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 import LogIn from './LogIn';
 import debounce from '../../common/util/debounce';
-import { withRouter, RouteComponentProps, matchPath } from 'react-router';
+import { withRouter, RouteComponentProps } from 'react-router';
+import UserSelection from '../../site/dashboard/UserSelection';
+import ServerAdmin from '../../api/serverAdmin';
 
 enum FilterType {
   Search = 'search',
@@ -102,6 +105,7 @@ interface ConnectProps {
 interface State {
   newItemTitle?:string;
   newItemDescription?:string;
+  newItemAuthorLabel?:Label;
   newItemChosenCategoryId?:string;
   newItemChosenTagIds?:string[];
   newItemSearchText?:string;
@@ -217,7 +221,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           {create}
         </div>
         <div className={this.props.classes.results}>
-          <DividerCorner width='320px' height={this.props.explorer.allowCreate ? '320px' : '80px'}>
+          <DividerCorner width='320px' height={!!create ? '320px' : '80px'}>
             <div className={this.props.classes.resultsInner}>
               {content}
             </div>
@@ -243,10 +247,9 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
       <div className={this.props.classes.createFormFields} style={{
-        width: expand ? '364px': '100px',
+        width: expand ? '364px': '50px',
         maxWidth: '100vw',
       }}>
-        {/* <Typography variant='overline' className={this.props.classes.caption}>Create</Typography> */}
         <TextField
           id='createTitle'
           disabled={this.state.newItemIsSubmitting}
@@ -294,6 +297,14 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               }}
               multiline
             />
+            {ServerAdmin.get().isAdminLoggedIn() && (
+              <UserSelection
+                server={this.props.server}
+                className={this.props.classes.createFormField}
+                disabled={this.state.newItemIsSubmitting}
+                onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
+              />
+            )}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -394,7 +405,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
   }
 
   createClickSubmit(mandatoryTagIds:string[]) {
-    if(this.props.loggedInUserId) {
+    if(!!this.state.newItemAuthorLabel || !!this.props.loggedInUserId) {
       this.createSubmit(mandatoryTagIds);
     } else {
       // open log in page, submit on success
@@ -404,16 +415,31 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
 
   createSubmit(mandatoryTagIds:string[]) {
     this.setState({newItemIsSubmitting: true});
-    this.props.server.dispatch().ideaCreate({
-      projectId: this.props.server.getProjectId(),
-      ideaCreate: {
-        authorUserId: this.props.loggedInUserId!,
-        title: this.state.newItemTitle!,
-        description: this.state.newItemDescription,
-        categoryId: this.state.newItemChosenCategoryId!,
-        tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
-      },
-    }).then(idea => {
+    var createPromise:Promise<Client.Idea|Admin.Idea>;
+    if(!!this.state.newItemAuthorLabel) {
+      createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
+        projectId: this.props.server.getProjectId(),
+        ideaCreateAdmin: {
+          authorUserId: this.state.newItemAuthorLabel!.value,
+          title: this.state.newItemTitle!,
+          description: this.state.newItemDescription,
+          categoryId: this.state.newItemChosenCategoryId!,
+          tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
+        },
+      }))
+    } else {
+      createPromise = this.props.server.dispatch().ideaCreate({
+        projectId: this.props.server.getProjectId(),
+        ideaCreate: {
+          authorUserId: this.props.loggedInUserId!,
+          title: this.state.newItemTitle!,
+          description: this.state.newItemDescription,
+          categoryId: this.state.newItemChosenCategoryId!,
+          tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
+        },
+      })
+    }
+    createPromise.then(idea => {
       this.setState({
         newItemTitle: undefined,
         newItemDescription: undefined,
@@ -485,8 +511,13 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {return {
-  configver: state.conf.ver, // force rerender on config change
-  config: state.conf.conf,
-  loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
-}}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(Explorer)));
+export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
+  if(!state.conf.conf && !state.conf.status) {
+    ownProps.server.dispatch().configGetAndUserBind({projectId: ownProps.server.getProjectId()});
+  }
+  return {
+    configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
+    loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
+  }
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(Explorer)));

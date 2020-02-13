@@ -4,9 +4,14 @@ import { Typography, Paper, Button, withStyles, Theme, createStyles, WithStyles 
 import Templater from '../configTemplater';
 
 const styles = (theme: Theme) => createStyles({
+  container: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+  },
   widget: {
     padding: theme.spacing(2),
-    margin: theme.spacing(1),
+    margin: theme.spacing(2,2,2,0),
     flex: '1 1 150px',
     minWidth: '150px',
     maxWidth: '250px',
@@ -73,11 +78,7 @@ class PresetWidget extends Component<Props> {
     }
 
     return (
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'baseline'
-      }}>
+      <div className={this.props.classes.container}>
         {presets.map(preset => (
           <div className={this.props.classes.widget}>
             <Typography variant='h5'>{preset.title}</Typography>

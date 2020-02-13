@@ -52,7 +52,7 @@
     "redux": "4.0.1",
     "redux-promise-middleware": "6.1.0",
     "redux-thunk": "2.3.0",
-    "typescript": "3.5.2"
+    "typescript": "3.7.5"
   },
   "scripts": {
     "start": "react-scripts start",
