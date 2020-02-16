@@ -18,6 +18,7 @@ import LogoutIcon from '../common/icon/LogoutIcon';
 import LoadingPage from '../app/LoadingPage';
 import PostsPage from './dashboard/PostsPage';
 import BasePage from '../app/BasePage';
+import CreatePage from './dashboard/CreatePage';
 
 interface Props {
 }
@@ -30,6 +31,7 @@ interface ConnectProps {
 
 interface State {
   currentPagePath:ConfigEditor.Path;
+  binding?:boolean;
 }
 
 class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State> {
@@ -39,14 +41,22 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
     super(props);
 
     if(props.accountStatus === undefined) {
+      this.state = {
+        currentPagePath: [],
+        binding: true,
+      };
       ServerAdmin.get().dispatchAdmin()
         .then(d => d.accountBindAdmin()
-        .then(result => {if(result.account) d.configGetAllAdmin()}));
+        .then(result => {
+          this.setState({binding: false})
+          if(result.account) d.configGetAllAdmin()
+        }));
     } else if(props.accountStatus === Status.FULFILLED && !props.configsStatus) {
+      this.state = {
+        currentPagePath: [],
+      };
       ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
     }
-
-    this.state = {currentPagePath: []};
   }
 
   componentWillUnmount() {
@@ -54,7 +64,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
   }
 
   render() {
-    if(this.props.accountStatus === Status.FULFILLED && !this.props.account) {
+    if(!this.state.binding && this.props.accountStatus !== Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
         pathname: "/login",
         state: {ADMIN_LOGIN_REDIRECT_TO: this.props.location}
@@ -103,7 +113,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         crumbs = [{name: 'Settings', slug: activePath}];
         break;
       case 'create':
-        page = (<div>This is create</div>);
+        page = (<CreatePage />);
         crumbs = [{name: 'Create', slug: activePath}];
         break;
       default:
