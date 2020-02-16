@@ -728,7 +728,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               }
             }}
             disableRestoreFocus
-            action={actions => this.fundingPopoverActions = actions}
+            action={actions => this.fundingPopoverActions = actions || undefined}
           >
             <FundingControl
               server={this.props.server}

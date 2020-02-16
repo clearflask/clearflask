@@ -1,8 +1,5 @@
 import React from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { ThemeStyle } from '@material-ui/core/styles/createTypography';
-import GradientFade from './GradientFade';
-import { fade } from '@material-ui/core/styles/colorManipulator';
 import { Button, IconButton, Typography, Divider } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import NotificationIcon from '@material-ui/icons/Notifications';

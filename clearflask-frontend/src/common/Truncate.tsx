@@ -1,7 +1,7 @@
 import React from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { ThemeStyle } from '@material-ui/core/styles/createTypography';
 import GradientFade from './GradientFade';
+import { Variant } from '@material-ui/core/styles/createTypography';
 
 const styles = (theme:Theme) => createStyles({
   content: {
@@ -9,7 +9,7 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  variant:ThemeStyle;
+  variant:Variant;
   lines?:number;
   isPaper?:boolean;
 }

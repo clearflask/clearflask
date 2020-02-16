@@ -93,7 +93,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                     newSearch = child; // child is "Search '...'" option
                   } else {
                     const type = this.getType(child.props.data);
-                    const columns = FilterTypes.has(type) ? baseColumns : tagColumns;
+                    const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
                     if(!columns[type]) columns[type] = [];
                     columns[type].push(child);
                   }

@@ -71,7 +71,6 @@ class Message extends Component<Props> {
             <CloseIcon style={this.styles.icon} />
           </IconButton>
         ) : undefined}
-        {...this.props}
       />
     );
   }

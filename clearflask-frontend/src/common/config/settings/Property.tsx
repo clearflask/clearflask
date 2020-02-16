@@ -59,8 +59,10 @@ export default class Property extends Component<Props> {
                     placeholder='#000'
                     defaultValue={prop.defaultValue}
                     value={prop.value || ''}
-                    onChange={color => prop.set(color)}
-                    TextFieldProps={{
+                    onChange={color => (prop as ConfigEditor.StringProperty).set(color)}
+                    error={!!prop.errorMsg}
+                    // Undocumented typescript definition
+                    {...{['TextFieldProps']:{
                       // Hack to modify material-ui-color-picker to fix bug
                       // where a click inside the empty space inside the
                       // picker would dismiss the picker.
@@ -84,8 +86,7 @@ export default class Property extends Component<Props> {
                         },
                         error: !!prop.errorMsg,
                       }
-                    }}
-                    error={!!prop.errorMsg}
+                    }}}
                   />
                 </div>
                 {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}

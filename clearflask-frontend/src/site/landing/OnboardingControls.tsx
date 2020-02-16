@@ -96,8 +96,7 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
         </ToggleButtonGroup>
         <Typography variant='caption' display='block'>Signup methods</Typography>
         <ToggleButtonGroup
-          {...{size:'small'}}
-          selected
+          size='small'
           value={this.state.signupMethods}
           className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {

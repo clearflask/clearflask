@@ -4,10 +4,9 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import { connect } from 'react-redux';
 import { ReduxState, Server, Status, getSearchKey } from '../../api/server';
 import FundingBar from './FundingBar';
-import { Typography, Button } from '@material-ui/core';
+import { Typography, Button, Slider } from '@material-ui/core';
 import Loader from '../utils/Loader';
 import Truncate from 'react-truncate';
-import { Slider } from '@material-ui/lab';
 import CreditView from '../../common/config/CreditView';
 import { withRouter, RouteComponentProps } from 'react-router';
 import minmax from '../../common/util/mathutil';
@@ -174,7 +173,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           step={step}
           value={value}
           onChange={(e, val) => {
-            const newFundAmount = this.sticky(val, min, max, target, fundAmount, idea && idea.funded, idea.fundGoal ? idea.fundGoal : undefined);
+            const newFundAmount = this.sticky(val as any as number, min, max, target, fundAmount, idea && idea.funded, idea.fundGoal ? idea.fundGoal : undefined);
             const fundAmountDiff = newFundAmount - fundAmount;
             this.setState({
               sliderFundAmountDiff: fundAmountDiff,
@@ -215,10 +214,10 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             }));
           }}
           classes={{
-            container: this.props.classes.slider,
+            // container: this.props.classes.slider,
             thumb: transitionClassName,
-            trackBefore: transitionClassName,
-            trackAfter: transitionClassName,
+            // trackBefore: transitionClassName,
+            track: transitionClassName,
             ...{ // Typescript definition doesn't expose the thumbWrapper
               thumbWrapper: transitionClassName,
             }

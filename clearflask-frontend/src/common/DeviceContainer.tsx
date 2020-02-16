@@ -1,9 +1,5 @@
 import React from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { ThemeStyle } from '@material-ui/core/styles/createTypography';
-import GradientFade from './GradientFade';
-import { fade } from '@material-ui/core/styles/colorManipulator';
-import { borderRadius } from 'react-select/lib/theme';
 
 export enum Device {
   Desktop = 'desktop',
