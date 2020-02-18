@@ -183,13 +183,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
               } : {}),
             });
           }}
-          onDragStart={e => {
-            this.setState({
-              sliderCurrentIdeaId: idea.ideaId,
-              fixedTarget: this.state.maxTarget,
-            });
-          }}
-          onDragEnd={e => {
+          onChangeCommitted={e => {
             const sliderFundAmountDiff = this.state.sliderFundAmountDiff;
             if(sliderFundAmountDiff === undefined || sliderFundAmountDiff === 0) {
               this.setState({
@@ -214,13 +208,9 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             }));
           }}
           classes={{
-            // container: this.props.classes.slider,
             thumb: transitionClassName,
-            // trackBefore: transitionClassName,
             track: transitionClassName,
-            ...{ // Typescript definition doesn't expose the thumbWrapper
-              thumbWrapper: transitionClassName,
-            }
+            root: transitionClassName,
           }}
         />
         <div style={{

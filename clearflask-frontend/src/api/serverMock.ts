@@ -80,7 +80,7 @@ interface VoteWithAuthorAndIdeaId extends Admin.Vote {
 class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   static instance:ServerMock|undefined;
   
-  readonly BASE_LATENCY = 300;
+  readonly BASE_LATENCY = 1000;
   readonly DEFAULT_LIMIT = 10;
   hasLatency:boolean = false;
   
@@ -239,7 +239,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaCreate(request: Client.IdeaCreateRequest): Promise<Client.Idea> {
     return this.ideaCreateAdmin({
       projectId: request.projectId,
-      ideaCreateAdmin: request.ideaCreate,
+      ideaCreateAdmin: {
+        ...request.ideaCreate,
+        statusId: this.getProject(request.projectId).config.config.content.categories
+          .find(c => c.categoryId === request.ideaCreate.categoryId)!.workflow.entryStatus
+      },
     });
   }
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
@@ -449,6 +453,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       childCommentCount: 0,
       authorName: author.name,
       ...(request.ideaCreateAdmin),
+      statusId: request.ideaCreateAdmin.statusId
+        ? request.ideaCreateAdmin.statusId
+        : this.getProject(request.projectId).config.config.content.categories
+            .find(c => c.categoryId === request.ideaCreateAdmin.categoryId)!.workflow.entryStatus
     };
     this.getProject(request.projectId).ideas.push(idea);
     return this.returnLater(idea);
@@ -479,11 +487,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
-    if(this.getProject(request.projectId).config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
+    if(request.versionLast !== undefined && this.getProject(request.projectId).config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
     this.getProject(request.projectId).config = { config: request.configAdmin, version: randomUuid() };
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
+    this.getProject(request.projectId).config.config = request.configAdmin;
     return this.returnLater({
       projectId: request.projectId,
       config: this.getProject(request.projectId).config,
@@ -694,6 +703,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       const editor = new ConfigEditor.EditorImpl();
       editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
       editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
+      editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);
       project = {
         config: {config: editor.getConfig(), version: randomUuid()},
         comments: [],

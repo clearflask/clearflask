@@ -25,23 +25,25 @@ export function getProject(
   projectId:string = randomUuid(),
 ):Promise<Project> {
   const server = new Server(projectId, ServerMock.get());
+  const editor = new ConfigEditor.EditorImpl();
+  const templater = Templater.get(editor);
+  template && template(templater);
   return server.dispatchAdmin()
-    .then(d => d.projectCreateAdmin({projectId: projectId})
-      .then(project =>{
-        const editor = new ConfigEditor.EditorImpl(project.config.config);
-        const templater = Templater.get(editor);
-        template && template(templater);
-        server.subscribeToChanges(editor);
-        return d.configSetAdmin({
-          projectId: projectId,
-          versionLast: project.config.version,
-          configAdmin: editor.getConfig(),
-        })
-        .then(() => mock && mock(DataMock.get(projectId)))
-        .then(() => server.dispatch().configGetAndUserBind({projectId: projectId}))
-        .then(() => ({server, templater, editor}));
+    .then(d => d.projectCreateAdmin({
+      projectId: projectId,
+      configAdmin: editor.getConfig(),
+    })
+    .then(project =>{
+      server.subscribeToChanges(editor);
+      return d.configSetAdmin({
+        projectId: projectId,
+        versionLast: project.config.version,
+        configAdmin: editor.getConfig(),
       })
-    );
+      .then(() => mock && mock(DataMock.get(projectId)))
+      .then(() => server.dispatch().configGetAndUserBind({projectId: projectId}))
+      .then(() => ({server, templater, editor}));
+    }));
 }
 
 export function deleteProject(projectId:string) {

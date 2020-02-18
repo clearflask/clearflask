@@ -43,12 +43,15 @@ interface Props {
   server:Server;
   pageSlug:string;
   pageChanged:(pageUrlName:string)=>void;
-  // connect
+}
+
+interface ConnectProps {
+  configver?:string;
   pageNotFound:boolean;
   page?:Client.Page;
 }
 
-class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
+class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
 
   render() {
     if(this.props.pageNotFound) {
@@ -168,8 +171,8 @@ class CustomPage extends Component<Props&WithStyles<typeof styles, true>> {
   }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
-  var newProps:{configver?:string;pageNotFound:boolean;page?:Client.Page;} = {
+export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
+  var newProps:ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     pageNotFound: false,
     page: undefined,
@@ -177,7 +180,11 @@ export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
 
   if(state.conf.status === Status.FULFILLED && state.conf.conf) {
     if(ownProps.pageSlug === '') {
-      newProps.page = state.conf.conf.layout.pages[0];
+      if(state.conf.conf.layout.pages.length <= 0) {
+        newProps.pageNotFound = true;
+      } else {
+        newProps.page = state.conf.conf.layout.pages[0];
+      }
     } else {
       newProps.page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
       if(!newProps.page) newProps.pageNotFound = true;

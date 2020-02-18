@@ -183,12 +183,19 @@ class DataMock {
     };
   }
 
-  fakeExpressions(category:Admin.Category):{[key:string]:number;} {
+  fakeExpressions(category:Admin.Category, count:number|undefined = undefined):{[key:string]:number;} {
     const expressions:{[key:string]:number;} = {};
-    ((category.support.express && category.support.express.limitEmojiSet)
+    const availableEmojis = (category.support.express && category.support.express.limitEmojiSet)
       ? category.support.express.limitEmojiSet.map(e => e.display)
-      : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'])
-      .forEach(emojiDisplay => expressions[emojiDisplay] = Math.round(Math.random() * 10) + 1);
+      : ['😀', '😁', '🤣', '😉', '😍', '😝', '😕', '😱', '💩', '🙀', '❤', '👍'];
+    if(count === undefined) {
+      availableEmojis.forEach(emojiDisplay => expressions[emojiDisplay] = Math.round(Math.random() * 10) + 1);
+    } else {
+      for (let i = 0; i <= count; i++) {
+        const emoji = availableEmojis[Math.floor(Math.random() * availableEmojis.length)];
+        expressions[emoji] = (expressions[emoji] || 0) + 1;
+      }
+    }
     return expressions;
   }
 

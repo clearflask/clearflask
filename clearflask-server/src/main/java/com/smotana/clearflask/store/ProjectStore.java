@@ -22,7 +22,7 @@ public interface ProjectStore {
 
     Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin);
 
-    void updateConfig(String projectId, String previousVersion, VersionedConfigAdmin versionedConfigAdmin);
+    void updateConfig(String projectId, Optional<String> previousVersion, VersionedConfigAdmin versionedConfigAdmin);
 
     interface Project {
         String getProjectId();

@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -108,22 +109,24 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, String versionLast, ConfigAdmin configAdmin) {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, ModelUtil.createConfigVersion());
-        projectStore.updateConfig(projectId, versionLast, versionedConfigAdmin);
+        projectStore.updateConfig(
+                projectId,
+                Optional.ofNullable(Strings.emptyToNull(versionLast)),
+                versionedConfigAdmin);
         return versionedConfigAdmin;
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
-    public NewProjectResult projectCreateAdmin(String projectId) {
+    public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        VersionedConfigAdmin configAdmin = ModelUtil.createEmptyConfig(projectId);
-        projectStore.createProject(projectId, configAdmin);
+        Project project = projectStore.createProject(projectId, new VersionedConfigAdmin(configAdmin, "new"));
         commentStore.createIndex(projectId);
         userStore.createIndex(projectId);
         ideaStore.createIndex(projectId);
         accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
-        return new NewProjectResult(projectId, configAdmin);
+        return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }
 }

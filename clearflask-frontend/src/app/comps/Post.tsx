@@ -105,7 +105,7 @@ const styles = (theme:Theme) => createStyles({
     borderRadius: '50% 50% 80% 80%',
   },
   voteIconVoted: {
-    color: theme.palette.primary.main,
+    color: theme.palette.primary.main + '!important', // important overrides disabled
     transform: 'scale(1.25)',
   },
   voteCount: {
@@ -464,7 +464,10 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.category
       || !this.props.category.support.comment) return null;
 
-    const addCommentButton = (
+      const commentsAllowed:boolean = !this.props.idea.statusId
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableComments !== true;
+
+    const addCommentButton = commentsAllowed && (
       <div className={this.props.classes.addCommentForm}>
         <TextField
           id='createComment'
@@ -516,6 +519,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             ideaId={this.props.idea.ideaId}
             expectedCommentCount={this.props.idea.childCommentCount}
             parentCommentId={undefined}
+            newCommentsAllowed={commentsAllowed}
           />
         )}
       </div>
@@ -580,6 +584,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.vote) return null;
+    const votingAllowed:boolean = !this.props.idea.statusId
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableVoting !== true;
+    if(!votingAllowed
+      && !this.props.idea.voteValue
+      && !this.props.idea.votersCount) return null;
 
     const upvoted:boolean = (this.props.vote === Client.VoteOption.Upvote) !== !!this.state.isSubmittingUpvote;
     const downvoted:boolean = (this.props.vote === Client.VoteOption.Downvote) !== !!this.state.isSubmittingDownvote;
@@ -593,7 +602,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         <IconButton
           color={upvoted ? 'primary' : undefined}
           className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}
-          onClick={e => {
+          disabled={!votingAllowed}
+          onClick={votingAllowed ? e => {
             const upvote = () => {
               if(this.state.isSubmittingUpvote) return;
               this.setState({isSubmittingUpvote: true});
@@ -608,7 +618,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               this.onLoggedIn = upvote;
               this.setState({logInOpen: true});
             }
-          }}>
+          } : undefined}>
           <UpvoteIcon fontSize='inherit' />
         </IconButton>
         <Typography variant='overline' className={this.props.classes.voteCount}>
@@ -619,7 +629,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           <IconButton
             color={downvoted ? 'primary' : undefined}
             className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''}`}
-            onClick={e => {
+            disabled={!votingAllowed}
+            onClick={votingAllowed ? e => {
               if(this.state.isSubmittingDownvote) return;
               const downvote = () => {
                 this.setState({isSubmittingDownvote: true});
@@ -634,7 +645,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                 this.onLoggedIn = downvote;
                 this.setState({logInOpen: true});
               }
-            }}>
+            } : undefined}>
             <DownvoteIcon fontSize='inherit' />
           </IconButton>
         )}
@@ -650,10 +661,13 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.credits
       || !this.props.category
       || !this.props.category.support.fund) return null;
-
     const fundingAllowed = !this.props.idea.statusId
-      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)!
-        .disableFunding !== true;
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableFunding !== true;
+    if(!fundingAllowed
+      && !this.props.idea.fundGoal
+      && !this.props.idea.funded
+      && !this.props.idea.fundersCount) return null;
+
     const iFundedThis = !!this.props.fundAmount && this.props.fundAmount > 0;
     const padding = this.props.theme.spacing(3);
 
@@ -693,7 +707,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                 <AddIcon fontSize='inherit' />
                 {iFundedThis ? 'Adjust funding' : 'Fund this'}
               </span>
-            : 'Funding has ended'}
+            : 'Funding is closed'}
         </Typography>
       </Button>
     );
@@ -742,22 +756,22 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderExpressionEmoji(key:string, display:string|React.ReactNode, hasExpressed:boolean, onLoggedInClick:(currentTarget:HTMLElement)=>void, count:number = 0) {
+  renderExpressionEmoji(key:string, display:string|React.ReactNode, hasExpressed:boolean, onLoggedInClick:((currentTarget:HTMLElement)=>void)|undefined = undefined, count:number = 0) {
     return (
       <Chip
-        clickable
+        clickable={!!onLoggedInClick}
         key={key}
         variant='outlined'
         color={hasExpressed ? 'primary' : 'default'}
-        onClick={e => {
+        onClick={onLoggedInClick ? e => {
           const currentTarget = e.currentTarget;
           if(this.props.loggedInUser) {
-            onLoggedInClick(currentTarget);
+            onLoggedInClick && onLoggedInClick(currentTarget);
           } else {
-            this.onLoggedIn = () => onLoggedInClick(currentTarget);
+            this.onLoggedIn = () => onLoggedInClick && onLoggedInClick(currentTarget);
             this.setState({logInOpen: true});
           }
-        }}
+        } : undefined}
         classes={{
           label: this.props.classes.expressionInner,
           root: `${this.props.classes.expressionOuter} ${hasExpressed ? this.props.classes.expressionHasExpressed : this.props.classes.expressionNotExpressed}`,
@@ -777,7 +791,12 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.express) return null;
-    
+    const expressionAllowed:boolean = !this.props.idea.statusId
+      || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableExpressions !== true;
+    if(!expressionAllowed
+      && (!this.props.idea.expressions || Object.keys(this.props.idea.expressions).length === 0)
+      && !this.props.idea.expressionsValue) return null;
+
     const padding = this.props.theme.spacing(0.5);
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
     const reachedLimitPerIdea = limitEmojiPerIdea && (!!this.props.expression && Object.keys(this.props.expression).length || 0) > 0;
@@ -788,6 +807,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         || false;
     };  
     const clickExpression = (display:string) => {
+      if(!expressionAllowed) return;
       var expressionDiff:Client.VoteUpdateExpressions|undefined = undefined;
       const hasExpressed = getHasExpressed(display);
       if(limitEmojiPerIdea) {
@@ -823,14 +843,16 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         expression,
         expression,
         getHasExpressed(expression),
-        () => clickExpression(expression), count));
+        expressionAllowed ? () => clickExpression(expression) : undefined,
+        count));
     });
     const expressionsUnused:React.ReactNode[] = [...unusedEmoji].map(expressionDisplay =>
       this.renderExpressionEmoji(
         expressionDisplay,
         expressionDisplay,
         getHasExpressed(expressionDisplay),
-        () => clickExpression(expressionDisplay), 0));
+        expressionAllowed ? () => clickExpression(expressionDisplay) : undefined,
+        0));
     const picker = limitEmojiSet ? undefined : (
       <span key='picker' className={this.props.classes.expressionPicker}>
         <Picker
@@ -871,7 +893,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           >
             {summaryItems}
           </GradientFade>
-          {showMoreButton && this.renderExpressionEmoji(
+          {expressionAllowed && showMoreButton && this.renderExpressionEmoji(
             'showMoreButton',
             (
               <span className={this.props.classes.moreContainer}>

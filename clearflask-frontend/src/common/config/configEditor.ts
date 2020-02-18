@@ -1,7 +1,6 @@
 import Schema from '../../api/schema/schema.json';
-import { Config } from '../../api/admin/models/Config.js';
 import randomUuid from '../util/uuid';
-import { ConfigAdmin } from '../../api/admin/index.js';
+import * as Admin from '../../api/admin';
 import stringToSlug from '../util/slugger';
 
 /**
@@ -306,7 +305,9 @@ export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[
 export interface Editor {
 
   clone():Editor;
-  getConfig():ConfigAdmin;
+  getConfig():Admin.ConfigAdmin;
+  setConfig(config:Admin.ConfigAdmin);
+  notify();
 
   get(path:Path, depth?:ResolveDepth):Page|PageGroup|Property;
   getPage(path:Path, depth?:ResolveDepth):Page;
@@ -322,15 +323,15 @@ export interface Editor {
 }
 
 export class EditorImpl implements Editor {
-  config:ConfigAdmin;
+  config:Admin.ConfigAdmin;
   cache:any = {};
   globalSubscribers:{[subscriberId:string]:()=>void} = {};
 
-  constructor(config?:ConfigAdmin) {
+  constructor(config?:Admin.ConfigAdmin) {
     if(config !== undefined) {
       this.config = config;
     } else {
-      this.config = {} as ConfigAdmin;
+      this.config = {} as Admin.ConfigAdmin;
       this.getPage([]).setDefault();
     }
   }
@@ -354,13 +355,19 @@ export class EditorImpl implements Editor {
     return () => delete subscribers[subscriberId];
   }
 
-  notify(localSubscribers:{[subscriberId:string]:()=>void}):void {
-    Object.values(localSubscribers).forEach(notify => notify());
+  notify(localSubscribers?:{[subscriberId:string]:()=>void}):void {
+    localSubscribers && Object.values(localSubscribers).forEach(notify => notify());
     Object.values(this.globalSubscribers).forEach(notify => notify());
   }
 
-  getConfig():ConfigAdmin {
+  getConfig():Admin.ConfigAdmin {
     return this.config;
+  }
+
+  setConfig(config:Admin.ConfigAdmin) {
+    this.config = config;
+    this.cacheInvalidate([]);
+    this.notify();
   }
 
   get(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page|PageGroup|Property {

@@ -4,6 +4,13 @@ import { Configuration } from '../runtime';
 {{#apis}}
 {{#operations}}
 import * as {{ classname }} from './{{ classFilename }}';
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
 export * from './{{ classFilename }}';
 {{/operations}}
 {{/apis}}

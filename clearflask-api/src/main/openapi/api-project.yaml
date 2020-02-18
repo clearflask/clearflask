@@ -402,7 +402,8 @@ components:
               - statusId
               - name
               - disableFunding
-              - disableSupport
+              - disableVoting
+              - disableExpressions
               - disableIdeaEdits
               - disableComments
             properties:
@@ -424,8 +425,11 @@ components:
               disableFunding:
                 x-clearflask-prop: { order: 4, name: 'Disable Funding', description: 'Overrides parent settings to disable funding during this status' }
                 type: boolean
-              disableSupport:
-                x-clearflask-prop: { order: 5, name: 'Disable Support', description: 'Overrides parent settings to disable support during this status' }
+              disableVoting:
+                x-clearflask-prop: { order: 5, name: 'Disable Voting', description: 'Overrides parent settings to disable voting during this status' }
+                type: boolean
+              disableExpressions:
+                x-clearflask-prop: { order: 5, name: 'Disable Expressions', description: 'Overrides parent settings to disable expressions during this status' }
                 type: boolean
               disableIdeaEdits:
                 x-clearflask-prop: { order: 6, name: 'Disable Editing', description: 'Overrides parent settings to disable editing of the idea during this status' }
@@ -748,6 +752,12 @@ components:
         required: true
         schema:
           type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
     responses:
       '200':
         content:
@@ -792,7 +802,6 @@ components:
           type: string
       - name: versionLast
         in: query
-        required: true
         schema:
           type: string
     requestBody:

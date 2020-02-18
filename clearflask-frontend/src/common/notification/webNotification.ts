@@ -13,21 +13,20 @@ export default class WebNotification {
   unsubscribeCall?:()=>Promise<boolean>;
   swRegistration?:ServiceWorkerRegistration;
 
-  constructor(isMock:boolean, status:Status = Status.Unsupported, mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>) {
-    this.isMock = isMock;
+  constructor(status:Status = Status.Unsupported, mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>) {
+    this.isMock = !!mockAskPermission;
+    this.mockAskPermission = mockAskPermission;
     this.status = status;
-    if(isMock) {
-      this.mockAskPermission;
-    } else {
+    if(!this.isMock) {
       this._checkStatus();
     }
   }
 
   static getInstance():WebNotification {
-    return this.instance || (this.instance = new this(false));
+    return this.instance || (this.instance = new this());
   }
   static getMockInstance(status:Status = Status.Unsupported, mockAskPermission?:()=>Promise<WebNotificationSubscription|WebNotificationError>):WebNotification {
-    return new this(true, status, mockAskPermission);
+    return new this(status, mockAskPermission);
   }
 
   getStatus():Status {

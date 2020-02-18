@@ -21,6 +21,7 @@ interface Props {
   ideaId:string;
   expectedCommentCount:number;
   parentCommentId?:string;
+  newCommentsAllowed?:boolean; // TODO add comment replies
 }
 
 interface ConnectProps {

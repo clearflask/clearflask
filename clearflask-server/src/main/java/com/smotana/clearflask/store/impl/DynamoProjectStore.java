@@ -215,7 +215,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     }
 
     @Override
-    public void updateConfig(String projectId, String previousVersion, VersionedConfigAdmin versionedConfigAdmin) {
+    public void updateConfig(String projectId, Optional<String> previousVersion, VersionedConfigAdmin versionedConfigAdmin) {
         Optional<String> slugOptPrevious = Optional.ofNullable(getProject(projectId, false).get().getVersionedConfigAdmin().getConfig().getSlug());
         Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
         if (!slugOpt.equals(slugOptPrevious)) {

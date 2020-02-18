@@ -100,17 +100,6 @@ export default class Templater {
     this.supportExpressingFacebookStyle(ideaCategoryIndex);
     this.taggingOsPlatform(ideaCategoryIndex);
     const statuses = this.workflowFeatures(ideaCategoryIndex);
-    // Article
-    const articleCategoryId = randomUuid();
-    categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
-      userCreatable: true,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: false}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
-    }));
-    const articleCategoryIndex = categories.getChildPages().length - 1;
-    this.supportExpressingAllEmojis(articleCategoryIndex);
 
     // tags: Feature Requests, Bug Reports, Translations
     // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security
@@ -197,6 +186,185 @@ export default class Templater {
       menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Ideas',
     }));
     // Blog
+    this.templateBlog();
+    // Explorer
+    const pageExplorerId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: pageExplorerId,
+      name: 'Search',
+      slug: stringToSlug('Explorer'),
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: true,
+        allowCreate: true,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+      }),
+    }));
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [pageExplorerId],
+    }));
+  }
+
+  templateBase() {
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    const pageHomeId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: pageHomeId,
+      name: 'Home',
+      slug: '',
+      description: undefined,
+      panels: [],
+    }));
+
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [pageHomeId],
+    }));
+  }
+
+  templateFeedback(withFunding:boolean, withStandaloneFunding:boolean = true) {
+    // Ideas
+    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    const ideaCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: true}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const ideaCategoryIndex = categories.getChildPages().length - 1;
+    const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withStandaloneFunding);
+    // Bugs
+    const bugCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: bugCategoryId, name: 'Bug', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: true}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const bugCategoryIndex = categories.getChildPages().length - 1;
+    const bugStatuses = this.workflowBug(bugCategoryIndex);
+
+    // Pages
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    // TODO
+
+    // Menu
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    // TODO add categories to menu
+
+    // Add to home page
+    const postDisplay:Admin.PostDisplay = {
+      titleTruncateLines: 0,
+      descriptionTruncateLines: 2,
+      showDescription: false,
+      showResponse: false,
+      showCommentCount: false,
+      showCategoryName: false,
+      showCreated: false,
+      showAuthor: false,
+      showStatus: false,
+      showTags: false,
+      showVoting: false,
+      showFunding: false,
+      showExpression: false,
+      disableExpand: false,
+    };
+    const homePagePanels = this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels']);
+    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Trending', display: Admin.PostDisplayToJSON({
+      ...postDisplay,
+      showDescription: true,
+      showFunding: true,
+      showExpression: true,
+      showVoting: true,
+    }), search: Admin.IdeaSearchToJSON({
+      sortBy: Admin.IdeaSearchSortByEnum.Trending,
+      filterCategoryIds: [ideaCategoryId],
+    })}));
+    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Recent Bugs', display: Admin.PostDisplayToJSON({
+      ...postDisplay,
+      showDescription: true,
+      showResponse: true,
+      showFunding: true,
+      showExpression: true,
+      showVoting: true,
+    }), search: Admin.IdeaSearchToJSON({
+      sortBy: Admin.IdeaSearchSortByEnum.New,
+      filterCategoryIds: [bugCategoryId],
+    })}));
+    this._get<ConfigEditor.Page>(['layout', 'pages', 0, 'board'])
+      .setRaw(Admin.PageBoardToJSON({
+        title: 'Roadmap',
+        panels: [
+          ...(withFunding && withStandaloneFunding ? [
+            Admin.PagePanelToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({
+              ...postDisplay,
+              showFunding: true,
+            }), search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId],
+              filterStatusIds: ideaStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+            })}),
+          ] : []),
+          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId, bugCategoryId],
+            filterStatusIds: ideaStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+          })}),
+          Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId, bugCategoryId],
+            filterStatusIds: [
+              ...ideaStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+              ...bugStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+            ],
+          })}),
+          Admin.PagePanelToJSON({title: 'Completed', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId, bugCategoryId],
+            filterStatusIds: [
+              ...ideaStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
+              ...bugStatuses.filter(s => s.name.match(/Fixed/)).map(s => s.statusId),
+            ],
+          })}),
+        ],
+        controls: Admin.PagePanelSearchToJSON({
+          enableSearchByCategory: false,
+          enableSearchByStatus: false,
+          enableSearchByTag: false,
+        }),
+      }));
+  }
+
+  templateBlog() {
+    // Category
+    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    const articleCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: true,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: false}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const articleCategoryIndex = categories.getChildPages().length - 1;
+    this.supportExpressingAllEmojis(articleCategoryIndex);
+
+    // Home page panel
+    this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
+      .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+        title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.New,
+          filterCategoryIds: [articleCategoryId],
+        })}));
+
+    // Pages and menu
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
     const pageBlogId = randomUuid();
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: pageBlogId,
@@ -216,24 +384,18 @@ export default class Templater {
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
       menuId: randomUuid(), pageIds: [pageBlogId],
     }));
-    // Explorer
-    const pageExplorerId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: pageExplorerId,
-      name: 'Search',
-      slug: stringToSlug('Explorer'),
-      description: undefined,
-      panels: [],
-      board: undefined,
-      explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
-        allowCreate: true,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
-      }),
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageExplorerId],
-    }));
+  }
+
+  templateChangelog() {
+    
+  }
+
+  templateFaq() {
+    
+  }
+
+  templateKnowledgeBase() {
+    
   }
 
   supportNone(categoryIndex:number) {
@@ -320,21 +482,24 @@ export default class Templater {
     }));
   }
 
-  workflowFeatures(categoryIndex:number):Admin.IdeaStatus[] {
-    const closed = Admin.IdeaStatusToJSON({name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    const completed = Admin.IdeaStatusToJSON({name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const planned = Admin.IdeaStatusToJSON({name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const funding = Admin.IdeaStatusToJSON({name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [funding.statusId, closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, funding, underReview]);
+  workflowFeatures(categoryIndex:number, withStandaloneFunding:boolean = true):Admin.IdeaStatus[] {
+    const closed = Admin.IdeaStatusToJSON({name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+    const completed = Admin.IdeaStatusToJSON({name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    const planned = Admin.IdeaStatusToJSON({name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding:withStandaloneFunding, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    var funding;
+    if(withStandaloneFunding) {
+      funding = Admin.IdeaStatusToJSON({name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding:false, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    }
+    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [...(withStandaloneFunding ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:withStandaloneFunding, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+    return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...(withStandaloneFunding ? [funding] : [])]);
   }
   workflowBug(categoryIndex:number):Admin.IdeaStatus[] {
-    const notReproducible = Admin.IdeaStatusToJSON({name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    const wontFix = Admin.IdeaStatusToJSON({name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:false});
-    const fixed = Admin.IdeaStatusToJSON({name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableSupport:false, disableComments:false, disableIdeaEdits:true});
-    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableSupport:false, disableComments:false, disableIdeaEdits:false});
+    const notReproducible = Admin.IdeaStatusToJSON({name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+    const wontFix = Admin.IdeaStatusToJSON({name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+    const fixed = Admin.IdeaStatusToJSON({name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
     return this.workflow(categoryIndex, underReview.statusId, [notReproducible, wontFix, fixed, inProgress, underReview]);
   }
   workflow(categoryIndex:number, entryStatusId:string, statuses:Admin.IdeaStatus[]):Admin.IdeaStatus[] {

@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as ConfigEditor from '../../common/config/configEditor';
 import Templater from '../../common/config/configTemplater';
 import { ToggleButtonGroup, ToggleButton } from '@material-ui/lab';
-import { Grow, RadioGroup, FormControlLabel, Radio, Switch, FormHelperText } from '@material-ui/core';
+import { RadioGroup, FormControlLabel, Radio, Switch, FormHelperText } from '@material-ui/core';
 
 const styles = (theme:Theme) => createStyles({
   page: {
@@ -23,7 +22,7 @@ interface State {
   fundingType:'currency'|'time'|'beer';
   votingEnableDownvote?:boolean;
   expressionsLimitEmojis?:boolean;
-  expressionsAllowMultiple?:number;
+  expressionsAllowMultiple?:boolean;
 }
 
 class PrioritizationControls extends Component<Props&WithStyles<typeof styles, true>, State> {

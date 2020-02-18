@@ -4,11 +4,11 @@ import Menu, { MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import { RouteComponentProps, Redirect } from 'react-router';
 import Message from '../app/comps/Message';
-import DemoApp from './DemoApp';
+import DemoApp, { getProject, Project } from './DemoApp';
 import Layout from '../common/Layout';
 import { Typography, IconButton, Button } from '@material-ui/core';
 import * as AdminClient from '../api/admin';
-import ServerAdmin, { ReduxStateAdmin, Project } from '../api/serverAdmin';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Crumbs from '../common/config/settings/Crumbs';
 import AddIcon from '@material-ui/icons/Add';
 import randomUuid from '../common/util/uuid';
@@ -19,6 +19,7 @@ import LoadingPage from '../app/LoadingPage';
 import PostsPage from './dashboard/PostsPage';
 import BasePage from '../app/BasePage';
 import CreatePage from './dashboard/CreatePage';
+import Promised from '../common/Promised';
 
 interface Props {
 }
@@ -36,6 +37,8 @@ interface State {
 
 class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State> {
   unsubscribes:{[projectId:string]: ()=>void} = {};
+  createProjectPromise:Promise<Project>|undefined = undefined;
+  createProject:Project|undefined = undefined;
 
   constructor(props) {
     super(props);
@@ -113,8 +116,27 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         crumbs = [{name: 'Settings', slug: activePath}];
         break;
       case 'create':
-        page = (<CreatePage />);
+        if(!this.createProjectPromise) {
+          this.createProjectPromise = getProject(undefined,undefined,'create-preview');
+          this.createProjectPromise.then(project => {
+            this.createProject = project;
+            this.forceUpdate();
+          })
+        }
+        page = this.createProject && (
+          <CreatePage
+            previewProject={this.createProject}
+            pageClicked={(path, subPath) => this.pageClicked(path, subPath)}
+          />
+        );
         crumbs = [{name: 'Create', slug: activePath}];
+        preview = this.createProject && (
+          <DemoApp
+            key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
+            server={this.createProject.server}
+            forcePath={forcePath}
+          />
+        );
         break;
       default:
         if(activeProject === undefined) {
