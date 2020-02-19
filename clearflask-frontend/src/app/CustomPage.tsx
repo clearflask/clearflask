@@ -100,33 +100,30 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       // ### BOARD
       if(this.props.page.board) {
         const board = this.props.page.board;
-        var panels:any = [];
-        for(let panel of board.panels) {
-          panels.push(
-            <div className={this.props.classes.boardPanel}>
-              <Panel
-                key={getSearchKey(panel.search)}
-                maxHeight='80vh'
-                direction={Direction.Vertical}
-                panel={panel}
-                server={this.props.server}
-                displayDefaults={{
-                  titleTruncateLines: 3,
-                  descriptionTruncateLines: 0,
-                  showDescription: false,
-                  showCommentCount: false,
-                  showCategoryName: false,
-                  showCreated: false,
-                  showAuthor: false,
-                  showStatus: false,
-                  showTags: false,
-                  showVoting: false,
-                  showFunding: false,
-                  showExpression: false,
-                }} />
-            </div>
-          );
-        }
+        var panels:any = board.panels.map((panel, panelIndex) => (
+          <div key={panelIndex} className={this.props.classes.boardPanel}>
+            <Panel
+              key={getSearchKey(panel.search)}
+              maxHeight='80vh'
+              direction={Direction.Vertical}
+              panel={panel}
+              server={this.props.server}
+              displayDefaults={{
+                titleTruncateLines: 3,
+                descriptionTruncateLines: 0,
+                showDescription: false,
+                showCommentCount: false,
+                showCategoryName: false,
+                showCreated: false,
+                showAuthor: false,
+                showStatus: false,
+                showTags: false,
+                showVoting: false,
+                showFunding: false,
+                showExpression: false,
+              }} />
+          </div>
+        ));
         boardCmpt = (
           <div>
             <DividerCorner title={board.title} height='90%'>

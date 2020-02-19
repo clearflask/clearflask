@@ -34,8 +34,8 @@ export default class Templater {
     this.creditsCurrency();
 
     this.demoPagePanel(Admin.PostDisplayToJSON({
-      titleTruncateLines: 0,
-      descriptionTruncateLines: 0,
+      titleTruncateLines: 2,
+      descriptionTruncateLines: 3,
       showDescription: true,
       showCommentCount: false,
       showCategoryName: false,
@@ -237,6 +237,7 @@ export default class Templater {
     }));
     const ideaCategoryIndex = categories.getChildPages().length - 1;
     const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withStandaloneFunding);
+
     // Bugs
     const bugCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
@@ -248,19 +249,55 @@ export default class Templater {
     }));
     const bugCategoryIndex = categories.getChildPages().length - 1;
     const bugStatuses = this.workflowBug(bugCategoryIndex);
+    this.taggingOsPlatform(bugCategoryIndex);
 
     // Pages
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    // TODO
+    const ideaPageId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: ideaPageId,
+      name: 'Ideas',
+      slug: 'ideas',
+      title: undefined,
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: true,
+        allowCreate: true,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          filterCategoryIds: [ideaCategoryId],
+        })}),
+      }),
+    }));
+    const bugPageId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: bugPageId,
+      name: 'Bugs',
+      slug: 'bugs',
+      title: undefined,
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: true,
+        allowCreate: true,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          filterCategoryIds: [bugCategoryId],
+        })}),
+      }),
+    }));
 
     // Menu
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    // TODO add categories to menu
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [ideaPageId, bugPageId], name: 'Feedback',
+    }));
 
     // Add to home page
     const postDisplay:Admin.PostDisplay = {
-      titleTruncateLines: 0,
-      descriptionTruncateLines: 2,
+      titleTruncateLines: 2,
+      descriptionTruncateLines: 4,
       showDescription: false,
       showResponse: false,
       showCommentCount: false,
@@ -275,7 +312,7 @@ export default class Templater {
       disableExpand: false,
     };
     const homePagePanels = this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels']);
-    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Trending', display: Admin.PostDisplayToJSON({
+    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Trending feedback', display: Admin.PostDisplayToJSON({
       ...postDisplay,
       showDescription: true,
       showFunding: true,
@@ -346,7 +383,7 @@ export default class Templater {
     const articleCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
-      userCreatable: true,
+      userCreatable: false,
       workflow: Admin.WorkflowToJSON({statuses: []}),
       support: Admin.SupportToJSON({comment: false}),
       tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
@@ -357,7 +394,22 @@ export default class Templater {
     // Home page panel
     this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
       .insert().setRaw(Admin.PagePanelWithSearchToJSON({
-        title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+          titleTruncateLines: 2,
+          descriptionTruncateLines: 2,
+          showDescription: true,
+          showResponse: false,
+          showCommentCount: false,
+          showCategoryName: false,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: false,
+          showTags: false,
+          showVoting: false,
+          showFunding: false,
+          showExpression: false,
+          disableExpand: false,
+        }), search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.New,
           filterCategoryIds: [articleCategoryId],
         })}));
@@ -376,7 +428,11 @@ export default class Templater {
       explorer: Admin.PageExplorerToJSON({
         allowSearch: false,
         allowCreate: false,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({
+          titleTruncateLines: 0,
+          descriptionTruncateLines: 2,
+          showDescription: true,
+        }), search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [articleCategoryId],
         })}),
       }),
@@ -387,15 +443,139 @@ export default class Templater {
   }
 
   templateChangelog() {
-    
-  }
+    // Category
+    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    const changelogCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: changelogCategoryId, name: 'Changelog', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: false,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: false}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const changelogCategoryIndex = categories.getChildPages().length - 1;
+    this.supportExpressingAllEmojis(changelogCategoryIndex);
 
-  templateFaq() {
-    
+    // Home page panel
+    this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
+      .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+        title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+          titleTruncateLines: 2,
+          descriptionTruncateLines: 2,
+          showDescription: true,
+          showResponse: false,
+          showCommentCount: false,
+          showCategoryName: false,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: false,
+          showTags: false,
+          showVoting: false,
+          showFunding: false,
+          showExpression: false,
+          disableExpand: false,
+        }), search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.New,
+          filterCategoryIds: [changelogCategoryId],
+        })}));
+
+    // Pages and menu
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    const changelogPageId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: changelogPageId,
+      name: 'Changelog',
+      slug: stringToSlug('changelog'),
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: false,
+        allowCreate: false,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({
+          titleTruncateLines: 0,
+          descriptionTruncateLines: 2,
+          showDescription: true,
+        }), search: Admin.IdeaSearchToJSON({
+          filterCategoryIds: [changelogCategoryId],
+        })}),
+      }),
+    }));
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [changelogPageId],
+    }));
   }
 
   templateKnowledgeBase() {
-    
+    // help articles
+    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
+    const helpCategoryId = randomUuid();
+    categories.insert().setRaw(Admin.CategoryToJSON({
+      categoryId: helpCategoryId, name: 'Help', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      userCreatable: false,
+      workflow: Admin.WorkflowToJSON({statuses: []}),
+      support: Admin.SupportToJSON({comment: false}),
+      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+    }));
+    const helpCategoryIndex = categories.getChildPages().length - 1;
+    const accountSetupTagId = randomUuid();
+    const productShippingTagId = randomUuid();
+    this.tagging(helpCategoryIndex,
+      [Admin.TagToJSON({tagId: accountSetupTagId, name: 'Account Setup'}),
+        Admin.TagToJSON({tagId: productShippingTagId, name: 'Product Shipping'}),
+      ],
+      Admin.TagGroupToJSON({
+        tagGroupId: randomUuid(), name: 'Categories', userSettable: false, tagIds: [],
+      }));
+      this.supportExpressingRange(helpCategoryIndex);
+
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    const helpPageId = randomUuid();
+    const postDisplay:Admin.PostDisplay = {
+      titleTruncateLines: 0,
+      descriptionTruncateLines: 4,
+      showDescription: false,
+      showResponse: false,
+      showCommentCount: false,
+      showCategoryName: false,
+      showCreated: false,
+      showAuthor: false,
+      showStatus: false,
+      showTags: false,
+      showVoting: false,
+      showFunding: false,
+      showExpression: false,
+      disableExpand: false,
+    };
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: helpPageId,
+      name: 'Help',
+      slug: 'help',
+      title: 'How can we help you?',
+      description: "If you can't find help, don't hesitate to contact us at support@example.com",
+      panels: [Admin.PagePanelWithSearchToJSON({title: 'Account Setup', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+        sortBy: Admin.IdeaSearchSortByEnum.Top,
+        filterCategoryIds: [helpCategoryId],
+        filterTagIds: [accountSetupTagId],
+      })}), Admin.PagePanelWithSearchToJSON({title: 'Product Shipping', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+        sortBy: Admin.IdeaSearchSortByEnum.Top,
+        filterCategoryIds: [helpCategoryId],
+        filterTagIds: [productShippingTagId],
+      })})],
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: true,
+        allowCreate: false,
+        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          filterCategoryIds: [helpCategoryId],
+        })}),
+      }),
+    }));
+
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [helpPageId],
+    }));
   }
 
   supportNone(categoryIndex:number) {
@@ -457,6 +637,16 @@ export default class Templater {
       Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
       Admin.ExpressionToJSON({display: '🚀', text: 'Rocket', weight: 1}),
       Admin.ExpressionToJSON({display: '👀', text: 'Eyes', weight: 1}),
+    ]);
+  }
+  supportExpressingRange(categoryIndex:number) {
+    const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
+    if(expressProp.value !== true) expressProp.set(true);
+    this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
+      Admin.ExpressionToJSON({display: '😃', text: 'Smiley', weight: 1}),
+      Admin.ExpressionToJSON({display: '😐', text: 'Neutral', weight: -1}),
+      Admin.ExpressionToJSON({display: '😞', text: 'Disappointed', weight: -2}),
     ]);
   }
   supportExpressingLimitEmojiPerIdea(categoryIndex:number, limitEmojiPerIdea?:boolean) {
