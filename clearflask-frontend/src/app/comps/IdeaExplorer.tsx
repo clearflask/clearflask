@@ -36,19 +36,12 @@ const styles = (theme:Theme) => createStyles({
   content: {
     margin: theme.spacing(2),
   },
-  results: {
-    gridArea: 'results',
-  },
-  resultsInner: {
-    margin: theme.spacing(2),
-  },
-  create: {
-    gridArea: 'create',
-    margin: theme.spacing(1),
-  },
   createFormFields: {
     display: 'flex',
     flexDirection: 'column',
+    // Uncomment these to align with corner
+    // marginTop: theme.spacing(1),
+    marginRight: theme.spacing(2),
   },
   createFormField: {
     margin: theme.spacing(1),
@@ -73,9 +66,17 @@ const styles = (theme:Theme) => createStyles({
     cursor: 'text',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.type === 'light'
-      ? theme.palette.text.secondary
-      : theme.palette.text.primary,
+    color: theme.palette.text.hint,
+  },
+  panelSearch: {
+    // Uncomment these to align with corner
+    // marginBottom: -1,
+  },
+  createField: {
+    minWidth: 100,
+    // Uncomment these to align with corner
+    // marginBottom: -1,
+    marginRight: theme.spacing(3),
   },
 });
 
@@ -156,6 +157,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     } else {
       topBar = this.props.explorer.allowSearch && (
         <PanelSearch
+          className={this.props.classes.panelSearch}
           innerRef={this.panelSearchRef}
           server={this.props.server}
           search={this.state.search}
@@ -199,7 +201,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const createVisible = this.props.explorer.allowCreate && (
       <TextField
         disabled={this.state.newItemIsSubmitting}
-        className={this.props.classes.createFormField}
+        className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
         label='Create'
         placeholder='Title'
         value={this.state.newItemTitle || ''}
@@ -237,7 +239,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
 
     return (
       <ExplorerTemplate
-        createSize={expand ? '364px': '116px'}
+        createSize={expand ? '364px' : '116px'}
         createShown={expand}
         createVisible={createVisible}
         createCollapsible={createCollapsible}

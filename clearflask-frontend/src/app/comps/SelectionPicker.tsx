@@ -19,9 +19,7 @@ const styles = (theme:Theme) => createStyles({
     cursor: 'pointer',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.type === 'light'
-      ? theme.palette.text.secondary
-      : theme.palette.text.primary,
+    color: theme.palette.text.hint,
   },
   deleteIcon: {
     cursor: 'pointer',

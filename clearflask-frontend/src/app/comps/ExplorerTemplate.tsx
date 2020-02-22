@@ -125,8 +125,8 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
         <div className={this.props.classes.results}>
           <DividerCorner
             isExplorer
-            width={this.props.createShown ? '80px' : '234px'}
-            height={this.props.createShown ? '180px' : undefined}
+            width={this.props.createShown ? '80px' : '320px'}
+            height={this.props.createShown ? '180px' : '80px'}
           >
             <Fade
               in={!expandInMotion}

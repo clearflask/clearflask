@@ -37,6 +37,7 @@ const styles = (theme:Theme) => createStyles({
 
 interface Props {
   style?:React.CSSProperties;
+  className?:string;
   server:Server;
   search?:Partial<Client.IdeaSearch>;
   onSearchChanged:(search:Partial<Client.IdeaSearch>)=>void;
@@ -62,7 +63,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
   render() {
     const controls = this.getControls();
     return (
-      <div className={this.props.classes.container} style={this.props.style}>
+      <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
         <SelectionPicker
           label='Search'
           value={controls.values}
