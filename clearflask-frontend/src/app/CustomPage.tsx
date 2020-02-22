@@ -6,7 +6,7 @@ import { ReduxState as ReduxState, Server, Status, getSearchKey } from '../api/s
 import Panel, { Direction } from './comps/Panel';
 import Loader from './utils/Loader';
 import ErrorPage from './ErrorPage';
-import Explorer from './comps/Explorer';
+import IdeaExplorer from './comps/IdeaExplorer';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import DividerCorner from './utils/DividerCorner';
 import { Side, contentScrollApplyStyles } from '../common/ContentScroll';
@@ -140,7 +140,7 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       if(this.props.page.explorer) {
         const explorer = this.props.page.explorer;
         explorerCmpt = (
-          <Explorer
+          <IdeaExplorer
             server={this.props.server}
             explorer={explorer}
           />

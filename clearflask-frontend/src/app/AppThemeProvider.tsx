@@ -12,6 +12,7 @@ interface ThemeCustomProps {
   funding?: string;
   isInsideContainer?: boolean;
   expressionGrayscale?: number;
+  explorerExpandTimeout?: number;
 }
 
 declare module '@material-ui/core/styles/createMuiTheme' {
@@ -49,6 +50,7 @@ class AppThemeProvider extends Component<Props> {
           // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
         isInsideContainer: !!this.props.isInsideContainer,
         expressionGrayscale: expressionGrayscale,
+        explorerExpandTimeout: 500,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
           ...(this.props.config.style.palette.primary ? { primary: {

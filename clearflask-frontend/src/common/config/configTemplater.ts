@@ -520,10 +520,10 @@ export default class Templater {
     }));
     const helpCategoryIndex = categories.getChildPages().length - 1;
     const accountSetupTagId = randomUuid();
-    const productShippingTagId = randomUuid();
+    const orderingShippingTagId = randomUuid();
     this.tagging(helpCategoryIndex,
       [Admin.TagToJSON({tagId: accountSetupTagId, name: 'Account Setup'}),
-        Admin.TagToJSON({tagId: productShippingTagId, name: 'Product Shipping'}),
+        Admin.TagToJSON({tagId: orderingShippingTagId, name: 'Ordering and Shipping'}),
       ],
       Admin.TagGroupToJSON({
         tagGroupId: randomUuid(), name: 'Categories', userSettable: false, tagIds: [],
@@ -558,10 +558,10 @@ export default class Templater {
         sortBy: Admin.IdeaSearchSortByEnum.Top,
         filterCategoryIds: [helpCategoryId],
         filterTagIds: [accountSetupTagId],
-      })}), Admin.PagePanelWithSearchToJSON({title: 'Product Shipping', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+      })}), Admin.PagePanelWithSearchToJSON({title: 'Ordering and Shipping', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
         sortBy: Admin.IdeaSearchSortByEnum.Top,
         filterCategoryIds: [helpCategoryId],
-        filterTagIds: [productShippingTagId],
+        filterTagIds: [orderingShippingTagId],
       })})],
       explorer: Admin.PageExplorerToJSON({
         allowSearch: true,

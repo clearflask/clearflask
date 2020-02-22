@@ -19,6 +19,7 @@ interface Props {
   disabled?:boolean;
   server:Server;
   onChange?: (userLabel:Label) => void;
+  allowCreate?:boolean;
 }
 interface ConnectProps {
   loggedInUserLabel?:Label;
@@ -89,6 +90,18 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
           this.setState({selectedUserLabel: labels[0]})
           this.props.onChange && this.props.onChange(labels[0]);
         }}
+        onValueCreate={this.props.allowCreate ? name => {
+          this.props.server.dispatchAdmin()
+            .then(d => d.userCreateAdmin({
+              projectId: this.props.server.getProjectId(),
+              userCreateAdmin: { name },
+            }))
+            .then(user => {
+              const newLabel = UserSelection.mapUserToLabel(user);
+              this.setState({selectedUserLabel: newLabel});
+              this.props.onChange && this.props.onChange(newLabel);
+            });
+        } : undefined}
       />
     );
   }

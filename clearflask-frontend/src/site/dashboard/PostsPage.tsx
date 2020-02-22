@@ -4,7 +4,7 @@ import { History, Location } from 'history';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { connect, Provider } from 'react-redux';
 import * as Admin from '../../api/admin';
-import Explorer from '../../app/comps/Explorer';
+import IdeaExplorer from '../../app/comps/IdeaExplorer';
 import { Project } from '../../api/serverAdmin';
 import SelectionPicker, {Label} from '../../app/comps/SelectionPicker';
 import { Bag } from '../../common/util/bag';
@@ -55,7 +55,7 @@ class PostsPage extends Component<ConnectProps&WithStyles<typeof styles, true>, 
           />
         )}
         <Provider key={selectedProjectLabel.value} store={selectedProject.server.getStore()}>
-          <Explorer
+          <IdeaExplorer
             server={selectedProject.server}
             explorer={{
               allowSearch: true,

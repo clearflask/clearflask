@@ -13,6 +13,12 @@ const styles = (theme:Theme) => createStyles({
   dividerVertical: {
     gridArea: 'divider-vertical',
   },
+  heightTransition: {
+    transition: (props:Props) => theme.transitions.create('height', props.isExplorer ? {duration: theme.explorerExpandTimeout} : undefined),
+  },
+  widthTransition: {
+    transition: (props:Props) => theme.transitions.create('min-width', props.isExplorer ? {duration: theme.explorerExpandTimeout} : undefined),
+  },
 });
 
 interface Props {
@@ -22,6 +28,7 @@ interface Props {
   width?:string;
   height?:string;
   rtl?:boolean;
+  isExplorer?:boolean
 }
 
 class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
@@ -33,7 +40,7 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
         flexDirection: 'column',
         alignItems: this.props.rtl ? 'flex-end' : 'flex-start',
       }}>
-        <div style={{
+        <div className={this.props.classes.widthTransition} style={{
           minWidth: this.props.width || '24px',
           display: 'inline-block',
         }}>
@@ -54,7 +61,10 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
             display: 'flex',
             alignItems: 'stretch',
           }}>
-            <DividerVertical style={{ height: this.props.height || '24px' }} />
+            <DividerVertical
+              className={this.props.classes.heightTransition}
+              style={{ height: this.props.height || '24px' }}
+            />
           </div>
           <div style={{width: '100%'}}>
             {this.props.children}

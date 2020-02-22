@@ -9,7 +9,7 @@ import Chip from '@material-ui/core/Chip';
 import MenuItem from '@material-ui/core/MenuItem';
 import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
-import { FormHelperText } from '@material-ui/core';
+import { FormHelperText, Grow } from '@material-ui/core';
 import { SelectComponents, components } from 'react-select/lib/components';
 import { ActionMeta, InputActionMeta } from 'react-select/lib/types';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
@@ -171,7 +171,7 @@ const Control = (props) => {
       disabled={outerProps.disabled}
       InputLabelProps={{
         style: {
-          marginTop: '3px',
+          marginTop: '1px',
         },
         shrink: (outerProps.value !== undefined && outerProps.value.length !== 0 || outerProps.placeholder) ? true : undefined,
       }}
@@ -270,6 +270,7 @@ const MultiValue = (props) => {
 
 const Menu = (props) => {
   return (
+    <Grow appear in style={{transformOrigin: '0 0 0'}}>
     <Paper elevation={2} square {...props.innerProps} style={{
       position: 'absolute',
       zIndex: 1,
@@ -280,6 +281,7 @@ const Menu = (props) => {
     }}>
       {props.children}
     </Paper>
+    </Grow>
   );
 }
 

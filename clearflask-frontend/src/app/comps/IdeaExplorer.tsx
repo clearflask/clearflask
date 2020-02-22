@@ -4,8 +4,7 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 import * as Client from '../../api/client';
 import * as Admin from '../../api/admin';
 import Panel, { Direction } from './Panel';
-import { Typography, TextField, Grow, Button, Select, MenuItem, FormControl, FormHelperText } from '@material-ui/core';
-import DividerCorner from '../utils/DividerCorner';
+import { Typography, TextField, Grow, Button, Select, MenuItem, FormControl, FormHelperText, InputAdornment, IconButton } from '@material-ui/core';
 import { connect } from 'react-redux';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
@@ -14,6 +13,8 @@ import debounce from '../../common/util/debounce';
 import { withRouter, RouteComponentProps } from 'react-router';
 import UserSelection from '../../site/dashboard/UserSelection';
 import ServerAdmin from '../../api/serverAdmin';
+import ExplorerTemplate from './ExplorerTemplate';
+import AddIcon from '@material-ui/icons/Add';
 
 enum FilterType {
   Search = 'search',
@@ -31,29 +32,9 @@ interface TagSelection {
   error?:string;
 }
 
-const expandTimeout = 500;
 const styles = (theme:Theme) => createStyles({
-  explorer: {
-    display: 'grid',
-    [theme.breakpoints.up('sm')]: {
-      gridTemplateColumns: 'auto minmax(0, 1fr)',
-      gridTemplateRows: 'minmax(0px, auto) minmax(0, 1fr)',
-      gridTemplateAreas:
-        '". search"'
-        + '"create results"',
-    },
-    [theme.breakpoints.down('xs')]: {
-      gridTemplateColumns: 'auto',
-      gridTemplateRows: 'auto auto auto',
-      gridTemplateAreas:
-        '"create"'
-        +'"search"'
-        + '"results"',
-    },
-  },
-  search: {
-    gridArea: 'search',
-    alignSelf: 'end',
+  content: {
+    margin: theme.spacing(2),
   },
   results: {
     gridArea: 'results',
@@ -68,7 +49,6 @@ const styles = (theme:Theme) => createStyles({
   createFormFields: {
     display: 'flex',
     flexDirection: 'column',
-    transition: theme.transitions.create('width', {duration: expandTimeout}),
   },
   createFormField: {
     margin: theme.spacing(1),
@@ -89,6 +69,14 @@ const styles = (theme:Theme) => createStyles({
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
   },
+  addIcon: {
+    cursor: 'text',
+    height: '24px',
+    fontSize: '24px',
+    color: theme.palette.type === 'light'
+      ? theme.palette.text.secondary
+      : theme.palette.text.primary,
+  },
 });
 
 interface Props {
@@ -103,6 +91,7 @@ interface ConnectProps {
 }
 
 interface State {
+  createRefFocused?:boolean;
   newItemTitle?:string;
   newItemDescription?:string;
   newItemAuthorLabel?:Label;
@@ -117,6 +106,7 @@ interface State {
 
 class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
   readonly panelSearchRef:React.RefObject<any> = React.createRef();
+  readonly panelSearchInputRef:React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText:(title?:string,desc?:string)=>void;
 
   constructor(props) {
@@ -124,25 +114,22 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     this.state = {};
     this.updateSearchText = debounce(
       (title?:string,desc?:string)=>this.setState({newItemSearchText: 
-        `${this.state.newItemTitle || ''} ${this.state.newItemDescription || ''}`}),
+        `${title || ''} ${desc || ''}`}),
       1000);
   }
 
   render() {
-    const expand = !!(this.state.newItemTitle || this.state.newItemDescription);
-    const expandInMotion = expand !== (this.state.createFormHasExpanded || false);
+    const expand = !!this.state.createRefFocused || !!this.state.newItemTitle || !!this.state.newItemDescription;
 
     var content, topBar;
     if(expand) {
       topBar = (
-        <Typography variant='overline' className={this.props.classes.caption} style={{
-          visibility: expandInMotion ? 'hidden' : undefined,
-        }}>
+        <Typography variant='overline' className={this.props.classes.caption}>
           Similar:
         </Typography>
         );
-      content = !expandInMotion && (
-        <div>
+      content = (
+        <div className={this.props.classes.content}>
           <Panel
             key={getSearchKey(this.props.explorer.panel.search)}
             direction={Direction.Vertical}
@@ -153,6 +140,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
               showDescription: true,
+              showResponse: false,
               showCommentCount: false,
               showCategoryName: false,
               showCreated: false,
@@ -168,9 +156,6 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     } else {
       topBar = this.props.explorer.allowSearch && (
         <PanelSearch
-          style={{
-            visibility: expandInMotion ? 'hidden' : undefined,
-          }}
           innerRef={this.panelSearchRef}
           server={this.props.server}
           search={this.state.search}
@@ -178,8 +163,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           panel={this.props.explorer.panel}
         />
       );
-      content = !expandInMotion && (
-        <div>
+      content = (
+        <div className={this.props.classes.content}>
           <Panel
             key={getSearchKey(this.props.explorer.panel.search)}
             server={this.props.server}
@@ -189,6 +174,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
               showDescription: true,
+              showResponse: true,
               showCommentCount: true,
               showCreated: true,
               showAuthor: true,
@@ -210,35 +196,65 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
       );
     }
 
-    const create = this.props.explorer.allowCreate && this.renderCreate(expand, expandInMotion);
+    const createVisible = this.props.explorer.allowCreate && (
+      <TextField
+        disabled={this.state.newItemIsSubmitting}
+        className={this.props.classes.createFormField}
+        label='Create'
+        placeholder='Title'
+        value={this.state.newItemTitle || ''}
+        onChange={e => {
+          this.updateSearchText(e.target.value, this.state.newItemDescription);
+          this.setState({
+          newItemTitle: e.target.value,
+          ...(this.state.newItemChosenCategoryId === undefined
+            ? {newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
+              ? this.state.search.filterCategoryIds[0]
+              : ((this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
+                ? this.props.explorer.panel.search.filterCategoryIds[0]
+                : undefined)}
+            : {}),
+          ...(this.state.newItemChosenTagIds === undefined ? {newItemChosenTagIds: [...new Set([
+            ...(this.state.search && this.state.search.filterTagIds || []),
+            ...(this.props.explorer.panel.search.filterTagIds || [])])]} : {}),
+        })}}
+        InputProps={{
+          inputRef: this.panelSearchInputRef,
+          onBlur: () => this.setState({createRefFocused: false}),
+          onFocus: () => this.setState({createRefFocused: true}),
+          endAdornment: (
+            <InputAdornment position="end">
+              <AddIcon
+                className={this.props.classes.addIcon}
+                onClick={() => this.panelSearchInputRef.current?.focus()}
+              />
+            </InputAdornment>
+          ),
+        }}
+      />
+    );
+    const createCollapsible = this.props.explorer.allowCreate && this.renderCreate(expand);
 
     return (
-      <div className={this.props.classes.explorer}>
-        <div className={this.props.classes.search}>
-          {topBar}
-        </div>
-        <div className={this.props.classes.create}>
-          {create}
-        </div>
-        <div className={this.props.classes.results}>
-          <DividerCorner width='320px' height={!!create ? '320px' : '80px'}>
-            <div className={this.props.classes.resultsInner}>
-              {content}
-            </div>
-          </DividerCorner>
-        </div>
-      </div>
+      <ExplorerTemplate
+        createSize={expand ? '364px': '116px'}
+        createShown={expand}
+        createVisible={createVisible}
+        createCollapsible={createCollapsible}
+        search={topBar}
+        content={content}
+      />
     );
   }
 
-  renderCreate(expand:boolean, expandInMotion:boolean) {
+  renderCreate(expand:boolean) {
     if(!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
-    const categoryOptions = ((this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
+    var categoryOptions = (this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
       ? this.props.config.content.categories.filter(c => this.props.explorer.panel.search.filterCategoryIds!.includes(c.categoryId))
-      : this.props.config.content.categories)
-      .filter(c => c.userCreatable);
+      : this.props.config.content.categories;
+    if(!ServerAdmin.get().isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
     if(this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
       this.setState({newItemChosenCategoryId: categoryOptions[0].categoryId})
     }
@@ -246,160 +262,128 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const tagSelection = selectedCategory ? this.getTagSelection(selectedCategory) : undefined;
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
-      <div className={this.props.classes.createFormFields} style={{
-        width: expand ? '364px': '50px',
-        maxWidth: '100vw',
-      }}>
-        <TextField
-          id='createTitle'
-          disabled={this.state.newItemIsSubmitting}
-          className={this.props.classes.createFormField}
-          label='Add'
-          placeholder='Title'
-          value={this.state.newItemTitle || ''}
-          onChange={e => {
-            this.updateSearchText(e.target.value, this.state.newItemDescription);
-            this.setState({
-            newItemTitle: e.target.value,
-            ...(this.state.newItemChosenCategoryId === undefined
-              ? {newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
-                ? this.state.search.filterCategoryIds[0]
-                : ((this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
-                  ? this.props.explorer.panel.search.filterCategoryIds[0]
-                  : undefined)}
-              : {}),
-            ...(this.state.newItemChosenTagIds === undefined ? {newItemChosenTagIds: [...new Set([
-              ...(this.state.search && this.state.search.filterTagIds || []),
-              ...(this.props.explorer.panel.search.filterTagIds || [])])]} : {}),
-          })}}
-        />
-        <Grow
-          in={expand}
-          mountOnEnter
-          unmountOnExit
-          onEntered={() => this.setState({createFormHasExpanded: true})}
-          onExited={() => this.setState({createFormHasExpanded: false})}
-          timeout={expandTimeout}
-        >
+      <div className={this.props.classes.createFormFields}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <TextField
+            id='createDescription'
+            disabled={this.state.newItemIsSubmitting}
+            className={this.props.classes.createFormField}
+            placeholder='Description'
+            value={this.state.newItemDescription || ''}
+            onChange={e => {
+              this.updateSearchText(this.state.newItemTitle, e.target.value);
+              this.setState({newItemDescription: e.target.value})
+            }}
+            multiline
+            rows={1}
+            rowsMax={5}
+          />
+          {ServerAdmin.get().isAdminLoggedIn() && (
+            <UserSelection
+              server={this.props.server}
+              className={this.props.classes.createFormField}
+              disabled={this.state.newItemIsSubmitting}
+              onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
+              allowCreate
+            />
+          )}
           <div style={{
             display: 'flex',
-            flexDirection: 'column',
+            flexWrap: 'wrap',
+            alignItems: 'flex-end',
           }}>
-            <TextField
-              id='createDescription'
-              disabled={this.state.newItemIsSubmitting}
-              className={this.props.classes.createFormField}
-              placeholder='Description'
-              value={this.state.newItemDescription || ''}
-              onChange={e => {
-                this.updateSearchText(this.state.newItemTitle, e.target.value);
-                this.setState({newItemDescription: e.target.value})
-              }}
-              multiline
-            />
-            {ServerAdmin.get().isAdminLoggedIn() && (
-              <UserSelection
-                server={this.props.server}
+            {categoryOptions.length > 1 && (
+              <FormControl
                 className={this.props.classes.createFormField}
-                disabled={this.state.newItemIsSubmitting}
-                onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
-              />
-            )}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'flex-end',
-            }}>
-              {categoryOptions.length > 1 && (
-                <FormControl
-                  className={this.props.classes.createFormField}
-                  error={!selectedCategory}
+                error={!selectedCategory}
+              >
+                <Select
+                  disabled={this.state.newItemIsSubmitting}
+                  value={selectedCategory ? selectedCategory.categoryId : ''}
+                  onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
                 >
-                  <Select
-                    disabled={this.state.newItemIsSubmitting}
-                    value={selectedCategory ? selectedCategory.categoryId : ''}
-                    onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
-                  >
-                    {categoryOptions.map(categoryOption => (
-                      <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>
-                    {!selectedCategory && 'Choose a category'}
-                  </FormHelperText>
-                </FormControl>
-              )}
-              {tagSelection && tagSelection.options.length > 0 && (
-                <div className={this.props.classes.createFormField}>
-                  <SelectionPicker
-                    placeholder='Tags'
-                    disabled={this.state.newItemIsSubmitting}
-                    value={tagSelection.values}
-                    options={tagSelection.options}
-                    colorLookup={tagSelection.colorLookup}
-                    helperText=' ' // Keep it aligned
-                    errorMsg={tagSelection.error}
-                    isMulti={true}
-                    width='100%'
-                    onValueChange={labels => this.setState({newItemChosenTagIds:
-                      [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
-                    overrideComponents={{
-                      MenuList: (menuProps) => {
-                        const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
-                        const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-                        children.forEach((child:any) => {
-                          if(!child.props.data) {
-                            // child is "No option(s)" text, ignore
-                          } else {
-                            const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
-                            if(!tagGroups[tagGroupId])tagGroups[tagGroupId] = [];
-                            tagGroups[tagGroupId].push(child);
-                          }
-                        });
-                        const menuItems = Object.keys(tagGroups).map(tagGroupId => (
-                          <div className={this.props.classes.menuItem}>
-                            <Typography variant='overline'>{selectedCategory!.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
-                            {tagGroups[tagGroupId]}
+                  {categoryOptions.map(categoryOption => (
+                    <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>
+                  {!selectedCategory ? 'Choose a category' : ' '}
+                </FormHelperText>
+              </FormControl>
+            )}
+            {tagSelection && tagSelection.options.length > 0 && (
+              <div className={this.props.classes.createFormField}>
+                <SelectionPicker
+                  placeholder='Tags'
+                  disabled={this.state.newItemIsSubmitting}
+                  value={tagSelection.values}
+                  options={tagSelection.options}
+                  colorLookup={tagSelection.colorLookup}
+                  helperText=' ' // Keep it aligned
+                  errorMsg={tagSelection.error}
+                  isMulti={true}
+                  width='100%'
+                  onValueChange={labels => this.setState({newItemChosenTagIds:
+                    [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
+                  overrideComponents={{
+                    MenuList: (menuProps) => {
+                      const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
+                      const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
+                      children.forEach((child:any) => {
+                        if(!child.props.data) {
+                          // child is "No option(s)" text, ignore
+                        } else {
+                          const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
+                          if(!tagGroups[tagGroupId])tagGroups[tagGroupId] = [];
+                          tagGroups[tagGroupId].push(child);
+                        }
+                      });
+                      const menuItems = Object.keys(tagGroups).map(tagGroupId => (
+                        <div className={this.props.classes.menuItem}>
+                          <Typography variant='overline'>{selectedCategory!.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
+                          {tagGroups[tagGroupId]}
+                        </div>
+                      ));
+                      return (
+                        <div {...menuProps} className={this.props.classes.menuContainer}>
+                          <div style={{
+                            MozColumns: `150px`,
+                            WebkitColumns: `150px`,
+                            columns: `150px`,
+                          }}>
+                            {menuItems}
                           </div>
-                        ));
-                        return (
-                          <div {...menuProps} className={this.props.classes.menuContainer}>
-                            <div style={{
-                              MozColumns: `150px`,
-                              WebkitColumns: `150px`,
-                              columns: `150px`,
-                            }}>
-                              {menuItems}
-                            </div>
-                          </div>
-                        );
-                      },
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            <Button
-              color='primary'
-              disabled={!enableSubmit || this.state.newItemIsSubmitting}
-              onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
-              style={{
-                alignSelf: 'flex-end',
-              }}
-            >
-              Submit
-            </Button>
-            <LogIn
-              server={this.props.server}
-              open={this.state.logInOpen}
-              onClose={() => this.setState({logInOpen: false})}
-              onLoggedInAndClose={() => {
-                this.setState({logInOpen: false});
-                this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
-              }}
-            />
+                        </div>
+                      );
+                    },
+                  }}
+                />
+              </div>
+            )}
           </div>
-        </Grow>
+          <Button
+            color='primary'
+            disabled={!enableSubmit || this.state.newItemIsSubmitting}
+            onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
+            style={{
+              alignSelf: 'flex-end',
+            }}
+          >
+            Submit
+          </Button>
+          <LogIn
+            server={this.props.server}
+            open={this.state.logInOpen}
+            onClose={() => this.setState({logInOpen: false})}
+            onLoggedInAndClose={() => {
+              this.setState({logInOpen: false});
+              this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
+            }}
+          />
+        </div>
       </div>
     );
   }

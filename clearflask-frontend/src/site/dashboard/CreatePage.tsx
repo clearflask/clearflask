@@ -497,7 +497,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined, undefined, undefined,
         mocker.fakeExpressions(helpCategory, 2),
         undefined,
-        [helpCategory.tagging.tags.find(s => s.name.match(/Account/))!.tagId],
+        [helpCategory.tagging.tags.find(s => s.name.match(/Account Setup/))!.tagId],
       );
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user1,
@@ -508,7 +508,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined, undefined, undefined,
         mocker.fakeExpressions(helpCategory, 1),
         undefined,
-        [helpCategory.tagging.tags.find(s => s.name.match(/Account/))!.tagId],
+        [helpCategory.tagging.tags.find(s => s.name.match(/Account Setup/))!.tagId],
       );
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
@@ -519,7 +519,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined, undefined, undefined,
         mocker.fakeExpressions(helpCategory, 3),
         undefined,
-        [helpCategory.tagging.tags.find(s => s.name.match(/Product/))!.tagId],
+        [helpCategory.tagging.tags.find(s => s.name.match(/Ordering and Shipping/))!.tagId],
       );
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
@@ -530,7 +530,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined, undefined, undefined,
         mocker.fakeExpressions(helpCategory, 3),
         undefined,
-        [helpCategory.tagging.tags.find(s => s.name.match(/Product/))!.tagId],
+        [helpCategory.tagging.tags.find(s => s.name.match(/Ordering and Shipping/))!.tagId],
       );
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
@@ -540,7 +540,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined, undefined, undefined,
         mocker.fakeExpressions(helpCategory, 3),
         undefined,
-        [helpCategory.tagging.tags.find(s => s.name.match(/Product/))!.tagId],
+        [helpCategory.tagging.tags.find(s => s.name.match(/Ordering and Shipping/))!.tagId],
       );
     }
   }

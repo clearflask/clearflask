@@ -96,7 +96,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         crumbs = [{name: 'Home', slug: activePath}];
         break;
       case 'posts':
-        page = (<BasePage><PostsPage /></BasePage>);
+        page = (<PostsPage />);
         crumbs = [{name: 'Posts', slug: activePath}];
         break;
       case 'comments':

@@ -21,9 +21,6 @@ const styles = (theme:Theme) => createStyles({
   container: {
     margin: theme.spacing(1),
   },
-  selection: {
-    margin: theme.spacing(1),
-  },
   menuContainer: {
     margin: theme.spacing(2),
   },
@@ -66,75 +63,73 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     const controls = this.getControls();
     return (
       <div className={this.props.classes.container} style={this.props.style}>
-        <div className={this.props.classes.selection}>
-          <SelectionPicker
-            label='Search'
-            value={controls.values}
-            options={controls.options}
-            colorLookup={controls.colorLookup}
-            isMulti={true}
-            inputMinWidth='100px'
-            onValueChange={this.onValueChange.bind(this)}
-            onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
-            formatCreateLabel={inputValue => `Search '${inputValue}'`}
-            overrideComponents={{
-              DropdownIndicator: (dropdownIndicatorProps) => (
-                <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
-              ),
-              MenuList: (menuProps) => {
-                var newSearch:React.ReactNode|undefined;
-                const tagColumns:any = {};
-                const baseColumns:any = {};
-                const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-                children.forEach((child:any) => {
-                  if(!child.props.data) {
-                    // child is "No option(s)" text, ignore
-                  } else if(child.props.data.__isNew__) {
-                    newSearch = child; // child is "Search '...'" option
-                  } else {
-                    const type = this.getType(child.props.data);
-                    const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
-                    if(!columns[type]) columns[type] = [];
-                    columns[type].push(child);
-                  }
-                });
-                const menuItems:React.ReactNode[] = [];
-                const addColumn = (title, content) => menuItems.push((
-                  <div className={this.props.classes.menuItem}>
-                    <Typography variant='overline'>{title}</Typography>
-                    {content ? content : (
-                      <MenuItem component="div" disabled>
-                        No option
-                      </MenuItem>
-                    )}
+        <SelectionPicker
+          label='Search'
+          value={controls.values}
+          options={controls.options}
+          colorLookup={controls.colorLookup}
+          isMulti={true}
+          inputMinWidth='100px'
+          onValueChange={this.onValueChange.bind(this)}
+          onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
+          formatCreateLabel={inputValue => `Search '${inputValue}'`}
+          overrideComponents={{
+            DropdownIndicator: (dropdownIndicatorProps) => (
+              <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
+            ),
+            MenuList: (menuProps) => {
+              var newSearch:React.ReactNode|undefined;
+              const tagColumns:any = {};
+              const baseColumns:any = {};
+              const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
+              children.forEach((child:any) => {
+                if(!child.props.data) {
+                  // child is "No option(s)" text, ignore
+                } else if(child.props.data.__isNew__) {
+                  newSearch = child; // child is "Search '...'" option
+                } else {
+                  const type = this.getType(child.props.data);
+                  const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
+                  if(!columns[type]) columns[type] = [];
+                  columns[type].push(child);
+                }
+              });
+              const menuItems:React.ReactNode[] = [];
+              const addColumn = (title, content) => menuItems.push((
+                <div className={this.props.classes.menuItem}>
+                  <Typography variant='overline'>{title}</Typography>
+                  {content ? content : (
+                    <MenuItem component="div" disabled>
+                      No option
+                    </MenuItem>
+                  )}
+                </div>
+              ));
+              Object.values(FilterType)
+              .filter(t => this.isFilterControllable(t)
+                && t !== FilterType.Search
+                && t !== FilterType.Tag
+                && baseColumns[t])
+              .forEach(t => addColumn(t, baseColumns[t]));
+              Object.keys(tagColumns)
+                .forEach(t => addColumn(t, tagColumns[t]));
+              return (
+                <div {...menuProps} className={this.props.classes.menuContainer}>
+                  {newSearch ? newSearch : (
+                    <MenuItem component="div" disabled>
+                      Type to search
+                    </MenuItem>
+                  )}
+                  <div style={{
+                    columnWidth: '150px',
+                  }}>
+                    {menuItems}
                   </div>
-                ));
-                Object.values(FilterType)
-                .filter(t => this.isFilterControllable(t)
-                  && t !== FilterType.Search
-                  && t !== FilterType.Tag
-                  && baseColumns[t])
-                .forEach(t => addColumn(t, baseColumns[t]));
-                Object.keys(tagColumns)
-                  .forEach(t => addColumn(t, tagColumns[t]));
-                return (
-                  <div {...menuProps} className={this.props.classes.menuContainer}>
-                    {newSearch ? newSearch : (
-                      <MenuItem component="div" disabled>
-                        Type to search
-                      </MenuItem>
-                    )}
-                    <div style={{
-                      columnWidth: '150px',
-                    }}>
-                      {menuItems}
-                    </div>
-                  </div>
-                );
-              },
-            }}
-          />
-        </div>
+                </div>
+              );
+            },
+          }}
+        />
       </div>
     );
   }
