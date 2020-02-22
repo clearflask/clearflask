@@ -107,7 +107,7 @@ interface State {
 
 class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
   readonly panelSearchRef:React.RefObject<any> = React.createRef();
-  readonly panelSearchInputRef:React.RefObject<HTMLInputElement> = React.createRef();
+  readonly createInputRef:React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText:(title?:string,desc?:string)=>void;
 
   constructor(props) {
@@ -221,14 +221,14 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
             ...(this.props.explorer.panel.search.filterTagIds || [])])]} : {}),
         })}}
         InputProps={{
-          inputRef: this.panelSearchInputRef,
+          inputRef: this.createInputRef,
           onBlur: () => this.setState({createRefFocused: false}),
           onFocus: () => this.setState({createRefFocused: true}),
           endAdornment: (
             <InputAdornment position="end">
               <AddIcon
                 className={this.props.classes.addIcon}
-                onClick={() => this.panelSearchInputRef.current?.focus()}
+                onClick={() => this.createInputRef.current?.focus()}
               />
             </InputAdornment>
           ),
@@ -265,127 +265,122 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
     return (
       <div className={this.props.classes.createFormFields}>
+        <TextField
+          id='createDescription'
+          disabled={this.state.newItemIsSubmitting}
+          className={this.props.classes.createFormField}
+          placeholder='Description'
+          value={this.state.newItemDescription || ''}
+          onChange={e => {
+            this.updateSearchText(this.state.newItemTitle, e.target.value);
+            this.setState({newItemDescription: e.target.value})
+          }}
+          multiline
+          rows={1}
+          rowsMax={5}
+        />
+        {ServerAdmin.get().isAdminLoggedIn() && (
+          <UserSelection
+            server={this.props.server}
+            className={this.props.classes.createFormField}
+            disabled={this.state.newItemIsSubmitting}
+            onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
+            allowCreate
+          />
+        )}
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end',
         }}>
-          <TextField
-            id='createDescription'
-            disabled={this.state.newItemIsSubmitting}
-            className={this.props.classes.createFormField}
-            placeholder='Description'
-            value={this.state.newItemDescription || ''}
-            onChange={e => {
-              this.updateSearchText(this.state.newItemTitle, e.target.value);
-              this.setState({newItemDescription: e.target.value})
-            }}
-            multiline
-            rows={1}
-            rowsMax={5}
-          />
-          {ServerAdmin.get().isAdminLoggedIn() && (
-            <UserSelection
-              server={this.props.server}
+          {categoryOptions.length > 1 && (
+            <FormControl
               className={this.props.classes.createFormField}
-              disabled={this.state.newItemIsSubmitting}
-              onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
-              allowCreate
-            />
-          )}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'flex-end',
-          }}>
-            {categoryOptions.length > 1 && (
-              <FormControl
-                className={this.props.classes.createFormField}
-                error={!selectedCategory}
+              error={!selectedCategory}
+            >
+              <Select
+                disabled={this.state.newItemIsSubmitting}
+                value={selectedCategory ? selectedCategory.categoryId : ''}
+                onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
               >
-                <Select
-                  disabled={this.state.newItemIsSubmitting}
-                  value={selectedCategory ? selectedCategory.categoryId : ''}
-                  onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
-                >
-                  {categoryOptions.map(categoryOption => (
-                    <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>
-                  {!selectedCategory ? 'Choose a category' : ' '}
-                </FormHelperText>
-              </FormControl>
-            )}
-            {tagSelection && tagSelection.options.length > 0 && (
-              <div className={this.props.classes.createFormField}>
-                <SelectionPicker
-                  placeholder='Tags'
-                  disabled={this.state.newItemIsSubmitting}
-                  value={tagSelection.values}
-                  options={tagSelection.options}
-                  colorLookup={tagSelection.colorLookup}
-                  helperText=' ' // Keep it aligned
-                  errorMsg={tagSelection.error}
-                  isMulti={true}
-                  width='100%'
-                  onValueChange={labels => this.setState({newItemChosenTagIds:
-                    [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
-                  overrideComponents={{
-                    MenuList: (menuProps) => {
-                      const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
-                      const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-                      children.forEach((child:any) => {
-                        if(!child.props.data) {
-                          // child is "No option(s)" text, ignore
-                        } else {
-                          const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
-                          if(!tagGroups[tagGroupId])tagGroups[tagGroupId] = [];
-                          tagGroups[tagGroupId].push(child);
-                        }
-                      });
-                      const menuItems = Object.keys(tagGroups).map(tagGroupId => (
-                        <div className={this.props.classes.menuItem}>
-                          <Typography variant='overline'>{selectedCategory!.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
-                          {tagGroups[tagGroupId]}
+                {categoryOptions.map(categoryOption => (
+                  <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                {!selectedCategory ? 'Choose a category' : ' '}
+              </FormHelperText>
+            </FormControl>
+          )}
+          {tagSelection && tagSelection.options.length > 0 && (
+            <div className={this.props.classes.createFormField}>
+              <SelectionPicker
+                placeholder='Tags'
+                disabled={this.state.newItemIsSubmitting}
+                value={tagSelection.values}
+                options={tagSelection.options}
+                colorLookup={tagSelection.colorLookup}
+                helperText=' ' // Keep it aligned
+                errorMsg={tagSelection.error}
+                isMulti={true}
+                width='100%'
+                onValueChange={labels => this.setState({newItemChosenTagIds:
+                  [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
+                overrideComponents={{
+                  MenuList: (menuProps) => {
+                    const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
+                    const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
+                    children.forEach((child:any) => {
+                      if(!child.props.data) {
+                        // child is "No option(s)" text, ignore
+                      } else {
+                        const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
+                        if(!tagGroups[tagGroupId])tagGroups[tagGroupId] = [];
+                        tagGroups[tagGroupId].push(child);
+                      }
+                    });
+                    const menuItems = Object.keys(tagGroups).map(tagGroupId => (
+                      <div className={this.props.classes.menuItem}>
+                        <Typography variant='overline'>{selectedCategory!.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
+                        {tagGroups[tagGroupId]}
+                      </div>
+                    ));
+                    return (
+                      <div {...menuProps} className={this.props.classes.menuContainer}>
+                        <div style={{
+                          MozColumns: `150px`,
+                          WebkitColumns: `150px`,
+                          columns: `150px`,
+                        }}>
+                          {menuItems}
                         </div>
-                      ));
-                      return (
-                        <div {...menuProps} className={this.props.classes.menuContainer}>
-                          <div style={{
-                            MozColumns: `150px`,
-                            WebkitColumns: `150px`,
-                            columns: `150px`,
-                          }}>
-                            {menuItems}
-                          </div>
-                        </div>
-                      );
-                    },
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <Button
-            color='primary'
-            disabled={!enableSubmit || this.state.newItemIsSubmitting}
-            onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
-            style={{
-              alignSelf: 'flex-end',
-            }}
-          >
-            Submit
-          </Button>
-          <LogIn
-            server={this.props.server}
-            open={this.state.logInOpen}
-            onClose={() => this.setState({logInOpen: false})}
-            onLoggedInAndClose={() => {
-              this.setState({logInOpen: false});
-              this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
-            }}
-          />
+                      </div>
+                    );
+                  },
+                }}
+              />
+            </div>
+          )}
         </div>
+        <Button
+          color='primary'
+          disabled={!enableSubmit || this.state.newItemIsSubmitting}
+          onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
+          style={{
+            alignSelf: 'flex-end',
+          }}
+        >
+          Submit
+        </Button>
+        <LogIn
+          server={this.props.server}
+          open={this.state.logInOpen}
+          onClose={() => this.setState({logInOpen: false})}
+          onLoggedInAndClose={() => {
+            this.setState({logInOpen: false});
+            this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
+          }}
+        />
       </div>
     );
   }

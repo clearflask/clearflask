@@ -17,9 +17,9 @@ import { Status } from '../api/server';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import LoadingPage from '../app/LoadingPage';
 import PostsPage from './dashboard/PostsPage';
-import BasePage from '../app/BasePage';
+import UsersPage from './dashboard/UsersPage';
 import CreatePage from './dashboard/CreatePage';
-import Promised from '../common/Promised';
+import ExplorerPage from './dashboard/ExplorerPage';
 
 interface Props {
 }
@@ -96,15 +96,19 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         crumbs = [{name: 'Home', slug: activePath}];
         break;
       case 'posts':
-        page = (<PostsPage />);
+        page = (<ExplorerPage render={server => (
+          <PostsPage server={server} />
+        )}/>);
         crumbs = [{name: 'Posts', slug: activePath}];
         break;
-      case 'comments':
-        page = (<div>This is comments</div>);
-        crumbs = [{name: 'Comments', slug: activePath}];
-        break;
+      // case 'comments':
+      //   page = (<div>This is comments</div>);
+      //   crumbs = [{name: 'Comments', slug: activePath}];
+      //   break;
       case 'users':
-        page = (<div>This is users</div>);
+        page = (<ExplorerPage render={server => (
+          <UsersPage server={server} />
+        )}/>);
         crumbs = [{name: 'Users', slug: activePath}];
         break;
       case 'billing':
@@ -213,7 +217,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
               { type: 'item', slug: '', name: 'Home' },
               { type: 'heading', text: 'Explore' },
               { type: 'item', slug: 'posts', name: 'Posts', offset: 1 },
-              { type: 'item', slug: 'comments', name: 'Comments', offset: 1 },
+              // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 },
               { type: 'item', slug: 'users', name: 'Users', offset: 1 },
               { type: 'heading', text: 'Config' },
               ...(projects.map(project => {

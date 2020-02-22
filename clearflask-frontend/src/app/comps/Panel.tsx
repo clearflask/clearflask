@@ -39,7 +39,7 @@ const styles = (theme:Theme) => createStyles({
   },
 });
 
-interface Props extends StateIdeas, WithStyles<typeof styles, true> {
+interface Props {
   server:Server;
   panel:Client.PagePanel;
   displayDefaults?:Client.PostDisplay;
@@ -49,13 +49,16 @@ interface Props extends StateIdeas, WithStyles<typeof styles, true> {
   onClickTag?:(tagId:string)=>void;
   onClickCategory?:(categoryId:string)=>void;
   onClickStatus?:(statusId:string)=>void;
-  // connect
+}
+
+interface ConnectProps {
+  configver?:string;
   config?:Client.Config;
   searchResult:SearchResult;
   searchMerged:Client.IdeaSearch;
 }
 
-class Panel extends Component<Props> {
+class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
   render() {
     var content;
     switch(this.props.searchResult.status) {
@@ -124,8 +127,8 @@ class Panel extends Component<Props> {
   }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => {
-  var newProps = {
+export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
+  var newProps:ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     searchResult: {

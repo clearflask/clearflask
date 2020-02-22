@@ -501,6 +501,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user:Admin.UserAdmin = {
       userId: randomUuid(),
+      created: new Date(),
       balance: 0,
       emailNotify: !!request.userCreateAdmin.email,
       iosPush: !!request.userCreateAdmin.iosPushToken,
@@ -525,6 +526,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(user => !request.userSearchAdmin.searchText
         || user.name && user.name.indexOf(request.userSearchAdmin.searchText) >= 0
         || user.email && user.email.indexOf(request.userSearchAdmin.searchText) >= 0)
+      .map(user => ({
+        ...user,
+        balance: this.getProject(request.projectId).balances[user.userId],
+      }))
       , this.DEFAULT_LIMIT, request.cursor));
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {

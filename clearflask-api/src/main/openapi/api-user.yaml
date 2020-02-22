@@ -68,6 +68,8 @@ components:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
         - type: object
+          required:
+          - created
           properties:
             email:
               type: string

@@ -108,7 +108,7 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
 
   static mapUserToLabel(user:Admin.UserAdmin|Admin.UserMe):Label {
     const userLabel:Label = {
-      label: `${user.name || 'anonymous'} ${user.email}`,
+      label: `${user.name || 'anonymous'} ${user.email || ''}`,
       value: user.userId,
     };
     return userLabel;

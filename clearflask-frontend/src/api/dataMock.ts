@@ -94,7 +94,7 @@ class DataMock {
         projectId: this.projectId,
         userId: userMe.userId,
         transactionCreateAdmin: {
-          amount: 100,
+          amount: 10000,
           summary: 'Mock amount given, spend it wisely',
         },
       });

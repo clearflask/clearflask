@@ -25,7 +25,7 @@ export class Server {
   readonly errorSubscribers:((errorMsg:string, isUserFacing:boolean)=>void)[] = [];
   challengeSubscriber?:((challenge:string)=>Promise<string|undefined>);
 
-  constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
+  constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface, versionedConfig?:Admin.VersionedConfigAdmin) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if(!isProd()) {
       const composeEnhancers =
@@ -37,7 +37,7 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(projectId),
+      Server.initialState(projectId, versionedConfig),
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
@@ -68,10 +68,12 @@ export class Server {
     };
   }
 
-  static initialState(projectId:string):any {
+  static initialState(projectId:string, versionedConfig?:Admin.VersionedConfigAdmin):any {
     const state:ReduxState = {
       projectId: projectId,
-      conf: {},
+      conf: versionedConfig ? {
+        status: Status.FULFILLED, conf: versionedConfig.config, ver: versionedConfig.version,
+      } : {},
       ideas: stateIdeasDefault,
       comments: stateCommentsDefault,
       users: stateUsersDefault,

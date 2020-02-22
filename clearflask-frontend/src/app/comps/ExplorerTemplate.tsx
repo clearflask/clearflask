@@ -115,7 +115,7 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
               onExited={() => this.setState({hasExpanded: false})}
               timeout={this.props.theme.explorerExpandTimeout}
               style={{
-                minWidth: '100px',
+                minWidth: '120px',
               }}
             >
               {this.props.createCollapsible}
