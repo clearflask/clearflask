@@ -54,6 +54,7 @@ const styles = (theme:Theme) => createStyles({
     background: 'transparent',
   },
   title: {
+    fontSize: '1.1rem',
   },
   titleAndDescription: {
     padding: theme.spacing(0.5),

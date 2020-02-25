@@ -118,6 +118,19 @@ components:
           type: string
         phone:
           type: string
+    AccountUpdateAdmin:
+      type: object
+      properties:
+        planIdAdd:
+          type: string
+        planIdRemove:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
 
 /admin/plan:
   get:
@@ -196,3 +209,19 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+/admin/account/update:
+  post:
+    operationId: accountUpdateAdmin
+    tags: [AccountAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'

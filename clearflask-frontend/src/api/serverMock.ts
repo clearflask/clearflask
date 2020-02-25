@@ -151,6 +151,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.loggedIn = true;
     return this.returnLater(account);
   }
+  accountUpdateAdmin(request: Admin.AccountUpdateAdminRequest): Promise<Admin.AccountAdmin> {
+    if(!this.account) return this.throwLater(403, 'Not logged in');  
+    if(request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
+    if(request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
+    if(request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
+    if(request.accountUpdateAdmin.planIdAdd) this.account.plans = [...new Set([...this.account.plans, AvailablePlans[request.accountUpdateAdmin.planIdAdd]!])];
+    if(request.accountUpdateAdmin.planIdRemove) {
+      const plansSet = new Set(this.account.plans);
+      plansSet.delete(AvailablePlans[request.accountUpdateAdmin.planIdRemove]);
+      this.account.plans = [...plansSet];
+    }
+    return this.returnLater(this.account);
+  }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;
     if(request['author']) {

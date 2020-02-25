@@ -113,7 +113,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                 />
                 <TemplateCard
                   title='Knowledge Base'
-                  content='Document your product.'
+                  content='Helpful articles around your product.'
                   checked={!!this.state.templateKnowledgeBase}
                   onChange={() => this.setStateAndPreview({templateKnowledgeBase: !this.state.templateKnowledgeBase})}
                 />
@@ -125,7 +125,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                 /> */}
                 <TemplateCard
                   title='Blog'
-                  content=''
+                  content='Add articles for your users'
                   checked={!!this.state.templateBlog}
                   onChange={() => this.setStateAndPreview({templateBlog: !this.state.templateBlog})}
                 />

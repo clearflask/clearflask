@@ -21,6 +21,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
   /admin/account/logout:
     $ref: 'api-account.yaml#/~1admin~1account~1logout'
+  /admin/account/update:
+    $ref: 'api-account.yaml#/~1admin~1account~1update'
   /project/{projectId}/admin/idea/search:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1search'
   /project/{projectId}/admin/idea:

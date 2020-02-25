@@ -87,18 +87,29 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
     return (
       <div className={this.props.classes.explorer}>
         <div className={this.props.classes.top}>
-          <div className={this.props.classes.createVisible} style={{minWidth: this.props.createSize, width: this.props.createSize}}>{this.props.createVisible}</div>
+          {this.props.createVisible && (
+            <div className={this.props.classes.createVisible} style={{
+              minWidth: this.props.createSize,
+              width: this.props.createSize,
+            }}>
+              {this.props.createVisible}
+            </div>
+          )}
+          {this.props.search && (
             <div className={this.props.classes.search} style={{visibility: expandInMotion ? 'hidden' : 'visible'}}>
               <Hidden xsDown implementation='css'>
                 {this.props.search}
               </Hidden>
             </div>
+          )}
         </div>
-        <div className={this.props.classes.search} style={{visibility: expandInMotion ? 'hidden' : 'visible'}}>
-          <Hidden smUp implementation='css'>
-              {this.props.search}
-          </Hidden>
-        </div>
+        {this.props.search && (
+          <div className={this.props.classes.search} style={{visibility: expandInMotion ? 'hidden' : 'visible'}}>
+            <Hidden smUp implementation='css'>
+                {this.props.search}
+            </Hidden>
+          </div>
+        )}
         {this.props.createCollapsible && (
           <div
             className={this.props.classes.createCollapsible}

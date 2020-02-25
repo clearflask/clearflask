@@ -48,7 +48,7 @@ const styles = (theme:Theme) => createStyles({
     marginRight: theme.spacing(3),
   },
   resultContainer: {
-    marginRight: theme.spacing(3),
+    margin: theme.spacing(2),
   },
   userProperties: {
     margin: theme.spacing(2),

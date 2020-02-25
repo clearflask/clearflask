@@ -34,8 +34,14 @@ interface Preset {
 class PresetWidget extends Component<Props> {
   static presets:{[pathStr:string]:Array<Preset>} = {
     '': [
-      { title: 'Demo', body: 'Demo app',
-        actionTitle: 'Add', action: (templater, path) => templater.demo() },
+      { title: 'Feedback', body: 'Collect feedback from user, comes with a "Feature" and "Bug" category',
+        actionTitle: 'Add', action: (templater, path) => templater.templateFeedback(true, false) },
+      { title: 'Changelog', body: 'Update your users with new changes to your product',
+        actionTitle: 'Add', action: (templater, path) => templater.templateChangelog(true) },
+      { title: 'Knowledge Base', body: 'Helpful articles around your product',
+        actionTitle: 'Add', action: (templater, path) => templater.templateKnowledgeBase() },
+      { title: 'Blog', body: 'Add articles for your users',
+        actionTitle: 'Add', action: (templater, path) => templater.templateBlog(true) },
     ],
     'content.categories.<>.support': [
       { title: 'Funding', body: 'Enables funding',

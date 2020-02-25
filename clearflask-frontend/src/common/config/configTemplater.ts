@@ -377,7 +377,7 @@ export default class Templater {
       }));
   }
 
-  templateBlog() {
+  templateBlog(suppressHomePage:boolean = false) {
     // Category
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const articleCategoryId = randomUuid();
@@ -392,27 +392,29 @@ export default class Templater {
     this.supportExpressingAllEmojis(articleCategoryIndex);
 
     // Home page panel
-    this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
-      .insert().setRaw(Admin.PagePanelWithSearchToJSON({
-        title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-          titleTruncateLines: 2,
-          descriptionTruncateLines: 2,
-          showDescription: true,
-          showResponse: false,
-          showCommentCount: false,
-          showCategoryName: false,
-          showCreated: false,
-          showAuthor: false,
-          showStatus: false,
-          showTags: false,
-          showVoting: false,
-          showFunding: false,
-          showExpression: false,
-          disableExpand: false,
-        }), search: Admin.IdeaSearchToJSON({
-          sortBy: Admin.IdeaSearchSortByEnum.New,
-          filterCategoryIds: [articleCategoryId],
-        })}));
+    if(!suppressHomePage) {
+      this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
+        .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+          title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+            titleTruncateLines: 2,
+            descriptionTruncateLines: 2,
+            showDescription: true,
+            showResponse: false,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: false,
+            showFunding: false,
+            showExpression: false,
+            disableExpand: false,
+          }), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [articleCategoryId],
+          })}));
+    }
 
     // Pages and menu
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
@@ -442,7 +444,7 @@ export default class Templater {
     }));
   }
 
-  templateChangelog() {
+  templateChangelog(suppressHomePage:boolean = false) {
     // Category
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const changelogCategoryId = randomUuid();
@@ -457,27 +459,29 @@ export default class Templater {
     this.supportExpressingAllEmojis(changelogCategoryIndex);
 
     // Home page panel
-    this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
-      .insert().setRaw(Admin.PagePanelWithSearchToJSON({
-        title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-          titleTruncateLines: 2,
-          descriptionTruncateLines: 2,
-          showDescription: true,
-          showResponse: false,
-          showCommentCount: false,
-          showCategoryName: false,
-          showCreated: false,
-          showAuthor: false,
-          showStatus: false,
-          showTags: false,
-          showVoting: false,
-          showFunding: false,
-          showExpression: false,
-          disableExpand: false,
-        }), search: Admin.IdeaSearchToJSON({
-          sortBy: Admin.IdeaSearchSortByEnum.New,
-          filterCategoryIds: [changelogCategoryId],
-        })}));
+    if(!suppressHomePage) {
+      this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
+        .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+          title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+            titleTruncateLines: 2,
+            descriptionTruncateLines: 2,
+            showDescription: true,
+            showResponse: false,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: false,
+            showFunding: false,
+            showExpression: false,
+            disableExpand: false,
+          }), search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [changelogCategoryId],
+          })}));
+    }
 
     // Pages and menu
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);

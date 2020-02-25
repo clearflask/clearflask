@@ -218,6 +218,7 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
       };
     case Admin.accountSignupAdminActionStatus.Fulfilled:
     case Admin.accountLoginAdminActionStatus.Fulfilled:
+    case Admin.accountUpdateAdminActionStatus.Fulfilled:
       return {
         ...state,
         account: {
