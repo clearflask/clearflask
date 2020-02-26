@@ -14,6 +14,9 @@ const MuiSnackbarProvider = withStyles((theme:Theme) => muiSnackbarStyles, { wit
     classes={{
       root: props.classes.snackbarRoot,
     }}
+    // content={(key, message) => (
+    //   <Alert id={key} message={message} />
+    // )}
   >
     {props.children}
   </SnackbarProvider>

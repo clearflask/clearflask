@@ -128,7 +128,6 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                       <Grid item key={plan.title} xs={12} sm={6}>
                         <PricingPlan
                           plan={plan}
-                          history={this.props.history}
                           actionTitle={this.state.planId === plan.planid ? 'continue' : 'select'}
                           actionOnClick={() => this.setState({
                             planId: plan.planid,

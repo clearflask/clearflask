@@ -17,6 +17,7 @@ const styles = (theme:Theme) => createStyles({
 interface Props extends WithStyles<typeof styles, true> {
   loaded:boolean;
   error?:string;
+  inline?:boolean;
 }
 
 class Loader extends Component<Props> {
@@ -27,7 +28,7 @@ class Loader extends Component<Props> {
     if(!this.props.loaded) {
       return (<Loading />);
     }
-    return (
+    return this.props.inline ? this.props.children : (
       <Fade in={this.props.loaded}>
         <div>
           {this.props.children}

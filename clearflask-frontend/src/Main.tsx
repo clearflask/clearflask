@@ -57,7 +57,7 @@ class Main extends Component {
                   <Site {...props} />
                 </Provider>
               )} />
-              <Route path="/(pricing|demo|signup|login)" render={props => (
+              <Route path="/(pricing|demo|signup|contact|login)" render={props => (
                 <Provider store={ServerAdmin.get().getStore()}>
                   <Site {...props} />
                 </Provider>

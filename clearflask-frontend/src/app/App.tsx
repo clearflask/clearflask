@@ -58,7 +58,7 @@ class App extends Component<Props> {
   }
 
   render() {
-  const prefixMatch = this.props.match.url;
+    const prefixMatch = this.props.match.url;
     const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (
       <Provider store={this.server.getStore()}>

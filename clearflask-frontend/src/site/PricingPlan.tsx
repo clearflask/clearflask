@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Typography, Button, Card, CardHeader, CardContent, CardActions } from '@material-ui/core';
 import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
-import { History, Location } from 'history';
 import * as Admin from '../api/admin';
 import InfoIcon from '@material-ui/icons/InfoOutlined';
 
@@ -19,12 +18,11 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  history:History;
   plan:Admin.Plan;
   selected?:boolean;
   expanded?:boolean;
-  actionTitle:string;
-  actionOnClick:()=>void;
+  actionTitle?:string;
+  actionOnClick?:()=>void;
 }
 
 class PricingPlan extends Component<Props&WithStyles<typeof styles, true>> {
@@ -40,7 +38,7 @@ class PricingPlan extends Component<Props&WithStyles<typeof styles, true>> {
           {this.props.plan.pricing ? (
             <React.Fragment>
               <div className={this.props.classes.cardPricing}>
-                <Typography component='h2' variant='h6' color='textSecondary' style={{alignSelf: 'end'}}>{'$'}</Typography>
+                <Typography component='h2' variant='h6' color='textSecondary' style={{alignSelf: 'flex-start'}}>{'$'}</Typography>
                 <Typography component='h2' variant='h3'>{this.props.plan.pricing.price}</Typography>
                 <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
               </div>
@@ -76,14 +74,17 @@ class PricingPlan extends Component<Props&WithStyles<typeof styles, true>> {
             </div>
           ))}
         </CardContent>
-        <CardActions>
-          <Button fullWidth color="primary"
-            variant={this.props.selected ? 'contained' : 'text'} 
-            onClick={this.props.actionOnClick}
-          >
-            {this.props.actionTitle}
-          </Button>
-        </CardActions>
+        {this.props.actionTitle && (
+          <CardActions>
+            <Button fullWidth color="primary"
+              variant={this.props.selected ? 'contained' : 'text'} 
+              onClick={this.props.actionOnClick}
+              disabled={!this.props.actionOnClick}
+            >
+              {this.props.actionTitle}
+            </Button>
+          </CardActions>
+        )}
       </Card>
     );
   }

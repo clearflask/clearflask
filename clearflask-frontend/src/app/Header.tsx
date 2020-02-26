@@ -17,6 +17,7 @@ const styles = (theme:Theme) => createStyles({
     borderRadius: '1px',
     bottom: 'unset',
     top: 0,
+    height: 1,
   },
   header: {
     maxWidth: '1024px',
@@ -59,6 +60,10 @@ const styles = (theme:Theme) => createStyles({
     display: 'flex',
     alignItems: 'center',
     padding: theme.spacing(1, 2, 0, 2),
+  },
+  logoImg: {
+    maxHeight: '48px',
+    margin: theme.spacing(1),
   },
   actions: {
     display: 'flex',
@@ -149,7 +154,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
     var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
       <div className={this.props.classes.logo}>
         {this.props.config.logoUrl && (
-          <img src={this.props.config.logoUrl} style={{maxHeight: '48px'}} />
+          <img src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
         )}
         {this.props.config.name && (
           <Typography variant='h6'>

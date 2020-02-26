@@ -47,6 +47,8 @@ paths:
   /project/{projectId}/notificationclear/{notificationId}/clear:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
   # api-admin.yaml
+  /support/message:
+    $ref: 'api-account.yaml#/~1support~1message'
   /admin/plan:
     $ref: 'api-account.yaml#/~1admin~1plan'
   /admin/account/signup:

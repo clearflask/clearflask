@@ -69,10 +69,9 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
-                    history={this.props.history}
                     actionTitle={plan.pricing ? 'Get started' : 'Contact us'}
                     actionOnClick={() => !plan.pricing
-                      ? this.props.history.push('/contact')
+                      ? this.props.history.push('/contact/sales')
                       : this.props.history.push('/signup', {[PRE_SELECTED_PLAN_ID]: plan.planid})}
                   />
                 </Grid>

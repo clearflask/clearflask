@@ -22,7 +22,8 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  className?:string
+  className?:string;
+  innerClassName?:string;
   title?:string;
   header?:React.ReactNode;
   width?:string;
@@ -66,7 +67,7 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
               style={{ height: this.props.height || '24px' }}
             />
           </div>
-          <div style={{width: '100%'}}>
+          <div style={{width: '100%'}} className={this.props.innerClassName}>
             {this.props.children}
           </div>
         </div>

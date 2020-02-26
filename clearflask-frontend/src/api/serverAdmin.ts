@@ -250,9 +250,13 @@ export interface StatePlans {
     plans?:Admin.Plan[];
     featuresTable?:Admin.FeaturesTable;
   };
+  changeOptions:{
+    status?:Status;
+  };
 }
 const statePlansDefault = {
   plans: {},
+  changeOptions: {},
 };
 function reducerPlans(state:StatePlans = statePlansDefault, action:Admin.Actions):StatePlans {
   switch (action.type) {

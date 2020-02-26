@@ -101,15 +101,13 @@ components:
     AccountAdmin:
       type: object
       required:
-      - plans
+      - plan
       - company
       - name
       - email
       properties:
-        plans:
-          type: array
-          items:
-            $ref: 'api-account.yaml#/components/schemas/Plan'
+        plan:
+          $ref: 'api-account.yaml#/components/schemas/Plan'
         company:
           type: string
         name:
@@ -121,10 +119,6 @@ components:
     AccountUpdateAdmin:
       type: object
       properties:
-        planIdAdd:
-          type: string
-        planIdRemove:
-          type: string
         name:
           type: string
         email:
@@ -132,6 +126,24 @@ components:
         password:
           type: string
 
+/support/message:
+  post:
+    operationId: supportMessage
+    tags: [Support]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            title: SupportMessage
+            properties:
+              content:
+                additionalProperties:
+                  type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /admin/plan:
   get:
     operationId: plansGet

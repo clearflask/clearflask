@@ -21,6 +21,7 @@ import UsersPage from './dashboard/UsersPage';
 import CreatePage from './dashboard/CreatePage';
 import ExplorerPage from './dashboard/ExplorerPage';
 import SettingsPage from './dashboard/SettingsPage';
+import BillingPage from './dashboard/BillingPage';
 
 interface Props {
 }
@@ -113,7 +114,7 @@ class Dashboard extends Component<Props&ConnectProps&RouteComponentProps, State>
         crumbs = [{name: 'Users', slug: activePath}];
         break;
       case 'billing':
-        page = (<div>This is billing</div>);
+        page = (<BillingPage />);
         crumbs = [{name: 'Billing', slug: activePath}];
         break;
       case 'account':

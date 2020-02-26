@@ -113,6 +113,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.hasLatency = enabled;
   }
 
+  supportMessage(request: Admin.SupportMessageRequest): Promise<void> {
+    console.log('Received support message with content:', request.supportMessage.content);
+    return this.returnLater();
+  }
   plansGet(): Promise<Admin.PlansGetResponse> {
     return this.returnLater({
       plans: Object.values(AvailablePlans),
@@ -134,13 +138,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;
-    return this.returnLater(undefined);
+    return this.returnLater();
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const plan = AvailablePlans[request.accountSignupAdmin.planid];
     if(!plan) return this.throwLater(404, 'Requested plan could not be found');
     const account:Admin.AccountAdmin = {
-      plans: [],
+      plan: AvailablePlans[request.accountSignupAdmin.planid]!,
       company: request.accountSignupAdmin.company,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
@@ -156,12 +160,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if(request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
     if(request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if(request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
-    if(request.accountUpdateAdmin.planIdAdd) this.account.plans = [...new Set([...this.account.plans, AvailablePlans[request.accountUpdateAdmin.planIdAdd]!])];
-    if(request.accountUpdateAdmin.planIdRemove) {
-      const plansSet = new Set(this.account.plans);
-      plansSet.delete(AvailablePlans[request.accountUpdateAdmin.planIdRemove]);
-      this.account.plans = [...plansSet];
-    }
     return this.returnLater(this.account);
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
@@ -341,7 +339,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.getProject(request.projectId).users.splice(userIdIndex, 1);
     }
     this.getProject(request.projectId).loggedInUser = undefined;
-    return this.returnLater(undefined);
+    return this.returnLater();
   }
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
@@ -352,7 +350,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
-    return this.returnLater(undefined);
+    return this.returnLater();
   }
   userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMeWithBalance> {
     var token;
@@ -411,14 +409,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId
         || notification.notificationId !== request.notificationId);
-    return this.returnLater(undefined);
+    return this.returnLater();
   }
   notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if(!loggedInUser) return this.throwLater(403, 'Not logged in');
     this.getProject(request.projectId).notifications = this.getProject(request.projectId).notifications
       .filter(notification => notification.userId !== loggedInUser.userId);
-    return this.returnLater(undefined);
+    return this.returnLater();
   }
   notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -787,7 +785,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return t;
   }
 
-  async returnLater<T>(returnValue:T):Promise<T> {
+  async returnLater<T>(returnValue:T|undefined = undefined):Promise<T> {
     // console.log('Server SEND:', returnValue);
     await this.waitLatency();
     return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
