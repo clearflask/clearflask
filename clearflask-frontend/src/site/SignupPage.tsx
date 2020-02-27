@@ -98,7 +98,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       : [];
 
     const planStepCompleted = !!this.state.planId && !!selectedPlan;
-    const accountStepCompleted = !!this.state.company && !!this.state.name && !!this.state.email && !!this.state.pass;
+    const accountStepCompleted = !!this.state.name && !!this.state.email && !!this.state.pass;
     const billingStepCompleted = !!this.state.stripe && !!this.state.cardValid && !!this.state.cardExpiryValid && !!this.state.cardCvcValid;
 
     return (
@@ -154,7 +154,6 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                     className={this.props.classes.item}
                     id='company'
                     label='Company'
-                    required
                     value={this.state.company || ''}
                     onChange={e => this.setState({ company: e.target.value })}
                   />
@@ -257,7 +256,7 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                     <TableBody>
                       {[
                         {name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Quarterly'})` : 'No plan selected', error: !selectedPlan},
-                        {name: 'Company', value: this.state.company || 'Missing company name', error: !this.state.company},
+                        {name: 'Company', value: this.state.company || 'Not set'},
                         {name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name},
                         {name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped'},
                         {name: 'Email', value: this.state.email || 'Missing email', error: !this.state.email},

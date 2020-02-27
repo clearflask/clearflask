@@ -54,6 +54,7 @@ class BillingPage extends Component<ConnectProps&WithStyles<typeof styles, true>
         </DividerCorner>
         <DividerCorner title='Billing' className={this.props.classes.corner}>
           TODO
+          {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
         </DividerCorner>
       </React.Fragment>
     );

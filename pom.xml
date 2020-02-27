@@ -33,6 +33,7 @@
     </properties>
 
     <modules>
+        <module>clearflask-legal</module>
         <module>clearflask-api</module>
         <module>clearflask-frontend</module>
         <module>clearflask-server</module>
