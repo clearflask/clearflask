@@ -23,8 +23,8 @@ export default class PushNotificationListener extends Component<Props> {
     }
   }
 
-  componentDidMount = () => navigator.serviceWorker.addEventListener('message', this.messageReceived.bind(this));
-  componentWillUnmount = () => navigator.serviceWorker.removeEventListener('message', this.messageReceived.bind(this));
+  componentDidMount = () => navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', this.messageReceived.bind(this));
+  componentWillUnmount = () => navigator.serviceWorker && navigator.serviceWorker.removeEventListener('message', this.messageReceived.bind(this));
 
   render = () => null;
 
