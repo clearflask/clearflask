@@ -137,6 +137,8 @@ components:
           schema:
             type: object
             title: SupportMessage
+            required:
+            - content
             properties:
               content:
                 additionalProperties:

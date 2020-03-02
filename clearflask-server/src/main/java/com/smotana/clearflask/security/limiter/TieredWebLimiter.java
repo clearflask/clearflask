@@ -157,7 +157,7 @@ public class TieredWebLimiter implements Limiter {
         }
 
         // Challenge
-        if (limit.challengeAfter() > 0) {
+        if (limit.challengeAfter() >= 0) {
             Optional<String> solutionOpt = Optional.ofNullable(Strings.emptyToNull(requestContext.getHeaderString(SOLUTION_HEADER)));
             Optional<String> newChallengeOpt = challengeLimiter.process(limit.challengeAfter(), remoteIp, target, solutionOpt);
             if (newChallengeOpt.isPresent()) {

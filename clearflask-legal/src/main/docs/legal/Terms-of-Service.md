@@ -1,10 +1,10 @@
-### Terms of Service
+# Terms of Service
 
 ## The Gist
 
 We (the [folks at Smotana](https://smotana.com)) are on a mission to provide useful software for both our customers and users. We hope you love our products and services as much as we love creating them. These Terms of Service ("Terms") describe our commitments to you, and your rights and responsibilities when using our services. Please read them carefully and reach out to us if you have any questions at our [email](mailto:legal@example.com). These Terms are available under a [Creative Commons Sharealike](https://creativecommons.org/licenses/by-sa/4.0/) license originally created by the amazing [folks at Automattic](http://automattic.com/about/). You’re more than welcome to copy them, adapt them, and repurpose them for your own use. Just make sure to revise the language so that your Terms reflect your actual practices.
 
-## Terms of Service
+## Terms
 
 These Terms govern your access to and use of Smotana.com, Veruv.com, and ClearFlask.com (collectively, the "Sites", "Service Sites", or "Our Sites"), as well as all content, products and services available at or through these websites (collectively, "Services"). These Terms also govern visitors’ access to and use of any websites that use our Services, such as content hosted on Our Sites that are operated by our users. Our Services are offered subject to your acceptance, without modification, of all of the terms and conditions contained herein and all other operating rules, policies (including, without limitation, [Smotana’s Privacy Policy](https://smotana.com/privacy/)), and procedures that may be published from time to time by Smotana (collectively, the "Agreement"). You agree that we may automatically upgrade our Services, and the Agreement will apply to any upgrades. Please read the Agreement carefully before accessing or using our Services. By accessing or using any part of our Services, you agree to become bound by the Agreement. If you do not agree to all the terms of the Agreement, then you may not access or use our Services.
 

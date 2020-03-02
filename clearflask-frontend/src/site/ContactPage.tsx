@@ -9,6 +9,13 @@ import { match, Route } from 'react-router';
 import BasePage from '../app/BasePage';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 
+// If changed, also change in SupportResource.java
+const TYPE = 'type';
+// If changed, also change in SupportResource.java
+const IMPORTANT = 'important';
+// If changed, also change in SupportResource.java
+const CONTACT = 'contact';
+
 const styles = (theme:Theme) => createStyles({
   page: {
     margin: theme.spacing(2),
@@ -44,7 +51,7 @@ const forms:ContactForm[] = [{
     fields: [
       {attrName: 'product', title: 'Company', placeholder: 'example.com'},
       {attrName: 'availability', title: 'Availability', placeholder: 'Tue 3-6pm PT', required: true},
-      {attrName: 'contact', title: 'Contact', placeholder: 'name@example.com', required: true},
+      {attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true},
     ],
   }, {
     type: 'support',
@@ -53,8 +60,8 @@ const forms:ContactForm[] = [{
     subtitle: 'Need help? Found an issue?',
     fields: [
       {attrName: 'issue', type: 'multiline', title: 'Issue', required: true},
-      {attrName: 'contact', title: 'Contact', placeholder: 'name@example.com', required: true},
-      {attrName: 'important', type: 'checkbox', title: 'Requires immediate attention'},
+      {attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true},
+      {attrName: IMPORTANT, type: 'checkbox', title: 'Requires immediate attention'},
     ],
   }, {
     type: 'general',
@@ -63,7 +70,7 @@ const forms:ContactForm[] = [{
     submitTitle: 'Contact us',
     fields: [
       {attrName: 'message', type: 'multiline', title: 'Inquiry', required: true},
-      {attrName: 'contact', title: 'Contact', placeholder: 'name@example.com', required: true},
+      {attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true},
     ],
   },
 ];
@@ -138,7 +145,7 @@ class ContactPage extends Component<Props&WithStyles<typeof styles, true>, State
                           form.fields.forEach(field => content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`]);
                           ServerAdmin.get().dispatchAdmin().then(d => d.supportMessage({supportMessage: {content: {
                             ...content,
-                            type: form.type,
+                            [TYPE]: form.type,
                           }}}))
                           .then(() => {
                             this.setState({isSubmitting: false});

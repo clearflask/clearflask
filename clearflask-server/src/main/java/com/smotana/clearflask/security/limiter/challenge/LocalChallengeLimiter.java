@@ -55,10 +55,11 @@ public class LocalChallengeLimiter implements ChallengeLimiter {
             return Optional.empty();
         }
 
-        int attemptsCount = attemptsCounter.compute(target, (k, ac) -> ac == null ? 1 : ac + 1);
-
-        if (attemptsCount <= challengeAfter) {
-            return Optional.empty();
+        if (challengeAfter != 0) {
+            int attemptsCount = attemptsCounter.compute(target, (k, ac) -> ac == null ? 1 : ac + 1);
+            if (attemptsCount <= challengeAfter) {
+                return Optional.empty();
+            }
         }
 
         if (!challengeResponse.isPresent()) {

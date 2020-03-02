@@ -40,10 +40,9 @@
 
 package com.smotana.clearflask.security.limiter;
 
-import com.google.common.net.InetAddresses;
 import com.smotana.clearflask.core.ServiceInjector;
+import com.smotana.clearflask.util.IpUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.common.Strings;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -130,7 +129,7 @@ public class LimiterDynamicFeature implements DynamicFeature {
 
         @Override
         public void filter(ContainerRequestContext requestContext) throws IOException {
-            String remoteIp = getRemoteIp();
+            String remoteIp = IpUtil.getRemoteIp(request, env);
             String target;
             switch (targetType) {
                 case IP:
@@ -149,34 +148,6 @@ public class LimiterDynamicFeature implements DynamicFeature {
             }
 
             limiter.filter(requestContext, limit, remoteIp, target);
-        }
-
-        private String getRemoteIp() {
-            String remoteIp;
-            switch (env) {
-                case PRODUCTION_AWS:
-                    String xForwardedFor = request.getHeader("x-forwarded-for");
-                    if (Strings.isNullOrEmpty(xForwardedFor)) {
-                        throw new InternalServerErrorException("X-Forwarded-For not set in AWS");
-                    }
-                    int indexOfFirstComma = xForwardedFor.indexOf(',');
-                    if (indexOfFirstComma == -1) {
-                        remoteIp = xForwardedFor.trim();
-                    } else {
-                        remoteIp = xForwardedFor.substring(0, indexOfFirstComma).trim();
-                    }
-                    break;
-                case TEST:
-                case DEVELOPMENT_LOCAL:
-                    remoteIp = request.getRemoteAddr();
-                    break;
-                default:
-                    throw new InternalServerErrorException("Unknown environment: " + env);
-            }
-            if (!InetAddresses.isInetAddress(remoteIp)) {
-                throw new InternalServerErrorException("Not a valid remote IP: " + remoteIp);
-            }
-            return remoteIp;
         }
     }
 }

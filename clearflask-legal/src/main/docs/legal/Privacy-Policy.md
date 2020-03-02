@@ -1,3 +1,5 @@
+# Privacy Policy
+
 Your privacy is critically important to us. At Smotana, we have a few fundamental principles:
 
 *   We are thoughtful about the personal information we ask you to provide and the personal information that we collect about you through the operation of our services.
