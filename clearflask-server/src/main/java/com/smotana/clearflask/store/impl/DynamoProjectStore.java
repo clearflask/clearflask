@@ -215,7 +215,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     }
 
     @Override
-    public void updateConfig(String projectId, Optional<String> previousVersion, VersionedConfigAdmin versionedConfigAdmin) {
+    public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin) {
         Optional<String> slugOptPrevious = Optional.ofNullable(getProject(projectId, false).get().getVersionedConfigAdmin().getConfig().getSlug());
         Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
         if (!slugOpt.equals(slugOptPrevious)) {
@@ -231,14 +231,16 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                     .withPrimaryKey(slugSchema.primaryKey(Map.of(
                             "slug", slugPrevious)))));
         }
+        PutItemSpec putItemSpec = new PutItemSpec()
+                .withItem(projectSchema.toItem(new ProjectModel(
+                        projectId,
+                        versionedConfigAdmin.getVersion(),
+                        gson.toJson(versionedConfigAdmin.getConfig()))));
+        previousVersionOpt.ifPresent(previousVersion -> putItemSpec
+                .withConditionExpression("version = :previousVersion")
+                .withValueMap(Map.of(":previousVersion", previousVersion)));
         try {
-            projectSchema.table().putItem(new PutItemSpec()
-                    .withItem(projectSchema.toItem(new ProjectModel(
-                            projectId,
-                            versionedConfigAdmin.getVersion(),
-                            gson.toJson(versionedConfigAdmin.getConfig()))))
-                    .withConditionExpression("version = :previousVersion")
-                    .withValueMap(Map.of(":previousVersion", previousVersion)));
+            projectSchema.table().putItem(putItemSpec);
         } catch (ConditionalCheckFailedException ex) {
             throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
         }

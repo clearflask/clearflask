@@ -9,6 +9,8 @@ import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ConfigAndBindResult;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
+import com.smotana.clearflask.api.model.Legal;
+import com.smotana.clearflask.api.model.LegalDocuments;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
@@ -41,6 +43,11 @@ import java.util.Optional;
 @Path("/v1")
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
+    private static final Legal DEFAULT_LEGAL = new Legal(ImmutableList.of(
+            new LegalDocuments("Terms", "Terms of Service", "https://clearflask.com/terms"),
+            new LegalDocuments("Privacy", "Privacy Policy", "https://clearflask.com/privacy")
+    ));
+
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -68,6 +75,19 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
                 userMeWithBalanceOpt.orElse(null));
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 1)
+    @Override
+    public Legal projectLegalGet(String projectId) {
+        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, true)
+                .or(() -> projectStore.getProject(projectId, false));
+        if (!projectOpt.isPresent()) {
+            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
+        }
+        return Optional.ofNullable(projectOpt.get().getVersionedConfigAdmin().getConfig().getLegal())
+                .orElse(DEFAULT_LEGAL);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -107,7 +127,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public VersionedConfigAdmin configSetAdmin(String projectId, String versionLast, ConfigAdmin configAdmin) {
+    public VersionedConfigAdmin configSetAdmin(String projectId, ConfigAdmin configAdmin, String versionLast) {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, ModelUtil.createConfigVersion());
         projectStore.updateConfig(
                 projectId,

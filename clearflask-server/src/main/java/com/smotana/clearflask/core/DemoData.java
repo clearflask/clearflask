@@ -69,7 +69,7 @@ public class DemoData extends ManagedService {
                 email);
         AccountStore.Account account = new AccountStore.Account(
                 email,
-                ImmutableSet.of(plan.getPlanid()),
+                plan.getPlanid(),
                 "Smotana",
                 "Matus Faro",
                 password,

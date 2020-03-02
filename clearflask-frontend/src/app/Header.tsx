@@ -11,6 +11,7 @@ import { connect } from 'react-redux';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import { withRouter, RouteComponentProps } from 'react-router';
 import NotificationBadge from './NotificationBadge';
+import PoweredBy from './PoweredBy';
 
 const styles = (theme:Theme) => createStyles({
   indicator: {
@@ -20,6 +21,7 @@ const styles = (theme:Theme) => createStyles({
     height: 1,
   },
   header: {
+    width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
     padding: theme.spacing(1),
@@ -164,7 +166,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
       </div>
     ) : undefined;
 
-    var userActions = this.props.config && this.props.loggedInUser && (
+    var rightSide = this.props.config && this.props.loggedInUser && (
       <div className={this.props.classes.actions}>
         <IconButton
           aria-label='Notifications'
@@ -194,7 +196,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
         <div className={this.props.classes.logoAndActions}>
           {logo}
           <div className={this.props.classes.grow} />
-          {userActions}
+          {rightSide}
         </div>
         <Divider />
         {menu}

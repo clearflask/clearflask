@@ -38,6 +38,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoNotificationStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.StaticPlanStore;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -128,6 +129,7 @@ public enum ServiceInjector {
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
                 install(StaticPlanStore.module());
+                install(ResourceLegalStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());
                 install(DefaultServerSecret.module(Names.named("cursor")));

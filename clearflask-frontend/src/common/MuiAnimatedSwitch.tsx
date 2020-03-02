@@ -5,7 +5,9 @@ import muiSpring from './muiSpring';
 
 const styles = (theme:Theme) => createStyles({
   switch: {
-    position: 'relative', // Required for absolutely positioned children
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
 });
 
@@ -17,6 +19,7 @@ class MuiAnimatedSwitch extends Component<Props> {
   render() {
     return (
       <AnimatedSwitch
+        className={this.props.classes.switch}
         // props https://maisano.github.io/react-router-transition/animated-switch/props
         atEnter={{
           opacity: 0,
@@ -32,9 +35,13 @@ class MuiAnimatedSwitch extends Component<Props> {
         }}
         mapStyles={(styles) => {return {
           width: '100%',
+          height: '100%',
           position: styles.opacity >= 0.999 ? 'relative' : 'absolute',
           opacity: styles.opacity,
-          transform: `translateY(${styles.offset}px)`
+          transform: `translateY(${styles.offset}px)`,
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
         }}}
         runOnMount
       >

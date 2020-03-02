@@ -182,6 +182,7 @@ export default class ServerAdmin {
       account: stateAccountDefault,
       plans: statePlansDefault,
       configs: stateConfigsDefault,
+      legal: stateLegalDefault,
     };
     return state;
   }
@@ -345,13 +346,42 @@ function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.A
   }
 }
 
+export interface StateLegal {
+  status?:Status;
+  legal?:Admin.LegalResponse;
+}
+const stateLegalDefault = {};
+function reducerLegal(state:StateLegal = stateLegalDefault, action:Admin.Actions):StateLegal {
+  switch (action.type) {
+    case Admin.legalGetActionStatus.Pending:
+      return {
+        ...state,
+        status: Status.PENDING,
+      };
+    case Admin.legalGetActionStatus.Rejected:
+      return {
+        ...state,
+        status: Status.REJECTED,
+      };
+    case Admin.legalGetActionStatus.Fulfilled:
+      return {
+        status: Status.FULFILLED,
+        legal: action.payload,
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxStateAdmin {
   account:StateAccount;
   plans:StatePlans;
   configs:StateConfigs;
+  legal:StateLegal;
 }
 export const reducersAdmin = combineReducers({
   account: reducerAccount,
   plans: reducerPlans,
   configs: reducerConfigs,
+  legal: reducerLegal,
 });

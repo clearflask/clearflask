@@ -36,7 +36,7 @@ public class AccountStoreTest extends AbstractTest {
     public void testAccount() throws Exception {
         Account account = new Account(
                 "my@email.com",
-                ImmutableSet.of("planId1"),
+                "planId1",
                 "company",
                 "name",
                 "password",
@@ -90,7 +90,7 @@ public class AccountStoreTest extends AbstractTest {
     public void testSession() throws Exception {
         Account account = new Account(
                 "my@email.com",
-                ImmutableSet.of("planId1"),
+                "planId1",
                 "company",
                 "name",
                 "password",

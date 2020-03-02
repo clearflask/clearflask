@@ -1,6 +1,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -77,7 +78,7 @@ public interface AccountStore {
         private final String email;
 
         @NonNull
-        private final ImmutableSet<String> planIds;
+        private final String planId;
 
         @NonNull
         private final String company;
@@ -96,5 +97,14 @@ public interface AccountStore {
 
         @NonNull
         private final ImmutableSet<String> projectIds;
+
+        public AccountAdmin toAccountAdmin(PlanStore planStore) {
+            return new AccountAdmin(
+                    planStore.getPlan(getPlanId()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanId())),
+                    getCompany(),
+                    getName(),
+                    getEmail(),
+                    getPhone());
+        }
     }
 }

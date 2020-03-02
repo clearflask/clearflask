@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -10,19 +11,24 @@ import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.LegalResponse;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
+import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -52,6 +58,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private AccountStore accountStore;
     @Inject
     private PlanStore planStore;
+    @Inject
+    private LegalStore legalStore;
     @Inject
     private PasswordUtil passwordUtil;
 
@@ -85,12 +93,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         Account account = accountOpt.get();
 
-        return new AccountBindAdminResponse(new AccountAdmin(
-                planStore.mapIdsToPlans(account.getPlanIds()).asList(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPhone()));
+        return new AccountBindAdminResponse(account.toAccountAdmin(planStore));
     }
 
     @PermitAll
@@ -116,12 +119,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         setAuthCookie(accountSession);
 
-        return new AccountAdmin(
-                planStore.mapIdsToPlans(account.getPlanIds()).asList(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPhone());
+        return account.toAccountAdmin(planStore);
     }
 
     @PermitAll
@@ -156,7 +154,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
         Account account = new Account(
                 signup.getEmail(),
-                ImmutableSet.of(plan.getPlanid()),
+                plan.getPlanid(),
                 signup.getCompany(),
                 signup.getName(),
                 passwordHashed,
@@ -172,12 +170,35 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         // TODO Stripe setup recurring billing
 
-        return new AccountAdmin(
-                planStore.mapIdsToPlans(account.getPlanIds()).asList(),
-                account.getCompany(),
-                account.getName(),
-                account.getEmail(),
-                account.getPhone());
+        return account.toAccountAdmin(planStore);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public AccountAdmin accountUpdateAdmin(AccountUpdateAdmin accountUpdateAdmin) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = null;
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
+            account = accountStore.updateAccountName(accountSession.getEmail(), accountUpdateAdmin.getName());
+        }
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
+            account = accountStore.updateAccountPassword(accountSession.getEmail(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
+        }
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
+            account = accountStore.updateAccountEmail(accountSession.getEmail(), accountUpdateAdmin.getEmail());
+        }
+        return (account == null
+                ? accountStore.getAccount(accountSession.getEmail()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getEmail()))
+                : account)
+                .toAccountAdmin(planStore);
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 1)
+    @Override
+    public LegalResponse legalGet() {
+        return new LegalResponse(legalStore.termsOfService(), legalStore.privacyPolicy());
     }
 
     private void setAuthCookie(AccountSession accountSession) {

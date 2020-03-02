@@ -380,6 +380,16 @@
                                     <outputDirectory>${project.build.directory}/war-include/</outputDirectory>
                                     <includes>ROOT/**</includes>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.smotana.clearflask</groupId>
+                                    <artifactId>clearflask-legal</artifactId>
+                                    <classifier>legal</classifier>
+                                    <version>${project.version}</version>
+                                    <type>tar.gz</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/resources-legal/legal/</outputDirectory>
+                                    <includes>**</includes>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -433,5 +443,11 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <filtering>false</filtering>
+                <directory>${project.build.directory}/resources-legal</directory>
+            </resource>
+        </resources>
     </build>
 </project>

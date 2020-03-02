@@ -166,6 +166,25 @@ components:
                     $ref: 'api-account.yaml#/components/schemas/Plan'
                 featuresTable:
                   $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
+/admin/legal:
+  get:
+    operationId: legalGet
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: LegalResponse
+              type: object
+              required:
+              - terms
+              - privacy
+              properties:
+                terms:
+                  type: string
+                privacy:
+                  type: string
 /admin/account/signup:
   post:
     operationId: accountSignupAdmin

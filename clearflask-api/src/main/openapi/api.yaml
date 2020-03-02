@@ -40,6 +40,8 @@ paths:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
   /project/{projectId}/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
+  /project/{projectId}/legal:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1legal'
   /project/{projectId}/notificationsearch:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationsearch'
   /project/{projectId}/notificationclear:
@@ -49,6 +51,8 @@ paths:
   # api-admin.yaml
   /support/message:
     $ref: 'api-account.yaml#/~1support~1message'
+  /admin/legal:
+    $ref: 'api-account.yaml#/~1admin~1legal'
   /admin/plan:
     $ref: 'api-account.yaml#/~1admin~1plan'
   /admin/account/signup:

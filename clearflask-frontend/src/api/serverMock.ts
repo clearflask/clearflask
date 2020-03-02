@@ -123,6 +123,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       featuresTable: FeaturesTable,
     });
   }
+  legalGet(): Promise<Admin.LegalResponse> {
+    return this.returnLater({
+      terms: 'Here are Terms of Service',
+      privacy: 'Here is a privacy policy.',
+    });
+  }
   accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
     return this.returnLater(this.loggedIn && this.account
       ? {account: this.account} : {});
@@ -321,6 +327,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         balance: this.getProject(request.projectId).balances[loggedInUser.userId] || 0,
       } : undefined,
     });
+  }
+  projectLegalGet(request: Client.ProjectLegalGetRequest): Promise<Client.Legal> {
+    if(!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
+    return this.returnLater(this.getProject(request.projectId).config.config.legal
+      ? this.getProject(request.projectId).config.config.legal
+      : {documents: [
+        {shortName: 'Privacy', name: 'Privacy Policy', link: 'https://clearflask.com/privacy-policy'},
+        {shortName: 'Terms', name: 'Terms of Service', link: 'https://clearflask.com/terms-of-service'},
+      ]});
   }
   userCreate(request: Client.UserCreateRequest): Promise<Client.UserMeWithBalance> {
     return this.userCreateAdmin({

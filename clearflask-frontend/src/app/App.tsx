@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Server } from '../api/server';
 import { match } from 'react-router';
 import Header from './Header';
+import Footer from './Footer';
 import { History, Location } from 'history';
 import BasePage from './BasePage';
 import { Provider } from 'react-redux';
@@ -62,14 +63,27 @@ class App extends Component<Props> {
     const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (
       <Provider store={this.server.getStore()}>
-      <AppThemeProvider appRootId={appRootId} isInsideContainer={this.props.isInsideContainer} supressCssBaseline={this.props.supressCssBaseline}>
+      <AppThemeProvider
+        appRootId={appRootId}
+        isInsideContainer={this.props.isInsideContainer}
+        supressCssBaseline={this.props.supressCssBaseline}
+        containerStyle={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <PushNotificationListener server={this.server} />
         <ServerErrorNotifier server={this.server} />
         <CaptchaChallenger server={this.server} />
         {/* SSO not yet suppported <SsoLogin server={this.server} /> */}
         <div
+          key={appRootId}
           id={appRootId}
           style={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
             height: '100%',
             width: '100%',
             ...(this.props.isInsideContainer ? {
@@ -86,8 +100,8 @@ class App extends Component<Props> {
           )} />
           <AnimatedPageSwitch
             render={(pageSlug:string) => (
-              <Route key={pageSlug} path={`${prefixMatch}/(embed)?/${pageSlug}`} render={props => (
-                <BasePage>
+              <Route key={pageSlug} path={`${prefixMatch}/:embed(embed)?/${pageSlug}`} render={props => (
+                <BasePage showFooter={!props.match.params['embed']}>
                   <CustomPage
                     pageSlug={pageSlug}
                     server={this.server}
@@ -97,23 +111,23 @@ class App extends Component<Props> {
               )} />
             )} >
             <Route key='transaction' path={`${prefixMatch}/transaction`} render={props => (
-              <BasePage>
+              <BasePage showFooter>
                 <BankPage server={this.server} />
               </BasePage>
             )} />
             <Route key='notification' path={`${prefixMatch}/notification`} render={props => (
-              <BasePage>
+              <BasePage showFooter>
                 <NotificationPage server={this.server} />
               </BasePage>
             )} />
             <Route key='account' path={`${prefixMatch}/account`} render={props => (
-              <BasePage>
+              <BasePage showFooter>
                 <AccountPage server={this.server} />
               </BasePage>
             )} />
             {!isExpanded() && (
               <Route key='post' path={`${prefixMatch}/post/:postId`} render={props => (
-                <BasePage>
+                <BasePage showFooter>
                   <PostPage
                     postId={props.match.params['postId'] || ''}
                     server={this.server}

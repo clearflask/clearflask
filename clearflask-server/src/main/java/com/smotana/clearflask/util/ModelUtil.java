@@ -7,6 +7,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Content;
 import com.smotana.clearflask.api.model.Credits;
 import com.smotana.clearflask.api.model.Layout;
+import com.smotana.clearflask.api.model.Legal;
 import com.smotana.clearflask.api.model.NotificationMethods;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.Palette;
@@ -39,7 +40,7 @@ public class ModelUtil {
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
                                 new NotificationMethods(null, true, false, null))),
-                null
+                new Legal(null)
         ), createConfigVersion());
     }
 

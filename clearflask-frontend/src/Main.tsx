@@ -49,7 +49,12 @@ class Main extends Component {
         <EnvironmentNotifier />
         <ServerErrorNotifier server={ServerAdmin.get()} />
         <CaptchaChallenger server={ServerAdmin.get()} />
-        <div style={{background: theme.palette.background.default}}>
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: theme.palette.background.default,
+        }}>
           <Router>
             <Switch>
               <Route exact path="/" render={props => (
@@ -57,7 +62,7 @@ class Main extends Component {
                   <Site {...props} />
                 </Provider>
               )} />
-              <Route path="/(pricing|demo|signup|contact|login)" render={props => (
+              <Route path="/(pricing|demo|signup|contact|login|terms|terms-of-service|privacy|policy|privacy-policy)" render={props => (
                 <Provider store={ServerAdmin.get().getStore()}>
                   <Site {...props} />
                 </Provider>

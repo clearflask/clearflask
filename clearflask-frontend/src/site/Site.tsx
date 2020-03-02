@@ -12,6 +12,7 @@ import PricingPage from './PricingPage';
 import SignupPage from './SignupPage';
 import SigninPage from './SigninPage';
 import ContactPage from './ContactPage';
+import LegalPage from './LegalPage';
 import MenuIcon from '@material-ui/icons/Menu';
 
 const styles = (theme:Theme) => createStyles({
@@ -20,6 +21,11 @@ const styles = (theme:Theme) => createStyles({
   },
   grow: {
     flexGrow: 1,
+  },
+  growAndFlex: {
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
   appBarSpacer: theme.mixins.toolbar,
   appbar: {
@@ -49,7 +55,7 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
       {path: '/dashboard', title: 'Dashboard'},
     ]
     return (
-      <React.Fragment>
+      <div className={this.props.classes.growAndFlex}>
         {/* <HideOnScroll> */}
           <AppBar position='relative' color='inherit' elevation={0} className={this.props.classes.appbar}>
             <Container maxWidth='md' disableGutters>
@@ -109,6 +115,12 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
           <Route exact path={'/signup'} render={props => (
             <SignupPage {...props} />
           )} />
+          <Route exact path={'/(terms|terms-of-service)'} render={props => (
+            <LegalPage type='terms' />
+          )} />
+          <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => (
+            <LegalPage type='privacy' />
+          )} />
           <Route path={`/:projectId(demo)`} render={props => {
             if(!this.projectPromise) this.projectPromise = getProject(
               templater => templater.demo(),
@@ -130,7 +142,7 @@ class Site extends Component<RouteComponentProps&WithStyles<typeof styles, true>
             <LandingPage />
           )} />
         </MuiAnimatedSwitch>
-      </React.Fragment>
+      </div>
     );
   }
 }

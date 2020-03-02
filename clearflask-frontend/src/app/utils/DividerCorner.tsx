@@ -60,7 +60,6 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
         }}>
           <div style={{
             display: 'flex',
-            alignItems: 'stretch',
           }}>
             <DividerVertical
               className={this.props.classes.heightTransition}

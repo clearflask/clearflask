@@ -21,6 +21,7 @@ declare module '@material-ui/core/styles/createMuiTheme' {
 }
 
 interface Props {
+  containerStyle?:React.CSSProperties,
   supressCssBaseline?:boolean;
   isInsideContainer?:boolean;
   breakpoints?:{[key in Breakpoint]:number};
@@ -118,6 +119,7 @@ class AppThemeProvider extends Component<Props> {
           height: '100%',
           background: theme.palette.background.default,
           color: theme.palette.text.primary,
+          ...(this.props.containerStyle || {}),
         }}>
           {this.props.children}
         </div>

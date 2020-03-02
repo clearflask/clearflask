@@ -9,6 +9,7 @@ import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/s
 const MENU_WIDTH = '180px';
 const styles = (theme:Theme) => createStyles({
   root: {
+    flexGrow: 1,
     display: 'flex',
   },
   mainAndBarBottom: {

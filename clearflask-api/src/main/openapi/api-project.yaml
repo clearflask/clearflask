@@ -14,6 +14,7 @@ components:
         - content
         - style
         - users
+        - legal
       properties:
         # TODO remove test page
         # test:
@@ -236,6 +237,27 @@ components:
               x-clearflask-prop: { order: 2, name: 'Font Size' }
               type: number
               format: double
+    legal:
+      x-clearflask-page: { order: 20, name: 'Legal', description: 'End-user agreements.' }
+      title: Legal
+      type: object
+      properties:
+        documents:
+          x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents end-users will agree to when using your service. You can override default ClearFlask Terms of Service and Privacy Policy by linking to your own.' }
+          type: array
+          items:
+            x-clearflask-prop: { name: 'Object', description: 'Document' }
+            type: object
+            properties:
+              shortName:
+                x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
+                type: string
+              name:
+                x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
+                type: string
+              link:
+                x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
+                type: string
     support:
       x-clearflask-page: { order: 4, name: 'Support' }
       title: Support
@@ -555,9 +577,11 @@ components:
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/Config'
         - type: object
+          required:
+          - legal
           properties:
-            dummyField: # Add field so java generation doesn't use model inheritance
-              type: string
+            legal:
+              $ref: 'api-project.yaml#/components/schemas/legal'
       # TODO OAuth
       # TODO Email/Push notifications
       # TODO Credit income
@@ -704,11 +728,11 @@ components:
     operationId: configGetAndUserBind
     tags: [Project]
     parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
     responses:
       '200':
         content:
@@ -717,12 +741,28 @@ components:
               title: ConfigAndBindResult
               type: object
               required:
-                - config
+              - config
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/project/{projectId}/legal:
+  get:
+    operationId: projectLegalGet
+    tags: [Project]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/legal'
 /project/config/admin:
   get:
     operationId: configGetAllAdmin
