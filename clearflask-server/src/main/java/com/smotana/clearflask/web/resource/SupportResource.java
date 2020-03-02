@@ -63,7 +63,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
     private HttpServletRequest request;
 
     @PermitAll
-    @Limit(requiredPermits = 100, challengeAfter = 0)
+    @Limit(requiredPermits = 100, challengeAfter = 1)
     @Override
     public void supportMessage(SupportMessage supportMessage) {
         try {

@@ -47,10 +47,10 @@ export default class CaptchaChallenger extends Component<Props, State> {
           },
         }}
       >
-        <DialogTitle>Detected excessive usage</DialogTitle>
+        <DialogTitle>Make sure you are human</DialogTitle>
         <DialogContent>
           <DialogContentText>Complete captcha challenge below to continue</DialogContentText>
-          {this.state.sitekey &&(
+          {this.state.sitekey && (
             <ReCAPTCHA
               ref={this.recaptchaRef}
               sitekey={this.state.sitekey}
