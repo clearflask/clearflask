@@ -12,12 +12,10 @@ class PostsPage extends Component<Props> {
       <IdeaExplorer
         server={this.props.server}
         explorer={{
-          allowSearch: true,
+          allowSearch: {enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true},
           allowCreate: true,
-          panel: {
-            search: {},
-            display: {},
-          },
+          search: {},
+          display: {},
         }}
       />
     );

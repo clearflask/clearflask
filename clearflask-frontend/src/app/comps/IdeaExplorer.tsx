@@ -132,9 +132,9 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
       content = (
         <div className={this.props.classes.content}>
           <Panel
-            key={getSearchKey(this.props.explorer.panel.search)}
+            key={getSearchKey(this.props.explorer.search)}
             direction={Direction.Vertical}
-            panel={this.props.explorer.panel}
+            panel={this.props.explorer}
             searchOverride={{searchText: this.state.newItemSearchText}}
             server={this.props.server}
             displayDefaults={{
@@ -162,16 +162,16 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           server={this.props.server}
           search={this.state.search}
           onSearchChanged={search => this.setState({ search: search })}
-          panel={this.props.explorer.panel}
+          explorer={this.props.explorer}
         />
       );
       content = (
         <div className={this.props.classes.content}>
           <Panel
-            key={getSearchKey(this.props.explorer.panel.search)}
+            key={getSearchKey(this.props.explorer.search)}
             server={this.props.server}
             direction={Direction.Vertical}
-            panel={this.props.explorer.panel}
+            panel={this.props.explorer}
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
@@ -212,13 +212,13 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           ...(this.state.newItemChosenCategoryId === undefined
             ? {newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
               ? this.state.search.filterCategoryIds[0]
-              : ((this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
-                ? this.props.explorer.panel.search.filterCategoryIds[0]
+              : ((this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
+                ? this.props.explorer.search.filterCategoryIds[0]
                 : undefined)}
             : {}),
           ...(this.state.newItemChosenTagIds === undefined ? {newItemChosenTagIds: [...new Set([
             ...(this.state.search && this.state.search.filterTagIds || []),
-            ...(this.props.explorer.panel.search.filterTagIds || [])])]} : {}),
+            ...(this.props.explorer.search.filterTagIds || [])])]} : {}),
         })}}
         InputProps={{
           inputRef: this.createInputRef,
@@ -253,8 +253,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     if(!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
-    var categoryOptions = (this.props.explorer.panel.search.filterCategoryIds && this.props.explorer.panel.search.filterCategoryIds.length > 0)
-      ? this.props.config.content.categories.filter(c => this.props.explorer.panel.search.filterCategoryIds!.includes(c.categoryId))
+    var categoryOptions = (this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
+      ? this.props.config.content.categories.filter(c => this.props.explorer.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories;
     if(!ServerAdmin.get().isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
     if(this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
@@ -439,10 +439,10 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const tagSelection:TagSelection = {
       values: [],
       options: [],
-      mandatoryTagIds: this.props.explorer.panel.search.filterTagIds || [],
+      mandatoryTagIds: this.props.explorer.search.filterTagIds || [],
       colorLookup: {},
     };
-    const mandatoryTagIds = new Set(this.props.explorer.panel.search.filterTagIds || []);
+    const mandatoryTagIds = new Set(this.props.explorer.search.filterTagIds || []);
 
     if(!this.props.config) return tagSelection;
 

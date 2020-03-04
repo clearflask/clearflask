@@ -41,7 +41,7 @@ interface Props {
   server:Server;
   search?:Partial<Client.IdeaSearch>;
   onSearchChanged:(search:Partial<Client.IdeaSearch>)=>void;
-  panel:Client.PagePanelWithSearch;
+  explorer:Client.PageExplorer;
 }
 
 interface ConnectProps {
@@ -185,7 +185,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
 
     // sort
     if(!this.isFilterControllable(FilterType.Sort)) {
-      const label:Label = this.getLabel(FilterType.Sort, this.props.panel.search.sortBy!, this.props.panel.search.sortBy!);
+      const label:Label = this.getLabel(FilterType.Sort, this.props.explorer.search.sortBy!, this.props.explorer.search.sortBy!);
       controls.permanent.push(label);
     } else {
       Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
@@ -200,7 +200,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     // category
     var searchableCategories:Client.Category[] = [];
     if(!this.isFilterControllable(FilterType.Category)) {
-      (this.props.panel.search.filterCategoryIds || []).forEach(categoryId => {
+      (this.props.explorer.search.filterCategoryIds || []).forEach(categoryId => {
         const category = this.props.config!.content.categories.find(c => c.categoryId === categoryId);
         if(!category) return;
         searchableCategories.push(category);
@@ -227,7 +227,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     if(!this.isFilterControllable(FilterType.Status)) {
       searchableCategories.forEach(category => {
         category.workflow.statuses.forEach(status => {
-          if(this.props.panel.search.filterStatusIds && this.props.panel.search.filterStatusIds.includes(status.statusId)) {
+          if(this.props.explorer.search.filterStatusIds && this.props.explorer.search.filterStatusIds.includes(status.statusId)) {
             const label:Label = this.getLabel(FilterType.Status, status.statusId, status.name);
             controls.permanent.push(label);
             controls.colorLookup[label.value] = status.color;
@@ -251,7 +251,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     if(!this.isFilterControllable(FilterType.Tag)) {
       searchableCategories.forEach(category => {
         category.tagging.tags.forEach(tag => {
-          if(this.props.panel.search.filterTagIds && this.props.panel.search.filterTagIds.includes(tag.tagId)) {
+          if(this.props.explorer.search.filterTagIds && this.props.explorer.search.filterTagIds.includes(tag.tagId)) {
             const label:Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
             controls.permanent.push(label);
             controls.colorLookup[label.value] = tag.color;
@@ -259,7 +259,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
         })
       });
     } else {
-      const filterTagIds = new Set(this.props.panel.search.filterTagIds);
+      const filterTagIds = new Set(this.props.explorer.search.filterTagIds);
       searchableCategories.forEach(category => {
         category.tagging.tagGroups.forEach(tagGroup => {
           const matchingCount:number = tagGroup.tagIds.reduce((count, nextTagId) => count + (filterTagIds.has(nextTagId) ? 1 : 0), 0);
@@ -286,7 +286,7 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
 
     // search
     if(!this.isFilterControllable(FilterType.Search)) {
-      const label:Label = this.getLabel(FilterType.Search, this.props.panel.search.searchText!, this.props.panel.search.searchText!);
+      const label:Label = this.getLabel(FilterType.Search, this.props.explorer.search.searchText!, this.props.explorer.search.searchText!);
       controls.permanent.push(label);
     } else if(this.props.search && this.props.search.searchText != undefined) {
       const label:Label = this.getLabel(FilterType.Search, this.props.search.searchText, this.props.search.searchText);
@@ -315,15 +315,15 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
   isFilterControllable(type:FilterType|string):boolean {
     switch(type) {
       case FilterType.Search:
-        return this.props.panel.enableSearchText !== undefined ? this.props.panel.enableSearchText : this.props.panel.search.searchText === undefined;
+        return this.props.explorer.allowSearch?.enableSearchText !== undefined ? this.props.explorer.allowSearch.enableSearchText : this.props.explorer.search.searchText === undefined;
       case FilterType.Sort:
-        return this.props.panel.enableSort !== undefined ? this.props.panel.enableSort : !this.props.panel.search.sortBy;
+        return this.props.explorer.allowSearch?.enableSort !== undefined ? this.props.explorer.allowSearch.enableSort : !this.props.explorer.search.sortBy;
       case FilterType.Category:
-        return this.props.panel.enableSearchByCategory !== undefined ? this.props.panel.enableSearchByCategory : (!this.props.panel.search.filterCategoryIds || this.props.panel.search.filterCategoryIds.length <= 0);
+        return this.props.explorer.allowSearch?.enableSearchByCategory !== undefined ? this.props.explorer.allowSearch.enableSearchByCategory : (!this.props.explorer.search.filterCategoryIds || this.props.explorer.search.filterCategoryIds.length <= 0);
       case FilterType.Tag:
-        return this.props.panel.enableSearchByTag !== undefined ? this.props.panel.enableSearchByTag : true;
+        return this.props.explorer.allowSearch?.enableSearchByTag !== undefined ? this.props.explorer.allowSearch.enableSearchByTag : true;
       case FilterType.Status:
-        return this.props.panel.enableSearchByStatus !== undefined ? this.props.panel.enableSearchByStatus : (!this.props.panel.search.filterStatusIds || this.props.panel.search.filterStatusIds.length <= 0);
+        return this.props.explorer.allowSearch?.enableSearchByStatus !== undefined ? this.props.explorer.allowSearch.enableSearchByStatus : (!this.props.explorer.search.filterStatusIds || this.props.explorer.search.filterStatusIds.length <= 0);
       default:
         return true;
     }

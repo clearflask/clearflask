@@ -229,15 +229,25 @@ export default class Property extends Component<Props> {
           );
           break;
         }
-        const items:{
-          name:string;
-          value:any;
-        }[] = prop.type === ConfigEditor.PropertyType.Boolean
-          ? [{name: 'Not set', value: undefined},
-            {name: 'Enabled', value: true},
-            {name: 'Disabled', value: false}]
-          : prop.items;
-        const currentItem = items.find(item => item.value === prop.value);
+        var items:ConfigEditor.EnumItem[];
+        var currentItem;
+        if(prop.type === ConfigEditor.PropertyType.Boolean) {
+          items = [
+            {name: 'Not set', value: 'undefined'},
+            {name: 'Enabled', value: 'true'},
+            {name: 'Disabled', value: 'false'},
+          ];
+          if(prop.value === undefined) {
+            currentItem = items.find(item => item.value === 'undefined');
+          } else if(prop.value === true) {
+            currentItem = items.find(item => item.value === 'true');
+          } else if(prop.value === false) {
+            currentItem = items.find(item => item.value === 'false');
+          }
+        } else {
+          items = prop.items;
+          currentItem = items.find(item => item.value === prop.value);
+        }
         shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl
@@ -248,12 +258,28 @@ export default class Property extends Component<Props> {
           >
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
-              value={prop.value || ''}
-              onChange={e => prop.set((e.target.value) as never)}
+              value={prop.value !== undefined && currentItem.value ? currentItem.value : ''}
+              onChange={e => {
+                if(prop.type === ConfigEditor.PropertyType.Boolean) {
+                  switch(e.target.value) {
+                    case 'undefined':
+                      prop.set(undefined as never)
+                      break;
+                    case 'true':
+                      prop.set(true as never)
+                      break;
+                    case 'false':
+                      prop.set(false as never)
+                      break;
+                  }
+                } else {
+                  prop.set((e.target.value) as never)
+                }
+              }}
               error={!!prop.errorMsg}
             >
               {items.map(item => (
-                <MenuItem value={item.value || ''}>{item.value === undefined
+                <MenuItem value={item.value || ''}>{item.value === 'undefined'
                   ? (<em>{item.name}</em>)
                   : item.name
                 }</MenuItem>

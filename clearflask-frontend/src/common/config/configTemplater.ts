@@ -71,7 +71,7 @@ export default class Templater {
       name: 'Demo',
       slug: stringToSlug('demo'),
       panels: [
-        Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({})}),
+        Admin.PagePanelWithHideIfEmptyToJSON({display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({}), hideIfEmpty: false}),
       ],
     }));
   }
@@ -123,7 +123,7 @@ export default class Templater {
       slug: '',
       description: undefined,
       panels: [
-        Admin.PagePanelWithSearchToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        Admin.PagePanelWithHideIfEmptyToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.New,
           filterCategoryIds: [ideaCategoryId],
           filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
@@ -132,27 +132,22 @@ export default class Templater {
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
-          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'Completed', display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Completed', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId],
             filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
           })}),
         ],
-        controls: Admin.PagePanelSearchToJSON({
-          enableSearchByCategory: false,
-          enableSearchByStatus: false,
-          enableSearchByTag: false,
-        }),
       }),
       explorer: undefined,
     }));
@@ -173,12 +168,13 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
-          allowSearch: true,
+          allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
           allowCreate: true,
-          panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+          display: Admin.PostDisplayToJSON({}),
+          search: Admin.IdeaSearchToJSON({
             filterCategoryIds: [ideaCategoryId],
             filterTagIds: [tag.tagId],
-          })}),
+          }),
         }),
       }));
     });
@@ -197,9 +193,10 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
         allowCreate: true,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({})}),
+        display: Admin.PostDisplayToJSON({}),
+        search: Admin.IdeaSearchToJSON({}),
       }),
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
@@ -263,11 +260,12 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
         allowCreate: true,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        display: Admin.PostDisplayToJSON({}),
+        search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [ideaCategoryId],
-        })}),
+        }),
       }),
     }));
     const bugPageId = randomUuid();
@@ -280,11 +278,12 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
         allowCreate: true,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({}), search: Admin.IdeaSearchToJSON({
+        display: Admin.PostDisplayToJSON({}),
+        search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [bugCategoryId],
-        })}),
+        }),
       }),
     }));
 
@@ -312,7 +311,7 @@ export default class Templater {
       disableExpand: false,
     };
     const homePagePanels = this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels']);
-    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Trending feedback', display: Admin.PostDisplayToJSON({
+    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({title: 'Trending feedback', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
       ...postDisplay,
       showDescription: true,
       showFunding: true,
@@ -322,7 +321,7 @@ export default class Templater {
       sortBy: Admin.IdeaSearchSortByEnum.Trending,
       filterCategoryIds: [ideaCategoryId],
     })}));
-    homePagePanels.insert().setRaw(Admin.PagePanelWithSearchToJSON({title: 'Recent Bugs', display: Admin.PostDisplayToJSON({
+    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
       ...postDisplay,
       showDescription: true,
       showResponse: true,
@@ -338,7 +337,7 @@ export default class Templater {
         title: 'Roadmap',
         panels: [
           ...(withFunding && withStandaloneFunding ? [
-            Admin.PagePanelToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({
+            Admin.PagePanelWithHideIfEmptyToJSON({title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
               ...postDisplay,
               showFunding: true,
             }), search: Admin.IdeaSearchToJSON({
@@ -347,12 +346,12 @@ export default class Templater {
               filterStatusIds: ideaStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
             })}),
           ] : []),
-          Admin.PagePanelToJSON({title: 'Planned', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId, bugCategoryId],
             filterStatusIds: ideaStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
           })}),
-          Admin.PagePanelToJSON({title: 'In progress', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId, bugCategoryId],
             filterStatusIds: [
@@ -360,7 +359,7 @@ export default class Templater {
               ...bugStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
             ],
           })}),
-          Admin.PagePanelToJSON({title: 'Completed', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [ideaCategoryId, bugCategoryId],
             filterStatusIds: [
@@ -369,11 +368,6 @@ export default class Templater {
             ],
           })}),
         ],
-        controls: Admin.PagePanelSearchToJSON({
-          enableSearchByCategory: false,
-          enableSearchByStatus: false,
-          enableSearchByTag: false,
-        }),
       }));
   }
 
@@ -394,7 +388,7 @@ export default class Templater {
     // Home page panel
     if(!suppressHomePage) {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
-        .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+        .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
             titleTruncateLines: 2,
             descriptionTruncateLines: 2,
@@ -428,15 +422,15 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: false,
         allowCreate: false,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({
+        display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
           showDescription: true,
-        }), search: Admin.IdeaSearchToJSON({
+        }),
+        search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [articleCategoryId],
-        })}),
+        }),
       }),
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
@@ -461,7 +455,7 @@ export default class Templater {
     // Home page panel
     if(!suppressHomePage) {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
-        .insert().setRaw(Admin.PagePanelWithSearchToJSON({
+        .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
             titleTruncateLines: 2,
             descriptionTruncateLines: 2,
@@ -495,15 +489,15 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: false,
         allowCreate: false,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON({
+        display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
           showDescription: true,
-        }), search: Admin.IdeaSearchToJSON({
+        }),
+        search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [changelogCategoryId],
-        })}),
+        }),
       }),
     }));
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
@@ -558,21 +552,22 @@ export default class Templater {
       slug: 'help',
       title: 'How can we help you?',
       description: "If you can't find help, don't hesitate to contact us at support@example.com",
-      panels: [Admin.PagePanelWithSearchToJSON({title: 'Account Setup', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+      panels: [Admin.PagePanelWithHideIfEmptyToJSON({title: 'Account Setup', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
         sortBy: Admin.IdeaSearchSortByEnum.Top,
         filterCategoryIds: [helpCategoryId],
         filterTagIds: [accountSetupTagId],
-      })}), Admin.PagePanelWithSearchToJSON({title: 'Ordering and Shipping', display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+      })}), Admin.PagePanelWithHideIfEmptyToJSON({title: 'Ordering and Shipping', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
         sortBy: Admin.IdeaSearchSortByEnum.Top,
         filterCategoryIds: [helpCategoryId],
         filterTagIds: [orderingShippingTagId],
       })})],
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: true,
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
         allowCreate: false,
-        panel: Admin.PagePanelWithSearchToJSON({display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+        display: Admin.PostDisplayToJSON(postDisplay),
+        search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [helpCategoryId],
-        })}),
+        }),
       }),
     }));
 

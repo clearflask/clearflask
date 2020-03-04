@@ -397,7 +397,7 @@ components:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
                 type: array
                 items:
-                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearch'
+                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
               board:
                 $ref: 'api-project.yaml#/components/schemas/PageBoard'
               explorer:
@@ -592,21 +592,15 @@ components:
       properties:
         title:
           type: string
-        controls:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
         panels:
           x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
           type: array
           items:
-            $ref: 'api-project.yaml#/components/schemas/PagePanel'
+            $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
       required:
         - panels
-    PagePanelWithSearch:
-      allOf:
-        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
-        - $ref: 'api-project.yaml#/components/schemas/PagePanelSearch'
     PostDisplay:
-      x-clearflask-prop: { order: 1, name: 'Choose fields', description: 'Force certain fields to be hidden from display in this panel.', defaultValue: true}
+      x-clearflask-prop: { order: 200, name: 'Choose fields', description: 'Force certain fields to be shown or hidden from display in this panel.', defaultValue: true}
       type: object
       title: PanelDisplay
       properties:
@@ -666,42 +660,59 @@ components:
         - display
       properties:
         title:
+          x-clearflask-prop: { order: 1, name: 'Panel title'}
           type: string
-        hideIfEmpty:
-          type: boolean
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
         display:
           $ref: 'api-project.yaml#/components/schemas/PostDisplay'
-    PagePanelSearch:
-      type: object
-      properties:
-        enableSort:
-          type: boolean
-        enableSearchText:
-          type: boolean
-        enableSearchByCategory:
-          type: boolean
-        enableSearchByStatus:
-          type: boolean
-        enableSearchByTag:
-          type: boolean
+    PagePanelWithHideIfEmpty:
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - type: object
+          x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
+          required:
+            - hideIfEmpty
+          properties:
+            hideIfEmpty:
+              x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel search founds no results, it will be hidden from this page.', defaultValue: true}
+              type: boolean
     PageExplorer:
-      x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
-      type: object
-      required:
-        - allowSearch
-        - allowCreate
-        - panel
-      properties:
-        allowSearch:
-          x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
-          type: boolean
-        allowCreate:
-          x-clearflask-prop: { order: 1, name: 'Allow creating', defaultValue: true }
-          type: boolean
-        panel:
-          $ref: 'api-project.yaml#/components/schemas/PagePanelWithSearch'
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - type: object
+          x-clearflask-page: { order: 7, name: 'Explorer', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
+          required:
+            - allowCreate
+          properties:
+            allowSearch:
+              x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
+              type: object
+              required:
+              - enableSort
+              - enableSearchText
+              - enableSearchByCategory
+              - enableSearchByStatus
+              - enableSearchByTag
+              properties:
+                enableSort:
+                  x-clearflask-prop: { order: 1, name: 'Sort', description: 'Enable sorting', defaultValue: true}
+                  type: boolean
+                enableSearchText:
+                  x-clearflask-prop: { order: 2, name: 'Type to search', description: 'Enable searching by text', defaultValue: true}
+                  type: boolean
+                enableSearchByCategory:
+                  x-clearflask-prop: { order: 3, name: 'Category', description: 'Enable filtering by categories if present', defaultValue: true}
+                  type: boolean
+                enableSearchByStatus:
+                  x-clearflask-prop: { order: 4, name: 'Status', description: 'Enable filtering by statuses if present', defaultValue: true}
+                  type: boolean
+                enableSearchByTag:
+                  x-clearflask-prop: { order: 5, name: 'Tag', description: 'Enable filtering by tags if present', defaultValue: true}
+                  type: boolean
+            allowCreate:
+              x-clearflask-prop: { order: 2, name: 'Allow creating', defaultValue: true }
+              type: boolean
     VersionedConfig:
       type: object
       required:

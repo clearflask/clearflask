@@ -145,11 +145,15 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
       );
     }
 
-    var nameWithLink:any = this.props.config && this.props.config.name
+    var name:any = this.props.config?.name && (
+      <Typography variant='h6'>
+        {this.props.config && this.props.config.name}
+      </Typography>
+    );
     if(this.props.config && this.props.config.website) {
-      nameWithLink = (
-        <Link href={this.props.config.website} rel='noopener nofollow'>
-          {nameWithLink}
+      name = (
+        <Link color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
+          {name}
         </Link>
       );
     }
@@ -158,11 +162,7 @@ class Header extends Component<Props&ConnectProps&WithStyles<typeof styles, true
         {this.props.config.logoUrl && (
           <img src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
         )}
-        {this.props.config.name && (
-          <Typography variant='h6'>
-            {this.props.config && this.props.config.name}
-          </Typography>
-        )}
+        {name}
       </div>
     ) : undefined;
 

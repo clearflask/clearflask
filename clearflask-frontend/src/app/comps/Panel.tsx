@@ -41,7 +41,7 @@ const styles = (theme:Theme) => createStyles({
 
 interface Props {
   server:Server;
-  panel:Client.PagePanel;
+  panel:Client.PagePanel|Client.PagePanelWithHideIfEmpty|Client.PageExplorer;
   displayDefaults?:Client.PostDisplay;
   searchOverride?:Partial<Client.IdeaSearch>;
   direction:Direction
@@ -69,13 +69,13 @@ class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         );
         break;
       case Status.PENDING:
-        if(this.props.panel.hideIfEmpty) return null;
+        if((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
         content = (
           <Loading />
         );
         break;
       case Status.FULFILLED:
-        if(this.props.panel.hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
+        if((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
         if(this.props.searchResult.ideas.length === 0) {
           content = (
             <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
