@@ -1,19 +1,9 @@
+import { Divider } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import * as Client from '../api/client';
-import { Typography, Grid, Avatar, Tabs, Tab, Button, Hidden, Divider, Badge, IconButton, Select, MenuItem, Input, Link } from '@material-ui/core';
-import BalanceIcon from '@material-ui/icons/AccountBalance';
-import NotificationsIcon from '@material-ui/icons/Notifications';
-import AccountIcon from '@material-ui/icons/AccountCircle';
-import { Server, ReduxState, Status } from '../api/server';
-import DropdownTab from '../common/DropdownTab';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { connect } from 'react-redux';
-import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
-import { withRouter, RouteComponentProps } from 'react-router';
-import NotificationBadge from './NotificationBadge';
 import PoweredBy from './PoweredBy';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   footer: {
     width: '100%',
     maxWidth: '1024px',
@@ -44,4 +34,3 @@ class Footer extends Component<WithStyles<typeof styles, true>> {
 }
 
 export default withStyles(styles, { withTheme: true })(Footer);
- 

@@ -1,17 +1,17 @@
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, FormHelperText, Grid, Link, Radio, RadioGroup, Step, StepContent, StepLabel, Stepper, Switch, TextField, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { Stepper, Step, StepLabel, Link, StepContent, Grid, Card, CardHeader, CardContent, Checkbox, CardActions, FormControlLabel, Box, Button, TextField, Typography, Collapse, FormHelperText, Switch, RadioGroup, Radio } from '@material-ui/core';
-import ServerAdmin from '../../api/serverAdmin';
-import { Project } from '../DemoApp';
-import Templater from '../../common/config/configTemplater';
-import * as ConfigEditor from '../../common/config/configEditor';
 import * as Admin from '../../api/admin';
-import { ToggleButtonGroup, ToggleButton } from '@material-ui/lab';
-import debounce from '../../common/util/debounce';
 import DataMock from '../../api/dataMock';
+import ServerAdmin from '../../api/serverAdmin';
 import ServerMock from '../../api/serverMock';
+import * as ConfigEditor from '../../common/config/configEditor';
+import Templater from '../../common/config/configTemplater';
+import debounce from '../../common/util/debounce';
+import { Project } from '../DemoApp';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   item: {
     margin: theme.spacing(2),
   },
@@ -34,35 +34,35 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  previewProject:Project;
-  pageClicked:(path:string, subPath?:ConfigEditor.Path)=>void;
+  previewProject: Project;
+  pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
 }
 
 interface State {
-  step:number;
-  isSubmitting?:boolean;
-  
-  templateFeedback?:boolean;
-  templateChangelog?:boolean;
-  templateKnowledgeBase?:boolean;
-  templateBlog?:boolean;
+  step: number;
+  isSubmitting?: boolean;
 
-  fundingAllowed:boolean;
-  votingAllowed:boolean;
-  expressionAllowed:boolean;
-  fundingType:'currency'|'time'|'beer';
-  votingEnableDownvote?:boolean;
-  expressionsLimitEmojis?:boolean;
-  expressionsAllowMultiple?:boolean;
+  templateFeedback?: boolean;
+  templateChangelog?: boolean;
+  templateKnowledgeBase?: boolean;
+  templateBlog?: boolean;
 
-  infoWebsite?:string;
-  infoName?:string;
-  infoSlug?:string;
-  infoLogo?:string;
+  fundingAllowed: boolean;
+  votingAllowed: boolean;
+  expressionAllowed: boolean;
+  fundingType: 'currency' | 'time' | 'beer';
+  votingEnableDownvote?: boolean;
+  expressionsLimitEmojis?: boolean;
+  expressionsAllowMultiple?: boolean;
+
+  infoWebsite?: string;
+  infoName?: string;
+  infoSlug?: string;
+  infoLogo?: string;
 }
 
-class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State> {
-  readonly updatePreview:()=>void;
+class CreatePage extends Component<Props & WithStyles<typeof styles, true>, State> {
+  readonly updatePreview: () => void;
 
   constructor(props) {
     super(props);
@@ -84,38 +84,38 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
   }
 
   render() {
-    const supportButtonGroupVal:string[] = [];
+    const supportButtonGroupVal: string[] = [];
     this.state.fundingAllowed && supportButtonGroupVal.push('funding');
     this.state.votingAllowed && supportButtonGroupVal.push('voting');
-    this.state.expressionAllowed && supportButtonGroupVal .push('expression');
+    this.state.expressionAllowed && supportButtonGroupVal.push('expression');
     return (
       <React.Fragment>
         <Stepper activeStep={this.state.step} orientation='vertical'>
           <Step key='plan' completed={false}>
             <StepLabel>
-              <Link onClick={() => !this.state.isSubmitting && this.setState({step: 0})} className={this.props.classes.link}>
+              <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 0 })} className={this.props.classes.link}>
                 Template Selection
               </Link>
             </StepLabel>
-            <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+            <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
               <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
                 <TemplateCard
                   title='Feedback'
                   content='Collect feedback from user. Comes with a "Feature" and "Bug" category.'
                   checked={!!this.state.templateFeedback}
-                  onChange={() => this.setStateAndPreview({templateFeedback: !this.state.templateFeedback})}
+                  onChange={() => this.setStateAndPreview({ templateFeedback: !this.state.templateFeedback })}
                 />
                 <TemplateCard
                   title='Changelog'
                   content='Update your users with new changes to your product.'
                   checked={!!this.state.templateChangelog}
-                  onChange={() => this.setStateAndPreview({templateChangelog: !this.state.templateChangelog})}
+                  onChange={() => this.setStateAndPreview({ templateChangelog: !this.state.templateChangelog })}
                 />
                 <TemplateCard
                   title='Knowledge Base'
                   content='Helpful articles around your product.'
                   checked={!!this.state.templateKnowledgeBase}
-                  onChange={() => this.setStateAndPreview({templateKnowledgeBase: !this.state.templateKnowledgeBase})}
+                  onChange={() => this.setStateAndPreview({ templateKnowledgeBase: !this.state.templateKnowledgeBase })}
                 />
                 {/* TODO <TemplateCard
                   title='Community forum'
@@ -127,27 +127,27 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                   title='Blog'
                   content='Add articles for your users'
                   checked={!!this.state.templateBlog}
-                  onChange={() => this.setStateAndPreview({templateBlog: !this.state.templateBlog})}
+                  onChange={() => this.setStateAndPreview({ templateBlog: !this.state.templateBlog })}
                 />
               </Grid>
               <Typography variant='caption'>You can add additional templates later.</Typography>
               <Box display='flex' className={this.props.classes.item}>
-                <Button onClick={() => this.setState({step: this.state.step + 1})} color='primary'>Next</Button>
+                <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
               </Box>
             </StepContent>
           </Step>
           {!!this.state.templateFeedback && (
             <Step key='prioritization' completed={false}>
               <StepLabel>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({step: 1})} className={this.props.classes.link}>
+                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
                   Feedback prioritization
                 </Link>
               </StepLabel>
-              <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <ToggleButtonGroup
-                  {...{size:'small'}}
+                  {...{ size: 'small' }}
                   value={supportButtonGroupVal}
-                  style={{display: 'inline-block'}}
+                  style={{ display: 'inline-block' }}
                   onChange={(e, val) => this.setStateAndPreview({
                     fundingAllowed: val.includes('funding'),
                     expressionAllowed: val.includes('expression'),
@@ -162,7 +162,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                   <Collapse in={this.state.fundingAllowed}><div className={this.props.classes.extraControls}>
                     <RadioGroup
                       value={this.state.fundingType}
-                      onChange={(e, val) => this.setStateAndPreview({fundingType: val as any})}
+                      onChange={(e, val) => this.setStateAndPreview({ fundingType: val as any })}
                     >
                       <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
                       <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
@@ -175,7 +175,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                         <Switch
                           color='primary'
                           checked={!!this.state.votingEnableDownvote}
-                          onChange={(e, enableDownvote) => this.setStateAndPreview({votingEnableDownvote: enableDownvote})}
+                          onChange={(e, enableDownvote) => this.setStateAndPreview({ votingEnableDownvote: enableDownvote })}
                         />
                       )}
                       label={<FormHelperText component='span'>Enable downvoting</FormHelperText>}
@@ -187,7 +187,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                         <Switch
                           color='primary'
                           checked={!!this.state.expressionsLimitEmojis}
-                          onChange={(e, limitEmojis) => this.setStateAndPreview({expressionsLimitEmojis: limitEmojis})}
+                          onChange={(e, limitEmojis) => this.setStateAndPreview({ expressionsLimitEmojis: limitEmojis })}
                         />
                       )}
                       label={<FormHelperText component='span'>Limit available emojis</FormHelperText>}
@@ -197,7 +197,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                         <Switch
                           color='primary'
                           checked={!!this.state.expressionsAllowMultiple}
-                          onChange={(e, allowMultiple) => this.setStateAndPreview({expressionsAllowMultiple: allowMultiple})}
+                          onChange={(e, allowMultiple) => this.setStateAndPreview({ expressionsAllowMultiple: allowMultiple })}
                         />
                       )}
                       label={<FormHelperText component='span'>Allow selecting multiple emojis</FormHelperText>}
@@ -206,18 +206,18 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                 </div>
                 <Typography variant='caption'>You can customize this in more detail later.</Typography>
                 <Box display='flex' className={this.props.classes.item}>
-                  <Button onClick={() => this.setState({step: this.state.step + 1})} color='primary'>Next</Button>
+                  <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
                 </Box>
               </StepContent>
             </Step>
           )}
           <Step key='info' completed={false}>
             <StepLabel>
-              <Link onClick={() => !this.state.isSubmitting && this.setState({step: 1 + (!!this.state.templateFeedback ? 1 : 0)})} className={this.props.classes.link}>
+              <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 + (!!this.state.templateFeedback ? 1 : 0) })} className={this.props.classes.link}>
                 Info
                </Link>
             </StepLabel>
-            <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+            <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
               <Box display='flex' flexDirection='column' alignItems='flex-start' className={this.props.classes.item}>
                 <TextField
                   className={this.props.classes.item}
@@ -228,22 +228,22 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
                   value={this.state.infoWebsite || ''}
                   onChange={e => {
                     const nameMatch = e.target.value.match(/^(https?:\/\/)?([^\.\/]+).*$/);
-                    var slug:string|undefined = undefined;
-                    var name:string|undefined = undefined;
-                    if(nameMatch && nameMatch[2]) {
+                    var slug: string | undefined = undefined;
+                    var name: string | undefined = undefined;
+                    if (nameMatch && nameMatch[2]) {
                       slug = nameMatch[2].toLowerCase();
                       name = slug.charAt(0).toUpperCase() + slug.slice(1);
                     }
                     const logoMatch = e.target.value.match(/^(https?:\/\/)?([^\/]+).*$/);
-                    var logo:string|undefined = undefined;
-                    if(logoMatch && logoMatch[2]) {
+                    var logo: string | undefined = undefined;
+                    if (logoMatch && logoMatch[2]) {
                       logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;
                     }
                     this.setStateAndPreview({
                       infoWebsite: e.target.value,
-                      ...(!!logo ? {infoLogo: logo} : {}),
-                      ...(!!slug ? {infoSlug: slug} : {}),
-                      ...(!!name ? {infoName: name} : {}),
+                      ...(!!logo ? { infoLogo: logo } : {}),
+                      ...(!!slug ? { infoSlug: slug } : {}),
+                      ...(!!name ? { infoName: name } : {}),
                     })
                   }}
                 />
@@ -290,32 +290,32 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
     );
   }
 
-  createConfig():Admin.ConfigAdmin {
+  createConfig(): Admin.ConfigAdmin {
     const editor = new ConfigEditor.EditorImpl();
-    if(!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(this.state.infoSlug);
-    if(!!this.state.infoName) editor.getProperty<ConfigEditor.StringProperty>(['name']).set(this.state.infoName);
-    if(!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(this.state.infoSlug);
-    if(!!this.state.infoWebsite) editor.getProperty<ConfigEditor.StringProperty>(['website']).set(this.state.infoWebsite);
-    if(!!this.state.infoLogo) editor.getProperty<ConfigEditor.StringProperty>(['logoUrl']).set(this.state.infoLogo);
+    if (!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(this.state.infoSlug);
+    if (!!this.state.infoName) editor.getProperty<ConfigEditor.StringProperty>(['name']).set(this.state.infoName);
+    if (!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(this.state.infoSlug);
+    if (!!this.state.infoWebsite) editor.getProperty<ConfigEditor.StringProperty>(['website']).set(this.state.infoWebsite);
+    if (!!this.state.infoLogo) editor.getProperty<ConfigEditor.StringProperty>(['logoUrl']).set(this.state.infoLogo);
     const templater = Templater.get(editor);
     templater.templateBase();
-    if(this.state.templateFeedback) {
+    if (this.state.templateFeedback) {
       templater.templateFeedback(this.state.fundingAllowed, this.state.expressionAllowed || this.state.votingAllowed);
       const ideaCategoryIndex = 0;
-      if(this.state.votingAllowed) {
+      if (this.state.votingAllowed) {
         templater.supportVoting(ideaCategoryIndex, this.state.votingEnableDownvote);
       }
-      if(this.state.expressionAllowed) {
-        if(this.state.expressionsLimitEmojis) {
+      if (this.state.expressionAllowed) {
+        if (this.state.expressionsLimitEmojis) {
           templater.supportExpressingFacebookStyle(ideaCategoryIndex, !this.state.expressionsAllowMultiple);
         } else {
           templater.supportExpressingAllEmojis(ideaCategoryIndex, !this.state.expressionsAllowMultiple);
         }
         templater.supportExpressingLimitEmojiPerIdea(ideaCategoryIndex, !this.state.expressionsAllowMultiple);
       }
-      if(this.state.fundingAllowed) {
+      if (this.state.fundingAllowed) {
         templater.supportFunding(ideaCategoryIndex);
-        switch(this.state.fundingType) {
+        switch (this.state.fundingType) {
           case 'currency':
             templater.creditsCurrency();
             break;
@@ -329,20 +329,20 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
       }
 
       const bugCategoryIndex = 1;
-      if(this.state.votingAllowed) {
+      if (this.state.votingAllowed) {
         templater.supportVoting(bugCategoryIndex, this.state.votingEnableDownvote);
       }
-      if(this.state.expressionAllowed) {
-        if(this.state.expressionsLimitEmojis) {
+      if (this.state.expressionAllowed) {
+        if (this.state.expressionsLimitEmojis) {
           templater.supportExpressingFacebookStyle(bugCategoryIndex, !this.state.expressionsAllowMultiple);
         } else {
           templater.supportExpressingAllEmojis(bugCategoryIndex, !this.state.expressionsAllowMultiple);
         }
         templater.supportExpressingLimitEmojiPerIdea(bugCategoryIndex, !this.state.expressionsAllowMultiple);
       }
-      if(this.state.fundingAllowed && !this.state.votingAllowed && !this.state.expressionAllowed) {
+      if (this.state.fundingAllowed && !this.state.votingAllowed && !this.state.expressionAllowed) {
         templater.supportFunding(bugCategoryIndex);
-        switch(this.state.fundingType) {
+        switch (this.state.fundingType) {
           case 'currency':
             templater.creditsCurrency();
             break;
@@ -355,13 +355,13 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         }
       }
     }
-    if(this.state.templateChangelog) templater.templateChangelog();
-    if(this.state.templateBlog) templater.templateBlog();
-    if(this.state.templateKnowledgeBase) templater.templateKnowledgeBase();
+    if (this.state.templateChangelog) templater.templateChangelog();
+    if (this.state.templateBlog) templater.templateBlog();
+    if (this.state.templateKnowledgeBase) templater.templateKnowledgeBase();
     return editor.getConfig();
   }
 
-  async mockData(config:Admin.ConfigAdmin):Promise<void> {
+  async mockData(config: Admin.ConfigAdmin): Promise<void> {
     const mocker = DataMock.get(config.projectId);
     ServerMock.get().deleteProject(config.projectId);
     ServerMock.get().getProject(config.projectId)
@@ -371,7 +371,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
     const user2 = await mocker.mockUser('Jacob');
     const user3 = await mocker.mockUser('Sophie');
     const user4 = await mocker.mockUser('Harry');
-    if(this.state.templateFeedback) {
+    if (this.state.templateFeedback) {
       const ideaCategory = config.content.categories.find(c => c.name.match(/Idea/))!;
       const bugCategory = config.content.categories.find(c => c.name.match(/Bug/))!;
       await this.mockItem(
@@ -383,7 +383,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         this.state.votingAllowed ? 7 : undefined,
         this.state.expressionAllowed ? mocker.fakeExpressions(ideaCategory, 5) : undefined,
         (ideaCategory.workflow.statuses.find(s => s.name.match(/Funding/))
-        || ideaCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
+          || ideaCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
         undefined
       );
       await this.mockItem(
@@ -429,7 +429,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         [bugCategory.tagging.tags.find(s => s.name.match(/Windows/))!.tagId],
       );
     }
-    if(this.state.templateBlog) {
+    if (this.state.templateBlog) {
       const articleCategory = config.content.categories.find(c => c.name.match(/Article/))!;
       await this.mockItem(
         config.projectId, articleCategory.categoryId, user1,
@@ -453,7 +453,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined,
       );
     }
-    if(this.state.templateChangelog) {
+    if (this.state.templateChangelog) {
       const changelogCategory = config.content.categories.find(c => c.name.match(/Changelog/))!;
       await this.mockItem(
         config.projectId, changelogCategory.categoryId, user1,
@@ -476,7 +476,7 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
         undefined, undefined,
       );
     }
-    if(this.state.templateKnowledgeBase) {
+    if (this.state.templateKnowledgeBase) {
       const helpCategory = config.content.categories.find(c => c.name.match(/Help/))!;
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user1,
@@ -546,28 +546,28 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
   }
 
   mockItem(
-    projectId:string,
-    categoryId:string,
+    projectId: string,
+    categoryId: string,
     user: Admin.UserAdmin,
-    title:string,
-    description:string,
-    response:string|undefined,
-    funded:number|undefined,
-    fundGoal:number|undefined,
-    voteValue:number|undefined,
-    expressions:{[key:string]:number;}|undefined,
-    statusId:string|undefined,
-    tagIds:string[]|undefined,
-  ):Promise<Admin.Idea> {
+    title: string,
+    description: string,
+    response: string | undefined,
+    funded: number | undefined,
+    fundGoal: number | undefined,
+    voteValue: number | undefined,
+    expressions: { [key: string]: number; } | undefined,
+    statusId: string | undefined,
+    tagIds: string[] | undefined,
+  ): Promise<Admin.Idea> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: projectId,
       ideaCreateAdmin: {
         fundGoal: fundGoal,
-        ...{funded: funded || 0},
-        ...{fundersCount: funded ? Math.round(Math.random() * 5) + 1 : 0},
-        ...{voteValue: voteValue || 0},
-        ...{votersCount: voteValue ? Math.round(Math.random() * voteValue) + 1 : 0},
-        ...{expressions: expressions},
+        ...{ funded: funded || 0 },
+        ...{ fundersCount: funded ? Math.round(Math.random() * 5) + 1 : 0 },
+        ...{ voteValue: voteValue || 0 },
+        ...{ votersCount: voteValue ? Math.round(Math.random() * voteValue) + 1 : 0 },
+        ...{ expressions: expressions },
         authorUserId: user.userId,
         title: title,
         description: description,
@@ -579,35 +579,35 @@ class CreatePage extends Component<Props&WithStyles<typeof styles, true>, State>
     });
   }
 
-  setStateAndPreview<K extends keyof State>(stateUpdate:Pick<State, K>) {
+  setStateAndPreview<K extends keyof State>(stateUpdate: Pick<State, K>) {
     this.setState(stateUpdate, this.updatePreview.bind(this));
   }
 
   onCreate() {
-    this.setState({isSubmitting: true});
+    this.setState({ isSubmitting: true });
     ServerAdmin.get().dispatchAdmin().then(d => d
       .projectCreateAdmin({
         projectId: this.state.infoSlug!,
         configAdmin: this.createConfig(),
       }))
       .then(newProject => {
-        this.setState({isSubmitting: false});
+        this.setState({ isSubmitting: false });
         this.props.pageClicked(newProject.projectId)
       })
       .catch(e => {
-        this.setState({isSubmitting: false});
+        this.setState({ isSubmitting: false });
       });
   }
 }
 
 interface TemplateCardProps {
-  title:string;
-  content:string;
-  checked:boolean;
-  onChange:()=>void;
+  title: string;
+  content: string;
+  checked: boolean;
+  onChange: () => void;
 }
 
-const TemplateCard = withStyles(styles, { withTheme: true })((props:TemplateCardProps&WithStyles<typeof styles, true>) => (
+const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCardProps & WithStyles<typeof styles, true>) => (
   <Grid item key='feedback' xs={12} sm={6} md={12} lg={4}>
     <Card elevation={0} className={props.checked ? props.classes.boxSelected : props.classes.box}>
       <CardHeader

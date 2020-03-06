@@ -1,13 +1,11 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ReduxState, Server } from '../api/server';
-import * as Client from '../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import ErrorPage from './ErrorPage';
-import DividerCorner from './utils/DividerCorner';
 import NotificationList from './comps/NotificationList';
+import ErrorPage from './ErrorPage';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
   },
@@ -17,17 +15,17 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 
 interface ConnectProps {
-  isLoggedIn:boolean;
+  isLoggedIn: boolean;
 }
 
-class NotificationPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class NotificationPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    if(!this.props.isLoggedIn) {
+    if (!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }
     return (
@@ -38,9 +36,9 @@ class NotificationPage extends Component<Props&ConnectProps&WithStyles<typeof st
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined;
-  const connectProps:ConnectProps = {
+  const connectProps: ConnectProps = {
     isLoggedIn: !!userId,
   };
   return connectProps;

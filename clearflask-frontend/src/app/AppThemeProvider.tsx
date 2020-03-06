@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
-import * as Client from '../api/client';
-import { ReduxState, Status } from '../api/server';
-import { connect } from 'react-redux';
-import { CssBaseline, createMuiTheme, Theme } from '@material-ui/core';
-import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
-import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
+import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
+import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import * as Client from '../api/client';
+import { ReduxState } from '../api/server';
 
 interface ThemeCustomProps {
   disableTransitions?: boolean;
@@ -16,53 +16,59 @@ interface ThemeCustomProps {
 }
 
 declare module '@material-ui/core/styles/createMuiTheme' {
-  interface Theme extends ThemeCustomProps {}
-  interface ThemeOptions extends ThemeCustomProps {}
+  interface Theme extends ThemeCustomProps { }
+  interface ThemeOptions extends ThemeCustomProps { }
 }
 
 interface Props {
-  containerStyle?:React.CSSProperties,
-  supressCssBaseline?:boolean;
-  isInsideContainer?:boolean;
-  breakpoints?:{[key in Breakpoint]:number};
-  appRootId:string;
+  containerStyle?: React.CSSProperties,
+  supressCssBaseline?: boolean;
+  isInsideContainer?: boolean;
+  breakpoints?: { [key in Breakpoint]: number };
+  appRootId: string;
   // connect
-  config?:Client.Config;
+  config?: Client.Config;
 }
 
 class AppThemeProvider extends Component<Props> {
   render() {
-    var expressionGrayscale:number|undefined = undefined;
-    switch(this.props.config && this.props.config.style.palette.expressionColor) {
+    var expressionGrayscale: number | undefined = undefined;
+    switch (this.props.config && this.props.config.style.palette.expressionColor) {
       case Client.PaletteExpressionColorEnum.Gray:
         expressionGrayscale = 100;
-         break;
+        break;
       case Client.PaletteExpressionColorEnum.Washed:
         expressionGrayscale = 50;
         break;
     }
-    var theme:Theme|undefined;
-    if(this.props.config) {
+    var theme: Theme | undefined;
+    if (this.props.config) {
       theme = createMuiTheme({
         disableTransitions: !this.props.config.style.animation.enableTransitions,
         funding: this.props.config.style.palette.funding
           || this.props.config.style.palette.primary,
-          // Optional green color
-          // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
+        // Optional green color
+        // || ( this.props.config.style.palette.darkMode ? '#6ca869' : '#89c586' ),
         isInsideContainer: !!this.props.isInsideContainer,
         expressionGrayscale: expressionGrayscale,
         explorerExpandTimeout: 500,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
-          ...(this.props.config.style.palette.primary ? { primary: {
-            main: this.props.config.style.palette.primary,
-          }} : {}),
-          ...(this.props.config.style.palette.secondary ? { secondary: {
-            main: this.props.config.style.palette.secondary,
-          }} : {}),
-          ...(this.props.config.style.palette.text ? { text: {
-            primary: this.props.config.style.palette.text,
-          }} : {}),
+          ...(this.props.config.style.palette.primary ? {
+            primary: {
+              main: this.props.config.style.palette.primary,
+            }
+          } : {}),
+          ...(this.props.config.style.palette.secondary ? {
+            secondary: {
+              main: this.props.config.style.palette.secondary,
+            }
+          } : {}),
+          ...(this.props.config.style.palette.text ? {
+            text: {
+              primary: this.props.config.style.palette.text,
+            }
+          } : {}),
           background: {
             default: this.props.config.style.palette.background ? this.props.config.style.palette.background : '#fff',
             paper: this.props.config.style.palette.backgroundPaper ? this.props.config.style.palette.backgroundPaper : '#fff',
@@ -128,7 +134,9 @@ class AppThemeProvider extends Component<Props> {
   }
 }
 
-export default connect<any,any,any,any>((state:ReduxState, ownProps:Props) => { return {
-  configver: state.conf.ver, // force rerender on config change
-  config: state.conf.conf,
-}})(AppThemeProvider);
+export default connect<any, any, any, any>((state: ReduxState, ownProps: Props) => {
+  return {
+    configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
+  }
+})(AppThemeProvider);

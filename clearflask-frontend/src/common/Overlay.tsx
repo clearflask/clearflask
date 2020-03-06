@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
 import Trigger from 'rc-trigger';
+import React, { Component } from 'react';
 
 interface Props {
   popup: React.ReactNode;
@@ -8,12 +8,12 @@ interface Props {
 }
 
 interface State {
-  clickOpened:boolean;
-  childFocused:boolean;
+  clickOpened: boolean;
+  childFocused: boolean;
 }
 
 export default class Overlay extends Component<Props, State> {
-  ignoreNextClickOpened:boolean = false;
+  ignoreNextClickOpened: boolean = false;
 
   constructor(props) {
     super(props)
@@ -32,12 +32,12 @@ export default class Overlay extends Component<Props, State> {
         destroyPopupOnHide
         popupVisible={this.state.clickOpened || this.state.childFocused}
         onPopupVisibleChange={open => {
-          if(this.ignoreNextClickOpened) {
+          if (this.ignoreNextClickOpened) {
             this.ignoreNextClickOpened = false;
             return;
           }
-          if(open && !this.state.childFocused) return;
-          this.setState({clickOpened: open})
+          if (open && !this.state.childFocused) return;
+          this.setState({ clickOpened: open })
         }}
         popup={this.props.popup}
         popupAlign={{
@@ -50,10 +50,10 @@ export default class Overlay extends Component<Props, State> {
             // MUI table has a bug where onClick events are not fired properly
             // It causes rc-trigger to fire a close immediately, let's ignore it.
             // https://github.com/mui-org/material-ui/issues/1783
-            if(this.props.isInsideMuiTable) this.ignoreNextClickOpened = true;
-            this.setState({childFocused: true, clickOpened: true})
+            if (this.props.isInsideMuiTable) this.ignoreNextClickOpened = true;
+            this.setState({ childFocused: true, clickOpened: true })
           }}
-          onBlur={e => this.setState({childFocused: false})}
+          onBlur={e => this.setState({ childFocused: false })}
         >
           {this.props.children}
         </div>

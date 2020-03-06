@@ -1,9 +1,9 @@
-import React, { Component, Key } from 'react';
-import { IconButton, Popover, Typography, Button } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { Button, Popover, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import HelpIcon from '@material-ui/icons/HelpOutline';
+import React, { Component } from 'react';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   iconButton: {
     // fontSize: '2em',
     padding: '0px',
@@ -17,17 +17,17 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  title?:string;
-  description?:string;
+  title?: string;
+  description?: string;
 }
 
 interface State {
-  expandedAnchor?:HTMLElement;
+  expandedAnchor?: HTMLElement;
 }
 
 class HelpPopover extends Component<Props, State> {
 
-  constructor(props:Props) {
+  constructor(props: Props) {
     super(props);
     this.state = {};
   }
@@ -35,13 +35,13 @@ class HelpPopover extends Component<Props, State> {
   render() {
     return [
       <Button className={this.props.classes.iconButton}
-        onClick={e => this.setState({expandedAnchor: e.currentTarget})}>
+        onClick={e => this.setState({ expandedAnchor: e.currentTarget })}>
         <HelpIcon fontSize='inherit' />
       </Button>,
       <Popover
         open={!!this.state.expandedAnchor}
         anchorEl={this.state.expandedAnchor}
-        onClose={() => this.setState({expandedAnchor: undefined})}
+        onClose={() => this.setState({ expandedAnchor: undefined })}
         anchorOrigin={{ vertical: 'center', horizontal: 'right', }}
         transformOrigin={{ vertical: 'center', horizontal: 'left', }}
         disableRestoreFocus

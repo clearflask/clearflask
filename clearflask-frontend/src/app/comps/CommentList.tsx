@@ -1,14 +1,14 @@
+import { Button, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import * as Client from '../../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { Typography, Tooltip, Button } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { ReduxState, Status, Server } from '../../api/server';
+import * as Client from '../../api/client';
+import { CommentSearchResponse } from '../../api/client';
+import { ReduxState, Server, Status } from '../../api/server';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
-import { CommentSearchResponse } from '../../api/client';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   indent: {
     marginLeft: theme.spacing(3),
   },
@@ -17,32 +17,32 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
-  ideaId:string;
-  expectedCommentCount:number;
-  parentCommentId?:string;
-  newCommentsAllowed?:boolean; // TODO add comment replies
+  server: Server;
+  ideaId: string;
+  expectedCommentCount: number;
+  parentCommentId?: string;
+  newCommentsAllowed?: boolean; // TODO add comment replies
 }
 
 interface ConnectProps {
-  comments:Client.CommentWithAuthor[];
-  commentsStatus?:Status;
-  loadMore:()=>Promise<CommentSearchResponse>;
+  comments: Client.CommentWithAuthor[];
+  commentsStatus?: Status;
+  loadMore: () => Promise<CommentSearchResponse>;
 }
 
-class CommentListRaw extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   constructor(props) {
     super(props)
 
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
-    if(!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
+    if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
       this.props.server.dispatch().commentList({
         projectId: this.props.server.getProjectId(),
         ideaId: this.props.ideaId,
         commentSearch: {},
       });
-    }  
+    }
   }
 
   render() {
@@ -69,7 +69,7 @@ class CommentListRaw extends Component<Props&ConnectProps&WithStyles<typeof styl
   }
 
   renderLoadMore() {
-    if(this.props.commentsStatus !== Status.PENDING
+    if (this.props.commentsStatus !== Status.PENDING
       && this.props.comments.length >= this.props.expectedCommentCount) return null;
 
     return (
@@ -83,15 +83,15 @@ class CommentListRaw extends Component<Props&ConnectProps&WithStyles<typeof styl
   }
 }
 
-const CommentList = connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
-  const comments:Client.CommentWithAuthor[] = [];
+const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  const comments: Client.CommentWithAuthor[] = [];
   var ideaIdOrParentCommentId = ownProps.parentCommentId || ownProps.ideaId;
   const commentIds = state.comments.byIdeaIdOrParentCommentId[ideaIdOrParentCommentId];
   const commentsStatus = commentIds && commentIds.status;
-  if(commentIds && commentIds.status === Status.FULFILLED && commentIds.commentIds) {
+  if (commentIds && commentIds.status === Status.FULFILLED && commentIds.commentIds) {
     commentIds.commentIds.forEach(commentId => {
       const comment = state.comments.byId[commentId];
-      if(comment && comment.status === Status.FULFILLED && comment.comment) {
+      if (comment && comment.status === Status.FULFILLED && comment.comment) {
         comments.push(comment.comment);
       }
     });
@@ -99,7 +99,7 @@ const CommentList = connect<ConnectProps,{},Props,ReduxState>((state:ReduxState,
   return {
     commentsStatus: commentsStatus,
     comments: comments,
-    loadMore: ():Promise<CommentSearchResponse> => ownProps.server.dispatch().commentList({
+    loadMore: (): Promise<CommentSearchResponse> => ownProps.server.dispatch().commentList({
       projectId: state.projectId,
       ideaId: ownProps.ideaId,
       commentSearch: {

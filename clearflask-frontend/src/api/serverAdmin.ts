@@ -1,40 +1,39 @@
-import React from 'react';
-import * as Client from './client';
-import * as Admin from './admin';
-import { Server, Status } from './server';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
-import ServerMock from './serverMock';
-import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
-import thunk from 'redux-thunk';
+import { applyMiddleware, combineReducers, compose, createStore, Store } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
+import thunk from 'redux-thunk';
 import * as ConfigEditor from '../common/config/configEditor';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import * as Admin from './admin';
+import * as Client from './client';
+import { Server, Status } from './server';
+import ServerMock from './serverMock';
 
-type ErrorSubscribers = ((msg:string, isUserFacing:boolean)=>void)[];
-type ChallengeSubscriber = ((challenge:string)=>Promise<string|undefined>);
+type ErrorSubscribers = ((msg: string, isUserFacing: boolean) => void)[];
+type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 
 export interface Project {
-  projectId:string;
-  configVersion:string;
-  editor:ConfigEditor.Editor;
-  server:Server;
-  hasUnsavedChanges():boolean;
-  subscribeToUnsavedChanges:(subscriber:()=>void)=>()=>void;
+  projectId: string;
+  configVersion: string;
+  editor: ConfigEditor.Editor;
+  server: Server;
+  hasUnsavedChanges(): boolean;
+  subscribeToUnsavedChanges: (subscriber: () => void) => () => void;
   resetUnsavedChanges();
 }
 
 export default class ServerAdmin {
-  static instance:ServerAdmin|undefined;
+  static instance: ServerAdmin | undefined;
 
-  readonly apiOverride?:Client.ApiInterface&Admin.ApiInterface;
-  readonly projects:{[projectId:string]:Project} = {};
-  readonly dispatcherClient:Client.Dispatcher;
-  readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
-  readonly store:Store<ReduxStateAdmin>;
-  readonly errorSubscribers:ErrorSubscribers = [];
-  challengeSubscriber?:ChallengeSubscriber;
+  readonly apiOverride?: Client.ApiInterface & Admin.ApiInterface;
+  readonly projects: { [projectId: string]: Project } = {};
+  readonly dispatcherClient: Client.Dispatcher;
+  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
+  readonly store: Store<ReduxStateAdmin>;
+  readonly errorSubscribers: ErrorSubscribers = [];
+  challengeSubscriber?: ChallengeSubscriber;
 
-  constructor(apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
-    if(ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
+  constructor(apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
+    if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
     this.apiOverride = apiOverride;
     const dispatchers = Server.getDispatchers(
       msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber),
@@ -43,11 +42,11 @@ export default class ServerAdmin {
     this.dispatcherAdmin = dispatchers.adminPromise;
 
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
-    if(!isProd()) {
+    if (!isProd()) {
       const composeEnhancers =
         typeof window === 'object' &&
-        window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */})
+          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */ })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
@@ -57,9 +56,9 @@ export default class ServerAdmin {
       storeMiddleware);
   }
 
-  static get():ServerAdmin {
-    if(ServerAdmin.instance === undefined) {
-      if(detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+  static get(): ServerAdmin {
+    if (ServerAdmin.instance === undefined) {
+      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
         ServerAdmin.instance = new ServerAdmin(ServerMock.get());
       } else {
         ServerAdmin.instance = new ServerAdmin();
@@ -68,63 +67,63 @@ export default class ServerAdmin {
     return ServerAdmin.instance;
   }
 
-  getStore():Store<ReduxStateAdmin> {
+  getStore(): Store<ReduxStateAdmin> {
     return this.store;
   }
 
-  getServers():Server[] {
+  getServers(): Server[] {
     return Object.values(this.projects).map(p => p.server);
   }
 
-  subscribeToErrors(subscriber:((msg:string, isUserFacing:boolean)=>void)) {
+  subscribeToErrors(subscriber: ((msg: string, isUserFacing: boolean) => void)) {
     this.errorSubscribers.push(subscriber);
   }
 
-  subscribeChallenger(subscriber:ChallengeSubscriber) {
+  subscribeChallenger(subscriber: ChallengeSubscriber) {
     this.challengeSubscriber = subscriber;
   }
 
-  dispatch(projectId?:string):Client.Dispatcher {
+  dispatch(projectId?: string): Client.Dispatcher {
     return projectId === undefined ? this.dispatcherClient : this.projects[projectId].server.dispatch();
   }
 
-  dispatchAdmin(projectId?:string):Promise<Admin.Dispatcher> {
+  dispatchAdmin(projectId?: string): Promise<Admin.Dispatcher> {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
   }
 
-  isAdminLoggedIn():boolean {
+  isAdminLoggedIn(): boolean {
     return this.store.getState().account.account.status === Status.FULFILLED
       && !!this.store.getState().account.account.account;
   }
 
-  static async _dispatch(msg:any, store:Store, errorSubscribers:ErrorSubscribers, challengeSubscriber?:ChallengeSubscriber):Promise<any>{
+  static async _dispatch(msg: any, store: Store, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
     try {
       var result = await store.dispatch(msg);
-    } catch(response) {
+    } catch (response) {
       console.log("Dispatch error: ", response);
-      if(response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
-        if(!challengeSubscriber) {
+      if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
+        if (!challengeSubscriber) {
           errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
           throw response;
         }
-        var solution:string|undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
-        if(solution) {
-          return msg.meta.retry({'x-cf-solution': solution});
+        var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
+        if (solution) {
+          return msg.meta.retry({ 'x-cf-solution': solution });
         }
       }
       var body;
-      if(response && response.json) {
+      if (response && response.json) {
         body = await response.json();
       }
       var errorMsg;
       var isUserFacing = false;
       var action = msg && msg.meta && msg.meta.action || 'unknown action';
-      if(body && body.userFacingMessage) {
+      if (body && body.userFacingMessage) {
         errorMsg = body.userFacingMessage;
         isUserFacing = true;
-      } else if(response.status && response.status >= 100 && response.status < 300) {
+      } else if (response.status && response.status >= 100 && response.status < 300) {
         errorMsg = `${response.status} failed ${action}`;
-      } else if(response.status && response.status >= 300 && response.status < 600) {
+      } else if (response.status && response.status >= 300 && response.status < 600) {
         errorMsg = `${response.status} failed ${action}`;
         isUserFacing = true;
       } else {
@@ -137,17 +136,17 @@ export default class ServerAdmin {
     return result.value;
   }
 
-  getProject(versionedConfig:Admin.VersionedConfigAdmin):Project {
+  getProject(versionedConfig: Admin.VersionedConfigAdmin): Project {
     const projectId = versionedConfig.config.projectId;
     var project = this.projects[projectId];
-    if(!project || versionedConfig.version !== project.configVersion) {
+    if (!project || versionedConfig.version !== project.configVersion) {
       const server = new Server(projectId, this.apiOverride, versionedConfig);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, 200);
-      const subscribers:(()=>void)[] = [];
+      const subscribers: (() => void)[] = [];
       editor.subscribe(() => {
-        if(!hasUnsavedChanges) {
+        if (!hasUnsavedChanges) {
           hasUnsavedChanges = true;
           subscribers.forEach(subscriber => subscriber());
         } else {
@@ -164,7 +163,7 @@ export default class ServerAdmin {
           subscribers.push(subscriber);
           return () => {
             const subscriberIndex = subscribers.findIndex(subscriber);
-            if(subscriberIndex !== -1) subscribers.splice(subscriberIndex, 1);
+            if (subscriberIndex !== -1) subscribers.splice(subscriberIndex, 1);
           };
         },
         resetUnsavedChanges: () => {
@@ -177,8 +176,8 @@ export default class ServerAdmin {
     return project;
   }
 
-  static _initialState():any {
-    const state:ReduxStateAdmin = {
+  static _initialState(): any {
+    const state: ReduxStateAdmin = {
       account: stateAccountDefault,
       plans: statePlansDefault,
       configs: stateConfigsDefault,
@@ -189,15 +188,15 @@ export default class ServerAdmin {
 }
 
 export interface StateAccount {
-  account:{
-    status?:Status;
-    account?:Admin.AccountAdmin;
+  account: {
+    status?: Status;
+    account?: Admin.AccountAdmin;
   };
 }
 const stateAccountDefault = {
   account: {},
 };
-function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.Actions):StateAccount {
+function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin.Actions): StateAccount {
   switch (action.type) {
     case Admin.accountSignupAdminActionStatus.Pending:
     case Admin.accountLoginAdminActionStatus.Pending:
@@ -228,7 +227,7 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
         },
       };
     case Admin.accountBindAdminActionStatus.Fulfilled:
-      if(!action.payload.account) return state;
+      if (!action.payload.account) return state;
       return {
         ...state,
         account: {
@@ -246,20 +245,20 @@ function reducerAccount(state:StateAccount = stateAccountDefault, action:Admin.A
 }
 
 export interface StatePlans {
-  plans:{
-    status?:Status;
-    plans?:Admin.Plan[];
-    featuresTable?:Admin.FeaturesTable;
+  plans: {
+    status?: Status;
+    plans?: Admin.Plan[];
+    featuresTable?: Admin.FeaturesTable;
   };
-  changeOptions:{
-    status?:Status;
+  changeOptions: {
+    status?: Status;
   };
 }
 const statePlansDefault = {
   plans: {},
   changeOptions: {},
 };
-function reducerPlans(state:StatePlans = statePlansDefault, action:Admin.Actions):StatePlans {
+function reducerPlans(state: StatePlans = statePlansDefault, action: Admin.Actions): StatePlans {
   switch (action.type) {
     case Admin.plansGetActionStatus.Pending:
       return {
@@ -292,15 +291,15 @@ function reducerPlans(state:StatePlans = statePlansDefault, action:Admin.Actions
 }
 
 export interface StateConfigs {
-  configs:{
-    status?:Status;
-    configs?:{ [projectId:string]: Admin.VersionedConfigAdmin };
+  configs: {
+    status?: Status;
+    configs?: { [projectId: string]: Admin.VersionedConfigAdmin };
   };
 }
 const stateConfigsDefault = {
   configs: {},
 };
-function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.Actions):StateConfigs {
+function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin.Actions): StateConfigs {
   switch (action.type) {
     case Admin.configGetAllAdminActionStatus.Pending:
       return {
@@ -347,11 +346,11 @@ function reducerConfigs(state:StateConfigs = stateConfigsDefault, action:Admin.A
 }
 
 export interface StateLegal {
-  status?:Status;
-  legal?:Admin.LegalResponse;
+  status?: Status;
+  legal?: Admin.LegalResponse;
 }
 const stateLegalDefault = {};
-function reducerLegal(state:StateLegal = stateLegalDefault, action:Admin.Actions):StateLegal {
+function reducerLegal(state: StateLegal = stateLegalDefault, action: Admin.Actions): StateLegal {
   switch (action.type) {
     case Admin.legalGetActionStatus.Pending:
       return {
@@ -374,10 +373,10 @@ function reducerLegal(state:StateLegal = stateLegalDefault, action:Admin.Actions
 }
 
 export interface ReduxStateAdmin {
-  account:StateAccount;
-  plans:StatePlans;
-  configs:StateConfigs;
-  legal:StateLegal;
+  account: StateAccount;
+  plans: StatePlans;
+  configs: StateConfigs;
+  legal: StateLegal;
 }
 export const reducersAdmin = combineReducers({
   account: reducerAccount,

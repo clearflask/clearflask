@@ -1,29 +1,29 @@
-import React, { Component, Key } from 'react';
-import { Button, TextField, IconButton } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { Button, IconButton, TextField } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import React, { Component } from 'react';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   wrapper: {
     display: 'flex',
   },
 });
 
 interface Props {
-  value?:string;
-  onSave:(value:string)=>Promise<any>;
-  isPassword?:boolean;
+  value?: string;
+  onSave: (value: string) => Promise<any>;
+  isPassword?: boolean;
 }
 
 interface State {
-  value?:string;
-  isSubmitting?:boolean;
-  revealPassword?:boolean;
+  value?: string;
+  isSubmitting?: boolean;
+  revealPassword?: boolean;
 }
 
-class UpdatableField extends Component<Props&WithStyles<typeof styles, true>, State> {
-  state:State = {};
+class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
   render() {
     return (
@@ -39,21 +39,22 @@ class UpdatableField extends Component<Props&WithStyles<typeof styles, true>, St
         {this.props.isPassword && (
           <IconButton
             aria-label='Toggle password visibility'
-            onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
+            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
             disabled={this.state.isSubmitting}
           >
             {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-          </IconButton>        
+          </IconButton>
         )}
         <Button
           aria-label="Save"
           color='primary'
-          style={{visibility: !this.state.value || this.state.value === this.props.value
-            ? 'hidden' : undefined
+          style={{
+            visibility: !this.state.value || this.state.value === this.props.value
+              ? 'hidden' : undefined
           }}
           disabled={this.state.isSubmitting}
           onClick={() => {
-            this.setState({isSubmitting: true});
+            this.setState({ isSubmitting: true });
             this.props.onSave(this.state.value || '')
               .then(() => this.setState({
                 isSubmitting: false,
@@ -63,8 +64,8 @@ class UpdatableField extends Component<Props&WithStyles<typeof styles, true>, St
                 isSubmitting: false,
               }));
           }}
-          >
-            Save
+        >
+          Save
           </Button>
       </div>
     );

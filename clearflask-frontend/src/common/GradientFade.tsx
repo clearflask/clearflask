@@ -1,27 +1,27 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   content: {
     display: 'inline-block',
   },
 });
 
 interface Props {
-  className?:string;
-  direction?:string;
-  start?:string;
-  end?:string;
-  opacity?:number;
-  isPaper?:boolean;
-  disabled?:boolean;
-  style?:React.CSSProperties,
+  className?: string;
+  direction?: string;
+  start?: string;
+  end?: string;
+  opacity?: number;
+  isPaper?: boolean;
+  disabled?: boolean;
+  style?: React.CSSProperties,
 }
 
-class GradientFade extends React.Component<Props&WithStyles<typeof styles, true>> {
+class GradientFade extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(this.props.disabled) return this.props.children;
+    if (this.props.disabled) return this.props.children;
     return (
       <div className={`${this.props.classes.content} ${this.props.className || ''}`} style={{
         ...(this.props.style || {}),

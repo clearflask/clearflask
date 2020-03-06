@@ -1,7 +1,7 @@
-import Schema from '../../api/schema/schema.json';
-import randomUuid from '../util/uuid';
 import * as Admin from '../../api/admin';
+import Schema from '../../api/schema/schema.json';
 import stringToSlug from '../util/slugger';
+import randomUuid from '../util/uuid';
 
 /**
  * OpenApi vendor properties.
@@ -30,49 +30,49 @@ export enum OpenApiTags {
   Hide = 'x-clearflask-hide',
 }
 export interface xCfPage {
-  name?:string;
-  nameFromProp?:string;
-  order?:number;
-  description?:string;
-  defaultValue?:true|undefined;
+  name?: string;
+  nameFromProp?: string;
+  order?: number;
+  description?: string;
+  defaultValue?: true | undefined;
 }
 export interface xCfPageGroup {
-  name?:string;
-  order?:number;
-  description?:string;
-  defaultValue?:true|undefined;
+  name?: string;
+  order?: number;
+  description?: string;
+  defaultValue?: true | undefined;
   /** Properties to show on main PageGroup page inside table */
-  tablePropertyNames:string[] 
+  tablePropertyNames: string[]
 }
 export interface xCfProp {
-  name?:string;
-  order?:number;
-  description?:string;
-  placeholder?:string;
+  name?: string;
+  order?: number;
+  description?: string;
+  placeholder?: string;
   /**
    * Default value to set on new properties. Use the following for dynamic names:
    * '<>' replaced with parent path name (used when inside an array)
    */
-  defaultValue?:any;
-  subType?:PropSubType;
+  defaultValue?: any;
+  subType?: PropSubType;
   /** EnumProperty only */
-  enumNames?:string[];
+  enumNames?: string[];
   /**
    * Will autocomplete slug properties with current value.
    * '<>' will be replaced by current path entry.
    * Example: if you set this property to 'Feature Requests',
    * the supplied path will become something like 'feature-requests'.
    */
-  slugAutoComplete?:{
-    path:Path;
-    skipFirst?:boolean;
+  slugAutoComplete?: {
+    path: Path;
+    skipFirst?: boolean;
   };
   /** BooleanProperty only.
    * Treat false value as undefined.
    * Useful if you only need two states but don't want to waste space
    * in config with a false value.
    */
-  falseAsUndefined?:boolean;
+  falseAsUndefined?: boolean;
 }
 export enum PropSubType {
   /**
@@ -89,15 +89,15 @@ export interface xCfPropLink {
    * '<>' will be replaced by current path entry,
    * useful when crossing another array.
    */
-  linkPath:string[];
+  linkPath: string[];
   /** If set, links to this prop name. Otherwise links to the array index */
-  idPropName:string;
+  idPropName: string;
   /** If set, displays the prop value as the name */
-  displayPropName:string;
+  displayPropName: string;
   /** If set, use this color from the prop value */
-  colorPropName?:string;
+  colorPropName?: string;
   /** If set, cannot create a new item in place */
-  disallowCreate?:boolean;
+  disallowCreate?: boolean;
 }
 
 /**
@@ -105,60 +105,60 @@ export interface xCfPropLink {
  */
 
 export type Unsubscribe = () => void;
-export interface Setting<T extends PageType|PageGroupType|PropertyType, R> {
+export interface Setting<T extends PageType | PageGroupType | PropertyType, R> {
   /** Unique object key; used in React to determine whether prop changed */
-  key:string;
-  type:T;
-  path:Path;
-  pathStr:string;
-  required:boolean;
-  value?:R|undefined;
-  set(val:R|undefined):void;
-  setDefault():void;
-  errorMsg?:string;
+  key: string;
+  type: T;
+  path: Path;
+  pathStr: string;
+  required: boolean;
+  value?: R | undefined;
+  set(val: R | undefined): void;
+  setDefault(): void;
+  errorMsg?: string;
   /** Validates value and sets the errorMsg accordingly */
-  validateValue(val:R|undefined);
+  validateValue(val: R | undefined);
   /** Subscribe to updates on this path only */
-  subscribe(callback:()=>void):Unsubscribe;
+  subscribe(callback: () => void): Unsubscribe;
 }
 
 export type PageType = 'page';
-export const PageType:PageType = 'page';
-export interface Page extends Setting<PageType, true|undefined>, xCfPage {
-  name:string;
+export const PageType: PageType = 'page';
+export interface Page extends Setting<PageType, true | undefined>, xCfPage {
+  name: string;
   /** Name potentially derived from a property */
-  getDynamicName:()=>string;
-  depth:ResolveDepth;
-  getChildren():PageChildren;
-  setRaw(val:object|undefined):void;
-  cachedChildren?:PageChildren; // Internal use only
+  getDynamicName: () => string;
+  depth: ResolveDepth;
+  getChildren(): PageChildren;
+  setRaw(val: object | undefined): void;
+  cachedChildren?: PageChildren; // Internal use only
 }
 export interface PageChildren {
-  all: (Page|PageGroup|Property)[]
+  all: (Page | PageGroup | Property)[]
   pages: Page[];
   groups: PageGroup[];
   props: Property[];
 }
 
 export type PageGroupType = 'pagegroup';
-export const PageGroupType:PageGroupType = 'pagegroup';
-export interface PageGroup extends Setting<PageGroupType, true|undefined>, xCfPageGroup {
-  name:string;
-  depth:ResolveDepth;
-  minItems?:number;
-  maxItems?:number;
-  getChildPages():Page[];
-  insert(index?:number):Page;
-  duplicate(sourceIndex:number):Page;
-  moveUp(index:number):void;
-  moveDown(index:number):void;
-  delete(index:number):void;
-  setRaw(val:Array<any>|undefined):void;
-  cachedChildPages?:Page[]; // Internal use only
+export const PageGroupType: PageGroupType = 'pagegroup';
+export interface PageGroup extends Setting<PageGroupType, true | undefined>, xCfPageGroup {
+  name: string;
+  depth: ResolveDepth;
+  minItems?: number;
+  maxItems?: number;
+  getChildPages(): Page[];
+  insert(index?: number): Page;
+  duplicate(sourceIndex: number): Page;
+  moveUp(index: number): void;
+  moveDown(index: number): void;
+  delete(index: number): void;
+  setRaw(val: Array<any> | undefined): void;
+  cachedChildPages?: Page[]; // Internal use only
 }
 
-interface PropertyBase<T extends PageType|PageGroupType|PropertyType, R> extends Setting<T, R>, xCfProp {
-  name:string;
+interface PropertyBase<T extends PageType | PageGroupType | PropertyType, R> extends Setting<T, R>, xCfProp {
+  name: string;
 }
 export enum PropertyType {
   String = 'string',
@@ -173,53 +173,53 @@ export enum PropertyType {
 }
 export type Property =
   StringProperty
-  |LinkProperty
-  |LinkMultiProperty
-  |NumberProperty
-  |IntegerProperty
-  |BooleanProperty
-  |EnumProperty
-  |ArrayProperty
-  |ObjectProperty;
+  | LinkProperty
+  | LinkMultiProperty
+  | NumberProperty
+  | IntegerProperty
+  | BooleanProperty
+  | EnumProperty
+  | ArrayProperty
+  | ObjectProperty;
 
 export interface StringProperty extends PropertyBase<PropertyType.String, string> {
-  minLength?:number;
-  maxLength?:number;
-  validation?:RegExp;
-  format?:StringFormat|string;
+  minLength?: number;
+  maxLength?: number;
+  validation?: RegExp;
+  format?: StringFormat | string;
 }
 
 export interface LinkProperty extends PropertyBase<PropertyType.Link, string>, xCfPropLink {
-  allowCreate:boolean;
-  create(name:string):void;
-  getOptions():LinkPropertyOption[];
-  cachedOptions?:LinkPropertyOption[] // Internal use only
+  allowCreate: boolean;
+  create(name: string): void;
+  getOptions(): LinkPropertyOption[];
+  cachedOptions?: LinkPropertyOption[] // Internal use only
 }
 export interface LinkPropertyOption {
-  id:string;
-  name:string;
-  color?:string;
+  id: string;
+  name: string;
+  color?: string;
 }
 
 export interface NumberProperty extends PropertyBase<PropertyType.Number, number> {
-  minimum?:number;
-  maximum?:number;
+  minimum?: number;
+  maximum?: number;
 }
 
 export interface IntegerProperty extends PropertyBase<PropertyType.Integer, number> {
-  minimum?:number;
-  maximum?:number;
+  minimum?: number;
+  maximum?: number;
 }
 
 export interface BooleanProperty extends PropertyBase<PropertyType.Boolean, boolean> {
 }
 
 export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
-  items:EnumItem[];
+  items: EnumItem[];
 }
 export interface EnumItem {
-  name:string;
-  value:string;
+  name: string;
+  value: string;
 }
 
 /**
@@ -230,29 +230,29 @@ export interface EnumItem {
  * TODO add support for uniqueItems
  */
 export interface ArrayProperty extends PropertyBase<PropertyType.Array, true> {
-  minItems?:number;
-  maxItems?:number;
-  uniqueItems?:boolean;
-  childType:PropertyType;
-  childEnumItems?:EnumItem[]; // Only set if childType === Enum
-  childProperties?:Property[];
-  insert(index?:number):Property;
-  duplicate(sourceIndex:number):Property;
-  moveUp(index:number):void;
-  moveDown(index:number):void;
-  delete(index:number):void;
-  setRaw(val:Array<any>|undefined):void;
+  minItems?: number;
+  maxItems?: number;
+  uniqueItems?: boolean;
+  childType: PropertyType;
+  childEnumItems?: EnumItem[]; // Only set if childType === Enum
+  childProperties?: Property[];
+  insert(index?: number): Property;
+  duplicate(sourceIndex: number): Property;
+  moveUp(index: number): void;
+  moveDown(index: number): void;
+  delete(index: number): void;
+  setRaw(val: Array<any> | undefined): void;
 }
 
 export interface LinkMultiProperty extends PropertyBase<PropertyType.LinkMulti, Set<string>>, xCfPropLink {
-  minItems?:number;
-  maxItems?:number;
-  allowCreate:boolean;
-  create(name:string):void;
-  insert(linkId:string):void;
-  delete(linkId:string):void;
-  getOptions():LinkPropertyOption[];
-  cachedOptions?:LinkPropertyOption[] // Internal use only
+  minItems?: number;
+  maxItems?: number;
+  allowCreate: boolean;
+  create(name: string): void;
+  insert(linkId: string): void;
+  delete(linkId: string): void;
+  getOptions(): LinkPropertyOption[];
+  cachedOptions?: LinkPropertyOption[] // Internal use only
 }
 
 /**
@@ -263,8 +263,8 @@ export interface LinkMultiProperty extends PropertyBase<PropertyType.LinkMulti, 
  *   or set. If set, all 'properties' become visible.
  */
 export interface ObjectProperty extends PropertyBase<PropertyType.Object, true> {
-  childProperties?:Property[];
-  setRaw(val:object|undefined):void;
+  childProperties?: Property[];
+  setRaw(val: object | undefined): void;
 }
 
 /**
@@ -289,9 +289,9 @@ export enum StringFormat {
  * 
  * Ex: ['tags', 3, 'color']
  */
-export type Path = (string|number)[];
-export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[.\/]/):Path => {
-  if(!pathStr) {
+export type Path = (string | number)[];
+export const parsePath = (pathStr: string | undefined, delimiter: string | RegExp = /[.\/]/): Path => {
+  if (!pathStr) {
     return [];
   }
   return pathStr
@@ -304,31 +304,31 @@ export const parsePath = (pathStr:string|undefined, delimiter:string|RegExp = /[
 
 export interface Editor {
 
-  clone():Editor;
-  getConfig():Admin.ConfigAdmin;
-  setConfig(config:Admin.ConfigAdmin);
+  clone(): Editor;
+  getConfig(): Admin.ConfigAdmin;
+  setConfig(config: Admin.ConfigAdmin);
   notify();
 
-  get(path:Path, depth?:ResolveDepth):Page|PageGroup|Property;
-  getPage(path:Path, depth?:ResolveDepth):Page;
-  getPageGroup(path:Path, depth?:ResolveDepth):PageGroup;
-  getProperty(path:Path):Property;
+  get(path: Path, depth?: ResolveDepth): Page | PageGroup | Property;
+  getPage(path: Path, depth?: ResolveDepth): Page;
+  getPageGroup(path: Path, depth?: ResolveDepth): PageGroup;
+  getProperty(path: Path): Property;
 
-  getValue(path:Path):any;
-  getOrDefaultValue(path:Path, defaultValue:any):any;
-  setValue(path:Path, value:any):void;
+  getValue(path: Path): any;
+  getOrDefaultValue(path: Path, defaultValue: any): any;
+  setValue(path: Path, value: any): void;
 
   /** Subscribe to all updates in config */
-  subscribe(callback:()=>void):Unsubscribe;
+  subscribe(callback: () => void): Unsubscribe;
 }
 
 export class EditorImpl implements Editor {
-  config:Admin.ConfigAdmin;
-  cache:any = {};
-  globalSubscribers:{[subscriberId:string]:()=>void} = {};
+  config: Admin.ConfigAdmin;
+  cache: any = {};
+  globalSubscribers: { [subscriberId: string]: () => void } = {};
 
-  constructor(config?:Admin.ConfigAdmin) {
-    if(config !== undefined) {
+  constructor(config?: Admin.ConfigAdmin) {
+    if (config !== undefined) {
       this.config = config;
     } else {
       this.config = {} as Admin.ConfigAdmin;
@@ -336,145 +336,145 @@ export class EditorImpl implements Editor {
     }
   }
 
-  clone():Editor {
+  clone(): Editor {
     return new EditorImpl(
       JSON.parse(
         JSON.stringify(
           this.config)));
   }
 
-  subscribe(callback: () => void):Unsubscribe {
+  subscribe(callback: () => void): Unsubscribe {
     const subscriberId = randomUuid();
     this.globalSubscribers[subscriberId] = callback;
     return () => delete this.globalSubscribers[subscriberId];
   }
 
-  _subscribe(callback: () => void, subscribers:{[subscriberId:string]:()=>void}):Unsubscribe {
+  _subscribe(callback: () => void, subscribers: { [subscriberId: string]: () => void }): Unsubscribe {
     const subscriberId = randomUuid();
     subscribers[subscriberId] = callback;
     return () => delete subscribers[subscriberId];
   }
 
-  notify(localSubscribers?:{[subscriberId:string]:()=>void}):void {
+  notify(localSubscribers?: { [subscriberId: string]: () => void }): void {
     localSubscribers && Object.values(localSubscribers).forEach(notify => notify());
     Object.values(this.globalSubscribers).forEach(notify => notify());
   }
 
-  getConfig():Admin.ConfigAdmin {
+  getConfig(): Admin.ConfigAdmin {
     return this.config;
   }
 
-  setConfig(config:Admin.ConfigAdmin) {
+  setConfig(config: Admin.ConfigAdmin) {
     this.config = config;
     this.cacheInvalidate([]);
     this.notify();
   }
 
-  get(path:Path, depth:ResolveDepth = ResolveDepth.None, subSchema?:any):Page|PageGroup|Property {
+  get(path: Path, depth: ResolveDepth = ResolveDepth.None, subSchema?: any): Page | PageGroup | Property {
     return this.cacheGet(path, () => this.parse(path, depth, subSchema), depth);
   }
 
-  getPage(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):Page {
-    var result:Page|PageGroup|Property = this.cacheGet(path, () => this.parsePage(path, depth, isRequired, subSchema), depth);
-    if(result.type !== 'page') {
+  getPage(path: Path, depth: ResolveDepth = ResolveDepth.None, isRequired?: boolean, subSchema?: any): Page {
+    var result: Page | PageGroup | Property = this.cacheGet(path, () => this.parsePage(path, depth, isRequired, subSchema), depth);
+    if (result.type !== 'page') {
       throw Error(`Expecting page type but found ${result.type} on path ${path}`);
     }
     return result;
   }
 
-  getPageGroup(path:Path, depth:ResolveDepth = ResolveDepth.None, isRequired?:boolean, subSchema?:any):PageGroup {
-    var result:Page|PageGroup|Property = this.cacheGet(path, () => this.parsePageGroup(path, depth, isRequired, subSchema), depth);
-    if(result.type !== 'pagegroup') {
+  getPageGroup(path: Path, depth: ResolveDepth = ResolveDepth.None, isRequired?: boolean, subSchema?: any): PageGroup {
+    var result: Page | PageGroup | Property = this.cacheGet(path, () => this.parsePageGroup(path, depth, isRequired, subSchema), depth);
+    if (result.type !== 'pagegroup') {
       throw Error(`Expecting page group type but found ${result.type} on path ${path}`);
     }
     return result;
   }
 
-  getProperty<T extends Property>(path:Path, isRequired?:boolean, subSchema?:any):T {
-    var result:Page|PageGroup|Property = this.cacheGet(path, () => this.parseProperty(path, isRequired, subSchema));
-    if(result.type === 'page' || result.type === 'pagegroup') {
+  getProperty<T extends Property>(path: Path, isRequired?: boolean, subSchema?: any): T {
+    var result: Page | PageGroup | Property = this.cacheGet(path, () => this.parseProperty(path, isRequired, subSchema));
+    if (result.type === 'page' || result.type === 'pagegroup') {
       throw Error(`Expecting property type but found ${result.type} on path ${path}`);
     }
     return result as T;
   }
 
-  cacheGet(path:Path, loader:()=>Page|PageGroup|Property, minDepth:ResolveDepth = ResolveDepth.None):Page|PageGroup|Property {
+  cacheGet(path: Path, loader: () => Page | PageGroup | Property, minDepth: ResolveDepth = ResolveDepth.None): Page | PageGroup | Property {
     var pointer = this.cache;
     for (let i = 0; i < path.length; i++) {
       var nextPointer = pointer[path[i]];
-      if(nextPointer === undefined) {
+      if (nextPointer === undefined) {
         nextPointer = {};
         pointer[path[i]] = nextPointer;
       }
       pointer = nextPointer;
     }
     var value = pointer._;
-    if(value === undefined || (value['depth'] || 0) < minDepth) {
+    if (value === undefined || (value['depth'] || 0) < minDepth) {
       value = loader();
       pointer._ = value;
     }
     return value;
   }
 
-  cacheInvalidate(path:Path):void {
-    if(path.length === 0) {
+  cacheInvalidate(path: Path): void {
+    if (path.length === 0) {
       this.cache = {};
       return;
     }
     var pointer = this.cache;
     for (let i = 0; i < path.length - 1; i++) {
       pointer = pointer[path[i]];
-      if(pointer === undefined) {
+      if (pointer === undefined) {
         return;
       }
     }
     delete pointer[path[path.length - 1]];
   }
 
-  cacheInvalidateChildren(path:Path):void {
+  cacheInvalidateChildren(path: Path): void {
     var pointer = this.cache;
     for (let i = 0; i < path.length - 1; i++) {
       pointer = pointer[path[i]];
-      if(pointer === undefined) {
+      if (pointer === undefined) {
         return;
       }
     }
     const cacheNode = pointer[path[path.length - 1]];
-    if(cacheNode._) {
-      pointer[path[path.length - 1]] = {_: cacheNode._};
+    if (cacheNode._) {
+      pointer[path[path.length - 1]] = { _: cacheNode._ };
     } else {
       delete pointer[path[path.length - 1]];
     }
   }
 
-  getOrDefaultValue(path:Path, defaultValue:any, subConfig?:any):any {
-    if(path.length === 0) {
-      if(this.config === undefined) {
+  getOrDefaultValue(path: Path, defaultValue: any, subConfig?: any): any {
+    if (path.length === 0) {
+      if (this.config === undefined) {
         this.config = defaultValue;
       }
       return this.config;
     } else {
       const parent = this.getValue(path.slice(0, -1));
-      if(parent[path[path.length - 1]] === undefined) {
+      if (parent[path[path.length - 1]] === undefined) {
         parent[path[path.length - 1]] = defaultValue;
       }
       return parent[path[path.length - 1]];
     }
   }
 
-  getValue(path:Path, subConfig?:any):any {
+  getValue(path: Path, subConfig?: any): any {
     return path.reduce(
       (subConfig, nextKey) => subConfig && subConfig[nextKey],
       subConfig || this.config);
   }
 
-  setValue(path:Path, value:any):void {
-    if(path.length === 0) {
+  setValue(path: Path, value: any): void {
+    if (path.length === 0) {
       this.config = value;
     } else {
       const parent = this.getValue(path.slice(0, -1));
-      if(value === undefined) {
-        if(typeof path[path.length - 1] === 'number') {
+      if (value === undefined) {
+        if (typeof path[path.length - 1] === 'number') {
           parent.splice(path[path.length - 1], 1);
         } else {
           delete parent[path[path.length - 1]];
@@ -485,28 +485,28 @@ export class EditorImpl implements Editor {
     }
   }
 
-  sortPagesProps(l:Page|PageGroup|Property, r:Page|PageGroup|Property):number {
+  sortPagesProps(l: Page | PageGroup | Property, r: Page | PageGroup | Property): number {
     // id subtype needs to initialize first in case a subsequent link points to itself
     return (l['subType'] === 'id' ? -1 : l.order || l.name)
       > (r['subType'] === 'id' ? -1 : r.order || r.name)
-        ? 1
-        : -1;
+      ? 1
+      : -1;
   }
 
-  getCacheKey(path:Path):string {
+  getCacheKey(path: Path): string {
     return path.join(':');
   }
 
-  getSubSchema(path:Path, schema:any = Schema):any {
+  getSubSchema(path: Path, schema: any = Schema): any {
     return this.mergeAllOf(path.reduce(
       (subSchema, nextKey) =>
         this.skipPaths(this.mergeAllOf(subSchema), ['properties'])
-          [typeof nextKey === 'number' ? 'items' : nextKey]
-            || (() => {throw Error(`Cannot find ${nextKey} in path ${path}`)})(),
+        [typeof nextKey === 'number' ? 'items' : nextKey]
+        || (() => { throw Error(`Cannot find ${nextKey} in path ${path}`) })(),
       schema));
   }
 
-  mergeAllOf(schema:any):any {
+  mergeAllOf(schema: any): any {
     return schema['allOf'] !== undefined
       ? {
         ...schema['allOf'].reduce((result, next) => Object.assign(result, next), {}),
@@ -516,22 +516,22 @@ export class EditorImpl implements Editor {
       : schema;
   }
 
-  skipPaths(schema:any, pathsToSkip:string[]):any {
+  skipPaths(schema: any, pathsToSkip: string[]): any {
     pathsToSkip.forEach(pathToSkip => {
-      if(schema[pathToSkip]) {
+      if (schema[pathToSkip]) {
         schema = schema[pathToSkip]
       };
     });
     return schema;
   }
 
-  parse(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page|PageGroup|Property {
+  parse(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): Page | PageGroup | Property {
     var schema;
-    if(isRequired !== undefined && subSchema !== undefined) {
+    if (isRequired !== undefined && subSchema !== undefined) {
       schema = subSchema;
     } else {
       schema = this.getSubSchema(path);
-      if(path.length === 0) {
+      if (path.length === 0) {
         isRequired = true;
       } else {
         const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
@@ -540,22 +540,22 @@ export class EditorImpl implements Editor {
       }
     }
 
-    if(schema[OpenApiTags.Hide]) {
+    if (schema[OpenApiTags.Hide]) {
       throw Error(`Property hidden on path ${path}`);
-    } else if(schema[OpenApiTags.Page]) {
+    } else if (schema[OpenApiTags.Page]) {
       return this.parsePage(path, depth, isRequired, schema);
-    } else if(schema[OpenApiTags.PageGroup]) {
+    } else if (schema[OpenApiTags.PageGroup]) {
       return this.parsePageGroup(path, depth, isRequired, schema);
     } else {
       return this.parseProperty(path, isRequired, schema);
     }
   }
 
-  getEnumItems(propSchema:any):EnumItem[] {
+  getEnumItems(propSchema: any): EnumItem[] {
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
-    if(!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
-    if(xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
-    const items:EnumItem[] = new Array(propSchema.enum.length);
+    if (!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
+    if (xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
+    const items: EnumItem[] = new Array(propSchema.enum.length);
     for (let i = 0; i < propSchema.enum.length; i++) {
       items[i] = {
         name: xProp && xProp.enumNames && xProp.enumNames[i] || propSchema.enum[i],
@@ -565,58 +565,58 @@ export class EditorImpl implements Editor {
     return items;
   }
 
-  getLinkOptions(linkProp:LinkProperty|LinkMultiProperty, localSubscribers:{[subscriberId:string]:()=>void}):LinkPropertyOption[] {
-    if(linkProp.cachedOptions !== undefined) return linkProp.cachedOptions;
+  getLinkOptions(linkProp: LinkProperty | LinkMultiProperty, localSubscribers: { [subscriberId: string]: () => void }): LinkPropertyOption[] {
+    if (linkProp.cachedOptions !== undefined) return linkProp.cachedOptions;
     const targetPath = linkProp.linkPath.map((pathStep, index) => pathStep === '<>' ? linkProp.path[index] : pathStep);
-    const target:Page|PageGroup|Property = this.get(targetPath);
-    if(target.type !== PropertyType.Array && target.type !== PageGroupType) {
+    const target: Page | PageGroup | Property = this.get(targetPath);
+    if (target.type !== PropertyType.Array && target.type !== PageGroupType) {
       throw Error(`Link property ${linkProp.path} pointing to non-array non-page-group on path ${targetPath}`);
     }
-    if(target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
+    if (target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
       throw Error(`Link property ${linkProp.path} pointing to array of non-objects on path ${targetPath}`);
     }
-    const unsubscribes:(()=>void)[] = [];
+    const unsubscribes: (() => void)[] = [];
     const subscribe = p => unsubscribes.push(p.subscribe(() => {
       linkProp.cachedOptions = undefined;
       unsubscribes.forEach(u => u());
       this.notify(localSubscribers);
     }));
     subscribe(target);
-    const options:(Page|ObjectProperty)[] = (target.type === PageGroupType
+    const options: (Page | ObjectProperty)[] = (target.type === PageGroupType
       ? target.getChildPages()
       : (target.childProperties as ObjectProperty[]) || []);
-    const linkPropertyOptions = options.map((option:Page|ObjectProperty) => {
-      var id:string|undefined = undefined;
-      var name:string|undefined = undefined;
-      var color:string|undefined = undefined;
-      const props:Property[] = (option.type === PageType
+    const linkPropertyOptions = options.map((option: Page | ObjectProperty) => {
+      var id: string | undefined = undefined;
+      var name: string | undefined = undefined;
+      var color: string | undefined = undefined;
+      const props: Property[] = (option.type === PageType
         ? option.getChildren().props
         : option.childProperties || []);
-      props.forEach((childProp:Property) => {
-        if(childProp.type !== PropertyType.String) {
+      props.forEach((childProp: Property) => {
+        if (childProp.type !== PropertyType.String) {
           return;
         }
         const childPropName = childProp.path[childProp.path.length - 1];
-        if(childPropName === linkProp.displayPropName) {
+        if (childPropName === linkProp.displayPropName) {
           name = childProp.value;
           subscribe(childProp);
         }
-        if(childProp.subType === PropSubType.Id
+        if (childProp.subType === PropSubType.Id
           && childPropName === linkProp.idPropName) {
           id = childProp.value;
           subscribe(childProp);
         }
-        if(linkProp.colorPropName !== undefined
+        if (linkProp.colorPropName !== undefined
           && childProp.subType === PropSubType.Color
           && childPropName === linkProp.colorPropName) {
           color = childProp.value;
           subscribe(childProp);
         }
       });
-      if(id === undefined) {
+      if (id === undefined) {
         throw Error(`Link property ${linkProp.path} idPropName '${linkProp.idPropName}' points to non-existent property on path ${targetPath}`);
       }
-      const linkPropertyOption:LinkPropertyOption = {
+      const linkPropertyOption: LinkPropertyOption = {
         id: id,
         name: name || id,
         color: color,
@@ -627,13 +627,13 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
-  parsePage(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):Page {
+  parsePage(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): Page {
     var pageSchema;
-    if(isRequired !== undefined && subSchema !== undefined) {
+    if (isRequired !== undefined && subSchema !== undefined) {
       pageSchema = this.mergeAllOf(subSchema);
     } else {
       pageSchema = this.getSubSchema(path);
-      if(path.length === 0) {
+      if (path.length === 0) {
         isRequired = true;
       } else {
         const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
@@ -641,18 +641,18 @@ export class EditorImpl implements Editor {
         isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
     }
-    
-    if(pageSchema[OpenApiTags.Hide]) {
+
+    if (pageSchema[OpenApiTags.Hide]) {
       throw Error(`Cannot parse hidden page on path ${path}`);
     }
 
     const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
-    if(!xPage) {
+    if (!xPage) {
       throw Error(`No page found on path ${path}`);
     }
 
-    const fetchChildren = ():PageChildren => {
-      const children:PageChildren = {
+    const fetchChildren = (): PageChildren => {
+      const children: PageChildren = {
         all: [],
         pages: [],
         groups: [],
@@ -660,14 +660,14 @@ export class EditorImpl implements Editor {
       };
       const objSchema = this.skipPaths(pageSchema, ['allOf']);
       const propsSchema = objSchema.properties
-        || (() => {throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`)})();
+        || (() => { throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`) })();
       const requiredProps = objSchema.required || [];
       Object.keys(propsSchema).forEach(propName => {
         const propPath = [...path, propName];
         const propSchema = this.getSubSchema([propName], propsSchema);
-        if(propSchema[OpenApiTags.Hide]) {
+        if (propSchema[OpenApiTags.Hide]) {
           // Nothing to do, hidden
-        } else if(propSchema[OpenApiTags.Page]) {
+        } else if (propSchema[OpenApiTags.Page]) {
           const childPage = this.getPage(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
@@ -675,7 +675,7 @@ export class EditorImpl implements Editor {
             propSchema);
           children.all.push(childPage);
           children.pages.push(childPage);
-        } else if(propSchema[OpenApiTags.PageGroup]) {
+        } else if (propSchema[OpenApiTags.PageGroup]) {
           const childGroup = this.getPageGroup(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
@@ -698,17 +698,17 @@ export class EditorImpl implements Editor {
       children.props.sort(this.sortPagesProps);
       return children;
     };
-    const getChildren = ():PageChildren => {
-      if(!page.cachedChildren || page.cachedChildren === undefined) {
+    const getChildren = (): PageChildren => {
+      if (!page.cachedChildren || page.cachedChildren === undefined) {
         page.cachedChildren = fetchChildren();
       }
       return page.cachedChildren;
     };
     const pathStr = path.join('.');
-    const localSubscribers:{[subscriberId:string]:()=>void} = {};
-    var dynamicNameUnsubscribe:(()=>void)|undefined = undefined;
+    const localSubscribers: { [subscriberId: string]: () => void } = {};
+    var dynamicNameUnsubscribe: (() => void) | undefined = undefined;
 
-    const page:Page = {
+    const page: Page = {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
@@ -720,10 +720,10 @@ export class EditorImpl implements Editor {
       required: isRequired,
       depth: depth,
       getChildren: getChildren,
-      set: (val:true|undefined):void => {
-        if(!val && isRequired) throw Error(`Cannot unset a required page for path ${path}`)
+      set: (val: true | undefined): void => {
+        if (!val && isRequired) throw Error(`Cannot unset a required page for path ${path}`)
         this.setValue(path, val === true ? {} : undefined);
-        if(val) {
+        if (val) {
           page.cachedChildren = fetchChildren();
           page.cachedChildren.pages.forEach(childPage => childPage.setDefault());
           page.cachedChildren.groups.forEach(childPageGroup => childPageGroup.setDefault());
@@ -740,13 +740,13 @@ export class EditorImpl implements Editor {
         page.validateValue(page.value);
         this.notify(localSubscribers);
       },
-      setDefault: ():void => {
+      setDefault: (): void => {
         page.set(page.defaultValue);
       },
-      setRaw: (val:object|undefined):void => {
+      setRaw: (val: object | undefined): void => {
         this.setValue(path, val);
         this.cacheInvalidateChildren(path);
-        if(val !== undefined) {
+        if (val !== undefined) {
           page.value = true;
           page.cachedChildren = fetchChildren();
         } else {
@@ -761,25 +761,25 @@ export class EditorImpl implements Editor {
         page.validateValue(page.value);
         this.notify(localSubscribers);
       },
-      getDynamicName: ():string => {
-        if(!xPage.nameFromProp) {
+      getDynamicName: (): string => {
+        if (!xPage.nameFromProp) {
           return page.name;
         }
         const nameProp = page.getChildren().props.find(p => p.path[p.path.length - 1] === xPage.nameFromProp);
-        if(dynamicNameUnsubscribe === undefined && nameProp) {
+        if (dynamicNameUnsubscribe === undefined && nameProp) {
           dynamicNameUnsubscribe = nameProp.subscribe(() => this.notify(localSubscribers));
         }
         return (nameProp && nameProp.value)
           ? nameProp.value + '' : page.name;
       },
-      validateValue: (val:true|undefined):void => {
-        if(val === undefined && isRequired) {
+      validateValue: (val: true | undefined): void => {
+        if (val === undefined && isRequired) {
           page.errorMsg = 'Required value';
         } else {
           page.errorMsg = undefined;
         }
       },
-      subscribe: (callback: () => void):Unsubscribe => {
+      subscribe: (callback: () => void): Unsubscribe => {
         return this._subscribe(callback, localSubscribers);
       },
       cachedChildren: depth === ResolveDepth.None ? undefined : fetchChildren(),
@@ -788,13 +788,13 @@ export class EditorImpl implements Editor {
     return page;
   }
 
-  parsePageGroup(path:Path, depth:ResolveDepth, isRequired?:boolean, subSchema?:any):PageGroup {
+  parsePageGroup(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): PageGroup {
     var pageGroupSchema;
-    if(isRequired !== undefined && subSchema !== undefined) {
+    if (isRequired !== undefined && subSchema !== undefined) {
       pageGroupSchema = this.mergeAllOf(subSchema);
     } else {
       pageGroupSchema = this.getSubSchema(path);
-      if(path.length === 0) {
+      if (path.length === 0) {
         isRequired = true;
       } else {
         const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
@@ -803,20 +803,20 @@ export class EditorImpl implements Editor {
       }
     }
 
-    if(pageGroupSchema[OpenApiTags.Hide]) {
+    if (pageGroupSchema[OpenApiTags.Hide]) {
       throw Error(`Cannot parse hidden page group on path ${path}`);
     }
 
     const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
-    if(!xPageGroup) {
+    if (!xPageGroup) {
       throw Error(`No page group found on path ${path}`);
     }
 
-    const fetchChildPages = ():Page[] => {
+    const fetchChildPages = (): Page[] => {
       const value = this.getValue(path);
       const count = value && value.length;
-      const pages:Page[] = [];
-      for(let i = 0; i < count; i++) {
+      const pages: Page[] = [];
+      for (let i = 0; i < count; i++) {
         pages.push(this.getPage(
           [...path, i],
           depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
@@ -825,16 +825,16 @@ export class EditorImpl implements Editor {
       }
       return pages;
     };
-    const getPages = ():Page[] => {
-      if(pageGroup.cachedChildPages === undefined) {
+    const getPages = (): Page[] => {
+      if (pageGroup.cachedChildPages === undefined) {
         pageGroup.cachedChildPages = fetchChildPages();
       }
       return pageGroup.cachedChildPages;
     };
     const pathStr = path.join('.');
-    const localSubscribers:{[subscriberId:string]:()=>void} = {};
+    const localSubscribers: { [subscriberId: string]: () => void } = {};
 
-    const pageGroup:PageGroup = {
+    const pageGroup: PageGroup = {
       key: randomUuid(),
       defaultValue: isRequired ? true : undefined,
       name: pathStr,
@@ -848,9 +848,9 @@ export class EditorImpl implements Editor {
       minItems: pageGroupSchema.minItems,
       maxItems: pageGroupSchema.maxItems,
       getChildPages: getPages,
-      insert: (index?:number):Page => {
+      insert: (index?: number): Page => {
         const arr = this.getOrDefaultValue(path, []);
-        if(index !== undefined) {
+        if (index !== undefined) {
           arr.splice(index, 0, undefined);
           this.cacheInvalidateChildren(path);
         } else {
@@ -867,20 +867,20 @@ export class EditorImpl implements Editor {
         this.notify(localSubscribers);
         return newPage;
       },
-      duplicate: (sourceIndex:number):Page => {
+      duplicate: (sourceIndex: number): Page => {
         const arr = this.getOrDefaultValue(path, []);
         const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
         const newPage = pageGroup.insert();
         newPage.setRaw(duplicateData);
-        if(newPage.nameFromProp) {
+        if (newPage.nameFromProp) {
           const nameProp = newPage.getChildren().props.find(p => p.path[p.path.length - 1] === newPage.nameFromProp) as StringProperty;
           nameProp.set(nameProp.value + ' (Copy)');
         }
         return newPage;
       },
-      moveUp: (index:number):void => {
+      moveUp: (index: number): void => {
         const arr = this.getOrDefaultValue(path, []);
-        if(index <= 0 || arr.length - 1 < index) return;
+        if (index <= 0 || arr.length - 1 < index) return;
         const temp = arr[index - 1];
         arr[index - 1] = arr[index];
         arr[index] = temp;
@@ -888,9 +888,9 @@ export class EditorImpl implements Editor {
         pageGroup.cachedChildPages = fetchChildPages();
         this.notify(localSubscribers);
       },
-      moveDown: (index:number):void => {
+      moveDown: (index: number): void => {
         const arr = this.getOrDefaultValue(path, []);
-        if(index < 0 || arr.length - 2 < index) return;
+        if (index < 0 || arr.length - 2 < index) return;
         const temp = arr[index + 1];
         arr[index + 1] = arr[index];
         arr[index] = temp;
@@ -898,7 +898,7 @@ export class EditorImpl implements Editor {
         pageGroup.cachedChildPages = fetchChildPages();
         this.notify(localSubscribers);
       },
-      delete: (index:number):void => {
+      delete: (index: number): void => {
         const arr = this.getValue(path);
         arr.splice(index, 1);
         this.cacheInvalidateChildren(path);
@@ -906,12 +906,12 @@ export class EditorImpl implements Editor {
         pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
-      set: (val:true|undefined):void => {
-        if(!val && isRequired) throw Error(`Cannot unset a required page group for path ${path}`)
+      set: (val: true | undefined): void => {
+        if (!val && isRequired) throw Error(`Cannot unset a required page group for path ${path}`)
         this.setValue(path, val === true
           ? new Array(pageGroup.minItems ? pageGroup.minItems : 0)
           : undefined);
-        if(val) {
+        if (val) {
           pageGroup.cachedChildPages = fetchChildPages();
           pageGroup.cachedChildPages.forEach(childPage => childPage.setDefault());
         } else {
@@ -921,13 +921,13 @@ export class EditorImpl implements Editor {
         pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
-      setDefault: ():void => {
+      setDefault: (): void => {
         pageGroup.set(pageGroup.defaultValue);
       },
-      setRaw: (val:Array<any>|undefined):void => {
+      setRaw: (val: Array<any> | undefined): void => {
         this.setValue(path, val);
         this.cacheInvalidateChildren(path);
-        if(val !== undefined) {
+        if (val !== undefined) {
           pageGroup.value = true;
           pageGroup.cachedChildPages = fetchChildPages();
         } else {
@@ -937,15 +937,15 @@ export class EditorImpl implements Editor {
         pageGroup.validateValue(pageGroup.value);
         this.notify(localSubscribers);
       },
-      validateValue: (val:true|undefined):void => {
-        if(val === undefined && isRequired) {
+      validateValue: (val: true | undefined): void => {
+        if (val === undefined && isRequired) {
           pageGroup.errorMsg = 'Required value';
-        } else if(val === true) {
+        } else if (val === true) {
           const rawValue = this.getValue(path);
           const count = rawValue === undefined ? 0 : rawValue.length;
-          if(pageGroup.minItems !== undefined && count < pageGroup.minItems) {
+          if (pageGroup.minItems !== undefined && count < pageGroup.minItems) {
             pageGroup.errorMsg = `Must have at least ${pageGroup.minItems} entries`;
-          } else if(pageGroup.maxItems !== undefined && count > pageGroup.maxItems) {
+          } else if (pageGroup.maxItems !== undefined && count > pageGroup.maxItems) {
             pageGroup.errorMsg = `Must have at most ${pageGroup.maxItems} entries`;
           }
           pageGroup.errorMsg = undefined;
@@ -953,7 +953,7 @@ export class EditorImpl implements Editor {
           pageGroup.errorMsg = undefined;
         }
       },
-      subscribe: (callback: () => void):Unsubscribe => {
+      subscribe: (callback: () => void): Unsubscribe => {
         return this._subscribe(callback, localSubscribers);
       },
       cachedChildPages: depth === ResolveDepth.None ? undefined : fetchChildPages(),
@@ -962,43 +962,43 @@ export class EditorImpl implements Editor {
     return pageGroup;
   }
 
-  parseProperty(path:Path, isRequired?:boolean, subSchema?:any, valueOverride:any = null):Property {
-    if(path.length === 0) {
+  parseProperty(path: Path, isRequired?: boolean, subSchema?: any, valueOverride: any = null): Property {
+    if (path.length === 0) {
       throw Error(`Property cannot be on root on path ${path}`);
     }
     var propSchema;
-    if(isRequired !== undefined && subSchema !== undefined) {
+    if (isRequired !== undefined && subSchema !== undefined) {
       propSchema = this.mergeAllOf(subSchema);
     } else {
       const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
       const propName = path[path.length - 1];
       propSchema = parentSchema.properties && parentSchema.properties[propName]
-        || (() => {throw Error(`Cannot find property on path ${path}`)})();
+        || (() => { throw Error(`Cannot find property on path ${path}`) })();
       isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
     }
-    if(propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
+    if (propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
       throw Error(`Page or pagegroup found instead of property on path ${path}`);
     }
 
-    if(propSchema[OpenApiTags.Hide]) {
+    if (propSchema[OpenApiTags.Hide]) {
       throw Error(`Cannot parse hidden property on path ${path}`);
     }
 
-    var property:Property;
+    var property: Property;
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
 
-    const localSubscribers:{[subscriberId:string]:()=>void} = {};
-    const setFun = (val:any):void => {
+    const localSubscribers: { [subscriberId: string]: () => void } = {};
+    const setFun = (val: any): void => {
       this.setValue(path, val);
       property.value = val;
       property.validateValue(val as never);
       this.notify(localSubscribers);
     };
-    const setDefaultFun = ():void => {
+    const setDefaultFun = (): void => {
       property.set(property.defaultValue);
     };
-    const validateRequiredFun = (val:any):void => {
-      if(val === undefined && isRequired) {
+    const validateRequiredFun = (val: any): void => {
+      if (val === undefined && isRequired) {
         property.errorMsg = 'Required value';
       } else {
         property.errorMsg = undefined;
@@ -1015,37 +1015,37 @@ export class EditorImpl implements Editor {
       required: isRequired,
       set: setFun,
       setDefault: setDefaultFun,
-      subscribe: (callback: () => void):Unsubscribe => {
+      subscribe: (callback: () => void): Unsubscribe => {
         return this._subscribe(callback, localSubscribers);
       },
       validateValue: validateRequiredFun,
     };
     const value = valueOverride === null ? this.getValue(path) : valueOverride;
-    switch(propSchema.type || 'object') {
+    switch (propSchema.type || 'object') {
       case 'string':
-        if(propSchema.enum){
-          const items:EnumItem[] = this.getEnumItems(propSchema);
+        if (propSchema.enum) {
+          const items: EnumItem[] = this.getEnumItems(propSchema);
           property = {
             defaultValue: isRequired ? propSchema.enum[0] : undefined,
             ...base,
             type: PropertyType.Enum,
             value: value,
             items: items,
-            validateValue: (val:string|undefined):void => {
-              if(val === undefined) {
+            validateValue: (val: string | undefined): void => {
+              if (val === undefined) {
                 validateRequiredFun(val);
-              } else if(!propSchema.enum.includes(val)) {
+              } else if (!propSchema.enum.includes(val)) {
                 property.errorMsg = `Can only be one of: ${JSON.stringify(propSchema.enum)}`;
               } else {
                 property.errorMsg = undefined;
               }
             },
           };
-        } else if(propSchema[OpenApiTags.PropLink]) {
+        } else if (propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
           const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
           const target = this.get(targetPath);
-          if(target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
+          if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
           target.subscribe(() => {
             const linkProperty = property as LinkProperty;
             linkProperty.cachedOptions = undefined;
@@ -1059,35 +1059,35 @@ export class EditorImpl implements Editor {
             type: PropertyType.Link,
             value: value,
             allowCreate: !xPropLink.disallowCreate,
-            set: (val:string|undefined):void => {
+            set: (val: string | undefined): void => {
               (property as LinkProperty).cachedOptions = undefined;
               setFun(val);
             },
-            create: (name:string):void => {
-              const newItem:Page|Property = target.insert();
+            create: (name: string): void => {
+              const newItem: Page | Property = target.insert();
               var newItemProps;
-              if(newItem.type === PageType) {
+              if (newItem.type === PageType) {
                 newItemProps = newItem.getChildren().props;
-              } else if(newItem.type === PropertyType.Object){
+              } else if (newItem.type === PropertyType.Object) {
                 newItemProps = newItem.childProperties || []
               } else {
                 throw Error(`Link property ${path} pointing to array of non-objects on path ${targetPath}`);
               }
               const displayProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.displayPropName);
-              if(displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
-              if(displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
+              if (displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
+              if (displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
               displayProp.set(name);
 
               const idProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.idPropName);
-              if(idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
-              if(idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
-              if(idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
+              if (idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
+              if (idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
+              if (idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
 
               property.set(idProp.value as never);
             },
-            getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
-            validateValue: (val:string|undefined):void => {
-              if(val === undefined) {
+            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
+            validateValue: (val: string | undefined): void => {
+              if (val === undefined) {
                 validateRequiredFun(val);
               } else {
                 // Since link validation requires another property,
@@ -1098,51 +1098,51 @@ export class EditorImpl implements Editor {
                   const newErrorMsg = linkProperty.getOptions().find(o => o.id === val) === undefined
                     ? "Invalid reference"
                     : undefined;
-                  if(newErrorMsg !== property.errorMsg) {
+                  if (newErrorMsg !== property.errorMsg) {
                     property.errorMsg = newErrorMsg;
                     this.notify(localSubscribers);
                   }
-                },1);
+                }, 1);
               }
             },
           };
           break;
         } else {
           var defaultValue;
-          if(xProp && xProp.subType === PropSubType.Id) {
+          if (xProp && xProp.subType === PropSubType.Id) {
             defaultValue = randomUuid();
           } else {
             defaultValue = isRequired ? '' : undefined;
           }
           var setDefaultStringFun = setDefaultFun;
           var setStringFun = setFun;
-          if(base.defaultValue && base.defaultValue.includes('<>')) {
-            setDefaultStringFun = ():void => {
+          if (base.defaultValue && base.defaultValue.includes('<>')) {
+            setDefaultStringFun = (): void => {
               setStringFun(base.defaultValue
                 .replace(/\<\>/g, path[path.length - 2]));
             }
           }
-          if(xProp && xProp.slugAutoComplete !== undefined) {
-            setStringFun = (val:string|undefined):void => {
+          if (xProp && xProp.slugAutoComplete !== undefined) {
+            setStringFun = (val: string | undefined): void => {
               const prevVal = (property as StringProperty).value;
               setFun(val);
               setTimeout(() => {
-                var lastIndex:string|number|undefined;
+                var lastIndex: string | number | undefined;
                 const slugProp = this.getProperty(xProp.slugAutoComplete!.path
                   .map((pathStep, index) => {
-                    if(pathStep === '<>') {
+                    if (pathStep === '<>') {
                       lastIndex = path[index];
                       return path[index];
                     } else {
                       return pathStep;
                     }
                   }));
-                if(xProp.slugAutoComplete!.skipFirst && lastIndex === 0) {
+                if (xProp.slugAutoComplete!.skipFirst && lastIndex === 0) {
                   return;
                 }
                 const prevSlugName = stringToSlug(prevVal);
                 // Only update slug if it hasn't been changed already manually
-                if(slugProp.value === prevSlugName) {
+                if (slugProp.value === prevSlugName) {
                   const slugName = stringToSlug(val);
                   slugProp.set(slugName as never);
                 }
@@ -1160,15 +1160,15 @@ export class EditorImpl implements Editor {
             format: propSchema.format,
             set: setStringFun,
             setDefault: setDefaultStringFun,
-            validateValue: (val:string|undefined):void => {
+            validateValue: (val: string | undefined): void => {
               const stringProperty = property as StringProperty;
-              if(val === undefined) {
+              if (val === undefined) {
                 validateRequiredFun(val);
-              } else if(stringProperty.validation !== undefined && !stringProperty.validation.test(val)) {
+              } else if (stringProperty.validation !== undefined && !stringProperty.validation.test(val)) {
                 property.errorMsg = `Invalid value (Requires ${stringProperty.validation})`;
-              } else if(stringProperty.minLength !== undefined && val.length < stringProperty.minLength) {
+              } else if (stringProperty.minLength !== undefined && val.length < stringProperty.minLength) {
                 property.errorMsg = `Must be at least ${stringProperty.minLength} characters`;
-              } else if(stringProperty.maxLength !== undefined && val.length > stringProperty.maxLength) {
+              } else if (stringProperty.maxLength !== undefined && val.length > stringProperty.maxLength) {
                 property.errorMsg = `Must be at most ${stringProperty.maxLength} characters`;
               } else {
                 property.errorMsg = undefined;
@@ -1184,15 +1184,15 @@ export class EditorImpl implements Editor {
           ...base,
           type: propSchema.type,
           value: value,
-          validateValue: (val:number|undefined):void => {
-            const numericProperty = property as IntegerProperty|NumberProperty;
-            if(val === undefined) {
+          validateValue: (val: number | undefined): void => {
+            const numericProperty = property as IntegerProperty | NumberProperty;
+            if (val === undefined) {
               validateRequiredFun(val);
-            } else if(property.type === PropertyType.Integer && val % 1 > 0) {
+            } else if (property.type === PropertyType.Integer && val % 1 > 0) {
               property.errorMsg = `Must be a whole number`;
-            } else if(numericProperty.minimum !== undefined && val < numericProperty.minimum) {
+            } else if (numericProperty.minimum !== undefined && val < numericProperty.minimum) {
               property.errorMsg = `Must be a minimum of ${numericProperty.minimum}`;
-            } else if(numericProperty.maximum !== undefined && val > numericProperty.maximum) {
+            } else if (numericProperty.maximum !== undefined && val > numericProperty.maximum) {
               property.errorMsg = `Must be a maximum of ${numericProperty.maximum}`;
             } else {
               property.errorMsg = undefined;
@@ -1208,7 +1208,7 @@ export class EditorImpl implements Editor {
           value: value,
           ...(xProp && xProp.falseAsUndefined && !isRequired ? {
             required: true,
-            set: (val:boolean|undefined):void => {
+            set: (val: boolean | undefined): void => {
               this.setValue(path, val === true ? true : undefined);
               property.value = val;
               property.validateValue(val as never);
@@ -1218,14 +1218,14 @@ export class EditorImpl implements Editor {
         };
         break;
       case 'array':
-        if(propSchema[OpenApiTags.PropLink]) {
-          if(!propSchema.items || propSchema.items.type !== 'string') {
+        if (propSchema[OpenApiTags.PropLink]) {
+          if (!propSchema.items || propSchema.items.type !== 'string') {
             throw Error(`Multi Link must be an array of strings on path ${path}`);
           }
           const xPropLink = propSchema[OpenApiTags.PropLink];
           const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
           const target = this.get(targetPath);
-          if(target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
+          if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
           target.subscribe(() => {
             const linkMultiProperty = property as LinkMultiProperty;
             linkMultiProperty.cachedOptions = undefined;
@@ -1241,7 +1241,7 @@ export class EditorImpl implements Editor {
             allowCreate: !xPropLink.disallowCreate,
             minItems: propSchema.minItems,
             maxItems: propSchema.maxItems,
-            set: (val:Set<string>) => {
+            set: (val: Set<string>) => {
               const linkMultiProperty = property as LinkMultiProperty;
               linkMultiProperty.value = new Set<string>(val);
               this.setValue(path, [...linkMultiProperty.value]);
@@ -1249,55 +1249,55 @@ export class EditorImpl implements Editor {
               linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
-            create: (name:string):void => {
-              const newItem:Page|Property = target.insert();
+            create: (name: string): void => {
+              const newItem: Page | Property = target.insert();
               var newItemProps;
-              if(newItem.type === PageType) {
+              if (newItem.type === PageType) {
                 newItemProps = newItem.getChildren().props;
-              } else if(newItem.type === PropertyType.Object){
+              } else if (newItem.type === PropertyType.Object) {
                 newItemProps = newItem.childProperties || []
               } else {
                 throw Error(`Link property ${path} pointing to array of non-objects on path ${targetPath}`);
               }
               const displayProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.displayPropName);
-              if(displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
-              if(displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
+              if (displayProp === undefined) throw Error(`Link property ${path} target does not have display property name ${xPropLink.displayPropName} on path ${targetPath}`);
+              if (displayProp.type !== PropertyType.String) throw Error(`Link property ${path} target display property name ${xPropLink.displayPropName} is not a string type on path ${displayProp.path}`);
               displayProp.set(name);
 
               const idProp = newItemProps.find(p => p.path[p.path.length - 1] === xPropLink.idPropName);
-              if(idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
-              if(idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
-              if(idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
+              if (idProp === undefined) throw Error(`Link property ${path} target does not have id property name ${xPropLink.idPropName} on path ${targetPath}`);
+              if (idProp.type !== PropertyType.String) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is not a string type on path ${idProp.path}`);
+              if (idProp.value === undefined) throw Error(`Link property ${path} target id property name ${xPropLink.idPropName} is undefined after just inserted it on path ${idProp.path}`);
 
               (property as LinkMultiProperty).insert(idProp.value);
             },
-            insert: (linkId:string):void => {
+            insert: (linkId: string): void => {
               const linkMultiProperty = property as LinkMultiProperty;
-              if(linkMultiProperty.value === undefined) linkMultiProperty.value = new Set<string>();
+              if (linkMultiProperty.value === undefined) linkMultiProperty.value = new Set<string>();
               linkMultiProperty.value.add(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
               (property as LinkMultiProperty).cachedOptions = undefined;
               linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
-            delete: (linkId:string):void => {
+            delete: (linkId: string): void => {
               const linkMultiProperty = property as LinkMultiProperty;
-              if(linkMultiProperty.value === undefined) return;
+              if (linkMultiProperty.value === undefined) return;
               linkMultiProperty.value.delete(linkId);
               this.setValue(path, [...linkMultiProperty.value]);
               (property as LinkMultiProperty).cachedOptions = undefined;
               linkMultiProperty.validateValue(linkMultiProperty.value);
               this.notify(localSubscribers);
             },
-            validateValue: (val:Set<string>|undefined):void => {
-              if(val === undefined) {
+            validateValue: (val: Set<string> | undefined): void => {
+              if (val === undefined) {
                 validateRequiredFun(val);
               } else {
                 const linkMultiProperty = property as LinkMultiProperty;
                 const count = val ? val.size : 0;
-                if(linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) {
+                if (linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) {
                   property.errorMsg = `Must have at least ${linkMultiProperty.minItems} entries`;
-                } else if(linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) {
+                } else if (linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) {
                   property.errorMsg = `Must have at most ${linkMultiProperty.maxItems} entries`;
                 } else {
                   property.errorMsg = undefined;
@@ -1306,31 +1306,31 @@ export class EditorImpl implements Editor {
                   // is fully initialized to prevent a stack overflow
                   setTimeout(() => {
                     const options = linkMultiProperty.getOptions();
-                    var newErrorMsg:string|undefined = undefined;
-                    for(let valItem in val) {
-                      if(options.find(o => o.id === valItem) === undefined) {
+                    var newErrorMsg: string | undefined = undefined;
+                    for (let valItem in val) {
+                      if (options.find(o => o.id === valItem) === undefined) {
                         newErrorMsg = "Option no longer exists";
                         break;
                       }
                     }
-                    if(newErrorMsg !== property.errorMsg) {
+                    if (newErrorMsg !== property.errorMsg) {
                       property.errorMsg = newErrorMsg;
                       this.notify(localSubscribers);
                     }
-                  },1);
+                  }, 1);
                 }
               }
             },
-            getOptions: ():LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
+            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
           }
           break;
         }
-        const fetchChildPropertiesArray = ():Property[]|undefined => {
+        const fetchChildPropertiesArray = (): Property[] | undefined => {
           const arr = this.getValue(path);
-          var childProperties:Property[]|undefined;
-          if(arr) {
+          var childProperties: Property[] | undefined;
+          if (arr) {
             childProperties = [];
-            for(let i = 0; i < arr.length; i++) {
+            for (let i = 0; i < arr.length; i++) {
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
             }
           }
@@ -1347,10 +1347,10 @@ export class EditorImpl implements Editor {
           childType: propSchema.items.enum ? 'enum' : (propSchema.items.type || 'object'),
           childEnumItems: propSchema.items.enum ? this.getEnumItems(propSchema.items) : undefined,
           childProperties: fetchChildPropertiesArray(),
-          set: (val:true|undefined):void => {
-            if(!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
+          set: (val: true | undefined): void => {
+            if (!val && isRequired) throw Error(`Cannot unset a required array prop for path ${path}`)
             const arrayProperty = property as ArrayProperty;
-            if(val !== undefined) {
+            if (val !== undefined) {
               this.setValue(path, new Array(arrayProperty.minItems ? arrayProperty.minItems : 0));
               arrayProperty.childProperties = fetchChildPropertiesArray();
               arrayProperty.childProperties && arrayProperty.childProperties.forEach(p => p.setDefault());
@@ -1362,11 +1362,11 @@ export class EditorImpl implements Editor {
             arrayProperty.validateValue(val);
             this.notify(localSubscribers);
           },
-          setRaw: (val:Array<any>|undefined):void => {
+          setRaw: (val: Array<any> | undefined): void => {
             this.setValue(path, val);
             this.cacheInvalidateChildren(path);
             const arrayProperty = property as ArrayProperty;
-            if(val !== undefined) {
+            if (val !== undefined) {
               arrayProperty.value = true;
               arrayProperty.childProperties = fetchChildPropertiesArray();
             } else {
@@ -1376,20 +1376,20 @@ export class EditorImpl implements Editor {
             arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
           },
-          setDefault: ():void => {
+          setDefault: (): void => {
             const arrayProperty = property as ArrayProperty;
             arrayProperty.set(arrayProperty.defaultValue);
           },
-          insert: (index?:number):Property => {
+          insert: (index?: number): Property => {
             const arr = this.getOrDefaultValue(path, []);
-            if(index !== undefined) {
+            if (index !== undefined) {
               arr.splice(index, 0, undefined);
               this.cacheInvalidateChildren(path);
             } else {
               arr.push(undefined);
             }
             const newChildProperties = fetchChildPropertiesArray();
-            const arrayProperty:ArrayProperty = (property as ArrayProperty);
+            const arrayProperty: ArrayProperty = (property as ArrayProperty);
             arrayProperty.childProperties = newChildProperties;
             const newProperty = arrayProperty.childProperties![
               index !== undefined
@@ -1401,21 +1401,21 @@ export class EditorImpl implements Editor {
             this.notify(localSubscribers);
             return newProperty;
           },
-          duplicate: (sourceIndex:number):Property => {
+          duplicate: (sourceIndex: number): Property => {
             const arr = this.getValue(path);
             const duplicateData = JSON.parse(JSON.stringify(arr[sourceIndex]));
             const arrayProperty = property as ArrayProperty;
             const newProp = arrayProperty.insert();
-            if(newProp.type === PropertyType.Object || newProp.type === PropertyType.Array) {
+            if (newProp.type === PropertyType.Object || newProp.type === PropertyType.Array) {
               newProp.setRaw(duplicateData);
             } else {
               newProp.set(duplicateData);
             }
             return newProp;
           },
-          moveUp: (index:number):void => {
+          moveUp: (index: number): void => {
             const arr = this.getOrDefaultValue(path, []);
-            if(index <= 0 || arr.length - 1 < index) return;
+            if (index <= 0 || arr.length - 1 < index) return;
             const temp = arr[index - 1];
             arr[index - 1] = arr[index];
             arr[index] = temp;
@@ -1423,9 +1423,9 @@ export class EditorImpl implements Editor {
             (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
             this.notify(localSubscribers);
           },
-          moveDown: (index:number):void => {
+          moveDown: (index: number): void => {
             const arr = this.getOrDefaultValue(path, []);
-            if(index < 0 || arr.length - 2 < index) return;
+            if (index < 0 || arr.length - 2 < index) return;
             const temp = arr[index + 1];
             arr[index + 1] = arr[index];
             arr[index] = temp;
@@ -1433,8 +1433,8 @@ export class EditorImpl implements Editor {
             (property as ArrayProperty).childProperties = fetchChildPropertiesArray();
             this.notify(localSubscribers);
           },
-          delete: (index:number):void => {
-            if(!property.value) return;
+          delete: (index: number): void => {
+            if (!property.value) return;
             const arrayProperty = property as ArrayProperty;
             const arr = this.getValue(path);
             arr.splice(index, 1);
@@ -1443,17 +1443,17 @@ export class EditorImpl implements Editor {
             arrayProperty.validateValue(arrayProperty.value);
             this.notify(localSubscribers);
           },
-          validateValue: (val:true|undefined):void => {
-            if(val === undefined) {
+          validateValue: (val: true | undefined): void => {
+            if (val === undefined) {
               validateRequiredFun(val);
             } else {
               const arrayProperty = property as ArrayProperty;
               const count = arrayProperty.childProperties ? arrayProperty.childProperties.length : 0;
-              if(arrayProperty.minItems !== undefined && count < arrayProperty.minItems) {
+              if (arrayProperty.minItems !== undefined && count < arrayProperty.minItems) {
                 property.errorMsg = `Must have at least ${arrayProperty.minItems} entries`;
-              } else if(arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) {
+              } else if (arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) {
                 property.errorMsg = `Must have at most ${arrayProperty.maxItems} entries`;
-              } else if(arrayProperty.uniqueItems !== undefined && (new Set(this.getValue(path))).size !== (arrayProperty.childProperties || []).length) {
+              } else if (arrayProperty.uniqueItems !== undefined && (new Set(this.getValue(path))).size !== (arrayProperty.childProperties || []).length) {
                 property.errorMsg = `Must have unique entries`;
               } else {
                 property.errorMsg = undefined;
@@ -1463,17 +1463,17 @@ export class EditorImpl implements Editor {
         };
         break;
       case 'object':
-        const fetchChildPropertiesObject = ():Property[]|undefined => {
+        const fetchChildPropertiesObject = (): Property[] | undefined => {
           const obj = this.getValue(path);
-          var childProperties:Property[]|undefined;
-          if(obj) {
+          var childProperties: Property[] | undefined;
+          if (obj) {
             childProperties = [];
             const childPropsSchema = propSchema.properties
-              || (() => {throw Error(`Cannot find 'properties' under path ${path}`)})();
+              || (() => { throw Error(`Cannot find 'properties' under path ${path}`) })();
             const requiredProps = propSchema.required || [];
             Object.keys(childPropsSchema).forEach(propName => {
               const objectPropSchema = this.getSubSchema([propName], childPropsSchema);
-              if(objectPropSchema[OpenApiTags.Hide]) {
+              if (objectPropSchema[OpenApiTags.Hide]) {
                 return;
               }
               childProperties!.push(this.getProperty(
@@ -1491,10 +1491,10 @@ export class EditorImpl implements Editor {
           type: PropertyType.Object,
           value: value === undefined ? undefined : true,
           childProperties: fetchChildPropertiesObject(),
-          set: (val:true|undefined):void => {
-            if(!val && isRequired) throw Error(`Cannot unset a required object prop for path ${path}`)
+          set: (val: true | undefined): void => {
+            if (!val && isRequired) throw Error(`Cannot unset a required object prop for path ${path}`)
             const objectProperty = property as ObjectProperty;
-            if(val) {
+            if (val) {
               this.setValue(path, {});
               objectProperty.childProperties = fetchChildPropertiesObject();
               objectProperty.childProperties && objectProperty.childProperties.forEach(childProp => childProp.setDefault());
@@ -1506,11 +1506,11 @@ export class EditorImpl implements Editor {
             objectProperty.validateValue(val);
             this.notify(localSubscribers);
           },
-          setRaw: (val:object|undefined):void => {
+          setRaw: (val: object | undefined): void => {
             this.setValue(path, val);
             this.cacheInvalidateChildren(path);
             const objectProperty = property as ObjectProperty;
-            if(val !== undefined) {
+            if (val !== undefined) {
               objectProperty.value = true;
               objectProperty.childProperties = fetchChildPropertiesObject();
             } else {
@@ -1520,7 +1520,7 @@ export class EditorImpl implements Editor {
             objectProperty.validateValue(objectProperty.value);
             this.notify(localSubscribers);
           },
-          setDefault: ():void => {
+          setDefault: (): void => {
             const objectProperty = property as ObjectProperty;
             objectProperty.set(objectProperty.defaultValue);
           },

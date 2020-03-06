@@ -1,20 +1,20 @@
-import React, { Component } from 'react';
-import { ListProps } from '@material-ui/core/List';
-import Select from 'react-select';
-import CreatableSelect, { Props as SelectProps } from 'react-select/lib/Creatable';
-import Typography from '@material-ui/core/Typography';
-import TextField from '@material-ui/core/TextField';
-import Paper from '@material-ui/core/Paper';
+import { FormHelperText, Grow } from '@material-ui/core';
 import Chip from '@material-ui/core/Chip';
+import { ListProps } from '@material-ui/core/List';
 import MenuItem from '@material-ui/core/MenuItem';
+import Paper from '@material-ui/core/Paper';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
 import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
-import { FormHelperText, Grow } from '@material-ui/core';
-import { SelectComponents, components } from 'react-select/lib/components';
+import React, { Component } from 'react';
+import Select from 'react-select';
+import { components, SelectComponents } from 'react-select/lib/components';
+import CreatableSelect, { Props as SelectProps } from 'react-select/lib/Creatable';
 import { ActionMeta, InputActionMeta } from 'react-select/lib/types';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   dropdownIcon: {
     cursor: 'pointer',
     height: '24px',
@@ -43,33 +43,33 @@ export interface Label {
   value: string;
 }
 
-export type ColorLookup = { [value:string]: string; }
+export type ColorLookup = { [value: string]: string; }
 
 interface Props extends ListProps, WithStyles<typeof styles, true> {
   classes; // conflict
-  className?:string;
-  label?:string;
-  helperText?:string;
-  placeholder?:string;
-  errorMsg?:string;
-  value?:Label[];
-  options:Label[];
-  colorLookup?:ColorLookup;
-  disabled?:boolean;
-  isMulti?:boolean;
-  bare?:boolean;
-  width?:string
-  inputMinWidth?:string;
-  overrideComponents?:Partial<SelectComponents<Label>>;
-  formatCreateLabel?:(input:string)=>string;
-  onInputChange?:(newValue: string, actionMeta: InputActionMeta) => void;
-  onValueChange:(labels:Label[], action: ActionMeta)=>void;
-  onValueCreate?:(name:string)=>void;
+  className?: string;
+  label?: string;
+  helperText?: string;
+  placeholder?: string;
+  errorMsg?: string;
+  value?: Label[];
+  options: Label[];
+  colorLookup?: ColorLookup;
+  disabled?: boolean;
+  isMulti?: boolean;
+  bare?: boolean;
+  width?: string
+  inputMinWidth?: string;
+  overrideComponents?: Partial<SelectComponents<Label>>;
+  formatCreateLabel?: (input: string) => string;
+  onInputChange?: (newValue: string, actionMeta: InputActionMeta) => void;
+  onValueChange: (labels: Label[], action: ActionMeta) => void;
+  onValueCreate?: (name: string) => void;
 }
 
 class SelectionPicker extends Component<Props> {
   render() {
-    const selectComponentProps:SelectProps<Label> = {
+    const selectComponentProps: SelectProps<Label> = {
       options: this.props.options || [],
       openOnFocus: true,
       components: {
@@ -90,7 +90,7 @@ class SelectionPicker extends Component<Props> {
       commonProps: this.props,
       value: this.props.value || [],
       onChange: (value, action) => {
-        if(this.props.isMulti) {
+        if (this.props.isMulti) {
           this.props.onValueChange((value || []) as Label[], action);
         } else {
           this.props.onValueChange((value ? [value] : []) as Label[], action);
@@ -112,7 +112,7 @@ class SelectionPicker extends Component<Props> {
         {this.props.onValueCreate
           ? (<CreatableSelect<Label> {...selectComponentProps} />)
           : (<Select<Label> {...selectComponentProps} />)}
-        {(!this.props.bare && this.props.helperText || this.props.errorMsg) && (<FormHelperText style={{minWidth: this.props.inputMinWidth, width: this.props.width}} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>)}
+        {(!this.props.bare && this.props.helperText || this.props.errorMsg) && (<FormHelperText style={{ minWidth: this.props.inputMinWidth, width: this.props.width }} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>)}
       </div>
     );
   }
@@ -120,7 +120,7 @@ class SelectionPicker extends Component<Props> {
 
 const NoOptionsMessage = (props) => {
   return (
-    <Typography color="textSecondary" {...props.innerProps} style = {{
+    <Typography color="textSecondary" {...props.innerProps} style={{
       padding: `${10}px ${10 * 2}px`,
     }}>
       {props.children}
@@ -133,7 +133,7 @@ const Input = (props) => {
     <div style={{
       minWidth: '20px',
     }}>
-      <components.Input {...props}/>
+      <components.Input {...props} />
     </div>
   );
 }
@@ -143,7 +143,7 @@ const inputComponent = ({ inputRef, ...props }) => {
 }
 
 const Control = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <TextField
       style={{
@@ -179,7 +179,7 @@ const Control = (props) => {
 }
 
 const Option = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <MenuItem
       buttonRef={props.innerRef}
@@ -197,22 +197,22 @@ const Option = (props) => {
 }
 
 const DropdownIndicator = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <DropdownIcon fontSize='inherit' className={outerProps.classes.dropdownIcon} />
   );
 }
 
 const ClearIndicator = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   const { innerProps: { ref, ...restInnerProps } } = props;
   return !outerProps.value || outerProps.value.length <= 1 ? null : (
-      <DeleteIcon {...restInnerProps} fontSize='inherit' className={outerProps.classes.deleteIcon} />
+    <DeleteIcon {...restInnerProps} fontSize='inherit' className={outerProps.classes.deleteIcon} />
   );
 }
 
 const Placeholder = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <Typography color="textSecondary" {...props.innerProps} style={{
       position: 'absolute',
@@ -226,7 +226,7 @@ const Placeholder = (props) => {
 }
 
 const SingleValue = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <Typography {...props.innerProps} style={{
       fontSize: 16,
@@ -252,7 +252,7 @@ const ValueContainer = (props) => {
 }
 
 const MultiValue = (props) => {
-  const outerProps:Props = props.selectProps.commonProps;
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <Chip
       variant='outlined'
@@ -260,25 +260,25 @@ const MultiValue = (props) => {
       tabIndex={-1}
       label={props.children}
       onDelete={props.removeProps.onClick}
-      deleteIcon={<DeleteIcon {...props.removeProps} className={outerProps.classes.deleteIcon}/>}
-      style={outerProps.colorLookup ? {color: outerProps.colorLookup[props.data.value]} : undefined}
+      deleteIcon={<DeleteIcon {...props.removeProps} className={outerProps.classes.deleteIcon} />}
+      style={outerProps.colorLookup ? { color: outerProps.colorLookup[props.data.value] } : undefined}
     />
   );
 }
 
 const Menu = (props) => {
   return (
-    <Grow appear in style={{transformOrigin: '0 0 0'}}>
-    <Paper elevation={2} square {...props.innerProps} style={{
-      position: 'absolute',
-      zIndex: 1,
-      marginTop: 0,
-      left: 0,
-      right: 0,
-      width: 'fit-content',
-    }}>
-      {props.children}
-    </Paper>
+    <Grow appear in style={{ transformOrigin: '0 0 0' }}>
+      <Paper elevation={2} square {...props.innerProps} style={{
+        position: 'absolute',
+        zIndex: 1,
+        marginTop: 0,
+        left: 0,
+        right: 0,
+        width: 'fit-content',
+      }}>
+        {props.children}
+      </Paper>
     </Grow>
   );
 }

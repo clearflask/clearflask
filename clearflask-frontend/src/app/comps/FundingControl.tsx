@@ -1,23 +1,23 @@
+import { Button, Slider, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import * as Client from '../../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
-import { ReduxState, Server, Status, getSearchKey } from '../../api/server';
-import FundingBar from './FundingBar';
-import { Typography, Button, Slider } from '@material-ui/core';
-import Loader from '../utils/Loader';
+import { RouteComponentProps, withRouter } from 'react-router';
 import Truncate from 'react-truncate';
+import * as Client from '../../api/client';
+import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
-import { withRouter, RouteComponentProps } from 'react-router';
 import minmax from '../../common/util/mathutil';
+import Loader from '../utils/Loader';
+import FundingBar from './FundingBar';
 
 interface SearchResult {
-  status:Status;
-  ideas:(Client.IdeaWithVote|undefined)[];
-  cursor:string|undefined,
+  status: Status;
+  ideas: (Client.IdeaWithVote | undefined)[];
+  cursor: string | undefined,
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   separatorMargin: {
     marginTop: theme.spacing(3),
   },
@@ -43,66 +43,66 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
-  className?:string;
-  style?:React.CSSProperties;
+  server: Server;
+  className?: string;
+  style?: React.CSSProperties;
   /** If you want to show a particular idea first, set idea and vote here */
-  idea?:Client.Idea;
-  fundAmount?:number;
-  onOtherFundedIdeasLoaded?:()=>void;
+  idea?: Client.Idea;
+  fundAmount?: number;
+  onOtherFundedIdeasLoaded?: () => void;
 }
 
 interface ConnectProps {
-  configver?:string;
-  credits?:Client.Credits;
-  otherFundedIdeas:SearchResult;
-  balance:number;
-  maxFundAmountSeen:number;
-  updateVote: (voteUpdate:Client.VoteUpdate)=>Promise<Client.VoteUpdateResponse>;
-  callOnMount: ()=>void,
+  configver?: string;
+  credits?: Client.Credits;
+  otherFundedIdeas: SearchResult;
+  balance: number;
+  maxFundAmountSeen: number;
+  updateVote: (voteUpdate: Client.VoteUpdate) => Promise<Client.VoteUpdateResponse>;
+  callOnMount: () => void,
 }
 
 interface State {
-  sliderCurrentIdeaId?:string;
-  sliderFundAmountDiff?:number;
-  sliderIsSubmitting?:boolean;
-  fixedTarget?:number;
-  maxTarget:number;
+  sliderCurrentIdeaId?: string;
+  sliderFundAmountDiff?: number;
+  sliderIsSubmitting?: boolean;
+  fixedTarget?: number;
+  maxTarget: number;
 }
 
-class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
-  state:State={maxTarget: 0};
+class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+  state: State = { maxTarget: 0 };
 
   componentDidMount() {
     this.props.callOnMount();
   }
 
-  static getDerivedStateFromProps(props:Props&ConnectProps&WithStyles<typeof styles, true>, state:State):Partial<State> | null {
-    var maxTarget:number = (props.fundAmount || 0);
+  static getDerivedStateFromProps(props: Props & ConnectProps & WithStyles<typeof styles, true>, state: State): Partial<State> | null {
+    var maxTarget: number = (props.fundAmount || 0);
     props.otherFundedIdeas.ideas.forEach(i =>
       maxTarget = Math.max(maxTarget, i ? (i.vote.fundAmount || 0) : 0));
     maxTarget += props.balance;
-    if(state.maxTarget !== maxTarget) {
-      return {maxTarget};
+    if (state.maxTarget !== maxTarget) {
+      return { maxTarget };
     }
     return null;
   }
 
-  componentDidUpdate(prevProps: Readonly<Props&ConnectProps&WithStyles<typeof styles, true>>): void {
-    if(prevProps.otherFundedIdeas.status !== Status.FULFILLED
+  componentDidUpdate(prevProps: Readonly<Props & ConnectProps & WithStyles<typeof styles, true>>): void {
+    if (prevProps.otherFundedIdeas.status !== Status.FULFILLED
       && this.props.otherFundedIdeas.status === Status.FULFILLED) {
       this.props.onOtherFundedIdeasLoaded && this.props.onOtherFundedIdeasLoaded();
     }
   }
 
   render() {
-    if(!this.props.credits) return null;
+    if (!this.props.credits) return null;
 
     const showFirstIdea = !!this.props.idea;
     var msg;
-    if(showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0) {
+    if (showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0) {
       msg = 'Prioritize against others';
-    } else if(!showFirstIdea
+    } else if (!showFirstIdea
       && this.props.otherFundedIdeas.status === Status.FULFILLED
       && this.props.otherFundedIdeas.ideas.length === 0) {
       msg = 'No items funded yet';
@@ -128,7 +128,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
         <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
             <div className={this.props.classes.separatorMargin}>
-              <Typography variant='subtitle1' style={{display: 'flex', alignItems: 'baseline'}}>
+              <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
                 <Truncate lines={1} style={{ opacity: 0.6 }}><div>{idea.title}</div></Truncate>
                 {!showFirstIdea && (
                   <Button onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/post/${idea.ideaId}`)}>
@@ -150,11 +150,11 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     );
   }
 
-  renderSlider(idea:Client.Idea, credits:Client.Credits, fundAmount:number) {
+  renderSlider(idea: Client.Idea, credits: Client.Credits, fundAmount: number) {
     const isSliding = this.state.sliderCurrentIdeaId === idea.ideaId;
     const min = 0;
     var max = fundAmount + this.props.balance;
-    if(!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
+    if (!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
     const value = isSliding ? fundAmount + (this.state.sliderFundAmountDiff || 0) : fundAmount;
     const step = this.props.credits && this.props.credits.increment || undefined;
     const target = this.state.fixedTarget || this.state.maxTarget;
@@ -185,7 +185,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
           }}
           onChangeCommitted={e => {
             const sliderFundAmountDiff = this.state.sliderFundAmountDiff;
-            if(sliderFundAmountDiff === undefined || sliderFundAmountDiff === 0) {
+            if (sliderFundAmountDiff === undefined || sliderFundAmountDiff === 0) {
               this.setState({
                 sliderCurrentIdeaId: undefined,
                 fixedTarget: undefined,
@@ -200,12 +200,12 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
               ideaId: idea.ideaId,
               fundDiff: minmax(-fundAmount, sliderFundAmountDiff, this.props.balance),
             })
-            .finally(() => this.setState({
-              sliderCurrentIdeaId: undefined,
-              fixedTarget: undefined,
-              sliderFundAmountDiff: undefined,
-              sliderIsSubmitting: false,
-            }));
+              .finally(() => this.setState({
+                sliderCurrentIdeaId: undefined,
+                fixedTarget: undefined,
+                sliderFundAmountDiff: undefined,
+                sliderIsSubmitting: false,
+              }));
           }}
           classes={{
             thumb: transitionClassName,
@@ -222,15 +222,15 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{flexGrow: target > 0 ? (value / target) : 0}}></div>
-            <div style={{flexGrow: 0}}>
-              {(min !== max) && ( 
+            <div style={{ flexGrow: target > 0 ? (value / target) : 0 }}></div>
+            <div style={{ flexGrow: 0 }}>
+              {(min !== max) && (
                 <Typography variant='body1'>
                   <CreditView key='value' val={value} credits={credits} />
                 </Typography>
               )}
             </div>
-            <div style={{flexGrow: target > 0 ? (1 - (value / target)) : 0}}></div>
+            <div style={{ flexGrow: target > 0 ? (1 - (value / target)) : 0 }}></div>
           </div>
           <div style={{
             position: 'absolute',
@@ -238,13 +238,13 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
             display: 'flex',
             alignItems: 'baseline',
           }}>
-            <div style={{flexGrow: max / target}}></div>
-            <div style={{opacity: minMaxTitleOpacity}}>
+            <div style={{ flexGrow: max / target }}></div>
+            <div style={{ opacity: minMaxTitleOpacity }}>
               <Typography variant='body1'>
                 <CreditView key='max' val={max} credits={credits} />
               </Typography>
             </div>
-            <div style={{flexGrow: 1 - (max / target)}}></div>
+            <div style={{ flexGrow: 1 - (max / target) }}></div>
           </div>
           <div style={{ opacity: minMaxTitleOpacity }}>
             <Typography variant='body1'>
@@ -256,16 +256,16 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
     );
   }
 
-  sticky(input:number, min:number, max:number, target:number, startValue:number, ideaFunded:number = 0, ideaGoal?:number):number {
+  sticky(input: number, min: number, max: number, target: number, startValue: number, ideaFunded: number = 0, ideaGoal?: number): number {
     var pointOfNoReturn = (target - min) / 100;
     var output = input;
     var outputCloseness;
     const fundDiff = input - startValue;
     [ideaGoal, startValue].forEach(target => {
-      if(target === undefined) return;
+      if (target === undefined) return;
       const targetDiff = target - ideaFunded;
       const closeness = Math.abs(targetDiff - fundDiff);
-      if(closeness <= pointOfNoReturn && (!outputCloseness || outputCloseness > closeness)) { 
+      if (closeness <= pointOfNoReturn && (!outputCloseness || outputCloseness > closeness)) {
         outputCloseness = closeness;
         output = targetDiff + startValue;
       }
@@ -274,7 +274,7 @@ class FundingControl extends Component<Props&ConnectProps&WithStyles<typeof styl
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
   const search = { fundedByMeAndActive: true };
   var newProps = {
     configver: state.conf.ver, // force rerender on config change
@@ -286,7 +286,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       cursor: undefined,
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
-    updateVote: (voteUpdate:Client.VoteUpdate):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
+    updateVote: (voteUpdate: Client.VoteUpdate): Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
       voteUpdate: voteUpdate,
     }),
@@ -299,20 +299,22 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
   };
 
   const bySearch = state.ideas.bySearch[getSearchKey(search)];
-  if(bySearch) {
+  if (bySearch) {
     newProps.otherFundedIdeas.status = bySearch.status;
     newProps.otherFundedIdeas.cursor = bySearch.cursor;
     newProps.otherFundedIdeas.ideas = (bySearch.ideaIds || [])
-    .filter(ideaId => ideaId !== (ownProps.idea && ownProps.idea.ideaId))
-    .map(ideaId => {
-      const idea = state.ideas.byId[ideaId];
-      if(!idea || !idea.idea || idea.status !== Status.FULFILLED) return undefined;
-      return {...idea.idea, vote: {
-        vote: state.votes.votesByIdeaId[ideaId],
-        expression: state.votes.expressionByIdeaId[ideaId],
-        fundAmount: state.votes.fundAmountByIdeaId[ideaId],
-      }};
-    });
+      .filter(ideaId => ideaId !== (ownProps.idea && ownProps.idea.ideaId))
+      .map(ideaId => {
+        const idea = state.ideas.byId[ideaId];
+        if (!idea || !idea.idea || idea.status !== Status.FULFILLED) return undefined;
+        return {
+          ...idea.idea, vote: {
+            vote: state.votes.votesByIdeaId[ideaId],
+            expression: state.votes.expressionByIdeaId[ideaId],
+            fundAmount: state.votes.fundAmountByIdeaId[ideaId],
+          }
+        };
+      });
   }
 
   return newProps;

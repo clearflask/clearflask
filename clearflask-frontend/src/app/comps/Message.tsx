@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
 import { Alert, Color } from '@material-ui/lab';
+import React, { Component } from 'react';
 
 interface Props {
-  innerStyle?:React.CSSProperties;
-  message:React.ReactNode|string,
-  variant:Color,
+  innerStyle?: React.CSSProperties;
+  message: React.ReactNode | string,
+  variant: Color,
 }
 
 class Message extends Component<Props> {

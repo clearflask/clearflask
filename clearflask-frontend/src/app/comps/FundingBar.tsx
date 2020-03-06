@@ -1,11 +1,11 @@
+import { LinearProgress, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { fade } from '@material-ui/core/styles/colorManipulator';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { Typography, LinearProgress } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import CreditView from '../../common/config/CreditView';
-import { fade } from '@material-ui/core/styles/colorManipulator';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   container: {
   },
   fundingAmount: {
@@ -56,19 +56,19 @@ const styles = (theme:Theme) => createStyles({
 
 interface Props {
   fundingBarRef?: React.Ref<HTMLDivElement>;
-  style?:React.CSSProperties;
-  idea?:Client.Idea;
-  credits?:Client.Credits;
-  maxFundAmountSeen:number;
-  fundAmountDiff?:number;
+  style?: React.CSSProperties;
+  idea?: Client.Idea;
+  credits?: Client.Credits;
+  maxFundAmountSeen: number;
+  fundAmountDiff?: number;
   /** If set, shown on the right side of the bar, otherwise a percentage is shown */
-  overrideRight?:React.ReactNode;
+  overrideRight?: React.ReactNode;
 }
 
-class FundingBar extends Component<Props&WithStyles<typeof styles, true>> {
+class FundingBar extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(!this.props.idea
+    if (!this.props.idea
       || !this.props.credits) return null;
 
     const fundGoal = this.props.idea.fundGoal && this.props.idea.fundGoal > 0

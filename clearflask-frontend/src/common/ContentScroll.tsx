@@ -1,8 +1,8 @@
-import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
+import React from 'react';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
 });
 
 export enum Side {
@@ -12,26 +12,26 @@ export enum Side {
 }
 
 interface Props {
-  style?:React.CSSProperties,
-  className?:string;
-  isVertical?:boolean;
-  side?:Side;
-  isPaper?:boolean;
+  style?: React.CSSProperties,
+  className?: string;
+  isVertical?: boolean;
+  side?: Side;
+  isPaper?: boolean;
 }
 
 const radialSize = 15;
 
-export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, isVertical:boolean = false, isPaper:boolean = false):React.CSSProperties => {
+export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, isPaper: boolean = false): React.CSSProperties => {
   const backgroundColor = isPaper ? theme.palette.background.paper : theme.palette.background.default;
   var startHor;
   var startVer;
   var endHor;
   var endVer;
   var radialMultiplier;
-  if(isVertical) {
+  if (isVertical) {
     startVer = 'top';
     endVer = 'bottom';
-    switch(side) {
+    switch (side) {
       default:
       case 'center':
         startHor = endHor = 'center';
@@ -49,7 +49,7 @@ export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, i
   } else {
     startHor = 'left';
     endHor = 'right';
-    switch(side) {
+    switch (side) {
       default:
       case 'center':
         startVer = endVer = 'center';
@@ -68,9 +68,9 @@ export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, i
   const ellipseShape = isVertical ? `50% ${radialSize / radialMultiplier}px` : `${radialSize / radialMultiplier}px 50%`;
   return {
     background: `radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
-      +`radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
-      +`radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%),`
-      +`radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%)`,
+      + `radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
+      + `radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%),`
+      + `radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${fade(theme.palette.common.black, 0.2)} 0px, rgba(0,0,0,0) ${100 * radialMultiplier}%)`,
     overflow: 'hidden',
     [isVertical ? 'overflowY' : 'overflowX']: 'scroll',
     backgroundAttachment: 'local, local, scroll, scroll',
@@ -80,7 +80,7 @@ export const contentScrollApplyStyles = (theme:Theme, side:Side = Side.Center, i
   };
 };
 
-class ContentScroll extends React.Component<Props&WithStyles<typeof styles, true>> {
+class ContentScroll extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (

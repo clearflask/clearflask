@@ -1,17 +1,17 @@
-import React, { Component } from 'react';
-import * as Client from '../api/client';
 import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { ReduxState as ReduxState, Server, Status, getSearchKey } from '../api/server';
-import Panel, { Direction } from './comps/Panel';
-import Loader from './utils/Loader';
-import ErrorPage from './ErrorPage';
+import * as Client from '../api/client';
+import { getSearchKey, ReduxState as ReduxState, Server, Status } from '../api/server';
+import { contentScrollApplyStyles } from '../common/ContentScroll';
 import IdeaExplorer from './comps/IdeaExplorer';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import Panel, { Direction } from './comps/Panel';
+import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
-import { Side, contentScrollApplyStyles } from '../common/ContentScroll';
+import Loader from './utils/Loader';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
   },
@@ -40,21 +40,21 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
-  pageSlug:string;
-  pageChanged:(pageUrlName:string)=>void;
+  server: Server;
+  pageSlug: string;
+  pageChanged: (pageUrlName: string) => void;
 }
 
 interface ConnectProps {
-  configver?:string;
-  pageNotFound:boolean;
-  page?:Client.Page;
+  configver?: string;
+  pageNotFound: boolean;
+  page?: Client.Page;
 }
 
-class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    if(this.props.pageNotFound) {
+    if (this.props.pageNotFound) {
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
@@ -62,9 +62,9 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
     var boardCmpt;
     var explorerCmpt;
 
-    if(this.props.page) {
+    if (this.props.page) {
       // ### PANELS
-      if(this.props.page.panels.length > 0) {
+      if (this.props.page.panels.length > 0) {
         panelsCmpt = (
           <div className={this.props.classes.singlePanels}>
             {(this.props.page.panels || []).map(panel => {
@@ -98,9 +98,9 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       }
 
       // ### BOARD
-      if(this.props.page.board) {
+      if (this.props.page.board) {
         const board = this.props.page.board;
-        var panels:any = board.panels.map((panel, panelIndex) => (
+        var panels: any = board.panels.map((panel, panelIndex) => (
           <div key={panelIndex} className={this.props.classes.boardPanel}>
             <Panel
               key={getSearchKey(panel.search)}
@@ -137,7 +137,7 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
       }
 
       // ### EXPLORER
-      if(this.props.page.explorer) {
+      if (this.props.page.explorer) {
         const explorer = this.props.page.explorer;
         explorerCmpt = (
           <IdeaExplorer
@@ -168,23 +168,23 @@ class CustomPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
-  var newProps:ConnectProps = {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
+  var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     pageNotFound: false,
     page: undefined,
   };
 
-  if(state.conf.status === Status.FULFILLED && state.conf.conf) {
-    if(ownProps.pageSlug === '') {
-      if(state.conf.conf.layout.pages.length <= 0) {
+  if (state.conf.status === Status.FULFILLED && state.conf.conf) {
+    if (ownProps.pageSlug === '') {
+      if (state.conf.conf.layout.pages.length <= 0) {
         newProps.pageNotFound = true;
       } else {
         newProps.page = state.conf.conf.layout.pages[0];
       }
     } else {
       newProps.page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
-      if(!newProps.page) newProps.pageNotFound = true;
+      if (!newProps.page) newProps.pageNotFound = true;
     }
   }
 

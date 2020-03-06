@@ -1,12 +1,12 @@
-import React, { Component } from 'react';
-import { Server, ReduxState } from '../../api/server';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as Client from '../../api/client';
-import { connect } from 'react-redux';
-import SelectionPicker, { Label, ColorLookup } from './SelectionPicker';
-import { Typography, MenuItem } from '@material-ui/core';
-import { ActionMeta } from 'react-select/lib/types';
+import { MenuItem, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/FilterListRounded';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { ActionMeta } from 'react-select/lib/types';
+import * as Client from '../../api/client';
+import { ReduxState, Server } from '../../api/server';
+import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 
 export enum FilterType {
   Search = 'search',
@@ -17,7 +17,7 @@ export enum FilterType {
 }
 const FilterTypes = new Set(Object.values(FilterType));
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   container: {
     margin: theme.spacing(1),
   },
@@ -36,28 +36,28 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  style?:React.CSSProperties;
-  className?:string;
-  server:Server;
-  search?:Partial<Client.IdeaSearch>;
-  onSearchChanged:(search:Partial<Client.IdeaSearch>)=>void;
-  explorer:Client.PageExplorer;
+  style?: React.CSSProperties;
+  className?: string;
+  server: Server;
+  search?: Partial<Client.IdeaSearch>;
+  onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
+  explorer: Client.PageExplorer;
 }
 
 interface ConnectProps {
-  config?:Client.Config;
+  config?: Client.Config;
 }
 
-class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
-  onClickTag(tagId:string):void {
-    this.props.onSearchChanged({...this.props.search, filterTagIds: [tagId]});
+  onClickTag(tagId: string): void {
+    this.props.onSearchChanged({ ...this.props.search, filterTagIds: [tagId] });
   }
-  onClickCategory(categoryId:string):void {
-    this.props.onSearchChanged({...this.props.search, filterCategoryIds: [categoryId]});
+  onClickCategory(categoryId: string): void {
+    this.props.onSearchChanged({ ...this.props.search, filterCategoryIds: [categoryId] });
   }
-  onClickStatus(statusId:string):void {
-    this.props.onSearchChanged({...this.props.search, filterStatusIds: [statusId]});
+  onClickStatus(statusId: string): void {
+    this.props.onSearchChanged({ ...this.props.search, filterStatusIds: [statusId] });
   }
 
   render() {
@@ -79,23 +79,23 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
               <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
             ),
             MenuList: (menuProps) => {
-              var newSearch:React.ReactNode|undefined;
-              const tagColumns:any = {};
-              const baseColumns:any = {};
+              var newSearch: React.ReactNode | undefined;
+              const tagColumns: any = {};
+              const baseColumns: any = {};
               const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-              children.forEach((child:any) => {
-                if(!child.props.data) {
+              children.forEach((child: any) => {
+                if (!child.props.data) {
                   // child is "No option(s)" text, ignore
-                } else if(child.props.data.__isNew__) {
+                } else if (child.props.data.__isNew__) {
                   newSearch = child; // child is "Search '...'" option
                 } else {
                   const type = this.getType(child.props.data);
                   const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
-                  if(!columns[type]) columns[type] = [];
+                  if (!columns[type]) columns[type] = [];
                   columns[type].push(child);
                 }
               });
-              const menuItems:React.ReactNode[] = [];
+              const menuItems: React.ReactNode[] = [];
               const addColumn = (title, content) => menuItems.push((
                 <div className={this.props.classes.menuItem}>
                   <Typography variant='overline'>{title}</Typography>
@@ -107,11 +107,11 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
                 </div>
               ));
               Object.values(FilterType)
-              .filter(t => this.isFilterControllable(t)
-                && t !== FilterType.Search
-                && t !== FilterType.Tag
-                && baseColumns[t])
-              .forEach(t => addColumn(t, baseColumns[t]));
+                .filter(t => this.isFilterControllable(t)
+                  && t !== FilterType.Search
+                  && t !== FilterType.Tag
+                  && baseColumns[t])
+                .forEach(t => addColumn(t, baseColumns[t]));
               Object.keys(tagColumns)
                 .forEach(t => addColumn(t, tagColumns[t]));
               return (
@@ -135,13 +135,13 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     );
   }
 
-  onValueChange(labels:Label[], action: ActionMeta) {
-    const partialSearch:Partial<Client.IdeaSearch> = {};
+  onValueChange(labels: Label[], action: ActionMeta) {
+    const partialSearch: Partial<Client.IdeaSearch> = {};
     labels.forEach(label => {
       const type = this.getType(label);
-      if(!this.isFilterControllable(type)) return;
+      if (!this.isFilterControllable(type)) return;
       const data = this.getData(label);
-      switch(type) {
+      switch (type) {
         case FilterType.Search:
           partialSearch.searchText = data;
           break;
@@ -149,31 +149,31 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
           partialSearch.sortBy = data as Client.IdeaSearchSortByEnum;
           break;
         case FilterType.Category:
-          if(!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
+          if (!partialSearch.filterCategoryIds) partialSearch.filterCategoryIds = [];
           partialSearch.filterCategoryIds.push(data);
           break;
         case FilterType.Status:
-          if(!partialSearch.filterStatusIds) partialSearch.filterStatusIds = [];
+          if (!partialSearch.filterStatusIds) partialSearch.filterStatusIds = [];
           partialSearch.filterStatusIds.push(data);
           break;
         default:
-          if(!partialSearch.filterTagIds) partialSearch.filterTagIds = [];
+          if (!partialSearch.filterTagIds) partialSearch.filterTagIds = [];
           partialSearch.filterTagIds.push(data);
           break;
-        }
+      }
     });
     this.props.onSearchChanged(partialSearch);
   }
 
-  onValueCreate(searchText:string) {
-    if(!this.isFilterControllable(FilterType.Search)) return;
+  onValueCreate(searchText: string) {
+    if (!this.isFilterControllable(FilterType.Search)) return;
     this.props.onSearchChanged({
       ...this.props.search,
       searchText: searchText
     });
   }
 
-  getControls():{values: Label[], options: Label[], permanent: Label[], colorLookup:ColorLookup} {
+  getControls(): { values: Label[], options: Label[], permanent: Label[], colorLookup: ColorLookup } {
     const controls = {
       values: [] as Label[],
       options: [] as Label[],
@@ -181,42 +181,42 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
       colorLookup: {},
     };
 
-    if(!this.props.config) return controls;
+    if (!this.props.config) return controls;
 
     // sort
-    if(!this.isFilterControllable(FilterType.Sort)) {
-      const label:Label = this.getLabel(FilterType.Sort, this.props.explorer.search.sortBy!, this.props.explorer.search.sortBy!);
+    if (!this.isFilterControllable(FilterType.Sort)) {
+      const label: Label = this.getLabel(FilterType.Sort, this.props.explorer.search.sortBy!, this.props.explorer.search.sortBy!);
       controls.permanent.push(label);
     } else {
       Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
-        const label:Label = this.getLabel(FilterType.Sort, sortBy, sortBy);
+        const label: Label = this.getLabel(FilterType.Sort, sortBy, sortBy);
         controls.options.push(label);
-        if(this.props.search && this.props.search.sortBy === sortBy) {
+        if (this.props.search && this.props.search.sortBy === sortBy) {
           controls.values.push(label);
         }
       });
     }
 
     // category
-    var searchableCategories:Client.Category[] = [];
-    if(!this.isFilterControllable(FilterType.Category)) {
+    var searchableCategories: Client.Category[] = [];
+    if (!this.isFilterControllable(FilterType.Category)) {
       (this.props.explorer.search.filterCategoryIds || []).forEach(categoryId => {
         const category = this.props.config!.content.categories.find(c => c.categoryId === categoryId);
-        if(!category) return;
+        if (!category) return;
         searchableCategories.push(category);
-        const label:Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
+        const label: Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
         controls.permanent.push(label);
         controls.colorLookup[label.value] = category.color;
       });
     } else {
-      if(!this.props.search || !this.props.search.filterCategoryIds || this.props.search.filterCategoryIds.length === 0) {
+      if (!this.props.search || !this.props.search.filterCategoryIds || this.props.search.filterCategoryIds.length === 0) {
         searchableCategories = this.props.config.content.categories;
       }
       this.props.config.content.categories.forEach(category => {
-        const label:Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
+        const label: Label = this.getLabel(FilterType.Category, category.categoryId, category.name);
         controls.options.push(label);
         controls.colorLookup[label.value] = category.color;
-        if(this.props.search && this.props.search.filterCategoryIds && this.props.search.filterCategoryIds.includes(category.categoryId)) {
+        if (this.props.search && this.props.search.filterCategoryIds && this.props.search.filterCategoryIds.includes(category.categoryId)) {
           controls.values.push(label);
           searchableCategories.push(category);
         }
@@ -224,11 +224,11 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     }
 
     // status
-    if(!this.isFilterControllable(FilterType.Status)) {
+    if (!this.isFilterControllable(FilterType.Status)) {
       searchableCategories.forEach(category => {
         category.workflow.statuses.forEach(status => {
-          if(this.props.explorer.search.filterStatusIds && this.props.explorer.search.filterStatusIds.includes(status.statusId)) {
-            const label:Label = this.getLabel(FilterType.Status, status.statusId, status.name);
+          if (this.props.explorer.search.filterStatusIds && this.props.explorer.search.filterStatusIds.includes(status.statusId)) {
+            const label: Label = this.getLabel(FilterType.Status, status.statusId, status.name);
             controls.permanent.push(label);
             controls.colorLookup[label.value] = status.color;
           }
@@ -237,10 +237,10 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     } else {
       searchableCategories.forEach(category => {
         category.workflow.statuses.forEach(status => {
-          const label:Label = this.getLabel(FilterType.Status, status.statusId, status.name);
+          const label: Label = this.getLabel(FilterType.Status, status.statusId, status.name);
           controls.options.push(label);
           controls.colorLookup[label.value] = status.color;
-          if(this.props.search && this.props.search.filterStatusIds && this.props.search.filterStatusIds.includes(status.statusId)) {
+          if (this.props.search && this.props.search.filterStatusIds && this.props.search.filterStatusIds.includes(status.statusId)) {
             controls.values.push(label);
           }
         })
@@ -248,11 +248,11 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     }
 
     // tag
-    if(!this.isFilterControllable(FilterType.Tag)) {
+    if (!this.isFilterControllable(FilterType.Tag)) {
       searchableCategories.forEach(category => {
         category.tagging.tags.forEach(tag => {
-          if(this.props.explorer.search.filterTagIds && this.props.explorer.search.filterTagIds.includes(tag.tagId)) {
-            const label:Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
+          if (this.props.explorer.search.filterTagIds && this.props.explorer.search.filterTagIds.includes(tag.tagId)) {
+            const label: Label = this.getLabel(FilterType.Tag, tag.tagId, tag.name);
             controls.permanent.push(label);
             controls.colorLookup[label.value] = tag.color;
           }
@@ -262,20 +262,20 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
       const filterTagIds = new Set(this.props.explorer.search.filterTagIds);
       searchableCategories.forEach(category => {
         category.tagging.tagGroups.forEach(tagGroup => {
-          const matchingCount:number = tagGroup.tagIds.reduce((count, nextTagId) => count + (filterTagIds.has(nextTagId) ? 1 : 0), 0);
+          const matchingCount: number = tagGroup.tagIds.reduce((count, nextTagId) => count + (filterTagIds.has(nextTagId) ? 1 : 0), 0);
           const permanent = matchingCount > 0
             && (tagGroup.minRequired || 0) <= matchingCount
             && (tagGroup.maxRequired || tagGroup.tagIds.length) >= matchingCount;
           tagGroup.tagIds.forEach(tagId => {
             const tag = category.tagging.tags.find(t => t.tagId === tagId);
-            if(!tag) return;
-            const label:Label = this.getLabel(tagGroup.name, tag.tagId, tag.name);
-            if(permanent) {
+            if (!tag) return;
+            const label: Label = this.getLabel(tagGroup.name, tag.tagId, tag.name);
+            if (permanent) {
               controls.permanent.push(label);
             } else {
               controls.options.push(label);
               controls.colorLookup[label.value] = tag.color;
-              if(this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
+              if (this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
                 controls.values.push(label);
               }
             }
@@ -285,11 +285,11 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     }
 
     // search
-    if(!this.isFilterControllable(FilterType.Search)) {
-      const label:Label = this.getLabel(FilterType.Search, this.props.explorer.search.searchText!, this.props.explorer.search.searchText!);
+    if (!this.isFilterControllable(FilterType.Search)) {
+      const label: Label = this.getLabel(FilterType.Search, this.props.explorer.search.searchText!, this.props.explorer.search.searchText!);
       controls.permanent.push(label);
-    } else if(this.props.search && this.props.search.searchText != undefined) {
-      const label:Label = this.getLabel(FilterType.Search, this.props.search.searchText, this.props.search.searchText);
+    } else if (this.props.search && this.props.search.searchText != undefined) {
+      const label: Label = this.getLabel(FilterType.Search, this.props.search.searchText, this.props.search.searchText);
       controls.options.push(label);
       controls.values.push(label);
     }
@@ -297,23 +297,23 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
     return controls;
   }
 
-  getLabel(type:FilterType|string, data:string, name:string):Label {
+  getLabel(type: FilterType | string, data: string, name: string): Label {
     return {
       label: name,
       value: `${type}:${data}`,
     };
   }
-  
-  getType(label:Label):FilterType|string {
+
+  getType(label: Label): FilterType | string {
     return label.value.substr(0, label.value.indexOf(':'));
   }
 
-  getData(label:Label):string {
+  getData(label: Label): string {
     return label.value.substr(label.value.indexOf(':') + 1);
   }
 
-  isFilterControllable(type:FilterType|string):boolean {
-    switch(type) {
+  isFilterControllable(type: FilterType | string): boolean {
+    switch (type) {
       case FilterType.Search:
         return this.props.explorer.allowSearch?.enableSearchText !== undefined ? this.props.explorer.allowSearch.enableSearchText : this.props.explorer.search.searchText === undefined;
       case FilterType.Sort:
@@ -330,7 +330,9 @@ class PanelSearch extends Component<Props&ConnectProps&WithStyles<typeof styles,
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {return {
-  configver: state.conf.ver, // force rerender on config change
-  config: state.conf.conf,
-}}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(PanelSearch));
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
+  return {
+    configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
+  }
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(PanelSearch));

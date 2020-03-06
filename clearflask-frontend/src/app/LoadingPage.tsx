@@ -1,7 +1,6 @@
-import React, { Component } from 'react';
-import Message from './comps/Message';
-import Loading from './utils/Loading';
 import { Box } from '@material-ui/core';
+import React, { Component } from 'react';
+import Loading from './utils/Loading';
 
 export default class LoadingPage extends Component {
   render() {

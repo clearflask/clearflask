@@ -1,15 +1,14 @@
-import React from 'react';
-import * as Client from './client';
-import * as Admin from './admin';
-import * as ConfigEditor from '../common/config/configEditor';
-import ServerMock from './serverMock';
-import { isProd, detectEnv, Environment } from '../common/util/detectEnv';
-import { Store, createStore, compose, applyMiddleware, combineReducers } from 'redux';
-import thunk from 'redux-thunk';
+import { applyMiddleware, combineReducers, compose, createStore, Store } from 'redux';
 import reduxPromiseMiddleware from 'redux-promise-middleware';
-import randomUuid from '../common/util/uuid';
+import thunk from 'redux-thunk';
+import * as ConfigEditor from '../common/config/configEditor';
 import debounce from '../common/util/debounce';
+import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import randomUuid from '../common/util/uuid';
+import * as Admin from './admin';
+import * as Client from './client';
 import ServerAdmin from './serverAdmin';
+import ServerMock from './serverMock';
 
 export enum Status {
   PENDING = 'PENDING',
@@ -18,20 +17,20 @@ export enum Status {
 }
 
 export class Server {
-  readonly store:Store<ReduxState>;
-  readonly mockServer:ServerMock|undefined;
-  readonly dispatcherClient:Client.Dispatcher;
-  readonly dispatcherAdmin:Promise<Admin.Dispatcher>;
-  readonly errorSubscribers:((errorMsg:string, isUserFacing:boolean)=>void)[] = [];
-  challengeSubscriber?:((challenge:string)=>Promise<string|undefined>);
+  readonly store: Store<ReduxState>;
+  readonly mockServer: ServerMock | undefined;
+  readonly dispatcherClient: Client.Dispatcher;
+  readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
+  readonly errorSubscribers: ((errorMsg: string, isUserFacing: boolean) => void)[] = [];
+  challengeSubscriber?: ((challenge: string) => Promise<string | undefined>);
 
-  constructor(projectId:string, apiOverride?:Client.ApiInterface&Admin.ApiInterface, versionedConfig?:Admin.VersionedConfigAdmin) {
+  constructor(projectId: string, apiOverride?: Client.ApiInterface & Admin.ApiInterface, versionedConfig?: Admin.VersionedConfigAdmin) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
-    if(!isProd()) {
+    if (!isProd()) {
       const composeEnhancers =
         typeof window === 'object' &&
-        window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */})
+          window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */ })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
@@ -48,11 +47,11 @@ export class Server {
   }
 
   static getDispatchers(
-    dispatcherDelegate:(msg:any)=>Promise<any>,
-    apiOverride?:Client.ApiInterface&Admin.ApiInterface) {
+    dispatcherDelegate: (msg: any) => Promise<any>,
+    apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
 
-    const apiConf:Client.ConfigurationParameters = {};
-    if(!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+    const apiConf: Client.ConfigurationParameters = {};
+    if (!apiOverride && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();
     } else {
       apiConf.basePath = Client.BASE_PATH.replace(/https:\/\/clearflask\.com/, `${window.location.protocol}//${window.location.host}`);
@@ -68,8 +67,8 @@ export class Server {
     };
   }
 
-  static initialState(projectId:string, versionedConfig?:Admin.VersionedConfigAdmin):any {
-    const state:ReduxState = {
+  static initialState(projectId: string, versionedConfig?: Admin.VersionedConfigAdmin): any {
+    const state: ReduxState = {
       projectId: projectId,
       conf: versionedConfig ? {
         status: Status.FULFILLED, conf: versionedConfig.config, ver: versionedConfig.version,
@@ -84,25 +83,25 @@ export class Server {
     return state;
   }
 
-  getProjectId():string {
+  getProjectId(): string {
     return this.store.getState().projectId;
   }
 
-  getStore():Store<ReduxState> {
+  getStore(): Store<ReduxState> {
     return this.store;
   }
 
-  dispatch():Client.Dispatcher {
+  dispatch(): Client.Dispatcher {
     return this.dispatcherClient;
   }
 
-  async dispatchAdmin():Promise<Admin.Dispatcher> {
+  async dispatchAdmin(): Promise<Admin.Dispatcher> {
     // TODO load as async webpack here. remove all references to Admin.*
     return this.dispatcherAdmin;
   }
 
-  subscribeToChanges(editor:ConfigEditor.Editor, debounceWait:number|undefined = undefined) {
-    if(debounceWait == undefined) {
+  subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {
+    if (debounceWait == undefined) {
       editor.subscribe(() => this.overrideConfig(editor.getConfig()));
     } else {
       const overrideConfigDebounced = debounce(this.overrideConfig.bind(this), debounceWait);
@@ -110,16 +109,16 @@ export class Server {
     }
   }
 
-  subscribeToErrors(subscriber:((errorMsg:string, isUserFacing:boolean)=>void)) {
+  subscribeToErrors(subscriber: ((errorMsg: string, isUserFacing: boolean) => void)) {
     this.errorSubscribers.push(subscriber);
   }
 
-  subscribeChallenger(subscriber:((challenge:string)=>Promise<string|undefined>)) {
+  subscribeChallenger(subscriber: ((challenge: string) => Promise<string | undefined>)) {
     this.challengeSubscriber = subscriber;
   }
 
-  overrideConfig(config:Admin.ConfigAdmin):void {
-    const msg:Admin.configGetAdminActionFulfilled = {
+  overrideConfig(config: Admin.ConfigAdmin): void {
+    const msg: Admin.configGetAdminActionFulfilled = {
       type: Admin.configGetAdminActionStatus.Fulfilled,
       meta: {
         action: Admin.Action.configGetAdmin,
@@ -133,7 +132,7 @@ export class Server {
   }
 }
 
-export const getSearchKey = (search:Client.IdeaSearch):string => {
+export const getSearchKey = (search: Client.IdeaSearch): string => {
   return [
     (search.filterCategoryIds || []).join('.'),
     (search.filterStatusIds || []).join('.'),
@@ -145,7 +144,7 @@ export const getSearchKey = (search:Client.IdeaSearch):string => {
   ].join('-');
 }
 
-export const getTransactionSearchKey = (search:Client.TransactionSearch):string => {
+export const getTransactionSearchKey = (search: Client.TransactionSearch): string => {
   return [
     (search.filterTransactionTypes || []).join('.'),
     search.filterAmountMin || -1,
@@ -155,7 +154,7 @@ export const getTransactionSearchKey = (search:Client.TransactionSearch):string 
   ].join('-');
 }
 
-function reducerProjectId(projectId:string = 'unknown', action:Client.Actions|Admin.Actions):string {
+function reducerProjectId(projectId: string = 'unknown', action: Client.Actions | Admin.Actions): string {
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
       return (action as any).payload.config.projectId || projectId;
@@ -167,11 +166,11 @@ function reducerProjectId(projectId:string = 'unknown', action:Client.Actions|Ad
 }
 
 export interface StateConf {
-  status?:Status;
-  conf?:Client.Config;
-  ver?:string;
+  status?: Status;
+  conf?: Client.Config;
+  ver?: string;
 }
-function reducerConf(state:StateConf = {}, action:Client.Actions|Admin.Actions):StateConf {
+function reducerConf(state: StateConf = {}, action: Client.Actions | Admin.Actions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
@@ -195,24 +194,28 @@ function reducerConf(state:StateConf = {}, action:Client.Actions|Admin.Actions):
 }
 
 export interface StateIdeas {
-  byId:{[ideaId:string]:{
-    status:Status;
-    idea?:Client.Idea;
-  }};
+  byId: {
+    [ideaId: string]: {
+      status: Status;
+      idea?: Client.Idea;
+    }
+  };
   // TODO eventually we should invalidate these searches over time
-  bySearch:{[searchKey:string]:{
-    status: Status,
-    ideaIds?: string[],
-    cursor?: string,
-  }};
-  maxFundAmountSeen:number;
+  bySearch: {
+    [searchKey: string]: {
+      status: Status,
+      ideaIds?: string[],
+      cursor?: string,
+    }
+  };
+  maxFundAmountSeen: number;
 }
 const stateIdeasDefault = {
   byId: {},
   bySearch: {},
   maxFundAmountSeen: 0,
 };
-function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Actions|Admin.Actions):StateIdeas {
+function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Actions | Admin.Actions): StateIdeas {
   var searchKey;
   switch (action.type) {
     case Client.ideaGetActionStatus.Pending:
@@ -288,7 +291,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           ...state.bySearch,
           [searchKey]: {
             status: Status.FULFILLED,
-            ideaIds: (action.meta.request.cursor!== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
+            ideaIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
               ? [ // Append results to existing idea ids
                 ...(state.bySearch[searchKey].ideaIds || []),
                 ...action.payload.results.map(idea => idea.ideaId),
@@ -299,7 +302,7 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
           }
         },
         maxFundAmountSeen: Math.max(
-          action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0),  0) || 0,
+          action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
           state.maxFundAmountSeen),
       };
     case Client.voteUpdateActionStatus.Pending:
@@ -308,39 +311,39 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
       // In case of rejection, it undoes the faking
       const isPending = action.type === Client.voteUpdateActionStatus.Pending;
       const idea = state.byId[action.meta.request.voteUpdate.ideaId];
-      if(!idea || !idea.idea) return state;
+      if (!idea || !idea.idea) return state;
       state.byId[action.meta.request.voteUpdate.ideaId] = idea;
-      const previousVote:Client.Vote = action.meta['previousVote'] || {};
-      if(previousVote === undefined ) throw Error('voteUpdate expecting previousVote in extra meta, set to null if not present');
-      if(action.meta.request.voteUpdate.fundDiff !== undefined) {
+      const previousVote: Client.Vote = action.meta['previousVote'] || {};
+      if (previousVote === undefined) throw Error('voteUpdate expecting previousVote in extra meta, set to null if not present');
+      if (action.meta.request.voteUpdate.fundDiff !== undefined) {
         const fundDiff = isPending ? action.meta.request.voteUpdate.fundDiff : -action.meta.request.voteUpdate.fundDiff;
-        if(fundDiff !== 0) {
+        if (fundDiff !== 0) {
           idea.idea.funded = (idea.idea.funded || 0) + fundDiff;
         }
         const previousFundersCount = (previousVote.fundAmount || 0) > 0 ? 1 : 0;
         const fundersCount = (previousVote.fundAmount || 0) + fundDiff > 0 ? 1 : 0;
         const fundersCountDiff = isPending ? fundersCount - previousFundersCount : previousFundersCount - fundersCount;
-        if(fundersCountDiff) {
+        if (fundersCountDiff) {
           idea.idea.fundersCount = fundersCountDiff;
         }
       }
-      if(action.meta.request.voteUpdate.vote !== undefined) {
+      if (action.meta.request.voteUpdate.vote !== undefined) {
         const previousVoteVal = (previousVote.vote === Client.VoteOption.Upvote ? 1 : (previousVote.vote === Client.VoteOption.Downvote ? -1 : 0));
         const voteVal = (action.meta.request.voteUpdate.vote === Client.VoteOption.Upvote ? 1 : (action.meta.request.voteUpdate.vote === Client.VoteOption.Downvote ? -1 : 0));
         const voteDiff = isPending ? voteVal - previousVoteVal : previousVoteVal - voteVal;
-        if(voteDiff !== 0) {
+        if (voteDiff !== 0) {
           idea.idea.voteValue = (idea.idea.voteValue || 0) + voteDiff;
         }
         const votersCountDiff = isPending ? Math.abs(voteVal) - Math.abs(previousVoteVal) : Math.abs(previousVoteVal) - Math.abs(voteVal);
-        if(votersCountDiff !== 0) {
+        if (votersCountDiff !== 0) {
           idea.idea.votersCount = (idea.idea.votersCount || 0) + votersCountDiff;
         }
       }
-      if(action.meta.request.voteUpdate.expressions !== undefined) {
-        const expression:string|undefined = action.meta.request.voteUpdate.expressions.expression;
-        var addExpressions:string[] = [];
-        var removeExpressions:string[] = [];
-        switch(action.meta.request.voteUpdate.expressions.action) {
+      if (action.meta.request.voteUpdate.expressions !== undefined) {
+        const expression: string | undefined = action.meta.request.voteUpdate.expressions.expression;
+        var addExpressions: string[] = [];
+        var removeExpressions: string[] = [];
+        switch (action.meta.request.voteUpdate.expressions.action) {
           case Client.VoteUpdateExpressionsActionEnum.Set:
             expression && addExpressions.push(expression);
             removeExpressions = (previousVote.expression || []).filter(e => e !== expression);
@@ -349,12 +352,12 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
             removeExpressions = (previousVote.expression || []);
             break;
           case Client.VoteUpdateExpressionsActionEnum.Add:
-            if(expression && !(previousVote.expression || []).includes(expression)) {
+            if (expression && !(previousVote.expression || []).includes(expression)) {
               addExpressions.push(expression);
             }
             break;
           case Client.VoteUpdateExpressionsActionEnum.Remove:
-            if(expression && (previousVote.expression || []).includes(expression)) {
+            if (expression && (previousVote.expression || []).includes(expression)) {
               removeExpressions.push(expression);
             }
             break;
@@ -396,20 +399,24 @@ function reducerIdeas(state:StateIdeas = stateIdeasDefault, action:Client.Action
 }
 
 export interface StateComments {
-  byId:{[commentId:string]:{
-    status:Status;
-    comment?:Client.CommentWithAuthor;
-  }};
-  byIdeaIdOrParentCommentId:{[ideaIdOrParentCommentId:string]:{
-    status:Status;
-    commentIds?:Set<string>;
-  }};
+  byId: {
+    [commentId: string]: {
+      status: Status;
+      comment?: Client.CommentWithAuthor;
+    }
+  };
+  byIdeaIdOrParentCommentId: {
+    [ideaIdOrParentCommentId: string]: {
+      status: Status;
+      commentIds?: Set<string>;
+    }
+  };
 }
 const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
 };
-function reducerComments(state:StateComments = stateCommentsDefault, action:Client.Actions|Admin.Actions):StateComments {
+function reducerComments(state: StateComments = stateCommentsDefault, action: Client.Actions | Admin.Actions): StateComments {
   switch (action.type) {
     case Client.commentListActionStatus.Pending:
       return {
@@ -467,7 +474,7 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
             ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId]
               ? newState.byIdeaIdOrParentCommentId[comment.parentCommentId || comment.ideaId].commentIds || []
               : []),
-              comment.commentId,
+            comment.commentId,
           ]),
         }
       });
@@ -516,20 +523,22 @@ function reducerComments(state:StateComments = stateCommentsDefault, action:Clie
 }
 
 export interface StateUsers {
-  byId:{[userId:string]:{
-    status:Status;
-    user?:Client.User;
-  }};
+  byId: {
+    [userId: string]: {
+      status: Status;
+      user?: Client.User;
+    }
+  };
   loggedIn: {
-    status?:Status;
-    user?:Client.UserMe,
+    status?: Status;
+    user?: Client.UserMe,
   };
 }
 const stateUsersDefault = {
   byId: {},
   loggedIn: {},
 };
-function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Actions|Admin.Actions):StateUsers {
+function reducerUsers(state: StateUsers = stateUsersDefault, action: Client.Actions | Admin.Actions): StateUsers {
   switch (action.type) {
     case Client.userGetActionStatus.Pending:
       return {
@@ -565,7 +574,7 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
           ...state.byId,
           ...action.payload.results.reduce(
             (usersById, comment) => {
-              if(comment.author) {
+              if (comment.author) {
                 usersById[comment.author.userId] = {
                   user: comment.author,
                   status: Status.FULFILLED,
@@ -576,7 +585,7 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
         }
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
-      if(!action.payload.user) return state;
+      if (!action.payload.user) return state;
       return {
         ...state,
         byId: {
@@ -611,8 +620,8 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
       };
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
-      if(!state.loggedIn.user) return state;
-      const {[state.loggedIn.user.userId]:removedUser, ...byIdWithout} = state.byId;
+      if (!state.loggedIn.user) return state;
+      const { [state.loggedIn.user.userId]: removedUser, ...byIdWithout } = state.byId;
       return {
         ...state,
         byId: byIdWithout,
@@ -624,10 +633,10 @@ function reducerUsers(state:StateUsers = stateUsersDefault, action:Client.Action
 }
 
 export interface StateVotes {
-  statusByIdeaId:{[ideaId:string]:Status};
-  votesByIdeaId:{[ideaId:string]:Client.VoteOption};
-  expressionByIdeaId:{[ideaId:string]:Array<string>};
-  fundAmountByIdeaId:{[ideaId:string]:number};
+  statusByIdeaId: { [ideaId: string]: Status };
+  votesByIdeaId: { [ideaId: string]: Client.VoteOption };
+  expressionByIdeaId: { [ideaId: string]: Array<string> };
+  fundAmountByIdeaId: { [ideaId: string]: number };
 }
 const stateVotesDefault = {
   statusByIdeaId: {},
@@ -635,7 +644,7 @@ const stateVotesDefault = {
   expressionByIdeaId: {},
   fundAmountByIdeaId: {},
 };
-function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Actions|Admin.Actions):StateVotes {
+function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Actions | Admin.Actions): StateVotes {
   switch (action.type) {
     case Client.voteGetOwnActionStatus.Pending:
       return {
@@ -701,18 +710,18 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...(action.meta.request.voteUpdate.expressions ? {
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: 
-            action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
-            && [action.meta.request.voteUpdate.expressions.expression!]
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
+            [action.meta.request.voteUpdate.ideaId]:
+              action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
+              && [action.meta.request.voteUpdate.expressions.expression!]
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
               && []
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
               && [...new Set<string>([
                 action.meta.request.voteUpdate.expressions.expression!,
                 ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
               && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
-            || [],
+              || [],
           },
         } : {}),
         ...(action.meta.request.voteUpdate.fundDiff ? {
@@ -738,18 +747,18 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
         ...(action.meta.request.voteUpdate.expressions ? {
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: 
-            action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
+            [action.meta.request.voteUpdate.ideaId]:
+              action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
               && []
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
               && [...(action.meta.request.voteUpdate.expressions.expression ? [action.meta.request.voteUpdate.expressions.expression] : [])]
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
               && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
-            || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
+              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
               && [...new Set<string>([
                 action.meta.request.voteUpdate.expressions.expression!,
                 ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
-            || [],
+              || [],
           },
         } : {}),
         ...(action.meta.request.voteUpdate.fundDiff ? {
@@ -803,7 +812,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
           ...state.votesByIdeaId,
           ...action.payload.results.reduce(
             (votesByIdeaId, idea) => {
-              if(idea.vote.vote) votesByIdeaId[idea.ideaId] = idea.vote.vote;
+              if (idea.vote.vote) votesByIdeaId[idea.ideaId] = idea.vote.vote;
               return votesByIdeaId;
             }, {}),
         },
@@ -811,7 +820,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
           ...state.expressionByIdeaId,
           ...action.payload.results.reduce(
             (expressionByIdeaId, idea) => {
-              if(idea.vote.expression) expressionByIdeaId[idea.ideaId] = idea.vote.expression;
+              if (idea.vote.expression) expressionByIdeaId[idea.ideaId] = idea.vote.expression;
               return expressionByIdeaId;
             }, {}),
         },
@@ -819,7 +828,7 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
           ...state.fundAmountByIdeaId,
           ...action.payload.results.reduce(
             (fundAmountByIdeaId, idea) => {
-              if(idea.vote.fundAmount) fundAmountByIdeaId[idea.ideaId] = idea.vote.fundAmount;
+              if (idea.vote.fundAmount) fundAmountByIdeaId[idea.ideaId] = idea.vote.fundAmount;
               return fundAmountByIdeaId;
             }, {}),
         },
@@ -840,22 +849,22 @@ function reducerVotes(state:StateVotes = stateVotesDefault, action:Client.Action
 }
 
 export interface StateCredits {
-  transactionSearch:{
-    searchKey?:string;
-    status?:Status;
-    transactions?:Client.Transaction[];
-    cursor?:string;
+  transactionSearch: {
+    searchKey?: string;
+    status?: Status;
+    transactions?: Client.Transaction[];
+    cursor?: string;
   };
-  myBalance:{
-    status?:Status;
-    balance?:number;
+  myBalance: {
+    status?: Status;
+    balance?: number;
   }
 }
 const stateCreditsDefault = {
   transactionSearch: {},
   myBalance: {},
 };
-function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.Actions|Admin.Actions):StateCredits {
+function reducerCredits(state: StateCredits = stateCreditsDefault, action: Client.Actions | Admin.Actions): StateCredits {
   switch (action.type) {
     case Client.transactionSearchActionStatus.Pending:
       return {
@@ -909,7 +918,7 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
         } : {}),
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
-      if(!action.payload.user) return state;
+      if (!action.payload.user) return state;
       return {
         ...state,
         myBalance: {
@@ -939,16 +948,16 @@ function reducerCredits(state:StateCredits = stateCreditsDefault, action:Client.
 }
 
 export interface StateNotifications {
-  notificationSearch:{
-    status?:Status;
-    notifications?:Client.Notification[];
-    cursor?:string;
+  notificationSearch: {
+    status?: Status;
+    notifications?: Client.Notification[];
+    cursor?: string;
   };
 }
 const stateNotificationsDefault = {
   notificationSearch: {},
 };
-function reducerNotifications(state:StateNotifications = stateNotificationsDefault, action:Client.Actions|Admin.Actions):StateNotifications {
+function reducerNotifications(state: StateNotifications = stateNotificationsDefault, action: Client.Actions | Admin.Actions): StateNotifications {
   switch (action.type) {
     case Client.notificationSearchActionStatus.Pending:
       return {
@@ -1004,14 +1013,14 @@ function reducerNotifications(state:StateNotifications = stateNotificationsDefau
 }
 
 export interface ReduxState {
-  projectId:string;
-  conf:StateConf;
-  ideas:StateIdeas;
-  comments:StateComments;
-  users:StateUsers;
-  votes:StateVotes;
-  credits:StateCredits;
-  notifications:StateNotifications;
+  projectId: string;
+  conf: StateConf;
+  ideas: StateIdeas;
+  comments: StateComments;
+  users: StateUsers;
+  votes: StateVotes;
+  credits: StateCredits;
+  notifications: StateNotifications;
 }
 export const reducers = combineReducers({
   projectId: reducerProjectId,

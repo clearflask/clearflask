@@ -1,20 +1,20 @@
-import React, { Component, Suspense } from 'react';
-import * as ConfigEditor from '../configEditor';
 import { Typography } from '@material-ui/core';
-import Property from './Property';
-import PresetWidget from './PresetWidget';
-import CreditPreview from './injects/CreditPreview';
+import React, { Component, Suspense } from 'react';
 import Loading from '../../../app/utils/Loading';
+import * as ConfigEditor from '../configEditor';
+import CreditPreview from './injects/CreditPreview';
+import PresetWidget from './PresetWidget';
+import Property from './Property';
 
 interface Props {
-  key:string;
-  page:ConfigEditor.Page;
-  editor:ConfigEditor.Editor;
-  pageClicked:(path:ConfigEditor.Path)=>void;
+  key: string;
+  page: ConfigEditor.Page;
+  editor: ConfigEditor.Editor;
+  pageClicked: (path: ConfigEditor.Path) => void;
 }
 
 export default class Page extends Component<Props> {
-  unsubscribe?:()=>void;
+  unsubscribe?: () => void;
 
   componentDidMount() {
     this.unsubscribe = this.props.page.subscribe(this.forceUpdate.bind(this));
@@ -28,7 +28,7 @@ export default class Page extends Component<Props> {
     var creditPreview = this.props.page.pathStr === 'credits'
       && (<CreditPreview editor={this.props.editor} />);
     var workflowPreview;
-    if(this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
+    if (this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
       const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'));
       workflowPreview = (
         <Suspense fallback={<Loading />}>

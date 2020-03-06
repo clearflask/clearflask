@@ -1,15 +1,15 @@
-import React from 'react';
-import { Server } from '../../api/server';
-import { useSnackbar } from 'notistack';
-import ServerAdmin from '../../api/serverAdmin';
 import { IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
+import { useSnackbar } from 'notistack';
+import React from 'react';
+import { Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 
-const ServerErrorNotifier = (props:({server:Server|ServerAdmin})) => {
+const ServerErrorNotifier = (props: ({ server: Server | ServerAdmin })) => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   props.server.subscribeToErrors((errorMsg, isUserFacing) => {
     console.log("Server error:", errorMsg);
-    if(isUserFacing) {
+    if (isUserFacing) {
       enqueueSnackbar(errorMsg, {
         variant: 'error',
         preventDuplicate: false,

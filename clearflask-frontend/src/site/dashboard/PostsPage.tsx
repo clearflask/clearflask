@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import IdeaExplorer from '../../app/comps/IdeaExplorer';
 import { Server } from '../../api/server';
+import IdeaExplorer from '../../app/comps/IdeaExplorer';
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 
 class PostsPage extends Component<Props> {
@@ -12,7 +12,7 @@ class PostsPage extends Component<Props> {
       <IdeaExplorer
         server={this.props.server}
         explorer={{
-          allowSearch: {enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true},
+          allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
           allowCreate: true,
           search: {},
           display: {},

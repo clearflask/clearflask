@@ -1,21 +1,10 @@
+import { Collapse, Fade, Hidden } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { Server, getSearchKey, ReduxState } from '../../api/server';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as Client from '../../api/client';
-import * as Admin from '../../api/admin';
-import Panel, { Direction } from './Panel';
-import { Typography, TextField, Grow, Button, Select, MenuItem, FormControl, FormHelperText, Fade, Hidden, Collapse } from '@material-ui/core';
+import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../utils/DividerCorner';
-import { connect } from 'react-redux';
-import PanelSearch from './PanelSearch';
-import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
-import LogIn from './LogIn';
-import debounce from '../../common/util/debounce';
-import { withRouter, RouteComponentProps } from 'react-router';
-import UserSelection from '../../site/dashboard/UserSelection';
-import ServerAdmin from '../../api/serverAdmin';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   explorer: {
     display: 'grid',
     [theme.breakpoints.up('sm')]: {
@@ -55,32 +44,32 @@ const styles = (theme:Theme) => createStyles({
     flexGrow: 1,
   },
   createVisible: {
-    transition: theme.transitions.create(['min-width', 'width'], {duration: theme.explorerExpandTimeout}),
+    transition: theme.transitions.create(['min-width', 'width'], { duration: theme.explorerExpandTimeout }),
     maxWidth: '100vw',
     display: 'flex',
   },
   createCollapsible: {
     gridArea: 'cc',
-    transition: theme.transitions.create(['max-width', 'width'], {duration: theme.explorerExpandTimeout}),
+    transition: theme.transitions.create(['max-width', 'width'], { duration: theme.explorerExpandTimeout }),
     maxWidth: '100vw',
   },
 });
 
 interface Props {
-  createSize?:string;
-  createShown?:boolean;
-  createVisible?:React.ReactNode;
-  createCollapsible?:React.ReactNode;
-  search?:React.ReactNode;
-  content?:React.ReactNode;
+  createSize?: string;
+  createShown?: boolean;
+  createVisible?: React.ReactNode;
+  createCollapsible?: React.ReactNode;
+  search?: React.ReactNode;
+  content?: React.ReactNode;
 }
 
 interface State {
-  hasExpanded?:boolean;
+  hasExpanded?: boolean;
 }
 
-class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&RouteComponentProps, State> {
-  state:State = {};
+class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+  state: State = {};
 
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
@@ -96,7 +85,7 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
             </div>
           )}
           {this.props.search && (
-            <div className={this.props.classes.search} style={{visibility: expandInMotion ? 'hidden' : 'visible'}}>
+            <div className={this.props.classes.search} style={{ visibility: expandInMotion ? 'hidden' : 'visible' }}>
               <Hidden xsDown implementation='css'>
                 {this.props.search}
               </Hidden>
@@ -104,9 +93,9 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
           )}
         </div>
         {this.props.search && (
-          <div className={this.props.classes.search} style={{visibility: expandInMotion ? 'hidden' : 'visible'}}>
+          <div className={this.props.classes.search} style={{ visibility: expandInMotion ? 'hidden' : 'visible' }}>
             <Hidden smUp implementation='css'>
-                {this.props.search}
+              {this.props.search}
             </Hidden>
           </div>
         )}
@@ -122,8 +111,8 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
               in={this.props.createShown || false}
               mountOnEnter
               unmountOnExit
-              onEntered={() => this.setState({hasExpanded: true})}
-              onExited={() => this.setState({hasExpanded: false})}
+              onEntered={() => this.setState({ hasExpanded: true })}
+              onExited={() => this.setState({ hasExpanded: false })}
               timeout={this.props.theme.explorerExpandTimeout}
               style={{
                 minWidth: '120px',
@@ -144,7 +133,7 @@ class ExplorerTemplate extends Component<Props&WithStyles<typeof styles, true>&R
               mountOnEnter
               unmountOnExit
               timeout={30}
-            >              
+            >
               {this.props.content}
             </Fade>
           </DividerCorner>

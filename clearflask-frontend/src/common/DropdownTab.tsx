@@ -1,8 +1,8 @@
+import { FormControl, MenuItem, Select } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component, Key } from 'react';
-import { Input, IconButton, Typography, Drawer, Divider, AppBar, Hidden, Select, MenuItem, InputLabel, FormControl } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   outer: {
     [theme.breakpoints.up('md')]: {
       minWidth: '160px',
@@ -52,20 +52,20 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  key?:Key;
-  label?:string;
-  links:Array<{name:string; val:string}>;
+  key?: Key;
+  label?: string;
+  links: Array<{ name: string; val: string }>;
   // Only here to satisfy outer Tabs component to determine if tab is selected
-  value?:string;
-  selectedValue?:string;
-  onDropdownTabSelect:(val:string)=>void;
+  value?: string;
+  selectedValue?: string;
+  onDropdownTabSelect: (val: string) => void;
 }
 
 class DropdownTab extends Component<Props> {
   render() {
     var anySelected = false;
     const items = this.props.links.map(link => {
-      if(this.props.selectedValue === link.val) anySelected = true;
+      if (this.props.selectedValue === link.val) anySelected = true;
       return (
         <MenuItem key={link.name + link.val} value={link.val}>{link.name}</MenuItem>
       );
@@ -73,25 +73,25 @@ class DropdownTab extends Component<Props> {
     const id = `dropdowntab-${this.props.key}`;
     return (
       <div className={this.props.classes.outer}>
-      <FormControl>
-        <Select
-          className={this.props.classes.select}
-          classes={{
-            icon: this.props.classes.selectIcon
-          }}
-          value={anySelected ? this.props.selectedValue : '__NOT_SELECTED__'}
-          key={this.props.key}
-          onChange={e => this.props.onDropdownTabSelect(e.target.value as string)}
-          inputProps={{
-            className: `${this.props.classes.tabButton} ${anySelected && this.props.classes.tabButtonSelected}`,
-            id: id,
-          }}
-          displayEmpty
-        >
-          {this.props.label && (<MenuItem style={{display: 'none'}} divider disabled value='__NOT_SELECTED__'>{this.props.label}</MenuItem>)}
-          {items}
-        </Select>
-      </FormControl>
+        <FormControl>
+          <Select
+            className={this.props.classes.select}
+            classes={{
+              icon: this.props.classes.selectIcon
+            }}
+            value={anySelected ? this.props.selectedValue : '__NOT_SELECTED__'}
+            key={this.props.key}
+            onChange={e => this.props.onDropdownTabSelect(e.target.value as string)}
+            inputProps={{
+              className: `${this.props.classes.tabButton} ${anySelected && this.props.classes.tabButtonSelected}`,
+              id: id,
+            }}
+            displayEmpty
+          >
+            {this.props.label && (<MenuItem style={{ display: 'none' }} divider disabled value='__NOT_SELECTED__'>{this.props.label}</MenuItem>)}
+            {items}
+          </Select>
+        </FormControl>
       </div>
     );
   }

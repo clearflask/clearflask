@@ -1,11 +1,11 @@
+import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { Typography, Tooltip } from '@material-ui/core';
-import TimeAgo from 'react-timeago'
 import Delimited from '../utils/Delimited';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(2),
   },
@@ -26,10 +26,10 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  comment?:Client.CommentWithAuthor;
+  comment?: Client.CommentWithAuthor;
 }
 
-class Comment extends Component<Props&WithStyles<typeof styles, true>> {
+class Comment extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (
@@ -37,17 +37,17 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
         {this.props.comment && !this.props.comment.author ? (
           <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
         ) : (
-        <Typography variant='body1'>
-          {this.props.comment && this.props.comment.content}
-        </Typography>
-        )}
+            <Typography variant='body1'>
+              {this.props.comment && this.props.comment.content}
+            </Typography>
+          )}
         {this.renderBottomBar()}
       </div>
     );
   }
 
   renderBottomBar() {
-    if(!this.props.comment) return null;
+    if (!this.props.comment) return null;
 
     return (
       <div className={this.props.classes.bottomBarLine}>
@@ -63,7 +63,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
   }
 
   renderEdited() {
-    if(!this.props.comment || !this.props.comment.edited) return null;
+    if (!this.props.comment || !this.props.comment.edited) return null;
 
     return (
       <Typography className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
@@ -75,7 +75,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
   }
 
   renderAuthor() {
-    if(!this.props.comment
+    if (!this.props.comment
       || !this.props.comment.author
       || !this.props.comment.author.name) return null;
 
@@ -87,7 +87,7 @@ class Comment extends Component<Props&WithStyles<typeof styles, true>> {
   }
 
   renderCreatedDatetime() {
-    if(!this.props.comment) return null;
+    if (!this.props.comment) return null;
 
     return (
       <Typography className={this.props.classes.barItem} variant='caption'>

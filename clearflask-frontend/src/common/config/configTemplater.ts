@@ -1,16 +1,16 @@
-import * as ConfigEditor from "./configEditor";
 import * as Admin from "../../api/admin";
-import randomUuid from "../util/uuid";
 import stringToSlug from "../util/slugger";
+import randomUuid from "../util/uuid";
+import * as ConfigEditor from "./configEditor";
 
 export default class Templater {
-  editor:ConfigEditor.Editor;
+  editor: ConfigEditor.Editor;
 
-  constructor(editor:ConfigEditor.Editor) {
+  constructor(editor: ConfigEditor.Editor) {
     this.editor = editor;
   }
 
-  static get(editor:ConfigEditor.Editor):Templater {
+  static get(editor: ConfigEditor.Editor): Templater {
     return new Templater(editor);
   }
 
@@ -26,7 +26,7 @@ export default class Templater {
     // TODO QUESTION AND ANSWER
     // TODO FORUM
   }
-  
+
   demoPrioritization() {
     const categoryIndex = this.demoCategory();
 
@@ -56,22 +56,22 @@ export default class Templater {
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: true}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: true }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const categoryIndex = categories.getChildPages().length - 1;
     return categoryIndex;
   }
 
-  demoPagePanel(display:Admin.PostDisplay = {}) {
+  demoPagePanel(display: Admin.PostDisplay = {}) {
     const pageId = randomUuid();
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
       pageId: pageId,
       name: 'Demo',
       slug: stringToSlug('demo'),
       panels: [
-        Admin.PagePanelWithHideIfEmptyToJSON({display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({}), hideIfEmpty: false}),
+        Admin.PagePanelWithHideIfEmptyToJSON({ display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({}), hideIfEmpty: false }),
       ],
     }));
   }
@@ -90,9 +90,9 @@ export default class Templater {
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: true}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: true }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const ideaCategoryIndex = categories.getChildPages().length - 1;
     this.supportFunding(ideaCategoryIndex);
@@ -104,9 +104,9 @@ export default class Templater {
     // tags: Feature Requests, Bug Reports, Translations
     // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security
     const tagGroupIdIdeas = randomUuid();
-    const tags = [Admin.TagToJSON({tagId: randomUuid(), name: 'Feature'}),
-      Admin.TagToJSON({tagId: randomUuid(), name: 'Bug'}),
-      Admin.TagToJSON({tagId: randomUuid(), name: 'Translation'})];
+    const tags = [Admin.TagToJSON({ tagId: randomUuid(), name: 'Feature' }),
+    Admin.TagToJSON({ tagId: randomUuid(), name: 'Bug' }),
+    Admin.TagToJSON({ tagId: randomUuid(), name: 'Translation' })];
     this.tagging(ideaCategoryIndex, tags, Admin.TagGroupToJSON({
       tagGroupId: tagGroupIdIdeas, name: 'Ideas', userSettable: true, tagIds: [],
       minRequired: 1, maxRequired: 1,
@@ -123,30 +123,38 @@ export default class Templater {
       slug: '',
       description: undefined,
       panels: [
-        Admin.PagePanelWithHideIfEmptyToJSON({title: 'Funding', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-          sortBy: Admin.IdeaSearchSortByEnum.New,
-          filterCategoryIds: [ideaCategoryId],
-          filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
-        })}),
+        Admin.PagePanelWithHideIfEmptyToJSON({
+          title: 'Funding', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+            filterCategoryIds: [ideaCategoryId],
+            filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+          })
+        }),
       ],
       board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Planned', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId],
-            filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
-          })}),
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'In progress', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId],
-            filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-          })}),
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Completed', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId],
-            filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
-          })}),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'Planned', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId],
+              filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+            })
+          }),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'In progress', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId],
+              filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+            })
+          }),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'Completed', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId],
+              filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
+            })
+          }),
         ],
       }),
       explorer: undefined,
@@ -155,7 +163,7 @@ export default class Templater {
       menuId: randomUuid(), pageIds: [pageHomeId],
     }));
     // Features
-    const pageIdeaIds:string[] = [];
+    const pageIdeaIds: string[] = [];
     tags.forEach(tag => {
       const pageIdeaId = randomUuid();
       pageIdeaIds.push(pageIdeaId);
@@ -168,7 +176,7 @@ export default class Templater {
         panels: [],
         board: undefined,
         explorer: Admin.PageExplorerToJSON({
-          allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
+          allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
           allowCreate: true,
           display: Admin.PostDisplayToJSON({}),
           search: Admin.IdeaSearchToJSON({
@@ -193,7 +201,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
         allowCreate: true,
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({}),
@@ -221,16 +229,16 @@ export default class Templater {
     }));
   }
 
-  templateFeedback(withFunding:boolean, withStandaloneFunding:boolean = true) {
+  templateFeedback(withFunding: boolean, withStandaloneFunding: boolean = true) {
     // Ideas
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const ideaCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: true}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: true }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const ideaCategoryIndex = categories.getChildPages().length - 1;
     const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withStandaloneFunding);
@@ -240,9 +248,9 @@ export default class Templater {
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: bugCategoryId, name: 'Bug', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: true}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: true }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const bugCategoryIndex = categories.getChildPages().length - 1;
     const bugStatuses = this.workflowBug(bugCategoryIndex);
@@ -260,7 +268,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
         allowCreate: true,
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({
@@ -278,7 +286,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
         allowCreate: true,
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({
@@ -294,7 +302,7 @@ export default class Templater {
     }));
 
     // Add to home page
-    const postDisplay:Admin.PostDisplay = {
+    const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 2,
       descriptionTruncateLines: 4,
       showDescription: false,
@@ -311,82 +319,94 @@ export default class Templater {
       disableExpand: false,
     };
     const homePagePanels = this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels']);
-    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({title: 'Trending feedback', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-      ...postDisplay,
-      showDescription: true,
-      showFunding: true,
-      showExpression: true,
-      showVoting: true,
-    }), search: Admin.IdeaSearchToJSON({
-      sortBy: Admin.IdeaSearchSortByEnum.Trending,
-      filterCategoryIds: [ideaCategoryId],
-    })}));
-    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-      ...postDisplay,
-      showDescription: true,
-      showResponse: true,
-      showFunding: true,
-      showExpression: true,
-      showVoting: true,
-    }), search: Admin.IdeaSearchToJSON({
-      sortBy: Admin.IdeaSearchSortByEnum.New,
-      filterCategoryIds: [bugCategoryId],
-    })}));
+    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
+      title: 'Trending feedback', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+        ...postDisplay,
+        showDescription: true,
+        showFunding: true,
+        showExpression: true,
+        showVoting: true,
+      }), search: Admin.IdeaSearchToJSON({
+        sortBy: Admin.IdeaSearchSortByEnum.Trending,
+        filterCategoryIds: [ideaCategoryId],
+      })
+    }));
+    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
+      title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+        ...postDisplay,
+        showDescription: true,
+        showResponse: true,
+        showFunding: true,
+        showExpression: true,
+        showVoting: true,
+      }), search: Admin.IdeaSearchToJSON({
+        sortBy: Admin.IdeaSearchSortByEnum.New,
+        filterCategoryIds: [bugCategoryId],
+      })
+    }));
     this._get<ConfigEditor.Page>(['layout', 'pages', 0, 'board'])
       .setRaw(Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
           ...(withFunding && withStandaloneFunding ? [
-            Admin.PagePanelWithHideIfEmptyToJSON({title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
-              ...postDisplay,
-              showFunding: true,
-            }), search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId],
-              filterStatusIds: ideaStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
-            })}),
+            Admin.PagePanelWithHideIfEmptyToJSON({
+              title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
+                ...postDisplay,
+                showFunding: true,
+              }), search: Admin.IdeaSearchToJSON({
+                sortBy: Admin.IdeaSearchSortByEnum.New,
+                filterCategoryIds: [ideaCategoryId],
+                filterStatusIds: ideaStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+              })
+            }),
           ] : []),
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId, bugCategoryId],
-            filterStatusIds: ideaStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
-          })}),
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId, bugCategoryId],
-            filterStatusIds: [
-              ...ideaStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-              ...bugStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-            ],
-          })}),
-          Admin.PagePanelWithHideIfEmptyToJSON({title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId, bugCategoryId],
-            filterStatusIds: [
-              ...ideaStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
-              ...bugStatuses.filter(s => s.name.match(/Fixed/)).map(s => s.statusId),
-            ],
-          })}),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId, bugCategoryId],
+              filterStatusIds: ideaStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+            })
+          }),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId, bugCategoryId],
+              filterStatusIds: [
+                ...ideaStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+                ...bugStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+              ],
+            })
+          }),
+          Admin.PagePanelWithHideIfEmptyToJSON({
+            title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+              sortBy: Admin.IdeaSearchSortByEnum.New,
+              filterCategoryIds: [ideaCategoryId, bugCategoryId],
+              filterStatusIds: [
+                ...ideaStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
+                ...bugStatuses.filter(s => s.name.match(/Fixed/)).map(s => s.statusId),
+              ],
+            })
+          }),
         ],
       }));
   }
 
-  templateBlog(suppressHomePage:boolean = false) {
+  templateBlog(suppressHomePage: boolean = false) {
     // Category
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const articleCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: false,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: false}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: false }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const articleCategoryIndex = categories.getChildPages().length - 1;
     this.supportExpressingAllEmojis(articleCategoryIndex);
 
     // Home page panel
-    if(!suppressHomePage) {
+    if (!suppressHomePage) {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
         .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
@@ -407,7 +427,8 @@ export default class Templater {
           }), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [articleCategoryId],
-          })}));
+          })
+        }));
     }
 
     // Pages and menu
@@ -438,22 +459,22 @@ export default class Templater {
     }));
   }
 
-  templateChangelog(suppressHomePage:boolean = false) {
+  templateChangelog(suppressHomePage: boolean = false) {
     // Category
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const changelogCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: changelogCategoryId, name: 'Changelog', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: false,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: false}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: false }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const changelogCategoryIndex = categories.getChildPages().length - 1;
     this.supportExpressingAllEmojis(changelogCategoryIndex);
 
     // Home page panel
-    if(!suppressHomePage) {
+    if (!suppressHomePage) {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
         .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
@@ -474,7 +495,8 @@ export default class Templater {
           }), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [changelogCategoryId],
-          })}));
+          })
+        }));
     }
 
     // Pages and menu
@@ -512,25 +534,25 @@ export default class Templater {
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: helpCategoryId, name: 'Help', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: false,
-      workflow: Admin.WorkflowToJSON({statuses: []}),
-      support: Admin.SupportToJSON({comment: false}),
-      tagging: Admin.TaggingToJSON({tags: [], tagGroups: []}),
+      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      support: Admin.SupportToJSON({ comment: false }),
+      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const helpCategoryIndex = categories.getChildPages().length - 1;
     const accountSetupTagId = randomUuid();
     const orderingShippingTagId = randomUuid();
     this.tagging(helpCategoryIndex,
-      [Admin.TagToJSON({tagId: accountSetupTagId, name: 'Account Setup'}),
-        Admin.TagToJSON({tagId: orderingShippingTagId, name: 'Ordering and Shipping'}),
+      [Admin.TagToJSON({ tagId: accountSetupTagId, name: 'Account Setup' }),
+      Admin.TagToJSON({ tagId: orderingShippingTagId, name: 'Ordering and Shipping' }),
       ],
       Admin.TagGroupToJSON({
         tagGroupId: randomUuid(), name: 'Categories', userSettable: false, tagIds: [],
       }));
-      this.supportExpressingRange(helpCategoryIndex);
+    this.supportExpressingRange(helpCategoryIndex);
 
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const helpPageId = randomUuid();
-    const postDisplay:Admin.PostDisplay = {
+    const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 0,
       descriptionTruncateLines: 4,
       showDescription: false,
@@ -552,17 +574,21 @@ export default class Templater {
       slug: 'help',
       title: 'How can we help you?',
       description: "If you can't find help, don't hesitate to contact us at support@example.com",
-      panels: [Admin.PagePanelWithHideIfEmptyToJSON({title: 'Account Setup', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-        sortBy: Admin.IdeaSearchSortByEnum.Top,
-        filterCategoryIds: [helpCategoryId],
-        filterTagIds: [accountSetupTagId],
-      })}), Admin.PagePanelWithHideIfEmptyToJSON({title: 'Ordering and Shipping', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-        sortBy: Admin.IdeaSearchSortByEnum.Top,
-        filterCategoryIds: [helpCategoryId],
-        filterTagIds: [orderingShippingTagId],
-      })})],
+      panels: [Admin.PagePanelWithHideIfEmptyToJSON({
+        title: 'Account Setup', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.Top,
+          filterCategoryIds: [helpCategoryId],
+          filterTagIds: [accountSetupTagId],
+        })
+      }), Admin.PagePanelWithHideIfEmptyToJSON({
+        title: 'Ordering and Shipping', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.Top,
+          filterCategoryIds: [helpCategoryId],
+          filterTagIds: [orderingShippingTagId],
+        })
+      })],
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true}),
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
         allowCreate: false,
         display: Admin.PostDisplayToJSON(postDisplay),
         search: Admin.IdeaSearchToJSON({
@@ -577,93 +603,93 @@ export default class Templater {
     }));
   }
 
-  supportNone(categoryIndex:number) {
+  supportNone(categoryIndex: number) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).set(undefined);
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).set(undefined);
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(undefined);
   }
-  supportFunding(categoryIndex:number) {
+  supportFunding(categoryIndex: number) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).setRaw(Admin.FundingToJSON({
       showFunds: true, showFunders: true,
     }));
   }
-  supportVoting(categoryIndex:number, enableDownvotes:boolean = false) {
+  supportVoting(categoryIndex: number, enableDownvotes: boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).setRaw(Admin.VotingToJSON({
       enableDownvotes: enableDownvotes, showVotes: true, showVoters: true,
     }));
   }
-  supportExpressingAllEmojis(categoryIndex:number, limitEmojiPerIdea?:boolean) {
+  supportExpressingAllEmojis(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(true);
-    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
   }
-  supportExpressingFacebookStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
+  supportExpressingFacebookStyle(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    if(expressProp.value !== true) expressProp.set(true);
-    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    if (expressProp.value !== true) expressProp.set(true);
+    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
-      Admin.ExpressionToJSON({display: '👍', text: 'Thumbs up', weight: 1}),
-      Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
-      Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
-      Admin.ExpressionToJSON({display: '😮', text: 'Shocked', weight: 0}),
-      Admin.ExpressionToJSON({display: '😥', text: 'Crying', weight: -1}),
-      Admin.ExpressionToJSON({display: '😠', text: 'Angry', weight: -1}),
+      Admin.ExpressionToJSON({ display: '👍', text: 'Thumbs up', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '❤️', text: 'Heart', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😆', text: 'Laugh', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😮', text: 'Shocked', weight: 0 }),
+      Admin.ExpressionToJSON({ display: '😥', text: 'Crying', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '😠', text: 'Angry', weight: -1 }),
     ]);
   }
-  supportExpressingMessengerStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
+  supportExpressingMessengerStyle(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    if(expressProp.value !== true) expressProp.set(true);
-    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    if (expressProp.value !== true) expressProp.set(true);
+    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
-      Admin.ExpressionToJSON({display: '😍', text: 'Love', weight: 1}),
-      Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
-      Admin.ExpressionToJSON({display: '😮', text: 'Shocked', weight: 0}),
-      Admin.ExpressionToJSON({display: '😥', text: 'Crying', weight: -1}),
-      Admin.ExpressionToJSON({display: '😠', text: 'Angry', weight: -1}),
-      Admin.ExpressionToJSON({display: '👍', text: 'Thumbs up', weight: 1}),
-      Admin.ExpressionToJSON({display: '👎', text: 'Thumbs down', weight: -1}),
+      Admin.ExpressionToJSON({ display: '😍', text: 'Love', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😆', text: 'Laugh', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😮', text: 'Shocked', weight: 0 }),
+      Admin.ExpressionToJSON({ display: '😥', text: 'Crying', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '😠', text: 'Angry', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '👍', text: 'Thumbs up', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '👎', text: 'Thumbs down', weight: -1 }),
     ]);
   }
-  supportExpressingGithubStyle(categoryIndex:number, limitEmojiPerIdea?:boolean) {
+  supportExpressingGithubStyle(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    if(expressProp.value !== true) expressProp.set(true);
-    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    if (expressProp.value !== true) expressProp.set(true);
+    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
-      Admin.ExpressionToJSON({display: '👍', text: '+1', weight: 1}),
-      Admin.ExpressionToJSON({display: '👎', text: '-1', weight: -1}),
-      Admin.ExpressionToJSON({display: '😆', text: 'Laugh', weight: 1}),
-      Admin.ExpressionToJSON({display: '🎉', text: 'Hooray', weight: 1}),
-      Admin.ExpressionToJSON({display: '😕', text: 'Confused', weight: -1}),
-      Admin.ExpressionToJSON({display: '❤️', text: 'Heart', weight: 1}),
-      Admin.ExpressionToJSON({display: '🚀', text: 'Rocket', weight: 1}),
-      Admin.ExpressionToJSON({display: '👀', text: 'Eyes', weight: 1}),
+      Admin.ExpressionToJSON({ display: '👍', text: '+1', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '👎', text: '-1', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '😆', text: 'Laugh', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '🎉', text: 'Hooray', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😕', text: 'Confused', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '❤️', text: 'Heart', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '🚀', text: 'Rocket', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '👀', text: 'Eyes', weight: 1 }),
     ]);
   }
-  supportExpressingRange(categoryIndex:number) {
+  supportExpressingRange(categoryIndex: number) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    if(expressProp.value !== true) expressProp.set(true);
+    if (expressProp.value !== true) expressProp.set(true);
     this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
     this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiSet']).setRaw([
-      Admin.ExpressionToJSON({display: '😃', text: 'Smiley', weight: 1}),
-      Admin.ExpressionToJSON({display: '😐', text: 'Neutral', weight: -1}),
-      Admin.ExpressionToJSON({display: '😞', text: 'Disappointed', weight: -2}),
+      Admin.ExpressionToJSON({ display: '😃', text: 'Smiley', weight: 1 }),
+      Admin.ExpressionToJSON({ display: '😐', text: 'Neutral', weight: -1 }),
+      Admin.ExpressionToJSON({ display: '😞', text: 'Disappointed', weight: -2 }),
     ]);
   }
-  supportExpressingLimitEmojiPerIdea(categoryIndex:number, limitEmojiPerIdea?:boolean) {
+  supportExpressingLimitEmojiPerIdea(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
-    if(expressProp.value !== true) expressProp.set(true);
-    if(limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    if (expressProp.value !== true) expressProp.set(true);
+    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
   }
 
-  taggingOsPlatform(categoryIndex:number) {
+  taggingOsPlatform(categoryIndex: number) {
     this.tagging(categoryIndex,
-      [Admin.TagToJSON({tagId: randomUuid(), name: 'Windows'}),
-        Admin.TagToJSON({tagId: randomUuid(), name: 'Mac'}),
-        Admin.TagToJSON({tagId: randomUuid(), name: 'Linux'})],
+      [Admin.TagToJSON({ tagId: randomUuid(), name: 'Windows' }),
+      Admin.TagToJSON({ tagId: randomUuid(), name: 'Mac' }),
+      Admin.TagToJSON({ tagId: randomUuid(), name: 'Linux' })],
       Admin.TagGroupToJSON({
         tagGroupId: randomUuid(), name: 'Platform', userSettable: true, tagIds: [],
       }));
   }
-  tagging(categoryIndex:number, tags:Admin.Tag[], tagGroup:Admin.TagGroup) {
+  tagging(categoryIndex: number, tags: Admin.Tag[], tagGroup: Admin.TagGroup) {
     const tagsProp = this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'tagging', 'tags']);
     tags.forEach(tag => (tagsProp.insert() as ConfigEditor.ObjectProperty).setRaw(tag))
     this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'tagging', 'tagGroups']).insert().setRaw(Admin.TagGroupToJSON({
@@ -671,27 +697,27 @@ export default class Templater {
     }));
   }
 
-  workflowFeatures(categoryIndex:number, withStandaloneFunding:boolean = true):Admin.IdeaStatus[] {
-    const closed = Admin.IdeaStatusToJSON({name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
-    const completed = Admin.IdeaStatusToJSON({name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
-    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
-    const planned = Admin.IdeaStatusToJSON({name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding:withStandaloneFunding, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+  workflowFeatures(categoryIndex: number, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
+    const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const planned = Admin.IdeaStatusToJSON({ name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding: withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     var funding;
-    if(withStandaloneFunding) {
-      funding = Admin.IdeaStatusToJSON({name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding:false, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
+    if (withStandaloneFunding) {
+      funding = Admin.IdeaStatusToJSON({ name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     }
-    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [...(withStandaloneFunding ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:withStandaloneFunding, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...(withStandaloneFunding ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...(withStandaloneFunding ? [funding] : [])]);
   }
-  workflowBug(categoryIndex:number):Admin.IdeaStatus[] {
-    const notReproducible = Admin.IdeaStatusToJSON({name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
-    const wontFix = Admin.IdeaStatusToJSON({name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
-    const fixed = Admin.IdeaStatusToJSON({name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
-    const inProgress = Admin.IdeaStatusToJSON({name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding:true, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:true});
-    const underReview = Admin.IdeaStatusToJSON({name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding:false, disableExpressions:false, disableVoting:false, disableComments:false, disableIdeaEdits:false});
+  workflowBug(categoryIndex: number): Admin.IdeaStatus[] {
+    const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const wontFix = Admin.IdeaStatusToJSON({ name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const fixed = Admin.IdeaStatusToJSON({ name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [notReproducible, wontFix, fixed, inProgress, underReview]);
   }
-  workflow(categoryIndex:number, entryStatusId:string, statuses:Admin.IdeaStatus[]):Admin.IdeaStatus[] {
+  workflow(categoryIndex: number, entryStatusId: string, statuses: Admin.IdeaStatus[]): Admin.IdeaStatus[] {
     this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(undefined);
     this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'workflow', 'statuses']).setRaw(statuses);
     this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(entryStatusId);
@@ -701,42 +727,42 @@ export default class Templater {
   creditsCurrency() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({prefix: '$', lessOrEqual: 0}),
-      Admin.CreditFormatterEntryToJSON({prefix: '¢'}),
+      Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ prefix: '$', lessOrEqual: 0 }),
+      Admin.CreditFormatterEntryToJSON({ prefix: '¢' }),
     ]);
   }
   creditsTime() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: ' Weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' Week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' Days', multiplier: 0.125, greaterOrEqual: 9, lessOrEqual: 39, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' Day', multiplier: 0.125, greaterOrEqual: 8, lessOrEqual: 8}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' Hrs', greaterOrEqual: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' Hr', lessOrEqual: 1}),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Days', multiplier: 0.125, greaterOrEqual: 9, lessOrEqual: 39, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Day', multiplier: 0.125, greaterOrEqual: 8, lessOrEqual: 8 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Hrs', greaterOrEqual: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' Hr', lessOrEqual: 1 }),
     ]);
   }
   creditsUnitless() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: 'm', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
     ]);
   }
-   /**
-    * TODO Create scale instead of credits. Possibly negative credits too?
-    * Requirements:
-    * - Display # of people funded and average instead of total
-    * - Max funding per item
-    * - Balance and transaction history??
-    * - Goal??
-    */
+  /**
+   * TODO Create scale instead of credits. Possibly negative credits too?
+   * Requirements:
+   * - Display # of people funded and average instead of total
+   * - Max funding per item
+   * - Balance and transaction history??
+   * - Goal??
+   */
   // creditsScale() {
   //   this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(0.01);
   //   this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
@@ -749,44 +775,44 @@ export default class Templater {
   creditsBeer() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1}),
-      Admin.CreditFormatterEntryToJSON({suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2}),
-      Admin.CreditFormatterEntryToJSON({suffix: ' 🍺', lessOrEqual: 999}),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 100000, maximumFractionDigits: 0 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 10000, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: 'k 🍺', multiplier: 0.001, greaterOrEqual: 1000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' 🍺', lessOrEqual: 999 }),
     ]);
   }
 
-  usersOnboardingEmail(enable:boolean, passwordRequirement:Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional, confirmEmails:boolean = false) {
+  usersOnboardingEmail(enable: boolean, passwordRequirement: Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional, confirmEmails: boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'email']).set(enable ? true : undefined);
-    if(enable) {
+    if (enable) {
       this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'password']).set(passwordRequirement);
       this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'confirmEmails']).set(confirmEmails);
     }
   }
 
-  usersOnboardingAnonymous(enable:boolean, onlyShowIfPushNotAvailable:boolean = false) {
+  usersOnboardingAnonymous(enable: boolean, onlyShowIfPushNotAvailable: boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous']).set(enable ? true : undefined);
-    if(enable) {
+    if (enable) {
       this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous', 'onlyShowIfPushNotAvailable']).set(onlyShowIfPushNotAvailable);
     }
   }
 
-  usersOnboardingMobilePush(enable:boolean) {
+  usersOnboardingMobilePush(enable: boolean) {
     this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'mobilePush']).set(enable);
   }
 
-  usersOnboardingBrowserPush(enable:boolean) {
+  usersOnboardingBrowserPush(enable: boolean) {
     this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'browserPush']).set(enable);
   }
 
-  usersOnboardingDisplayName(requirement:Admin.AccountFieldsDisplayNameEnum) {
+  usersOnboardingDisplayName(requirement: Admin.AccountFieldsDisplayNameEnum) {
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(requirement);
   }
 
-  _get<T extends ConfigEditor.Setting<any, any>>(path:ConfigEditor.Path):T {
+  _get<T extends ConfigEditor.Setting<any, any>>(path: ConfigEditor.Path): T {
     return this.editor.get(path) as any as T;
   }
 }

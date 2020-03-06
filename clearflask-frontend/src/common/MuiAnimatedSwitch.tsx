@@ -1,9 +1,9 @@
-import React, { Component, Key } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
 import { AnimatedSwitch } from 'react-router-transition';
 import muiSpring from './muiSpring';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   switch: {
     flexGrow: 1,
     display: 'flex',
@@ -33,16 +33,18 @@ class MuiAnimatedSwitch extends Component<Props> {
           opacity: muiSpring(1),
           offset: muiSpring(0),
         }}
-        mapStyles={(styles) => {return {
-          width: '100%',
-          height: '100%',
-          position: styles.opacity >= 0.999 ? 'relative' : 'absolute',
-          opacity: styles.opacity,
-          transform: `translateY(${styles.offset}px)`,
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-        }}}
+        mapStyles={(styles) => {
+          return {
+            width: '100%',
+            height: '100%',
+            position: styles.opacity >= 0.999 ? 'relative' : 'absolute',
+            opacity: styles.opacity,
+            transform: `translateY(${styles.offset}px)`,
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          }
+        }}
         runOnMount
       >
         {this.props.children}

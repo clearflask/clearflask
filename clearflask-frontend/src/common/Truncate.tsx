@@ -1,23 +1,23 @@
-import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import GradientFade from './GradientFade';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Variant } from '@material-ui/core/styles/createTypography';
+import React from 'react';
+import GradientFade from './GradientFade';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   content: {
   },
 });
 
 interface Props {
-  variant:Variant;
-  lines?:number;
-  isPaper?:boolean;
+  variant: Variant;
+  lines?: number;
+  isPaper?: boolean;
 }
 
-class Truncate extends React.Component<Props&WithStyles<typeof styles, true>> {
+class Truncate extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(this.props.lines === undefined) return this.props.children;
+    if (this.props.lines === undefined) return this.props.children;
     const lineHeight = this.props.theme.typography[this.props.variant]
       && this.props.theme.typography[this.props.variant].lineHeight
       && (typeof this.props.theme.typography[this.props.variant].lineHeight === 'number'

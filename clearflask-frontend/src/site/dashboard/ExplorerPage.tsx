@@ -1,49 +1,43 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { History, Location } from 'history';
-import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { connect, Provider } from 'react-redux';
-import * as Admin from '../../api/admin';
-import IdeaExplorer from '../../app/comps/IdeaExplorer';
-import { Project } from '../../api/serverAdmin';
-import SelectionPicker, {Label} from '../../app/comps/SelectionPicker';
-import { Bag } from '../../common/util/bag';
-import UserSelection from './UserSelection';
 import { Server } from '../../api/server';
+import ServerAdmin, { Project, ReduxStateAdmin } from '../../api/serverAdmin';
+import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  render:(server:Server)=>React.ReactNode;
+  render: (server: Server) => React.ReactNode;
 }
 interface ConnectProps {
-  projects:Project[];
+  projects: Project[];
 }
 interface State {
-  selectedProjectLabel?:Label;
+  selectedProjectLabel?: Label;
 }
 
-class ExplorerPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
+class ExplorerPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   constructor(props) {
     super(props);
-    if(props.isLoggedIn && !props.configsStatus) {
+    if (props.isLoggedIn && !props.configsStatus) {
       ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
     }
     this.state = {};
   }
 
   render() {
-    if(this.props.projects.length <= 0) {
+    if (this.props.projects.length <= 0) {
       return 'No projects available';
     }
     const hasOnlyOneProject = this.props.projects.length === 1;
     var selectedProjectLabel, selectedProject;
-    if(!!this.state.selectedProjectLabel) {
+    if (!!this.state.selectedProjectLabel) {
       selectedProjectLabel = this.state.selectedProjectLabel;
       selectedProject = this.props.projects.find(p => p.projectId === this.state.selectedProjectLabel!.value)!;
     } else {
-      selectedProjectLabel = {label: this.props.projects[0].editor.getConfig().name, value: this.props.projects[0].projectId};
+      selectedProjectLabel = { label: this.props.projects[0].editor.getConfig().name, value: this.props.projects[0].projectId };
       selectedProject = this.props.projects[0];
     }
     return (
@@ -51,10 +45,10 @@ class ExplorerPage extends Component<Props&ConnectProps&WithStyles<typeof styles
         {!hasOnlyOneProject && (
           <SelectionPicker
             value={[selectedProjectLabel]}
-            options={this.props.projects.map(p => ({label: p.editor.getConfig().name, value: p.projectId}))}
+            options={this.props.projects.map(p => ({ label: p.editor.getConfig().name, value: p.projectId }))}
             isMulti={false}
             bare={false}
-            onValueChange={(labels, action) => labels.length === 1 && this.setState({selectedProjectLabel: labels[0]})}
+            onValueChange={(labels, action) => labels.length === 1 && this.setState({ selectedProjectLabel: labels[0] })}
           />
         )}
         <Provider key={selectedProjectLabel.value} store={selectedProject.server.getStore()}>
@@ -65,8 +59,8 @@ class ExplorerPage extends Component<Props&ConnectProps&WithStyles<typeof styles
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state) => {
-  const connectProps:ConnectProps = {
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state) => {
+  const connectProps: ConnectProps = {
     projects: state.configs.configs.configs && Object.values(state.configs.configs.configs)
       .map(c => ServerAdmin.get().getProject(c)) || [],
   };

@@ -1,24 +1,23 @@
-import React, { Component } from 'react';
-import { Server } from '../../api/server';
-import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as Client from '../../api/client';
-import * as Admin from '../../api/admin';
-import debounce from '../../common/util/debounce';
-import { TextField, InputAdornment, IconButton, Button, Typography, Table, TableHead, TableRow, TableCell, TableBody } from '@material-ui/core';
+import { Button, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
-import VisibilityIcon from '@material-ui/icons/Visibility';
-import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
-import TimeAgo from 'react-timeago';
-import EmailIcon from '@material-ui/icons/Email';
 import AndroidIcon from '@material-ui/icons/Android';
 import IosIcon from '@material-ui/icons/Apple';
-import BrowserIcon from '@material-ui/icons/Web';
+import EmailIcon from '@material-ui/icons/Email';
 import NotificationsOffIcon from '@material-ui/icons/NotificationsOff';
-import CreditView from '../../common/config/CreditView';
+import VisibilityIcon from '@material-ui/icons/Visibility';
+import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import BrowserIcon from '@material-ui/icons/Web';
+import React, { Component } from 'react';
+import TimeAgo from 'react-timeago';
+import * as Admin from '../../api/admin';
+import { Server } from '../../api/server';
+import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import Loader from '../../app/utils/Loader';
+import CreditView from '../../common/config/CreditView';
+import debounce from '../../common/util/debounce';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   searchInput: {
     margin: theme.spacing(1),
     width: 100,
@@ -62,27 +61,27 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 
 interface State {
-  createRefFocused?:boolean;
-  newUserName?:string;
-  newUserEmail?:string;
-  newUserPassword?:string;
-  revealPassword?:boolean;
-  newUserBalance?:number
-  newUserIsSubmitting?:boolean;
-  createFormHasExpanded?:boolean;
-  searchInput?:string;
-  searchText?:string;
-  searchResult?:Admin.UserAdmin[];
-  searchCursor?:string;
+  createRefFocused?: boolean;
+  newUserName?: string;
+  newUserEmail?: string;
+  newUserPassword?: string;
+  revealPassword?: boolean;
+  newUserBalance?: number
+  newUserIsSubmitting?: boolean;
+  createFormHasExpanded?: boolean;
+  searchInput?: string;
+  searchText?: string;
+  searchResult?: Admin.UserAdmin[];
+  searchCursor?: string;
 }
 
-class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> {
-  readonly updateSearchText:(name?:string, email?:string)=>void;
-  readonly createInputRef:React.RefObject<HTMLInputElement> = React.createRef();
+class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State> {
+  readonly updateSearchText: (name?: string, email?: string) => void;
+  readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
   constructor(props) {
     super(props);
@@ -107,13 +106,13 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
             placeholder='Name'
             value={this.state.newUserName || ''}
             onChange={e => {
-              this.setState({newUserName: e.target.value});
+              this.setState({ newUserName: e.target.value });
               this.updateSearchText(e.target.value, this.state.newUserEmail);
             }}
             InputProps={{
               inputRef: this.createInputRef,
-              onBlur: () => this.setState({createRefFocused: false}),
-              onFocus: () => this.setState({createRefFocused: true}),
+              onBlur: () => this.setState({ createRefFocused: false }),
+              onFocus: () => this.setState({ createRefFocused: true }),
               endAdornment: (
                 <InputAdornment position="end">
                   <AddIcon
@@ -133,7 +132,7 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
               placeholder='Email'
               value={this.state.newUserEmail || ''}
               onChange={e => {
-                this.setState({newUserEmail: e.target.value});
+                this.setState({ newUserEmail: e.target.value });
                 this.updateSearchText(this.state.newUserName, e.target.value);
               }}
             />
@@ -142,25 +141,27 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
               className={this.props.classes.createFormField}
               placeholder='Password'
               value={this.state.newUserPassword || ''}
-              onChange={e => this.setState({newUserPassword: e.target.value})}
+              onChange={e => this.setState({ newUserPassword: e.target.value })}
               type={this.state.revealPassword ? 'text' : 'password'}
-              InputProps={{ endAdornment: (
-                <InputAdornment position='end'>
-                  <IconButton
-                    aria-label='Toggle password visibility'
-                    onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
-                  >
-                    {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                  </IconButton>
-                </InputAdornment>
-              )}}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position='end'>
+                    <IconButton
+                      aria-label='Toggle password visibility'
+                      onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                    >
+                      {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
             <Button
               color='primary'
               disabled={!enableSubmit || this.state.newUserIsSubmitting}
               onClick={e => {
-                if(!enableSubmit) return;
-                this.setState({newUserIsSubmitting: true});
+                if (!enableSubmit) return;
+                this.setState({ newUserIsSubmitting: true });
                 this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
                   projectId: this.props.server.getProjectId(),
                   userCreateAdmin: {
@@ -198,7 +199,7 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
             value={this.state.searchInput || ''}
             onChange={e => {
               this.setState({
-                searchInput: e.target.value, 
+                searchInput: e.target.value,
                 searchText: e.target.value,
               });
               this.updateSearchText(e.target.value);
@@ -236,7 +237,7 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
                           <TableCell><Typography>
                             {!!user.balance && (<CreditView
                               val={user.balance}
-                              credits={this.props.server.getStore().getState().conf.conf?.credits || {increment: 1}} />)}
+                              credits={this.props.server.getStore().getState().conf.conf?.credits || { increment: 1 }} />)}
                           </Typography></TableCell>
                         </TableRow>
                       ))}
@@ -244,7 +245,7 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
                   </Table>
                   {!!this.state.searchCursor && (
                     <Button
-                      style={{margin: 'auto', display: 'block'}}
+                      style={{ margin: 'auto', display: 'block' }}
                       onClick={() => this.search(this.state.searchText, undefined, this.state.searchCursor)}
                     >
                       Show more
@@ -264,21 +265,21 @@ class UsersPage extends Component<Props&WithStyles<typeof styles, true>, State> 
     );
   }
 
-  search(name?:string, email?:string, cursor?:string) {
+  search(name?: string, email?: string, cursor?: string) {
     this.props.server.dispatchAdmin()
-        .then(d => d.userSearchAdmin({
-          projectId: this.props.server.getProjectId(),
-          cursor: cursor,
-          userSearchAdmin: {
-            searchText: `${name || ''} ${email || ''}`.trim(),
-          },
-        }))
-        .then(result => this.setState({
-          searchResult: cursor
-            ? [...(this.state.searchResult || []), ...result.results]
-            : result.results,
-          searchCursor: result.cursor,
-        }));
+      .then(d => d.userSearchAdmin({
+        projectId: this.props.server.getProjectId(),
+        cursor: cursor,
+        userSearchAdmin: {
+          searchText: `${name || ''} ${email || ''}`.trim(),
+        },
+      }))
+      .then(result => this.setState({
+        searchResult: cursor
+          ? [...(this.state.searchResult || []), ...result.results]
+          : result.results,
+        searchCursor: result.cursor,
+      }));
   }
 }
 

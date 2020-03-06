@@ -1,27 +1,27 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { Motion } from 'react-motion';
 import muiSpring from './muiSpring';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   screen: {
     background: theme.palette.background.default,
   },
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  expand:boolean;
+  expand: boolean;
 }
 
 class Expander extends Component<Props> {
-  readonly contentRef:React.RefObject<HTMLDivElement> = React.createRef();
-  prevExpandValue:boolean;
+  readonly contentRef: React.RefObject<HTMLDivElement> = React.createRef();
+  prevExpandValue: boolean;
 
-  parentRect:DOMRect|ClientRect|undefined;
-  contentRect:DOMRect|ClientRect|undefined;
+  parentRect: DOMRect | ClientRect | undefined;
+  contentRect: DOMRect | ClientRect | undefined;
 
 
-  constructor(props:Props) {
+  constructor(props: Props) {
     super(props);
     this.prevExpandValue = props.expand;
   }
@@ -30,8 +30,8 @@ class Expander extends Component<Props> {
     const expandChanged = this.prevExpandValue !== this.props.expand;
     this.prevExpandValue = this.props.expand;
 
-    if(expandChanged) {
-      if(this.props.expand) {
+    if (expandChanged) {
+      if (this.props.expand) {
         this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && this.contentRef.current.offsetParent.getBoundingClientRect() || undefined;
         this.contentRect = this.contentRef.current && this.contentRef.current.getBoundingClientRect() || undefined;
       }

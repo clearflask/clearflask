@@ -1,15 +1,15 @@
-import React, { Component } from 'react';
-import { Server, StateIdeas, ReduxState, Status, getSearchKey } from '../../api/server';
-import Post from './Post';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as Client from '../../api/client';
-import { connect } from 'react-redux';
-import { Typography, Divider } from '@material-ui/core';
-import ErrorMsg from '../ErrorMsg';
-import Loading from '../utils/Loading';
-import DividerCorner from '../utils/DividerCorner';
-import ContentScroll, { Side, contentScrollApplyStyles } from '../../common/ContentScroll';
+import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import * as Client from '../../api/client';
+import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
+import { contentScrollApplyStyles, Side } from '../../common/ContentScroll';
+import ErrorMsg from '../ErrorMsg';
+import DividerCorner from '../utils/DividerCorner';
+import Loading from '../utils/Loading';
+import Post from './Post';
 
 export enum Direction {
   Horizontal,
@@ -17,12 +17,12 @@ export enum Direction {
 }
 
 interface SearchResult {
-  status:Status;
-  ideas:(Client.Idea|undefined)[];
-  cursor:string|undefined,
+  status: Status;
+  ideas: (Client.Idea | undefined)[];
+  cursor: string | undefined,
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
   },
@@ -40,28 +40,28 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
-  panel:Client.PagePanel|Client.PagePanelWithHideIfEmpty|Client.PageExplorer;
-  displayDefaults?:Client.PostDisplay;
-  searchOverride?:Partial<Client.IdeaSearch>;
-  direction:Direction
-  maxHeight?:string,
-  onClickTag?:(tagId:string)=>void;
-  onClickCategory?:(categoryId:string)=>void;
-  onClickStatus?:(statusId:string)=>void;
+  server: Server;
+  panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
+  displayDefaults?: Client.PostDisplay;
+  searchOverride?: Partial<Client.IdeaSearch>;
+  direction: Direction
+  maxHeight?: string,
+  onClickTag?: (tagId: string) => void;
+  onClickCategory?: (categoryId: string) => void;
+  onClickStatus?: (statusId: string) => void;
 }
 
 interface ConnectProps {
-  configver?:string;
-  config?:Client.Config;
-  searchResult:SearchResult;
-  searchMerged:Client.IdeaSearch;
+  configver?: string;
+  config?: Client.Config;
+  searchResult: SearchResult;
+  searchMerged: Client.IdeaSearch;
 }
 
-class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class Panel extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     var content;
-    switch(this.props.searchResult.status) {
+    switch (this.props.searchResult.status) {
       default:
       case Status.REJECTED:
         content = (
@@ -69,14 +69,14 @@ class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
         );
         break;
       case Status.PENDING:
-        if((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
+        if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
         content = (
           <Loading />
         );
         break;
       case Status.FULFILLED:
-        if((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
-        if(this.props.searchResult.ideas.length === 0) {
+        if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
+        if (this.props.searchResult.ideas.length === 0) {
           content = (
             <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
           )
@@ -84,10 +84,10 @@ class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
           const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
             || (this.props.panel.search.filterCategoryIds && this.props.panel.search.filterCategoryIds.length === 1));
 
-          const display:Client.PostDisplay = {
+          const display: Client.PostDisplay = {
             titleTruncateLines: 1,
             descriptionTruncateLines: 2,
-            ...(onlyHasOneCategory ? {showCategoryName: false} : {}),
+            ...(onlyHasOneCategory ? { showCategoryName: false } : {}),
             ...(this.props.displayDefaults || {}),
             ...this.props.panel.display,
           }
@@ -110,7 +110,7 @@ class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
     content = (
       <div
         className={classNames(this.props.classes.container, this.props.classes[this.props.direction])}
-        style={{maxHeight: this.props.maxHeight}}
+        style={{ maxHeight: this.props.maxHeight }}
       >
         {content}
       </div>
@@ -127,8 +127,8 @@ class Panel extends Component<Props&ConnectProps&WithStyles<typeof styles, true>
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props) => {
-  var newProps:ConnectProps = {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
+  var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     searchResult: {
@@ -136,28 +136,28 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       ideas: [],
       cursor: undefined,
     } as SearchResult,
-    searchMerged: {...ownProps.searchOverride, ...ownProps.panel.search},
+    searchMerged: { ...ownProps.searchOverride, ...ownProps.panel.search },
   };
 
   const searchKey = getSearchKey(newProps.searchMerged);
   const bySearch = state.ideas.bySearch[searchKey];
-  if(!bySearch) {
+  if (!bySearch) {
     ownProps.server.dispatch().ideaSearch({
       projectId: state.projectId,
       ideaSearch: newProps.searchMerged,
     });
   } else {
-    const missingVotesByIdeaIds:string[] = [];
+    const missingVotesByIdeaIds: string[] = [];
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;
     newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
-      if(state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
+      if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
       const idea = state.ideas.byId[ideaId];
       return (idea && idea.status === Status.FULFILLED)
         ? idea.idea
         : undefined;
     });
-    if(missingVotesByIdeaIds.length > 0) {
+    if (missingVotesByIdeaIds.length > 0) {
       ownProps.server.dispatch().voteGetOwn({
         projectId: state.projectId,
         ideaIds: missingVotesByIdeaIds,

@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { Divider, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
 import DividerVertical from './DividerVertical';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   title: {
     margin: theme.spacing(1),
   },
@@ -14,25 +14,25 @@ const styles = (theme:Theme) => createStyles({
     gridArea: 'divider-vertical',
   },
   heightTransition: {
-    transition: (props:Props) => theme.transitions.create('height', props.isExplorer ? {duration: theme.explorerExpandTimeout} : undefined),
+    transition: (props: Props) => theme.transitions.create('height', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },
   widthTransition: {
-    transition: (props:Props) => theme.transitions.create('min-width', props.isExplorer ? {duration: theme.explorerExpandTimeout} : undefined),
+    transition: (props: Props) => theme.transitions.create('min-width', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },
 });
 
 interface Props {
-  className?:string;
-  innerClassName?:string;
-  title?:string;
-  header?:React.ReactNode;
-  width?:string;
-  height?:string;
-  rtl?:boolean;
-  isExplorer?:boolean
+  className?: string;
+  innerClassName?: string;
+  title?: string;
+  header?: React.ReactNode;
+  width?: string;
+  height?: string;
+  rtl?: boolean;
+  isExplorer?: boolean
 }
 
-class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
+class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (
@@ -66,7 +66,7 @@ class DividerCorner extends Component<Props&WithStyles<typeof styles, true>> {
               style={{ height: this.props.height || '24px' }}
             />
           </div>
-          <div style={{width: '100%'}} className={this.props.innerClassName}>
+          <div style={{ width: '100%' }} className={this.props.innerClassName}>
             {this.props.children}
           </div>
         </div>

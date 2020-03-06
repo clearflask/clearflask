@@ -1,9 +1,8 @@
 // Based off of https://gist.github.com/lfalke/1c5e7168424c8b2a65dcfba425fcc310
 
-import React, { PureComponent } from 'react'
-import PropTypes from 'prop-types'
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { FormControl, InputLabel, Input, FormHelperText } from '@material-ui/core';
+import { FormControl, FormHelperText, Input, InputLabel } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React, { PureComponent } from 'react';
 
 interface StripeElementWrapperProps {
   component: any;
@@ -19,7 +18,7 @@ interface StripeElementWrapperState {
 }
 
 export default class StripeElementWrapper extends PureComponent<StripeElementWrapperProps, StripeElementWrapperState> {
-  state:StripeElementWrapperState = {
+  state: StripeElementWrapperState = {
     complete: false,
     focused: false,
     empty: true,
@@ -34,7 +33,7 @@ export default class StripeElementWrapper extends PureComponent<StripeElementWra
   }
 
   handleChange = changeObj => {
-    if(this.state.complete !== changeObj.complete) {
+    if (this.state.complete !== changeObj.complete) {
       this.props.onValidChanged(!!changeObj.complete);
     }
     this.setState({
@@ -72,7 +71,7 @@ export default class StripeElementWrapper extends PureComponent<StripeElementWra
   }
 }
 
-const StripeInputStyles = (theme:Theme) => createStyles({
+const StripeInputStyles = (theme: Theme) => createStyles({
   root: {
     width: '100%',
     padding: '6px 0 7px',
@@ -81,19 +80,19 @@ const StripeInputStyles = (theme:Theme) => createStyles({
 });
 
 interface StripeInputProps {
-  classes:any,
+  classes: any,
   component?: any,
   onBlur: any,
   onFocus: any,
   onChange: any,
 }
 
-class StripeInputInternal extends PureComponent<StripeInputProps&WithStyles<typeof StripeInputStyles, true>> {
+class StripeInputInternal extends PureComponent<StripeInputProps & WithStyles<typeof StripeInputStyles, true>> {
 
   static defaultProps = {
-    onFocus: () => {},
-    onBlur: () => {},
-    onChange: () => {},
+    onFocus: () => { },
+    onBlur: () => { },
+    onChange: () => { },
   }
 
   render() {

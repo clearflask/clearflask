@@ -1,12 +1,12 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
-import SelectionPicker, {Label} from '../../app/comps/SelectionPicker';
+import { ReduxState, Server } from '../../api/server';
+import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import debounce from '../../common/util/debounce';
-import { Server, ReduxState } from '../../api/server';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   createFormField: {
     margin: theme.spacing(1),
     width: 'auto',
@@ -15,57 +15,57 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  className?:string;
-  disabled?:boolean;
-  server:Server;
-  onChange?: (userLabel:Label) => void;
-  allowCreate?:boolean;
+  className?: string;
+  disabled?: boolean;
+  server: Server;
+  onChange?: (userLabel: Label) => void;
+  allowCreate?: boolean;
 }
 interface ConnectProps {
-  loggedInUserLabel?:Label;
+  loggedInUserLabel?: Label;
 }
 interface State {
-  selectedUserLabel?:Label;
-  options?:Label[];
+  selectedUserLabel?: Label;
+  options?: Label[];
 }
 
-class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
-  readonly searchUsers:(newValue:string)=>void;
+class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  readonly searchUsers: (newValue: string) => void;
 
   constructor(props) {
     super(props);
     const selectedUserLabel = props.loggedInUserLabel;
     this.state = { selectedUserLabel };
-    if(selectedUserLabel && this.props.onChange) this.props.onChange(selectedUserLabel);
+    if (selectedUserLabel && this.props.onChange) this.props.onChange(selectedUserLabel);
     this.searchUsers = debounce(
-      (newValue:string) => this.props.server.dispatchAdmin()
+      (newValue: string) => this.props.server.dispatchAdmin()
         .then(d => d.userSearchAdmin({
           projectId: this.props.server.getProjectId(),
           userSearchAdmin: { searchText: newValue },
         }))
         .then(results => {
           const userLabels = results.results.map(UserSelection.mapUserToLabel);
-          this.setState({options: userLabels});
+          this.setState({ options: userLabels });
         })
       , 200);
   }
 
   render() {
-    const seenUserIds:Set<string> = new Set();
-    const options:Label[] = [];
+    const seenUserIds: Set<string> = new Set();
+    const options: Label[] = [];
 
-    if(!!this.state.selectedUserLabel) {
+    if (!!this.state.selectedUserLabel) {
       seenUserIds.add(this.state.selectedUserLabel.value);
       options.push(this.state.selectedUserLabel);
     }
 
-    if(!!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
+    if (!!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
       seenUserIds.add(this.props.loggedInUserLabel.value);
       options.push(this.props.loggedInUserLabel);
     }
 
     this.state.options && this.state.options.forEach(option => {
-      if(!seenUserIds.has(option.value)) {
+      if (!seenUserIds.has(option.value)) {
         seenUserIds.add(option.value);
         options.push(option);
       }
@@ -81,13 +81,13 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
         width='100%'
         disabled={this.props.disabled}
         onInputChange={(newValue, actionMeta) => {
-          if(actionMeta.action === 'input-change') {
+          if (actionMeta.action === 'input-change') {
             this.searchUsers(newValue);
           }
         }}
         onValueChange={(labels, action) => {
-          if(action.action !== 'set-value', labels.length !== 1) return;
-          this.setState({selectedUserLabel: labels[0]})
+          if (action.action !== 'set-value', labels.length !== 1) return;
+          this.setState({ selectedUserLabel: labels[0] })
           this.props.onChange && this.props.onChange(labels[0]);
         }}
         onValueCreate={this.props.allowCreate ? name => {
@@ -98,7 +98,7 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
             }))
             .then(user => {
               const newLabel = UserSelection.mapUserToLabel(user);
-              this.setState({selectedUserLabel: newLabel});
+              this.setState({ selectedUserLabel: newLabel });
               this.props.onChange && this.props.onChange(newLabel);
             });
         } : undefined}
@@ -106,8 +106,8 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
     );
   }
 
-  static mapUserToLabel(user:Admin.UserAdmin|Admin.UserMe):Label {
-    const userLabel:Label = {
+  static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
+    const userLabel: Label = {
       label: `${user.name || 'anonymous'} ${user.email || ''}`,
       value: user.userId,
     };
@@ -115,8 +115,8 @@ class UserSelection extends Component<Props&ConnectProps&WithStyles<typeof style
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
-  const connectProps:ConnectProps = {
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  const connectProps: ConnectProps = {
     loggedInUserLabel: state.users.loggedIn.user ? UserSelection.mapUserToLabel(state.users.loggedIn.user) : undefined,
   };
   return connectProps;

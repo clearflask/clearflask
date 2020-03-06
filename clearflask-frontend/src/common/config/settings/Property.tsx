@@ -1,27 +1,27 @@
-import React, { Component } from 'react';
-import * as ConfigEditor from '../configEditor';
-import { Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox, Switch, FormHelperText, FormControl, InputLabel, Select, MenuItem, Input, Collapse, IconButton } from '@material-ui/core';
-import TableProp from './TableProp';
-import ColorPicker from 'material-ui-color-picker'
+import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
+import { BaseEmoji, Picker } from 'emoji-mart';
 import 'emoji-mart/css/emoji-mart.css';
-import { Picker, EmojiData, BaseEmoji } from 'emoji-mart';
+import ColorPicker from 'material-ui-color-picker';
+import React, { Component } from 'react';
+import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';
 import Overlay from '../../Overlay';
-import SelectionPicker, { Label, ColorLookup } from '../../../app/comps/SelectionPicker';
+import * as ConfigEditor from '../configEditor';
+import TableProp from './TableProp';
 
 interface Props {
-  key:string;
-  prop:ConfigEditor.Page|ConfigEditor.PageGroup|ConfigEditor.Property;
-  bare?:boolean;
-  width?:string
-  pageClicked:(path:ConfigEditor.Path)=>void;
-  isInsideMuiTable?:boolean;
+  key: string;
+  prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property;
+  bare?: boolean;
+  width?: string
+  pageClicked: (path: ConfigEditor.Path) => void;
+  isInsideMuiTable?: boolean;
 }
 
 export default class Property extends Component<Props> {
   static inputMinWidth = '224px';
   readonly colorRef = React.createRef<HTMLDivElement>();
-  unsubscribe?:()=>void;
+  unsubscribe?: () => void;
 
   componentDidMount() {
     this.unsubscribe = this.props.prop.subscribe(this.forceUpdate.bind(this));
@@ -37,11 +37,11 @@ export default class Property extends Component<Props> {
     var marginTop = 30;
     var propertySetter;
     var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
-    OUTER: switch(prop.type) {
+    OUTER: switch (prop.type) {
       case ConfigEditor.PropertyType.Number:
       case ConfigEditor.PropertyType.Integer:
       case ConfigEditor.PropertyType.String:
-        switch(prop.subType) {
+        switch (prop.subType) {
           case ConfigEditor.PropSubType.Id:
             // ID is an invisible field
             propertySetter = undefined;
@@ -62,43 +62,45 @@ export default class Property extends Component<Props> {
                     onChange={color => (prop as ConfigEditor.StringProperty).set(color)}
                     error={!!prop.errorMsg}
                     // Undocumented typescript definition
-                    {...{['TextFieldProps']:{
-                      // Hack to modify material-ui-color-picker to fix bug
-                      // where a click inside the empty space inside the
-                      // picker would dismiss the picker.
-                      onFocus: () => setTimeout(() => {
-                        var ptr:any = this.colorRef;
-                        ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
-                        ptr && (ptr.position = 'relative');
-                      },500),
-                      InputLabelProps:{
-                        shrink: shrink,
-                        error: !!prop.errorMsg,
-                      },
-                      InputProps: {
-                        inputProps: {
-                          autocomplete: 'off',
+                    {...{
+                      ['TextFieldProps']: {
+                        // Hack to modify material-ui-color-picker to fix bug
+                        // where a click inside the empty space inside the
+                        // picker would dismiss the picker.
+                        onFocus: () => setTimeout(() => {
+                          var ptr: any = this.colorRef;
+                          ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
+                          ptr && (ptr.position = 'relative');
+                        }, 500),
+                        InputLabelProps: {
+                          shrink: shrink,
+                          error: !!prop.errorMsg,
                         },
-                        style: {
-                          color: prop.value,
-                          minWidth: Property.inputMinWidth,
-                          width: this.props.width,
-                        },
-                        error: !!prop.errorMsg,
+                        InputProps: {
+                          inputProps: {
+                            autocomplete: 'off',
+                          },
+                          style: {
+                            color: prop.value,
+                            minWidth: Property.inputMinWidth,
+                            width: this.props.width,
+                          },
+                          error: !!prop.errorMsg,
+                        }
                       }
-                    }}}
+                    }}
                   />
                 </div>
-                {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+                {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
               </div>
             );
             break OUTER;
           default:
-            // Fall through to below
+          // Fall through to below
         }
         var fieldType;
-        if(prop.type === ConfigEditor.PropertyType.String) {
-          switch(prop.format) {
+        if (prop.type === ConfigEditor.PropertyType.String) {
+          switch (prop.format) {
             case ConfigEditor.StringFormat.DateTime:
               fieldType = 'datetime-local';
               shrink = true;
@@ -145,7 +147,7 @@ export default class Property extends Component<Props> {
             }}
           />
         );
-        if(prop.subType === ConfigEditor.PropSubType.Emoji) {
+        if (prop.subType === ConfigEditor.PropSubType.Emoji) {
           propertySetter = (
             <Overlay
               isInsideMuiTable={this.props.isInsideMuiTable}
@@ -172,10 +174,10 @@ export default class Property extends Component<Props> {
           </div>
         );
         const description = (prop.description || prop.errorMsg)
-            ? (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)
-            : null;
+          ? (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)
+          : null;
         var content;
-        if(prop.required) {
+        if (prop.required) {
           content = [description, link];
         } else {
           content = (
@@ -192,7 +194,7 @@ export default class Property extends Component<Props> {
                   label={description}
                 />
               </div>
-              <Collapse in={prop.value} style={{marginLeft: '30px'}}>
+              <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
                 {link}
               </Collapse>
             </div>
@@ -208,7 +210,7 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PropertyType.Boolean:
       case ConfigEditor.PropertyType.Enum:
-        if(prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
+        if (prop.required && prop.type === ConfigEditor.PropertyType.Boolean) {
           propertySetter = (
             <div>
               {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
@@ -224,24 +226,24 @@ export default class Property extends Component<Props> {
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
                 />
               </div>
-              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             </div>
           );
           break;
         }
-        var items:ConfigEditor.EnumItem[];
+        var items: ConfigEditor.EnumItem[];
         var currentItem;
-        if(prop.type === ConfigEditor.PropertyType.Boolean) {
+        if (prop.type === ConfigEditor.PropertyType.Boolean) {
           items = [
-            {name: 'Not set', value: 'undefined'},
-            {name: 'Enabled', value: 'true'},
-            {name: 'Disabled', value: 'false'},
+            { name: 'Not set', value: 'undefined' },
+            { name: 'Enabled', value: 'true' },
+            { name: 'Disabled', value: 'false' },
           ];
-          if(prop.value === undefined) {
+          if (prop.value === undefined) {
             currentItem = items.find(item => item.value === 'undefined');
-          } else if(prop.value === true) {
+          } else if (prop.value === true) {
             currentItem = items.find(item => item.value === 'true');
-          } else if(prop.value === false) {
+          } else if (prop.value === false) {
             currentItem = items.find(item => item.value === 'false');
           }
         } else {
@@ -260,8 +262,8 @@ export default class Property extends Component<Props> {
             <Select
               value={prop.value !== undefined && currentItem.value ? currentItem.value : ''}
               onChange={e => {
-                if(prop.type === ConfigEditor.PropertyType.Boolean) {
-                  switch(e.target.value) {
+                if (prop.type === ConfigEditor.PropertyType.Boolean) {
+                  switch (e.target.value) {
                     case 'undefined':
                       prop.set(undefined as never)
                       break;
@@ -285,21 +287,21 @@ export default class Property extends Component<Props> {
                 }</MenuItem>
               ))}
             </Select>
-            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
           </FormControl>
         );
         break;
       case ConfigEditor.PageGroupType:
       case ConfigEditor.PropertyType.Array:
-        if(prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
-          const values:Label[] = [];
-          const options:Label[] = [];
+        if (prop.type === ConfigEditor.PropertyType.Array && prop.childType === ConfigEditor.PropertyType.Enum && prop.childEnumItems && prop.required && prop.uniqueItems) {
+          const values: Label[] = [];
+          const options: Label[] = [];
           const enumValues = new Set((prop.childProperties || []).map(childProp => (childProp as ConfigEditor.EnumProperty)
             .value));
           prop.childEnumItems.forEach(enumItem => {
-            const label = {label: enumItem!.name, value: enumItem!.value};
+            const label = { label: enumItem!.name, value: enumItem!.value };
             options.push(label);
-            if(enumValues.has(enumItem.value)) {
+            if (enumValues.has(enumItem.value)) {
               values.push(label);
             }
           });
@@ -334,7 +336,7 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PropertyType.Object:
         const subProps = (
-          <Collapse in={prop.value} style={{marginLeft: '30px'}}>
+          <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
             {prop.childProperties && prop.childProperties
               .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
               .map(childProp => (
@@ -353,16 +355,16 @@ export default class Property extends Component<Props> {
                   color='default'
                 />
               )}
-              label={!this.props.bare && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
-              style={{ marginBottom: '-10px'}}
+              label={!this.props.bare && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+              style={{ marginBottom: '-10px' }}
             />
           </div>
         );
         marginTop += 16;
         propertySetter = (
-          <div style={{marginBottom: '10px'}}>
+          <div style={{ marginBottom: '10px' }}>
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
-            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{minWidth: Property.inputMinWidth, width: this.props.width}} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
+            {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             {enableObject}
             {subProps}
           </div>
@@ -371,28 +373,28 @@ export default class Property extends Component<Props> {
       case ConfigEditor.PropertyType.Link:
       case ConfigEditor.PropertyType.LinkMulti:
         const onValueChange = (labels, action) => {
-          if(prop.type === ConfigEditor.PropertyType.LinkMulti) {
+          if (prop.type === ConfigEditor.PropertyType.LinkMulti) {
             prop.set(new Set<string>(labels.map(o => o.value)));
           } else {
             prop.set(labels.length === 0 ? undefined : labels[0].value);
           }
         };
         const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
-        const values:Label[] = [];
-        const options:Label[] = [];
-        const colorLookup:ColorLookup = {};
+        const values: Label[] = [];
+        const options: Label[] = [];
+        const colorLookup: ColorLookup = {};
         prop.getOptions()
-        .forEach(o => {
-          options.push({label: o.name, value: o.id});
-          if(o!.color) colorLookup[o!.id] = o!.color;
-        });
-        if(prop.value !== undefined) {
+          .forEach(o => {
+            options.push({ label: o.name, value: o.id });
+            if (o!.color) colorLookup[o!.id] = o!.color;
+          });
+        if (prop.value !== undefined) {
           (prop.type === ConfigEditor.PropertyType.Link
             ? [prop.getOptions().find(o => o.id === prop.value)]
               .filter(o => o !== undefined)
             : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
             .forEach(o => {
-              values.push({label: o!.name, value: o!.id});
+              values.push({ label: o!.name, value: o!.id });
             })
         }
         propertySetter = (
@@ -419,7 +421,7 @@ export default class Property extends Component<Props> {
 
     return propertySetter
       ? (
-        <div style={{marginTop: this.props.bare ? undefined : marginTop + 'px'}}>
+        <div style={{ marginTop: this.props.bare ? undefined : marginTop + 'px' }}>
           {propertySetter}
         </div>
       ) : null;

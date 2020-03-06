@@ -1,9 +1,8 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 import Footer from './Footer';
-import { Fade } from '@material-ui/core';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   // Required for AnimatedSwitch to overlap two pages during animation
   animationContainer: {
     flexGrow: 1,
@@ -23,10 +22,10 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  showFooter?:boolean;
+  showFooter?: boolean;
 }
 
-class BasePage extends Component<Props&WithStyles<typeof styles, true>> {
+class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
   readonly styles = {
   };
 

@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import React from 'react';
 import Loading from '../app/utils/Loading';
 
 interface Props<T> {
-  promise:Promise<T>,
-  render:(val:T) => React.ReactNode,
-  renderError?:(err) => React.ReactNode,
-  loading?:React.ReactNode,
+  promise: Promise<T>,
+  render: (val: T) => React.ReactNode,
+  renderError?: (err) => React.ReactNode,
+  loading?: React.ReactNode,
 }
 
 interface State<T> {
-  result?:boolean,
-  val?:T;
-  error?:any;
+  result?: boolean,
+  val?: T;
+  error?: any;
 }
 
 class Promised<T> extends React.Component<Props<T>, State<T>> {
-  state:State<T> = {};
+  state: State<T> = {};
 
   componentWillMount() {
     this.props.promise
@@ -39,11 +38,11 @@ class Promised<T> extends React.Component<Props<T>, State<T>> {
         : this.renderError(this.state.error));
   }
 
-  renderVal(val:T) {
+  renderVal(val: T) {
     return this.props.render(val);
   }
 
-  renderError(error:any) {
+  renderError(error: any) {
     return this.props.renderError
       ? this.props.renderError(this.state.error)
       : null;

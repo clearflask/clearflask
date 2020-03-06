@@ -1,20 +1,20 @@
+import { Button, FormControl, FormHelperText, InputAdornment, MenuItem, Select, TextField, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';
-import { Server, getSearchKey, ReduxState } from '../../api/server';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import * as Client from '../../api/client';
-import * as Admin from '../../api/admin';
-import Panel, { Direction } from './Panel';
-import { Typography, TextField, Grow, Button, Select, MenuItem, FormControl, FormHelperText, InputAdornment, IconButton } from '@material-ui/core';
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
+import * as Admin from '../../api/admin';
+import * as Client from '../../api/client';
+import { getSearchKey, ReduxState, Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
+import debounce from '../../common/util/debounce';
+import UserSelection from '../../site/dashboard/UserSelection';
+import ExplorerTemplate from './ExplorerTemplate';
+import LogIn from './LogIn';
+import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
-import LogIn from './LogIn';
-import debounce from '../../common/util/debounce';
-import { withRouter, RouteComponentProps } from 'react-router';
-import UserSelection from '../../site/dashboard/UserSelection';
-import ServerAdmin from '../../api/serverAdmin';
-import ExplorerTemplate from './ExplorerTemplate';
-import AddIcon from '@material-ui/icons/Add';
 
 enum FilterType {
   Search = 'search',
@@ -25,14 +25,14 @@ enum FilterType {
 }
 
 interface TagSelection {
-  values:Label[];
-  options:Label[];
-  mandatoryTagIds:string[];
-  colorLookup:ColorLookup;
-  error?:string;
+  values: Label[];
+  options: Label[];
+  mandatoryTagIds: string[];
+  colorLookup: ColorLookup;
+  error?: string;
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   content: {
     margin: theme.spacing(2),
   },
@@ -81,41 +81,43 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
-  explorer:Client.PageExplorer;
+  server: Server;
+  explorer: Client.PageExplorer;
 }
 
 interface ConnectProps {
-  configver?:string;
-  config?:Client.Config;
-  loggedInUserId?:string;
+  configver?: string;
+  config?: Client.Config;
+  loggedInUserId?: string;
 }
 
 interface State {
-  createRefFocused?:boolean;
-  newItemTitle?:string;
-  newItemDescription?:string;
-  newItemAuthorLabel?:Label;
-  newItemChosenCategoryId?:string;
-  newItemChosenTagIds?:string[];
-  newItemSearchText?:string;
-  newItemIsSubmitting?:boolean;
-  search?:Partial<Client.IdeaSearch>;
-  logInOpen?:boolean;
-  createFormHasExpanded?:boolean;
+  createRefFocused?: boolean;
+  newItemTitle?: string;
+  newItemDescription?: string;
+  newItemAuthorLabel?: Label;
+  newItemChosenCategoryId?: string;
+  newItemChosenTagIds?: string[];
+  newItemSearchText?: string;
+  newItemIsSubmitting?: boolean;
+  search?: Partial<Client.IdeaSearch>;
+  logInOpen?: boolean;
+  createFormHasExpanded?: boolean;
 }
 
-class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps, State> {
-  readonly panelSearchRef:React.RefObject<any> = React.createRef();
-  readonly createInputRef:React.RefObject<HTMLInputElement> = React.createRef();
-  readonly updateSearchText:(title?:string,desc?:string)=>void;
+class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+  readonly panelSearchRef: React.RefObject<any> = React.createRef();
+  readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  readonly updateSearchText: (title?: string, desc?: string) => void;
 
   constructor(props) {
     super(props);
     this.state = {};
     this.updateSearchText = debounce(
-      (title?:string,desc?:string)=>this.setState({newItemSearchText: 
-        `${title || ''} ${desc || ''}`}),
+      (title?: string, desc?: string) => this.setState({
+        newItemSearchText:
+          `${title || ''} ${desc || ''}`
+      }),
       1000);
   }
 
@@ -123,19 +125,19 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     const expand = !!this.state.createRefFocused || !!this.state.newItemTitle || !!this.state.newItemDescription;
 
     var content, topBar;
-    if(expand) {
+    if (expand) {
       topBar = (
         <Typography variant='overline' className={this.props.classes.caption}>
           Similar:
         </Typography>
-        );
+      );
       content = (
         <div className={this.props.classes.content}>
           <Panel
             key={getSearchKey(this.props.explorer.search)}
             direction={Direction.Vertical}
             panel={this.props.explorer}
-            searchOverride={{searchText: this.state.newItemSearchText}}
+            searchOverride={{ searchText: this.state.newItemSearchText }}
             server={this.props.server}
             displayDefaults={{
               titleTruncateLines: 1,
@@ -183,7 +185,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               showVoting: true,
               showFunding: true,
               showExpression: true,
-            }} 
+            }}
             searchOverride={this.state.search}
             {...(this.props.explorer.allowSearch ? {
               onClickTag: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Tag)
@@ -208,22 +210,27 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
         onChange={e => {
           this.updateSearchText(e.target.value, this.state.newItemDescription);
           this.setState({
-          newItemTitle: e.target.value,
-          ...(this.state.newItemChosenCategoryId === undefined
-            ? {newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
-              ? this.state.search.filterCategoryIds[0]
-              : ((this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
-                ? this.props.explorer.search.filterCategoryIds[0]
-                : undefined)}
-            : {}),
-          ...(this.state.newItemChosenTagIds === undefined ? {newItemChosenTagIds: [...new Set([
-            ...(this.state.search && this.state.search.filterTagIds || []),
-            ...(this.props.explorer.search.filterTagIds || [])])]} : {}),
-        })}}
+            newItemTitle: e.target.value,
+            ...(this.state.newItemChosenCategoryId === undefined
+              ? {
+                newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
+                  ? this.state.search.filterCategoryIds[0]
+                  : ((this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
+                    ? this.props.explorer.search.filterCategoryIds[0]
+                    : undefined)
+              }
+              : {}),
+            ...(this.state.newItemChosenTagIds === undefined ? {
+              newItemChosenTagIds: [...new Set([
+                ...(this.state.search && this.state.search.filterTagIds || []),
+                ...(this.props.explorer.search.filterTagIds || [])])]
+            } : {}),
+          })
+        }}
         InputProps={{
           inputRef: this.createInputRef,
-          onBlur: () => this.setState({createRefFocused: false}),
-          onFocus: () => this.setState({createRefFocused: true}),
+          onBlur: () => this.setState({ createRefFocused: false }),
+          onFocus: () => this.setState({ createRefFocused: true }),
           endAdornment: (
             <InputAdornment position="end">
               <AddIcon
@@ -249,16 +256,16 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     );
   }
 
-  renderCreate(expand:boolean) {
-    if(!this.props.config
+  renderCreate(expand: boolean) {
+    if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
     var categoryOptions = (this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
       ? this.props.config.content.categories.filter(c => this.props.explorer.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories;
-    if(!ServerAdmin.get().isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
-    if(this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
-      this.setState({newItemChosenCategoryId: categoryOptions[0].categoryId})
+    if (!ServerAdmin.get().isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
+    if (this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
+      this.setState({ newItemChosenCategoryId: categoryOptions[0].categoryId })
     }
     const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
     const tagSelection = selectedCategory ? this.getTagSelection(selectedCategory) : undefined;
@@ -273,7 +280,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
           value={this.state.newItemDescription || ''}
           onChange={e => {
             this.updateSearchText(this.state.newItemTitle, e.target.value);
-            this.setState({newItemDescription: e.target.value})
+            this.setState({ newItemDescription: e.target.value })
           }}
           multiline
           rows={1}
@@ -284,7 +291,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
             server={this.props.server}
             className={this.props.classes.createFormField}
             disabled={this.state.newItemIsSubmitting}
-            onChange={selectedUserLabel => this.setState({newItemAuthorLabel: selectedUserLabel})}
+            onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
             allowCreate
           />
         )}
@@ -301,7 +308,7 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
               <Select
                 disabled={this.state.newItemIsSubmitting}
                 value={selectedCategory ? selectedCategory.categoryId : ''}
-                onChange={e => this.setState({newItemChosenCategoryId: e.target.value as string})}
+                onChange={e => this.setState({ newItemChosenCategoryId: e.target.value as string })}
               >
                 {categoryOptions.map(categoryOption => (
                   <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
@@ -324,18 +331,20 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
                 errorMsg={tagSelection.error}
                 isMulti={true}
                 width='100%'
-                onValueChange={labels => this.setState({newItemChosenTagIds:
-                  [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]})}
+                onValueChange={labels => this.setState({
+                  newItemChosenTagIds:
+                    [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]
+                })}
                 overrideComponents={{
                   MenuList: (menuProps) => {
-                    const tagGroups:{[tagGroupId:string]:React.ReactNode[]} = {};
+                    const tagGroups: { [tagGroupId: string]: React.ReactNode[] } = {};
                     const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-                    children.forEach((child:any) => {
-                      if(!child.props.data) {
+                    children.forEach((child: any) => {
+                      if (!child.props.data) {
                         // child is "No option(s)" text, ignore
                       } else {
                         const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
-                        if(!tagGroups[tagGroupId])tagGroups[tagGroupId] = [];
+                        if (!tagGroups[tagGroupId]) tagGroups[tagGroupId] = [];
                         tagGroups[tagGroupId].push(child);
                       }
                     });
@@ -375,9 +384,9 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
         <LogIn
           server={this.props.server}
           open={this.state.logInOpen}
-          onClose={() => this.setState({logInOpen: false})}
+          onClose={() => this.setState({ logInOpen: false })}
           onLoggedInAndClose={() => {
-            this.setState({logInOpen: false});
+            this.setState({ logInOpen: false });
             this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
           }}
         />
@@ -385,19 +394,19 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     );
   }
 
-  createClickSubmit(mandatoryTagIds:string[]) {
-    if(!!this.state.newItemAuthorLabel || !!this.props.loggedInUserId) {
+  createClickSubmit(mandatoryTagIds: string[]) {
+    if (!!this.state.newItemAuthorLabel || !!this.props.loggedInUserId) {
       this.createSubmit(mandatoryTagIds);
     } else {
       // open log in page, submit on success
-      this.setState({logInOpen: true})
+      this.setState({ logInOpen: true })
     }
   }
 
-  createSubmit(mandatoryTagIds:string[]) {
-    this.setState({newItemIsSubmitting: true});
-    var createPromise:Promise<Client.Idea|Admin.Idea>;
-    if(!!this.state.newItemAuthorLabel) {
+  createSubmit(mandatoryTagIds: string[]) {
+    this.setState({ newItemIsSubmitting: true });
+    var createPromise: Promise<Client.Idea | Admin.Idea>;
+    if (!!this.state.newItemAuthorLabel) {
       createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
@@ -435,8 +444,8 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     }));
   }
 
-  getTagSelection(category:Client.Category):TagSelection {
-    const tagSelection:TagSelection = {
+  getTagSelection(category: Client.Category): TagSelection {
+    const tagSelection: TagSelection = {
       values: [],
       options: [],
       mandatoryTagIds: this.props.explorer.search.filterTagIds || [],
@@ -444,57 +453,57 @@ class Explorer extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
     };
     const mandatoryTagIds = new Set(this.props.explorer.search.filterTagIds || []);
 
-    if(!this.props.config) return tagSelection;
+    if (!this.props.config) return tagSelection;
 
     category.tagging.tagGroups
-    .filter(tagGroup => tagGroup.userSettable)
-    .forEach(tagGroup => {
-      // Skip groups with tags that have mandatory tags
-      if(tagGroup.tagIds.findIndex(t => mandatoryTagIds.has(t)) !== -1) return;
+      .filter(tagGroup => tagGroup.userSettable)
+      .forEach(tagGroup => {
+        // Skip groups with tags that have mandatory tags
+        if (tagGroup.tagIds.findIndex(t => mandatoryTagIds.has(t)) !== -1) return;
 
-      var selectedCount = 0;
-      category.tagging.tags
-        .filter(t => tagGroup.tagIds.includes(t.tagId))
-        .forEach(tag => {
-          const label:Label = {
-            label: tag.name,
-            value: `${tagGroup.tagGroupId}:${tag.tagId}`,
-          };
-          if(tag.color) {
-            tagSelection.colorLookup[label.value] = tag.color;
-          }
-          tagSelection.options.push(label);
-          if(this.state.newItemChosenTagIds && this.state.newItemChosenTagIds.includes(tag.tagId)) {
-            selectedCount++;
-            tagSelection.values.push(label);
-          }
-        })
-      if(tagGroup.minRequired !== undefined && selectedCount < tagGroup.minRequired) {
-        if(tagGroup.minRequired === tagGroup.maxRequired) {
-          if(tagGroup.minRequired === 1) {
-            tagSelection.error = `Choose one ${tagGroup.name} tag`;
+        var selectedCount = 0;
+        category.tagging.tags
+          .filter(t => tagGroup.tagIds.includes(t.tagId))
+          .forEach(tag => {
+            const label: Label = {
+              label: tag.name,
+              value: `${tagGroup.tagGroupId}:${tag.tagId}`,
+            };
+            if (tag.color) {
+              tagSelection.colorLookup[label.value] = tag.color;
+            }
+            tagSelection.options.push(label);
+            if (this.state.newItemChosenTagIds && this.state.newItemChosenTagIds.includes(tag.tagId)) {
+              selectedCount++;
+              tagSelection.values.push(label);
+            }
+          })
+        if (tagGroup.minRequired !== undefined && selectedCount < tagGroup.minRequired) {
+          if (tagGroup.minRequired === tagGroup.maxRequired) {
+            if (tagGroup.minRequired === 1) {
+              tagSelection.error = `Choose one ${tagGroup.name} tag`;
+            } else {
+              tagSelection.error = `Choose ${tagGroup.minRequired} ${tagGroup.name} tags`;
+            }
           } else {
-            tagSelection.error = `Choose ${tagGroup.minRequired} ${tagGroup.name} tags`;
+            tagSelection.error = `Choose at least ${tagGroup.maxRequired} ${tagGroup.name} tags`;
           }
-        } else {
-          tagSelection.error = `Choose at least ${tagGroup.maxRequired} ${tagGroup.name} tags`;
+        } else if (tagGroup.maxRequired !== undefined && selectedCount > tagGroup.maxRequired) {
+          if (tagGroup.maxRequired === 1) {
+            tagSelection.error = `Cannot choose more than one ${tagGroup.name} tag`;
+          } else {
+            tagSelection.error = `Cannot choose more than ${tagGroup.maxRequired} ${tagGroup.name} tags`;
+          }
         }
-      } else if(tagGroup.maxRequired !== undefined && selectedCount > tagGroup.maxRequired) {
-        if(tagGroup.maxRequired === 1) {
-          tagSelection.error = `Cannot choose more than one ${tagGroup.name} tag`;
-        } else {
-          tagSelection.error = `Cannot choose more than ${tagGroup.maxRequired} ${tagGroup.name} tags`;
-        }
-      }
-    });
+      });
 
     return tagSelection;
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
-  if(!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({projectId: ownProps.server.getProjectId()});
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  if (!state.conf.conf && !state.conf.status) {
+    ownProps.server.dispatch().configGetAndUserBind({ projectId: ownProps.server.getProjectId() });
   }
   return {
     configver: state.conf.ver, // force rerender on config change

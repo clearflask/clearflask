@@ -1,7 +1,7 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   separator: {
     '&:before': {
       content: '"·"',
@@ -11,23 +11,23 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  delimiter?:React.ReactNode;
+  delimiter?: React.ReactNode;
 }
 
-class Delimited extends Component<Props&WithStyles<typeof styles, true>> {
+class Delimited extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(!Array.isArray(this.props.children)) {
+    if (!Array.isArray(this.props.children)) {
       return this.props.children || null;
     }
     const delimiter = this.props.delimiter || (
       <div className={this.props.classes.separator} />
     );
-    const result:React.ReactNode[] = [];
+    const result: React.ReactNode[] = [];
     for (let i = 0; i < this.props.children.length; i++) {
       const el = this.props.children[i];
-      if(!el) continue;
-      if(i > 0) result.push(<span key={i}>{delimiter}</span>);
+      if (!el) continue;
+      if (i > 0) result.push(<span key={i}>{delimiter}</span>);
       result.push(el);
     }
     return result;

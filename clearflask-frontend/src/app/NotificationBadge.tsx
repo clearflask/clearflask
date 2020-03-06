@@ -1,21 +1,21 @@
-import React, { Component } from 'react';
-import * as Client from '../api/client';
 import { Badge } from '@material-ui/core';
-import { Server, ReduxState, Status } from '../api/server';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import * as Client from '../api/client';
+import { ReduxState, Server, Status } from '../api/server';
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 interface ConnectProps {
-  isLoggedIn:boolean;
-  notifications?:Client.Notification[];
-  hasMore:boolean;
+  isLoggedIn: boolean;
+  notifications?: Client.Notification[];
+  hasMore: boolean;
 }
 
-class NotificationBadge extends Component<Props&ConnectProps> {
+class NotificationBadge extends Component<Props & ConnectProps> {
   render() {
-    if(!this.props.isLoggedIn) return null;
+    if (!this.props.isLoggedIn) return null;
 
     return (
       <Badge
@@ -29,9 +29,9 @@ class NotificationBadge extends Component<Props&ConnectProps> {
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.status === Status.FULFILLED && state.users.loggedIn.user && state.users.loggedIn.user.userId || undefined;
-  if(userId && state.notifications.notificationSearch.status === undefined) {
+  if (userId && state.notifications.notificationSearch.status === undefined) {
     ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
     });

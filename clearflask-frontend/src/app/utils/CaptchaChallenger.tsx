@@ -1,29 +1,29 @@
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import React, { Component } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@material-ui/core';
-import ReCAPTCHA from 'react-google-recaptcha';
 
 export interface Props {
-  server:Server|ServerAdmin;
+  server: Server | ServerAdmin;
 }
 
 interface State {
-  solved?:((solution:string)=>void);
-  sitekey?:string;
+  solved?: ((solution: string) => void);
+  sitekey?: string;
 }
 
 export default class CaptchaChallenger extends Component<Props, State> {
-  state:State = {};
-  recaptchaRef:React.RefObject<ReCAPTCHA> = React.createRef();
+  state: State = {};
+  recaptchaRef: React.RefObject<ReCAPTCHA> = React.createRef();
 
   constructor(props) {
     super(props);
 
-    props.server.subscribeChallenger((challengeStr:string) => new Promise((resolve, reject) => {
+    props.server.subscribeChallenger((challengeStr: string) => new Promise((resolve, reject) => {
       console.log('Server challenge: ' + challengeStr);
       var challenge = JSON.parse(challengeStr);
-      if(challenge.version !== 'RECAPTCHA_V2' || !challenge.challenge) {
+      if (challenge.version !== 'RECAPTCHA_V2' || !challenge.challenge) {
         reject(`Unknown challenge: ${challenge}`);
         return;
       }
@@ -59,19 +59,19 @@ export default class CaptchaChallenger extends Component<Props, State> {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => this.setState({solved: undefined, sitekey: undefined})}>Cancel</Button>
+          <Button onClick={() => this.setState({ solved: undefined, sitekey: undefined })}>Cancel</Button>
         </DialogActions>
       </Dialog>
     );
   }
 
-  recaptchaOnChange(result:string|null) {
-    if(!this.state.solved) {
-      this.setState({solved: undefined, sitekey: undefined});
+  recaptchaOnChange(result: string | null) {
+    if (!this.state.solved) {
+      this.setState({ solved: undefined, sitekey: undefined });
       return;
     }
 
-    if(!result) {
+    if (!result) {
       this.recaptchaRef.current && this.recaptchaRef.current.reset();
       return;
     }
@@ -82,6 +82,6 @@ export default class CaptchaChallenger extends Component<Props, State> {
     });
 
     this.state.solved(solutionStr);
-    this.setState({solved: undefined, sitekey: undefined});
+    this.setState({ solved: undefined, sitekey: undefined });
   }
 }

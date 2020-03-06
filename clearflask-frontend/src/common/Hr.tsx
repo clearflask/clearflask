@@ -1,7 +1,7 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   hr: {
     width: '10%',
     margin: '40px auto 30px auto',
@@ -26,28 +26,28 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  className?:string;
-  style?:React.CSSProperties;
-  vertical?:boolean;
-  margins?:string;
-  length?:string;
+  className?: string;
+  style?: React.CSSProperties;
+  vertical?: boolean;
+  margins?: string;
+  length?: string;
 }
 
-class Hr extends React.Component<Props&WithStyles<typeof styles, true>> {
+class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(this.props.vertical) {
+    if (this.props.vertical) {
       return (
         <div className={`${this.props.classes.vrContainer} ${this.props.className}`}>
           <div className={this.props.classes.vr} style={{
-              ...this.props.style,
-              ...(this.props.length && {
-                height: this.props.length
-              }),
-              ...(this.props.margins && {
-                marginLeft: this.props.margins,
-                marginRight: this.props.margins,
-              }),
+            ...this.props.style,
+            ...(this.props.length && {
+              height: this.props.length
+            }),
+            ...(this.props.margins && {
+              marginLeft: this.props.margins,
+              marginRight: this.props.margins,
+            }),
           }}>
             {this.props.children ? (
               <span style={{

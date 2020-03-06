@@ -1,10 +1,10 @@
 // Originally from: https://raw.githubusercontent.com/mui-org/material-ui/2f6a982aa74ffa46680798089ad20ed67ed0c5ae/docs/src/modules/components/MarkdownElement.js
-import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import marked from 'marked';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DOMPurify from 'dompurify';
-import textToHash from './textToHash';
+import marked from 'marked';
+import React, { Component } from 'react';
 import { highlight } from './prism';
+import textToHash from './textToHash';
 
 // Monkey patch to preserve non-breaking spaces
 // https://github.com/chjj/marked/blob/6b0416d10910702f73da9cb6bb3d4c8dcb7dead7/lib/marked.js#L142-L150
@@ -40,7 +40,7 @@ renderer.heading = (text, level) => {
 
 renderer.link = (href, title, text) => `<a href="${href}" target="_blank" rel="noopener nofollow">${text}</a>`;
 
-const markedOptions:marked.MarkedOptions = {
+const markedOptions: marked.MarkedOptions = {
   gfm: true,
   breaks: false,
   pedantic: false,
@@ -52,7 +52,7 @@ const markedOptions:marked.MarkedOptions = {
   renderer,
 };
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   markdownBody: {
     fontFamily: theme.typography.fontFamily,
     fontSize: 16,
@@ -228,10 +228,10 @@ const styles = (theme:Theme) => createStyles({
 
 
 interface Props {
-  text?:string,
+  text?: string,
 }
 
-class MarkdownElement extends Component<Props&WithStyles<typeof styles, true>> {
+class MarkdownElement extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
       <div

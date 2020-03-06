@@ -1,26 +1,26 @@
+import { Container, Grid, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { Typography, Grid, Box, Container } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import DemoApp, { getProject, Project, deleteProject } from './DemoApp';
-import Templater from '../common/config/configTemplater';
 import DataMock from '../api/dataMock';
+import Templater from '../common/config/configTemplater';
 import Promised from '../common/Promised';
-import PrioritizationControls from './landing/PrioritizationControls';
-import OnboardingDemo from './landing/OnboardingDemo';
+import DemoApp, { deleteProject, getProject, Project } from './DemoApp';
 import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import OnboardingDemo from './landing/OnboardingDemo';
+import PrioritizationControls from './landing/PrioritizationControls';
 
 interface DemoProps {
-  isEven:boolean;
-  title:string;
-  description:string;
-  initialSubPath?:string;
-  template?:(templater:Templater)=>void;
-  mock?:(mocker:DataMock)=>Promise<any>;
-  controls?:(project:Project)=>React.ReactNode;
-  demo?:(project:Project)=>React.ReactNode;
+  isEven: boolean;
+  title: string;
+  description: string;
+  initialSubPath?: string;
+  template?: (templater: Templater) => void;
+  mock?: (mocker: DataMock) => Promise<any>;
+  controls?: (project: Project) => React.ReactNode;
+  demo?: (project: Project) => React.ReactNode;
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
   },
   hero: {
@@ -74,7 +74,7 @@ const styles = (theme:Theme) => createStyles({
  * 
  */
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
-  demoProjectIds:string[] = [];
+  demoProjectIds: string[] = [];
 
   componentWillUnmount() {
     this.demoProjectIds.forEach(deleteProject);
@@ -147,8 +147,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  onboardingDemoRef:React.RefObject<any> = React.createRef();
-  renderPrioritization(isEven:boolean) {
+  onboardingDemoRef: React.RefObject<any> = React.createRef();
+  renderPrioritization(isEven: boolean) {
     return this.renderDemo({
       isEven,
       title: 'Give users ability to convey the value of features',
@@ -162,13 +162,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     });
   }
 
-  renderOnboarding(isEven:boolean) {
+  renderOnboarding(isEven: boolean) {
     return this.renderDemo({
       isEven,
       title: 'Notify users when their wishes are fulfilled',
-      description: 
-      'It is important to keep a communication channel from users leaving feedback.'
-      + 'To minimize friction, users can choose between browser push notifications, mobile push or standard email.',
+      description:
+        'It is important to keep a communication channel from users leaving feedback.'
+        + 'To minimize friction, users can choose between browser push notifications, mobile push or standard email.',
       initialSubPath: '/embed/demo',
       template: templater => setInitSignupMethodsTemplate(templater),
       controls: project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />),
@@ -176,12 +176,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     });
   }
 
-  renderAnalytics(isEven:boolean) {
+  renderAnalytics(isEven: boolean) {
     return this.renderDemo({
       isEven,
       title: 'Analytics',
-      description: 
-      'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Error, aperiam. Sapiente quibusdam atque praesentium quidem nemo inventore numquam eaque aperiam? Maxime quasi laborum accusamus amet eum ea cum reprehenderit natus.',
+      description:
+        'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Error, aperiam. Sapiente quibusdam atque praesentium quidem nemo inventore numquam eaque aperiam? Maxime quasi laborum accusamus amet eum ea cum reprehenderit natus.',
       initialSubPath: '/dashboard/demo',
       template: templater => templater.demo(),
       mock: mocker => mocker.mockAll(),
@@ -189,7 +189,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     });
   }
 
-  renderDemo(demoProps:DemoProps) {
+  renderDemo(demoProps: DemoProps) {
     const projectPromise = getProject(demoProps.template, demoProps.mock);
     projectPromise.then(project => this.demoProjectIds.push(project.server.getProjectId()));
     const controls = demoProps.controls === undefined ? undefined : (
@@ -221,7 +221,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         className={this.props.classes.demo}
         container
         spacing={3}
-        direction={ demoProps.isEven ? 'row-reverse' : undefined }
+        direction={demoProps.isEven ? 'row-reverse' : undefined}
         wrap='wrap-reverse'
       >
         {app}

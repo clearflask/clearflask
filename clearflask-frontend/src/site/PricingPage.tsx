@@ -1,19 +1,18 @@
-import React, { Component } from 'react';
-import { Typography, Grid, Button, Container, Card, CardHeader, CardContent, CardActions, Table, TableHead, TableRow, TableCell, TableBody, Paper, FormControlLabel, Switch, FormHelperText } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import CheckIcon from '@material-ui/icons/CheckRounded';
-import HelpPopover from '../common/HelpPopover';
-import { useTheme } from '@material-ui/core/styles';
+import { Container, FormControlLabel, FormHelperText, Grid, Switch, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
-import { History, Location } from 'history';
-import { PRE_SELECTED_PLAN_ID } from './SignupPage';
-import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import CheckIcon from '@material-ui/icons/CheckRounded';
+import { History } from 'history';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../api/admin';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
+import HelpPopover from '../common/HelpPopover';
 import PricingPlan from './PricingPlan';
+import { PRE_SELECTED_PLAN_ID } from './SignupPage';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(2),
   },
@@ -26,18 +25,18 @@ const T = true;
 const F = false;
 
 interface Props {
-  history:History;
+  history: History;
 }
 interface ConnectProps {
-  plans?:Admin.Plan[];
-  featuresTable?:Admin.FeaturesTable;
+  plans?: Admin.Plan[];
+  featuresTable?: Admin.FeaturesTable;
 }
 interface State {
-  isYearly:boolean;
+  isYearly: boolean;
 }
 
-class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
-  state:State = {
+class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  state: State = {
     isYearly: true
   };
   render() {
@@ -55,7 +54,7 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
             control={(
               <Switch
                 checked={this.state.isYearly}
-                onChange={(e, checked) => this.setState({isYearly: !this.state.isYearly})}
+                onChange={(e, checked) => this.setState({ isYearly: !this.state.isYearly })}
                 color='default'
               />
             )}
@@ -72,7 +71,7 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
                     actionTitle={plan.pricing ? 'Get started' : 'Contact us'}
                     actionOnClick={() => !plan.pricing
                       ? this.props.history.push('/contact/sales')
-                      : this.props.history.push('/signup', {[PRE_SELECTED_PLAN_ID]: plan.planid})}
+                      : this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })}
                   />
                 </Grid>
               ))}
@@ -95,9 +94,9 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
     );
   }
 
-  mapFeaturesTableValues(values:string[]):(string|boolean)[] {
+  mapFeaturesTableValues(values: string[]): (string | boolean)[] {
     return values.map(value => {
-      switch(value) {
+      switch (value) {
         case 'Yes': return T;
         case 'No': return F;
         default: return value;
@@ -106,10 +105,10 @@ class PricingPage extends Component<Props&ConnectProps&WithStyles<typeof styles,
   }
 }
 
-const FeatureList = withStyles(styles, { withTheme: true })((props:WithStyles<typeof styles, true>&{
-  planNames:string[],
-  name:string,
-  children?:any,
+const FeatureList = withStyles(styles, { withTheme: true })((props: WithStyles<typeof styles, true> & {
+  planNames: string[],
+  name: string,
+  children?: any,
 }) => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('sm'));
@@ -134,10 +133,10 @@ const FeatureList = withStyles(styles, { withTheme: true })((props:WithStyles<ty
   );
 });
 
-const FeatureListItem = (props:{
-  planContents:(boolean|React.ReactNode|string)[],
-  name:string,
-  helpText?:string
+const FeatureListItem = (props: {
+  planContents: (boolean | React.ReactNode | string)[],
+  name: string,
+  helpText?: string
 }) => {
   return (
     <TableRow key='name'>
@@ -156,8 +155,8 @@ const FeatureListItem = (props:{
   );
 }
 
-export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
-  if(state.plans.plans.status === undefined) {
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
+  if (state.plans.plans.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
   return {

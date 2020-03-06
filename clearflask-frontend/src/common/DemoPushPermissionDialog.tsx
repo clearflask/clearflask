@@ -1,18 +1,18 @@
-import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { Button, IconButton, Typography, Divider } from '@material-ui/core';
+import { Button, Divider } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/Close';
 import NotificationIcon from '@material-ui/icons/Notifications';
-import MobileNotification, { Device, Status as MobileStatus, Device as MobileDevice } from './notification/mobileNotification';
-import WebNotification, { Status as WebStatus } from './notification/webNotification';
+import React from 'react';
 import DividerVertical from '../app/utils/DividerVertical';
+import MobileNotification, { Device, Device as MobileDevice, Status as MobileStatus } from './notification/mobileNotification';
+import WebNotification, { Status as WebStatus } from './notification/webNotification';
 
 export enum PushDialogPlatform {
   Browser = 'browser',
   Ios = 'ios',
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   container: {
     position: 'relative',
     width: '100%',
@@ -94,19 +94,19 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  mobileNotification:MobileNotification;
-  webNotification:WebNotification;
+  mobileNotification: MobileNotification;
+  webNotification: WebNotification;
 }
 
 interface State {
-  open?:boolean;
-  device?:PushDialogPlatform;
+  open?: boolean;
+  device?: PushDialogPlatform;
 }
 
-class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof styles, true>, State> {
-  state:State = {};
-  onAccept:undefined|(()=>void);
-  onBlock:undefined|(()=>void);
+class DemoPushPermissionDialog extends React.Component<Props & WithStyles<typeof styles, true>, State> {
+  state: State = {};
+  onAccept: undefined | (() => void);
+  onBlock: undefined | (() => void);
 
   componentWillMount() {
     this.props.mobileNotification.mockSetStatus(MobileStatus.Available);
@@ -123,7 +123,7 @@ class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof s
         resolve({
           type: 'success',
           device: Device.Ios,
-          token:'mock-token',
+          token: 'mock-token',
         });
       };
       this.onBlock = () => {
@@ -145,7 +145,7 @@ class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof s
         this.props.webNotification.mockSetStatus(WebStatus.Granted);
         resolve({
           type: 'success',
-          token:'mock-token',
+          token: 'mock-token',
         });
       };
       this.onBlock = () => {
@@ -160,7 +160,7 @@ class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof s
 
   render() {
     var dialog;
-    if(this.state.open && this.state.device === PushDialogPlatform.Browser) {
+    if (this.state.open && this.state.device === PushDialogPlatform.Browser) {
       dialog = (
         <div key='dialog' className={this.props.classes[PushDialogPlatform.Browser]}>
           <div style={{
@@ -187,17 +187,17 @@ class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof s
           <div style={{
             display: 'flex',
           }}>
-            <div style={{flexGrow: 1}} />
+            <div style={{ flexGrow: 1 }} />
             <Button className='button' disableRipple variant='outlined' color='primary'
               onClick={() => this.onBlock && this.onBlock()}
-              >Block</Button>
+            >Block</Button>
             <Button className='button' disableRipple variant='outlined' color='primary'
               onClick={() => this.onAccept && this.onAccept()}
             >Allow</Button>
           </div>
         </div>
       );
-    } else if(this.state.open && this.state.device === PushDialogPlatform.Ios) {
+    } else if (this.state.open && this.state.device === PushDialogPlatform.Ios) {
       dialog = (
         <div key='dialog' className={this.props.classes[PushDialogPlatform.Ios]}>
           <div className='dialogBorder'>
@@ -207,7 +207,7 @@ class DemoPushPermissionDialog extends React.Component<Props&WithStyles<typeof s
             <div className='buttonContainer'>
               <Button className='buttonDont' disableRipple color='primary'
                 onClick={() => this.onBlock && this.onBlock()}
-                >Don't Allow</Button>
+              >Don't Allow</Button>
               <DividerVertical />
               <Button className='buttonOk' disableRipple color='primary'
                 onClick={() => this.onAccept && this.onAccept()}

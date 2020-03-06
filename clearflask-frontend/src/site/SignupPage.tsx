@@ -1,24 +1,23 @@
-import React, { Component } from 'react';
-import { Typography, Grid, Button, Container, Card, CardHeader, CardContent, CardActions, Stepper, StepLabel, StepContent, Step, Box, TextField, Link, InputAdornment, IconButton, Table, TableBody, TableRow, TableCell, FormHelperText, FormControlLabel, Switch } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import CheckIcon from '@material-ui/icons/CheckRounded';
-import { History, Location } from 'history';
+import { Box, Button, Container, FormControlLabel, FormHelperText, Grid, IconButton, Link, Step, StepContent, StepLabel, Stepper, Switch, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
-import StripeProviderProvider from '../common/stripe/StripeProviderProvider';
-import { CardNumberElement, CardExpiryElement, CardCVCElement, ReactStripeElements } from 'react-stripe-elements';
+import { History, Location } from 'history';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { CardCVCElement, CardExpiryElement, CardNumberElement, ReactStripeElements } from 'react-stripe-elements';
+import * as Admin from '../api/admin';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import Message from '../app/comps/Message';
 import Loader from '../app/utils/Loader';
 import StripeElementWrapper from '../common/stripe/StripeElementWrapper';
-import Message from '../app/comps/Message';
-import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import { connect } from 'react-redux';
-import * as Admin from '../api/admin';
+import StripeProviderProvider from '../common/stripe/StripeProviderProvider';
 import { saltHashPassword } from '../common/util/auth';
 import PricingPlan from './PricingPlan';
 
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(2),
   },
@@ -44,41 +43,41 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  history:History;
-  location:Location;
+  history: History;
+  location: Location;
 }
 interface ConnectProps {
-  plans?:Admin.Plan[];
+  plans?: Admin.Plan[];
 }
 interface State {
-  error?:string;
-  step:number;
-  isSubmitting?:boolean;
-  planId?:string;
-  billingIsYearly:boolean;
-  company?:string;
-  name?:string;
-  email?:string;
-  phone?:string;
-  pass?:string;
-  revealPassword?:boolean;
-  stripe?:ReactStripeElements.StripeProps;
-  stripeLoadError?:string;
-  cardValid?:boolean;
-  cardExpiryValid?:boolean;
-  cardCvcValid?:boolean;
+  error?: string;
+  step: number;
+  isSubmitting?: boolean;
+  planId?: string;
+  billingIsYearly: boolean;
+  company?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  pass?: string;
+  revealPassword?: boolean;
+  stripe?: ReactStripeElements.StripeProps;
+  stripeLoadError?: string;
+  cardValid?: boolean;
+  cardExpiryValid?: boolean;
+  cardCvcValid?: boolean;
 }
 
-class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>, State> {
+class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
 
     var billingIsYearly = true;
     var planId;
-    if(props.location && props.location.state && props.location.state[PRE_SELECTED_PLAN_ID]) {
+    if (props.location && props.location.state && props.location.state[PRE_SELECTED_PLAN_ID]) {
       planId = props.location.state[PRE_SELECTED_PLAN_ID];
-      if(props.plans && props.plans[planId] && props.plans[planId].pricing) {
+      if (props.plans && props.plans[planId] && props.plans[planId].pricing) {
         billingIsYearly = props.plans[planId].pricing!.period === Admin.PlanPricingPeriodEnum.Yearly;
       }
     }
@@ -107,17 +106,17 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
           <Stepper activeStep={this.state.step} orientation='vertical'>
             <Step key='plan' completed={planStepCompleted}>
               <StepLabel error={this.state.step > 0 && !planStepCompleted}>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({step: 0})} className={this.props.classes.link}>
+                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 0 })} className={this.props.classes.link}>
                   Plan
                 </Link>
               </StepLabel>
-              <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Loader loaded={!!this.props.plans}>
                   <FormControlLabel
                     control={(
                       <Switch
                         checked={this.state.billingIsYearly}
-                        onChange={(e, checked) => this.setState({billingIsYearly: !this.state.billingIsYearly})}
+                        onChange={(e, checked) => this.setState({ billingIsYearly: !this.state.billingIsYearly })}
                         color='default'
                       />
                     )}
@@ -144,11 +143,11 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
             </Step>
             <Step key='account' completed={accountStepCompleted}>
               <StepLabel error={this.state.step > 1 && !accountStepCompleted}>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({step: 1})} className={this.props.classes.link}>
+                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
                   Account
                 </Link>
               </StepLabel>
-              <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Box display='flex' flexDirection='column' alignItems='flex-start'>
                   <TextField
                     className={this.props.classes.item}
@@ -181,57 +180,57 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                     onChange={e => this.setState({ email: e.target.value })}
                   />
                   <Box display='flex' flexDirection='row' alignItems='center'>
-                  <TextField
-                    className={this.props.classes.item}
-                    id='pass'
-                    label='Password'
-                    required
-                    value={this.state.pass || ''}
-                    onChange={e => this.setState({ pass: e.target.value })}
-                    type={this.state.revealPassword ? 'text' : 'password'}
-                  />
-                  <IconButton
-                    aria-label='Toggle password visibility'
-                    onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
-                  >
-                    {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                  </IconButton>
+                    <TextField
+                      className={this.props.classes.item}
+                      id='pass'
+                      label='Password'
+                      required
+                      value={this.state.pass || ''}
+                      onChange={e => this.setState({ pass: e.target.value })}
+                      type={this.state.revealPassword ? 'text' : 'password'}
+                    />
+                    <IconButton
+                      aria-label='Toggle password visibility'
+                      onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                    >
+                      {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                    </IconButton>
                   </Box>
                 </Box>
                 <Box display='flex' className={this.props.classes.item}>
-                  <Button onClick={() => this.setState({step: this.state.step + 1})} color='primary' disabled={!accountStepCompleted}>Next</Button>
+                  <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary' disabled={!accountStepCompleted}>Next</Button>
                 </Box>
               </StepContent>
             </Step>
             <Step key='billing' completed={billingStepCompleted}>
               <StepLabel error={this.state.step > 2 && !billingStepCompleted}>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({step: 2})} className={this.props.classes.link}>
+                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 2 })} className={this.props.classes.link}>
                   Billing
                 </Link>
               </StepLabel>
-              <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Box display='flex' flexDirection='column' alignItems='flex-start'>
                   <Typography>Enter your payment information</Typography>
                   <StripeProviderProvider stripeKey='pk_test_M1ANiFgYLBV2UyeVB10w1Ons'
-                    onStripeElementsReady={stripe => this.setState({stripe: stripe})}
-                    onError={() => this.setState({stripeLoadError: 'Failed to load payment processor'})}>
+                    onStripeElementsReady={stripe => this.setState({ stripe: stripe })}
+                    onError={() => this.setState({ stripeLoadError: 'Failed to load payment processor' })}>
                     <Loader loaded={!!this.state.stripe} error={this.state.stripeLoadError}>
                       <React.Fragment>
                         {/* <CardElement className={this.props.classes.cardEl} /> */}
                         <Grid container className={this.props.classes.stripeGrid}>
                           <Grid item xs={12} className={this.props.classes.stripeInput}>
                             <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({cardValid: isValid})}
+                              onValidChanged={isValid => this.setState({ cardValid: isValid })}
                               label="Card Number" component={CardNumberElement} />
                           </Grid>
                           <Grid item xs={7} className={this.props.classes.stripeInput}>
                             <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({cardExpiryValid: isValid})}
+                              onValidChanged={isValid => this.setState({ cardExpiryValid: isValid })}
                               label="Expiry (MM / YY)" component={CardExpiryElement} />
                           </Grid>
                           <Grid item xs={5} className={this.props.classes.stripeInput}>
                             <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({cardCvcValid: isValid})}
+                              onValidChanged={isValid => this.setState({ cardCvcValid: isValid })}
                               label="CVC" component={CardCVCElement} />
                           </Grid>
                         </Grid>
@@ -240,29 +239,29 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
                   </StripeProviderProvider>
                 </Box>
                 <Box display='flex' className={this.props.classes.item}>
-                  <Button onClick={() => this.setState({step: this.state.step + 1})} color='primary' disabled={!billingStepCompleted}>Next</Button>
+                  <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary' disabled={!billingStepCompleted}>Next</Button>
                 </Box>
               </StepContent>
             </Step>
             <Step key='submit'>
               <StepLabel>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({step: 3})} className={this.props.classes.link}>
+                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 3 })} className={this.props.classes.link}>
                   {'Review & Submit'}
                 </Link>
               </StepLabel>
-              <StepContent TransitionProps={{mountOnEnter: true, unmountOnExit: false}}>
+              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Box width='fit-content'>
                   <Table>
                     <TableBody>
                       {[
-                        {name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Quarterly'})` : 'No plan selected', error: !selectedPlan},
-                        {name: 'Company', value: this.state.company || 'Not set'},
-                        {name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name},
-                        {name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped'},
-                        {name: 'Email', value: this.state.email || 'Missing email', error: !this.state.email},
-                        {name: 'Password', value: this.state.pass ? 'Set' : 'Not set', error: !this.state.pass},
-                        {name: 'Billing', value: billingStepCompleted ? 'Completed' : 'Incomplete', error: !billingStepCompleted },
-                      ].map((data:{name:string, value:string, error?:boolean}) => (
+                        { name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Quarterly'})` : 'No plan selected', error: !selectedPlan },
+                        { name: 'Company', value: this.state.company || 'Not set' },
+                        { name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name },
+                        { name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped' },
+                        { name: 'Email', value: this.state.email || 'Missing email', error: !this.state.email },
+                        { name: 'Password', value: this.state.pass ? 'Set' : 'Not set', error: !this.state.pass },
+                        { name: 'Billing', value: billingStepCompleted ? 'Completed' : 'Incomplete', error: !billingStepCompleted },
+                      ].map((data: { name: string, value: string, error?: boolean }) => (
                         <TableRow key={data.name}>
                           <TableCell key='date'><Typography>
                             {data.name}
@@ -293,31 +292,36 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
   }
 
   async signUp() {
-    if(!this.state.stripe) {
-      this.setState({error: 'Our payment processor has not initialized'});
+    if (!this.state.stripe) {
+      this.setState({ error: 'Our payment processor has not initialized' });
       return;
     }
 
-    this.setState({isSubmitting: true});
-    
-    var tokenResponse:ReactStripeElements.TokenResponse;
+    this.setState({ isSubmitting: true });
+
+    var tokenResponse: ReactStripeElements.TokenResponse;
     try {
       tokenResponse = await this.state.stripe.createToken();
-    } catch(err) {
-      this.setState({error: 'Failed to tokenize billing information',
-        isSubmitting: false});
+    } catch (err) {
+      this.setState({
+        error: 'Failed to tokenize billing information',
+        isSubmitting: false
+      });
       return;
     };
-    
-    if(tokenResponse.error) {
-      this.setState({error: 'Failed to retrieve billing token: ' + tokenResponse.error.message || tokenResponse.error.type,
-        isSubmitting: false});
+
+    if (tokenResponse.error) {
+      this.setState({
+        error: 'Failed to retrieve billing token: ' + tokenResponse.error.message || tokenResponse.error.type,
+        isSubmitting: false
+      });
       return;
     }
 
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
-      await dispatchAdmin.accountSignupAdmin({accountSignupAdmin: {
+      await dispatchAdmin.accountSignupAdmin({
+        accountSignupAdmin: {
           planid: this.state.planId!,
           company: this.state.company!,
           name: this.state.name!,
@@ -325,13 +329,14 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
           phone: this.state.phone,
           password: saltHashPassword(this.state.pass!),
           paymentToken: JSON.stringify(tokenResponse.token!),
-        }});
+        }
+      });
     } catch (err) {
       this.setState({
         error: (err.json && err.json.userFacingMessage)
           ? err.json.userFacingMessage
           : 'Failed to signup: ' + JSON.stringify(err),
-          isSubmitting: false
+        isSubmitting: false
       });
       return;
     }
@@ -339,8 +344,8 @@ class SignupPage extends Component<Props&ConnectProps&WithStyles<typeof styles, 
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxStateAdmin>((state, ownProps) => {
-  if(state.plans.plans.status === undefined) {
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
+  if (state.plans.plans.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
   return { plans: state.plans.plans.plans };

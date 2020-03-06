@@ -1,17 +1,12 @@
 import React, { Component } from 'react';
-import App from '../app/App';
-import {
-  MemoryRouter,
-  Route,
-  withRouter,
-  RouteComponentProps,
-} from 'react-router-dom'
-import { Server } from '../api/server';
-import Templater from '../common/config/configTemplater';
+import { MemoryRouter, Route, RouteComponentProps, withRouter } from 'react-router-dom';
 import DataMock from '../api/dataMock';
-import * as ConfigEditor from '../common/config/configEditor';
-import randomUuid from '../common/util/uuid';
+import { Server } from '../api/server';
 import ServerMock from '../api/serverMock';
+import App from '../app/App';
+import * as ConfigEditor from '../common/config/configEditor';
+import Templater from '../common/config/configTemplater';
+import randomUuid from '../common/util/uuid';
 
 export interface Project {
   server: Server;
@@ -20,10 +15,10 @@ export interface Project {
 }
 
 export function getProject(
-  template:((templater:Templater)=>void)|undefined = undefined,
-  mock:((mocker:DataMock)=>void)|undefined = undefined,
-  projectId:string = randomUuid(),
-):Promise<Project> {
+  template: ((templater: Templater) => void) | undefined = undefined,
+  mock: ((mocker: DataMock) => void) | undefined = undefined,
+  projectId: string = randomUuid(),
+): Promise<Project> {
   const server = new Server(projectId, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   const templater = Templater.get(editor);
@@ -33,27 +28,27 @@ export function getProject(
       projectId: projectId,
       configAdmin: editor.getConfig(),
     })
-    .then(project =>{
-      server.subscribeToChanges(editor);
-      return d.configSetAdmin({
-        projectId: projectId,
-        versionLast: project.config.version,
-        configAdmin: editor.getConfig(),
-      })
-      .then(() => mock && mock(DataMock.get(projectId)))
-      .then(() => server.dispatch().configGetAndUserBind({projectId: projectId}))
-      .then(() => ({server, templater, editor}));
-    }));
+      .then(project => {
+        server.subscribeToChanges(editor);
+        return d.configSetAdmin({
+          projectId: projectId,
+          versionLast: project.config.version,
+          configAdmin: editor.getConfig(),
+        })
+          .then(() => mock && mock(DataMock.get(projectId)))
+          .then(() => server.dispatch().configGetAndUserBind({ projectId: projectId }))
+          .then(() => ({ server, templater, editor }));
+      }));
 }
 
-export function deleteProject(projectId:string) {
+export function deleteProject(projectId: string) {
   ServerMock.get().deleteProject(projectId);
 }
 
 interface Props {
-  server:Server;
-  intialSubPath?:string;
-  forcePath?:string;
+  server: Server;
+  intialSubPath?: string;
+  forcePath?: string;
 }
 
 export default class DemoApp extends Component<Props> {
@@ -76,8 +71,8 @@ export default class DemoApp extends Component<Props> {
 }
 
 var lastForcedPath;
-const ForceUrl = withRouter((props:RouteComponentProps&{forcePath?:string}) => {
-  if(props.forcePath !== undefined
+const ForceUrl = withRouter((props: RouteComponentProps & { forcePath?: string }) => {
+  if (props.forcePath !== undefined
     && props.forcePath !== lastForcedPath) {
     setTimeout(() => props.history.push(`/${props.match.params['projectId']}${props.forcePath}`), 1);
   };

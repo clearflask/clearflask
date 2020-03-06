@@ -1,30 +1,30 @@
-import React, { Component } from 'react';
-import { createStyles, withStyles, WithStyles, Theme } from '@material-ui/core';
-import * as ConfigEditor from '../../configEditor';
-import CytoscapeComponent from 'react-cytoscapejs';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core';
 import Cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
-import DividerCorner from '../../../../app/utils/DividerCorner';
+import React, { Component } from 'react';
+import CytoscapeComponent from 'react-cytoscapejs';
 import ErrorMsg from '../../../../app/ErrorMsg';
+import DividerCorner from '../../../../app/utils/DividerCorner';
+import * as ConfigEditor from '../../configEditor';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   graph: {
     border: '1px solid ' + theme.palette.grey[300],
   },
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  page:ConfigEditor.Page;
-  editor:ConfigEditor.Editor;
+  page: ConfigEditor.Page;
+  editor: ConfigEditor.Editor;
 }
 
 interface State {
-  error?:string;
+  error?: string;
 }
 
 class WorkflowPreview extends Component<Props, State> {
-  state:State = {};
-  unsubscribe?:()=>void;
+  state: State = {};
+  unsubscribe?: () => void;
 
   constructor(props) {
     super(props);
@@ -32,13 +32,13 @@ class WorkflowPreview extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error) {
-    return {error: 'Failed to render visualization'};
+    return { error: 'Failed to render visualization' };
   }
 
   componentDidMount() {
     this.unsubscribe = this.props.editor.subscribe(() => {
-      if(!!this.state.error) {
-        this.setState({error: undefined});
+      if (!!this.state.error) {
+        this.setState({ error: undefined });
       } else {
         this.forceUpdate.bind(this)
       }
@@ -50,34 +50,38 @@ class WorkflowPreview extends Component<Props, State> {
   }
 
   render() {
-    if(!!this.state.error) {
+    if (!!this.state.error) {
       return (
         <ErrorMsg msg={this.state.error} />
       );
     }
 
-    const seenStatusIds:Set<string> = new Set();
-    var nodes:any[] = [];
-    var edges:any[] = [];
+    const seenStatusIds: Set<string> = new Set();
+    var nodes: any[] = [];
+    var edges: any[] = [];
     const entryStatusId = (this.props.editor.get([...this.props.page.path, 'entryStatus']) as ConfigEditor.StringProperty).value;
     const statusCount = (this.props.editor.get([...this.props.page.path, 'statuses']) as ConfigEditor.PageGroup).getChildPages().length;
-    for(var i = 0; i < statusCount; i++) {
+    for (var i = 0; i < statusCount; i++) {
       const name = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'name']) as ConfigEditor.StringProperty).value;
       const statusId = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value!;
       const color = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
       const nextStatusIds = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
       const isStart = statusId === entryStatusId;
       seenStatusIds.add(statusId);
-      nodes.push({data:{
-        id: statusId,
-        label: name,
-        color: color,
-        type: isStart ? 'circle' : 'round-rectangle',
-      }});
-      nextStatusIds && nextStatusIds.forEach(nextStatusId => edges.push({data:{
-        source: statusId,
-        target: nextStatusId,
-      }}))
+      nodes.push({
+        data: {
+          id: statusId,
+          label: name,
+          color: color,
+          type: isStart ? 'circle' : 'round-rectangle',
+        }
+      });
+      nextStatusIds && nextStatusIds.forEach(nextStatusId => edges.push({
+        data: {
+          source: statusId,
+          target: nextStatusId,
+        }
+      }))
     }
     return (
       <DividerCorner title='Visualization' height='100%'>
@@ -113,7 +117,7 @@ class WorkflowPreview extends Component<Props, State> {
               'text-valign': 'center',
               'text-halign': 'center',
             }
-          },{
+          }, {
             selector: 'edge',
             style: {
               'width': 2,

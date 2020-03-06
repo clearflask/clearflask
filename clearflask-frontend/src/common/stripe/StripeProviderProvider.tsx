@@ -1,21 +1,21 @@
 import React from 'react';
-import { StripeProvider, Elements, injectStripe, ReactStripeElements } from 'react-stripe-elements';
+import { Elements, injectStripe, ReactStripeElements, StripeProvider } from 'react-stripe-elements';
 
 interface Props {
-  stripeKey:string;
-  onStripeReady?:(stripe:stripe.Stripe)=>void;
-  onStripeElementsReady?:(stripeElements:ReactStripeElements.StripeProps)=>void;
-  onError?:OnErrorEventHandler;
+  stripeKey: string;
+  onStripeReady?: (stripe: stripe.Stripe) => void;
+  onStripeElementsReady?: (stripeElements: ReactStripeElements.StripeProps) => void;
+  onError?: OnErrorEventHandler;
 }
 
 interface State {
-  stripe?:stripe.Stripe;
+  stripe?: stripe.Stripe;
 }
 
-export default class StripeProviderProvider extends React.Component<Props,State> {
-  state:State={};
+export default class StripeProviderProvider extends React.Component<Props, State> {
+  state: State = {};
   static stripeScriptElement;
-  stripeElementsReady:boolean = false
+  stripeElementsReady: boolean = false
 
   componentDidMount() {
     const onWindowStripeReady = () => {
@@ -27,22 +27,22 @@ export default class StripeProviderProvider extends React.Component<Props,State>
     }
     if (window['Stripe']) {
       onWindowStripeReady()
-    } else if(StripeProviderProvider.stripeScriptElement) {
+    } else if (StripeProviderProvider.stripeScriptElement) {
       StripeProviderProvider.stripeScriptElement.addEventListener('load', onWindowStripeReady);
     } else {
       this.state = {
         stripe: undefined,
       };
       StripeProviderProvider.stripeScriptElement = document.createElement("script");
-      StripeProviderProvider.stripeScriptElement.src='https://js.stripe.com/v3/';
-      if(this.props.onError)StripeProviderProvider.stripeScriptElement.onerror=this.props.onError;
-      StripeProviderProvider.stripeScriptElement.onload=onWindowStripeReady;
+      StripeProviderProvider.stripeScriptElement.src = 'https://js.stripe.com/v3/';
+      if (this.props.onError) StripeProviderProvider.stripeScriptElement.onerror = this.props.onError;
+      StripeProviderProvider.stripeScriptElement.onload = onWindowStripeReady;
       document.body.appendChild(StripeProviderProvider.stripeScriptElement);
     }
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if(this.props.onStripeReady && prevState.stripe === undefined && this.state.stripe !== undefined) {
+    if (this.props.onStripeReady && prevState.stripe === undefined && this.state.stripe !== undefined) {
       this.props.onStripeReady(this.state.stripe);
     }
   }
@@ -59,8 +59,8 @@ export default class StripeProviderProvider extends React.Component<Props,State>
     );
   }
 
-  onElementsStripe(stripeElements:ReactStripeElements.StripeProps) {
-    if(!this.stripeElementsReady) {
+  onElementsStripe(stripeElements: ReactStripeElements.StripeProps) {
+    if (!this.stripeElementsReady) {
       this.props.onStripeElementsReady && this.props.onStripeElementsReady(stripeElements);
     }
     this.stripeElementsReady = true;
@@ -68,12 +68,12 @@ export default class StripeProviderProvider extends React.Component<Props,State>
 }
 
 interface ExposeStripeElementsProps extends ReactStripeElements.InjectedStripeProps {
-  onElementsStripe?:(stripeElements:ReactStripeElements.StripeProps)=>void;
-  children:any;
+  onElementsStripe?: (stripeElements: ReactStripeElements.StripeProps) => void;
+  children: any;
 }
 
-const ExposeStripeElements = injectStripe((props:ExposeStripeElementsProps) => {
-  if(props.stripe && props.onElementsStripe) {
+const ExposeStripeElements = injectStripe((props: ExposeStripeElementsProps) => {
+  if (props.stripe && props.onElementsStripe) {
     props.onElementsStripe(props.stripe);
   }
   return props.children;

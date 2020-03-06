@@ -1,10 +1,10 @@
+import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
 import Message from './comps/Message';
-import { Box } from '@material-ui/core';
 
 interface Props {
-  msg?:string;
-  variant?:'success'|'warning'|'error'|'info';
+  msg?: string;
+  variant?: 'success' | 'warning' | 'error' | 'info';
 }
 
 export default class ErrorPage extends Component<Props> {

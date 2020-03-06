@@ -1,10 +1,8 @@
-import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import ErrorPage from './ErrorPage';
-import NotificationList from './comps/NotificationList';
 import { Link } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   container: {
     margin: theme.spacing(1),
     display: 'flex',

@@ -1,13 +1,13 @@
-import React, { Component } from 'react';
-import * as ConfigEditor from './config/configEditor';
-import { Toolbar, IconButton, Drawer, Divider, AppBar, Hidden } from '@material-ui/core';
+import { AppBar, Divider, Drawer, Hidden, IconButton, Toolbar } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
+import * as ConfigEditor from './config/configEditor';
 
 const MENU_WIDTH = '180px';
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   root: {
     flexGrow: 1,
     display: 'flex',
@@ -83,13 +83,13 @@ interface Props {
 }
 
 interface State {
-  mobileMenuOpen:boolean;
-  mobilePreviewOpen:boolean;
-  previewWidth?:string;
+  mobileMenuOpen: boolean;
+  mobilePreviewOpen: boolean;
+  previewWidth?: string;
 }
 
-class Layout extends Component<Props&WithStyles<typeof styles, true>, State> {
-  readonly editor:ConfigEditor.Editor = new ConfigEditor.EditorImpl();
+class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
+  readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl();
   readonly containerRef = React.createRef<HTMLDivElement>();
 
   constructor(props) {
@@ -128,7 +128,7 @@ class Layout extends Component<Props&WithStyles<typeof styles, true>, State> {
               </IconButton>
             )}
           </Toolbar>
-          <Divider /> 
+          <Divider />
         </AppBar>
         <div className={this.props.classes.root}>
           <nav className={this.props.classes.drawer}>
@@ -214,7 +214,7 @@ class Layout extends Component<Props&WithStyles<typeof styles, true>, State> {
                 >
                   <div className={this.props.classes.toolbar} />
                   <Divider />
-                  <div style={{flex: '1 1 auto'}}>
+                  <div style={{ flex: '1 1 auto' }}>
                     {this.props.preview}
                   </div>
                 </Drawer>
@@ -222,7 +222,7 @@ class Layout extends Component<Props&WithStyles<typeof styles, true>, State> {
               <Hidden smDown implementation='css'>
                 <Drawer
                   PaperProps={{
-                    style: {width: this.state.previewWidth}
+                    style: { width: this.state.previewWidth }
                   }}
                   classes={{
                     paper: this.props.classes.previewPaper,
@@ -251,11 +251,11 @@ class Layout extends Component<Props&WithStyles<typeof styles, true>, State> {
   }
 
   handleDrawerToggle() {
-    this.setState({mobileMenuOpen: !this.state.mobileMenuOpen});
+    this.setState({ mobileMenuOpen: !this.state.mobileMenuOpen });
   };
 
   handlePreviewToggle() {
-    this.setState({mobilePreviewOpen: !this.state.mobilePreviewOpen});
+    this.setState({ mobilePreviewOpen: !this.state.mobilePreviewOpen });
   };
 }
 

@@ -1,20 +1,15 @@
 
+import { Grid } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import IdeaExplorer from '../../app/comps/IdeaExplorer';
-import { Server } from '../../api/server';
-import DividerCorner from '../../app/utils/DividerCorner';
-import { Grid, TextField, Button, Typography, Box } from '@material-ui/core';
-import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import UpdatableField from '../../common/UpdatableField';
-import { saltHashPassword } from '../../common/util/auth';
 import { Status } from '../../api/server';
+import { ReduxStateAdmin } from '../../api/serverAdmin';
+import DividerCorner from '../../app/utils/DividerCorner';
 import PricingPlan from '../PricingPlan';
-import Loader from '../../app/utils/Loader';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   corner: {
     margin: theme.spacing(1),
   },
@@ -30,13 +25,13 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface ConnectProps {
-  accountStatus?:Status;
-  account?:Admin.AccountAdmin;
+  accountStatus?: Status;
+  account?: Admin.AccountAdmin;
 }
 
-class BillingPage extends Component<ConnectProps&WithStyles<typeof styles, true>> {
+class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if(!this.props.account) {
+    if (!this.props.account) {
       return 'Need to login to see this page';
     }
     return (
@@ -61,8 +56,8 @@ class BillingPage extends Component<ConnectProps&WithStyles<typeof styles, true>
   }
 }
 
-export default connect<ConnectProps,{},{},ReduxStateAdmin>((state, ownProps) => {
-  const connectProps:ConnectProps = {
+export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
+  const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
   };

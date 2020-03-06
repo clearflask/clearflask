@@ -1,18 +1,19 @@
-import React from 'react';
-import { Server, ReduxState, Status } from '../../api/server';
 import { connect } from 'react-redux';
+import { ReduxState, Server } from '../../api/server';
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 
 interface ConnectProps {
-  ssoEnabled:boolean;
+  ssoEnabled: boolean;
 }
 
-const SsoLogin = connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {return {
-  ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.notificationMethods/*.singleSignOn*/ || false,
-}})((props:Props&ConnectProps) => {
+const SsoLogin = connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  return {
+    ssoEnabled: state.conf.conf && !!state.conf.conf.users.onboarding.notificationMethods/*.singleSignOn*/ || false,
+  }
+})((props: Props & ConnectProps) => {
   throw new Error("SSO not yet supported");
   // if(!props.ssoEnabled) return null;
 

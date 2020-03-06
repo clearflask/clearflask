@@ -1,18 +1,16 @@
+import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import Message from './comps/Message';
 import { connect } from 'react-redux';
-import { ReduxState, Server, Status } from '../api/server';
 import * as Client from '../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { withRouter, RouteComponentProps, matchPath } from 'react-router';
+import { ReduxState, Server } from '../api/server';
+import CreditView from '../common/config/CreditView';
+import FundingControl from './comps/FundingControl';
 import TransactionList from './comps/TransactionList';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
-import CreditView from '../common/config/CreditView';
-import { Typography } from '@material-ui/core';
-import FundingControl from './comps/FundingControl';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(1),
   },
@@ -22,19 +20,19 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  server:Server;
+  server: Server;
 }
 
 interface ConnectProps {
-  isLoggedIn:boolean;
-  balance?:number;
-  credits?:Client.Credits;
+  isLoggedIn: boolean;
+  balance?: number;
+  credits?: Client.Credits;
 }
 
-class BankPage extends Component<Props&ConnectProps&WithStyles<typeof styles, true>> {
+class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    if(!this.props.isLoggedIn) {
+    if (!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }
     return (
@@ -55,9 +53,9 @@ class BankPage extends Component<Props&ConnectProps&WithStyles<typeof styles, tr
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined;
-  const connectProps:ConnectProps = {
+  const connectProps: ConnectProps = {
     isLoggedIn: !!userId,
     balance: state.credits.myBalance.balance,
     credits: state.conf.conf ? state.conf.conf.credits : undefined,

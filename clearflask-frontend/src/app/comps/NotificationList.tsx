@@ -1,18 +1,16 @@
+import { Button, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import Message from './Message';
 import { connect } from 'react-redux';
-import { ReduxState, Server, Status, getTransactionSearchKey } from '../../api/server';
+import { RouteComponentProps, withRouter } from 'react-router';
+import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import { withRouter, RouteComponentProps } from 'react-router';
-import ErrorMsg from '../ErrorMsg';
-import { Table, TableBody, TableRow, TableCell, TableHead, Button, Typography, CardActionArea } from '@material-ui/core';
-import CreditView from '../../common/config/CreditView';
-import TimeAgo from 'react-timeago'
+import { ReduxState, Server } from '../../api/server';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import ErrorMsg from '../ErrorMsg';
 import DividerCorner from '../utils/DividerCorner';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   table: {
     whiteSpace: 'nowrap',
     ...(contentScrollApplyStyles(theme)),
@@ -24,19 +22,19 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  className?:string;
-  server:Server;
+  className?: string;
+  server: Server;
 }
 
 interface ConnectProps {
-  userId?:string;
-  notifications?:Client.Notification[];
-  getNextNotifications?:()=>void;
+  userId?: string;
+  notifications?: Client.Notification[];
+  getNextNotifications?: () => void;
 }
 
-class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof styles, true>&RouteComponentProps> {
+class NotificationList extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
   render() {
-    if(!this.props.userId) {
+    if (!this.props.userId) {
       return (<ErrorMsg msg='You need to log in to see your notifications' variant='info' />);
     }
     const hasNotifications = this.props.notifications && this.props.notifications.length > 0;
@@ -66,12 +64,12 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
           </div>
         </DividerCorner>
         {hasNotifications && (
-          <Button style={{margin: 'auto', display: 'block'}} onClick={() => this.clearAll()}>
+          <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.clearAll()}>
             Clear all
           </Button>
         )}
         {this.props.getNextNotifications && (
-          <Button style={{margin: 'auto', display: 'block'}} onClick={() => this.props.getNextNotifications && this.props.getNextNotifications()}>
+          <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.props.getNextNotifications && this.props.getNextNotifications()}>
             Show more
           </Button>
         )}
@@ -79,13 +77,13 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
     );
   }
 
-  clickNotification(notification:Client.Notification) {
+  clickNotification(notification: Client.Notification) {
     this.props.server.dispatch().notificationClear({
       projectId: this.props.server.getProjectId(),
       notificationId: notification.notificationId,
     });
-    if(notification.relatedIdeaId) {
-      if(notification.relatedCommentId) {
+    if (notification.relatedIdeaId) {
+      if (notification.relatedCommentId) {
         this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`);
       } else {
         this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}`);
@@ -100,20 +98,20 @@ class NotificationList extends Component<Props&ConnectProps&WithStyles<typeof st
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state, ownProps) => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined;
   var getNextNotifications;
-  if(userId && state.notifications.notificationSearch.status === undefined) {
+  if (userId && state.notifications.notificationSearch.status === undefined) {
     ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
     });
-  } else if(userId && state.notifications.notificationSearch.cursor) {
+  } else if (userId && state.notifications.notificationSearch.cursor) {
     getNextNotifications = () => ownProps.server.dispatch().notificationSearch({
       projectId: ownProps.server.getProjectId(),
       cursor: state.notifications.notificationSearch.cursor,
     });
   }
-  const connectProps:ConnectProps = {
+  const connectProps: ConnectProps = {
     userId: userId,
     notifications: state.notifications.notificationSearch.notifications,
     getNextNotifications: getNextNotifications,

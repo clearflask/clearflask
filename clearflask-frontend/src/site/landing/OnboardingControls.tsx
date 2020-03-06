@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import Templater from '../../common/config/configTemplater';
-import { ToggleButtonGroup, ToggleButton } from '@material-ui/lab';
 import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import React, { Component } from 'react';
 import * as Client from '../../api/client';
+import Templater from '../../common/config/configTemplater';
 import { Device } from '../../common/DeviceContainer';
 
 enum SignupMethods {
@@ -15,18 +15,18 @@ enum SignupMethods {
 
 const initialSignupMethods = [SignupMethods.Email, SignupMethods.Mobile, SignupMethods.Web];
 
-const setSignupMethodsTemplate = (templater:Templater, signupMethods:SignupMethods[]) => {
+const setSignupMethodsTemplate = (templater: Templater, signupMethods: SignupMethods[]) => {
   templater.usersOnboardingEmail(signupMethods.includes(SignupMethods.Email));
   templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
   templater.usersOnboardingBrowserPush(signupMethods.includes(SignupMethods.Web));
   templater.usersOnboardingAnonymous(signupMethods.includes(SignupMethods.Anonymous), !signupMethods.includes(SignupMethods.Anonymous));
 }
 
-export const setInitSignupMethodsTemplate = (templater:Templater) => {
+export const setInitSignupMethodsTemplate = (templater: Templater) => {
   setSignupMethodsTemplate(templater, initialSignupMethods);
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   toggleButtonGroup: {
     display: 'inline-flex',
     marginBottom: theme.spacing(2),
@@ -45,17 +45,17 @@ interface Props {
 }
 
 interface State {
-  device:Device;
-  signupMethods:SignupMethods[];
-  allowEmail:boolean;
-  allowMobilePush:boolean;
-  allowDesktopPush:boolean;
-  allowAnonymous:boolean;
-  collectDisplayName:Client.AccountFieldsDisplayNameEnum;
+  device: Device;
+  signupMethods: SignupMethods[];
+  allowEmail: boolean;
+  allowMobilePush: boolean;
+  allowDesktopPush: boolean;
+  allowAnonymous: boolean;
+  collectDisplayName: Client.AccountFieldsDisplayNameEnum;
 }
 
-class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>, State> {
-  state:State = {
+class OnboardingControls extends Component<Props & WithStyles<typeof styles, true>, State> {
+  state: State = {
     device: Device.Desktop,
     signupMethods: initialSignupMethods,
     allowEmail: true,
@@ -70,20 +70,20 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
       <div>
         <Typography variant='caption' display='block'>Platform</Typography>
         <ToggleButtonGroup
-          {...{size:'small'}}
+          {...{ size: 'small' }}
           value={this.state.device}
           exclusive
           className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {
-            switch(val) {
+            switch (val) {
               case 'mobile':
-                this.setState({device: Device.Mobile});
+                this.setState({ device: Device.Mobile });
                 this.props.onboardingDemoRef.current
                   && this.props.onboardingDemoRef.current.onDeviceChange
                   && this.props.onboardingDemoRef.current.onDeviceChange(Device.Mobile);
                 break;
               case 'desktop':
-                this.setState({device: Device.Desktop});
+                this.setState({ device: Device.Desktop });
                 this.props.onboardingDemoRef.current
                   && this.props.onboardingDemoRef.current.onDeviceChange
                   && this.props.onboardingDemoRef.current.onDeviceChange(Device.Desktop);
@@ -101,7 +101,7 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
           className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {
             const signupMethods = val as SignupMethods[];
-            this.setState({signupMethods: signupMethods});
+            this.setState({ signupMethods: signupMethods });
             setSignupMethodsTemplate(this.props.templater, signupMethods);
           }}
         >
@@ -116,13 +116,13 @@ class OnboardingControls extends Component<Props&WithStyles<typeof styles, true>
         </ToggleButtonGroup>
         <Typography variant='caption' display='block'>Display name</Typography>
         <ToggleButtonGroup
-          {...{size:'small'}}
+          {...{ size: 'small' }}
           value={this.state.collectDisplayName}
           exclusive
           className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {
             const displayName = val as Client.AccountFieldsDisplayNameEnum;
-            this.setState({collectDisplayName: displayName});
+            this.setState({ collectDisplayName: displayName });
             this.props.templater.usersOnboardingDisplayName(displayName);
           }}
         >

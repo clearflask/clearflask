@@ -1,12 +1,12 @@
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
 
 export enum Device {
   Desktop = 'desktop',
   Mobile = 'mobile',
 }
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   // Based on https://www.w3schools.com/howto/howto_css_devices.asp
   mobileBorder: {
     margin: 'auto',
@@ -109,17 +109,17 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props {
-  device:Device;
+  device: Device;
 }
 
-class DeviceContainer extends React.Component<Props&WithStyles<typeof styles, true>> {
+class DeviceContainer extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    switch(this.props.device) {
+    switch (this.props.device) {
       case Device.Desktop:
         return (
-            <div className={this.props.classes.desktopOutside}>
-              <div className={this.props.classes.desktopBorder}>
+          <div className={this.props.classes.desktopOutside}>
+            <div className={this.props.classes.desktopBorder}>
               <div className={this.props.classes.desktopContainer}>
                 <div className={this.props.classes.desktopContent}>
                   {this.props.children}
@@ -127,7 +127,7 @@ class DeviceContainer extends React.Component<Props&WithStyles<typeof styles, tr
               </div>
             </div>
             <div className={this.props.classes.desktopBottom}>
-            <div className={this.props.classes.desktopBottomOpening} />
+              <div className={this.props.classes.desktopBottomOpening} />
             </div>
           </div>
         );

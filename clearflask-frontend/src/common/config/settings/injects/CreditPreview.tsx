@@ -1,9 +1,9 @@
-import { Table, TableBody, TableCell, TableRow, createStyles, withStyles, WithStyles, Theme } from '@material-ui/core';
+import { createStyles, Table, TableBody, TableCell, TableRow, Theme, withStyles, WithStyles } from '@material-ui/core';
 import React, { Component } from 'react';
 import * as ConfigEditor from '../../configEditor';
 import CreditView from '../../CreditView';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   headerCell: {
     color: 'rgba(0, 0, 0, 0.54)',
     borderRight: '1px solid rgba(224, 224, 224, 1)',
@@ -14,11 +14,11 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  editor:ConfigEditor.Editor;
+  editor: ConfigEditor.Editor;
 }
 
 class CreditPreview extends Component<Props> {
-  unsubscribe?:()=>void;
+  unsubscribe?: () => void;
 
   componentDidMount() {
     this.unsubscribe = this.props.editor.subscribe(this.forceUpdate.bind(this));
@@ -29,8 +29,8 @@ class CreditPreview extends Component<Props> {
   }
 
   render() {
-    const headerRow:React.ReactNode[] = [];
-    const dataRow:React.ReactNode[] = [];
+    const headerRow: React.ReactNode[] = [];
+    const dataRow: React.ReactNode[] = [];
     headerRow.push((
       <TableCell key='credit' align='right' className={this.props.classes.headerCell}>
         Preview
@@ -73,9 +73,9 @@ class CreditPreview extends Component<Props> {
     );
   }
 
-  getEdgeCases():Array<number> {
+  getEdgeCases(): Array<number> {
     const credits = this.props.editor.getConfig().credits;
-    if(!credits.formats || credits.formats.length === 0) {
+    if (!credits.formats || credits.formats.length === 0) {
       return [0, 100];
     }
 
@@ -83,12 +83,12 @@ class CreditPreview extends Component<Props> {
     previews.add(0);
     previews.add(100);
     credits.formats.forEach(format => {
-      if(format.greaterOrEqual) {
+      if (format.greaterOrEqual) {
         previews.add(format.greaterOrEqual);
         const belowEdge = format.greaterOrEqual - (credits.increment || 1);
-        if(belowEdge >= 0) previews.add(belowEdge);
+        if (belowEdge >= 0) previews.add(belowEdge);
       }
-      if(format.lessOrEqual) {
+      if (format.lessOrEqual) {
         previews.add(format.lessOrEqual);
         previews.add(format.lessOrEqual + (credits.increment || 1));
       }
@@ -100,7 +100,7 @@ class CreditPreview extends Component<Props> {
         : rangeMid);
     });
 
-    return [...previews].sort((a,b) => a - b);
+    return [...previews].sort((a, b) => a - b);
   }
 }
 

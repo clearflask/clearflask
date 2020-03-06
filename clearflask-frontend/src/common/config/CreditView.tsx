@@ -1,14 +1,14 @@
-import { Table, TableBody, TableCell, createStyles, withStyles, WithStyles, Theme } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core';
+import { red } from '@material-ui/core/colors';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import { red } from '@material-ui/core/colors';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   root: {
     whiteSpace: 'nowrap',
   },
   negative: {
-    color: theme.palette.type === 'light' ? red.A700 : red.A100 ,
+    color: theme.palette.type === 'light' ? red.A700 : red.A100,
   },
   negativeBrackets: {
     opacity: 0.6,
@@ -16,8 +16,8 @@ const styles = (theme:Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  val:number;
-  credits:Client.Credits;
+  val: number;
+  credits: Client.Credits;
 }
 
 class CreditView extends Component<Props> {
@@ -25,27 +25,27 @@ class CreditView extends Component<Props> {
     return this.formatCredit(this.props.val, this.props.credits);
   }
 
-  formatCredit(val, credits:Client.Credits) {
+  formatCredit(val, credits: Client.Credits) {
     const isNegative = val < 0;
     val = Math.abs(val);
-    if(credits.increment === undefined) {
+    if (credits.increment === undefined) {
       val = Math.floor(val);
     } else {
       val = Math.floor(val / credits.increment) * credits.increment;
     }
-    if(credits.formats) {
+    if (credits.formats) {
       for (let i = 0; i < credits.formats.length; i++) {
         const format = credits.formats[i];
-        if(format.greaterOrEqual !== undefined && val < format.greaterOrEqual) {
+        if (format.greaterOrEqual !== undefined && val < format.greaterOrEqual) {
           continue;
         }
-        if(format.lessOrEqual !== undefined && val > format.lessOrEqual) {
+        if (format.lessOrEqual !== undefined && val > format.lessOrEqual) {
           continue;
         }
-        if(format.multiplier !== undefined) {
+        if (format.multiplier !== undefined) {
           val *= format.multiplier
         }
-        if(format.maximumFractionDigits !== undefined) {
+        if (format.maximumFractionDigits !== undefined) {
           const exp = Math.pow(10, format.maximumFractionDigits);
           val = Math.floor(val * exp) / exp;
         }

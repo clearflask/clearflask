@@ -1,36 +1,32 @@
-import React, { Component } from 'react';
-import * as Client from '../../api/client';
-import { Typography, CardActionArea, Grid, Button, IconButton, LinearProgress, Popover, Grow, Collapse, Chip, Fade, TextField, Paper } from '@material-ui/core';
-import { withStyles, Theme, createStyles, WithStyles } from '@material-ui/core/styles';
-import Loader from '../utils/Loader';
-import { connect } from 'react-redux';
-import { ReduxState, Server, Status } from '../../api/server';
-import TimeAgo from 'react-timeago'
+import { Button, CardActionArea, Chip, Fade, IconButton, Popover, TextField, Typography } from '@material-ui/core';
+import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { fade } from '@material-ui/core/styles/colorManipulator';
+import AddIcon from '@material-ui/icons/Add';
+import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
+import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
-import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
-import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded'
-/* Other potential icons: receipt, shopping cart, create, attach money, local atm, money, plus one */
-import FundIcon from '@material-ui/icons/MoneyRounded';
-import Truncate from 'react-truncate';
-import { withRouter, RouteComponentProps, matchPath } from 'react-router';
-import Expander from '../../common/Expander';
-import Delimited from '../utils/Delimited';
-import Comment from './Comment';
-import LogIn from './LogIn';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
-import AddIcon from '@material-ui/icons/Add';
-import { Picker, BaseEmoji } from 'emoji-mart';
-import GradientFade from '../../common/GradientFade';
-import { PopoverPosition, PopoverActions } from '@material-ui/core/Popover';
-import { fade } from '@material-ui/core/styles/colorManipulator';
+import { BaseEmoji, Picker } from 'emoji-mart';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
+import TimeAgo from 'react-timeago';
+import Truncate from 'react-truncate';
+import * as Client from '../../api/client';
+import { ReduxState, Server } from '../../api/server';
+import Expander from '../../common/Expander';
+import GradientFade from '../../common/GradientFade';
+import Delimited from '../utils/Delimited';
+import Loader from '../utils/Loader';
+import CommentList from './CommentList';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
-import Message from './Message';
-import CommentList from './CommentList';
+import LogIn from './LogIn';
 
-const styles = (theme:Theme) => createStyles({
+const styles = (theme: Theme) => createStyles({
   page: {
     minWidth: 300,
   },
@@ -141,7 +137,7 @@ const styles = (theme:Theme) => createStyles({
     display: 'inline-block',
     width: 16,
     height: 16,
-    transform: 'translate(-1px,-1px)',  
+    transform: 'translate(-1px,-1px)',
     wordBreak: 'keep-all',
     fontFamily: '"Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI", "Apple Color Emoji", "Twemoji Mozilla", "Noto Color Emoji", "EmojiOne Color", "Android Emoji"',
   },
@@ -194,24 +190,24 @@ const styles = (theme:Theme) => createStyles({
     left: -6,
   },
   expressionPicker: {
-    '& .emoji-mart' : {
+    '& .emoji-mart': {
       color: theme.palette.text.primary + '!important',
     },
-    '& .emoji-mart-emoji' : {
-      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)`+ '!important') : undefined,
+    '& .emoji-mart-emoji': {
+      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)` + '!important') : undefined,
     },
-    '& .emoji-mart-anchor-icon svg' : {
+    '& .emoji-mart-anchor-icon svg': {
       fill: theme.palette.text.hint + '!important',
     },
-    '& .emoji-mart-search input::placeholder' : {
+    '& .emoji-mart-search input::placeholder': {
       color: theme.palette.text.hint + '!important',
     },
-    '& .emoji-mart-search input' : {
+    '& .emoji-mart-search input': {
       background: 'inherit' + '!important',
       border: '0px' + '!important',
       color: theme.palette.text.primary + '!important',
     },
-    '& .emoji-mart-category-label span' : {
+    '& .emoji-mart-category-label span': {
       background: fade(theme.palette.background.paper, .95) + '!important',
     },
   },
@@ -224,7 +220,7 @@ const styles = (theme:Theme) => createStyles({
     flexGrow: 1,
   },
   bottomBar: {
-    margin:  theme.spacing(1),
+    margin: theme.spacing(1),
     marginTop: `-${theme.spacing(0.5)}px`,
     display: 'flex',
     alignItems: 'center',
@@ -244,69 +240,69 @@ const styles = (theme:Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   funding: {
-    margin:  theme.spacing(1),
+    margin: theme.spacing(1),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
 });
 
-export type PostVariant = 'list'|'page';
+export type PostVariant = 'list' | 'page';
 
 interface Props {
-  server:Server;
-  idea?:Client.Idea;
-  variant:PostVariant;
+  server: Server;
+  idea?: Client.Idea;
+  variant: PostVariant;
   /**
    * If true, when post is clicked,
    * variant is switched from 'list' to 'page',
    * url is appended with /post/<postId>
    * and post is expanded to full screen.
    */
-  expandable?:boolean;
-  display?:Client.PostDisplay;
-  onClickTag?:(tagId:string)=>void;
-  onClickCategory?:(categoryId:string)=>void;
-  onClickStatus?:(statusId:string)=>void;
+  expandable?: boolean;
+  display?: Client.PostDisplay;
+  onClickTag?: (tagId: string) => void;
+  onClickCategory?: (categoryId: string) => void;
+  onClickStatus?: (statusId: string) => void;
 }
 
 interface ConnectProps {
-  configver?:string;
-  projectId:string;
-  category?:Client.Category;
-  credits?:Client.Credits;
-  maxFundAmountSeen:number;
-  vote?:Client.VoteOption;
-  expression?:Array<string>;
-  fundAmount?:number;
-  loggedInUser?:Client.User;
-  updateVote: (voteUpdate:Partial<Client.VoteUpdate>)=>Promise<Client.VoteUpdateResponse>;
+  configver?: string;
+  projectId: string;
+  category?: Client.Category;
+  credits?: Client.Credits;
+  maxFundAmountSeen: number;
+  vote?: Client.VoteOption;
+  expression?: Array<string>;
+  fundAmount?: number;
+  loggedInUser?: Client.User;
+  updateVote: (voteUpdate: Partial<Client.VoteUpdate>) => Promise<Client.VoteUpdateResponse>;
 }
 
 
 interface State {
-  fundingExpanded?:boolean;
-  fundingExpandedAnchor?:PopoverPosition&{width:number};
-  expressionExpanded?:boolean;
-  expressionExpandedAnchor?:PopoverPosition;
-  logInOpen?:boolean;
-  isSubmittingUpvote?:boolean;
-  isSubmittingDownvote?:boolean;
-  isSubmittingFund?:boolean;
-  isSubmittingExpression?:boolean;
-  newCommentInput?:string;
+  fundingExpanded?: boolean;
+  fundingExpandedAnchor?: PopoverPosition & { width: number };
+  expressionExpanded?: boolean;
+  expressionExpandedAnchor?: PopoverPosition;
+  logInOpen?: boolean;
+  isSubmittingUpvote?: boolean;
+  isSubmittingDownvote?: boolean;
+  isSubmittingFund?: boolean;
+  isSubmittingExpression?: boolean;
+  newCommentInput?: string;
 }
 
-export const isExpanded = ():boolean => !!Post.expandedPath;
+export const isExpanded = (): boolean => !!Post.expandedPath;
 
-class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<typeof styles, true>&WithSnackbarProps, State> {
+class Post extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   /**
    * expandedPath allows a page transition from a list of posts into a
    * single post without having to render a new page.
    */
-  static expandedPath:string|undefined;
-  expandedPath:string|undefined;
-  onLoggedIn?:()=>void;
+  static expandedPath: string | undefined;
+  expandedPath: string | undefined;
+  onLoggedIn?: () => void;
 
   constructor(props) {
     super(props);
@@ -314,22 +310,22 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
   }
 
   componentWillUnmount() {
-    if(Post.expandedPath === this.expandedPath) {
+    if (Post.expandedPath === this.expandedPath) {
       Post.expandedPath = undefined;
     }
   }
 
   render() {
-    if(!this.props.idea) return (
+    if (!this.props.idea) return (
       <Loader loaded={false}>
       </Loader>
     );
 
     var forceExpand = false;
-    if(this.expandedPath) {
-      if(this.expandedPath !== Post.expandedPath) {
+    if (this.expandedPath) {
+      if (this.expandedPath !== Post.expandedPath) {
         this.expandedPath = undefined;
-      } else if(this.expandedPath !== this.props.location.pathname) {
+      } else if (this.expandedPath !== this.props.location.pathname) {
         this.expandedPath = undefined;
         Post.expandedPath = undefined;
       } else {
@@ -341,55 +337,55 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const voting = this.renderVoting(variant);
     return (
       <Loader loaded={!!this.props.idea}>
-      <Expander expand={forceExpand}>
-        <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-        }}>
-          {voting && (
-            <div className={this.props.classes.leftColumn}>
-              {voting}
-            </div>
-          )}
-          <div className={this.props.classes.rightColumn} style={{
+        <Expander expand={forceExpand}>
+          <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'flex-start',
           }}>
-            {this.renderFunding(variant)}
-            <div className={this.props.classes.titleAndDescriptionOuter}>
-              <CardActionArea
-                className={this.props.classes.titleAndDescription}
-                disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
-                onClick={this.onExpand.bind(this)}
-                classes={{
-                  focusHighlight: this.props.classes.titleAndDescriptionCard,
-                }}
-              >
-                {this.renderTitle(variant)}
-                {this.renderDescription(variant)}
-                {this.renderResponse(variant)}
-              </CardActionArea>
+            {voting && (
+              <div className={this.props.classes.leftColumn}>
+                {voting}
+              </div>
+            )}
+            <div className={this.props.classes.rightColumn} style={{
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              {this.renderFunding(variant)}
+              <div className={this.props.classes.titleAndDescriptionOuter}>
+                <CardActionArea
+                  className={this.props.classes.titleAndDescription}
+                  disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
+                  onClick={this.onExpand.bind(this)}
+                  classes={{
+                    focusHighlight: this.props.classes.titleAndDescriptionCard,
+                  }}
+                >
+                  {this.renderTitle(variant)}
+                  {this.renderDescription(variant)}
+                  {this.renderResponse(variant)}
+                </CardActionArea>
+              </div>
+              {this.renderBottomBar(variant)}
+              {this.renderComments(variant)}
             </div>
-            {this.renderBottomBar(variant)}
-            {this.renderComments(variant)}
           </div>
-        </div>
-        <LogIn
-          server={this.props.server}
-          open={this.state.logInOpen}
-          onClose={() => this.setState({logInOpen: false})}
-          onLoggedInAndClose={() => {
-            this.setState({logInOpen: false});
-            this.onLoggedIn && this.onLoggedIn();
-            this.onLoggedIn = undefined;
-          }}
-        />
-      </Expander>
+          <LogIn
+            server={this.props.server}
+            open={this.state.logInOpen}
+            onClose={() => this.setState({ logInOpen: false })}
+            onLoggedInAndClose={() => {
+              this.setState({ logInOpen: false });
+              this.onLoggedIn && this.onLoggedIn();
+              this.onLoggedIn = undefined;
+            }}
+          />
+        </Expander>
       </Loader>
     );
   }
 
-  renderBottomBar(variant:PostVariant) {
+  renderBottomBar(variant: PostVariant) {
     const leftSide = [
       this.renderExpression(variant),
       this.renderCommentCount(variant),
@@ -402,7 +398,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
       ...(this.renderTags(variant) || []),
     ].filter(i => !!i);
 
-    if(leftSide.length + rightSide.length === 0) return null;
+    if (leftSide.length + rightSide.length === 0) return null;
 
     return (
       <div className={this.props.classes.bottomBar}>
@@ -421,8 +417,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderAuthor(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showAuthor === false
+  renderAuthor(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showAuthor === false
       || !this.props.idea) return null;
 
     return (
@@ -432,8 +428,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderCreatedDatetime(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showCreated === false
+  renderCreatedDatetime(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showCreated === false
       || !this.props.idea) return null;
 
     return (
@@ -443,8 +439,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderCommentCount(variant:PostVariant) {
-    if(this.props.display && this.props.display.showCommentCount === false
+  renderCommentCount(variant: PostVariant) {
+    if (this.props.display && this.props.display.showCommentCount === false
       || variant === 'page'
       || !this.props.idea
       || !this.props.category
@@ -459,13 +455,13 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderComments(variant:PostVariant) {
-    if(variant !== 'page'
+  renderComments(variant: PostVariant) {
+    if (variant !== 'page'
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.comment) return null;
 
-      const commentsAllowed:boolean = !this.props.idea.statusId
+    const commentsAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableComments !== true;
 
     const addCommentButton = commentsAllowed && (
@@ -490,15 +486,15 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                   content: this.state.newCommentInput!,
                 },
               })
-              .then(comment => {
-                this.setState({newCommentInput: undefined});
-              });
+                .then(comment => {
+                  this.setState({ newCommentInput: undefined });
+                });
             };
-            if(this.props.loggedInUser) {
+            if (this.props.loggedInUser) {
               onNewCommentClick();
             } else {
               this.onLoggedIn = onNewCommentClick;
-              this.setState({logInOpen: true});
+              this.setState({ logInOpen: true });
             }
           }}
           style={{
@@ -527,72 +523,72 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderStatus(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showStatus === false
+  renderStatus(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showStatus === false
       || !this.props.idea
       || !this.props.idea.statusId
       || !this.props.category) return null;
 
     const status = this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId);
-    if(!status) return null;
+    if (!status) return null;
 
     return (
       <Button key='status' variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
         onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
-        <Typography variant='caption' style={{color: status.color}}>
+        <Typography variant='caption' style={{ color: status.color }}>
           {status.name}
         </Typography>
       </Button>
     );
   }
 
-  renderTags(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showTags === false
+  renderTags(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showTags === false
       || !this.props.idea
       || this.props.idea.tagIds.length === 0
       || !this.props.category) return null;
 
     return this.props.idea.tagIds
-    .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
-    .filter(tag => !!tag)
-    .map(tag => (
-      <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
-        onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
-        <Typography variant='caption' style={{color: tag!.color}}>
-          {tag!.name}
-        </Typography>
-      </Button>
-    ));
+      .map(tagId => this.props.category!.tagging.tags.find(t => t.tagId === tagId))
+      .filter(tag => !!tag)
+      .map(tag => (
+        <Button key={'tag' + tag!.tagId} variant="text" className={this.props.classes.button} disabled={!this.props.onClickTag || variant === 'page'}
+          onClick={e => this.props.onClickTag && this.props.onClickTag(tag!.tagId)}>
+          <Typography variant='caption' style={{ color: tag!.color }}>
+            {tag!.name}
+          </Typography>
+        </Button>
+      ));
   }
 
-  renderCategory(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showCategoryName === false
+  renderCategory(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showCategoryName === false
       || !this.props.idea
       || !this.props.category) return null;
-      
+
     return (
       <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant === 'page'}
         onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
-        <Typography variant='caption' style={{color: this.props.category.color}}>
+        <Typography variant='caption' style={{ color: this.props.category.color }}>
           {this.props.category.name}
         </Typography>
       </Button>
     );
   }
 
-  renderVoting(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showVoting === false
+  renderVoting(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showVoting === false
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.vote) return null;
-    const votingAllowed:boolean = !this.props.idea.statusId
+    const votingAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableVoting !== true;
-    if(!votingAllowed
+    if (!votingAllowed
       && !this.props.idea.voteValue
       && !this.props.idea.votersCount) return null;
 
-    const upvoted:boolean = (this.props.vote === Client.VoteOption.Upvote) !== !!this.state.isSubmittingUpvote;
-    const downvoted:boolean = (this.props.vote === Client.VoteOption.Downvote) !== !!this.state.isSubmittingDownvote;
+    const upvoted: boolean = (this.props.vote === Client.VoteOption.Upvote) !== !!this.state.isSubmittingUpvote;
+    const downvoted: boolean = (this.props.vote === Client.VoteOption.Downvote) !== !!this.state.isSubmittingDownvote;
 
     return (
       <div style={{
@@ -606,18 +602,20 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           disabled={!votingAllowed}
           onClick={votingAllowed ? e => {
             const upvote = () => {
-              if(this.state.isSubmittingUpvote) return;
-              this.setState({isSubmittingUpvote: true});
-              this.props.updateVote({vote: (this.props.vote === Client.VoteOption.Upvote)
-                ? Client.VoteOption.None : Client.VoteOption.Upvote})
-                .then(()=>this.setState({isSubmittingUpvote: false}),
-                  ()=>this.setState({isSubmittingUpvote: false}));
+              if (this.state.isSubmittingUpvote) return;
+              this.setState({ isSubmittingUpvote: true });
+              this.props.updateVote({
+                vote: (this.props.vote === Client.VoteOption.Upvote)
+                  ? Client.VoteOption.None : Client.VoteOption.Upvote
+              })
+                .then(() => this.setState({ isSubmittingUpvote: false }),
+                  () => this.setState({ isSubmittingUpvote: false }));
             };
-            if(this.props.loggedInUser) {
+            if (this.props.loggedInUser) {
               upvote();
             } else {
               this.onLoggedIn = upvote;
-              this.setState({logInOpen: true});
+              this.setState({ logInOpen: true });
             }
           } : undefined}>
           <UpvoteIcon fontSize='inherit' />
@@ -625,26 +623,28 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         <Typography variant='overline' className={this.props.classes.voteCount}>
           {this.props.idea.voteValue || 0}
         </Typography>
-        
+
         {this.props.category.support.vote.enableDownvotes && (
           <IconButton
             color={downvoted ? 'primary' : undefined}
             className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''}`}
             disabled={!votingAllowed}
             onClick={votingAllowed ? e => {
-              if(this.state.isSubmittingDownvote) return;
+              if (this.state.isSubmittingDownvote) return;
               const downvote = () => {
-                this.setState({isSubmittingDownvote: true});
-                this.props.updateVote({vote: (this.props.vote === Client.VoteOption.Downvote)
-                  ? Client.VoteOption.None : Client.VoteOption.Downvote})
-                  .then(()=>this.setState({isSubmittingDownvote: false}),
-                    ()=>this.setState({isSubmittingDownvote: false}));
+                this.setState({ isSubmittingDownvote: true });
+                this.props.updateVote({
+                  vote: (this.props.vote === Client.VoteOption.Downvote)
+                    ? Client.VoteOption.None : Client.VoteOption.Downvote
+                })
+                  .then(() => this.setState({ isSubmittingDownvote: false }),
+                    () => this.setState({ isSubmittingDownvote: false }));
               };
-              if(this.props.loggedInUser) {
+              if (this.props.loggedInUser) {
                 downvote();
               } else {
                 this.onLoggedIn = downvote;
-                this.setState({logInOpen: true});
+                this.setState({ logInOpen: true });
               }
             } : undefined}>
             <DownvoteIcon fontSize='inherit' />
@@ -654,17 +654,17 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  fundingBarRef:React.RefObject<HTMLDivElement> = React.createRef();
-  fundingPopoverActions?:PopoverActions;
-  renderFunding(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showFunding === false
+  fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
+  fundingPopoverActions?: PopoverActions;
+  renderFunding(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
       || !this.props.credits
       || !this.props.category
       || !this.props.category.support.fund) return null;
     const fundingAllowed = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableFunding !== true;
-    if(!fundingAllowed
+    if (!fundingAllowed
       && !this.props.idea.fundGoal
       && !this.props.idea.funded
       && !this.props.idea.fundersCount) return null;
@@ -686,15 +686,16 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
               fundingExpandedAnchor: {
                 width: this.fundingBarRef.current!.getBoundingClientRect().width,
                 top: this.fundingBarRef.current!.getBoundingClientRect().top - padding,
-                left: this.fundingBarRef.current!.getBoundingClientRect().left - padding}
-              },
+                left: this.fundingBarRef.current!.getBoundingClientRect().left - padding
+              }
+            },
             )
           };
-          if(this.props.loggedInUser) {
+          if (this.props.loggedInUser) {
             onLoggedInClick();
           } else {
             this.onLoggedIn = onLoggedInClick;
-            this.setState({logInOpen: true});
+            this.setState({ logInOpen: true });
           }
         })}
       >
@@ -704,10 +705,10 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           color={iFundedThis ? 'primary' : undefined}
         >
           {fundingAllowed
-            ? <span style={{display: 'flex', alignItems: 'center'}}>
-                <AddIcon fontSize='inherit' />
-                {iFundedThis ? 'Adjust funding' : 'Fund this'}
-              </span>
+            ? <span style={{ display: 'flex', alignItems: 'center' }}>
+              <AddIcon fontSize='inherit' />
+              {iFundedThis ? 'Adjust funding' : 'Fund this'}
+            </span>
             : 'Funding is closed'}
         </Typography>
       </Button>
@@ -720,7 +721,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           idea={this.props.idea}
           credits={this.props.credits}
           maxFundAmountSeen={this.props.maxFundAmountSeen}
-          style={{alignSelf: 'stretch'}}
+          style={{ alignSelf: 'stretch' }}
           overrideRight={fundThisButton}
         />
         {fundingAllowed && (
@@ -730,7 +731,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
             open={!!this.state.fundingExpanded}
             anchorReference='anchorPosition'
             anchorPosition={this.state.fundingExpandedAnchor}
-            onClose={() => this.setState({fundingExpanded: false})}
+            onClose={() => this.setState({ fundingExpanded: false })}
             anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
             transformOrigin={{ vertical: 'top', horizontal: 'left', }}
             marginThreshold={2}
@@ -757,7 +758,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderExpressionEmoji(key:string, display:string|React.ReactNode, hasExpressed:boolean, onLoggedInClick:((currentTarget:HTMLElement)=>void)|undefined = undefined, count:number = 0) {
+  renderExpressionEmoji(key: string, display: string | React.ReactNode, hasExpressed: boolean, onLoggedInClick: ((currentTarget: HTMLElement) => void) | undefined = undefined, count: number = 0) {
     return (
       <Chip
         clickable={!!onLoggedInClick}
@@ -766,11 +767,11 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         color={hasExpressed ? 'primary' : 'default'}
         onClick={onLoggedInClick ? e => {
           const currentTarget = e.currentTarget;
-          if(this.props.loggedInUser) {
+          if (this.props.loggedInUser) {
             onLoggedInClick && onLoggedInClick(currentTarget);
           } else {
             this.onLoggedIn = () => onLoggedInClick && onLoggedInClick(currentTarget);
-            this.setState({logInOpen: true});
+            this.setState({ logInOpen: true });
           }
         } : undefined}
         classes={{
@@ -778,7 +779,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           root: `${this.props.classes.expressionOuter} ${hasExpressed ? this.props.classes.expressionHasExpressed : this.props.classes.expressionNotExpressed}`,
         }}
         label={(
-          <div style={{display: 'flex', alignItems: 'center'}}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <span className={this.props.classes.expression}>{display}</span>
             {count > 0 && (<Typography variant='caption' color={hasExpressed ? 'primary' : undefined}>&nbsp;{count}</Typography>)}
           </div>
@@ -787,14 +788,14 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderExpression(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showExpression === false
+  renderExpression(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showExpression === false
       || !this.props.idea
       || !this.props.category
       || !this.props.category.support.express) return null;
-    const expressionAllowed:boolean = !this.props.idea.statusId
+    const expressionAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableExpressions !== true;
-    if(!expressionAllowed
+    if (!expressionAllowed
       && (!this.props.idea.expressions || Object.keys(this.props.idea.expressions).length === 0)
       && !this.props.idea.expressionsValue) return null;
 
@@ -802,40 +803,40 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
     const reachedLimitPerIdea = limitEmojiPerIdea && (!!this.props.expression && Object.keys(this.props.expression).length || 0) > 0;
 
-    const getHasExpressed = (display:string):boolean => {
+    const getHasExpressed = (display: string): boolean => {
       return this.props.expression
         && this.props.expression.includes(display)
         || false;
-    };  
-    const clickExpression = (display:string) => {
-      if(!expressionAllowed) return;
-      var expressionDiff:Client.VoteUpdateExpressions|undefined = undefined;
+    };
+    const clickExpression = (display: string) => {
+      if (!expressionAllowed) return;
+      var expressionDiff: Client.VoteUpdateExpressions | undefined = undefined;
       const hasExpressed = getHasExpressed(display);
-      if(limitEmojiPerIdea) {
-        if(hasExpressed) {
-          expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Unset, expression: display};
+      if (limitEmojiPerIdea) {
+        if (hasExpressed) {
+          expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Unset, expression: display };
         } else {
-          expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Set, expression: display};
+          expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Set, expression: display };
         }
-      } else if(!hasExpressed && reachedLimitPerIdea) {
+      } else if (!hasExpressed && reachedLimitPerIdea) {
         this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'warning', preventDuplicate: true });
         return;
-      } else if(hasExpressed) {
-        expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Remove, expression: display};
+      } else if (hasExpressed) {
+        expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Remove, expression: display };
       } else {
-        expressionDiff = {action: Client.VoteUpdateExpressionsActionEnum.Add, expression: display};
+        expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Add, expression: display };
       }
       this.props.updateVote({ expressions: expressionDiff })
-    };  
+    };
 
     const limitEmojiSet = this.props.category.support.express.limitEmojiSet
       ? new Set<string>(this.props.category.support.express.limitEmojiSet.map(e => e.display))
       : undefined;
     const unusedEmoji = new Set<string>(limitEmojiSet || []);
-    const expressionsExpressed:React.ReactNode[] = [];
+    const expressionsExpressed: React.ReactNode[] = [];
     this.props.idea.expressions && Object.entries(this.props.idea.expressions).forEach(([expression, count]) => {
-      if(limitEmojiSet) {
-        if(!limitEmojiSet.has(expression)) {
+      if (limitEmojiSet) {
+        if (!limitEmojiSet.has(expression)) {
           return; // expression not in the list of approved expressions
         }
         unusedEmoji.delete(expression)
@@ -847,7 +848,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
         expressionAllowed ? () => clickExpression(expression) : undefined,
         count));
     });
-    const expressionsUnused:React.ReactNode[] = [...unusedEmoji].map(expressionDisplay =>
+    const expressionsUnused: React.ReactNode[] = [...unusedEmoji].map(expressionDisplay =>
       this.renderExpressionEmoji(
         expressionDisplay,
         expressionDisplay,
@@ -874,21 +875,21 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
 
     const maxItems = 3;
-    const summaryItems:React.ReactNode[] = expressionsExpressed.length > 0 ? expressionsExpressed.slice(0, Math.min(maxItems, expressionsExpressed.length)) : [];
+    const summaryItems: React.ReactNode[] = expressionsExpressed.length > 0 ? expressionsExpressed.slice(0, Math.min(maxItems, expressionsExpressed.length)) : [];
 
-    const showMoreButton:boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
+    const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
       <div key='expression' style={{
         position: 'relative',
       }}>
-        <div style={{display: 'flex'}}>
+        <div style={{ display: 'flex' }}>
           <GradientFade
             disabled={summaryItems.length < maxItems}
             start={'50%'}
             opacity={0.3}
             style={{
-              display: 'flex', 
+              display: 'flex',
               flexWrap: 'wrap',
             }}
           >
@@ -909,8 +910,9 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
                 expressionExpanded: true,
                 expressionExpandedAnchor: {
                   top: targetElement.getBoundingClientRect().top - padding,
-                  left: targetElement.getBoundingClientRect().left - padding}
-                },
+                  left: targetElement.getBoundingClientRect().left - padding
+                }
+              },
               )
             }
           )}
@@ -921,7 +923,7 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
           open={!!this.state.expressionExpanded}
           anchorReference='anchorPosition'
           anchorPosition={this.state.expressionExpandedAnchor}
-          onClose={() => this.setState({expressionExpanded: false})}
+          onClose={() => this.setState({ expressionExpanded: false })}
           anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
           transformOrigin={{ vertical: 'top', horizontal: 'left', }}
           marginThreshold={2}
@@ -946,8 +948,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderTitle(variant:PostVariant) {
-    if(!this.props.idea
+  renderTitle(variant: PostVariant) {
+    if (!this.props.idea
       || !this.props.idea.title) return null;
     return (
       <Typography variant='subtitle1' component={'span'} className={this.props.classes.title}>
@@ -958,8 +960,8 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderDescription(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showDescription === false
+  renderDescription(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showDescription === false
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
@@ -971,27 +973,27 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
     );
   }
 
-  renderResponse(variant:PostVariant) {
-    if(variant !== 'page' && this.props.display && this.props.display.showResponse === false
+  renderResponse(variant: PostVariant) {
+    if (variant !== 'page' && this.props.display && this.props.display.showResponse === false
       || !this.props.idea
       || !this.props.idea.response) return null;
     return (
       <div className={this.props.classes.responseContainer}>
         <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
           Reply:&nbsp;&nbsp;
-        </Typography>  
+        </Typography>
         <Typography variant='body1' component={'span'}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
             : this.props.idea.response}
-        </Typography>  
+        </Typography>
       </div>
     );
   }
 
   onExpand() {
-    if(!this.props.expandable || !this.props.idea) return;
-    if(this.props.theme.disableTransitions) {
+    if (!this.props.expandable || !this.props.idea) return;
+    if (this.props.theme.disableTransitions) {
       this.props.history.push(`/${this.props.server.getProjectId()}/post/${this.props.idea.ideaId}`);
     } else {
       this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;
@@ -1001,15 +1003,15 @@ class Post extends Component<Props&ConnectProps&RouteComponentProps&WithStyles<t
   }
 }
 
-export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownProps:Props):ConnectProps => {
-  var vote:Client.VoteOption|undefined;
-  var expression:Array<string>|undefined;
-  var fundAmount:number|undefined;
-  if(ownProps.idea) {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  var vote: Client.VoteOption | undefined;
+  var expression: Array<string> | undefined;
+  var fundAmount: number | undefined;
+  if (ownProps.idea) {
     const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
-    if(voteStatus === undefined) {
+    if (voteStatus === undefined) {
       // Don't refresh votes if inside a panel which will refresh votes for us
-      if(ownProps.variant === 'page') {
+      if (ownProps.variant === 'page') {
         ownProps.server.dispatch().voteGetOwn({
           projectId: state.projectId,
           ideaIds: [ownProps.idea.ideaId],
@@ -1035,7 +1037,7 @@ export default connect<ConnectProps,{},Props,ReduxState>((state:ReduxState, ownP
       : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (voteUpdate:Partial<Client.VoteUpdate>):Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
+    updateVote: (voteUpdate: Partial<Client.VoteUpdate>): Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
       projectId: state.projectId,
       voteUpdate: {
         ideaId: ownProps.idea!.ideaId,
