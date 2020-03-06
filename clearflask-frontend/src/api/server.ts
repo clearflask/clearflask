@@ -101,7 +101,7 @@ export class Server {
   }
 
   subscribeToChanges(editor: ConfigEditor.Editor, debounceWait: number | undefined = undefined) {
-    if (debounceWait == undefined) {
+    if (debounceWait === undefined) {
       editor.subscribe(() => this.overrideConfig(editor.getConfig()));
     } else {
       const overrideConfigDebounced = debounce(this.overrideConfig.bind(this), debounceWait);
@@ -464,7 +464,6 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Cl
         },
       };
       // Then put all the comments in the right places
-      var newByIdeaIdOrParentCommentId = newState.byIdeaIdOrParentCommentId;
       action.payload.results.forEach(comment => newState.byIdeaIdOrParentCommentId = {
         ...newState.byIdeaIdOrParentCommentId,
         [comment.parentCommentId || comment.ideaId]: {

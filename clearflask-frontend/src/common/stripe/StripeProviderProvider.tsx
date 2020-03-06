@@ -30,9 +30,9 @@ export default class StripeProviderProvider extends React.Component<Props, State
     } else if (StripeProviderProvider.stripeScriptElement) {
       StripeProviderProvider.stripeScriptElement.addEventListener('load', onWindowStripeReady);
     } else {
-      this.state = {
+      this.setState({
         stripe: undefined,
-      };
+      });
       StripeProviderProvider.stripeScriptElement = document.createElement("script");
       StripeProviderProvider.stripeScriptElement.src = 'https://js.stripe.com/v3/';
       if (this.props.onError) StripeProviderProvider.stripeScriptElement.onerror = this.props.onError;

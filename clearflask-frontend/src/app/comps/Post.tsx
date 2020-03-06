@@ -194,7 +194,7 @@ const styles = (theme: Theme) => createStyles({
       color: theme.palette.text.primary + '!important',
     },
     '& .emoji-mart-emoji': {
-      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)` + '!important') : undefined,
+      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)!important`) : undefined,
     },
     '& .emoji-mart-anchor-icon svg': {
       fill: theme.palette.text.hint + '!important',
@@ -203,8 +203,8 @@ const styles = (theme: Theme) => createStyles({
       color: theme.palette.text.hint + '!important',
     },
     '& .emoji-mart-search input': {
-      background: 'inherit' + '!important',
-      border: '0px' + '!important',
+      background: 'inherit!important',
+      border: '0px!important',
       color: theme.palette.text.primary + '!important',
     },
     '& .emoji-mart-category-label span': {

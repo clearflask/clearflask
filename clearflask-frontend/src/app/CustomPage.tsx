@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
-import { getSearchKey, ReduxState as ReduxState, Server, Status } from '../api/server';
+import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import { contentScrollApplyStyles } from '../common/ContentScroll';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';

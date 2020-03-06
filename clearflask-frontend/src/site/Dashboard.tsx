@@ -139,7 +139,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           <DemoApp
             key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
             server={this.createProject.server}
-            forcePath={forcePath}
           />
         );
         break;

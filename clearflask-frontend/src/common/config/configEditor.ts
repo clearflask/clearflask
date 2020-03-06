@@ -290,7 +290,7 @@ export enum StringFormat {
  * Ex: ['tags', 3, 'color']
  */
 export type Path = (string | number)[];
-export const parsePath = (pathStr: string | undefined, delimiter: string | RegExp = /[.\/]/): Path => {
+export const parsePath = (pathStr: string | undefined, delimiter: string | RegExp = /[./]/): Path => {
   if (!pathStr) {
     return [];
   }
@@ -554,7 +554,7 @@ export class EditorImpl implements Editor {
   getEnumItems(propSchema: any): EnumItem[] {
     const xProp = propSchema[OpenApiTags.Prop] as xCfProp;
     if (!propSchema.enum.length || propSchema.enum.length === 0) throw Error(`Expecting enum to contain more than one value`);
-    if (xProp && xProp.enumNames && xProp.enumNames.length != propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
+    if (xProp && xProp.enumNames && xProp.enumNames.length !== propSchema.enum.length) throw Error(`Expecting 'enumNames' length to match enum values`);
     const items: EnumItem[] = new Array(propSchema.enum.length);
     for (let i = 0; i < propSchema.enum.length; i++) {
       items[i] = {
@@ -1119,7 +1119,7 @@ export class EditorImpl implements Editor {
           if (base.defaultValue && base.defaultValue.includes('<>')) {
             setDefaultStringFun = (): void => {
               setStringFun(base.defaultValue
-                .replace(/\<\>/g, path[path.length - 2]));
+                .replace(/<>/g, path[path.length - 2]));
             }
           }
           if (xProp && xProp.slugAutoComplete !== undefined) {

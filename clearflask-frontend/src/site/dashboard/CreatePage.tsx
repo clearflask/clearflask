@@ -227,14 +227,14 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoWebsite || ''}
                   onChange={e => {
-                    const nameMatch = e.target.value.match(/^(https?:\/\/)?([^\.\/]+).*$/);
+                    const nameMatch = e.target.value.match(/^(https?:\/\/)?([^./]+).*$/);
                     var slug: string | undefined = undefined;
                     var name: string | undefined = undefined;
                     if (nameMatch && nameMatch[2]) {
                       slug = nameMatch[2].toLowerCase();
                       name = slug.charAt(0).toUpperCase() + slug.slice(1);
                     }
-                    const logoMatch = e.target.value.match(/^(https?:\/\/)?([^\/]+).*$/);
+                    const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
                     var logo: string | undefined = undefined;
                     if (logoMatch && logoMatch[2]) {
                       logo = `${logoMatch[1] || 'https://'}${logoMatch[2]}/favicon.ico`;

@@ -1,4 +1,28 @@
 
+export enum Status {
+  Disconnected = 'disconnected',
+  Available = 'available',
+  Denied = 'denied',
+  Subscribed = 'subscribed',
+}
+
+export enum Device {
+  None = 'none',
+  Ios = 'ios',
+  Android = 'android',
+}
+
+export interface MobileNotificationSubscription {
+  type: 'success';
+  device: Device;
+  token: string;
+}
+
+export interface MobileNotificationError {
+  type: 'error';
+  userFacingMsg?: string,
+}
+
 export default class MobileNotification {
   static instance: MobileNotification;
   readonly isMock: boolean;
@@ -51,28 +75,4 @@ export default class MobileNotification {
   mockSetDevice(device: Device) { if (this.isMock) this.device = device };
 
   mockSetAskPermission(mockAskPermission?: () => Promise<MobileNotificationSubscription | MobileNotificationError>) { if (this.isMock) this.mockAskPermission = mockAskPermission };
-}
-
-export enum Status {
-  Disconnected = 'disconnected',
-  Available = 'available',
-  Denied = 'denied',
-  Subscribed = 'subscribed',
-}
-
-export enum Device {
-  None = 'none',
-  Ios = 'ios',
-  Android = 'android',
-}
-
-export interface MobileNotificationSubscription {
-  type: 'success';
-  device: Device;
-  token: string;
-}
-
-export interface MobileNotificationError {
-  type: 'error';
-  userFacingMsg?: string,
 }

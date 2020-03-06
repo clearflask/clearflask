@@ -159,7 +159,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
       <div className={this.props.classes.logo}>
         {this.props.config.logoUrl && (
-          <img src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
+          <img alt='logo' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
         )}
         {name}
       </div>

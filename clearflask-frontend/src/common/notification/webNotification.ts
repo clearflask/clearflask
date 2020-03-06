@@ -1,5 +1,22 @@
 import { detectEnv, Environment } from "../util/detectEnv";
 
+export enum Status {
+  Unsupported = 'unsupported',
+  Available = 'available',
+  Denied = 'denied',
+  Granted = 'granted',
+}
+
+export interface WebNotificationSubscription {
+  type: 'success';
+  token: string;
+}
+
+export interface WebNotificationError {
+  type: 'error';
+  userFacingMsg?: string;
+}
+
 // Also set in config-aws.cfg
 const KEY_PUBLIC = 'BP7Bm7jiQKOFKJTO2LEDVidsA_OtlHfsIeFZLZjc015R8iARXNX5QL5yWd3XGxmRkhII5kQrv97IjMQHpVJDO2U=';
 const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';
@@ -123,7 +140,7 @@ export default class WebNotification {
   _urlB64ToUint8Array(base64String: string) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
+      .replace(/-/g, '+')
       .replace(/_/g, '/');
 
     const rawData = window.atob(base64);
@@ -134,21 +151,4 @@ export default class WebNotification {
     }
     return outputArray;
   }
-}
-
-export enum Status {
-  Unsupported = 'unsupported',
-  Available = 'available',
-  Denied = 'denied',
-  Granted = 'granted',
-}
-
-export interface WebNotificationSubscription {
-  type: 'success';
-  token: string;
-}
-
-export interface WebNotificationError {
-  type: 'error';
-  userFacingMsg?: string;
 }

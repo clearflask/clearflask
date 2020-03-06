@@ -88,6 +88,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           <Container maxWidth='md'>
             {this.renderTitle()}
             <img
+              alt='logo'
               style={{
                 position: 'absolute',
                 width: '300px',

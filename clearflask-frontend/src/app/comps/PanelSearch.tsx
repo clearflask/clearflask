@@ -288,7 +288,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     if (!this.isFilterControllable(FilterType.Search)) {
       const label: Label = this.getLabel(FilterType.Search, this.props.explorer.search.searchText!, this.props.explorer.search.searchText!);
       controls.permanent.push(label);
-    } else if (this.props.search && this.props.search.searchText != undefined) {
+    } else if (this.props.search && this.props.search.searchText !== undefined) {
       const label: Label = this.getLabel(FilterType.Search, this.props.search.searchText, this.props.search.searchText);
       controls.options.push(label);
       controls.values.push(label);

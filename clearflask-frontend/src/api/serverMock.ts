@@ -406,9 +406,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     const votes = this.getProject(request.projectId).votes.filter(vote => vote.voterUserId === loggedInUser.userId && request.ideaIds.includes(vote.ideaId));
     return this.returnLater({
-      votesByIdeaId: votes.filter(vote => vote.vote).reduce((map, vote) => (map[vote.ideaId] = vote.vote, map), {}),
-      expressionByIdeaId: votes.filter(vote => vote.expression).reduce((map, vote) => (map[vote.ideaId] = vote.expression, map), {}),
-      fundAmountByIdeaId: votes.filter(vote => vote.fundAmount).reduce((map, vote) => (map[vote.ideaId] = vote.fundAmount, map), {}),
+      votesByIdeaId: votes.filter(vote => vote.vote).reduce((map, vote) => {
+        map[vote.ideaId] = vote.vote;
+        return map;
+      }, {}),
+      expressionByIdeaId: votes.filter(vote => vote.expression).reduce((map, vote) => {
+        map[vote.ideaId] = vote.expression;
+        return map;
+      }, {}),
+      fundAmountByIdeaId: votes.filter(vote => vote.fundAmount).reduce((map, vote) => {
+        map[vote.ideaId] = vote.fundAmount;
+        return map;
+      }, {}),
       results: votes
     });
   }
@@ -816,6 +825,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     console.log('Server THROW:', httpStatus, userFacingMessage);
     console.trace();
     await this.waitLatency();
+    // eslint-disable-next-line no-throw-literal
     throw {
       status: httpStatus,
       json: () => Promise.resolve(Admin.ErrorResponseToJSON({
@@ -835,6 +845,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         challenge: '6Lcnvs4UAAAAAG2X4PqlukwjGIhgR_A_oXDt3XU2'
       }));
     }
+    // eslint-disable-next-line no-throw-literal
     throw {
       status: 429,
       headers: headers,

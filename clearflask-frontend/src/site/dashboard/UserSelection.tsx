@@ -86,7 +86,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           }
         }}
         onValueChange={(labels, action) => {
-          if (action.action !== 'set-value', labels.length !== 1) return;
+          if (action.action !== 'set-value' || labels.length !== 1) return;
           this.setState({ selectedUserLabel: labels[0] })
           this.props.onChange && this.props.onChange(labels[0]);
         }}

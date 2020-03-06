@@ -63,7 +63,7 @@ export default class Property extends Component<Props> {
                     error={!!prop.errorMsg}
                     // Undocumented typescript definition
                     {...{
-                      ['TextFieldProps']: {
+                      TextFieldProps: {
                         // Hack to modify material-ui-color-picker to fix bug
                         // where a click inside the empty space inside the
                         // picker would dismiss the picker.

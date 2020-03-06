@@ -67,7 +67,11 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": "react-app",
+    "rules": {
+      "no-mixed-operators": "off",
+      "no-labels": "off"
+    }
   },
   "browserslist": [
     ">0.2%",

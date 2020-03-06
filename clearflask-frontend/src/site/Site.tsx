@@ -1,6 +1,5 @@
-import { AppBar, Button, Container, Hidden, IconButton, Menu, MenuItem, Slide, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Button, Container, Hidden, IconButton, Menu, MenuItem, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import useScrollTrigger from '@material-ui/core/useScrollTrigger';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
@@ -83,6 +82,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 </Menu>
               </Hidden>
               <img
+                alt='logo'
                 className={this.props.classes.logo}
                 src='/clearflask-logo.png' />
               <Button
@@ -147,13 +147,13 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   }
 }
 
-function HideOnScroll(props) {
-  const trigger = useScrollTrigger();
-  return (
-    <Slide appear={false} direction="down" in={!trigger}>
-      {props.children}
-    </Slide>
-  );
-}
+// function HideOnScroll(props) {
+//   const trigger = useScrollTrigger();
+//   return (
+//     <Slide appear={false} direction="down" in={!trigger}>
+//       {props.children}
+//     </Slide>
+//   );
+// }
 
 export default withStyles(styles, { withTheme: true })(Site);

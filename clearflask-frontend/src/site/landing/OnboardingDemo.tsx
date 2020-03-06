@@ -20,7 +20,7 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
   },
   loginDialog: {
-    position: 'relative' + '!important' as 'relative',
+    position: 'relative!important' as any,
     width: '100%',
     height: '100%',
   },

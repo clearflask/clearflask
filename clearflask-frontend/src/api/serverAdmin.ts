@@ -322,7 +322,10 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
         ...state,
         configs: {
           status: Status.FULFILLED,
-          configs: action.payload.configs.reduce((configs, config) => (configs[config.config.projectId] = config, configs), {}),
+          configs: action.payload.configs.reduce((configs, config) => {
+            configs[config.config.projectId] = config;
+            return configs;
+          }, {}),
         },
       };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
