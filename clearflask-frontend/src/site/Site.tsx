@@ -73,8 +73,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   open={!!this.state.menuOpen}
                   onClose={() => this.setState({ menuOpen: false })}
                 >
-                  {menuItems.map(menuItem =>
-                    <MenuItem onClick={() => {
+                  {menuItems.map((menuItem, index) =>
+                    <MenuItem key={menuItem.path} onClick={() => {
                       this.setState({ menuOpen: false });
                       this.props.history.push(menuItem.path);
                     }}>{menuItem.title}</MenuItem>

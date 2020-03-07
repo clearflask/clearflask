@@ -81,15 +81,15 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         <br />
         <br />
         <br />
-        <Container maxWidth='md'>
-          {this.props.featuresTable && (
+        {this.props.featuresTable && (
+          <Container maxWidth='md'>
             <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
-              {this.props.featuresTable.features.map(feature => (
-                <FeatureListItem planContents={this.mapFeaturesTableValues(feature.values)} name={feature.feature} />
+              {this.props.featuresTable.features.map((feature, index) => (
+                <FeatureListItem key={feature.feature} planContents={this.mapFeaturesTableValues(feature.values)} name={feature.feature} />
               ))}
             </FeatureList>
-          )}
-        </Container>
+          </Container>
+        )}
       </div>
     );
   }
@@ -144,8 +144,8 @@ const FeatureListItem = (props: {
         {props.name}
         {props.helpText && (<HelpPopover description={props.helpText} />)}
       </TableCell>
-      {props.planContents.map(content => (
-        <TableCell>
+      {props.planContents.map((content, index) => (
+        <TableCell key={index}>
           {content === T
             ? (<CheckIcon fontSize='inherit' />)
             : content}

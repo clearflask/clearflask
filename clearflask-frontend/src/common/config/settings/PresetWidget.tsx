@@ -117,8 +117,8 @@ class PresetWidget extends Component<Props> {
 
     return (
       <div className={this.props.classes.container}>
-        {presets.map(preset => (
-          <div className={this.props.classes.widget}>
+        {presets.map((preset, index) => (
+          <div key={preset.title} className={this.props.classes.widget}>
             <Typography variant='h5'>{preset.title}</Typography>
             <Typography component='p'>{preset.body}</Typography>
             <Button onClick={() => preset.action(Templater.get(this.props.editor), this.props.page.path)}

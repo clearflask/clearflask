@@ -183,7 +183,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
 
   renderDataCell(prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property) {
     return (
-      <TableCell align='center' size='small'>
+      <TableCell key={prop.key} align='center' size='small'>
         <Property isInsideMuiTable bare key={prop.key} prop={prop} pageClicked={this.props.pageClicked} />
       </TableCell>
     );

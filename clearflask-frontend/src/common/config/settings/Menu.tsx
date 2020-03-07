@@ -53,10 +53,10 @@ export default class Menu extends Component<Props> {
   render() {
     return (
       <List dense component='nav' style={{ padding: '0px' }}>
-        {this.props.items.map(item => {
+        {this.props.items.map((item, index) => {
           if (item.type === 'item') {
             return (
-              <ListItem selected={item.slug === this.props.activePath} button onClick={() => {
+              <ListItem key={item.slug || 'empty'} selected={item.slug === this.props.activePath} button onClick={() => {
                 if (item.onClick) {
                   item.onClick();
                 }
@@ -79,7 +79,7 @@ export default class Menu extends Component<Props> {
             );
           } else if (item.type === 'heading') {
             return (
-              <ListItem disabled>
+              <ListItem key={index} disabled>
                 <ListItemText style={Menu.paddingForLevel(item.offset)} primary={item.text} />
               </ListItem>
             );

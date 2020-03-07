@@ -262,15 +262,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           </React.Fragment>
         ) : undefined}
       >
-        {[
-          <Crumbs
-            crumbs={crumbs}
-            activeProject={activeProject}
-            activeSubPath={activeSubPath}
-            pageClicked={this.pageClicked.bind(this)}
-          />,
-          page,
-        ]}
+        <Crumbs
+          crumbs={crumbs}
+          activeProject={activeProject}
+          activeSubPath={activeSubPath}
+          pageClicked={this.pageClicked.bind(this)}
+        />
+        {page}
         {/* TODO remove */}
         {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
       </Layout>

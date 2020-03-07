@@ -46,7 +46,7 @@ export default class Crumbs extends Component<Props> {
 
   createCrumb(name: string, path: string, subPath?: ConfigEditor.Path) {
     return (
-      <Link color="inherit" onClick={() => this.props.pageClicked(path, subPath)}>
+      <Link key={path} color="inherit" onClick={() => this.props.pageClicked(path, subPath)}>
         {name}
       </Link>
     );

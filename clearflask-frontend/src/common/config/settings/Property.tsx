@@ -124,7 +124,7 @@ export default class Property extends Component<Props> {
             value={prop.value || ''}
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
-            placeholder={prop.placeholder}
+            placeholder={prop.placeholder + ''}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
             type={fieldType}
@@ -178,7 +178,12 @@ export default class Property extends Component<Props> {
           : null;
         var content;
         if (prop.required) {
-          content = [description, link];
+          content = (
+            <React.Fragment>
+              {description}
+              {link}
+            </React.Fragment>
+          );
         } else {
           content = (
             <div>
@@ -280,8 +285,8 @@ export default class Property extends Component<Props> {
               }}
               error={!!prop.errorMsg}
             >
-              {items.map(item => (
-                <MenuItem value={item.value || ''}>{item.value === 'undefined'
+              {items.map((item, index) => (
+                <MenuItem key={item.name} value={item.value || ''}>{item.value === 'undefined'
                   ? (<em>{item.name}</em>)
                   : item.name
                 }</MenuItem>
@@ -309,7 +314,7 @@ export default class Property extends Component<Props> {
             <SelectionPicker
               label={prop.name}
               helperText={prop.description}
-              placeholder={prop.placeholder}
+              placeholder={prop.placeholder + ''}
               errorMsg={prop.errorMsg}
               value={values}
               options={options}
@@ -401,7 +406,7 @@ export default class Property extends Component<Props> {
           <SelectionPicker
             label={prop.name}
             helperText={prop.description}
-            placeholder={prop.placeholder}
+            placeholder={prop.placeholder + ''}
             errorMsg={prop.errorMsg}
             value={values}
             colorLookup={colorLookup}

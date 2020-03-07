@@ -48,7 +48,7 @@ export interface xCfProp {
   name?: string;
   order?: number;
   description?: string;
-  placeholder?: string;
+  placeholder?: string | number;
   /**
    * Default value to set on new properties. Use the following for dynamic names:
    * '<>' replaced with parent path name (used when inside an array)
