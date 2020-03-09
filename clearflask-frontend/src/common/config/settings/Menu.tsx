@@ -119,6 +119,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
   render() {
     const expanded = this.isExpanded(this.props.page.path);
     const padding = Menu.paddingForLevel(1, this.props.page.path);
+    const color = this.props.page.getColor();
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
         <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
@@ -126,7 +127,9 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
         }}>
           <ListItemText style={padding} primary={(
             <React.Fragment>
-              {this.props.page.getDynamicName()}
+              <span style={{ color }}>
+                {this.props.page.getDynamicName()}
+              </span>
               <Badge
                 variant='dot'
                 invisible={!this.props.hasUnsavedChanges}

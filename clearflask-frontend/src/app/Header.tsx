@@ -10,6 +10,7 @@ import * as Client from '../api/client';
 import { ReduxState, Server, Status } from '../api/server';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import DropdownTab from '../common/DropdownTab';
+import notEmpty from '../common/util/arrayUtil';
 import NotificationBadge from './NotificationBadge';
 
 const styles = (theme: Theme) => createStyles({
@@ -91,7 +92,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     if (this.props.config && this.props.config.layout.menu.length > 0) {
       var currentTabValue = this.props.page
         ? this.props.page.slug
-        : undefined;
+        : false;
       var tabs;
       tabs = this.props.config.layout.menu.map(menu => {
         if (!menu.pageIds || menu.pageIds.length === 0) return null;
@@ -108,12 +109,16 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           );
         }
         const dropdownItems = menu.pageIds.map(pageId => {
-          const page = this.props.config!.layout.pages.find(p => p.pageId === pageId)!;
+          const page = this.props.config!.layout.pages.find(p => p.pageId === pageId);
+          if (!page) {
+            return undefined;
+          }
           if (this.props.page && this.props.page.pageId === page.pageId) {
             currentTabValue = menu.menuId;
           }
           return { name: page.name, val: page.slug };
-        });
+        })
+          .filter(notEmpty);
         return (
           <DropdownTab
             key={menu.menuId}

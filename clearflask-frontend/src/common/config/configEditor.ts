@@ -32,6 +32,7 @@ export enum OpenApiTags {
 export interface xCfPage {
   name?: string;
   nameFromProp?: string;
+  colorFromProp?: string;
   order?: number;
   description?: string;
   defaultValue?: true | undefined;
@@ -128,6 +129,7 @@ export interface Page extends Setting<PageType, true | undefined>, xCfPage {
   name: string;
   /** Name potentially derived from a property */
   getDynamicName: () => string;
+  getColor: () => string | undefined;
   depth: ResolveDepth;
   getChildren(): PageChildren;
   setRaw(val: object | undefined): void;
@@ -707,6 +709,7 @@ export class EditorImpl implements Editor {
     const pathStr = path.join('.');
     const localSubscribers: { [subscriberId: string]: () => void } = {};
     var dynamicNameUnsubscribe: (() => void) | undefined = undefined;
+    var colorUnsubscribe: (() => void) | undefined = undefined;
 
     const page: Page = {
       key: randomUuid(),
@@ -771,6 +774,17 @@ export class EditorImpl implements Editor {
         }
         return (nameProp && nameProp.value)
           ? nameProp.value + '' : page.name;
+      },
+      getColor: (): string | undefined => {
+        if (!xPage.colorFromProp) {
+          return;
+        }
+        const colorProp = page.getChildren().props.find(p => p.path[p.path.length - 1] === xPage.colorFromProp);
+        if (colorUnsubscribe === undefined && colorProp) {
+          colorUnsubscribe = colorProp.subscribe(() => this.notify(localSubscribers));
+        }
+        return (colorProp && colorProp.value)
+          ? colorProp.value + '' : undefined;
       },
       validateValue: (val: true | undefined): void => {
         if (val === undefined && isRequired) {

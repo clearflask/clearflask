@@ -78,7 +78,7 @@ export default class Property extends Component<Props> {
                         },
                         InputProps: {
                           inputProps: {
-                            autocomplete: 'off',
+                            autoComplete: 'off',
                           },
                           style: {
                             color: prop.value,

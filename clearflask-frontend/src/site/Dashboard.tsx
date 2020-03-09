@@ -60,6 +60,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         currentPagePath: [],
       };
       ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
+    } else {
+      this.state = {
+        currentPagePath: [],
+      };
     }
   }
 
