@@ -1,4 +1,4 @@
-import { Container, FormControlLabel, FormHelperText, Grid, Switch, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
@@ -9,6 +9,8 @@ import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopover from '../common/HelpPopover';
+import notEmpty from '../common/util/arrayUtil';
+import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
 import { PRE_SELECTED_PLAN_ID } from './SignupPage';
 
@@ -18,6 +20,9 @@ const styles = (theme: Theme) => createStyles({
   },
   box: {
     border: '1px solid ' + theme.palette.grey[300],
+  },
+  billingSelect: {
+    margin: theme.spacing(3),
   },
 });
 
@@ -32,33 +37,30 @@ interface ConnectProps {
   featuresTable?: Admin.FeaturesTable;
 }
 interface State {
-  isYearly: boolean;
+  period?: Admin.PlanPricingPeriodEnum;
 }
 
 class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
-  state: State = {
-    isYearly: true
-  };
+  state: State = {};
   render() {
-    const plans = this.props.plans ? this.props.plans
-      .filter(plan => !plan.pricing
-        || (this.state.isYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Quarterly) === plan.pricing.period)
-      : [];
-
+    const allPlans = this.props.plans || [];
+    const periodsSet = new Set(allPlans
+      .map(plan => plan.pricing?.period)
+      .filter(notEmpty));
+    const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
+    const selectedPeriod = this.state.period
+      || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
+    const plans = allPlans
+      .filter(plan => !plan.pricing || selectedPeriod === plan.pricing.period);
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
-          <Typography component="h1" variant="h2" color="textPrimary">Plans and pricing</Typography>
+          <Typography component="h1" variant="h2" color="textPrimary">Compare pricing</Typography>
           <Typography component="h2" variant="h4" color="textSecondary">All plans include unlimited number of users.</Typography>
-          <FormControlLabel
-            control={(
-              <Switch
-                checked={this.state.isYearly}
-                onChange={(e, checked) => this.setState({ isYearly: !this.state.isYearly })}
-                color='default'
-              />
-            )}
-            label={(<FormHelperText component='span'>{this.state.isYearly ? 'Yearly billing' : 'Quarterly billing'}</FormHelperText>)}
+          <PlanPeriodSelect
+            plans={this.props.plans}
+            value={selectedPeriod}
+            onChange={period => this.setState({ period })}
           />
         </Container>
         <Container maxWidth='md'>
@@ -85,9 +87,19 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Container maxWidth='md'>
             <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
               {this.props.featuresTable.features.map((feature, index) => (
-                <FeatureListItem key={feature.feature} planContents={this.mapFeaturesTableValues(feature.values)} name={feature.feature} />
+                <FeatureListItem
+                  key={feature.feature}
+                  planContents={this.mapFeaturesTableValues(feature.values)}
+                  name={feature.feature}
+                  helpText={feature.terms}
+                />
               ))}
             </FeatureList>
+            {this.props.featuresTable.extraTerms && (
+              <Box display='flex' justifyContent='center'>
+                <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
+              </Box>
+            )}
           </Container>
         )}
       </div>

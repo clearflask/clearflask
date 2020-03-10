@@ -7,38 +7,33 @@ import * as Client from './client';
 
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7': {
-    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Basic', pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Yearly },
+    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Basic',
+    pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Yearly },
     perks: [
       { desc: 'Unlimited users', terms: 'description' },
       { desc: 'Simple user voting', terms: 'description' },
       { desc: '1 hour feature credit', terms: 'description' },
     ],
+    beta: true,
   },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
-    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic', pricing: { price: 80, period: Admin.PlanPricingPeriodEnum.Quarterly },
+    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic',
+    pricing: { price: 80, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited users', terms: 'description' },
       { desc: 'Simple user voting', terms: 'description' },
-      { desc: '15 minute feature credit', terms: 'description' },
+      { desc: '5 minute feature credit', terms: 'description' },
     ],
+    beta: true,
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
-    planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic', pricing: { price: 300, period: Admin.PlanPricingPeriodEnum.Yearly },
+    planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
       { desc: 'Content analytics and search', terms: 'description' },
       { desc: 'Crowd-funding', terms: 'description' },
       { desc: 'Unlimited projects, users', terms: 'description' },
-      { desc: '10 hour feature credit', terms: 'description' },
     ],
-  },
-  '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A': {
-    planid: '89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A', title: 'Analytic', pricing: { price: 450, period: Admin.PlanPricingPeriodEnum.Quarterly },
-    perks: [
-      { desc: 'Content analytics and search', terms: 'description' },
-      { desc: 'Crowd-funding', terms: 'description' },
-      { desc: 'Unlimited projects, users', terms: 'description' },
-      { desc: '1 hour feature credit', terms: 'description' },
-    ],
+    comingSoon: true,
   },
   '597099E1-83B3-40AC-8AC3-52E9BF59A562': {
     planid: '597099E1-83B3-40AC-8AC3-52E9BF59A562', title: 'Enterprise',
@@ -49,14 +44,14 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
       { desc: 'Dedicated/Onsite hosting', terms: 'description' },
       { desc: 'Custom SLA', terms: 'description' },
     ],
+    comingSoon: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable = {
   plans: ['Basic', 'Analytic', 'Enterprise'],
   features: [
-    { feature: 'Projects', values: ['1', 'Unlimited', 'Unlimited'] },
-    { feature: 'Active users', values: ['Unlimited', 'Unlimited', 'Unlimited'] },
-    { feature: 'User submitted content', values: ['Unlimited', 'Unlimited', 'Unlimited'] },
+    { feature: 'Projects', values: ['Unlimited', 'Unlimited', 'Unlimited'] },
+    { feature: 'Active users', values: ['Unlimited†', 'Unlimited†', 'Unlimited†'] },
     { feature: 'Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...', values: ['Yes', 'Yes', 'Yes'] },
     { feature: 'Voting and Emoji expressions', values: ['No', 'Yes', 'Yes'] },
     { feature: 'Credit system / Crowd-funding', values: ['No', 'Yes', 'Yes'] },
@@ -66,6 +61,7 @@ const FeaturesTable: Admin.FeaturesTable = {
     { feature: 'API access', values: ['No', 'No', 'Yes'] },
     { feature: 'Whitelabel', values: ['No', 'No', 'Yes'] },
   ],
+  extraTerms: `† Unlimited assumes reasonable usage. Please contact us prior to deployment to ensure we are prepared for your traffic level.`,
 };
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithAuthor {

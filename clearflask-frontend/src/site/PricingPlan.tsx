@@ -27,11 +27,32 @@ interface Props {
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    var billed;
+    switch (this.props.plan.pricing?.period) {
+      case Admin.PlanPricingPeriodEnum.Monthly:
+        billed = `$${this.props.plan.pricing.price} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        break;
+      case Admin.PlanPricingPeriodEnum.Quarterly:
+        billed = `$${this.props.plan.pricing.price * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        break;
+      case Admin.PlanPricingPeriodEnum.Yearly:
+        billed = `$${this.props.plan.pricing.price * 12} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        break;
+    }
+
+    var subheader;
+    if (this.props.plan.comingSoon) {
+      subheader = 'Coming soon...';
+    } if (this.props.plan.beta) {
+      subheader = 'Public beta';
+    }
+
     return (
       <Card elevation={0} className={this.props.classes.box}>
         <CardHeader
           title={this.props.plan.title}
           titleTypographyProps={{ align: 'center' }}
+          subheader={subheader}
           subheaderTypographyProps={{ align: 'center' }}
         />
         <CardContent>
@@ -43,11 +64,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                 <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
               </div>
               <div className={this.props.classes.cardPricing}>
-                <Typography component='h3'>{
-                  this.props.plan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly
-                    ? ('$' + (this.props.plan.pricing.price * 12) + ' billed yearly')
-                    : ('$' + (this.props.plan.pricing.price * 3) + ' billed quarterly')
-                }</Typography>
+                <Typography component='h3'>{billed}</Typography>
               </div>
             </React.Fragment>
           ) : (

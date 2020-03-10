@@ -11,6 +11,7 @@ import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
+import ScrollToTop from './ScrollToTop';
 import Dashboard from './site/Dashboard';
 import Site from './site/Site';
 
@@ -52,6 +53,7 @@ class Main extends Component {
             background: theme.palette.background.default,
           }}>
             <Router>
+              <ScrollToTop />
               <Switch>
                 <Route exact path="/" render={props => (
                   <Provider store={ServerAdmin.get().getStore()}>

@@ -25,6 +25,7 @@ components:
             period:
               type: string
               enum:
+              - Monthly
               - Quarterly
               - Yearly
         perks:
@@ -40,6 +41,10 @@ components:
                 type: string
               terms:
                 type: string
+        comingSoon:
+          type: boolean
+        beta:
+          type: boolean
     FeaturesTable:
       type: object
       required:
@@ -64,6 +69,10 @@ components:
                 type: array
                 items:
                   type: string
+              terms:
+                type: string
+        extraTerms:
+          type: string
     AccountLogin:
       type: object
       required:

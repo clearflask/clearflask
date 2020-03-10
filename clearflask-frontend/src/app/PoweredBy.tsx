@@ -22,7 +22,7 @@ class PoweredBy extends Component<WithStyles<typeof styles, true>> {
     return (
       <div className={this.props.classes.container}>
         <div className={this.props.classes.poweredBy}>Powered by&nbsp;</div>
-        <Link underline='none' href={`https://clearflask.com/`}>
+        <Link underline='none' target="_blank" href='https://clearflask.com/'>
           <div className={this.props.classes.name}>ClearFlask</div>
         </Link>
       </div>

@@ -16,9 +16,6 @@ const styles = (theme: Theme) => createStyles({
   anchor: {
     position: 'relative' as 'relative',
   },
-  grow: {
-    flexGrow: 1,
-  },
 });
 
 interface Props {

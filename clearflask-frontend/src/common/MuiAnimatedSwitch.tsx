@@ -12,6 +12,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
+  className?: string;
   classes; // Conflicted property
 }
 
@@ -19,7 +20,7 @@ class MuiAnimatedSwitch extends Component<Props> {
   render() {
     return (
       <AnimatedSwitch
-        className={this.props.classes.switch}
+        className={`${this.props.classes.switch} ${this.props.className || ''}`}
         // props https://maisano.github.io/react-router-transition/animated-switch/props
         atEnter={{
           opacity: 0,
@@ -37,7 +38,7 @@ class MuiAnimatedSwitch extends Component<Props> {
           return {
             width: '100%',
             height: '100%',
-            position: styles.opacity >= 0.999 ? 'relative' : 'absolute',
+            position: styles.opacity >= 0.5 ? 'relative' : 'absolute',
             opacity: styles.opacity,
             transform: `translateY(${styles.offset}px)`,
             flexGrow: 1,

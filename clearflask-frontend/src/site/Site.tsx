@@ -1,8 +1,9 @@
-import { AppBar, Button, Container, Hidden, IconButton, Menu, MenuItem, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link, Menu, MenuItem, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
+import { NavLink } from 'react-router-dom';
 import App from '../app/App';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
@@ -26,9 +27,34 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
+  page: {
+    minHeight: '100vh',
+    PaddingBottom: theme.spacing(6),
+  },
   appBarSpacer: theme.mixins.toolbar,
-  appbar: {
-    borderBottom: '1px solid ' + theme.palette.grey[300],
+  bottomBar: {
+    padding: theme.spacing(6),
+    display: 'flex',
+    justifyContent: 'center',
+    borderTop: '1px solid ' + theme.palette.grey[300],
+  },
+  bottomItem: {
+    display: 'block',
+    padding: theme.spacing(0.5),
+    color: theme.palette.text.hint,
+    textDecoration: 'none',
+  },
+  bottomLogo: {
+    display: 'inline-flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomHeader: {
+    padding: theme.spacing(0.5),
+    paddingBottom: theme.spacing(1),
+    color: theme.palette.text.hint,
+    fontWeight: 'bold',
   },
   logo: {
     margin: theme.spacing(1),
@@ -56,7 +82,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     return (
       <div className={this.props.classes.growAndFlex}>
         {/* <HideOnScroll> */}
-        <AppBar position='relative' color='inherit' elevation={0} className={this.props.classes.appbar}>
+        <AppBar position='absolute' color='inherit' elevation={0} variant='outlined'>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>
               <Hidden smUp implementation='css'>
@@ -89,7 +115,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 style={{ textTransform: 'unset' }}
                 onClick={() => this.props.history.push('/')}
               >
-                <Typography variant="h6">Clear Flask</Typography>
+                <Typography>ClearFlask</Typography>
               </Button>
               <div className={this.props.classes.grow} />
               <Hidden xsDown implementation='css'>
@@ -101,47 +127,75 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
           </Container>
         </AppBar>
         {/* </HideOnScroll> */}
-        <div className={this.props.classes.appBarSpacer} />
-        <MuiAnimatedSwitch>
-          <Route exact path={'/login'} render={props => (
-            <SigninPage {...props} />
-          )} />
-          <Route exact path={'/pricing'} render={props => (
-            <PricingPage {...props} />
-          )} />
-          <Route path={'/contact'} render={props => (
-            <ContactPage {...props} />
-          )} />
-          <Route exact path={'/signup'} render={props => (
-            <SignupPage {...props} />
-          )} />
-          <Route exact path={'/(terms|terms-of-service)'} render={props => (
-            <LegalPage type='terms' />
-          )} />
-          <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => (
-            <LegalPage type='privacy' />
-          )} />
-          <Route path={`/:projectId(demo)`} render={props => {
-            if (!this.projectPromise) this.projectPromise = getProject(
-              templater => templater.demo(),
-              mocker => mocker.mockAll(),
-              'demo',
-            );
-            return (
-              <Promised promise={this.projectPromise} render={project => (
-                <App
-                  {...props}
-                  supressCssBaseline
-                  isInsideContainer
-                  serverOverride={project.server}
-                />
-              )} />
-            );
-          }} />
-          <Route exact path={`/`} component={props => (
-            <LandingPage />
-          )} />
-        </MuiAnimatedSwitch>
+        <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
+          <div className={this.props.classes.appBarSpacer} />
+          <MuiAnimatedSwitch>
+            <Route exact path={'/login'} render={props => (
+              <SigninPage {...props} />
+            )} />
+            <Route exact path={'/pricing'} render={props => (
+              <PricingPage {...props} />
+            )} />
+            <Route path={'/contact'} render={props => (
+              <ContactPage {...props} />
+            )} />
+            <Route exact path={'/signup'} render={props => (
+              <SignupPage {...props} />
+            )} />
+            <Route exact path={'/(terms|terms-of-service)'} render={props => (
+              <LegalPage type='terms' />
+            )} />
+            <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => (
+              <LegalPage type='privacy' />
+            )} />
+            <Route path={`/:projectId(demo)`} render={props => {
+              if (!this.projectPromise) this.projectPromise = getProject(
+                templater => templater.demo(),
+                mocker => mocker.mockAll(),
+                'demo',
+              );
+              return (
+                <Promised promise={this.projectPromise} render={project => (
+                  <App
+                    {...props}
+                    supressCssBaseline
+                    isInsideContainer
+                    serverOverride={project.server}
+                  />
+                )} />
+              );
+            }} />
+            <Route exact path={`/`} component={props => (
+              <LandingPage />
+            )} />
+          </MuiAnimatedSwitch>
+        </div>
+        <div className={this.props.classes.bottomBar}>
+          <Container maxWidth='md' disableGutters>
+            <Grid container justify='center' alignContent='center' spacing={6}>
+              <Grid item xs={10} sm={4} md={3} xl={2}>
+                <div className={this.props.classes.bottomHeader}>PRODUCT</div>
+                <NavLink to='/contact/sales' className={this.props.classes.bottomItem}>Talk to Sales</NavLink>
+                <NavLink to='/pricing' className={this.props.classes.bottomItem}>Pricing</NavLink>
+                <NavLink to='/demo' className={this.props.classes.bottomItem}>Demo</NavLink>
+                <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink>
+              </Grid>
+              <Grid item xs={10} sm={4} md={3} xl={2}>
+                <div className={this.props.classes.bottomHeader}>RESOURCES</div>
+                <NavLink to='/contact/support' className={this.props.classes.bottomItem}>Support</NavLink>
+                <NavLink to='/privacy-policy' className={this.props.classes.bottomItem}>Privacy Policy</NavLink>
+                <NavLink to='/terms-of-service' className={this.props.classes.bottomItem}>Terms of Service</NavLink>
+              </Grid>
+              <Grid item xs={10} sm={4} md={3} xl={2} className={this.props.classes.growAndFlex}>
+                <div className={this.props.classes.bottomHeader}>COMPANY</div>
+                <Link target="_blank" href='https://www.smotana.com' className={this.props.classes.bottomItem}>Smotana</Link>
+                <Link href='mailto:hi@smotana.com' className={this.props.classes.bottomItem}>hi@smotana.com</Link>
+                <div className={this.props.classes.grow} />
+                <div className={this.props.classes.bottomItem}>© ClearFlask</div>
+              </Grid>
+            </Grid>
+          </Container>
+        </div>
       </div>
     );
   }

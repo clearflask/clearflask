@@ -1,4 +1,4 @@
-import { Box, Button, Container, FormControlLabel, FormHelperText, Grid, IconButton, Link, Step, StepContent, StepLabel, Stepper, Switch, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
+import { Box, Button, Container, Grid, IconButton, Link, Step, StepContent, StepLabel, Stepper, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -12,7 +12,9 @@ import Message from '../app/comps/Message';
 import Loader from '../app/utils/Loader';
 import StripeElementWrapper from '../common/stripe/StripeElementWrapper';
 import StripeProviderProvider from '../common/stripe/StripeProviderProvider';
+import notEmpty from '../common/util/arrayUtil';
 import { saltHashPassword } from '../common/util/auth';
+import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
 
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
@@ -54,7 +56,7 @@ interface State {
   step: number;
   isSubmitting?: boolean;
   planId?: string;
-  billingIsYearly: boolean;
+  period?: Admin.PlanPricingPeriodEnum;
   company?: string;
   name?: string;
   email?: string;
@@ -73,18 +75,17 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
   constructor(props) {
     super(props);
 
-    var billingIsYearly = true;
-    var planId;
+    var planId, period;
     if (props.location && props.location.state && props.location.state[PRE_SELECTED_PLAN_ID]) {
       planId = props.location.state[PRE_SELECTED_PLAN_ID];
       if (props.plans && props.plans[planId] && props.plans[planId].pricing) {
-        billingIsYearly = props.plans[planId].pricing!.period === Admin.PlanPricingPeriodEnum.Yearly;
+        period = props.plans[planId].pricing!.period;
       }
     }
     this.state = {
       step: 0,
-      planId: planId,
-      billingIsYearly: billingIsYearly,
+      planId,
+      period,
     };
   }
 
@@ -92,9 +93,16 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     const selectedPlan = this.state.planId && this.props.plans && this.props.plans.find(plan =>
       plan.planid === this.state.planId);
 
-    const plans = this.props.plans
-      ? this.props.plans.filter(plan => !!plan.pricing && plan.pricing.period === (this.state.billingIsYearly ? Admin.PlanPricingPeriodEnum.Yearly : Admin.PlanPricingPeriodEnum.Quarterly))
-      : [];
+
+    const allPlans = this.props.plans || [];
+    const periodsSet = new Set(allPlans
+      .map(plan => plan.pricing?.period)
+      .filter(notEmpty));
+    const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
+    const selectedPeriod = this.state.period
+      || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
+    const plans = allPlans
+      .filter(plan => !!plan.pricing && plan.pricing.period === selectedPeriod);
 
     const planStepCompleted = !!this.state.planId && !!selectedPlan;
     const accountStepCompleted = !!this.state.name && !!this.state.email && !!this.state.pass;
@@ -112,15 +120,10 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               </StepLabel>
               <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Loader loaded={!!this.props.plans}>
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={this.state.billingIsYearly}
-                        onChange={(e, checked) => this.setState({ billingIsYearly: !this.state.billingIsYearly })}
-                        color='default'
-                      />
-                    )}
-                    label={(<FormHelperText component='span'>{this.state.billingIsYearly ? 'Yearly billing' : 'Quarterly billing'}</FormHelperText>)}
+                  <PlanPeriodSelect
+                    plans={this.props.plans}
+                    value={selectedPeriod}
+                    onChange={period => this.setState({ period })}
                   />
                   <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
                     {plans.map((plan, index) => (
