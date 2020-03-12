@@ -996,7 +996,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.props.theme.disableTransitions) {
       this.props.history.push(`/${this.props.server.getProjectId()}/post/${this.props.idea.ideaId}`);
     } else {
-      this.expandedPath = `${this.props.match.url}/post/${this.props.idea.ideaId}`;
+      this.expandedPath = `/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;
       this.props.history.push(this.expandedPath);
     }

@@ -4,11 +4,11 @@ import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { NavLink } from 'react-router-dom';
-import App from '../app/App';
+import ErrorPage from '../app/ErrorPage';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import ContactPage from './ContactPage';
-import { getProject, Project } from './DemoApp';
+import DemoApp, { getProject, Project } from './DemoApp';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
@@ -120,7 +120,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <div className={this.props.classes.grow} />
               <Hidden xsDown implementation='css'>
                 {menuItems.map(menuItem =>
-                  <Button onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
+                  <Button key={menuItem.path} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
                 )}
               </Hidden>
             </Toolbar>
@@ -156,11 +156,9 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               );
               return (
                 <Promised promise={this.projectPromise} render={project => (
-                  <App
+                  <DemoApp
                     {...props}
-                    supressCssBaseline
-                    isInsideContainer
-                    serverOverride={project.server}
+                    server={project.server}
                   />
                 )} />
               );
@@ -168,6 +166,9 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             <Route exact path={`/`} component={props => (
               <LandingPage />
             )} />
+            <Route>
+              <ErrorPage msg='Page not found' variant='error' />
+            </Route>
           </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>

@@ -54,12 +54,13 @@ interface Props {
 export default class DemoApp extends Component<Props> {
   render() {
     return (
-      <MemoryRouter initialEntries={[`/${this.props.server.getProjectId()}${this.props.intialSubPath || ''}`]}>
-        <Route path="/:projectId" render={props => (
+      <MemoryRouter initialEntries={this.props.intialSubPath ? [`${this.props.intialSubPath || '/'}`] : undefined}>
+        <Route path="/" render={props => (
           <React.Fragment>
             <ForceUrl forcePath={this.props.forcePath} />
             <App
               {...props}
+              projectId={this.props.server.getProjectId()}
               supressCssBaseline
               isInsideContainer
               serverOverride={this.props.server} />

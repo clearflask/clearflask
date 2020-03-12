@@ -87,7 +87,7 @@ interface State {
 class ContactPage extends Component<Props & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
-    const prefixMatch = this.props.match.url;
+    const prefixMatch = this.props.match.url.replace(/\/$/, '');
     return (
       <MuiAnimatedSwitch>
         <Route exact key='success' path={`${prefixMatch}/success`} render={props => (

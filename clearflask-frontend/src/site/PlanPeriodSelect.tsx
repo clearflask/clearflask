@@ -26,11 +26,11 @@ class PlanPeriodSelect extends Component<Props & WithStyles<typeof styles, true>
     return (
       <Select
         className={this.props.classes.billingSelect}
-        value={this.props.value || null}
+        value={this.props.value || ''}
         onChange={e => this.props.onChange && this.props.onChange(e.target.value as Admin.PlanPricingPeriodEnum)}
       >
         {periods.map(period => (
-          <MenuItem value={period}>{period} billing</MenuItem>
+          <MenuItem key={period} value={period}>{period} billing</MenuItem>
         ))}
       </Select>
     );

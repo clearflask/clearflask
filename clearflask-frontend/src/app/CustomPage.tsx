@@ -42,7 +42,6 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   pageSlug: string;
-  pageChanged: (pageUrlName: string) => void;
 }
 
 interface ConnectProps {

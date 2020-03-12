@@ -22,6 +22,7 @@ import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
 
 interface Props {
+  projectId: string;
   serverOverride?: Server;
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
@@ -40,7 +41,7 @@ class App extends Component<Props> {
 
     this.state = {};
 
-    const projectId = this.props.match.params['projectId'];
+    const projectId = this.props.projectId;
     if (this.props.serverOverride) {
       this.server = this.props.serverOverride;
     } else if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
@@ -55,7 +56,6 @@ class App extends Component<Props> {
   }
 
   render() {
-    const prefixMatch = this.props.match.url;
     const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (
       <Provider store={this.server.getStore()}>
@@ -87,7 +87,7 @@ class App extends Component<Props> {
               } : {}),
             }}
           >
-            <Route path={`${prefixMatch}/:page?`} render={props => props.match.params['page'] === 'embed' ? null : (
+            <Route path='/:page?' render={props => props.match.params['page'] === 'embed' ? null : (
               <Header
                 pageSlug={props.match.params['page'] || ''}
                 server={this.server}
@@ -96,33 +96,32 @@ class App extends Component<Props> {
             )} />
             <AnimatedPageSwitch
               render={(pageSlug: string) => (
-                <Route key={pageSlug} path={`${prefixMatch}/:embed(embed)?/${pageSlug}`} render={props => (
+                <Route key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
                     <CustomPage
                       pageSlug={pageSlug}
                       server={this.server}
-                      pageChanged={this.pageChanged.bind(this)}
                     />
                   </BasePage>
                 )} />
               )} >
-              <Route key='transaction' path={`${prefixMatch}/transaction`} render={props => (
+              <Route key='transaction' path='/transaction' render={props => (
                 <BasePage showFooter>
                   <BankPage server={this.server} />
                 </BasePage>
               )} />
-              <Route key='notification' path={`${prefixMatch}/notification`} render={props => (
+              <Route key='notification' path='/notification' render={props => (
                 <BasePage showFooter>
                   <NotificationPage server={this.server} />
                 </BasePage>
               )} />
-              <Route key='account' path={`${prefixMatch}/account`} render={props => (
+              <Route key='account' path='/account' render={props => (
                 <BasePage showFooter>
                   <AccountPage server={this.server} />
                 </BasePage>
               )} />
               {!isExpanded() && (
-                <Route key='post' path={`${prefixMatch}/post/:postId`} render={props => (
+                <Route key='post' path='/post/:postId' render={props => (
                   <BasePage showFooter>
                     <PostPage
                       postId={props.match.params['postId'] || ''}
@@ -132,8 +131,8 @@ class App extends Component<Props> {
                 )} />
               )}
               {!isExpanded() && (
-                <Route key='postWildcard' path={`${prefixMatch}/*/post/:postId`} render={props => (
-                  <Redirect exact to={{ pathname: `${prefixMatch}/post/${props.match.params.postId}` }} />
+                <Route key='postWildcard' path='/*/post/:postId' render={props => (
+                  <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
                 )} />
               )}
             </AnimatedPageSwitch>
@@ -144,8 +143,7 @@ class App extends Component<Props> {
   }
 
   pageChanged(pageUrlName: string): void {
-    pageUrlName = pageUrlName === '' ? pageUrlName : '/' + pageUrlName
-    this.props.history.push(`/${this.props.match.params['projectId']}${pageUrlName}`);
+    this.props.history.push(`${this.props.match.url}${pageUrlName}`);
   }
 }
 

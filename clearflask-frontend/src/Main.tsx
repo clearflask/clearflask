@@ -11,6 +11,7 @@ import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
+import { detectEnv, Environment } from './common/util/detectEnv';
 import ScrollToTop from './ScrollToTop';
 import Dashboard from './site/Dashboard';
 import Site from './site/Site';
@@ -38,6 +39,7 @@ class Main extends Component {
   }
 
   render() {
+    const subdomain = this.getSubdomain();
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -55,24 +57,24 @@ class Main extends Component {
             <Router>
               <ScrollToTop />
               <Switch>
-                <Route exact path="/" render={props => (
-                  <Provider store={ServerAdmin.get().getStore()}>
-                    <Site {...props} />
-                  </Provider>
-                )} />
-                <Route path="/(pricing|demo|signup|contact|login|terms|terms-of-service|privacy|policy|privacy-policy)" render={props => (
-                  <Provider store={ServerAdmin.get().getStore()}>
-                    <Site {...props} />
-                  </Provider>
-                )} />
-                <Route path="/dashboard/:path?/:subPath*" render={props => (
-                  <Provider store={ServerAdmin.get().getStore()}>
-                    <Dashboard {...props} />
-                  </Provider>
-                )} />
-                <Route path="/:projectId" render={props => (
-                  <App {...props} />
-                )} />
+                {subdomain ? (
+                  <Route path="/" render={props => (
+                    <App projectId={subdomain} {...props} />
+                  )} />
+                ) : (
+                    <React.Fragment>
+                      <Route path="/dashboard/:path?/:subPath*" render={props => (
+                        <Provider store={ServerAdmin.get().getStore()}>
+                          <Dashboard {...props} />
+                        </Provider>
+                      )} />
+                      <Route render={props => (
+                        <Provider store={ServerAdmin.get().getStore()}>
+                          <Site {...props} />
+                        </Provider>
+                      )} />
+                    </React.Fragment>
+                  )}
               </Switch>
             </Router>
           </div>
@@ -80,6 +82,25 @@ class Main extends Component {
       </MuiThemeProvider>
       // </React.StrictMode>
     );
+  }
+
+  getSubdomain(): string | undefined {
+    const hostSplit = window.location.host.split('.');
+    var subdomain: string | undefined = undefined;
+    switch (detectEnv()) {
+      case Environment.PRODUCTION:
+        if (hostSplit.length === 3) {
+          subdomain = hostSplit[0];
+        }
+        break;
+      case Environment.DEVELOPMENT_FRONTEND:
+      case Environment.DEVELOPMENT_LOCAL:
+        if (hostSplit.length === 2) {
+          subdomain = hostSplit[0];
+        }
+        break;
+    }
+    return subdomain;
   }
 }
 
