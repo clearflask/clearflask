@@ -68,7 +68,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                     <TableCell key='description'>
                       {transaction.summary}
                       {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
-                        <Button onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/post/${transaction.targetId}`)}>
+                        <Button onClick={() => this.props.history.push(`/post/${transaction.targetId}`)}>
                           View
                       </Button>
                       )}

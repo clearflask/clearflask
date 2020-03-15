@@ -17,13 +17,18 @@ const CONTACT = 'contact';
 
 const styles = (theme: Theme) => createStyles({
   page: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(6),
   },
   field: {
     margin: theme.spacing(2),
   },
   box: {
     border: '1px solid ' + theme.palette.grey[300],
+  },
+  growAndFlex: {
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
 });
 
@@ -170,33 +175,31 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
           )} />
         ))}
         <Route key='default' path={prefixMatch} render={props => (
-          <BasePage>
+          <div className={this.props.classes.page}>
             <Container maxWidth='md'>
               <Grid container spacing={5} alignItems='stretch' alignContent='stretch'>
                 <Grid item xs={12}>
                   <Typography component="h1" variant="h2" color="textPrimary">How can we help?</Typography>
                 </Grid>
                 {forms.map(form => (
-                  <Grid item xs={12} sm={4}>
-                    <div>
-                      <CardHeader
-                        title={form.title}
-                        subheader={form.subtitle}
-                        style={{ flexGrow: 1 }}
-                      />
-                      <CardActions style={{ justifyContent: 'flex-end' }}>
-                        <Button
-                          onClick={() => this.props.history.push(`/contact/${form.type}`)}
-                        >
-                          {form.submitTitle}
-                        </Button>
-                      </CardActions>
-                    </div>
+                  <Grid item xs={12} sm={6} md={4} className={this.props.classes.growAndFlex}>
+                    <CardHeader
+                      title={form.title}
+                      subheader={form.subtitle}
+                      style={{ flexGrow: 1 }}
+                    />
+                    <CardActions style={{ justifyContent: 'flex-end' }}>
+                      <Button
+                        onClick={() => this.props.history.push(`/contact/${form.type}`)}
+                      >
+                        {form.submitTitle}
+                      </Button>
+                    </CardActions>
                   </Grid>
                 ))}
               </Grid>
             </Container>
-          </BasePage>
+          </div>
         )} />
       </MuiAnimatedSwitch>
     );

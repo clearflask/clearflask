@@ -16,7 +16,7 @@ import { PRE_SELECTED_PLAN_ID } from './SignupPage';
 
 const styles = (theme: Theme) => createStyles({
   page: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(6),
   },
   box: {
     border: '1px solid ' + theme.palette.grey[300],

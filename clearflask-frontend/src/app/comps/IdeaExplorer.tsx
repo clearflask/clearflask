@@ -14,7 +14,8 @@ import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
 import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
-import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
+import { Label } from './SelectionPicker';
+import TagSelect from './TagSelect';
 
 enum FilterType {
   Search = 'search',
@@ -22,14 +23,6 @@ enum FilterType {
   Category = 'category',
   Tag = 'tag',
   Status = 'status',
-}
-
-interface TagSelection {
-  values: Label[];
-  options: Label[];
-  mandatoryTagIds: string[];
-  colorLookup: ColorLookup;
-  error?: string;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -51,16 +44,6 @@ const styles = (theme: Theme) => createStyles({
   caption: {
     margin: theme.spacing(1),
     color: theme.palette.text.hint,
-  },
-  menuContainer: {
-    margin: theme.spacing(2),
-  },
-  menuItem: {
-    display: 'inline-block',
-    width: '100%',
-    webkitColumnBreakInside: 'avoid',
-    pageBreakInside: 'avoid',
-    breakInside: 'avoid',
   },
   addIcon: {
     cursor: 'text',
@@ -98,6 +81,7 @@ interface State {
   newItemAuthorLabel?: Label;
   newItemChosenCategoryId?: string;
   newItemChosenTagIds?: string[];
+  newItemTagSelectHasError?: boolean;
   newItemSearchText?: string;
   newItemIsSubmitting?: boolean;
   search?: Partial<Client.IdeaSearch>;
@@ -268,8 +252,8 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       this.setState({ newItemChosenCategoryId: categoryOptions[0].categoryId })
     }
     const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
-    const tagSelection = selectedCategory ? this.getTagSelection(selectedCategory) : undefined;
-    const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && tagSelection && tagSelection.error === undefined;
+    const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
+    const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
     return (
       <div className={this.props.classes.createFormFields}>
         <TextField
@@ -319,54 +303,16 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
               </FormHelperText>
             </FormControl>
           )}
-          {tagSelection && tagSelection.options.length > 0 && (
+          {selectedCategory && (
             <div className={this.props.classes.createFormField}>
-              <SelectionPicker
+              <TagSelect
                 placeholder='Tags'
+                category={selectedCategory}
+                tagIds={this.state.newItemChosenTagIds}
+                onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
+                onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
                 disabled={this.state.newItemIsSubmitting}
-                value={tagSelection.values}
-                options={tagSelection.options}
-                colorLookup={tagSelection.colorLookup}
-                helperText=' ' // Keep it aligned
-                errorMsg={tagSelection.error}
-                isMulti={true}
-                width='100%'
-                onValueChange={labels => this.setState({
-                  newItemChosenTagIds:
-                    [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]
-                })}
-                overrideComponents={{
-                  MenuList: (menuProps) => {
-                    const tagGroups: { [tagGroupId: string]: React.ReactNode[] } = {};
-                    const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-                    children.forEach((child: any) => {
-                      if (!child.props.data) {
-                        // child is "No option(s)" text, ignore
-                      } else {
-                        const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
-                        if (!tagGroups[tagGroupId]) tagGroups[tagGroupId] = [];
-                        tagGroups[tagGroupId].push(child);
-                      }
-                    });
-                    const menuItems = Object.keys(tagGroups).map(tagGroupId => (
-                      <div className={this.props.classes.menuItem}>
-                        <Typography variant='overline'>{selectedCategory!.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
-                        {tagGroups[tagGroupId]}
-                      </div>
-                    ));
-                    return (
-                      <div {...menuProps} className={this.props.classes.menuContainer}>
-                        <div style={{
-                          MozColumns: `150px`,
-                          WebkitColumns: `150px`,
-                          columns: `150px`,
-                        }}>
-                          {menuItems}
-                        </div>
-                      </div>
-                    );
-                  },
-                }}
+                mandatoryTagIds={mandatoryTagIds}
               />
             </div>
           )}
@@ -374,7 +320,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         <Button
           color='primary'
           disabled={!enableSubmit || this.state.newItemIsSubmitting}
-          onClick={e => enableSubmit && this.createClickSubmit(tagSelection && tagSelection.mandatoryTagIds || [])}
+          onClick={e => enableSubmit && this.createClickSubmit(mandatoryTagIds)}
           style={{
             alignSelf: 'flex-end',
           }}
@@ -387,7 +333,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           onClose={() => this.setState({ logInOpen: false })}
           onLoggedInAndClose={() => {
             this.setState({ logInOpen: false });
-            this.createSubmit(tagSelection && tagSelection.mandatoryTagIds || [])
+            this.createSubmit(mandatoryTagIds)
           }}
         />
       </div>
@@ -438,66 +384,10 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });
-      this.props.history.push(`${this.props.server.getProjectId()}/post/${idea.ideaId}`);
+      this.props.history.push(`/post/${idea.ideaId}`);
     }).catch(e => this.setState({
       newItemIsSubmitting: false,
     }));
-  }
-
-  getTagSelection(category: Client.Category): TagSelection {
-    const tagSelection: TagSelection = {
-      values: [],
-      options: [],
-      mandatoryTagIds: this.props.explorer.search.filterTagIds || [],
-      colorLookup: {},
-    };
-    const mandatoryTagIds = new Set(this.props.explorer.search.filterTagIds || []);
-
-    if (!this.props.config) return tagSelection;
-
-    category.tagging.tagGroups
-      .filter(tagGroup => tagGroup.userSettable)
-      .forEach(tagGroup => {
-        // Skip groups with tags that have mandatory tags
-        if (tagGroup.tagIds.findIndex(t => mandatoryTagIds.has(t)) !== -1) return;
-
-        var selectedCount = 0;
-        category.tagging.tags
-          .filter(t => tagGroup.tagIds.includes(t.tagId))
-          .forEach(tag => {
-            const label: Label = {
-              label: tag.name,
-              value: `${tagGroup.tagGroupId}:${tag.tagId}`,
-            };
-            if (tag.color) {
-              tagSelection.colorLookup[label.value] = tag.color;
-            }
-            tagSelection.options.push(label);
-            if (this.state.newItemChosenTagIds && this.state.newItemChosenTagIds.includes(tag.tagId)) {
-              selectedCount++;
-              tagSelection.values.push(label);
-            }
-          })
-        if (tagGroup.minRequired !== undefined && selectedCount < tagGroup.minRequired) {
-          if (tagGroup.minRequired === tagGroup.maxRequired) {
-            if (tagGroup.minRequired === 1) {
-              tagSelection.error = `Choose one ${tagGroup.name} tag`;
-            } else {
-              tagSelection.error = `Choose ${tagGroup.minRequired} ${tagGroup.name} tags`;
-            }
-          } else {
-            tagSelection.error = `Choose at least ${tagGroup.maxRequired} ${tagGroup.name} tags`;
-          }
-        } else if (tagGroup.maxRequired !== undefined && selectedCount > tagGroup.maxRequired) {
-          if (tagGroup.maxRequired === 1) {
-            tagSelection.error = `Cannot choose more than one ${tagGroup.name} tag`;
-          } else {
-            tagSelection.error = `Cannot choose more than ${tagGroup.maxRequired} ${tagGroup.name} tags`;
-          }
-        }
-      });
-
-    return tagSelection;
   }
 }
 

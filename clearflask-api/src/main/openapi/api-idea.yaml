@@ -181,13 +181,9 @@ components:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
         - type: object
           properties:
-            title:
-              type: string
             response:
               type: string
             statusId:
-              type: string
-            categoryId:
               type: string
             tagIds:
               type: array

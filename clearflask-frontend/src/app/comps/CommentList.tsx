@@ -1,4 +1,3 @@
-import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -7,6 +6,7 @@ import { CommentSearchResponse } from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
+import LoadMoreButton from './LoadMoreButton';
 
 const styles = (theme: Theme) => createStyles({
   indent: {
@@ -62,23 +62,10 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
           </React.Fragment>
         ))}
         <Loader loaded={this.props.commentsStatus !== Status.PENDING} error={this.props.commentsStatus === Status.REJECTED ? "Failed to load" : undefined}>
-          {this.renderLoadMore()}
+          {(this.props.commentsStatus !== Status.PENDING && this.props.comments.length >= this.props.expectedCommentCount)
+            ? undefined : <LoadMoreButton onClick={this.props.loadMore.bind(this)} />}
         </Loader>
       </div>
-    );
-  }
-
-  renderLoadMore() {
-    if (this.props.commentsStatus !== Status.PENDING
-      && this.props.comments.length >= this.props.expectedCommentCount) return null;
-
-    return (
-      <Button
-        variant="text"
-        className={this.props.classes.loadMore}
-        onClick={e => this.props.loadMore()}>
-        <Typography variant='caption'>See more</Typography>
-      </Button>
     );
   }
 }

@@ -39,7 +39,7 @@ const styles = (theme: Theme) => createStyles({
 
 /** Label type used by react-select */
 export interface Label {
-  label: string;
+  label: string | React.ReactNode;
   value: string;
 }
 
@@ -57,6 +57,7 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   colorLookup?: ColorLookup;
   disabled?: boolean;
   isMulti?: boolean;
+  showClearWithOneValue?: boolean;
   bare?: boolean;
   width?: string
   inputMinWidth?: string;
@@ -206,7 +207,7 @@ const DropdownIndicator = (props) => {
 const ClearIndicator = (props) => {
   const outerProps: Props = props.selectProps.commonProps;
   const { innerProps: { ref, ...restInnerProps } } = props;
-  return !outerProps.value || outerProps.value.length <= 1 ? null : (
+  return !outerProps.value || outerProps.value.length <= (outerProps.showClearWithOneValue ? 0 : 1) ? null : (
     <DeleteIcon {...restInnerProps} fontSize='inherit' className={outerProps.classes.deleteIcon} />
   );
 }

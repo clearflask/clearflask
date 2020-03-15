@@ -11,9 +11,15 @@ interface ConnectProps {
   isLoggedIn: boolean;
   notifications?: Client.Notification[];
   hasMore: boolean;
+  callOnMount?: () => void,
 }
 
 class NotificationBadge extends Component<Props & ConnectProps> {
+
+  componentDidMount() {
+    this.props.callOnMount && this.props.callOnMount();
+  }
+
   render() {
     if (!this.props.isLoggedIn) return null;
 
@@ -31,14 +37,14 @@ class NotificationBadge extends Component<Props & ConnectProps> {
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const userId = state.users.loggedIn.status === Status.FULFILLED && state.users.loggedIn.user && state.users.loggedIn.user.userId || undefined;
-  if (userId && state.notifications.notificationSearch.status === undefined) {
-    ownProps.server.dispatch().notificationSearch({
-      projectId: ownProps.server.getProjectId(),
-    });
-  }
   return {
     isLoggedIn: !!userId,
     notifications: state.notifications.notificationSearch.notifications,
     hasMore: !!state.notifications.notificationSearch.cursor,
+    callOnMount: (userId && state.notifications.notificationSearch.status === undefined) ? () => {
+      ownProps.server.dispatch().notificationSearch({
+        projectId: ownProps.server.getProjectId(),
+      });
+    } : undefined,
   };
 })(NotificationBadge);

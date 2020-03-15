@@ -248,6 +248,19 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
+    case Admin.ideaUpdateAdminActionStatus.Fulfilled:
+    case Client.ideaUpdateActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.ideaId]: {
+            idea: action.payload,
+            status: Status.FULFILLED,
+          }
+        },
+        maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
+      };
     case Client.ideaSearchActionStatus.Pending:
       searchKey = getSearchKey(action.meta.request.ideaSearch);
       return {

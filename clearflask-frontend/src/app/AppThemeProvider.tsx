@@ -70,8 +70,8 @@ class AppThemeProvider extends Component<Props> {
             }
           } : {}),
           background: {
-            default: this.props.config.style.palette.background ? this.props.config.style.palette.background : '#fff',
-            paper: this.props.config.style.palette.backgroundPaper ? this.props.config.style.palette.backgroundPaper : '#fff',
+            ...(this.props.config.style.palette.background ? { default: this.props.config.style.palette.background } : {}),
+            ...(this.props.config.style.palette.backgroundPaper ? { paper: this.props.config.style.palette.backgroundPaper } : {}),
           },
         },
         typography: {

@@ -5,8 +5,11 @@ import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import CreditView from '../../common/config/CreditView';
 
+export const FundingMaxWidth = 300;
+
 const styles = (theme: Theme) => createStyles({
   container: {
+    maxWidth: FundingMaxWidth,
   },
   fundingAmount: {
     fontSize: '1.2em',

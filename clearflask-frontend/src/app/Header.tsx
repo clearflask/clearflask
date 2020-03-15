@@ -174,7 +174,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       <div className={this.props.classes.actions}>
         <IconButton
           aria-label='Notifications'
-          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/notification`)}
+          onClick={() => this.props.history.push('/notification')}
         >
           <NotificationBadge server={this.props.server}>
             <NotificationsIcon fontSize='small' />
@@ -182,13 +182,13 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         </IconButton>
         <IconButton
           aria-label='Balance'
-          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/transaction`)}
+          onClick={() => this.props.history.push('/transaction')}
         >
           <BalanceIcon fontSize='small' />
         </IconButton>
         <IconButton
           aria-label='Account'
-          onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/account`)}
+          onClick={() => this.props.history.push('/account')}
         >
           <AccountIcon fontSize='small' />
         </IconButton>

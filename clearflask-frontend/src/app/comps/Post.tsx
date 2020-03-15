@@ -7,6 +7,7 @@ import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
+import EditIcon from '@material-ui/icons/Edit';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import { BaseEmoji, Picker } from 'emoji-mart';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
@@ -14,9 +15,10 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import TimeAgo from 'react-timeago';
-import Truncate from 'react-truncate';
+import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
+import ServerAdmin from '../../api/serverAdmin';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import Delimited from '../utils/Delimited';
@@ -25,6 +27,7 @@ import CommentList from './CommentList';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
+import PostEdit from './PostEdit';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -89,6 +92,10 @@ const styles = (theme: Theme) => createStyles({
   author: {
     whiteSpace: 'nowrap',
     margin: theme.spacing(0.5),
+  },
+  editIconButton: {
+    padding: '0px',
+    color: theme.palette.text.hint,
   },
   voteIconButton: {
     fontSize: '2em',
@@ -291,6 +298,7 @@ interface State {
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
   newCommentInput?: string;
+  editExpanded?: boolean;
 }
 
 export const isExpanded = (): boolean => !!Post.expandedPath;
@@ -388,14 +396,17 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   renderBottomBar(variant: PostVariant) {
     const leftSide = [
       this.renderExpression(variant),
-      this.renderCommentCount(variant),
-      this.renderCreatedDatetime(variant),
-      this.renderAuthor(variant),
-    ].filter(i => !!i);
-    const rightSide = [
       this.renderStatus(variant),
       this.renderCategory(variant),
       ...(this.renderTags(variant) || []),
+    ].filter(i => !!i);
+    const middleSide = [
+    ].filter(i => !!i);
+    const rightSide = [
+      this.renderCommentCount(variant),
+      this.renderCreatedDatetime(variant),
+      this.renderAuthor(variant),
+      this.renderEdit(variant),
     ].filter(i => !!i);
 
     if (leftSide.length + rightSide.length === 0) return null;
@@ -405,6 +416,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <div className={this.props.classes.bottomBarLine}>
           <Delimited>
             {leftSide}
+          </Delimited>
+        </div>
+        <div className={this.props.classes.grow} />
+        <div className={this.props.classes.bottomBarLine}>
+          <Delimited>
+            {middleSide}
           </Delimited>
         </div>
         <div className={this.props.classes.grow} />
@@ -520,6 +537,34 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           />
         )}
       </div>
+    );
+  }
+
+  renderEdit(variant: PostVariant) {
+    if (!this.props.idea
+      || !this.props.category
+      || !this.props.credits
+      || (!ServerAdmin.get().isAdminLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
+
+    return (
+      <React.Fragment>
+        <IconButton key='edit' className={this.props.classes.editIconButton}
+          onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
+          <EditIcon fontSize='inherit' />
+        </IconButton>
+        {this.state.editExpanded !== undefined && (
+          <PostEdit
+            key={this.props.idea.ideaId}
+            server={this.props.server}
+            category={this.props.category}
+            credits={this.props.credits}
+            loggedInUser={this.props.loggedInUser}
+            idea={this.props.idea}
+            open={this.state.editExpanded}
+            onClose={() => this.setState({ editExpanded: false })}
+          />
+        )}
+      </React.Fragment>
     );
   }
 
@@ -994,7 +1039,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   onExpand() {
     if (!this.props.expandable || !this.props.idea) return;
     if (this.props.theme.disableTransitions) {
-      this.props.history.push(`/${this.props.server.getProjectId()}/post/${this.props.idea.ideaId}`);
+      this.props.history.push(`/post/${this.props.idea.ideaId}`);
     } else {
       this.expandedPath = `/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;

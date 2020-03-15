@@ -262,7 +262,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    return this.ideaDeleteAdmin(request);
   }
   ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithVote> {
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
@@ -315,7 +315,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor));
   }
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
-    throw new Error("Method not implemented.");
+    return this.ideaUpdateAdmin({
+      ...request,
+      ideaUpdateAdmin: {
+        ...request.ideaUpdate,
+      },
+    });
   }
   configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
@@ -511,7 +516,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.Idea> {
-    throw new Error("Method not implemented.");
+    const idea = this.getImmutable(
+      this.getProject(request.projectId).ideas,
+      idea => idea.ideaId === request.ideaId);
+    if (request.ideaUpdateAdmin.title !== undefined) idea.title = request.ideaUpdateAdmin.title;
+    if (request.ideaUpdateAdmin.description !== undefined) idea.description = request.ideaUpdateAdmin.description;
+    if (request.ideaUpdateAdmin.response !== undefined) idea.response = request.ideaUpdateAdmin.response;
+    if (request.ideaUpdateAdmin.statusId !== undefined) idea.statusId = request.ideaUpdateAdmin.statusId;
+    if (request.ideaUpdateAdmin.categoryId !== undefined) idea.categoryId = request.ideaUpdateAdmin.categoryId;
+    if (request.ideaUpdateAdmin.tagIds !== undefined) idea.tagIds = request.ideaUpdateAdmin.tagIds;
+    if (request.ideaUpdateAdmin.fundGoal !== undefined) idea.fundGoal = request.ideaUpdateAdmin.fundGoal;
+    if (!request.ideaUpdateAdmin.suppressNotifications) {
+      // TODO send notifications
+    };
+    return this.returnLater(idea);
   }
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');

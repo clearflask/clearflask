@@ -61,20 +61,19 @@ class Main extends Component {
                   <Route path="/" render={props => (
                     <App projectId={subdomain} {...props} />
                   )} />
-                ) : (
-                    <React.Fragment>
-                      <Route path="/dashboard/:path?/:subPath*" render={props => (
-                        <Provider store={ServerAdmin.get().getStore()}>
-                          <Dashboard {...props} />
-                        </Provider>
-                      )} />
-                      <Route render={props => (
-                        <Provider store={ServerAdmin.get().getStore()}>
-                          <Site {...props} />
-                        </Provider>
-                      )} />
-                    </React.Fragment>
-                  )}
+                ) : ([(
+                  <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                    <Provider store={ServerAdmin.get().getStore()}>
+                      <Dashboard {...props} />
+                    </Provider>
+                  )} />
+                ), (
+                  <Route key='site' render={props => (
+                    <Provider store={ServerAdmin.get().getStore()}>
+                      <Site {...props} />
+                    </Provider>
+                  )} />
+                )])}
               </Switch>
             </Router>
           </div>

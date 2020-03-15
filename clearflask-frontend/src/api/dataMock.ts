@@ -160,7 +160,7 @@ class DataMock {
         statusId: status ? status.statusId : undefined,
       },
     })
-      .then((item: Admin.Idea) => this.mockCommentsAndExpression([user], versionedConfig, category, item))
+      .then((item: Admin.Idea) => category.support.comment && this.mockComments([user], versionedConfig, category, item))
   }
 
   fakeMockIdeaData(category: Admin.Category): Partial<Admin.Idea> {
@@ -197,7 +197,7 @@ class DataMock {
     return expressions;
   }
 
-  mockCommentsAndExpression(userMentionPool: Admin.User[], versionedConfig: Admin.VersionedConfigAdmin, category: Admin.Category, item: Admin.Idea, level: number = 2, numComments: number = 1, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
+  mockComments(userMentionPool: Admin.User[], versionedConfig: Admin.VersionedConfigAdmin, category: Admin.Category, item: Admin.Idea, numComments: number = 1, level: number = 2, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
     return this.mockUser()
       .then(user => {
         userMentionPool.push(user);
@@ -246,7 +246,7 @@ class DataMock {
         var remainingComments = numComments * Math.random();
         var promise: Promise<any> = Promise.resolve();
         while (remainingComments-- > 0) {
-          promise = promise.then(() => this.mockCommentsAndExpression(userMentionPool, versionedConfig, category, item, level - 1, numComments, comment));
+          promise = promise.then(() => this.mockComments(userMentionPool, versionedConfig, category, item, numComments, level - 1, comment));
         }
         return promise;
       });
@@ -258,9 +258,9 @@ class DataMock {
       : '';
   }
 
-  getConfig(): Promise<Admin.ConfigAdmin> {
-    return ServerMock.get().configGetAdmin({ projectId: this.projectId })
-      .then((versionedConfig: Admin.VersionedConfigAdmin) => versionedConfig.config);
+  async getConfig(): Promise<Admin.ConfigAdmin> {
+    const versionedConfig = await ServerMock.get().configGetAdmin({ projectId: this.projectId });
+    return versionedConfig.config;
   }
 }
 

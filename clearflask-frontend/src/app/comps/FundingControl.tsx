@@ -3,13 +3,14 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
-import Truncate from 'react-truncate';
+import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import minmax from '../../common/util/mathutil';
 import Loader from '../utils/Loader';
-import FundingBar from './FundingBar';
+import FundingBar, { FundingMaxWidth } from './FundingBar';
+import LoadMoreButton from './LoadMoreButton';
 
 interface SearchResult {
   status: Status;
@@ -18,6 +19,9 @@ interface SearchResult {
 }
 
 const styles = (theme: Theme) => createStyles({
+  container: {
+    maxWidth: FundingMaxWidth,
+  },
   separatorMargin: {
     marginTop: theme.spacing(3),
   },
@@ -60,6 +64,7 @@ interface ConnectProps {
   maxFundAmountSeen: number;
   updateVote: (voteUpdate: Client.VoteUpdate) => Promise<Client.VoteUpdateResponse>;
   callOnMount: () => void,
+  loadMore?: () => void;
 }
 
 interface State {
@@ -109,7 +114,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     }
 
     return (
-      <div style={this.props.style} className={this.props.className}>
+      <div style={this.props.style} className={`${this.props.className} ${this.props.classes.container}`}>
         {showFirstIdea && this.props.idea && (<div>
           <FundingBar
             idea={this.props.idea}
@@ -129,9 +134,9 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
           {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
             <div className={this.props.classes.separatorMargin}>
               <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
-                <Truncate lines={1} style={{ opacity: 0.6 }}><div>{idea.title}</div></Truncate>
+                <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
                 {!showFirstIdea && (
-                  <Button onClick={() => this.props.history.push(`/${this.props.server.getProjectId()}/post/${idea.ideaId}`)}>
+                  <Button onClick={() => this.props.history.push(`/post/${idea.ideaId}`)}>
                     View
                   </Button>
                 )}
@@ -145,6 +150,9 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
               {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
             </div>
           ))}
+          {this.props.loadMore && (
+            <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
+          )}
         </Loader>
       </div>
     );
@@ -276,7 +284,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
   const search = { fundedByMeAndActive: true };
-  var newProps = {
+  var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
     credits: state.conf.conf ? state.conf.conf.credits : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
@@ -295,7 +303,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         projectId: state.projectId,
         ideaSearch: search,
       });
-    }
+    },
   };
 
   const bySearch = state.ideas.bySearch[getSearchKey(search)];
@@ -315,6 +323,15 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
           }
         };
       });
+    if (bySearch.cursor) {
+      newProps.loadMore = () => {
+        ownProps.server.dispatch().ideaSearch({
+          projectId: state.projectId,
+          ideaSearch: search,
+          cursor: bySearch.cursor,
+        });
+      }
+    }
   }
 
   return newProps;

@@ -84,9 +84,9 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
     });
     if (notification.relatedIdeaId) {
       if (notification.relatedCommentId) {
-        this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`);
+        this.props.history.push(`/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`);
       } else {
-        this.props.history.push(`/${this.props.server.getProjectId()}/post/${notification.relatedIdeaId}`);
+        this.props.history.push(`/post/${notification.relatedIdeaId}`);
       }
     }
   }
