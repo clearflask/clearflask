@@ -22,6 +22,7 @@ interface Props {
   expectedCommentCount: number;
   parentCommentId?: string;
   newCommentsAllowed?: boolean; // TODO add comment replies
+  loggedInUser?: Client.User;
 }
 
 interface ConnectProps {
@@ -50,13 +51,15 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
       <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.indent : undefined}>
         {this.props.comments.map(comment => (
           <React.Fragment key={comment.commentId}>
-            <Comment comment={comment}></Comment>
+            <Comment server={this.props.server} comment={comment} loggedInUser={this.props.loggedInUser}></Comment>
             {comment.childCommentCount > 0 && (
               <CommentList
                 server={this.props.server}
                 ideaId={this.props.ideaId}
                 expectedCommentCount={comment.childCommentCount}
                 parentCommentId={comment.commentId}
+                newCommentsAllowed={this.props.newCommentsAllowed}
+                loggedInUser={this.props.loggedInUser}
               />
             )}
           </React.Fragment>

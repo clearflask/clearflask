@@ -34,7 +34,7 @@ export default class Templater {
     this.creditsCurrency();
 
     this.demoPagePanel(Admin.PostDisplayToJSON({
-      titleTruncateLines: 2,
+      titleTruncateLines: 1,
       descriptionTruncateLines: 3,
       showDescription: true,
       showCommentCount: false,
@@ -303,7 +303,7 @@ export default class Templater {
 
     // Add to home page
     const postDisplay: Admin.PostDisplay = {
-      titleTruncateLines: 2,
+      titleTruncateLines: 1,
       descriptionTruncateLines: 4,
       showDescription: false,
       showResponse: false,
@@ -410,7 +410,7 @@ export default class Templater {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
         .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-            titleTruncateLines: 2,
+            titleTruncateLines: 1,
             descriptionTruncateLines: 2,
             showDescription: true,
             showResponse: false,
@@ -478,7 +478,7 @@ export default class Templater {
       this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
         .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
           title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-            titleTruncateLines: 2,
+            titleTruncateLines: 1,
             descriptionTruncateLines: 2,
             showDescription: true,
             showResponse: false,

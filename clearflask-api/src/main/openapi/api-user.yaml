@@ -73,12 +73,6 @@ components:
           properties:
             email:
               type: string
-            iosPushToken:
-              type: string
-            androidPushToken:
-              type: string
-            browserPushToken:
-              type: string
             created:
               type: string
               format: date-time
@@ -125,6 +119,23 @@ components:
           type: string
         browserPushToken:
           type: string
+    UserUpdateAdmin:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        emailNotify:
+          type: boolean
+        iosPush:
+          type: boolean
+        androidPush:
+          type: boolean
+        browserPush:
+          type: boolean
 
 /project/{projectId}/login:
   post:
@@ -414,7 +425,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'api-user.yaml#/components/schemas/UserUpdate'
+            $ref: 'api-user.yaml#/components/schemas/UserUpdateAdmin'
     responses:
       '200':
         content:

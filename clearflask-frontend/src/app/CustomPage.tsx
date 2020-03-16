@@ -108,7 +108,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               panel={panel}
               server={this.props.server}
               displayDefaults={{
-                titleTruncateLines: 3,
+                titleTruncateLines: 1,
                 descriptionTruncateLines: 0,
                 showDescription: false,
                 showCommentCount: false,

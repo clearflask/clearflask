@@ -454,6 +454,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Cl
         },
       };
     case Client.commentDeleteActionStatus.Fulfilled:
+    case Admin.commentDeleteAdminActionStatus.Fulfilled:
+    case Client.commentUpdateActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
@@ -569,6 +571,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: Client.Acti
         }
       };
     case Client.userGetActionStatus.Fulfilled:
+    case Admin.userUpdateAdminActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
@@ -630,13 +633,19 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: Client.Acti
           status: Status.FULFILLED,
         },
       };
+    case Admin.userDeleteAdminActionStatus.Fulfilled:
+      const { [action.meta.request.userId]: removedUser, ...byIdWithoutDeleted } = state.byId;
+      return {
+        ...state,
+        byId: byIdWithoutDeleted,
+      };
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
       if (!state.loggedIn.user) return state;
-      const { [state.loggedIn.user.userId]: removedUser, ...byIdWithout } = state.byId;
+      const { [state.loggedIn.user.userId]: loggedOutUser, ...byIdWithoutLoggedOut } = state.byId;
       return {
         ...state,
-        byId: byIdWithout,
+        byId: byIdWithoutLoggedOut,
         loggedIn: {},
       };
     default:

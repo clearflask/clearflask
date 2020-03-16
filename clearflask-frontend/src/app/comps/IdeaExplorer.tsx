@@ -66,6 +66,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   explorer: Client.PageExplorer;
+  forceDisablePostExpand?: boolean;
 }
 
 interface ConnectProps {
@@ -122,6 +123,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
             direction={Direction.Vertical}
             panel={this.props.explorer}
             searchOverride={{ searchText: this.state.newItemSearchText }}
+            forceDisablePostExpand={this.props.forceDisablePostExpand}
             server={this.props.server}
             displayDefaults={{
               titleTruncateLines: 1,
@@ -157,6 +159,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
             key={getSearchKey(this.props.explorer.search)}
             server={this.props.server}
             direction={Direction.Vertical}
+            forceDisablePostExpand={this.props.forceDisablePostExpand}
             panel={this.props.explorer}
             displayDefaults={{
               titleTruncateLines: 1,

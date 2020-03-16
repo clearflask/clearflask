@@ -13,11 +13,15 @@ import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import { Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
+import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import debounce from '../../common/util/debounce';
 
 const styles = (theme: Theme) => createStyles({
+  page: {
+    maxWidth: 1024,
+  },
   searchInput: {
     margin: theme.spacing(1),
     width: 100,
@@ -66,6 +70,7 @@ interface Props {
 
 interface State {
   createRefFocused?: boolean;
+  editExpandedForUserId?: string;
   newUserName?: string;
   newUserEmail?: string;
   newUserPassword?: string;
@@ -95,173 +100,201 @@ class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State
     const enableSubmit = !!this.state.newUserName;
 
     return (
-      <ExplorerTemplate
-        createSize={expand ? '364px' : '116px'}
-        createShown={expand}
-        createVisible={(
-          <TextField
-            disabled={this.state.newUserIsSubmitting}
-            className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-            label='Create'
-            placeholder='Name'
-            value={this.state.newUserName || ''}
-            onChange={e => {
-              this.setState({ newUserName: e.target.value });
-              this.updateSearchText(e.target.value, this.state.newUserEmail);
-            }}
-            InputProps={{
-              inputRef: this.createInputRef,
-              onBlur: () => this.setState({ createRefFocused: false }),
-              onFocus: () => this.setState({ createRefFocused: true }),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AddIcon
-                    className={this.props.classes.addIcon}
-                    onClick={() => this.createInputRef.current?.focus()}
-                  />
-                </InputAdornment>
-              ),
-            }}
-          />
-        )}
-        createCollapsible={(
-          <div className={this.props.classes.createFormFields}>
+      <div className={this.props.classes.page}>
+        <ExplorerTemplate
+          createSize={expand ? '364px' : '116px'}
+          createShown={expand}
+          createVisible={(
             <TextField
               disabled={this.state.newUserIsSubmitting}
-              className={this.props.classes.createFormField}
-              placeholder='Email'
-              value={this.state.newUserEmail || ''}
+              className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
+              label='Create'
+              placeholder='Name'
+              value={this.state.newUserName || ''}
               onChange={e => {
-                this.setState({ newUserEmail: e.target.value });
-                this.updateSearchText(this.state.newUserName, e.target.value);
+                this.setState({ newUserName: e.target.value });
+                this.updateSearchText(e.target.value, this.state.newUserEmail);
               }}
-            />
-            <TextField
-              disabled={this.state.newUserIsSubmitting}
-              className={this.props.classes.createFormField}
-              placeholder='Password'
-              value={this.state.newUserPassword || ''}
-              onChange={e => this.setState({ newUserPassword: e.target.value })}
-              type={this.state.revealPassword ? 'text' : 'password'}
               InputProps={{
+                inputRef: this.createInputRef,
+                onBlur: () => this.setState({ createRefFocused: false }),
+                onFocus: () => this.setState({ createRefFocused: true }),
                 endAdornment: (
-                  <InputAdornment position='end'>
-                    <IconButton
-                      aria-label='Toggle password visibility'
-                      onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                    >
-                      {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                    </IconButton>
+                  <InputAdornment position="end">
+                    <AddIcon
+                      className={this.props.classes.addIcon}
+                      onClick={() => this.createInputRef.current?.focus()}
+                    />
                   </InputAdornment>
-                )
+                ),
               }}
             />
-            <Button
-              color='primary'
-              disabled={!enableSubmit || this.state.newUserIsSubmitting}
-              onClick={e => {
-                if (!enableSubmit) return;
-                this.setState({ newUserIsSubmitting: true });
-                this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
-                  projectId: this.props.server.getProjectId(),
-                  userCreateAdmin: {
-                    name: this.state.newUserName,
-                    email: this.state.newUserEmail,
-                    password: this.state.newUserPassword,
-                    balance: this.state.newUserBalance,
-                  },
-                })).then(user => this.setState({
-                  createRefFocused: false,
-                  newUserName: undefined,
-                  newUserEmail: undefined,
-                  newUserPassword: undefined,
-                  revealPassword: undefined,
-                  newUserBalance: undefined,
-                  newUserIsSubmitting: false,
-                  searchInput: undefined,
-                  searchResult: [user],
-                })).catch(e => this.setState({
-                  newUserIsSubmitting: false,
-                }));
-              }}
-              style={{
-                alignSelf: 'flex-end',
-              }}
-            >
-              Submit
+          )}
+          createCollapsible={(
+            <div className={this.props.classes.createFormFields}>
+              <TextField
+                disabled={this.state.newUserIsSubmitting}
+                className={this.props.classes.createFormField}
+                placeholder='Email'
+                value={this.state.newUserEmail || ''}
+                onChange={e => {
+                  this.setState({ newUserEmail: e.target.value });
+                  this.updateSearchText(this.state.newUserName, e.target.value);
+                }}
+              />
+              <TextField
+                disabled={this.state.newUserIsSubmitting}
+                className={this.props.classes.createFormField}
+                placeholder='Password'
+                value={this.state.newUserPassword || ''}
+                onChange={e => this.setState({ newUserPassword: e.target.value })}
+                type={this.state.revealPassword ? 'text' : 'password'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position='end'>
+                      <IconButton
+                        aria-label='Toggle password visibility'
+                        onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                      >
+                        {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <Button
+                color='primary'
+                disabled={!enableSubmit || this.state.newUserIsSubmitting}
+                onClick={e => {
+                  if (!enableSubmit) return;
+                  this.setState({ newUserIsSubmitting: true });
+                  this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
+                    projectId: this.props.server.getProjectId(),
+                    userCreateAdmin: {
+                      name: this.state.newUserName,
+                      email: this.state.newUserEmail,
+                      password: this.state.newUserPassword,
+                      balance: this.state.newUserBalance,
+                    },
+                  })).then(user => this.setState({
+                    createRefFocused: false,
+                    newUserName: undefined,
+                    newUserEmail: undefined,
+                    newUserPassword: undefined,
+                    revealPassword: undefined,
+                    newUserBalance: undefined,
+                    newUserIsSubmitting: false,
+                    searchInput: undefined,
+                    searchResult: [user],
+                  })).catch(e => this.setState({
+                    newUserIsSubmitting: false,
+                  }));
+                }}
+                style={{
+                  alignSelf: 'flex-end',
+                }}
+              >
+                Submit
             </Button>
-          </div>
-        )}
-        search={(
-          <TextField
-            className={this.props.classes.searchInput}
-            label='Search'
-            value={this.state.searchInput || ''}
-            onChange={e => {
-              this.setState({
-                searchInput: e.target.value,
-                searchText: e.target.value,
-              });
-              this.updateSearchText(e.target.value);
-            }}
-          />
-        )}
-        content={(
-          <div className={this.props.classes.resultContainer}>
-            {this.state.searchResult && this.state.searchResult.length > 0
-              ? (
-                <React.Fragment>
-                  <Table size='small' className={this.props.classes.userProperties}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell key='created'>Created</TableCell>
-                        <TableCell key='name'>Name</TableCell>
-                        <TableCell key='email'>Email</TableCell>
-                        <TableCell key='notifications'>Notifications</TableCell>
-                        <TableCell key='balance'>Account balance</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {this.state.searchResult.map((user, index) => (
-                        <TableRow key={index}>
-                          <TableCell><Typography><TimeAgo date={user.created} /></Typography></TableCell>
-                          <TableCell><Typography>{user.name}</Typography></TableCell>
-                          <TableCell><Typography>{user.email}</Typography></TableCell>
-                          <TableCell><Typography>
-                            {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}
-                            {user.emailNotify && (<EmailIcon fontSize='inherit' />)}
-                            {user.browserPush && (<BrowserIcon fontSize='inherit' />)}
-                            {user.iosPush && (<IosIcon fontSize='inherit' />)}
-                            {user.androidPush && (<AndroidIcon fontSize='inherit' />)}
-                          </Typography></TableCell>
-                          <TableCell><Typography>
-                            {!!user.balance && (<CreditView
-                              val={user.balance}
-                              credits={this.props.server.getStore().getState().conf.conf?.credits || { increment: 1 }} />)}
-                          </Typography></TableCell>
+            </div>
+          )}
+          search={(
+            <TextField
+              className={this.props.classes.searchInput}
+              label='Search'
+              value={this.state.searchInput || ''}
+              onChange={e => {
+                this.setState({
+                  searchInput: e.target.value,
+                  searchText: e.target.value,
+                });
+                this.updateSearchText(e.target.value);
+              }}
+            />
+          )}
+          content={(
+            <div className={this.props.classes.resultContainer}>
+              {this.state.searchResult && this.state.searchResult.length > 0
+                ? (
+                  <React.Fragment>
+                    <Table size='small' className={this.props.classes.userProperties}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell key='name'>Name</TableCell>
+                          <TableCell key='email'>Email</TableCell>
+                          <TableCell key='balance'>Account balance</TableCell>
+                          <TableCell key='notifications'>Notifications</TableCell>
+                          <TableCell key='created'>Created</TableCell>
+                          <TableCell key='edit'></TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {!!this.state.searchCursor && (
-                    <Button
-                      style={{ margin: 'auto', display: 'block' }}
-                      onClick={() => this.search(this.state.searchText, undefined, this.state.searchCursor)}
-                    >
-                      Show more
-                    </Button>
-                  )}
-                </React.Fragment>
-              ) : (
-                <div className={this.props.classes.nothing}>
-                  <Loader loaded={this.state.searchResult !== undefined}>
-                    <Typography variant='overline'>No users found</Typography>
-                  </Loader>
-                </div>
-              )}
-          </div>
-        )}
-      />
+                      </TableHead>
+                      <TableBody>
+                        {this.state.searchResult.map((user, index) => (
+                          <TableRow key={index}>
+                            <TableCell><Typography>{user.name}</Typography></TableCell>
+                            <TableCell><Typography>{user.email}</Typography></TableCell>
+                            <TableCell><Typography>
+                              {!!user.balance && (<CreditView
+                                val={user.balance}
+                                credits={this.props.server.getStore().getState().conf.conf?.credits || { increment: 1 }} />)}
+                            </Typography></TableCell>
+                            <TableCell><Typography>
+                              {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}
+                              {user.emailNotify && (<EmailIcon fontSize='inherit' />)}
+                              {user.browserPush && (<BrowserIcon fontSize='inherit' />)}
+                              {user.iosPush && (<IosIcon fontSize='inherit' />)}
+                              {user.androidPush && (<AndroidIcon fontSize='inherit' />)}
+                            </Typography></TableCell>
+                            <TableCell><Typography><TimeAgo date={user.created} /></Typography></TableCell>
+                            <TableCell>
+                              <Button key='edit' variant='text'
+                                onClick={e => this.setState({ editExpandedForUserId: user.userId })}>
+                                <Typography variant='caption'>Edit</Typography>
+                              </Button>
+                              {this.state.editExpandedForUserId !== undefined && (
+                                <UserEdit
+                                  key={`edit${user.userId}`}
+                                  server={this.props.server}
+                                  user={user}
+                                  open={this.state.editExpandedForUserId === user.userId}
+                                  onClose={() => this.setState({ editExpandedForUserId: '' })}
+                                  onUpdated={userUpdated => {
+                                    const updatedSearchResult = [...this.state.searchResult!];
+                                    updatedSearchResult[index] = userUpdated;
+                                    this.setState({ searchResult: updatedSearchResult });
+                                  }}
+                                  onDeleted={() => {
+                                    const updatedSearchResult = [...this.state.searchResult!];
+                                    updatedSearchResult.splice(index, 1);
+                                    this.setState({ searchResult: updatedSearchResult });
+                                  }}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {!!this.state.searchCursor && (
+                      <Button
+                        style={{ margin: 'auto', display: 'block' }}
+                        onClick={() => this.search(this.state.searchText, undefined, this.state.searchCursor)}
+                      >
+                        Show more
+                      </Button>
+                    )}
+                  </React.Fragment>
+                ) : (
+                  <div className={this.props.classes.nothing}>
+                    <Loader loaded={this.state.searchResult !== undefined}>
+                      <Typography variant='overline'>No users found</Typography>
+                    </Loader>
+                  </div>
+                )}
+            </div>
+          )}
+        />
+      </div>
     );
   }
 

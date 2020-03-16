@@ -104,27 +104,32 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       />
                     </Grid>
                   )}
-                  <Grid item xs={12} className={this.props.classes.row}>
-                    <TagSelect
-                      label='Tags'
-                      disabled={this.state.isSubmitting}
-                      category={this.props.category}
-                      tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
-                      onChange={tagIds => this.setState({ tagIds: tagIds })}
-                      onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
-                    />
-                  </Grid>
+                  {this.props.category.tagging.tags.length > 0 && (
+                    <Grid item xs={12} className={this.props.classes.row}>
+                      <TagSelect
+                        label='Tags'
+                        disabled={this.state.isSubmitting}
+                        category={this.props.category}
+                        tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
+                        onChange={tagIds => this.setState({ tagIds: tagIds })}
+                        onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
+                      />
+                    </Grid>
+                  )}
                   {!!this.props.category.support.fund && (
                     <Grid item xs={12} className={this.props.classes.row}>
                       <TextField
                         disabled={this.state.isSubmitting}
                         label='Funding Goal'
                         fullWidth
-                        value={this.state.fundGoal === undefined ? this.props.idea.fundGoal : this.state.fundGoal}
+                        value={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : this.state.fundGoal}
                         type='number'
+                        inputProps={{
+                          step: 1,
+                        }}
                         helperText={(this.state.fundGoal === undefined && this.props.idea.fundGoal === undefined) ? undefined : (
                           <CreditView
-                            val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : this.state.fundGoal || 0}
+                            val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : this.state.fundGoal}
                             credits={this.props.credits}
                           />
                         )}
@@ -173,6 +178,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
                         className={this.props.classes.row}
+                        disabled={this.state.isSubmitting}
                         control={(
                           <Switch
                             checked={!this.state.suppressNotifications}
@@ -260,7 +266,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,
                   }))
-                  .then(idea => {
+                  .then(() => {
                     this.setState({ isSubmitting: false });
                     this.props.onClose();
                   })

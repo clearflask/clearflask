@@ -396,11 +396,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
-    return this.userUpdateAdmin(request)
-      .then(user => {
-        this.getProject(request.projectId).loggedInUser = user;
-        return user;
-      });
+    const user = this.getImmutable(
+      this.getProject(request.projectId).users,
+      user => user.userId === request.userId);
+    if (request.userUpdate.name !== undefined) user.name = request.userUpdate.name;
+    if (request.userUpdate.email !== undefined) user.email = request.userUpdate.email === '' ? undefined : request.userUpdate.email;
+    if (request.userUpdate.emailNotify !== undefined) user.emailNotify = request.userUpdate.emailNotify;
+    if (request.userUpdate.password !== undefined) user.password = request.userUpdate.password === '' ? undefined : request.userUpdate.password;
+    if (request.userUpdate.iosPushToken !== undefined) {
+      user.iosPushToken = request.userUpdate.iosPushToken === '' ? undefined : request.userUpdate.iosPushToken;
+      user.iosPush = request.userUpdate.iosPushToken !== '';
+    };
+    if (request.userUpdate.androidPushToken !== undefined) {
+      user.androidPushToken = request.userUpdate.androidPushToken === '' ? undefined : request.userUpdate.androidPushToken;
+      user.androidPush = request.userUpdate.androidPushToken !== '';
+    };
+    if (request.userUpdate.browserPushToken !== undefined) {
+      user.browserPushToken = request.userUpdate.browserPushToken === '' ? undefined : request.userUpdate.browserPushToken;
+      user.browserPush = request.userUpdate.browserPushToken !== '';
+    };
+    return this.returnLater(user);
   }
   voteGetOwn(request: Client.VoteGetOwnRequest): Promise<Client.VoteGetOwnResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
@@ -523,7 +538,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.ideaUpdateAdmin.description !== undefined) idea.description = request.ideaUpdateAdmin.description;
     if (request.ideaUpdateAdmin.response !== undefined) idea.response = request.ideaUpdateAdmin.response;
     if (request.ideaUpdateAdmin.statusId !== undefined) idea.statusId = request.ideaUpdateAdmin.statusId;
-    if (request.ideaUpdateAdmin.categoryId !== undefined) idea.categoryId = request.ideaUpdateAdmin.categoryId;
     if (request.ideaUpdateAdmin.tagIds !== undefined) idea.tagIds = request.ideaUpdateAdmin.tagIds;
     if (request.ideaUpdateAdmin.fundGoal !== undefined) idea.fundGoal = request.ideaUpdateAdmin.fundGoal;
     if (!request.ideaUpdateAdmin.suppressNotifications) {
@@ -568,7 +582,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(user);
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === request.userId);
+    if (userIdIndex) {
+      this.getProject(request.projectId).users.splice(userIdIndex, 1);
+    }
+    return this.returnLater();
   }
   userDeleteBulkAdmin(request: Admin.UserDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -591,23 +609,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const user = this.getImmutable(
       this.getProject(request.projectId).users,
       user => user.userId === request.userId);
-    if (request.userUpdate.name !== undefined) user.name = request.userUpdate.name;
-    if (request.userUpdate.email !== undefined) user.email = request.userUpdate.email === '' ? undefined : request.userUpdate.email;
-    if (request.userUpdate.emailNotify !== undefined) user.emailNotify = request.userUpdate.emailNotify;
-    if (request.userUpdate.password !== undefined) user.password = request.userUpdate.password === '' ? undefined : request.userUpdate.password;
-    if (request.userUpdate.iosPushToken !== undefined) {
-      user.iosPushToken = request.userUpdate.iosPushToken === '' ? undefined : request.userUpdate.iosPushToken;
-      user.iosPush = request.userUpdate.iosPushToken !== '';
+    if (request.userUpdateAdmin.name !== undefined) user.name = request.userUpdateAdmin.name;
+    if (request.userUpdateAdmin.email !== undefined) user.email = request.userUpdateAdmin.email === '' ? undefined : request.userUpdateAdmin.email;
+    if (request.userUpdateAdmin.emailNotify !== undefined) user.emailNotify = request.userUpdateAdmin.emailNotify;
+    if (request.userUpdateAdmin.password !== undefined) user.password = request.userUpdateAdmin.password === '' ? undefined : request.userUpdateAdmin.password;
+    if (request.userUpdateAdmin.iosPush === false) {
+      user.iosPushToken = undefined;
+      user.iosPush = false;
     };
-    if (request.userUpdate.androidPushToken !== undefined) {
-      user.androidPushToken = request.userUpdate.androidPushToken === '' ? undefined : request.userUpdate.androidPushToken;
-      user.androidPush = request.userUpdate.androidPushToken !== '';
+    if (request.userUpdateAdmin.androidPush === false) {
+      user.androidPushToken = undefined;
+      user.androidPush = false;
     };
-    if (request.userUpdate.browserPushToken !== undefined) {
-      user.browserPushToken = request.userUpdate.browserPushToken === '' ? undefined : request.userUpdate.browserPushToken;
-      user.browserPush = request.userUpdate.browserPushToken !== '';
+    if (request.userUpdateAdmin.browserPush === false) {
+      user.browserPushToken = undefined;
+      user.browserPush = false;
     };
-    return this.returnLater(user);
+    return this.returnLater({
+      ...user,
+      balance: this.getProject(request.projectId).balances[user.userId],
+    });
   }
   voteDeleteAdmin(request: Admin.VoteDeleteAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");

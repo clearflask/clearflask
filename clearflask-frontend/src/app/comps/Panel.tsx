@@ -49,6 +49,7 @@ interface Props {
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
+  forceDisablePostExpand?: boolean;
 }
 
 interface ConnectProps {
@@ -97,6 +98,7 @@ class Panel extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               server={this.props.server}
               idea={idea}
               expandable
+              forceDisablePostExpand={!this.props.forceDisablePostExpand}
               onClickTag={this.props.onClickTag}
               onClickCategory={this.props.onClickCategory}
               onClickStatus={this.props.onClickStatus}

@@ -43,7 +43,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
     const tagSelection = this.getTagSelection(this.props.category);
 
     if (tagSelection.options.length <= 0) {
-      return undefined;
+      return null;
     };
 
     if (!!tagSelection.error !== this.previousHasError) {

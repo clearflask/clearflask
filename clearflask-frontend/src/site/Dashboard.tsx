@@ -237,7 +237,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 type: 'item', slug: 'create', name: (
                   <span style={{ display: 'flex', alignItems: 'center' }}>
                     <AddIcon fontSize='inherit' />&nbsp;Create
-                </span>
+                  </span>
                 ), offset: 1
               },
               { type: 'heading', text: 'Account' },

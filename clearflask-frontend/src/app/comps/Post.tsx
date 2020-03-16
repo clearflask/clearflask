@@ -1,4 +1,4 @@
-import { Button, CardActionArea, Chip, Fade, IconButton, Popover, TextField, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Chip, Collapse, Fade, IconButton, Popover, TextField, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -7,7 +7,6 @@ import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
 import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
-import EditIcon from '@material-ui/icons/Edit';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import { BaseEmoji, Picker } from 'emoji-mart';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
@@ -21,6 +20,7 @@ import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
+import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
 import CommentList from './CommentList';
@@ -65,6 +65,12 @@ const styles = (theme: Theme) => createStyles({
       textDecoration: 'underline',
     },
   },
+  description: {
+    marginTop: theme.spacing(0.5),
+  },
+  pre: {
+    whiteSpace: 'pre-wrap',
+  },
   responseContainer: {
     margin: theme.spacing(0.5),
     padding: theme.spacing(0.5, 1),
@@ -72,6 +78,12 @@ const styles = (theme: Theme) => createStyles({
   responsePrefixText: {
     fontSize: '0.8rem',
     color: theme.palette.grey[500],
+  },
+  editButton: {
+    padding: `3px ${theme.spacing(0.5)}px`,
+    whiteSpace: 'nowrap',
+    minWidth: 'unset',
+    color: theme.palette.text.hint,
   },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -240,7 +252,17 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-flex',
     flexDirection: 'column',
     margin: theme.spacing(2),
+    marginBottom: 0,
     alignItems: 'flex-start',
+  },
+  addCommentField: {
+    transition: theme.transitions.create('width'),
+  },
+  addCommentFieldCollapsed: {
+    width: 115,
+  },
+  addCommentFieldExpanded: {
+    width: 400,
   },
   nothing: {
     margin: theme.spacing(4),
@@ -267,6 +289,7 @@ interface Props {
    * and post is expanded to full screen.
    */
   expandable?: boolean;
+  forceDisablePostExpand?: boolean;
   display?: Client.PostDisplay;
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
@@ -399,15 +422,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.renderStatus(variant),
       this.renderCategory(variant),
       ...(this.renderTags(variant) || []),
-    ].filter(i => !!i);
-    const middleSide = [
-    ].filter(i => !!i);
+    ].filter(notEmpty);
     const rightSide = [
       this.renderCommentCount(variant),
       this.renderCreatedDatetime(variant),
       this.renderAuthor(variant),
       this.renderEdit(variant),
-    ].filter(i => !!i);
+    ].filter(notEmpty);
 
     if (leftSide.length + rightSide.length === 0) return null;
 
@@ -416,12 +437,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <div className={this.props.classes.bottomBarLine}>
           <Delimited>
             {leftSide}
-          </Delimited>
-        </div>
-        <div className={this.props.classes.grow} />
-        <div className={this.props.classes.bottomBarLine}>
-          <Delimited>
-            {middleSide}
           </Delimited>
         </div>
         <div className={this.props.classes.grow} />
@@ -485,42 +500,45 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <div className={this.props.classes.addCommentForm}>
         <TextField
           id='createComment'
+          className={`${this.props.classes.addCommentField} ${!!this.state.newCommentInput
+            ? this.props.classes.addCommentFieldExpanded : this.props.classes.addCommentFieldCollapsed}`}
           label='Add comment'
           value={this.state.newCommentInput || ''}
           onChange={e => this.setState({ newCommentInput: e.target.value })}
           multiline
-          fullWidth={!!this.state.newCommentInput}
+          rowsMax={10}
         />
-        <Button
-          color='primary'
-          disabled={!this.state.newCommentInput}
-          onClick={e => {
-            const onNewCommentClick = () => {
-              this.props.server.dispatch().commentCreate({
-                projectId: this.props.server.getProjectId(),
-                ideaId: this.props.idea!.ideaId,
-                commentCreate: {
-                  content: this.state.newCommentInput!,
-                },
-              })
-                .then(comment => {
-                  this.setState({ newCommentInput: undefined });
-                });
-            };
-            if (this.props.loggedInUser) {
-              onNewCommentClick();
-            } else {
-              this.onLoggedIn = onNewCommentClick;
-              this.setState({ logInOpen: true });
-            }
-          }}
-          style={{
-            alignSelf: 'flex-end',
-            visibility: !this.state.newCommentInput ? 'hidden' : undefined,
-          }}
-        >
-          Submit
+        <Collapse in={!!this.state.newCommentInput}>
+          <Button
+            color='primary'
+            disabled={!this.state.newCommentInput}
+            onClick={e => {
+              const onNewCommentClick = () => {
+                this.props.server.dispatch().commentCreate({
+                  projectId: this.props.server.getProjectId(),
+                  ideaId: this.props.idea!.ideaId,
+                  commentCreate: {
+                    content: this.state.newCommentInput!,
+                  },
+                })
+                  .then(comment => {
+                    this.setState({ newCommentInput: undefined });
+                  });
+              };
+              if (this.props.loggedInUser) {
+                onNewCommentClick();
+              } else {
+                this.onLoggedIn = onNewCommentClick;
+                this.setState({ logInOpen: true });
+              }
+            }}
+            style={{
+              alignSelf: 'flex-end',
+            }}
+          >
+            Submit
         </Button>
+        </Collapse>
       </div>
     );
 
@@ -534,6 +552,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             expectedCommentCount={this.props.idea.childCommentCount}
             parentCommentId={undefined}
             newCommentsAllowed={commentsAllowed}
+            loggedInUser={this.props.loggedInUser}
           />
         )}
       </div>
@@ -548,10 +567,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <React.Fragment>
-        <IconButton key='edit' className={this.props.classes.editIconButton}
+        <Button key='edit' variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
-          <EditIcon fontSize='inherit' />
-        </IconButton>
+          <Typography variant='caption'>Edit</Typography>
+        </Button>
         {this.state.editExpanded !== undefined && (
           <PostEdit
             key={this.props.idea.ideaId}
@@ -1010,7 +1029,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
-      <Typography variant='body1' component={'span'}>
+      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.pre : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}
@@ -1038,10 +1057,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   onExpand() {
     if (!this.props.expandable || !this.props.idea) return;
-    if (this.props.theme.disableTransitions) {
-      this.props.history.push(`/post/${this.props.idea.ideaId}`);
+    if (this.props.forceDisablePostExpand || this.props.theme.disableTransitions) {
+      this.props.history.push(`${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`);
     } else {
-      this.expandedPath = `/post/${this.props.idea.ideaId}`;
+      this.expandedPath = `${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;
       this.props.history.push(this.expandedPath);
     }
