@@ -1,3 +1,4 @@
+import { Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -6,6 +7,7 @@ import { CommentSearchResponse } from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
+import CommentReply from './CommentReply';
 import LoadMoreButton from './LoadMoreButton';
 
 const styles = (theme: Theme) => createStyles({
@@ -23,6 +25,7 @@ interface Props {
   parentCommentId?: string;
   newCommentsAllowed?: boolean; // TODO add comment replies
   loggedInUser?: Client.User;
+  logIn: () => Promise<void>;
 }
 
 interface ConnectProps {
@@ -32,6 +35,7 @@ interface ConnectProps {
 }
 
 class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+  state = {};
 
   constructor(props) {
     super(props)
@@ -51,7 +55,27 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
       <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.indent : undefined}>
         {this.props.comments.map(comment => (
           <React.Fragment key={comment.commentId}>
-            <Comment server={this.props.server} comment={comment} loggedInUser={this.props.loggedInUser}></Comment>
+            <Comment
+              server={this.props.server}
+              comment={comment}
+              loggedInUser={this.props.loggedInUser}
+              replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
+              onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
+            />
+            <Collapse
+              in={!!this.state[`replyOpen${comment.commentId}`]}
+              mountOnEnter
+              unmountOnExit
+            >
+              <CommentReply
+                server={this.props.server}
+                focusOnMount
+                ideaId={this.props.ideaId}
+                parentCommentId={comment.commentId}
+                logIn={this.props.logIn}
+                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+              />
+            </Collapse>
             {comment.childCommentCount > 0 && (
               <CommentList
                 server={this.props.server}
@@ -60,6 +84,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 parentCommentId={comment.commentId}
                 newCommentsAllowed={this.props.newCommentsAllowed}
                 loggedInUser={this.props.loggedInUser}
+                logIn={this.props.logIn}
               />
             )}
           </React.Fragment>

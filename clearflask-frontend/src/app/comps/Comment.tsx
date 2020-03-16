@@ -49,6 +49,8 @@ interface Props {
   server: Server;
   comment?: Client.CommentWithAuthor;
   loggedInUser?: Client.User;
+  replyOpen?: boolean;
+  onReplyClicked: () => void;
 }
 interface State {
   editExpanded?: boolean;
@@ -81,6 +83,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       this.renderAuthor(),
       this.renderCreatedDatetime(),
       this.renderEdited(),
+      this.renderReply(),
       this.renderAdminDelete(),
       this.renderEdit(),
     ].filter(notEmpty);
@@ -99,6 +102,17 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
           {rightSide}
         </Delimited>
       </div>
+    );
+  }
+
+  renderReply() {
+    if (this.props.replyOpen) return null;
+
+    return (
+      <Button key='reply' variant='text' className={this.props.classes.editButton}
+        onClick={e => this.props.onReplyClicked()}>
+        <Typography variant='caption'>Reply</Typography>
+      </Button>
     );
   }
 

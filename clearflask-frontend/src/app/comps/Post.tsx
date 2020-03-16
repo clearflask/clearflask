@@ -1,4 +1,4 @@
-import { Button, CardActionArea, Chip, Collapse, Fade, IconButton, Popover, TextField, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Chip, Fade, IconButton, Popover, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -24,6 +24,7 @@ import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
 import CommentList from './CommentList';
+import CommentReply from './CommentReply';
 import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
@@ -259,7 +260,7 @@ const styles = (theme: Theme) => createStyles({
     transition: theme.transitions.create('width'),
   },
   addCommentFieldCollapsed: {
-    width: 115,
+    width: 73,
   },
   addCommentFieldExpanded: {
     width: 400,
@@ -320,7 +321,6 @@ interface State {
   isSubmittingDownvote?: boolean;
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
-  newCommentInput?: string;
   editExpanded?: boolean;
 }
 
@@ -496,50 +496,23 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const commentsAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableComments !== true;
 
+    const logIn = () => {
+      if (this.props.loggedInUser) {
+        return Promise.resolve();
+      } else {
+        return new Promise<void>(resolve => {
+          this.onLoggedIn = resolve
+          this.setState({ logInOpen: true });
+        });
+      }
+    };
+
     const addCommentButton = commentsAllowed && (
-      <div className={this.props.classes.addCommentForm}>
-        <TextField
-          id='createComment'
-          className={`${this.props.classes.addCommentField} ${!!this.state.newCommentInput
-            ? this.props.classes.addCommentFieldExpanded : this.props.classes.addCommentFieldCollapsed}`}
-          label='Add comment'
-          value={this.state.newCommentInput || ''}
-          onChange={e => this.setState({ newCommentInput: e.target.value })}
-          multiline
-          rowsMax={10}
-        />
-        <Collapse in={!!this.state.newCommentInput}>
-          <Button
-            color='primary'
-            disabled={!this.state.newCommentInput}
-            onClick={e => {
-              const onNewCommentClick = () => {
-                this.props.server.dispatch().commentCreate({
-                  projectId: this.props.server.getProjectId(),
-                  ideaId: this.props.idea!.ideaId,
-                  commentCreate: {
-                    content: this.state.newCommentInput!,
-                  },
-                })
-                  .then(comment => {
-                    this.setState({ newCommentInput: undefined });
-                  });
-              };
-              if (this.props.loggedInUser) {
-                onNewCommentClick();
-              } else {
-                this.onLoggedIn = onNewCommentClick;
-                this.setState({ logInOpen: true });
-              }
-            }}
-            style={{
-              alignSelf: 'flex-end',
-            }}
-          >
-            Submit
-        </Button>
-        </Collapse>
-      </div>
+      <CommentReply
+        server={this.props.server}
+        ideaId={this.props.idea.ideaId}
+        logIn={logIn}
+      />
     );
 
     return (
@@ -548,6 +521,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         {this.props.idea.commentCount > 0 && (
           <CommentList
             server={this.props.server}
+            logIn={logIn}
             ideaId={this.props.idea.ideaId}
             expectedCommentCount={this.props.idea.childCommentCount}
             parentCommentId={undefined}
