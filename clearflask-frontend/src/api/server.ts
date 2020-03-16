@@ -30,7 +30,9 @@ export class Server {
       const composeEnhancers =
         typeof window === 'object' &&
           window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */ })
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+            serialize: true,
+          })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }
@@ -529,6 +531,19 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Cl
             comment: action.payload,
             status: Status.FULFILLED,
           },
+          // Also increase the child comment count on the parent comment
+          ...(action.payload.parentCommentId
+            ? {
+              [action.payload.parentCommentId]: {
+                ...state.byId[action.payload.parentCommentId],
+                status: Status.FULFILLED,
+                comment: {
+                  ...state.byId[action.payload.parentCommentId].comment as any,
+                  childCommentCount: (state.byId[action.payload.parentCommentId].comment?.childCommentCount || 0) + 1,
+                },
+              }
+            }
+            : {}),
         },
       };
     default:
