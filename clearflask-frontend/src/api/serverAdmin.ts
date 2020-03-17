@@ -46,7 +46,9 @@ export default class ServerAdmin {
       const composeEnhancers =
         typeof window === 'object' &&
           window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']
-          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({/* OPTIONS */ })
+          ? window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__']({
+            serialize: true,
+          })
           : compose;
       storeMiddleware = composeEnhancers(storeMiddleware);
     }

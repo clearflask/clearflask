@@ -1,4 +1,4 @@
-import { Button, CardActionArea, Chip, Fade, IconButton, Popover, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Chip, Collapse, Fade, IconButton, Popover, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -322,6 +322,7 @@ interface State {
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
   editExpanded?: boolean;
+  commentExpanded?: boolean
 }
 
 export const isExpanded = (): boolean => !!Post.expandedPath;
@@ -507,17 +508,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       }
     };
 
-    const addCommentButton = commentsAllowed && (
-      <CommentReply
-        server={this.props.server}
-        ideaId={this.props.idea.ideaId}
-        logIn={logIn}
-      />
-    );
-
     return (
       <div className={this.props.classes.commentSection}>
-        {addCommentButton}
+        {commentsAllowed && (
+          <Button key='reply' variant='text'
+            onClick={e => this.setState({ commentExpanded: true })}>
+            <Typography variant='caption'>Reply</Typography>
+          </Button>
+        )}
         {this.props.idea.commentCount > 0 && (
           <CommentList
             server={this.props.server}
@@ -528,6 +526,22 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             newCommentsAllowed={commentsAllowed}
             loggedInUser={this.props.loggedInUser}
           />
+        )}
+        {commentsAllowed && (
+          <Collapse
+            in={this.state.commentExpanded}
+            mountOnEnter
+            unmountOnExit
+          >
+            <CommentReply
+              server={this.props.server}
+              ideaId={this.props.idea.ideaId}
+              focusOnMount
+              logIn={logIn}
+              onSubmitted={() => this.setState({ commentExpanded: undefined })}
+              onBlurAndEmpty={() => this.setState({ commentExpanded: undefined })}
+            />
+          </Collapse>
         )}
       </div>
     );

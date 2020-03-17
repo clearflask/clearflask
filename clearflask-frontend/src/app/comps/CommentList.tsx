@@ -11,7 +11,7 @@ import CommentReply from './CommentReply';
 import LoadMoreButton from './LoadMoreButton';
 
 const styles = (theme: Theme) => createStyles({
-  indent: {
+  commentIndent: {
     marginLeft: theme.spacing(3),
   },
   loadMore: {
@@ -52,7 +52,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 
   render() {
     return (
-      <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.indent : undefined}>
+      <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.commentIndent : undefined}>
         {this.props.comments.map(comment => (
           <React.Fragment key={comment.commentId}>
             <Comment
@@ -62,20 +62,6 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
               replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
               onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
             />
-            <Collapse
-              in={!!this.state[`replyOpen${comment.commentId}`]}
-              mountOnEnter
-              unmountOnExit
-            >
-              <CommentReply
-                server={this.props.server}
-                focusOnMount
-                ideaId={this.props.ideaId}
-                parentCommentId={comment.commentId}
-                logIn={this.props.logIn}
-                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-              />
-            </Collapse>
             {comment.childCommentCount > 0 && (
               <CommentList
                 server={this.props.server}
@@ -87,6 +73,22 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 logIn={this.props.logIn}
               />
             )}
+            <Collapse
+              in={!!this.state[`replyOpen${comment.commentId}`]}
+              mountOnEnter
+              unmountOnExit
+              className={this.props.classes.commentIndent}
+            >
+              <CommentReply
+                server={this.props.server}
+                focusOnMount
+                ideaId={this.props.ideaId}
+                parentCommentId={comment.commentId}
+                logIn={this.props.logIn}
+                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+                onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+              />
+            </Collapse>
           </React.Fragment>
         ))}
         <Loader loaded={this.props.commentsStatus !== Status.PENDING} error={this.props.commentsStatus === Status.REJECTED ? "Failed to load" : undefined}>

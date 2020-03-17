@@ -2,6 +2,7 @@ import { Button, Collapse, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Server } from '../../api/server';
+import ScrollAnchor from '../../common/util/ScrollAnchor';
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
@@ -24,12 +25,14 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string;
   server: Server;
   ideaId: string;
   parentCommentId?: string;
   focusOnMount?: boolean;
   logIn: () => Promise<void>;
   onSubmitted?: () => void;
+  onBlurAndEmpty?: () => void;
 }
 
 interface State {
@@ -42,13 +45,14 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
 
   componentDidMount() {
     if (this.props.focusOnMount) {
-      this.inputRef.current?.focus();
+      // Focus after smooth scrolling finishes to prevent rapid scroll
+      setTimeout(() => this.inputRef.current?.focus(), 200)
     };
   }
 
   render() {
     return (
-      <div className={this.props.classes.addCommentForm}>
+      <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
         <TextField
           id='createComment'
           className={`${this.props.classes.addCommentField} ${!!this.state.newCommentInput
@@ -60,6 +64,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
           rowsMax={10}
           InputProps={{
             inputRef: this.inputRef,
+            onBlur: () => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(),
           }}
         />
         <Collapse in={!!this.state.newCommentInput}>
@@ -84,6 +89,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
             Submit
         </Button>
         </Collapse>
+        <ScrollAnchor scrollOnMount />
       </div>
     );
   }
