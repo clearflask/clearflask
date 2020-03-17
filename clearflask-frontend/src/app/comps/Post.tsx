@@ -265,6 +265,9 @@ const styles = (theme: Theme) => createStyles({
   addCommentFieldExpanded: {
     width: 400,
   },
+  addCommentButton: {
+    color: theme.palette.text.hint,
+  },
   nothing: {
     margin: theme.spacing(4),
     color: theme.palette.text.hint,
@@ -511,9 +514,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div className={this.props.classes.commentSection}>
         {commentsAllowed && (
-          <Button key='reply' variant='text'
+          <Button key='addComment' variant='text' className={this.props.classes.addCommentButton}
             onClick={e => this.setState({ commentExpanded: true })}>
-            <Typography variant='caption'>Reply</Typography>
+            <Typography variant='caption'>Comment</Typography>
           </Button>
         )}
         {this.props.idea.commentCount > 0 && (
