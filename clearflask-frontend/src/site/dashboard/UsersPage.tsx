@@ -62,6 +62,9 @@ const styles = (theme: Theme) => createStyles({
   value: {
     margin: theme.spacing(1),
   },
+  created: {
+    whiteSpace: 'nowrap',
+  }
 });
 
 interface Props {
@@ -245,7 +248,7 @@ class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State
                               {user.iosPush && (<IosIcon fontSize='inherit' />)}
                               {user.androidPush && (<AndroidIcon fontSize='inherit' />)}
                             </Typography></TableCell>
-                            <TableCell><Typography><TimeAgo date={user.created} /></Typography></TableCell>
+                            <TableCell><Typography className={this.props.classes.created}><TimeAgo date={user.created} /></Typography></TableCell>
                             <TableCell>
                               <Button key='edit' variant='text'
                                 onClick={e => this.setState({ editExpandedForUserId: user.userId })}>

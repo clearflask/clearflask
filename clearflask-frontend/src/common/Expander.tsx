@@ -2,6 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { Motion } from 'react-motion';
 import muiSpring from './muiSpring';
+import getAbsoluteBoundingRect from './util/absoluteBoundingRect';
 
 const styles = (theme: Theme) => createStyles({
   screen: {
@@ -32,8 +33,8 @@ class Expander extends Component<Props> {
 
     if (expandChanged) {
       if (this.props.expand) {
-        this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && this.contentRef.current.offsetParent.getBoundingClientRect() || undefined;
-        this.contentRect = this.contentRef.current && this.contentRef.current.getBoundingClientRect() || undefined;
+        this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && getAbsoluteBoundingRect(this.contentRef.current.offsetParent) || undefined;
+        this.contentRect = this.contentRef.current && getAbsoluteBoundingRect(this.contentRef.current) || undefined;
       }
     }
 

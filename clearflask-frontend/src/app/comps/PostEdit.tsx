@@ -239,7 +239,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   this.props.onClose();
                 })
                 .catch(e => this.setState({ isSubmitting: false }))
-            }}>Publish</Button>
+            }}>Save</Button>
           </DialogActions>
         </Dialog>
         <Dialog

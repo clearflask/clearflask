@@ -111,7 +111,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       color='primary'
                     />
                   )}
-                  label={`Notify by email`}
+                  label={`Notifications sent to email`}
                 />
               </Grid>
               {this.props.user.iosPush && (
@@ -126,7 +126,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         color='primary'
                       />
                     )}
-                    label={`Notify by Apple Push`}
+                    label={`Notifications sent to Apple Push`}
                   />
                 </Grid>
               )}
@@ -142,7 +142,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         color='primary'
                       />
                     )}
-                    label={`Notify by Android Push`}
+                    label={`Notifications sent to Android Push`}
                   />
                 </Grid>
               )}
@@ -158,7 +158,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         color='primary'
                       />
                     )}
-                    label={`Notify by Browser Push`}
+                    label={`Notifications sent to Browser Push`}
                   />
                 </Grid>
               )}
@@ -202,7 +202,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   this.props.onClose();
                 })
                 .catch(e => this.setState({ isSubmitting: false }))
-            }}>Publish</Button>
+            }}>Save</Button>
           </DialogActions>
         </Dialog>
         <Dialog

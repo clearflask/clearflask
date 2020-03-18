@@ -98,7 +98,7 @@ class Panel extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               server={this.props.server}
               idea={idea}
               expandable
-              forceDisablePostExpand={!this.props.forceDisablePostExpand}
+              forceDisablePostExpand={this.props.forceDisablePostExpand}
               onClickTag={this.props.onClickTag}
               onClickCategory={this.props.onClickCategory}
               onClickStatus={this.props.onClickStatus}
@@ -159,7 +159,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         ? idea.idea
         : undefined;
     });
-    if (missingVotesByIdeaIds.length > 0) {
+    if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByIdeaIds.length > 0) {
       ownProps.server.dispatch().voteGetOwn({
         projectId: state.projectId,
         ideaIds: missingVotesByIdeaIds,

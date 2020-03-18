@@ -263,6 +263,24 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
+    case Client.commentCreateActionStatus.Fulfilled:
+      // For comment creation, update idea comment counts
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.ideaId]: {
+            ...state.byId[action.meta.request.ideaId],
+            idea: {
+              ...state.byId[action.meta.request.ideaId].idea!,
+              commentCount: (state.byId[action.meta.request.ideaId].idea?.commentCount || 0) + 1,
+              ...(!!action.payload.parentCommentId ? {} : {
+                childCommentCount: (state.byId[action.meta.request.ideaId].idea?.childCommentCount || 0) + 1,
+              }),
+            },
+          }
+        },
+      };
     case Client.ideaSearchActionStatus.Pending:
       searchKey = getSearchKey(action.meta.request.ideaSearch);
       return {
