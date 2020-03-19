@@ -1,4 +1,4 @@
-import { Container, Grid, Typography } from '@material-ui/core';
+import { Container, Grid, Hidden, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import DataMock from '../api/dataMock';
@@ -21,8 +21,6 @@ interface DemoProps {
 }
 
 const styles = (theme: Theme) => createStyles({
-  page: {
-  },
   hero: {
     width: '100vw',
     minHeight: '100vh',
@@ -40,39 +38,18 @@ const styles = (theme: Theme) => createStyles({
       padding: '10vh 1vw 10vh',
     },
   },
-  demoApp: {
+  heroLogo: {
+    [theme.breakpoints.up('sm')]: {
+      width: '200px',
+      height: '200px',
+    },
+    [theme.breakpoints.down('xs')]: {
+      width: '100px',
+      height: '100px',
+    },
   },
 });
 
-/** Landing page brainstorm v2 **
- * See https://docs.google.com/document/d/1_WY4oOE16MYihGKqWCyAZjzUhsyuYIuTcDLQUbwjeVU/edit
- */
-
-/** Landing page brainstorm **
- * 
- * User feedback
- * 
- * DONE Prioritization
- * 
- * Frictionless onboarding and retention:
- * title:
- * description:
- * demo: sign up form
- * - Choose platform: Mobile, Desktop
- * - Choose onboarding: Mobile, Desktop
- * 
- * Analytics: TODO
- * - Show top ideas
- * - Show idea interest over time
- * 
- * Customization:
- * Highly customizable
- * - Menu
- * - Style
- * 
- * Features (Demos):
- * 
- */
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
   demoProjectIds: string[] = [];
 
@@ -82,53 +59,36 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <div className={this.props.classes.page}>
+      <React.Fragment>
 
-        <div className={this.props.classes.hero}>
-          <Container maxWidth='md'>
-            {this.renderTitle()}
-            <img
-              alt='logo'
-              style={{
-                position: 'absolute',
-                width: '300px',
-                height: '300px',
-                transform: 'translateY(-50%) translateX(-75%)',
-              }}
-              src='/clearflask-logo.png' />
-            {this.renderSubTitle()}
-          </Container>
-        </div>
+        {this.renderHero()}
 
-        {/* TODO show different workflows:
-          - External:
-            - Based on monetary customer value, ie:
-              - Purchasable for real money
-              - Based on customer plan
-            - Other virtual value
-              - 
-          - Internal:
-            - Payment processor middleman. Set credit value and options to choose
-            - Length of account duration (x credits per month)
-            - 
-        */}
         {this.renderPrioritization(true)}
         {this.renderOnboarding(false)}
         {this.renderAnalytics(true)}
+      </React.Fragment>
+    );
+  }
 
-        {/* Feedback loop: collect -> analyze -> implement
-          Notify throughout all stages: discuss, roadmap, notify) */}
-
-        {/* Major templates (Feature ranking, blog, knowledge base, bug bounty, forum, FAQ, etc...)
-        all-in-one customer feedback */}
-        {/* Onboarding, minimal friction (SSO, email, Mobile push, Browser push, anonymous; email,pass,user req/opt)*/}
-        {/* Funding (toggle credit types: time, currency, points, beer) */}
-        {/* Voting (toggle downvotes) */}
-        {/* Expressions (toggle whitelist (github, unlimited, custom)) */}
-        {/* Layout (Rearrange menu and pages) */}
-        {/* Statuses (name color next status), display workflow */}
-        {/* Tagging (tag group name and tags) */}
-        {/* Style (toggle dark mode, colors, fonts)*/}
+  renderHero() {
+    return (
+      <div className={this.props.classes.hero}>
+        <Container maxWidth='md'>
+          <Grid container justify='center' wrap='wrap-reverse' spacing={2}>
+            <Hidden xsDown>
+              <Grid item sm={4}>
+                <img
+                  alt='logo'
+                  className={this.props.classes.heroLogo}
+                  src='/clearflask-logo.png' />
+              </Grid>
+            </Hidden>
+            <Grid item xs={12} sm={8}>
+              {this.renderTitle()}
+              {this.renderSubTitle()}
+            </Grid>
+          </Grid>
+        </Container>
       </div>
     );
   }
@@ -136,14 +96,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTitle() {
     return (
       <Typography variant='h3' component='h1'>
-        Give most valuable customers a proportionate voice to drive your product
+        Give valuable customers a voice to drive your product
       </Typography>
     );
   }
   renderSubTitle() {
     return (
       <Typography variant='h5' component='h2'>
-        A platform to collect and organize user feedback so you can implement the next most beneficial feature.
+        A tool to empower your users to voice their opinion for you to make better product decisions.
       </Typography>
     );
   }
@@ -207,7 +167,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
     const spacing = (<Grid item xs={false} sm={false} md={2} lg={1} xl={false} />);
     const app = (
-      <Grid item xs={12} md={6} className={this.props.classes.demoApp}>
+      <Grid item xs={12} md={6}>
         <Promised promise={projectPromise} render={demoProps.demo || (project => (
           <DemoApp
             server={project.server}

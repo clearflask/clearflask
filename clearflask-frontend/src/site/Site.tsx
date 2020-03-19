@@ -5,16 +5,17 @@ import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
+import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import ContactPage from './ContactPage';
 import DemoApp, { getProject, Project } from './DemoApp';
+import FeaturesPage from './FeaturesPage';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
 import SigninPage from './SigninPage';
 import SignupPage from './SignupPage';
-
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -61,7 +62,21 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '48px',
     maxHeight: '48px',
   },
+  menuIndent: {
+    marginLeft: theme.spacing(2),
+  },
 });
+
+interface MenuDropdown {
+  type: 'dropdown';
+  title: string;
+  items: Array<{ name: string; val: string }>;
+}
+interface MenuButton {
+  type: 'button';
+  title: string;
+  path: string;
+}
 
 interface State {
   menuOpen?: boolean;
@@ -73,12 +88,17 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
   render() {
-    const menuItems = [
-      { path: '/demo', title: 'Demo' },
-      { path: '/pricing', title: 'Pricing' },
-      { path: '/contact', title: 'Contact' },
-      { path: '/dashboard', title: 'Dashboard' },
-    ]
+    const menuItems: Array<MenuButton | MenuDropdown> = [
+      {
+        type: 'dropdown', title: 'Product', items: [
+          { val: '/features', name: 'Features' },
+          { val: '/demo', name: 'Demo' },
+        ],
+      },
+      { type: 'button', path: '/pricing', title: 'Pricing' },
+      { type: 'button', path: '/contact', title: 'Contact' },
+      { type: 'button', path: '/dashboard', title: 'Dashboard' },
+    ];
     return (
       <div className={this.props.classes.growAndFlex}>
         {/* <HideOnScroll> */}
@@ -99,12 +119,20 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   open={!!this.state.menuOpen}
                   onClose={() => this.setState({ menuOpen: false })}
                 >
-                  {menuItems.map((menuItem, index) =>
+                  {menuItems.map((menuItem, index) => menuItem.type === 'button' ? (
                     <MenuItem key={menuItem.path} onClick={() => {
                       this.setState({ menuOpen: false });
                       this.props.history.push(menuItem.path);
                     }}>{menuItem.title}</MenuItem>
-                  )}
+                  ) : [(
+                    <MenuItem disabled key={menuItem.title}>{menuItem.title}</MenuItem>
+                  ),
+                  menuItem.items.map(subMenuItem => (
+                    <MenuItem key={subMenuItem.val} className={this.props.classes.menuIndent} onClick={() => {
+                      this.setState({ menuOpen: false });
+                      this.props.history.push(subMenuItem.val);
+                    }}>{subMenuItem.name}</MenuItem>
+                  ))])}
                 </Menu>
               </Hidden>
               <img
@@ -119,9 +147,17 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               </Button>
               <div className={this.props.classes.grow} />
               <Hidden xsDown implementation='css'>
-                {menuItems.map(menuItem =>
+                {menuItems.map(menuItem => menuItem.type === 'button' ? (
                   <Button key={menuItem.path} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
-                )}
+                ) : (
+                    <DropdownButton
+                      key={menuItem.title}
+                      label={menuItem.title}
+                      links={menuItem.items}
+                      // TODO value={}
+                      onChange={val => this.props.history.push(val)}
+                    />
+                  ))}
               </Hidden>
             </Toolbar>
           </Container>
@@ -163,6 +199,9 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 )} />
               );
             }} />
+            <Route exact path={`/features`} component={props => (
+              <FeaturesPage />
+            )} />
             <Route exact path={`/`} component={props => (
               <LandingPage />
             )} />
