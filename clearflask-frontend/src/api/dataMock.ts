@@ -15,7 +15,7 @@ class DataMock {
 
   demoPrioritization() {
     return Promise.all([
-      this.mockLoggedIn(),
+      this.mockLoggedIn(40),
       this.getConfig()
         .then(config =>
           this.mockUser('John Doe')
@@ -36,11 +36,8 @@ class DataMock {
                     votersCount: 2,
                     expressionsValue: 7,
                     expressions: {
-                      '👍': 11,
-                      '😍': 7,
-                      '❤️': 5,
-                      '👎': 3,
-                      '🎉': 1,
+                      '👍': 4,
+                      '❤️': 1,
                     },
                   },
                 },
@@ -50,7 +47,7 @@ class DataMock {
 
   mockAll(): Promise<any> {
     return this.mockAccountCreate()
-      .then(this.mockLoggedIn.bind(this))
+      .then(() => this.mockLoggedIn())
       .then(userMe =>
         this.mockItems(userMe)
           .then(() => this.mockNotification(userMe)));
@@ -79,7 +76,7 @@ class DataMock {
     });
   }
 
-  mockLoggedIn(): Promise<Admin.UserMeWithBalance> {
+  mockLoggedIn(bankBalance: number = 10000): Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       userCreate: {
@@ -94,7 +91,7 @@ class DataMock {
         projectId: this.projectId,
         userId: userMe.userId,
         transactionCreateAdmin: {
-          amount: 10000,
+          amount: bankBalance,
           summary: 'Mock amount given, spend it wisely',
         },
       });

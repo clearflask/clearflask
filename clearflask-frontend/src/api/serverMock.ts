@@ -780,7 +780,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   getProject(projectId: string) {
     var project = this.db[projectId];
-    if (!project) {
+    if (project === undefined) {
       const editor = new ConfigEditor.EditorImpl();
       editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
       editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);

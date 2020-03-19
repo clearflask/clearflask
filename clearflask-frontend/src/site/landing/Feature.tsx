@@ -28,9 +28,11 @@ class Feature extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <Grid item xs={12} sm={6} md={4}>
         <Paper elevation={0} className={this.props.classes.box}>
-          <div className={this.props.classes.icon}>
-            {this.props.icon}
-          </div>
+          {this.props.icon && (
+            <div className={this.props.classes.icon}>
+              {this.props.icon}
+            </div>
+          )}
           <Typography variant='h5'>
             {this.props.title}
             {this.props.beta && (

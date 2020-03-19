@@ -27,11 +27,23 @@ export default class Templater {
     // TODO FORUM
   }
 
-  demoPrioritization() {
+  demoPrioritization(type: 'fund' | 'vote' | 'express') {
+    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+
     const categoryIndex = this.demoCategory();
 
-    this.supportFunding(categoryIndex);
-    this.creditsCurrency();
+    switch (type) {
+      case 'fund':
+        this.supportFunding(categoryIndex);
+        this.creditsCurrencyWithoutCents();
+        break;
+      case 'vote':
+        this.supportVoting(categoryIndex, false);
+        break;
+      case 'express':
+        this.supportExpressingAllEmojis(categoryIndex, true);
+        break;
+    }
 
     this.demoPagePanel(Admin.PostDisplayToJSON({
       titleTruncateLines: 1,
@@ -677,7 +689,7 @@ export default class Templater {
   supportExpressingLimitEmojiPerIdea(categoryIndex: number, limitEmojiPerIdea?: boolean) {
     const expressProp = this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']);
     if (expressProp.value !== true) expressProp.set(true);
-    if (limitEmojiPerIdea) this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(true);
+    this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(!!limitEmojiPerIdea);
   }
 
   taggingOsPlatform(categoryIndex: number) {
@@ -724,6 +736,14 @@ export default class Templater {
     return statuses;
   }
 
+  creditsCurrencyWithoutCents() {
+    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+      Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 10000, maximumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 100, minimumFractionDigits: 2 }),
+      Admin.CreditFormatterEntryToJSON({ prefix: '$' }),
+    ]);
+  }
   creditsCurrency() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([

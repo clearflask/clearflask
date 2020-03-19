@@ -21,6 +21,9 @@ export function getProject(
 ): Promise<Project> {
   const server = new Server(projectId, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
+  editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
+  editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
+  editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);
   const templater = Templater.get(editor);
   template && template(templater);
   return server.dispatchAdmin()

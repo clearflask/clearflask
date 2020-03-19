@@ -182,7 +182,7 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                   <Typography component="h1" variant="h2" color="textPrimary">How can we help?</Typography>
                 </Grid>
                 {forms.map(form => (
-                  <Grid item xs={12} sm={6} md={4} className={this.props.classes.growAndFlex}>
+                  <Grid key={form.title} item xs={12} sm={6} md={4} className={this.props.classes.growAndFlex}>
                     <CardHeader
                       title={form.title}
                       subheader={form.subtitle}

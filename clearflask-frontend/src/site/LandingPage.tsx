@@ -3,11 +3,12 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import DataMock from '../api/dataMock';
 import Templater from '../common/config/configTemplater';
-import Promised from '../common/Promised';
-import DemoApp, { deleteProject, getProject, Project } from './DemoApp';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
-import PrioritizationControls from './landing/PrioritizationControls';
+import { deleteProject, Project } from './DemoApp';
+import Block from './landing/Block';
+import Demo from './landing/Demo';
+import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
+import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
+import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 
 interface DemoProps {
   isEven: boolean;
@@ -60,12 +61,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   render() {
     return (
       <React.Fragment>
-
         {this.renderHero()}
 
-        {this.renderPrioritization(true)}
-        {this.renderOnboarding(false)}
-        {this.renderAnalytics(true)}
+        {this.renderPrioritization()}
+        {this.renderEngagement()}
+        {this.renderTransparency()}
+
+        {/* {this.renderPrioritizationDemo(true)}
+        {this.renderOnboarding()} */}
       </React.Fragment>
     );
   }
@@ -84,8 +87,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
               </Grid>
             </Hidden>
             <Grid item xs={12} sm={8}>
-              {this.renderTitle()}
-              {this.renderSubTitle()}
+              <Typography variant='h3' component='h1'>
+                Give valuable customers a voice to drive your product
+      </Typography>
+              <Typography variant='h5' component='h2'>
+                A tool to empower your users to voice their opinion for you to make better product decisions.
+      </Typography>
             </Grid>
           </Grid>
         </Container>
@@ -93,104 +100,74 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderTitle() {
+  renderPrioritization(mirror?: boolean) {
     return (
-      <Typography variant='h3' component='h1'>
-        Give valuable customers a voice to drive your product
-      </Typography>
+      <React.Fragment>
+        <Demo
+          title='Voting ideas'
+          description='Simple to understand voting system'
+          mirror={mirror}
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('vote')}
+          mock={mocker => mocker.demoPrioritization()}
+          controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+        />
+        <Demo
+          title='Powerful Credit System'
+          description='Assign credits based on user value. Let your users prioritize ideas by distributing credits.'
+          mirror={mirror}
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('fund')}
+          mock={mocker => mocker.demoPrioritization()}
+          controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+        />
+        <Demo
+          title='Expressions'
+          description='Expressions with blah blah blah.'
+          mirror={mirror}
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('express')}
+          mock={mocker => mocker.demoPrioritization()}
+          controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+        />
+      </React.Fragment>
     );
   }
-  renderSubTitle() {
+
+  renderEngagement(mirror?: boolean) {
     return (
-      <Typography variant='h5' component='h2'>
-        A tool to empower your users to voice their opinion for you to make better product decisions.
-      </Typography>
+      <Block
+        title=''
+        description=''
+        mirror={mirror}
+      />
     );
   }
 
-  onboardingDemoRef: React.RefObject<any> = React.createRef();
-  renderPrioritization(isEven: boolean) {
-    return this.renderDemo({
-      isEven,
-      title: 'Give users ability to convey the value of features',
-      description: 'Feature prioritization is critical to your success.'
-        + ' Give users proportionate amount of credits based on their value to you.'
-        + ' Alternatively, let users support your development by purchasing credits to choose which feature you build next.',
-      initialSubPath: '/embed/demo',
-      template: templater => templater.demoPrioritization(),
-      mock: mocker => mocker.demoPrioritization(),
-      controls: project => (<PrioritizationControls templater={project.templater} />),
-    });
-  }
-
-  renderOnboarding(isEven: boolean) {
-    return this.renderDemo({
-      isEven,
-      title: 'Notify users when their wishes are fulfilled',
-      description:
-        'It is important to keep a communication channel from users leaving feedback.'
-        + 'To minimize friction, users can choose between browser push notifications, mobile push or standard email.',
-      initialSubPath: '/embed/demo',
-      template: templater => setInitSignupMethodsTemplate(templater),
-      controls: project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />),
-      demo: project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />),
-    });
-  }
-
-  renderAnalytics(isEven: boolean) {
-    return this.renderDemo({
-      isEven,
-      title: 'Analytics',
-      description:
-        'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Error, aperiam. Sapiente quibusdam atque praesentium quidem nemo inventore numquam eaque aperiam? Maxime quasi laborum accusamus amet eum ea cum reprehenderit natus.',
-      initialSubPath: '/dashboard/demo',
-      template: templater => templater.demo(),
-      mock: mocker => mocker.mockAll(),
-      demo: project => (<div>TODO show analytics page</div>),
-    });
-  }
-
-  renderDemo(demoProps: DemoProps) {
-    const projectPromise = getProject(demoProps.template, demoProps.mock);
-    projectPromise.then(project => this.demoProjectIds.push(project.server.getProjectId()));
-    const controls = demoProps.controls === undefined ? undefined : (
-      <Promised promise={projectPromise} render={demoProps.controls} />
-    );
-    const textContainer = (
-      <Grid item xs={12} md={4} lg={3} xl={2}>
-        <Typography variant='h5' component='h3'>{demoProps.title}</Typography>
-        <br />
-        <Typography variant='subtitle1' component='div'>{demoProps.description}</Typography>
-        <br />
-        {controls}
-      </Grid>
-    );
-    const spacing = (<Grid item xs={false} sm={false} md={2} lg={1} xl={false} />);
-    const app = (
-      <Grid item xs={12} md={6}>
-        <Promised promise={projectPromise} render={demoProps.demo || (project => (
-          <DemoApp
-            server={project.server}
-            intialSubPath={demoProps.initialSubPath}
-          />
-        ))} />
-      </Grid>
-    );
-
+  renderTransparency(mirror?: boolean) {
     return (
-      <Grid
-        className={this.props.classes.demo}
-        container
-        spacing={3}
-        direction={demoProps.isEven ? 'row-reverse' : undefined}
-        wrap='wrap-reverse'
-      >
-        {app}
-        {spacing}
-        {textContainer}
-      </Grid>
+      <Block
+        title=''
+        description=''
+        mirror={mirror}
+      />
     );
   }
+
+  // onboardingDemoRef: React.RefObject<any> = React.createRef();
+  // renderOnboarding(mirror?: boolean) {
+  //   return (
+  //     <Demo
+  //       mirror={mirror}
+  //       title='Notify users when their wishes are fulfilled'
+  //       description='It is important to keep a communication channel from users leaving feedback. To minimize friction, users can choose between browser push notifications, mobile push or standard email.'
+  //       initialSubPath='/embed/demo'
+  //       template={templater => setInitSignupMethodsTemplate(templater)}
+  //       controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+  //       demo={project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />)}
+  //     />
+  //   );
+  // }
 }
 
 export default withStyles(styles, { withTheme: true })(LandingPage);
