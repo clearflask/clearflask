@@ -24,7 +24,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   className?: string;
   innerClassName?: string;
-  title?: string;
+  title?: string | React.ReactNode;
   header?: React.ReactNode;
   width?: string;
   height?: string;

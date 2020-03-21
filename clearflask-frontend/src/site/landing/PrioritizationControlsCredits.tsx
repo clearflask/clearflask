@@ -7,7 +7,6 @@ const styles = (theme: Theme) => createStyles({
   page: {
   },
   extraControls: {
-    minHeight: 200,
     margin: theme.spacing(1),
   },
 });

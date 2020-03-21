@@ -67,8 +67,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderEngagement()}
         {this.renderTransparency()}
 
-        {/* {this.renderPrioritizationDemo(true)}
-        {this.renderOnboarding()} */}
       </React.Fragment>
     );
   }

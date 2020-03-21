@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import CreditView from '../../common/config/CreditView';
+import CreditFractionView from '../../common/config/CreditFractionView';
 
 export const FundingMaxWidth = 300;
 
@@ -15,12 +15,6 @@ const styles = (theme: Theme) => createStyles({
     fontSize: '1.2em',
   },
   fundingGoal: {
-    fontSize: '0.8em',
-  },
-  fundingAmountReached: {
-    fontSize: '1.2em',
-  },
-  fundingGoalReached: {
     fontSize: '0.8em',
   },
   fundingBarColorPrimary: {
@@ -79,29 +73,19 @@ class FundingBar extends Component<Props & WithStyles<typeof styles, true>> {
     const fundPerc = Math.floor(100 * (this.props.idea.funded || 0) / (fundGoal || this.props.maxFundAmountSeen));
     const fundPercNew = this.props.fundAmountDiff ? Math.floor(100 * ((this.props.idea.funded || 0) + this.props.fundAmountDiff) / (fundGoal || this.props.maxFundAmountSeen)) : fundPerc;
     const fundingReached = fundGoal ? ((this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)) >= fundGoal : false;
-    const fundAmountDisplay = (
-      <Typography variant='body1'>
-        <span className={fundingReached ? this.props.classes.fundingAmountReached : this.props.classes.fundingAmount}>
-          <CreditView val={(this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)} credits={this.props.credits} />
-          {fundGoal && (<span>&nbsp;/&nbsp;</span>)}
-        </span>
-      </Typography>
-    );
-    const fundGoalDisplay = (
-      <Typography variant='body1'>
-        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal} style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          lineHeight: 'normal',
-        }}>
-          {fundGoal && (<CreditView val={this.props.idea.fundGoal || 0} credits={this.props.credits} />)}
-          &nbsp;raised
-        </span>
-      </Typography>
+    const fundFractionDisplay = (
+      <CreditFractionView
+        numerator={(this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)}
+        numeratorClassName={this.props.classes.fundingAmount}
+        denominator={this.props.idea.fundGoal || 0}
+        denominatorClassName={this.props.classes.fundingGoal}
+        additionalSuffix='raised'
+        credits={this.props.credits}
+      />
     );
     const fundRightSide = this.props.overrideRight || fundGoal && (
       <Typography variant='body1'>
-        <span className={fundingReached ? this.props.classes.fundingGoalReached : this.props.classes.fundingGoal}>
+        <span className={this.props.classes.fundingGoal}>
           {fundPercNew}
           &nbsp;%
         </span>
@@ -113,8 +97,7 @@ class FundingBar extends Component<Props & WithStyles<typeof styles, true>> {
           display: 'flex',
           alignItems: 'baseline',
         }}>
-          {fundAmountDisplay}
-          {fundGoalDisplay}
+          {fundFractionDisplay}
           <div style={{ flexGrow: 1 }}>&nbsp;</div>
           {fundRightSide}
         </div>

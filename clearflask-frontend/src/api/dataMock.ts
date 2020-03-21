@@ -15,34 +15,60 @@ class DataMock {
 
   demoPrioritization() {
     return Promise.all([
-      this.mockLoggedIn(40),
+      this.mockLoggedIn(80),
       this.getConfig()
         .then(config =>
           this.mockUser('John Doe')
-            .then(user =>
+            .then(user => ServerMock.get().ideaCreateAdmin({
+              projectId: this.projectId,
+              ideaCreateAdmin: {
+                authorUserId: user.userId,
+                title: 'Add Dark Mode',
+                description: 'To reduce eye-strain, please add a dark mode option',
+                categoryId: config.content.categories[0].categoryId,
+                tagIds: [],
+                ...{ // Fake data
+                  funded: 12,
+                  fundersCount: 5,
+                  fundGoal: 60,
+                  voteValue: 3,
+                  votersCount: 2,
+                  expressionsValue: 7,
+                  expressions: {
+                    '👍': 4,
+                    '❤️': 1,
+                  },
+                },
+              },
+            }).then(() =>
               ServerMock.get().ideaCreateAdmin({
                 projectId: this.projectId,
                 ideaCreateAdmin: {
                   authorUserId: user.userId,
-                  title: 'Support Jira integration',
+                  title: 'Support Jira Integration',
                   description: 'I would like to be able to synchronize user ideas with my Jira board',
                   categoryId: config.content.categories[0].categoryId,
                   tagIds: [],
                   ...{ // Fake data
-                    funded: 12,
+                    funded: 80,
                     fundersCount: 5,
-                    fundGoal: 60,
-                    voteValue: 3,
-                    votersCount: 2,
-                    expressionsValue: 7,
+                    fundGoal: 200,
+                    voteValue: 42,
+                    votersCount: 53,
+                    expressionsValue: 56,
                     expressions: {
-                      '👍': 4,
-                      '❤️': 1,
+                      '👍': 34,
+                      '❤️': 5,
                     },
                   },
                 },
-              }))),
-    ]);
+              }).then(idea => ServerMock.get().voteUpdate({
+                projectId: this.projectId,
+                voteUpdate: {
+                  ideaId: idea.ideaId,
+                  fundDiff: 40,
+                },
+              })))))]);
   }
 
   mockAll(): Promise<any> {

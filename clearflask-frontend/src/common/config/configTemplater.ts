@@ -59,6 +59,9 @@ export default class Templater {
       showFunding: true,
       showExpression: true,
       disableExpand: true,
+    }), Admin.IdeaSearchToJSON({
+      limit: 1,
+      sortBy: Admin.IdeaSearchSortByEnum.New,
     }));
   }
 
@@ -76,14 +79,14 @@ export default class Templater {
     return categoryIndex;
   }
 
-  demoPagePanel(display: Admin.PostDisplay = {}) {
+  demoPagePanel(display: Admin.PostDisplay = {}, search: Admin.IdeaSearch = {}) {
     const pageId = randomUuid();
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
       pageId: pageId,
       name: 'Demo',
       slug: stringToSlug('demo'),
       panels: [
-        Admin.PagePanelWithHideIfEmptyToJSON({ display: Admin.PostDisplayToJSON(display), search: Admin.IdeaSearchToJSON({}), hideIfEmpty: false }),
+        Admin.PagePanelWithHideIfEmptyToJSON({ display, search, hideIfEmpty: false }),
       ],
     }));
   }
@@ -756,12 +759,12 @@ export default class Templater {
   creditsTime() {
     this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Days', multiplier: 0.125, greaterOrEqual: 9, lessOrEqual: 39, maximumFractionDigits: 1 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Day', multiplier: 0.125, greaterOrEqual: 8, lessOrEqual: 8 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Hrs', greaterOrEqual: 2 }),
-      Admin.CreditFormatterEntryToJSON({ suffix: ' Hr', lessOrEqual: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' days', multiplier: 0.125, greaterOrEqual: 9, lessOrEqual: 39, maximumFractionDigits: 1 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' day', multiplier: 0.125, greaterOrEqual: 8, lessOrEqual: 8 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' hrs', greaterOrEqual: 2 }),
+      Admin.CreditFormatterEntryToJSON({ suffix: ' hr', lessOrEqual: 1 }),
     ]);
   }
   creditsUnitless() {

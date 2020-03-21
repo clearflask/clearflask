@@ -40,7 +40,6 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
       return (
         <div className={`${this.props.classes.vrContainer} ${this.props.className}`}>
           <div className={this.props.classes.vr} style={{
-            ...this.props.style,
             ...(this.props.length && {
               height: this.props.length
             }),
@@ -48,6 +47,7 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
               marginLeft: this.props.margins,
               marginRight: this.props.margins,
             }),
+            ...this.props.style,
           }}>
             {this.props.children ? (
               <span style={{
@@ -69,7 +69,6 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
       return (
         <div className={`${this.props.classes.hr} ${this.props.className}`}
           style={{
-            ...this.props.style,
             ...(this.props.length && {
               width: this.props.length
             }),
@@ -77,6 +76,7 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
               marginTop: this.props.margins,
               marginBottom: this.props.margins,
             }),
+            ...this.props.style,
           }}
         >
           {this.props.children && (

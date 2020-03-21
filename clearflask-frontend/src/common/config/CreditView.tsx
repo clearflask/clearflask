@@ -15,57 +15,68 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-interface Props extends WithStyles<typeof styles, true> {
+interface Props {
   val: number;
   credits: Client.Credits;
 }
 
 class CreditView extends Component<Props> {
   render() {
-    return this.formatCredit(this.props.val, this.props.credits);
-  }
-
-  formatCredit(val, credits: Client.Credits) {
-    const isNegative = val < 0;
-    val = Math.abs(val);
-    if (credits.increment === undefined) {
-      val = Math.floor(val);
-    } else {
-      val = Math.floor(val / credits.increment) * credits.increment;
-    }
-    if (credits.formats) {
-      for (let i = 0; i < credits.formats.length; i++) {
-        const format = credits.formats[i];
-        if (format.greaterOrEqual !== undefined && val < format.greaterOrEqual) {
-          continue;
-        }
-        if (format.lessOrEqual !== undefined && val > format.lessOrEqual) {
-          continue;
-        }
-        if (format.multiplier !== undefined) {
-          val *= format.multiplier
-        }
-        if (format.maximumFractionDigits !== undefined) {
-          const exp = Math.pow(10, format.maximumFractionDigits);
-          val = Math.floor(val * exp) / exp;
-        }
-        val = val.toLocaleString('en-US', {
-          minimumFractionDigits: format.minimumFractionDigits || undefined,
-        });
-        val = (format.prefix || '')
-          + val
-          + (format.suffix || '')
-        break;
-      }
-    }
+    const format = creditGetFormat(this.props.val, this.props.credits);
+    const valFormatted = format ? creditFormatVal(this.props.val, format) : this.props.val;
     return (
-      <span className={`${this.props.classes.root} ${isNegative ? this.props.classes.negative : ''}`}>
-        {isNegative && (<span className={this.props.classes.negativeBrackets}>(</span>)}
-        {val}
-        {isNegative && (<span className={this.props.classes.negativeBrackets}>)</span>)}
-      </span>
+      <CreditVal
+        valFormatted={valFormatted}
+        isNegative={this.props.val < 0}
+      />
     )
   }
 }
 
-export default withStyles(styles, { withTheme: true })(CreditView);
+export const creditGetFormat = (val: number, credits: Client.Credits): Client.CreditFormatterEntry | undefined => {
+  const valAbs = Math.abs(val);
+  return credits.formats?.find(format => {
+    if (format.greaterOrEqual !== undefined && valAbs < format.greaterOrEqual) {
+      return false;
+    }
+    if (format.lessOrEqual !== undefined && valAbs > format.lessOrEqual) {
+      return false;
+    }
+    return true;
+  });
+};
+
+export const creditFormatVal = (val: number, format: Client.CreditFormatterEntry, suppressSuffix: boolean = false) => {
+  var result: any = val;
+
+  if (format.multiplier !== undefined) {
+    result *= format.multiplier
+  }
+
+  if (format.maximumFractionDigits !== undefined) {
+    const exp = Math.pow(10, format.maximumFractionDigits);
+    result = Math.floor(result * exp) / exp;
+  }
+
+  result = result.toLocaleString('en-US', {
+    minimumFractionDigits: format.minimumFractionDigits || undefined,
+  });
+
+  result = `${format.prefix || ''}${result}${!!format.suffix && !suppressSuffix ? format.suffix : ''}`;
+
+  return result;
+};
+
+export const CreditVal = withStyles(styles, { withTheme: true })((props:
+  { valFormatted: string, isNegative: boolean }
+  & WithStyles<typeof styles, true>) => {
+  return (
+    <span className={`${props.classes.root} ${props.isNegative ? props.classes.negative : ''}`}>
+      {props.isNegative && (<span className={props.classes.negativeBrackets}>(</span>)}
+      {props.valFormatted}
+      {props.isNegative && (<span className={props.classes.negativeBrackets}>)</span>)}
+    </span>
+  )
+});
+
+export default CreditView;
