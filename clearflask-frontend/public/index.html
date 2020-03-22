@@ -3,7 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, shrink-to-fit=no, user-scalable=0">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, shrink-to-fit=no, user-scalable=0"
+    />
     <meta name="theme-color" content="#000000" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -21,7 +24,10 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
+      rel="stylesheet"
+    />
     <style>
       .body {
         margin: 0px;
@@ -39,20 +45,20 @@
       .mainScreen {
         visibility: hidden;
         opacity: 0;
-        min-height:100vh;
+        min-height: 100vh;
       }
       .loadingScreen {
         position: absolute;
         width: 100vw;
         height: 100vh;
         text-align: center;
-        display:flex;
+        display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         opacity: 0;
         animation: fadeInOpacity 150ms linear 1s 1 normal forwards;
-        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         line-height: 0px;
         color: #333;
         font-size: 2em;
@@ -76,8 +82,8 @@
     </style>
   </head>
   <body class="mdc-typography body">
-    <div class=loadingScreen id=loadingScreen>Loading...</div>
-    <div class=mainScreen id="mainScreen"></div>
+    <div class="loadingScreen" id="loadingScreen">Loading...</div>
+    <div class="mainScreen" id="mainScreen"></div>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <!--
       This HTML file is a template.

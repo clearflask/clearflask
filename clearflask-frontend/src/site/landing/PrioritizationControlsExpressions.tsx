@@ -4,9 +4,10 @@ import React, { Component } from 'react';
 import Templater from '../../common/config/configTemplater';
 
 const styles = (theme: Theme) => createStyles({
-  page: {
-  },
   extraControls: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     margin: theme.spacing(1),
   },
 });
@@ -25,29 +26,27 @@ class PrioritizationControlsExpressions extends Component<Props & WithStyles<typ
 
   render() {
     return (
-      <div className={this.props.classes.page}>
-        <div className={this.props.classes.extraControls}>
-          <FormControlLabel
-            control={(
-              <Switch
-                color='primary'
-                checked={!!this.state.expressionsLimitEmojis}
-                onChange={this.handleChangeExpressionsLimitEmojis.bind(this)}
-              />
-            )}
-            label={<FormHelperText component='span'>Limit available emojis</FormHelperText>}
-          />
-          <FormControlLabel
-            control={(
-              <Switch
-                color='primary'
-                checked={!!this.state.expressionsAllowMultiple}
-                onChange={this.handleChangeExpressionsLimitSingle.bind(this)}
-              />
-            )}
-            label={<FormHelperText component='span'>Allow selecting multiple</FormHelperText>}
-          />
-        </div>
+      <div className={this.props.classes.extraControls}>
+        <FormControlLabel
+          control={(
+            <Switch
+              color='primary'
+              checked={!!this.state.expressionsLimitEmojis}
+              onChange={this.handleChangeExpressionsLimitEmojis.bind(this)}
+            />
+          )}
+          label={<FormHelperText component='span'>Limit available emojis</FormHelperText>}
+        />
+        <FormControlLabel
+          control={(
+            <Switch
+              color='primary'
+              checked={!!this.state.expressionsAllowMultiple}
+              onChange={this.handleChangeExpressionsLimitSingle.bind(this)}
+            />
+          )}
+          label={<FormHelperText component='span'>Allow selecting multiple</FormHelperText>}
+        />
       </div>
     );
   }

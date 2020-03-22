@@ -4,9 +4,10 @@ import React, { Component } from 'react';
 import Templater from '../../common/config/configTemplater';
 
 const styles = (theme: Theme) => createStyles({
-  page: {
-  },
   extraControls: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     margin: theme.spacing(1),
   },
 });
@@ -24,19 +25,17 @@ class PrioritizationControls extends Component<Props & WithStyles<typeof styles,
 
   render() {
     return (
-      <div className={this.props.classes.page}>
-        <div className={this.props.classes.extraControls}>
-          <FormControlLabel
-            control={(
-              <Switch
-                color='primary'
-                checked={!!this.state.votingEnableDownvote}
-                onChange={this.handleChangeEnableDownvote.bind(this)}
-              />
-            )}
-            label={<FormHelperText component='span'>Enable downvoting</FormHelperText>}
-          />
-        </div>
+      <div className={this.props.classes.extraControls}>
+        <FormControlLabel
+          control={(
+            <Switch
+              color='primary'
+              checked={!!this.state.votingEnableDownvote}
+              onChange={this.handleChangeEnableDownvote.bind(this)}
+            />
+          )}
+          label={<FormHelperText component='span'>Enable downvoting</FormHelperText>}
+        />
       </div>
     );
   }

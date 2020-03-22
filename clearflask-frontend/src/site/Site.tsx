@@ -14,6 +14,7 @@ import FeaturesPage from './FeaturesPage';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
+import PrioritizationPage from './PrioritizationPage';
 import SigninPage from './SigninPage';
 import SignupPage from './SignupPage';
 const styles = (theme: Theme) => createStyles({
@@ -91,6 +92,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     const menuItems: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
+          { val: '/prioritization', name: 'Prioritization' },
           { val: '/features', name: 'Features' },
           { val: '/demo', name: 'Demo' },
         ],
@@ -201,6 +203,9 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             }} />
             <Route exact path={`/features`} component={props => (
               <FeaturesPage />
+            )} />
+            <Route exact path={`/prioritization`} component={props => (
+              <PrioritizationPage />
             )} />
             <Route exact path={`/`} component={props => (
               <LandingPage />

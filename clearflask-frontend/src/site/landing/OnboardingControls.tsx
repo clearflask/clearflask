@@ -31,12 +31,6 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-flex',
     marginBottom: theme.spacing(2),
   },
-  extraControls: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    margin: theme.spacing(1),
-  },
 });
 
 interface Props {

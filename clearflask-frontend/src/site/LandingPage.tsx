@@ -1,143 +1,56 @@
-import { Container, Grid, Hidden, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import DataMock from '../api/dataMock';
-import Templater from '../common/config/configTemplater';
-import { deleteProject, Project } from './DemoApp';
 import Block from './landing/Block';
-import Demo from './landing/Demo';
-import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
-import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
-import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
-
-interface DemoProps {
-  isEven: boolean;
-  title: string;
-  description: string;
-  initialSubPath?: string;
-  template?: (templater: Templater) => void;
-  mock?: (mocker: DataMock) => Promise<any>;
-  controls?: (project: Project) => React.ReactNode;
-  demo?: (project: Project) => React.ReactNode;
-}
+import Hero from './landing/Hero';
+import Placeholder from './landing/Placeholder';
 
 const styles = (theme: Theme) => createStyles({
-  hero: {
-    width: '100vw',
-    minHeight: '100vh',
-    padding: '20vh 10vw',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  demo: {
-    [theme.breakpoints.up('md')]: {
-      padding: '10vh 10vw 10vh',
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: '10vh 1vw 10vh',
-    },
-  },
-  heroLogo: {
-    [theme.breakpoints.up('sm')]: {
-      width: '200px',
-      height: '200px',
-    },
-    [theme.breakpoints.down('xs')]: {
-      width: '100px',
-      height: '100px',
-    },
-  },
 });
 
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
-  demoProjectIds: string[] = [];
-
-  componentWillUnmount() {
-    this.demoProjectIds.forEach(deleteProject);
-  }
 
   render() {
     return (
       <React.Fragment>
         {this.renderHero()}
-
-        {this.renderPrioritization()}
-        {this.renderEngagement()}
+        {this.renderCollect()}
+        {this.renderPrioritization(true)}
         {this.renderTransparency()}
-
+        {this.renderEngagement()}
       </React.Fragment>
     );
   }
 
   renderHero() {
     return (
-      <div className={this.props.classes.hero}>
-        <Container maxWidth='md'>
-          <Grid container justify='center' wrap='wrap-reverse' spacing={2}>
-            <Hidden xsDown>
-              <Grid item sm={4}>
-                <img
-                  alt='logo'
-                  className={this.props.classes.heroLogo}
-                  src='/clearflask-logo.png' />
-              </Grid>
-            </Hidden>
-            <Grid item xs={12} sm={8}>
-              <Typography variant='h3' component='h1'>
-                Give valuable customers a voice to drive your product
-      </Typography>
-              <Typography variant='h5' component='h2'>
-                A tool to empower your users to voice their opinion for you to make better product decisions.
-      </Typography>
-            </Grid>
-          </Grid>
-        </Container>
-      </div>
+      <Hero
+        title='Idea management tool for your product'
+        description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
+        image={(<Placeholder width={500} height={350} />)}
+      />
+    );
+  }
+
+  renderCollect(mirror?: boolean) {
+    return (
+      <Block
+        title='Give valuable customers a voice to drive your product'
+        description='A tool to empower your users to express their opinion for you to make better product decisions.'
+        mirror={mirror}
+        demo={(<Placeholder width={500} height={350} />)}
+      />
     );
   }
 
   renderPrioritization(mirror?: boolean) {
     return (
-      <React.Fragment>
-        <Demo
-          title='Voting ideas'
-          description='Simple to understand voting system'
-          mirror={mirror}
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('vote')}
-          mock={mocker => mocker.demoPrioritization()}
-          controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
-        />
-        <Demo
-          title='Powerful Credit System'
-          description='Assign credits based on user value. Let your users prioritize ideas by distributing credits.'
-          mirror={mirror}
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('fund')}
-          mock={mocker => mocker.demoPrioritization()}
-          controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
-        />
-        <Demo
-          title='Expressions'
-          description='Expressions with blah blah blah.'
-          mirror={mirror}
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoPrioritization('express')}
-          mock={mocker => mocker.demoPrioritization()}
-          controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
-        />
-      </React.Fragment>
-    );
-  }
-
-  renderEngagement(mirror?: boolean) {
-    return (
       <Block
-        title=''
-        description=''
+        title='Proportionate voice based on customer value'
+        description='Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.'
         mirror={mirror}
+        buttonTitle='Learn More'
+        buttonLink='/prioritization'
+        demo={(<Placeholder width={500} height={350} />)}
       />
     );
   }
@@ -145,13 +58,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTransparency(mirror?: boolean) {
     return (
       <Block
+        title='Development transparency strengthens your community'
+        description='Keep your users informed. (Roadmap, Idea reply)'
+        mirror={mirror}
+        demo={(<Placeholder width={500} height={350} />)}
+      />
+    );
+  }
+
+  renderEngagement(mirror?: boolean) {
+    return (
+      <Block
         title=''
-        description=''
+        description='Notifications, updates on ideas'
         mirror={mirror}
       />
     );
   }
 
+  // TODO move this somewhere else
   // onboardingDemoRef: React.RefObject<any> = React.createRef();
   // renderOnboarding(mirror?: boolean) {
   //   return (

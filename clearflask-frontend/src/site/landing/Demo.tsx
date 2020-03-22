@@ -7,14 +7,6 @@ import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block from './Block';
 
 const styles = (theme: Theme) => createStyles({
-  demo: {
-    [theme.breakpoints.up('md')]: {
-      padding: '10vh 10vw 10vh',
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: '10vh 1vw 10vh',
-    },
-  },
 });
 
 interface Props {
@@ -44,7 +36,6 @@ class Demo extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <Promised promise={this.projectPromise} render={project => (
         <Block
-          className={this.props.classes.demo}
           title={this.props.title}
           description={this.props.description}
           mirror={this.props.mirror}

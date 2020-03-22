@@ -1,8 +1,8 @@
-
-
 html {
-  font-family: -apple-system-body,BlinkMacSystemFont,SFUI,HelveticaNeue,Helvetica,Arial,sans-serif;
-  font-family: Roboto,-apple-system-body,BlinkMacSystemFont,SFUI,HelveticaNeue,Helvetica,Arial,sans-serif;
+  font-family: -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue,
+    Helvetica, Arial, sans-serif;
+  font-family: Roboto, -apple-system-body, BlinkMacSystemFont, SFUI,
+    HelveticaNeue, Helvetica, Arial, sans-serif;
   color: #333;
   -webkit-font-smoothing: antialiased;
   height: 100%;
