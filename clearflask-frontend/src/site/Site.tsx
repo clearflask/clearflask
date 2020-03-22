@@ -17,6 +17,7 @@ import PricingPage from './PricingPage';
 import PrioritizationPage from './PrioritizationPage';
 import SigninPage from './SigninPage';
 import SignupPage from './SignupPage';
+import TransparencyPage from './TransparencyPage';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -93,6 +94,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
       {
         type: 'dropdown', title: 'Product', items: [
           { val: '/prioritization', name: 'Prioritization' },
+          { val: '/transparency', name: 'Transparency' },
           { val: '/features', name: 'Features' },
           { val: '/demo', name: 'Demo' },
         ],
@@ -206,6 +208,9 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             )} />
             <Route exact path={`/prioritization`} component={props => (
               <PrioritizationPage />
+            )} />
+            <Route exact path={`/transparency`} component={props => (
+              <TransparencyPage />
             )} />
             <Route exact path={`/`} component={props => (
               <LandingPage />

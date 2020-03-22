@@ -17,6 +17,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderPrioritization(true)}
         {this.renderTransparency()}
         {this.renderEngagement()}
+        {this.renderCustomize()}
+        {this.renderSales()}
       </React.Fragment>
     );
   }
@@ -48,7 +50,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         title='Proportionate voice based on customer value'
         description='Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.'
         mirror={mirror}
-        buttonTitle='Learn More'
+        buttonTitle='Learn about prioritization'
         buttonLink='/prioritization'
         demo={(<Placeholder width={500} height={350} />)}
       />
@@ -58,8 +60,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTransparency(mirror?: boolean) {
     return (
       <Block
-        title='Development transparency strengthens your community'
-        description='Keep your users informed. (Roadmap, Idea reply)'
+        title='Transparency strengthens user community'
+        description='Keep your users involved and informed of your progress with updates and roadmap (Roadmap, Idea reply)'
+        buttonTitle='Learn about transparency'
+        buttonLink='/transparency'
         mirror={mirror}
         demo={(<Placeholder width={500} height={350} />)}
       />
@@ -71,6 +75,28 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <Block
         title=''
         description='Notifications, updates on ideas'
+        mirror={mirror}
+      />
+    );
+  }
+
+  renderCustomize(mirror?: boolean) {
+    return (
+      <Block
+        title=''
+        description=''
+        mirror={mirror}
+      />
+    );
+  }
+
+  renderSales(mirror?: boolean) {
+    return (
+      <Block
+        title='Every customer is different'
+        description='Talk to our sales team to determine how our solution can be customized for your needs.'
+        buttonTitle='Get in touch'
+        buttonLink='/contact/sales'
         mirror={mirror}
       />
     );

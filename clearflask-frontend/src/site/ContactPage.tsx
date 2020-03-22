@@ -53,9 +53,8 @@ const forms: ContactForm[] = [{
   subtitle: 'Our experts can help you find the right solution',
   submitTitle: 'Schedule',
   fields: [
-    { attrName: 'product', title: 'Company', placeholder: 'example.com' },
-    { attrName: 'availability', title: 'Availability', placeholder: 'Tue 3-6pm PT', required: true },
-    { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
+    { attrName: CONTACT, title: 'Work email', placeholder: 'name@example.com', required: true },
+    { attrName: 'details', type: 'multiline', title: 'What can we help you with?' },
   ],
 }, {
   type: 'support',
