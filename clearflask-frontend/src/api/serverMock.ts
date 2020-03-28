@@ -510,11 +510,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       childCommentCount: 0,
       authorName: author.name,
       ...(request.ideaCreateAdmin),
-      statusId: request.ideaCreateAdmin.statusId
-        ? request.ideaCreateAdmin.statusId
-        : this.getProject(request.projectId).config.config.content.categories
-          .find(c => c.categoryId === request.ideaCreateAdmin.categoryId)!.workflow.entryStatus
     };
+    if (request.ideaCreateAdmin.statusId === undefined) {
+      idea.statusId = this.getProject(request.projectId).config.config.content.categories
+        .find(c => c.categoryId === request.ideaCreateAdmin.categoryId)!.workflow.entryStatus;
+    }
     this.getProject(request.projectId).ideas.push(idea);
     return this.returnLater(idea);
   }
@@ -625,9 +625,24 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       user.browserPushToken = undefined;
       user.browserPush = false;
     };
+    var balance = this.getProject(request.projectId).balances[request.userId];
+    if (request.userUpdateAdmin.transactionCreate !== undefined) {
+      balance = (balance || 0) + request.userUpdateAdmin.transactionCreate.amount;
+      const transaction = {
+        userId: request.userId,
+        transactionId: randomUuid(),
+        created: new Date(),
+        amount: request.userUpdateAdmin.transactionCreate.amount,
+        balance: balance,
+        transactionType: Admin.TransactionType.Adjustment,
+        summary: request.userUpdateAdmin.transactionCreate.summary,
+      };
+      this.getProject(request.projectId).transactions.push(transaction);
+      this.getProject(request.projectId).balances[request.userId] = balance;
+    }
     return this.returnLater({
       ...user,
-      balance: this.getProject(request.projectId).balances[user.userId],
+      balance: balance,
     });
   }
   voteDeleteAdmin(request: Admin.VoteDeleteAdminRequest): Promise<void> {

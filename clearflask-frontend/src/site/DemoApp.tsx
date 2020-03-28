@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { MemoryRouter, Route, RouteComponentProps, withRouter } from 'react-router-dom';
+import * as Admin from "../api/admin";
 import DataMock from '../api/dataMock';
 import { Server } from '../api/server';
 import ServerMock from '../api/serverMock';
@@ -16,7 +17,7 @@ export interface Project {
 
 export function getProject(
   template: ((templater: Templater) => void) | undefined = undefined,
-  mock: ((mocker: DataMock) => void) | undefined = undefined,
+  mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => void) | undefined = undefined,
   projectId: string = randomUuid(),
 ): Promise<Project> {
   const server = new Server(projectId, ServerMock.get());
@@ -38,7 +39,7 @@ export function getProject(
           versionLast: project.config.version,
           configAdmin: editor.getConfig(),
         })
-          .then(() => mock && mock(DataMock.get(projectId)))
+          .then(() => mock && mock(DataMock.get(projectId), editor.getConfig()))
           .then(() => server.dispatch().configGetAndUserBind({ projectId: projectId }))
           .then(() => ({ server, templater, editor }));
       }));

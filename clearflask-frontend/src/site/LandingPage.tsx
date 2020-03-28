@@ -61,7 +61,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Block
         title='Transparency strengthens user community'
-        description='Keep your users involved and informed of your progress with updates and roadmap (Roadmap, Idea reply)'
+        description='Keep your users involved and informed of your progress with updates and roadmap (Roadmap, changelog, Idea reply)'
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}
@@ -94,7 +94,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Block
         title='Every customer is different'
-        description='Talk to our sales team to determine how our solution can be customized for your needs.'
+        description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
         buttonTitle='Get in touch'
         buttonLink='/contact/sales'
         mirror={mirror}

@@ -5,14 +5,13 @@ import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import * as Admin from '../../api/admin';
 import { Server } from '../../api/server';
+import CreditView from '../../common/config/CreditView';
 import { saltHashPassword } from '../../common/util/auth';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const styles = (theme: Theme) => createStyles({
   row: {
-    margin: theme.spacing(2),
-  },
-  passwordRow: {
+    padding: theme.spacing(2),
     display: 'flex',
   },
 });
@@ -20,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   user: Admin.UserAdmin;
+  credits: Admin.Credits;
   open?: boolean;
   onClose: () => void;
   onUpdated: (user: Admin.UserAdmin) => void;
@@ -32,6 +32,8 @@ interface State {
   email?: string;
   password?: string;
   revealPassword?: boolean;
+  balanceAdjustment?: string;
+  balanceDescription?: string;
   emailNotify?: boolean;
   iosPush?: boolean;
   androidPush?: boolean;
@@ -41,15 +43,20 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
   state: State = {};
 
   render() {
-    const canSubmit = (
-      this.state.name !== undefined
-      || this.state.email !== undefined
-      || this.state.password !== undefined
-      || this.state.emailNotify !== undefined
-      || this.state.iosPush !== undefined
-      || this.state.androidPush !== undefined
-      || this.state.browserPush !== undefined
-    );
+    const balanceAdjustmentChanged = this.state.balanceAdjustment !== undefined && (+this.state.balanceAdjustment !== 0);
+    const balanceAdjustmentHasError = !!this.state.balanceAdjustment && (!parseInt(this.state.balanceAdjustment) || !+this.state.balanceAdjustment || parseInt(this.state.balanceAdjustment) !== parseFloat(this.state.balanceAdjustment));
+    const canSubmit =
+      !balanceAdjustmentHasError
+      && (
+        this.state.name !== undefined
+        || this.state.email !== undefined
+        || this.state.password !== undefined
+        || balanceAdjustmentChanged
+        || this.state.emailNotify !== undefined
+        || this.state.iosPush !== undefined
+        || this.state.androidPush !== undefined
+        || this.state.browserPush !== undefined
+      );
 
     return (
       <React.Fragment>
@@ -81,7 +88,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   onChange={e => this.setState({ email: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} className={`${this.props.classes.row} ${this.props.classes.passwordRow}`}>
+              <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
                   disabled={this.state.isSubmitting}
                   label='Set password'
@@ -106,7 +113,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     || (this.state.email === undefined && this.props.user.email === undefined)}
                   control={(
                     <Switch
-                      checked={this.state.emailNotify === undefined ? true : this.state.emailNotify}
+                      checked={this.state.emailNotify === undefined ? this.props.user.emailNotify : this.state.emailNotify}
                       onChange={(e, checked) => this.setState({ emailNotify: checked ? undefined : false })}
                       color='primary'
                     />
@@ -121,7 +128,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     disabled={this.state.isSubmitting}
                     control={(
                       <Switch
-                        checked={this.state.iosPush === undefined ? true : this.state.iosPush}
+                        checked={this.state.iosPush === undefined ? this.props.user.iosPush : this.state.iosPush}
                         onChange={(e, checked) => this.setState({ iosPush: checked ? undefined : false })}
                         color='primary'
                       />
@@ -137,7 +144,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     disabled={this.state.isSubmitting}
                     control={(
                       <Switch
-                        checked={this.state.androidPush === undefined ? true : this.state.androidPush}
+                        checked={this.state.androidPush === undefined ? this.props.user.androidPush : this.state.androidPush}
                         onChange={(e, checked) => this.setState({ androidPush: checked ? undefined : false })}
                         color='primary'
                       />
@@ -153,7 +160,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     disabled={this.state.isSubmitting}
                     control={(
                       <Switch
-                        checked={this.state.browserPush === undefined ? true : this.state.browserPush}
+                        checked={this.state.browserPush === undefined ? this.props.user.browserPush : this.state.browserPush}
                         onChange={(e, checked) => this.setState({ browserPush: checked ? undefined : false })}
                         color='primary'
                       />
@@ -162,6 +169,37 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   />
                 </Grid>
               )}
+              <Grid item xs={4} className={this.props.classes.row}>
+                <TextField
+                  disabled={this.state.isSubmitting}
+                  label='Balance adjustment'
+                  value={this.state.balanceAdjustment || ''}
+                  error={balanceAdjustmentHasError}
+                  helperText={balanceAdjustmentHasError ? 'Invalid number' : (
+                    !this.state.balanceAdjustment ? undefined : (
+                      <CreditView
+                        val={+this.state.balanceAdjustment}
+                        credits={this.props.credits}
+                      />
+                    ))}
+                  onChange={e => this.setState({ balanceAdjustment: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={8} className={this.props.classes.row}>
+                <TextField
+                  disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
+                  label='Reason for adjustment'
+                  value={this.state.balanceDescription || ''}
+                  onChange={e => this.setState({ balanceDescription: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} className={this.props.classes.row}>
+                Account balance after adjustment:&nbsp;&nbsp;
+                <CreditView
+                  val={(this.props.user.balance || 0) + (!balanceAdjustmentHasError && balanceAdjustmentChanged && this.state.balanceAdjustment !== undefined ? +this.state.balanceAdjustment : 0)}
+                  credits={this.props.credits}
+                />
+              </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
@@ -184,6 +222,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   iosPush: this.state.iosPush,
                   androidPush: this.state.androidPush,
                   browserPush: this.state.browserPush,
+                  transactionCreate: (this.state.balanceAdjustment !== undefined && balanceAdjustmentChanged) ? {
+                    amount: +this.state.balanceAdjustment,
+                    summary: this.state.balanceDescription,
+                  } : undefined,
                 },
               }))
                 .then(user => {
@@ -193,6 +235,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     email: undefined,
                     password: undefined,
                     revealPassword: undefined,
+                    balanceAdjustment: undefined,
+                    balanceDescription: undefined,
                     emailNotify: undefined,
                     iosPush: undefined,
                     androidPush: undefined,

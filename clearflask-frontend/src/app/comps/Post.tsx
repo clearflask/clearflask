@@ -313,7 +313,6 @@ interface ConnectProps {
   updateVote: (voteUpdate: Partial<Client.VoteUpdate>) => Promise<Client.VoteUpdateResponse>;
 }
 
-
 interface State {
   fundingExpanded?: boolean;
   fundingExpandedAnchor?: PopoverPosition & { width: number };

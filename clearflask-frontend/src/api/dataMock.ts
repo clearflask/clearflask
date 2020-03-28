@@ -13,62 +13,87 @@ class DataMock {
     return new DataMock(projectId);
   }
 
-  demoPrioritization() {
+  demoPage(andThen: (config: Admin.ConfigAdmin, user: Admin.UserAdmin) => Promise<any>) {
     return Promise.all([
       this.mockLoggedIn(80),
       this.getConfig()
         .then(config =>
           this.mockUser('John Doe')
-            .then(user => ServerMock.get().ideaCreateAdmin({
-              projectId: this.projectId,
-              ideaCreateAdmin: {
-                authorUserId: user.userId,
-                title: 'Add Dark Mode',
-                description: 'To reduce eye-strain, please add a dark mode option',
-                categoryId: config.content.categories[0].categoryId,
-                tagIds: [],
-                ...{ // Fake data
-                  funded: 12,
-                  fundersCount: 5,
-                  fundGoal: 60,
-                  voteValue: 3,
-                  votersCount: 2,
-                  expressionsValue: 7,
-                  expressions: {
-                    '👍': 4,
-                    '❤️': 1,
-                  },
-                },
-              },
-            }).then(() =>
-              ServerMock.get().ideaCreateAdmin({
-                projectId: this.projectId,
-                ideaCreateAdmin: {
-                  authorUserId: user.userId,
-                  title: 'Support Jira Integration',
-                  description: 'I would like to be able to synchronize user ideas with my Jira board',
-                  categoryId: config.content.categories[0].categoryId,
-                  tagIds: [],
-                  ...{ // Fake data
-                    funded: 80,
-                    fundersCount: 5,
-                    fundGoal: 200,
-                    voteValue: 42,
-                    votersCount: 53,
-                    expressionsValue: 56,
-                    expressions: {
-                      '👍': 34,
-                      '❤️': 5,
-                    },
-                  },
-                },
-              }).then(idea => ServerMock.get().voteUpdate({
-                projectId: this.projectId,
-                voteUpdate: {
-                  ideaId: idea.ideaId,
-                  fundDiff: 40,
-                },
-              })))))]);
+            .then(user => andThen(config, user)))]);
+  }
+
+  demoBoard(ideas: Array<{
+    status: string,
+    title: string,
+    description?: string,
+    extra?: Partial<Admin.Idea>
+  }>) {
+    return this.demoPage((config, user) => Promise.all(ideas.map(idea => ServerMock.get().ideaCreateAdmin({
+      projectId: this.projectId,
+      ideaCreateAdmin: {
+        authorUserId: user.userId,
+        title: idea.title,
+        description: idea.description,
+        categoryId: config.content.categories[0].categoryId,
+        tagIds: [],
+        statusId: idea.status,
+        // Fake data
+        ...{ ...idea.extra },
+      },
+    }))));
+  }
+
+  demoPrioritization() {
+    return this.demoPage((config, user) => ServerMock.get().ideaCreateAdmin({
+      projectId: this.projectId,
+      ideaCreateAdmin: {
+        authorUserId: user.userId,
+        title: 'Add Dark Mode',
+        description: 'To reduce eye-strain, please add a dark mode option',
+        categoryId: config.content.categories[0].categoryId,
+        tagIds: [],
+        ...{ // Fake data
+          funded: 12,
+          fundersCount: 5,
+          fundGoal: 60,
+          voteValue: 3,
+          votersCount: 2,
+          expressionsValue: 7,
+          expressions: {
+            '👍': 4,
+            '❤️': 1,
+          },
+        },
+      },
+    }).then(() =>
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Support Jira Integration',
+          description: 'I would like to be able to synchronize user ideas with my Jira board',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+          ...{ // Fake data
+            funded: 80,
+            fundersCount: 5,
+            fundGoal: 200,
+            voteValue: 42,
+            votersCount: 53,
+            expressionsValue: 56,
+            expressions: {
+              '👍': 34,
+              '❤️': 5,
+            },
+          },
+        },
+      }).then(idea => ServerMock.get().voteUpdate({
+        projectId: this.projectId,
+        voteUpdate: {
+          ideaId: idea.ideaId,
+          fundDiff: 40,
+        },
+      }))));
   }
 
   mockAll(): Promise<any> {
@@ -135,7 +160,7 @@ class DataMock {
             while (n-- > 0) {
               promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser())
                 .then((user: Admin.User) =>
-                  this.mockIdea(versionedConfig, category, status, user)
+                  this.mockIdea(category, status, user)
                 )
               );
             }
@@ -158,8 +183,11 @@ class DataMock {
     });
   }
 
-  mockIdea(versionedConfig: Admin.VersionedConfigAdmin, category: Admin.Category, status: Admin.IdeaStatus | undefined, user: Admin.User): Promise<any> {
-    return ServerMock.get().ideaCreateAdmin({
+  async mockIdea(category: Admin.Category, status: Admin.IdeaStatus | undefined = undefined, user: Admin.User | undefined = undefined, extra: Partial<Admin.Idea> = {}): Promise<Admin.Idea> {
+    if (user === undefined) {
+      user = await this.mockUser();
+    }
+    const item = await ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       ideaCreateAdmin: {
         ...this.fakeMockIdeaData(category),
@@ -181,9 +209,11 @@ class DataMock {
           .filter(t => Math.random() < 0.3)
           .map(t => t.tagId),
         statusId: status ? status.statusId : undefined,
+        ...extra,
       },
-    })
-      .then((item: Admin.Idea) => category.support.comment && this.mockComments([user], versionedConfig, category, item))
+    });
+    category.support.comment && this.mockComments([user], category, item);
+    return item;
   }
 
   fakeMockIdeaData(category: Admin.Category): Partial<Admin.Idea> {
@@ -220,7 +250,7 @@ class DataMock {
     return expressions;
   }
 
-  mockComments(userMentionPool: Admin.User[], versionedConfig: Admin.VersionedConfigAdmin, category: Admin.Category, item: Admin.Idea, numComments: number = 1, level: number = 2, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
+  mockComments(userMentionPool: Admin.User[], category: Admin.Category, item: Admin.Idea, numComments: number = 1, level: number = 2, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
     return this.mockUser()
       .then(user => {
         userMentionPool.push(user);
@@ -269,7 +299,7 @@ class DataMock {
         var remainingComments = numComments * Math.random();
         var promise: Promise<any> = Promise.resolve();
         while (remainingComments-- > 0) {
-          promise = promise.then(() => this.mockComments(userMentionPool, versionedConfig, category, item, numComments, level - 1, comment));
+          promise = promise.then(() => this.mockComments(userMentionPool, category, item, numComments, level - 1, comment));
         }
         return promise;
       });

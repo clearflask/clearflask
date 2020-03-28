@@ -96,8 +96,8 @@ components:
       description: >-
         Transaction type
         * Vote - Balance changes due to funding an idea
-        * Income - Income based on project settings.
-        * Adjustment - Typically Admin initiaited change in credit.
+        * Income - Income based on project settings or via API.
+        * Adjustment - Typically Admin initiated change in credit.
 
 
 /project/{projectId}/user/{userId}/transactionsearch:

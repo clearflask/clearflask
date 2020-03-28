@@ -265,7 +265,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
       };
     case Client.commentCreateActionStatus.Fulfilled:
       // For comment creation, update idea comment counts
-      return {
+      return !state.byId[action.meta.request.ideaId] ? state : {
         ...state,
         byId: {
           ...state.byId,

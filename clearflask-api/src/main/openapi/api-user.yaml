@@ -136,6 +136,8 @@ components:
           type: boolean
         browserPush:
           type: boolean
+        transactionCreate:
+          $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
 
 /project/{projectId}/login:
   post:

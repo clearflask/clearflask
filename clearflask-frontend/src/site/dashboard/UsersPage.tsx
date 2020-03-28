@@ -9,9 +9,11 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import BrowserIcon from '@material-ui/icons/Web';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
-import { Server } from '../../api/server';
+import * as Client from '../../api/client';
+import { ReduxState, Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
@@ -71,6 +73,10 @@ interface Props {
   server: Server;
 }
 
+interface ConnectProps {
+  credits?: Client.Credits;
+}
+
 interface State {
   createRefFocused?: boolean;
   editExpandedForUserId?: string;
@@ -87,7 +93,7 @@ interface State {
   searchCursor?: string;
 }
 
-class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State> {
+class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
@@ -259,6 +265,7 @@ class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State
                                   key={`edit${user.userId}`}
                                   server={this.props.server}
                                   user={user}
+                                  credits={this.props.credits}
                                   open={this.state.editExpandedForUserId === user.userId}
                                   onClose={() => this.setState({ editExpandedForUserId: '' })}
                                   onUpdated={userUpdated => {
@@ -319,4 +326,11 @@ class UsersPage extends Component<Props & WithStyles<typeof styles, true>, State
   }
 }
 
-export default withStyles(styles, { withTheme: true })(UsersPage);
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  const connectProps: ConnectProps = {
+    credits: state.conf.conf
+      ? state.conf.conf.credits
+      : undefined,
+  };
+  return connectProps;
+})(withStyles(styles, { withTheme: true })(UsersPage));

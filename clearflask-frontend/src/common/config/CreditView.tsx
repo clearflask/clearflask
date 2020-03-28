@@ -49,6 +49,8 @@ export const creditGetFormat = (val: number, credits: Client.Credits): Client.Cr
 export const creditFormatVal = (val: number, format: Client.CreditFormatterEntry, suppressSuffix: boolean = false) => {
   var result: any = val;
 
+  result = Math.abs(result);
+
   if (format.multiplier !== undefined) {
     result *= format.multiplier
   }

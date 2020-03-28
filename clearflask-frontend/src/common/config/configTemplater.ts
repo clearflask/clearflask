@@ -45,33 +45,75 @@ export default class Templater {
         break;
     }
 
-    this.demoPagePanel(Admin.PostDisplayToJSON({
-      titleTruncateLines: 1,
-      descriptionTruncateLines: 3,
-      showDescription: true,
-      showCommentCount: false,
-      showCategoryName: false,
-      showCreated: false,
-      showAuthor: false,
-      showStatus: false,
-      showTags: false,
-      showVoting: true,
-      showFunding: true,
-      showExpression: true,
-      disableExpand: true,
-    }), Admin.IdeaSearchToJSON({
-      limit: 1,
-      sortBy: Admin.IdeaSearchSortByEnum.New,
-    }));
+    this.demoPage({
+      panels: [
+        Admin.PagePanelWithHideIfEmptyToJSON({
+          display: Admin.PostDisplayToJSON({
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 3,
+            showDescription: true,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: true,
+            showFunding: true,
+            showExpression: true,
+            disableExpand: true,
+          }),
+          search: Admin.IdeaSearchToJSON({
+            limit: 1,
+            sortBy: Admin.IdeaSearchSortByEnum.New,
+          }),
+          hideIfEmpty: false
+        }),
+      ],
+    });
   }
 
-  demoCategory() {
+  demoBoard(title: string | undefined, panels: Array<{
+    title?: string;
+    status?: Partial<Admin.IdeaStatus>;
+    display?: Admin.PostDisplay;
+  }>) {
+    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+
+    const categoryIndex = this.demoCategory(panels.map((panel, index) => Admin.IdeaStatusToJSON({
+      statusId: index + '',
+      name: index + '',
+      disableFunding: false,
+      disableVoting: false,
+      disableExpressions: false,
+      disableIdeaEdits: false,
+      disableComments: false,
+      ...panel.status,
+    })));
+
+    this.demoPage({
+      board: Admin.PageBoardToJSON({
+        title,
+        panels: panels.map((panel, index) => Admin.PagePanelWithHideIfEmptyToJSON({
+          title: panel.title,
+          search: Admin.IdeaSearchToJSON({ filterStatusIds: [panel.status?.statusId || (index + '')] }),
+          display: Admin.PostDisplayToJSON({
+            disableExpand: true,
+            ...panel.display,
+          }),
+          hideIfEmpty: false,
+        })),
+      }),
+    });
+  }
+
+  demoCategory(statuses?: Array<Admin.IdeaStatus>) {
     const categoryId = randomUuid();
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     categories.insert().setRaw(Admin.CategoryToJSON({
       categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
-      workflow: Admin.WorkflowToJSON({ statuses: [] }),
+      workflow: Admin.WorkflowToJSON({ statuses: statuses || [] }),
       support: Admin.SupportToJSON({ comment: true }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
@@ -79,15 +121,14 @@ export default class Templater {
     return categoryIndex;
   }
 
-  demoPagePanel(display: Admin.PostDisplay = {}, search: Admin.IdeaSearch = {}) {
+  demoPage(pageProps: Partial<Admin.Page>) {
     const pageId = randomUuid();
     this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
       pageId: pageId,
       name: 'Demo',
       slug: stringToSlug('demo'),
-      panels: [
-        Admin.PagePanelWithHideIfEmptyToJSON({ display, search, hideIfEmpty: false }),
-      ],
+      panels: [],
+      ...pageProps,
     }));
   }
 

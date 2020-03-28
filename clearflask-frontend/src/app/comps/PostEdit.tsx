@@ -34,7 +34,7 @@ interface State {
   statusId?: string;
   tagIds?: string[];
   tagIdsHasError?: boolean;
-  fundGoal?: number;
+  fundGoal?: string;
   suppressNotifications?: boolean;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
@@ -42,8 +42,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
 
   render() {
     const isAdminLoggedIn = ServerAdmin.get().isAdminLoggedIn();
+    const fundGoalHasError = this.state.fundGoal !== undefined && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
     const canSubmit = (
       this.state.tagIdsHasError !== true
+      && !fundGoalHasError
       && (this.state.title !== undefined
         || this.state.description !== undefined
         || this.state.response !== undefined
@@ -85,7 +87,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           fullScreen={this.props.mediaQuery}
           fullWidth
         >
-          <DialogTitle>Edit</DialogTitle>
+          <DialogTitle>Edit post</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
               {isAdminLoggedIn && (
@@ -127,13 +129,15 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         inputProps={{
                           step: 1,
                         }}
-                        helperText={(this.state.fundGoal === undefined && this.props.idea.fundGoal === undefined) ? undefined : (
-                          <CreditView
-                            val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : this.state.fundGoal}
-                            credits={this.props.credits}
-                          />
-                        )}
-                        onChange={e => this.setState({ fundGoal: +e.target.value })}
+                        error={fundGoalHasError}
+                        helperText={fundGoalHasError ? 'Invalid value' : (
+                          (this.state.fundGoal === undefined && this.props.idea.fundGoal === undefined) ? undefined : (
+                            <CreditView
+                              val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : +this.state.fundGoal}
+                              credits={this.props.credits}
+                            />
+                          ))}
+                        onChange={e => this.setState({ fundGoal: e.target.value })}
                       />
                     </Grid>
                   )}
@@ -213,7 +217,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     response: this.state.response,
                     statusId: this.state.statusId,
                     tagIds: this.state.tagIds,
-                    fundGoal: this.state.fundGoal,
+                    fundGoal: this.state.fundGoal === undefined ? undefined : +this.state.fundGoal,
                     suppressNotifications: this.state.suppressNotifications,
                   },
                 }))

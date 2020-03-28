@@ -1,30 +1,32 @@
+import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { Route } from 'react-router';
-import { History, Location } from 'history';
 
 interface Props {
-  scrollOnMount?:boolean;
-  scrollOnStateName?:string;
-  scrollOnAnchorTag?:string;
+  scrollOnMount?: boolean;
+  scrollOnStateName?: string;
+  scrollOnAnchorTag?: string;
 }
 
 class ScrollAnchor extends Component<Props> {
   static readonly SCROLL_TO_STATE_KEY = 'scrollTo';
-  readonly scrollToRef:React.RefObject<HTMLDivElement> = React.createRef();
-  location:Location|undefined = undefined;
-  history:History|undefined = undefined;
+  readonly scrollToRef: React.RefObject<HTMLDivElement> = React.createRef();
+  location: Location | undefined = undefined;
+  history: History | undefined = undefined;
 
   scrollNow() {
-    if(!this.scrollToRef.current) {
+    if (!this.scrollToRef.current) {
       return;
     }
-    window.scrollTo({
-      top:this.scrollToRef.current!.offsetTop,
-      behavior: "smooth",
+    // TODO polyfill or go back to window.scrollTo
+    this.scrollToRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
     });
   }
 
-  static scrollToState(anchorName:string) {
+  static scrollToState(anchorName: string) {
     return {
       [ScrollAnchor.SCROLL_TO_STATE_KEY]: anchorName
     }
@@ -43,17 +45,17 @@ class ScrollAnchor extends Component<Props> {
   }
 
   componentDidMount() {
-    if(this.props.scrollOnMount) {
+    if (this.props.scrollOnMount) {
       this.scrollNow();
       return;
     }
-    if(this.props.scrollOnStateName
+    if (this.props.scrollOnStateName
       && this.location
       && this.location.state
       && this.location.state[ScrollAnchor.SCROLL_TO_STATE_KEY] === this.props.scrollOnStateName) {
       this.scrollNow();
       // Clear state so a refresh will not navigate again
-      if(this.history) {
+      if (this.history) {
         this.history.replace({
           ...this.location,
           state: {
@@ -64,7 +66,7 @@ class ScrollAnchor extends Component<Props> {
       }
       return;
     }
-    if(this.props.scrollOnAnchorTag
+    if (this.props.scrollOnAnchorTag
       && this.location
       && this.location.hash.substr(1) === this.props.scrollOnAnchorTag) {
       this.scrollNow();
