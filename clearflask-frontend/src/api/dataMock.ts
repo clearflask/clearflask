@@ -2,6 +2,14 @@ import { loremIpsum } from "lorem-ipsum";
 import * as Admin from "./admin";
 import ServerMock from "./serverMock";
 
+interface MockedComment {
+  content?: string;
+  author?: Admin.User | string;
+  created?: Date;
+  edited?: Date;
+  children?: MockedComment[];
+}
+
 class DataMock {
   projectId: string;
 
@@ -179,11 +187,12 @@ class DataMock {
           count: 2,
         }),
         email: 'example@example.com',
+        ...{ created: this.mockDate() },
       },
     });
   }
 
-  async mockIdea(category: Admin.Category, status: Admin.IdeaStatus | undefined = undefined, user: Admin.User | undefined = undefined, extra: Partial<Admin.Idea> = {}): Promise<Admin.Idea> {
+  async mockIdea(category: Admin.Category, status: Admin.IdeaStatus | undefined = undefined, user: Admin.User | undefined = undefined, extra: Partial<Admin.Idea> = {}, suppressComments: boolean = false): Promise<Admin.Idea> {
     if (user === undefined) {
       user = await this.mockUser();
     }
@@ -209,10 +218,11 @@ class DataMock {
           .filter(t => Math.random() < 0.3)
           .map(t => t.tagId),
         statusId: status ? status.statusId : undefined,
+        ...{ created: this.mockDate() },
         ...extra,
       },
     });
-    category.support.comment && this.mockComments([user], category, item);
+    !suppressComments && category.support.comment && this.mockComments([user], item);
     return item;
   }
 
@@ -250,7 +260,38 @@ class DataMock {
     return expressions;
   }
 
-  mockComments(userMentionPool: Admin.User[], category: Admin.Category, item: Admin.Idea, numComments: number = 1, level: number = 2, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
+  async mockDetailedComments(comments: MockedComment[], item: Admin.Idea, parentCommentId: string | undefined = undefined): Promise<any> {
+    const users: { [name: string]: Admin.User } = {};
+    for (const comment of comments) {
+      var user: Admin.User | undefined;
+      if (typeof comment.author === 'string') {
+        if (!users[comment.author]) {
+          users[comment.author] = await this.mockUser(comment.author);
+        }
+        user = users[comment.author];
+      } else {
+        user = comment.author;
+      }
+      const createdComment = await ServerMock.get().commentCreate({
+        projectId: this.projectId,
+        ideaId: item.ideaId,
+        commentCreate: {
+          content: comment.content as string,
+          parentCommentId,
+          ...{
+            author: user,
+            created: comment.created || this.mockDate(),
+            edited: comment.edited,
+          },
+        },
+      });
+      if (comment.children && comment.children.length > 0) {
+        await this.mockDetailedComments(comment.children, item, createdComment.commentId);
+      }
+    }
+  }
+
+  mockComments(userMentionPool: Admin.User[], item: Admin.Idea, numComments: number = 1, level: number = 2, parentComment: Admin.Comment | undefined = undefined): Promise<any> {
     return this.mockUser()
       .then(user => {
         userMentionPool.push(user);
@@ -265,9 +306,10 @@ class DataMock {
             count: Math.round(Math.random() * 3 + 1),
           }),
           parentCommentId: parentComment ? parentComment.commentId : undefined,
-        },
-        ...{ // override author
-          author: user,
+          ...{
+            author: user,
+            created: this.mockDate(),
+          },
         },
       }))
       .then(comment => {
@@ -299,7 +341,7 @@ class DataMock {
         var remainingComments = numComments * Math.random();
         var promise: Promise<any> = Promise.resolve();
         while (remainingComments-- > 0) {
-          promise = promise.then(() => this.mockComments(userMentionPool, category, item, numComments, level - 1, comment));
+          promise = promise.then(() => this.mockComments(userMentionPool, item, numComments, level - 1, comment));
         }
         return promise;
       });
@@ -314,6 +356,17 @@ class DataMock {
   async getConfig(): Promise<Admin.ConfigAdmin> {
     const versionedConfig = await ServerMock.get().configGetAdmin({ projectId: this.projectId });
     return versionedConfig.config;
+  }
+
+  lastMockDate?: Date;
+  mockDate(): Date {
+    if (this.lastMockDate === undefined) {
+      this.lastMockDate = new Date();
+      this.lastMockDate.setDate(this.lastMockDate.getDate() - 10);
+    } else {
+      this.lastMockDate.setTime(this.lastMockDate.getTime() + ((Math.random() + 1) * 60 * 60 * 1000));
+    }
+    return new Date(this.lastMockDate);
   }
 }
 

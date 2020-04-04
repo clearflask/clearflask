@@ -5,7 +5,7 @@ components:
       type: object
       properties:
         sortBy:
-          x-clearflask-prop: { name: 'Sort', description: 'Display ideas sorted' }
+          x-clearflask-prop: { name: 'Sort', description: 'Display ideas by this sort order', defaultValue: 'Trending' }
           type: string
           enum:
             - Trending
@@ -19,18 +19,18 @@ components:
             type: string
         filterStatusIds:
           x-clearflask-prop: { name: 'Status', description: 'Display only ideas having these statuses' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
         filterTagIds:
           x-clearflask-prop: { name: 'Tag', description: 'Display only ideas having these tags' }
-          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
         searchText:
-          x-clearflask-prop: { name: 'Search query', description: 'Optionally set a search query to use' }
+          x-clearflask-prop: { name: 'Search query', description: 'Filter results matching this search term' }
           type: string
         fundedByMeAndActive:
           x-clearflask-hide: true

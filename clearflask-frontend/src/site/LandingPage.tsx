@@ -2,7 +2,6 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import Block from './landing/Block';
 import Hero from './landing/Hero';
-import Placeholder from './landing/Placeholder';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -28,7 +27,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <Hero
         title='Idea management tool for your product'
         description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
-        image={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/hero.svg'
       />
     );
   }
@@ -39,7 +38,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         title='Give valuable customers a voice to drive your product'
         description='A tool to empower your users to express their opinion for you to make better product decisions.'
         mirror={mirror}
-        demo={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/collect.svg'
       />
     );
   }
@@ -52,7 +51,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         mirror={mirror}
         buttonTitle='Learn about prioritization'
         buttonLink='/prioritization'
-        demo={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/prioritization.svg'
       />
     );
   }
@@ -65,7 +64,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}
-        demo={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/transparency.svg'
       />
     );
   }

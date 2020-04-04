@@ -5,7 +5,6 @@ import { Provider } from 'react-redux';
 import CommentList from '../app/comps/CommentList';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
-import Placeholder from './landing/Placeholder';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -26,7 +25,7 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
       <Hero
         title='transparency'
         description='.'
-        image={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/transparency.svg'
       />
     );
   }
@@ -34,15 +33,34 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
   renderThread(mirror?: boolean) {
     return (
       <Demo
-        title='Comment threads'
-        description=''
+        title='Organized discussion threads with your customers'
+        description='Using threaded comments, keep track of discussion'
         mirror={mirror}
         scale={0.7}
         template={templater => templater.demoCategory()}
-        mock={(mocker, config) => mocker.mockIdea(config.content.categories[0], undefined, undefined, {
-          ideaId: 'idea',
-        })
-          .then(idea => mocker.mockComments([], config.content.categories[0], idea)
+        mock={(mocker, config) => mocker.mockIdea(config.content.categories[0], undefined, undefined, { ideaId: 'idea' }, true)
+          .then(idea => mocker.mockDetailedComments([
+            {
+              content: 'We should also consider adding an audio captcha for blind and visually impaired users', author: 'John', children: [
+                {
+                  content: 'The problem with audio captchas is that they are usually the easiest to break by spammers', author: 'Charlotte', children: [
+                    {
+                      content: 'We can always disable them later', author: 'John'
+                    },
+                  ]
+                },
+                {
+                  content: 'Ah yes, the AudioCaptcha service seems to be a good offer', author: 'Daisy', children: [
+                    {
+                      content: 'The pricing seems a bit high', author: 'John', children: [
+                        { content: 'Let me contact them to see if we can get a better price', author: 'John' }
+                      ]
+                    }
+                  ]
+                },
+              ]
+            },
+          ], idea)
             .then(() => mocker.mockLoggedIn()))}
         demo={project => (
           <Provider store={project.server.getStore()}>

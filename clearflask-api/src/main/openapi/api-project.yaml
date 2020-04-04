@@ -382,7 +382,7 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page title', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:{path: ['layout','pages','<>', 'slug'], skipFirst: true} }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page title', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
                 type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.' }
@@ -411,7 +411,7 @@ components:
       properties:
         entryStatus:
           x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
-          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['.', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
           type: string
         statuses:
           x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames:['name', 'color', 'nextStatusIds'] }
@@ -437,7 +437,7 @@ components:
                 type: string
               nextStatusIds:
                 x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
-                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['..', '..', 'statuses'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
                   type: string
@@ -518,7 +518,7 @@ components:
                 type: boolean
               tagIds:
                 x-clearflask-prop: { order: 5, name: 'Tags', description: 'Set of tags in this group' }
-                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color'}
+                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['..', '..', 'tags'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
                   type: string
@@ -591,6 +591,7 @@ components:
       type: object
       properties:
         title:
+          x-clearflask-prop: { order: 1, name: 'Board title'}
           type: string
         panels:
           x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
@@ -675,7 +676,7 @@ components:
             - hideIfEmpty
           properties:
             hideIfEmpty:
-              x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel search founds no results, it will be hidden from this page.', defaultValue: true}
+              x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel search has no results, it will be hidden', defaultValue: false}
               type: boolean
     PageExplorer:
       allOf:

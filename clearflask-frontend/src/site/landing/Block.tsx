@@ -37,6 +37,9 @@ const styles = (theme: Theme) => createStyles({
   button: {
     alignSelf: 'flex-end',
   },
+  image: {
+    width: '100%',
+  },
 });
 
 interface Props {
@@ -47,6 +50,7 @@ interface Props {
   buttonLink?: string;
   controls?: React.ReactNode;
   demo?: React.ReactNode;
+  imagePath?: string;
   icon?: React.ReactNode;
   mirror?: boolean;
 }
@@ -59,11 +63,16 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         container
         wrap='wrap-reverse'
         direction={!this.props.mirror ? 'row-reverse' : undefined}
+        alignItems='center'
       >
-        <Grid item xs={12} sm={6} md={6} className={this.props.classes.grid} direction='column'>
-          <div>
-            {this.props.demo}
-          </div>
+        <Grid item xs={12} md={6} className={this.props.classes.grid} direction='column'>
+          {this.props.imagePath && (
+            <img
+              className={this.props.classes.image}
+              src={this.props.imagePath}
+            />
+          )}
+          {this.props.demo}
           {this.props.controls && (
             <DividerCorner
               className={this.props.classes.controlsOuter}
@@ -76,8 +85,8 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             </DividerCorner>
           )}
         </Grid>
-        <Grid item xs={false} sm={false} md={false} lg={1} xl={false} />
-        <Grid item xs={12} sm={6} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+        <Grid item xs={false} md={false} lg={1} xl={false} />
+        <Grid item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
           {this.props.icon && (
             <div className={this.props.classes.icon}>
               {this.props.icon}

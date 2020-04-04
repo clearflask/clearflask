@@ -2,7 +2,6 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
-import Placeholder from './landing/Placeholder';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
@@ -27,7 +26,7 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
       <Hero
         title='Proportionate voice based on customer value'
         description='Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.'
-        image={(<Placeholder width={500} height={350} />)}
+        imagePath='/img/landing/prioritization.svg'
       />
     );
   }

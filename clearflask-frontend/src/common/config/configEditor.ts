@@ -51,8 +51,7 @@ export interface xCfProp {
   description?: string;
   placeholder?: string | number;
   /**
-   * Default value to set on new properties. Use the following for dynamic names:
-   * '<>' replaced with parent path name (used when inside an array)
+   * Default value to set on new properties.
    */
   defaultValue?: any;
   subType?: PropSubType;
@@ -60,13 +59,14 @@ export interface xCfProp {
   enumNames?: string[];
   /**
    * Will autocomplete slug properties with current value.
-   * '<>' will be replaced by current path entry.
    * Example: if you set this property to 'Feature Requests',
    * the supplied path will become something like 'feature-requests'.
+   * If skipFirst is set, if the path value of this is 0, then auto complete
+   * will be disabled. Useful for Page slug should be empty for home page.
    */
   slugAutoComplete?: {
     path: Path;
-    skipFirst?: boolean;
+    skipFirst?: number;
   };
   /** BooleanProperty only.
    * Treat false value as undefined.
@@ -85,11 +85,7 @@ export enum PropSubType {
   Emoji = 'emoji',
 }
 export interface xCfPropLink {
-  /**
-   * Path to array.
-   * '<>' will be replaced by current path entry,
-   * useful when crossing another array.
-   */
+  /** Path to array */
   linkPath: string[];
   /** If set, links to this prop name. Otherwise links to the array index */
   idPropName: string;
@@ -97,8 +93,20 @@ export interface xCfPropLink {
   displayPropName: string;
   /** If set, use this color from the prop value */
   colorPropName?: string;
-  /** If set, cannot create a new item in place */
+  /** If set, cannot create a new item in place, also implicitly assumed if filter is used below */
   disallowCreate?: boolean;
+  /** If set, the special variable <$> will be replaced with a filter
+   * In more detail: a special variable <$> will check the path given by the property,
+   * retrieve the value of that property (string or string array), and iterate all
+   * paths replacing the variable <$> with the values.
+   * Example: A filter for statuses needs to only display the statuses for categories that
+   * have been filtered.
+   */
+  filterPath?: string[];
+  /** Part of filterPath, shows which property should be considered as id */
+  filterIdPropName?: string;
+  /** Used with filterPath: if the destination property has no values, use all values */
+  filterShowAllIfNone?: boolean;
 }
 
 /**
@@ -527,6 +535,33 @@ export class EditorImpl implements Editor {
     return schema;
   }
 
+  /**
+   * Expands relative paths to absolute paths using signs: . ..
+   */
+  expandRelativePath(path: Path, currPath: Path): Path {
+    var absPath: Path = path;
+    if (!path || path.length <= 0) {
+      absPath = path;
+    } else if (path[0] === '.') {
+      absPath = [
+        ...(currPath.slice(0, currPath.length - 1)),
+        ...(path.slice(1)),
+      ];
+    } else if (path[0] === '..') {
+      var dirUps = 1;
+      for (var i = 1; i <= path.length; i++) {
+        if (path[i] === '..') dirUps++;
+      }
+      absPath = [
+        ...(currPath.slice(0, currPath.length - 1 - dirUps)),
+        ...(path.slice(dirUps)),
+      ];
+    } else {
+      absPath = path;
+    }
+    return absPath;
+  }
+
   parse(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): Page | PageGroup | Property {
     var schema;
     if (isRequired !== undefined && subSchema !== undefined) {
@@ -567,24 +602,103 @@ export class EditorImpl implements Editor {
     return items;
   }
 
-  getLinkOptions(linkProp: LinkProperty | LinkMultiProperty, localSubscribers: { [subscriberId: string]: () => void }): LinkPropertyOption[] {
+  filterPath(path: Path, filterPath: Path, filterIdPropName: string, currPath: Path, subscribe: (p: PageGroupType | Property) => void, filterShowAllIfNone: boolean = false): Path[] {
+    const variableIndex = path.indexOf('<$>');
+    if (variableIndex === -1) return [path];
+
+    filterPath = this.expandRelativePath(filterPath, currPath);
+    const filterTarget = this.get(filterPath);
+    var filterIds: Set<string> = new Set();
+    if (filterTarget.type === PropertyType.LinkMulti) {
+      subscribe(filterTarget);
+      if (filterTarget.value !== undefined && filterTarget.value.size > 0) {
+        filterIds = new Set([...filterTarget.value]);
+      }
+    } else if (filterTarget.type === PropertyType.Array && filterTarget.childType === PropertyType.String) {
+      subscribe(filterTarget);
+      if (filterTarget.childProperties !== undefined && filterTarget.childProperties?.length > 0) {
+        filterIds = new Set(filterTarget.childProperties
+          .map(childProp => childProp.value as string));
+      }
+    } else if (filterTarget.type === PropertyType.Link || filterTarget.type === PropertyType.String) {
+      if (filterTarget.value !== undefined) {
+        filterIds = new Set([filterTarget.value]);
+      }
+    } else {
+      throw Error(`Filtered path ${path} filter ${filterPath} is pointing to an unsupported variable type ${filterTarget.type} ${filterTarget.type === PropertyType.Array ? filterTarget.childType : ''}`)
+    }
+    if (filterIds.size <= 0 && !filterShowAllIfNone) return [];
+
+    const valuesPath = path.slice(0, variableIndex);
+    const valuesTarget = this.get(valuesPath);
+    var valuesOptions: (Page | Property)[];
+    if (valuesTarget.type === PropertyType.Array) {
+      valuesOptions = valuesTarget.childProperties || [];
+    } else if (valuesTarget.type === PageGroupType) {
+      valuesOptions = valuesTarget.getChildPages() || [];
+    } else {
+      throw Error(`Filtered path ${path} filter ${filterPath} variable destination pointing to non-array non-page-group on path ${valuesPath}`);
+    }
+    if (valuesOptions.length <= 0) return [];
+    return valuesOptions.reduce<number[]>((result, valueOption, index) => {
+      var childProps: Property[];
+      if (valueOption.type === PageType) {
+        childProps = valueOption.getChildren().props;
+      } else if (valueOption.type === PropertyType.Object) {
+        childProps = valueOption.childProperties || [];
+      } else {
+        throw Error(`Filtered path ${path} filter ${filterPath} variable destination pointing to non-array non-page-group on path ${valuesPath}`);
+      }
+      const id = childProps!.find(prop => {
+        const propName = prop.path[prop.path.length - 1];
+        return prop.subType === PropSubType.Id && propName === filterIdPropName
+      })!.value! as string;
+      return ((filterIds.size <= 0 && filterShowAllIfNone)
+        || filterIds.has(id))
+        ? [...result, index]
+        : result;
+    }, [])
+      .map(index => {
+        const newPath = [...path];
+        newPath[variableIndex] = index;
+        return newPath;
+      });
+  }
+
+  getLinkOptions(linkProp: LinkProperty | LinkMultiProperty, localSubscribers: { [subscriberId: string]: () => void }, currPath: Path): LinkPropertyOption[] {
     if (linkProp.cachedOptions !== undefined) return linkProp.cachedOptions;
-    const targetPath = linkProp.linkPath.map((pathStep, index) => pathStep === '<>' ? linkProp.path[index] : pathStep);
-    const target: Page | PageGroup | Property = this.get(targetPath);
-    if (target.type !== PropertyType.Array && target.type !== PageGroupType) {
-      throw Error(`Link property ${linkProp.path} pointing to non-array non-page-group on path ${targetPath}`);
-    }
-    if (target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
-      throw Error(`Link property ${linkProp.path} pointing to array of non-objects on path ${targetPath}`);
-    }
+    const targetPath = this.expandRelativePath(linkProp.linkPath, linkProp.path);
+    const targets: (PageGroup | ArrayProperty)[] = [];
+    const addTarget = (target: Page | PageGroup | Property) => {
+      if (target.type !== PropertyType.Array && target.type !== PageGroupType) {
+        throw Error(`Link property ${linkProp.path} pointing to non-array non-page-group on path ${target.path}`);
+      }
+      if (target.type === PropertyType.Array && target.childType !== PropertyType.Object) {
+        throw Error(`Link property ${linkProp.path} pointing to array of non-objects on path ${target.path}`);
+      }
+      targets.push(target);
+    };
     const unsubscribes: (() => void)[] = [];
     const subscribe = p => unsubscribes.push(p.subscribe(() => {
       linkProp.cachedOptions = undefined;
+      linkProp.validateValue(linkProp.value as any)
       unsubscribes.forEach(u => u());
       this.notify(localSubscribers);
     }));
-    subscribe(target);
-    const options: (Page | ObjectProperty)[] = (target.type === PageGroupType
+    if (linkProp.linkPath.includes('<$>')) {
+      if (linkProp.filterPath === undefined || linkProp.filterIdPropName === undefined) {
+        throw Error(`Link on path ${currPath} has a filter variable <$> but is missing filterPath or filterIdPropName property`)
+      }
+      const filteredPaths = this.filterPath(linkProp.linkPath, linkProp.filterPath, linkProp.filterIdPropName, currPath, subscribe, linkProp.filterShowAllIfNone);
+      console.log('DEBUGDEBUG...1', filteredPaths);
+      filteredPaths.forEach(filteredPath => {
+        addTarget(this.get(filteredPath));
+      });
+    } else {
+      addTarget(this.get(targetPath));
+    }
+    targets.forEach(target => subscribe(target));
+    const options: (Page | ObjectProperty)[] = targets.flatMap<Page | ObjectProperty>(target => target.type === PageGroupType
       ? target.getChildPages()
       : (target.childProperties as ObjectProperty[]) || []);
     const linkPropertyOptions = options.map((option: Page | ObjectProperty) => {
@@ -626,6 +740,7 @@ export class EditorImpl implements Editor {
       return linkPropertyOption;
     });
     linkProp.cachedOptions = linkPropertyOptions;
+    (linkProp.linkPath.includes('<$>')) && console.log('DEBUGDEBUG...5', linkPropertyOptions);
     return linkPropertyOptions;
   };
 
@@ -1057,27 +1172,24 @@ export class EditorImpl implements Editor {
           };
         } else if (propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
-          const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
-          const target = this.get(targetPath);
-          if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
-          target.subscribe(() => {
-            const linkProperty = property as LinkProperty;
-            linkProperty.cachedOptions = undefined;
-            linkProperty.validateValue(linkProperty.value)
-            this.notify(localSubscribers);
-          });
           property = {
             defaultValue: isRequired ? [...xPropLink.linkPath, 0] : undefined,
             ...xPropLink,
             ...base,
             type: PropertyType.Link,
             value: value,
-            allowCreate: !xPropLink.disallowCreate,
+            allowCreate: !xPropLink.disallowCreate && !xPropLink.linkPath.includes('<$>'),
             set: (val: string | undefined): void => {
               (property as LinkProperty).cachedOptions = undefined;
               setFun(val);
             },
             create: (name: string): void => {
+              if (xPropLink.linkPath.includes('<$>')) {
+                throw Error(`Link property ${path} link path ${xPropLink.linkPath} contains variable, not supported currently for creation`);
+              }
+              const targetPath = this.expandRelativePath(xPropLink.linkPath, path);
+              const target = this.get(targetPath);
+              if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
               const newItem: Page | Property = target.insert();
               var newItemProps;
               if (newItem.type === PageType) {
@@ -1099,7 +1211,7 @@ export class EditorImpl implements Editor {
 
               property.set(idProp.value as never);
             },
-            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
+            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers, path),
             validateValue: (val: string | undefined): void => {
               if (val === undefined) {
                 validateRequiredFun(val);
@@ -1141,17 +1253,9 @@ export class EditorImpl implements Editor {
               const prevVal = (property as StringProperty).value;
               setFun(val);
               setTimeout(() => {
-                var lastIndex: string | number | undefined;
-                const slugProp = this.getProperty(xProp.slugAutoComplete!.path
-                  .map((pathStep, index) => {
-                    if (pathStep === '<>') {
-                      lastIndex = path[index];
-                      return path[index];
-                    } else {
-                      return pathStep;
-                    }
-                  }));
-                if (xProp.slugAutoComplete!.skipFirst && lastIndex === 0) {
+                const slugProp = this.getProperty(this.expandRelativePath(xProp.slugAutoComplete!.path, path));
+                if (xProp.slugAutoComplete!.skipFirst !== undefined
+                  && path[xProp.slugAutoComplete!.skipFirst] === 0) {
                   return;
                 }
                 const prevSlugName = stringToSlug(prevVal);
@@ -1237,22 +1341,13 @@ export class EditorImpl implements Editor {
             throw Error(`Multi Link must be an array of strings on path ${path}`);
           }
           const xPropLink = propSchema[OpenApiTags.PropLink];
-          const targetPath = xPropLink.linkPath.map((pathStep, index) => pathStep === '<>' ? path[index] : pathStep);
-          const target = this.get(targetPath);
-          if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
-          target.subscribe(() => {
-            const linkMultiProperty = property as LinkMultiProperty;
-            linkMultiProperty.cachedOptions = undefined;
-            linkMultiProperty.validateValue(linkMultiProperty.value)
-            this.notify(localSubscribers);
-          });
           property = {
             defaultValue: isRequired ? new Set<string>() : undefined,
             ...xPropLink,
             ...base,
             type: PropertyType.LinkMulti,
             value: value === undefined ? undefined : new Set<string>(value),
-            allowCreate: !xPropLink.disallowCreate,
+            allowCreate: !xPropLink.disallowCreate && !xPropLink.linkPath.includes('<$>'),
             minItems: propSchema.minItems,
             maxItems: propSchema.maxItems,
             set: (val: Set<string>) => {
@@ -1264,6 +1359,13 @@ export class EditorImpl implements Editor {
               this.notify(localSubscribers);
             },
             create: (name: string): void => {
+              if (xPropLink.linkPath.includes('<$>')) {
+                // TODO implement here and above
+                throw Error(`Link property ${path} link path ${xPropLink.linkPath} contains variable, not supported currently for creation`);
+              }
+              const targetPath = this.expandRelativePath(xPropLink.linkPath, path);
+              const target = this.get(targetPath);
+              if (target.type !== PropertyType.Array && target.type !== PageGroupType) throw Error(`Link on path ${path} is pointing to a non-array non-page-group on path ${targetPath}`);
               const newItem: Page | Property = target.insert();
               var newItemProps;
               if (newItem.type === PageType) {
@@ -1335,7 +1437,7 @@ export class EditorImpl implements Editor {
                 }
               }
             },
-            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers),
+            getOptions: (): LinkPropertyOption[] => this.getLinkOptions(property as LinkProperty, localSubscribers, path),
           }
           break;
         }

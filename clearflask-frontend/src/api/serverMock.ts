@@ -166,9 +166,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;
-    if (request['author']) {
+    if (request.commentCreate['author']) {
       // Data mocking shortcut
-      loggedInUser = request['author'];
+      loggedInUser = request.commentCreate['author'];
     } else {
       loggedInUser = this.getProject(request.projectId).loggedInUser;
     }
@@ -190,6 +190,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       childCommentCount: 0,
       ...(request.commentCreate),
     };
+    console.log('DEBUG', request, comment, request.commentCreate);
     parentComment && parentComment.childCommentCount++;
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
     idea.commentCount++;
