@@ -5,63 +5,67 @@ import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
 import * as Client from './client';
 
+const termsProjects = 'You can create separate projects each having their own set of users and content';
+const termsActiveUsers = 'Active users are users that have signed up or made public contributions counted on a 3 month-average';
+const termsAnalytics = 'View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.';
+const termsVoting = 'Voting and Credit system allows precise expression of value for each idea.';
+const termsCredit = 'Spend time credits on future ClearFlask development features';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7': {
-    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Basic',
+    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Standard',
     pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Yearly },
     perks: [
-      { desc: 'Unlimited users', terms: 'description' },
-      { desc: 'Simple user voting', terms: 'description' },
-      { desc: '1 hour feature credit', terms: 'description' },
+      { desc: '1,000 Active users', terms: termsActiveUsers },
+      { desc: 'Multiple projects', terms: termsProjects },
+      { desc: 'Voting and Crowd-funding', terms: termsVoting },
+      { desc: '1hr feature credits', terms: termsCredit },
     ],
     beta: true,
   },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
-    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Basic',
+    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Standard',
     pricing: { price: 80, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: 'Unlimited users', terms: 'description' },
-      { desc: 'Simple user voting', terms: 'description' },
-      { desc: '5 minute feature credit', terms: 'description' },
+      { desc: '1,000 Active users', terms: termsActiveUsers },
+      { desc: 'Multiple projects', terms: termsProjects },
+      { desc: 'Voting and Crowd-funding', terms: termsVoting },
+      { desc: '5min feature credits', terms: termsCredit },
     ],
     beta: true,
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
     planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
-      { desc: 'Content analytics and search', terms: 'description' },
-      { desc: 'Crowd-funding', terms: 'description' },
-      { desc: 'Unlimited projects, users', terms: 'description' },
+      { desc: '10,000 Active users', terms: termsActiveUsers },
+      { desc: 'Powerful Analytics', terms: termsAnalytics },
+      { desc: 'Single sign-on' },
+      { desc: 'API access' },
     ],
     comingSoon: true,
   },
   '597099E1-83B3-40AC-8AC3-52E9BF59A562': {
     planid: '597099E1-83B3-40AC-8AC3-52E9BF59A562', title: 'Enterprise',
     perks: [
-      { desc: 'Multi-Agent Access', terms: 'description' },
-      { desc: 'Whitelabel', terms: 'description' },
-      { desc: 'Integrations, API Access', terms: 'description' },
-      { desc: 'Dedicated/Onsite hosting', terms: 'description' },
-      { desc: 'Custom SLA', terms: 'description' },
+      { desc: '10,000+ Active users', terms: termsActiveUsers },
+      { desc: 'Multi-Agent Access' },
+      { desc: 'Whitelabel' },
     ],
     comingSoon: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable = {
-  plans: ['Basic', 'Analytic', 'Enterprise'],
+  plans: ['Standard', 'Analytic', 'Enterprise'],
   features: [
-    { feature: 'Projects', values: ['Unlimited', 'Unlimited', 'Unlimited'] },
-    { feature: 'Active users', values: ['Unlimited†', 'Unlimited†', 'Unlimited†'] },
-    { feature: 'Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Voting and Emoji expressions', values: ['No', 'Yes', 'Yes'] },
-    { feature: 'Credit system / Crowd-funding', values: ['No', 'Yes', 'Yes'] },
-    { feature: 'Analytics', values: ['No', 'No', 'Yes'] },
-    { feature: 'Multi agent access', values: ['No', 'No', 'Yes'] },
-    { feature: 'Integrations', values: ['No', 'No', 'Yes'] },
-    { feature: 'API access', values: ['No', 'No', 'Yes'] },
+    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'], terms: termsProjects },
+    { feature: 'Active users', values: ['1,000', '10,000', '10,000+'], terms: termsActiveUsers },
+    { feature: 'Customizable pages', values: ['Yes', 'Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
+    { feature: 'Voting and Crowd-funding', values: ['Yes', 'Yes', 'Yes'], terms: termsVoting },
+    { feature: 'Powerful Analytics', values: ['No', 'Yes', 'Yes'], terms: termsAnalytics },
+    { feature: 'Single sign-on', values: ['No', 'Yes', 'Yes'] },
+    { feature: 'API access', values: ['No', 'Yes', 'Yes'] },
+    { feature: 'Multi-agent access', values: ['No', 'No', 'Yes'] },
     { feature: 'Whitelabel', values: ['No', 'No', 'Yes'] },
   ],
-  extraTerms: `† Unlimited assumes reasonable usage. Please contact us prior to deployment to ensure we are prepared for your traffic level.`,
 };
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithAuthor {
@@ -190,7 +194,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       childCommentCount: 0,
       ...(request.commentCreate),
     };
-    console.log('DEBUG', request, comment, request.commentCreate);
     parentComment && parentComment.childCommentCount++;
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
     idea.commentCount++;
@@ -677,7 +680,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         transactionId: randomUuid(),
         created: new Date(),
         amount: fundDiff,
-        balance: balance,
         transactionType: Admin.TransactionType.Vote,
         targetId: request.voteUpdateAdmin.ideaId,
         summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0, 47) + '...' : idea.title}"`

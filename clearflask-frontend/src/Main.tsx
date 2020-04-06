@@ -2,6 +2,7 @@ import { createMuiTheme, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
@@ -11,7 +12,7 @@ import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { detectEnv, Environment } from './common/util/detectEnv';
+import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import ScrollToTop from './ScrollToTop';
 import Dashboard from './site/Dashboard';
 import Site from './site/Site';
@@ -34,6 +35,22 @@ const theme: Theme = createMuiTheme({
 });
 
 class Main extends Component {
+
+  constructor(props) {
+    super(props);
+
+    if (isProd()) {
+      ReactGA.initialize('UA-127162051-3', {
+        gaOptions: {}
+      });
+      ReactGA.set({
+        anonymizeIp: true,
+        forceSSL: true
+      });
+      ReactGA.pageview(window.location.pathname + window.location.search);
+    }
+  }
+
   componentDidMount() {
     closeLoadingScreen();
   }
@@ -56,6 +73,13 @@ class Main extends Component {
           }}>
             <Router>
               <ScrollToTop />
+              {isProd() && (
+                <Route path="/" render={({ location }) => {
+                  ReactGA.set({ page: location.pathname + location.search });
+                  ReactGA.pageview(location.pathname + location.search);
+                  return null;
+                }} />
+              )}
               <Switch>
                 {subdomain ? (
                   <Route path="/" render={props => (

@@ -35,7 +35,7 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Demo
         title='Voting ideas'
-        description='Simple to understand voting system'
+        description='Simple upvote/downvote system with all users having equal voting power.'
         mirror={mirror}
         initialSubPath='/embed/demo'
         template={templater => templater.demoPrioritization('vote')}
@@ -64,7 +64,7 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Demo
         title='Expressions'
-        description='Expressions with blah blah blah.'
+        description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions is here to help.'
         mirror={mirror}
         initialSubPath='/embed/demo'
         template={templater => templater.demoPrioritization('express')}

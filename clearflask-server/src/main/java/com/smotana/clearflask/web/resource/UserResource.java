@@ -20,11 +20,13 @@ import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchResponse;
 import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -66,6 +68,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private Config config;
     @Inject
     private UserStore userStore;
+    @Inject
+    private VoteStore voteStore;
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -231,9 +235,17 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdate userUpdate) {
-        // TODO Sanity check userUpdate
-        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserAdmin();
+    public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
+        // TODO Sanity check userUpdateAdmin
+        if (userUpdateAdmin.getTransactionCreate() != null) {
+            voteStore.balanceAdjustTransaction(
+                    projectId,
+                    userId,
+                    userUpdateAdmin.getTransactionCreate().getAmount(),
+                    Strings.nullToEmpty(userUpdateAdmin.getTransactionCreate().getSummary()));
+            userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
+        }
+        return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})

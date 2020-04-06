@@ -5,7 +5,12 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -30,7 +35,7 @@ public class HttpRedirectorFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
 
         if (Strings.nullToEmpty(req.getHeader("x-forwarded-proto")).toLowerCase().equals("http")
-                && !Strings.nullToEmpty(req.getRequestURI()).startsWith("/api/ping")) {
+                && !Strings.nullToEmpty(req.getRequestURI()).startsWith("/api/health")) {
             HttpServletResponse res = (HttpServletResponse) response;
 
             String uri = req.getRequestURI();

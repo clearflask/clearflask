@@ -14,8 +14,8 @@ public class ResourceLegalStore implements LegalStore {
 
     @Inject
     private void setup() throws Exception {
-        this.termsOfService = Resources.toString(Resources.getResource("legal/terms-of-service.md"), Charsets.UTF_8);
-        this.privacyPolicy = Resources.toString(Resources.getResource("legal/privacy-policy.md"), Charsets.UTF_8);
+        this.termsOfService = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("legal/Terms-of-Service.md"), Charsets.UTF_8);
+        this.privacyPolicy = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("legal/Privacy-Policy.md"), Charsets.UTF_8);
     }
 
     @Override

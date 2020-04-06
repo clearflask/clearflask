@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Preconditions;
@@ -77,6 +78,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         @DefaultValue("true")
         boolean createTables();
 
+        @DefaultValue("clearflask")
+        String tablePrefix();
+
         @DefaultValue("1")
         long gsiCount();
 
@@ -135,7 +139,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                         .withTableName(getTableOrIndexName(Primary, -1))
                         .withKeySchema(primaryKeySchemas)
                         .withAttributeDefinitions(primaryAttributeDefinitions)
-                        .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                        .withBillingMode(BillingMode.PAY_PER_REQUEST)
+                        .withProvisionedThroughput(new ProvisionedThroughput(1L, 1L));
                 if (!localSecondaryIndexes.isEmpty()) {
                     createTableRequest.withLocalSecondaryIndexes(localSecondaryIndexes);
                 }
@@ -166,9 +171,9 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
     }
 
     private String getTableOrIndexName(TableType type, long indexNumber) {
-        return type == Primary
+        return this.config.tablePrefix() + (type == Primary
                 ? type.name().toLowerCase()
-                : type.name().toLowerCase() + indexNumber;
+                : type.name().toLowerCase() + indexNumber);
     }
 
     private String getPartitionKeyName(TableType type, long indexNumber) {

@@ -51,10 +51,10 @@ const forms: ContactForm[] = [{
   type: 'sales',
   title: 'Talk to sales',
   subtitle: 'Our experts can help you find the right solution',
-  submitTitle: 'Schedule',
+  submitTitle: 'Contact',
   fields: [
-    { attrName: CONTACT, title: 'Work email', placeholder: 'name@example.com', required: true },
-    { attrName: 'details', type: 'multiline', title: 'What can we help you with?' },
+    { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
+    { attrName: CONTACT, title: 'Work email', placeholder: 'name@company.com', required: true },
   ],
 }, {
   type: 'support',

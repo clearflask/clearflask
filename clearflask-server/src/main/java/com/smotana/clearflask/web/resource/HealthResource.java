@@ -14,17 +14,16 @@ import javax.ws.rs.core.MediaType;
 @Slf4j
 @Singleton
 @Path("/")
-public class PingResource {
+public class HealthResource {
 
     @Context
     private HttpServletRequest request;
 
     @GET
-    @Path("ping")
+    @Path("health")
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
-    public String ping() {
-        log.debug("ping from {} {}", request.getRemoteAddr(), request.getHeader("x-forwarded-for"));
-        return "pong";
+    public String health() {
+        return "ok";
     }
 }

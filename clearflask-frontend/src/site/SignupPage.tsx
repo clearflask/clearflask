@@ -5,13 +5,10 @@ import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { CardCVCElement, CardExpiryElement, CardNumberElement, ReactStripeElements } from 'react-stripe-elements';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../app/comps/Message';
 import Loader from '../app/utils/Loader';
-import StripeElementWrapper from '../common/stripe/StripeElementWrapper';
-import StripeProviderProvider from '../common/stripe/StripeProviderProvider';
 import notEmpty from '../common/util/arrayUtil';
 import { saltHashPassword } from '../common/util/auth';
 import PlanPeriodSelect from './PlanPeriodSelect';
@@ -30,14 +27,6 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'pointer',
     textDecoration: 'none!important',
     color: theme.palette.text.primary,
-  },
-  stripeGrid: {
-    minWidth: '167px',
-    width: '300px',
-    margin: theme.spacing(1),
-  },
-  stripeInput: {
-    padding: theme.spacing(1),
   },
   reviewRowError: {
     color: theme.palette.error.main,
@@ -63,11 +52,7 @@ interface State {
   phone?: string;
   pass?: string;
   revealPassword?: boolean;
-  stripe?: ReactStripeElements.StripeProps;
-  stripeLoadError?: string;
-  cardValid?: boolean;
-  cardExpiryValid?: boolean;
-  cardCvcValid?: boolean;
+  paymentToken?: string;
 }
 
 class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
@@ -86,6 +71,8 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       step: 0,
       planId,
       period,
+      // TODO remove this once payments are complete:
+      paymentToken: new URL(window.location.href).searchParams.get('please') || undefined,
     };
   }
 
@@ -106,7 +93,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
     const planStepCompleted = !!this.state.planId && !!selectedPlan;
     const accountStepCompleted = !!this.state.name && !!this.state.email && !!this.state.pass;
-    const billingStepCompleted = !!this.state.stripe && !!this.state.cardValid && !!this.state.cardExpiryValid && !!this.state.cardCvcValid;
+    const billingStepCompleted = !!this.state.paymentToken;
 
     return (
       <div className={this.props.classes.page}>
@@ -136,7 +123,6 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                             step: this.state.step + 1,
                           })}
                           selected={this.state.planId === plan.planid}
-                          expanded
                         />
                       </Grid>
                     ))}
@@ -214,32 +200,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
                 <Box display='flex' flexDirection='column' alignItems='flex-start'>
                   <Typography>Enter your payment information</Typography>
-                  <StripeProviderProvider stripeKey='pk_test_M1ANiFgYLBV2UyeVB10w1Ons'
-                    onStripeElementsReady={stripe => this.setState({ stripe: stripe })}
-                    onError={() => this.setState({ stripeLoadError: 'Failed to load payment processor' })}>
-                    <Loader loaded={!!this.state.stripe} error={this.state.stripeLoadError}>
-                      <React.Fragment>
-                        {/* <CardElement className={this.props.classes.cardEl} /> */}
-                        <Grid container className={this.props.classes.stripeGrid}>
-                          <Grid item xs={12} className={this.props.classes.stripeInput}>
-                            <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({ cardValid: isValid })}
-                              label="Card Number" component={CardNumberElement} />
-                          </Grid>
-                          <Grid item xs={7} className={this.props.classes.stripeInput}>
-                            <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({ cardExpiryValid: isValid })}
-                              label="Expiry (MM / YY)" component={CardExpiryElement} />
-                          </Grid>
-                          <Grid item xs={5} className={this.props.classes.stripeInput}>
-                            <StripeElementWrapper
-                              onValidChanged={isValid => this.setState({ cardCvcValid: isValid })}
-                              label="CVC" component={CardCVCElement} />
-                          </Grid>
-                        </Grid>
-                      </React.Fragment>
-                    </Loader>
-                  </StripeProviderProvider>
+                  Unfortunately, our payment processor is not yet available in your area
                 </Box>
                 <Box display='flex' className={this.props.classes.item}>
                   <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary' disabled={!billingStepCompleted}>Next</Button>
@@ -295,32 +256,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
   }
 
   async signUp() {
-    if (!this.state.stripe) {
-      this.setState({ error: 'Our payment processor has not initialized' });
-      return;
-    }
-
     this.setState({ isSubmitting: true });
-
-    var tokenResponse: ReactStripeElements.TokenResponse;
-    try {
-      tokenResponse = await this.state.stripe.createToken();
-    } catch (err) {
-      this.setState({
-        error: 'Failed to tokenize billing information',
-        isSubmitting: false
-      });
-      return;
-    };
-
-    if (tokenResponse.error) {
-      this.setState({
-        error: 'Failed to retrieve billing token: ' + tokenResponse.error.message || tokenResponse.error.type,
-        isSubmitting: false
-      });
-      return;
-    }
-
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
       await dispatchAdmin.accountSignupAdmin({
@@ -331,7 +267,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           email: this.state.email!,
           phone: this.state.phone,
           password: saltHashPassword(this.state.pass!),
-          paymentToken: JSON.stringify(tokenResponse.token!),
+          paymentToken: this.state.paymentToken!,
         }
       });
     } catch (err) {

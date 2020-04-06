@@ -34,7 +34,7 @@ public enum ElasticScript {
             checkArgument(split.length == 2);
             this.name = split[0];
             this.lang = split[1];
-            URL fileUrl = getClass().getClassLoader().getResource("elastic/" + fileName);
+            URL fileUrl = Thread.currentThread().getContextClassLoader().getResource("elastic/" + fileName);
             checkState(fileUrl != null);
             File file = new File(fileUrl.getPath());
             checkState(file.isFile());

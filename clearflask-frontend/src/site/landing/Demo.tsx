@@ -51,6 +51,7 @@ class Demo extends Component<Props & WithStyles<typeof styles, true>> {
               transform: `scale(${this.props.scale})`,
               transformOrigin: '0 0',
               width: `${100 / this.props.scale}%`,
+              marginBottom: `${(this.props.scale - 1) * 100}%`,
             }}>
               {demo}
             </div>

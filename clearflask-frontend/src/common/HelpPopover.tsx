@@ -1,6 +1,6 @@
 import { Button, Popover, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import HelpIcon from '@material-ui/icons/HelpOutline';
+import HelpIcon from '@material-ui/icons/InfoOutlined';
 import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
@@ -12,7 +12,8 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   popover: {
-    margin: theme.spacing(1),
+    margin: theme.spacing(2),
+    maxWidth: 500,
   },
 });
 

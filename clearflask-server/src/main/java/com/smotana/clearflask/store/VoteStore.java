@@ -60,6 +60,8 @@ public interface VoteStore {
         return IdUtil.randomAscId();
     }
 
+    TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary);
+
     TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary);
 
     ImmutableMap<String, FundModel> fundSearch(String projectId, String userId, ImmutableSet<String> targetIds);
@@ -166,9 +168,6 @@ public interface VoteStore {
         private final long amount;
 
         @NonNull
-        private final long balance;
-
-        @NonNull
         private final String transactionType;
 
         /**
@@ -189,7 +188,6 @@ public interface VoteStore {
                     getTransactionId(),
                     getCreated(),
                     getAmount(),
-                    getBalance(),
                     Enums.getIfPresent(TransactionType.class, getTransactionType())
                             .or(TransactionType.ADJUSTMENT),
                     getTargetId(),

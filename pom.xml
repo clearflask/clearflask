@@ -19,8 +19,8 @@
         <guava.version>26.0-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
-        <stripe.version>7.0.0</stripe.version>
-        <elastic.version>7.1.0</elastic.version>
+        <elastic.version>7.4.0</elastic.version>
+        <lucene.version>8.2.0</lucene.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
         <!-- If I still can't upgrade to 2.27+,
@@ -284,14 +284,14 @@
                 <version>${ice.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.stripe</groupId>
-                <artifactId>stripe-java</artifactId>
-                <version>${stripe.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-high-level-client</artifactId>
                 <version>${elastic.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
             </dependency>
             <dependency>
                 <!-- Ensures all AWS SDKs are version compatible -->
@@ -427,6 +427,16 @@
                 <artifactId>web-push</artifactId>
                 <version>5.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.10.8</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.10.8</version>
+            </dependency>
             <!-- test-only deps -->
             <dependency>
                 <groupId>junit</groupId>
@@ -462,12 +472,6 @@
                 <groupId>org.elasticsearch.test</groupId>
                 <artifactId>framework</artifactId>
                 <version>${elastic.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-test-framework</artifactId>
-                <version>8.0.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

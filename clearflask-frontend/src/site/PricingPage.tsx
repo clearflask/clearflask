@@ -70,10 +70,11 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
-                    actionTitle={plan.pricing ? 'Get started' : 'Contact us'}
-                    actionOnClick={() => !plan.pricing
-                      ? this.props.history.push('/contact/sales')
-                      : this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })}
+                    actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Contact us')}
+                    actionOnClick={plan.comingSoon ? undefined : () => plan.pricing && !plan.beta
+                      ? this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })
+                      : this.props.history.push('/contact/sales')
+                    }
                   />
                 </Grid>
               ))}
@@ -154,7 +155,12 @@ const FeatureListItem = (props: {
     <TableRow key='name'>
       <TableCell key='feature'>
         {props.name}
-        {props.helpText && (<HelpPopover description={props.helpText} />)}
+        {props.helpText && (
+          <React.Fragment>
+            &nbsp;
+            <HelpPopover description={props.helpText} />
+          </React.Fragment>
+        )}
       </TableCell>
       {props.planContents.map((content, index) => (
         <TableCell key={index}>

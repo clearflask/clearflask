@@ -42,7 +42,6 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
               className={this.props.classes.plan}>
               <PricingPlan
                 plan={this.props.account.plan}
-                expanded
               />
             </Grid>
           </Grid>

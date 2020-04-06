@@ -26,6 +26,9 @@ public class DefaultDynamoDbProvider extends ManagedService implements Provider<
 
     public interface Config {
         @DefaultValue("")
+        String productionRegion();
+
+        @DefaultValue("")
         String serviceEndpoint();
 
         @DefaultValue("")
@@ -46,10 +49,14 @@ public class DefaultDynamoDbProvider extends ManagedService implements Provider<
                 .withCredentials(AwsCredentialsProvider);
         String serviceEndpoint = config.serviceEndpoint();
         String signingRegion = config.signingRegion();
+        String productionRegion = config.productionRegion();
         if (!Strings.isNullOrEmpty(serviceEndpoint) && !Strings.isNullOrEmpty(signingRegion)) {
             amazonDynamoDBClientBuilder.withEndpointConfiguration(
                     new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion));
+        } else if (!Strings.isNullOrEmpty(productionRegion)) {
+            amazonDynamoDBClientBuilder.withRegion(productionRegion);
         }
+
         amazonDynamoDBOpt = Optional.of(amazonDynamoDBClientBuilder.build());
         return amazonDynamoDBOpt.get();
     }

@@ -82,12 +82,10 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Optional.of(ideaUpdated), store.getIdea(projectId, ideaUpdated.getIdeaId()));
 
         IdeaModel idea2Updated = idea2.toBuilder()
-                .categoryId(IdUtil.randomId())
                 .title("newTitle")
                 .fundGoal(10L)
                 .build();
         store.updateIdea(projectId, idea2.getIdeaId(), IdeaUpdateAdmin.builder()
-                .categoryId(idea2Updated.getCategoryId())
                 .title(idea2Updated.getTitle())
                 .fundGoal(idea2Updated.getFundGoal())
                 .build()).getIndexingFuture().get();

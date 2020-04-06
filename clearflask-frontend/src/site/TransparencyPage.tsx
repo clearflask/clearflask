@@ -3,6 +3,7 @@ import { loremIpsum } from "lorem-ipsum";
 import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import CommentList from '../app/comps/CommentList';
+import Block from './landing/Block';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 
@@ -14,8 +15,9 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderThread()}
         {this.renderRoadmap()}
+        {this.renderThread()}
+        {this.renderSales(true)}
       </React.Fragment>
     );
   }
@@ -23,8 +25,8 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
   renderHero() {
     return (
       <Hero
-        title='transparency'
-        description='.'
+        title='Strengthen user community with transparency'
+        description='Keep your users involved and informed of your progress at every significant step with updates and a public roadmap'
         imagePath='/img/landing/transparency.svg'
       />
     );
@@ -33,8 +35,8 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
   renderThread(mirror?: boolean) {
     return (
       <Demo
-        title='Organized discussion threads with your customers'
-        description='Using threaded comments, keep track of discussion'
+        title='Organized discussion threads'
+        description='Manage parallel discussions and side-conversations easily using threaded comments'
         mirror={mirror}
         scale={0.7}
         template={templater => templater.demoCategory()}
@@ -87,8 +89,8 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
       // - Custom (language courses): Gaining traction, Beta, Public
       // - Custom (Game ideas): Semi-finals, Selected
       <Demo
-        title='Roadmap'
-        description=''
+        title='Transparent roadmap'
+        description='Include your users during development and get them excited for upcoming improvements.'
         mirror={mirror}
         initialSubPath='/embed/demo'
         scale={0.7}
@@ -109,6 +111,18 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
           { status: '2', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
         ])}
       // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+      />
+    );
+  }
+
+  renderSales(mirror?: boolean) {
+    return (
+      <Block
+        title='Every customer is different'
+        description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
+        buttonTitle='Get in touch'
+        buttonLink='/contact/sales'
+        mirror={mirror}
       />
     );
   }

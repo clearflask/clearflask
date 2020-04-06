@@ -53,9 +53,6 @@ components:
         amount:
           type: integer
           format: int64
-        balance:
-          type: integer
-          format: int64
         transactionType:
           $ref: 'api-credit.yaml#/components/schemas/TransactionType'
         targetId:
@@ -74,7 +71,6 @@ components:
       - transactionId
       - created
       - amount
-      - balance
       - transactionType
     TransactionCreateAdmin:
       type: object

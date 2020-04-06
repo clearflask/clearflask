@@ -47,6 +47,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -338,6 +339,19 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
+    public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin) {
+        return updateUser(projectId, userId, new UserUpdate(
+                updatesAdmin.getName(),
+                updatesAdmin.getEmail(),
+                updatesAdmin.getPassword(),
+                updatesAdmin.getEmailNotify(),
+                updatesAdmin.getIosPush() == Boolean.FALSE ? "" : null,
+                updatesAdmin.getAndroidPush() == Boolean.FALSE ? "" : null,
+                updatesAdmin.getBrowserPush() == Boolean.FALSE ? "" : null
+        ));
+    }
+
+    @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(userSchema.primaryKey(Map.of(
@@ -442,12 +456,12 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, String ideaId, long balanceDiff) {
+    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt) {
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
-        boolean bloomFilterUpdated = bloomFilter.put(ideaId);
+        boolean bloomFilterUpdated = ideaIdOpt.map(bloomFilter::put).orElse(false);
 
         List<AttributeUpdate> attrUpdates = Lists.newArrayList();
         attrUpdates.add(new AttributeUpdate("balance").addNumeric(balanceDiff));

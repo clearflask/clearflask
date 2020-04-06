@@ -29,6 +29,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -252,6 +253,29 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
+    public TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary) {
+        TransactionModel transaction = new TransactionModel(
+                userId,
+                projectId,
+                genTransactionId(),
+                Instant.now(),
+                balanceDiff,
+                TransactionType.ADJUSTMENT.name(),
+                null,
+                summary,
+                Instant.now().plus(config.transactionExpiry()).getEpochSecond());
+        try {
+            transactionSchema.table().putItem(new PutItemSpec()
+                    .withItem(transactionSchema.toItem(transaction))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", transactionSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ErrorWithMessageException(Response.Status.CONFLICT, "You found an UUID collision, it's better than winning the lottery.", ex);
+        }
+        return transaction;
+    }
+
+    @Override
     public TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary) {
         Optional<String> conditionExpressionOpt = Optional.empty();
         HashMap<String, Object> valueMap = Maps.newHashMap();
@@ -273,14 +297,12 @@ public class DynamoVoteStore implements VoteStore {
                 .getItem()))
                 .map(FundModel::getFundAmount)
                 .orElse(0L);
-        long fundAmount = fundAmountPrevious + fundDiff;
         TransactionModel transaction = new TransactionModel(
                 userId,
                 projectId,
                 genTransactionId(),
                 Instant.now(),
                 fundDiff,
-                fundAmount,
                 transactionType,
                 targetId,
                 summary,

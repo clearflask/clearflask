@@ -372,7 +372,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 null,
                 null,
                 null,
-                null,
                 null));
     }
 
@@ -404,11 +403,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")
                     .put(ideaSchema.toDynamoValue("statusId", ideaUpdateAdmin.getStatusId())));
             indexUpdates.put("statusId", ideaUpdateAdmin.getStatusId());
-        }
-        if (ideaUpdateAdmin.getCategoryId() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("categoryId")
-                    .put(ideaSchema.toDynamoValue("categoryId", ideaUpdateAdmin.getCategoryId())));
-            indexUpdates.put("categoryId", ideaUpdateAdmin.getCategoryId());
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("tagIds")

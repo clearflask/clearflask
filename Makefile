@@ -32,7 +32,7 @@ tomcat-run-dev:
 	-v `pwd`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
 	-v `pwd`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	tomcat:9-jre10-slim
+	tomcat:8.5-jdk11-openjdk-slim
 
 elastic-run:
 	docker run --rm --name clearflask-elastic \

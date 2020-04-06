@@ -35,7 +35,6 @@ components:
             type: object
             required:
             - desc
-            - terms
             properties:
               desc:
                 type: string

@@ -199,7 +199,6 @@ public class VoteStoreTest extends AbstractTest {
                         fundResult.getTransaction().getTransactionId(),
                         fundResult.getTransaction().getCreated(),
                         fundResult.getTransaction().getAmount(),
-                        fundResult.getTransaction().getBalance(),
                         transactionType,
                         ideaId,
                         summary,

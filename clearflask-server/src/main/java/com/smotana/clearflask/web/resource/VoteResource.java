@@ -202,14 +202,14 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
             IdeaTransactionAndIndexingFuture fundIdeaResponse;
             if (voteUpdate.getFundDiff() > 0) {
                 // For funding, first take from user, then give to idea
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, voteUpdate.getIdeaId(), -voteUpdate.getFundDiff());
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), Optional.of(voteUpdate.getIdeaId()));
                 // Note: here is a critical time when funds have been taken but not yet given
                 fundIdeaResponse = ideaStore.fundIdea(projectId, voteUpdate.getIdeaId(), userId, voteUpdate.getFundDiff(), transactionType, summary);
             } else {
                 // For *RE*funding, first take from idea, then give to user
                 fundIdeaResponse = ideaStore.fundIdea(projectId, voteUpdate.getIdeaId(), userId, -voteUpdate.getFundDiff(), transactionType, summary);
                 // Note: here is a critical time when funds have been taken but not yet given
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, voteUpdate.getIdeaId(), voteUpdate.getFundDiff());
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, voteUpdate.getFundDiff(), Optional.of(voteUpdate.getIdeaId()));
             }
             balanceOpt = Optional.of(updateUserBalanceResponse.getUser().toBalance());
             transactionOpt = Optional.of(fundIdeaResponse.getTransaction().toTransaction());

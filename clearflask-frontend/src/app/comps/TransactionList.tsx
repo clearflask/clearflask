@@ -33,6 +33,7 @@ interface ConnectProps {
   configver?: string;
   credits?: Client.Credits;
   transactions?: Client.Transaction[];
+  balance?: number;
   getNextTransactions?: () => void;
 }
 
@@ -42,6 +43,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
     if (!this.props.isLoggedIn) {
       return (<ErrorMsg msg='You need to log in to see your balance' variant='info' />);
     }
+    var cumulativeBalance = this.props.balance || 0;
     return (
       <div className={this.props.className}>
         <DividerCorner title='Transaction history' height='100%'>
@@ -57,30 +59,34 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                 </TableRow>
               </TableHead>
               <TableBody>
-                {this.props.credits && this.props.transactions && this.props.transactions.map(transaction => (
-                  <TableRow key={transaction.transactionId}>
-                    <TableCell key='date'>
-                      <Typography><TimeAgo date={transaction.created} /></Typography>
-                    </TableCell>
-                    <TableCell key='type'>
-                      <Typography>{transaction.transactionType}</Typography>
-                    </TableCell>
-                    <TableCell key='description'>
-                      {transaction.summary}
-                      {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
-                        <Button onClick={() => this.props.history.push(`/post/${transaction.targetId}`)}>
-                          View
-                      </Button>
-                      )}
-                    </TableCell>
-                    <TableCell key='amount'>
-                      <CreditView val={transaction.amount} credits={this.props.credits!} />
-                    </TableCell>
-                    <TableCell key='balance'>
-                      <CreditView val={transaction.balance} credits={this.props.credits!} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {this.props.credits !== undefined && this.props.balance !== undefined && this.props.transactions !== undefined && this.props.transactions.map(transaction => {
+                  const transactionBalance = cumulativeBalance;
+                  cumulativeBalance += transaction.amount;
+                  return (
+                    <TableRow key={transaction.transactionId}>
+                      <TableCell key='date'>
+                        <Typography><TimeAgo date={transaction.created} /></Typography>
+                      </TableCell>
+                      <TableCell key='type'>
+                        <Typography>{transaction.transactionType}</Typography>
+                      </TableCell>
+                      <TableCell key='description'>
+                        {transaction.summary}
+                        {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
+                          <Button onClick={() => this.props.history.push(`/post/${transaction.targetId}`)}>
+                            View
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell key='amount'>
+                        <CreditView val={transaction.amount} credits={this.props.credits!} />
+                      </TableCell>
+                      <TableCell key='balance'>
+                        <CreditView val={transactionBalance} credits={this.props.credits!} />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -124,6 +130,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     configver: state.conf.ver, // force rerender on config change
     isLoggedIn: !!userId,
     transactions: state.credits.transactionSearch.transactions,
+    balance: state.credits.myBalance.balance,
     credits: state.conf.conf ? state.conf.conf.credits : undefined,
     getNextTransactions: getNextTransactions,
   };

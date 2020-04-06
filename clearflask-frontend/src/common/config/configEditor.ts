@@ -690,7 +690,6 @@ export class EditorImpl implements Editor {
         throw Error(`Link on path ${currPath} has a filter variable <$> but is missing filterPath or filterIdPropName property`)
       }
       const filteredPaths = this.filterPath(linkProp.linkPath, linkProp.filterPath, linkProp.filterIdPropName, currPath, subscribe, linkProp.filterShowAllIfNone);
-      console.log('DEBUGDEBUG...1', filteredPaths);
       filteredPaths.forEach(filteredPath => {
         addTarget(this.get(filteredPath));
       });
@@ -740,7 +739,6 @@ export class EditorImpl implements Editor {
       return linkPropertyOption;
     });
     linkProp.cachedOptions = linkPropertyOptions;
-    (linkProp.linkPath.includes('<$>')) && console.log('DEBUGDEBUG...5', linkPropertyOptions);
     return linkPropertyOptions;
   };
 
@@ -1360,7 +1358,6 @@ export class EditorImpl implements Editor {
             },
             create: (name: string): void => {
               if (xPropLink.linkPath.includes('<$>')) {
-                // TODO implement here and above
                 throw Error(`Link property ${path} link path ${xPropLink.linkPath} contains variable, not supported currently for creation`);
               }
               const targetPath = this.expandRelativePath(xPropLink.linkPath, path);

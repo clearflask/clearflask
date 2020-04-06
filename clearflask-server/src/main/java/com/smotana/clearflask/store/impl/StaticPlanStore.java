@@ -19,54 +19,50 @@ import java.util.Optional;
 @Singleton
 public class StaticPlanStore implements PlanStore {
 
+    private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
+    private static final String TERMS_ACTIVE_USERS = "Active users are users that have signed up or made public contributions counted on a 3 month-average";
+    private static final String TERMS_ANALYTICS = "View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.";
+    private static final String TERMS_VOTING = "Voting and Credit system allows precise expression of value for each idea.";
+    private static final String TERMS_CREDIT = "Spend time credits on future ClearFlask development features";
     private static final ImmutableMap<String, Plan> AVAILABLE_PlANS = ImmutableMap.of(
-            "7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", new Plan("7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", "Basic",
+            "7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", new Plan("7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", "Standard",
                     new PlanPricing(50L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
-                    new PlanPerk("1,000 active users", "description"),
-                    new PlanPerk("Simple user voting", "description"),
-                    new PlanPerk("1 hour credit", "description")),
+                    new PlanPerk("1,000 active users", TERMS_ACTIVE_USERS),
+                    new PlanPerk("Multiple projects", TERMS_PROJECTS),
+                    new PlanPerk("Voting and Crowd-funding", TERMS_VOTING),
+                    new PlanPerk("1hr feature credits", TERMS_CREDIT)),
                     null, true),
-            "9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", new Plan("9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", "Basic",
+            "9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", new Plan("9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", "Standard",
                     new PlanPricing(80L, PlanPricing.PeriodEnum.QUARTERLY), ImmutableList.of(
-                    new PlanPerk("1,000 active users", "description"),
-                    new PlanPerk("Simple user voting", "description"),
-                    new PlanPerk("15 minute credit", "description")),
+                    new PlanPerk("1,000 active users", TERMS_ACTIVE_USERS),
+                    new PlanPerk("Multiple projects", TERMS_PROJECTS),
+                    new PlanPerk("Voting and Crowd-funding", TERMS_VOTING),
+                    new PlanPerk("5min feature credits", TERMS_CREDIT)),
                     null, true),
             "CDBF4982-1805-4352-8A57-824AFB565973", new Plan("CDBF4982-1805-4352-8A57-824AFB565973", "Analytic",
-                    new PlanPricing(300L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
-                    new PlanPerk("Analytics and insights", "description"),
-                    new PlanPerk("Credit system", "description"),
-                    new PlanPerk("Unlimited projects", "description"),
-                    new PlanPerk("10 hour credit", "description")),
-                    null, true),
-            "89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A", new Plan("89C4E0BB-92A8-4F83-947A-8C39DC8CEA5A", "Analytic",
-                    new PlanPricing(450L, PlanPricing.PeriodEnum.QUARTERLY), ImmutableList.of(
-                    new PlanPerk("Analytics and insights", "description"),
-                    new PlanPerk("Credit system", "description"),
-                    new PlanPerk("Unlimited projects", "description"),
-                    new PlanPerk("1 hour credit", "description")),
-                    null, true),
+                    null, ImmutableList.of(
+                    new PlanPerk("10,000 active users", TERMS_ACTIVE_USERS),
+                    new PlanPerk("Powerful Analytics", TERMS_ANALYTICS),
+                    new PlanPerk("Single sign-on", null),
+                    new PlanPerk("API access", null)),
+                    true, false),
             "597099E1-83B3-40AC-8AC3-52E9BF59A562", new Plan("597099E1-83B3-40AC-8AC3-52E9BF59A562", "Enterprise",
                     null, ImmutableList.of(
-                    new PlanPerk("Multi-Agent Access", "description"),
-                    new PlanPerk("White-label", "description"),
-                    new PlanPerk("Integrations, API Access", "description"),
-                    new PlanPerk("Dedicated/Onsite hosting", "description"),
-                    new PlanPerk("Custom SLA", "description")),
-                    null, true));
+                    new PlanPerk("10,000+ active users", null),
+                    new PlanPerk("Multi-Agent Access", null),
+                    new PlanPerk("White-label", null)),
+                    true, false));
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
-            ImmutableList.of("Basic", "Analytic", "Enterprise"),
+            ImmutableList.of("Standard", "Analytic", "Enterprise"),
             ImmutableList.of(
-                    new FeaturesTableFeatures("Active users", ImmutableList.of("Unlimited", "Unlimited", "Unlimited"), null),
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("Unlimited", "Unlimited", "Unlimited"), null),
-                    new FeaturesTableFeatures("User submitted content", ImmutableList.of("Unlimited", "Unlimited", "Unlimited"), null),
-                    new FeaturesTableFeatures("Customizable pages: Ideas, Roadmap, FAQ, Knowledge base, etc...", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Voting and Emoji expressions", ImmutableList.of("No", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Credit system / Crowd-funding", ImmutableList.of("No", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Analytics", ImmutableList.of("No", "No", "Yes"), null),
-                    new FeaturesTableFeatures("Multi agent access", ImmutableList.of("No", "No", "Yes"), null),
-                    new FeaturesTableFeatures("Integrations", ImmutableList.of("No", "No", "Yes"), null),
-                    new FeaturesTableFeatures("API access", ImmutableList.of("No", "No", "Yes"), null),
+                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
+                    new FeaturesTableFeatures("Active users", ImmutableList.of("1,000", "10,000", "10,000+"), TERMS_ACTIVE_USERS),
+                    new FeaturesTableFeatures("Customizable pages", ImmutableList.of("Yes", "Yes", "Yes"), "Customize with Feedback, Roadmap, Changelog, Knowledge base, Blog, FAQ"),
+                    new FeaturesTableFeatures("Voting and Crowd-funding", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_VOTING),
+                    new FeaturesTableFeatures("Powerful Analytics", ImmutableList.of("No", "Yes", "Yes"), TERMS_ANALYTICS),
+                    new FeaturesTableFeatures("Single sign-on", ImmutableList.of("No", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("API access", ImmutableList.of("No", "Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Multi-Agent access", ImmutableList.of("No", "No", "Yes"), null),
                     new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), null)
             ), null);
     private static final PlansGetResponse PLANS_GET_RESPONSE = new PlansGetResponse(AVAILABLE_PlANS.values().asList(), FEATURES_TABLE);

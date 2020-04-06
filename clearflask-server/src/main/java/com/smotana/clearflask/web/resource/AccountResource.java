@@ -168,7 +168,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         setAuthCookie(accountSession);
 
-        // TODO Stripe setup recurring billing
+        // TODO setup recurring billing
+        // TODO for now, the only way to signup is if you guess the payment token to be "letmein"
+        if (!"letmein".equals(signup.getPaymentToken())) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Sign ups are not currently allowed");
+        }
 
         return account.toAccountAdmin(planStore);
     }

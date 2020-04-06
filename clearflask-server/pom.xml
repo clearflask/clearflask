@@ -126,12 +126,12 @@
             <artifactId>ice-jmx</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.stripe</groupId>
-            <artifactId>stripe-java</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -238,6 +238,14 @@
             <groupId>nl.martijndwars</groupId>
             <artifactId>web-push</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+        </dependency>
         <!-- test-only deps -->
         <dependency>
             <groupId>junit</groupId>
@@ -267,11 +275,6 @@
         <dependency>
             <groupId>org.elasticsearch.test</groupId>
             <artifactId>framework</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-test-framework</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

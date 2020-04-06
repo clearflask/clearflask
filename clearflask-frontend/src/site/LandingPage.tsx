@@ -15,9 +15,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderCollect()}
         {this.renderPrioritization(true)}
         {this.renderTransparency()}
-        {this.renderEngagement()}
-        {this.renderCustomize()}
-        {this.renderSales()}
+        {/* {this.renderEngagement()} */}
+        {/* {this.renderCustomize()} */}
+        {this.renderSales(true)}
       </React.Fragment>
     );
   }
@@ -59,8 +59,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTransparency(mirror?: boolean) {
     return (
       <Block
-        title='Transparency strengthens user community'
-        description='Keep your users involved and informed of your progress with updates and roadmap (Roadmap, changelog, Idea reply)'
+        title='Strengthen user community with transparency'
+        description='Keep your users involved and informed of your progress at every significant step with updates and a public roadmap'
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}

@@ -11,6 +11,7 @@ import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -47,13 +48,15 @@ public interface UserStore {
 
     SearchUsersResponse searchUsers(String projectId, UserSearchAdmin userSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
+    UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin);
+
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
     UserModel userVote(String projectId, String userId, String ideaId);
 
     UserModel userExpress(String projectId, String userId, String ideaId);
 
-    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, String ideaId, long balanceDiff);
+    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
@@ -197,9 +200,6 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     this.getBalance(),
-                    this.getIosPushToken(),
-                    this.getAndroidPushToken(),
-                    this.getBrowserPushToken(),
                     this.getCreated());
         }
 
