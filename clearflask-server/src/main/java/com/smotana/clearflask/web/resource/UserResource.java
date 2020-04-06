@@ -268,7 +268,12 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(Strings.emptyToNull(cursor)),
                 config.searchPageSize());
 
-        ImmutableMap<String, UserModel> usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
+        final ImmutableMap<String, UserModel> usersById;
+        if (searchUsersResponse.getUserIds().isEmpty()) {
+            usersById = ImmutableMap.of();
+        } else {
+            usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
+        }
 
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),

@@ -6,6 +6,15 @@
          metadata-complete="true">
 
     <filter>
+        <filter-name>LogExFilter</filter-name>
+        <filter-class>com.smotana.clearflask.web.filter.LogExFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>LogExFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
         <filter-name>HttpRedirector</filter-name>
         <filter-class>com.smotana.clearflask.web.filter.HttpRedirectorFilter</filter-class>
     </filter>

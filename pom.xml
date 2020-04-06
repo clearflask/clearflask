@@ -302,6 +302,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>javax.mail</groupId>
+                <artifactId>mail</artifactId>
+                <version>1.4.7</version>
+            </dependency>
+            <dependency>
                 <groupId>com.almworks.sqlite4java</groupId>
                 <artifactId>sqlite4java</artifactId>
                 <version>1.0.392</version>
