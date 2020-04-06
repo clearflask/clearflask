@@ -20,7 +20,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 @Slf4j
 public enum ElasticScript {
-    WILSON("comment-vote-wilson.painless", 1);
+    WILSON("comment-vote-wilson.painless", 1),
+    EXP_DECAY("exp-decay.painless", 1);
 
     private final String name;
     private final int version;

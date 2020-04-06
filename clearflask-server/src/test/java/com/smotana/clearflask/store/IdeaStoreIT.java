@@ -182,6 +182,19 @@ public class IdeaStoreIT extends AbstractIT {
         ), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .sortBy(IdeaSearchAdmin.SortByEnum.TOP)
                 .build(), false, Optional.empty()).getIdeaIds());
+        // Use expressions to trigger TRENDING order
+        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "👀").getIndexingFuture().get();
+        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "🤪").getIndexingFuture().get();
+        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "❤️").getIndexingFuture().get();
+        store.expressIdeaAdd(projectId, idea3.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "😇").getIndexingFuture().get();
+        store.expressIdeaAdd(projectId, idea3.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "😎").getIndexingFuture().get();
+        assertEquals(ImmutableList.of(
+                idea1.getIdeaId(),
+                idea3.getIdeaId(),
+                idea2.getIdeaId()
+        ), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+                .sortBy(IdeaSearchAdmin.SortByEnum.TRENDING)
+                .build(), false, Optional.empty()).getIdeaIds());
     }
 
     @Test(timeout = 5_000L)

@@ -1,0 +1,19 @@
+/**
+ * Inputs:
+ *   long decayPeriodInMillis
+ *   long timeInMillis
+ *   Map<String, Object> extraUpdates
+ */
+
+if(params.extraUpdates != null) {
+    for (entry in params.extraUpdates.entrySet()) {
+        ctx._source[entry.getKey()] = entry.getValue();
+    }
+}
+
+// See ExpDecayScore.java
+double prevTrendScore = ctx._source.trendScore == null ? 0 : ctx._source.trendScore;
+double rate = 1d / params.decayPeriodInMillis;
+double u = Math.max(prevTrendScore, rate * params.timeInMillis);
+double v = Math.min(prevTrendScore, rate * params.timeInMillis);
+ctx._source.trendScore = u + Math.log1p(Math.exp(v - u));
