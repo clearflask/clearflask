@@ -147,6 +147,8 @@ public interface IdeaStore {
         /** Expression counts; map of expression display to count. */
         private final ImmutableMap<String, Long> expressions;
 
+        private final Double trendScore;
+
         public Idea toIdea() {
             return new Idea(
                     getIdeaId(),

@@ -10,6 +10,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -193,8 +194,8 @@ public class CommentStoreIT extends AbstractIT {
                 0);
     }
 
-    private IdeaStore.IdeaModel createRandomIdea(String projectId) throws Exception {
-        IdeaStore.IdeaModel idea = new IdeaStore.IdeaModel(
+    private IdeaModel createRandomIdea(String projectId) throws Exception {
+        IdeaModel idea = new IdeaModel(
                 projectId,
                 ideaStore.genIdeaId(" this !@#$%^&*()is my title 9032 " + IdUtil.randomId()),
                 IdUtil.randomId(),
@@ -214,7 +215,8 @@ public class CommentStoreIT extends AbstractIT {
                 0L,
                 0L,
                 0d,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                0d);
         ideaStore.createIdea(idea).get();
         return idea;
     }

@@ -119,7 +119,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getEmail(),
                 passwordHashed.orElse(null),
                 userCreateAdmin.getEmail() != null,
-                userCreateAdmin.getBalance(),
+                userCreateAdmin.getBalance() == null ? 0 : userCreateAdmin.getBalance(),
                 userCreateAdmin.getIosPushToken(),
                 userCreateAdmin.getAndroidPushToken(),
                 userCreateAdmin.getBrowserPushToken(),
@@ -242,7 +242,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     projectId,
                     userId,
                     userUpdateAdmin.getTransactionCreate().getAmount(),
-                    Strings.nullToEmpty(userUpdateAdmin.getTransactionCreate().getSummary()));
+                    Optional.ofNullable(Strings.emptyToNull(userUpdateAdmin.getTransactionCreate().getSummary())).orElse("Admin adjustment"));
             userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
         }
         return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();

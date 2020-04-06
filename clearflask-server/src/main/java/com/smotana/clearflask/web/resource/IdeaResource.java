@@ -95,7 +95,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                0d);
         ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();
     }
@@ -126,7 +127,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                0d);
         ideaStore.createIdea(ideaModel);
         return ideaModel.toIdea();
     }

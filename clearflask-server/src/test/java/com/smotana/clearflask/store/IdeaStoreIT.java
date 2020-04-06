@@ -337,6 +337,7 @@ public class IdeaStoreIT extends AbstractIT {
                 0L,
                 0L,
                 0d,
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                0d);
     }
 }

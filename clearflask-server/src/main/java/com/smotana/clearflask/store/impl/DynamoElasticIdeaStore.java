@@ -49,6 +49,7 @@ import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ExpDecayScore;
+import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -207,10 +208,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("created", idea.getCreated().getEpochSecond())
                                 .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
-                                .put("description", idea.getDescription())
-                                .put("response", idea.getResponse())
+                                .put("description", orNull(idea.getDescription()))
+                                .put("response", orNull(idea.getResponse()))
                                 .put("categoryId", idea.getCategoryId())
-                                .put("statusId", idea.getStatusId())
+                                .put("statusId", orNull(idea.getStatusId()))
                                 .put("tagIds", idea.getTagIds())
                                 .put("commentCount", idea.getCommentCount())
                                 .put("childCommentCount", idea.getCommentCount())
@@ -220,7 +221,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("voteValue", orNull(idea.getVoteValue()))
                                 .put("votersCount", orNull(idea.getVotersCount()))
                                 .put("expressionsValue", orNull(idea.getExpressionsValue()))
-                                .put("expressions", idea.getExpressions().keySet())
+                                .put("expressions", idea.getExpressions() == null ? ExplicitNull.get() : idea.getExpressions().keySet())
+                                .put("trendScore", orNull(idea.getTrendScore()))
                                 .build()), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
