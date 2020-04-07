@@ -1,7 +1,10 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { featuresDescription, featuresTitle } from './FeaturesPage';
 import Block from './landing/Block';
 import Hero from './landing/Hero';
+import { prioritizationDescription, prioritizationTitle } from './PrioritizationPage';
+import { transparencyDescription, transparencyTitle } from './TransparencyPage';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -15,9 +18,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderCollect()}
         {this.renderPrioritization(true)}
         {this.renderTransparency()}
+        {this.renderFeatures(true)}
         {/* {this.renderEngagement()} */}
         {/* {this.renderCustomize()} */}
-        {this.renderSales(true)}
+        {this.renderSales()}
       </React.Fragment>
     );
   }
@@ -25,7 +29,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderHero() {
     return (
       <Hero
-        title='Idea management tool for your product'
+        title='Product Feedback Solution for customer transparency'
         description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
         imagePath='/img/landing/hero.svg'
       />
@@ -46,8 +50,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderPrioritization(mirror?: boolean) {
     return (
       <Block
-        title='Proportionate voice based on customer value'
-        description='Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.'
+        title={prioritizationTitle}
+        description={prioritizationDescription}
         mirror={mirror}
         buttonTitle='Learn about prioritization'
         buttonLink='/prioritization'
@@ -59,12 +63,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderTransparency(mirror?: boolean) {
     return (
       <Block
-        title='Strengthen user community with transparency'
-        description='Keep your users involved and informed of your progress at every significant step with updates and a public roadmap'
+        title={transparencyTitle}
+        description={transparencyDescription}
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}
         imagePath='/img/landing/transparency.svg'
+      />
+    );
+  }
+
+  renderFeatures(mirror?: boolean) {
+    return (
+      <Block
+        title={featuresTitle}
+        description={featuresDescription}
+        buttonTitle='Browse features'
+        buttonLink='/features'
+        mirror={mirror}
+        imagePath='/img/landing/features.svg'
       />
     );
   }

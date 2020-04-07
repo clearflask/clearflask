@@ -1,21 +1,19 @@
 import { createMuiTheme, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
-import App from './app/App';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
 import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
+import Loading from './app/utils/Loading';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { detectEnv, Environment, isProd } from './common/util/detectEnv';
+import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollToTop from './ScrollToTop';
-import Dashboard from './site/Dashboard';
-import Site from './site/Site';
 
 const theme: Theme = createMuiTheme({
   palette: {
@@ -39,7 +37,7 @@ class Main extends Component {
   constructor(props) {
     super(props);
 
-    if (isProd()) {
+    if (isTracking()) {
       ReactGA.initialize('UA-127162051-3', {
         gaOptions: {}
       });
@@ -51,12 +49,11 @@ class Main extends Component {
     }
   }
 
-  componentDidMount() {
-    closeLoadingScreen();
-  }
-
   render() {
     const subdomain = this.getSubdomain();
+    const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => (closeLoadingScreen(), i)));
+    const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => (closeLoadingScreen(), i)));
+    const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => (closeLoadingScreen(), i)));
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -73,32 +70,34 @@ class Main extends Component {
           }}>
             <Router>
               <ScrollToTop />
-              {isProd() && (
+              {isTracking() && (
                 <Route path="/" render={({ location }) => {
                   ReactGA.set({ page: location.pathname + location.search });
                   ReactGA.pageview(location.pathname + location.search);
                   return null;
                 }} />
               )}
-              <Switch>
-                {subdomain ? (
-                  <Route path="/" render={props => (
-                    <App projectId={subdomain} {...props} />
-                  )} />
-                ) : ([(
-                  <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
-                    <Provider store={ServerAdmin.get().getStore()}>
-                      <Dashboard {...props} />
-                    </Provider>
-                  )} />
-                ), (
-                  <Route key='site' render={props => (
-                    <Provider store={ServerAdmin.get().getStore()}>
-                      <Site {...props} />
-                    </Provider>
-                  )} />
-                )])}
-              </Switch>
+              <Suspense fallback={<Loading />}>
+                <Switch>
+                  {subdomain ? (
+                    <Route path="/" render={props => (
+                      <App projectId={subdomain} {...props} />
+                    )} />
+                  ) : ([(
+                    <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Dashboard {...props} />
+                      </Provider>
+                    )} />
+                  ), (
+                    <Route key='site' render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Site {...props} />
+                      </Provider>
+                    )} />
+                  )])}
+                </Switch>
+              </Suspense>
             </Router>
           </div>
         </MuiSnackbarProvider>

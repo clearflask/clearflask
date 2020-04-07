@@ -19,9 +19,9 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.security.PermitAll;
@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +50,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         @DefaultValue("support@clearflask.com")
         String supportEmail();
 
-        @DefaultValue("server@clearflask.com")
+        @DefaultValue("no-reply@clearflask.com")
         String fromEmail();
     }
 
@@ -67,10 +68,13 @@ public class SupportResource extends AbstractResource implements SupportApi {
     @Override
     public void supportMessage(SupportMessage supportMessage) {
         try {
-            ses.sendEmail(new SendEmailRequest()
+            SendEmailRequest sendEmailRequest = new SendEmailRequest();
+            generateReplyTo(supportMessage).ifPresent(sendEmailRequest::withReplyToAddresses);
+            ses.sendEmail(sendEmailRequest
                     .withDestination(new Destination()
                             .withToAddresses(config.supportEmail()))
                     .withFromEmailAddress(config.fromEmail())
+                    .withReplyToAddresses()
                     .withEmailTags(new MessageTag().withName("supportType").withValue(supportMessage.getContent().getOrDefault(TYPE_FIELD, "unknown")))
                     .withContent(new EmailContent().withSimple(new Message()
                             .withSubject(new Content()
@@ -85,27 +89,30 @@ public class SupportResource extends AbstractResource implements SupportApi {
         }
     }
 
+    private Optional<String> generateReplyTo(SupportMessage supportMessage) {
+        return Optional.ofNullable(supportMessage.getContent().get(CONTACT_FIELD));
+    }
+
     private String generateSubject(SupportMessage supportMessage) {
         StringBuilder sb = new StringBuilder();
         if (supportMessage.getContent().containsKey(TYPE_IMPORTANT)) {
-            sb.append("IMPORTANT ");
+            sb.append("!");
         }
-        sb.append("CfSupport");
-        sb.append(" type:");
+        sb.append("Support");
+        sb.append(" ");
         sb.append(StringUtils.abbreviate(supportMessage.getContent().getOrDefault(TYPE_FIELD, "unknown"), 20));
-        sb.append(" contact:");
-        sb.append(StringUtils.abbreviate(supportMessage.getContent().getOrDefault(CONTACT_FIELD, IpUtil.getRemoteIp(request, env)), 40));
+        sb.append(" #");
+        sb.append(RandomStringUtils.randomAlphanumeric(7));
         return sb.toString();
     }
 
     private String generateBody(SupportMessage supportMessage) {
         return Stream.concat(
                 ImmutableMap.of(
-                        "ip", request.getRemoteAddr(),
-                        "x-forwarded-for", request.getHeader("x-forwarded-for")
+                        "ip", request.getHeader("x-forwarded-for")
                 ).entrySet().stream(),
                 supportMessage.getContent().entrySet().stream())
-                .map(pair -> Strings.nullToEmpty(pair.getKey()) + ":\n" + Strings.nullToEmpty(pair.getValue()) + "\n\n")
+                .map(pair -> Strings.nullToEmpty(pair.getKey()) + ": " + Strings.nullToEmpty(pair.getValue()))
                 .collect(Collectors.joining("\n"));
     }
 

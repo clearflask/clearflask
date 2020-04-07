@@ -8,6 +8,7 @@ import ErrorPage from '../app/ErrorPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
+import setTitle from '../common/util/titleUtil';
 import ContactPage from './ContactPage';
 import DemoApp, { getProject, Project } from './DemoApp';
 import FeaturesPage from './FeaturesPage';
@@ -142,7 +143,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <img
                 alt='logo'
                 className={this.props.classes.logo}
-                src='/clearflask-logo.png' />
+                src='/img/clearflask-logo.png' />
               <Button
                 style={{ textTransform: 'unset' }}
                 onClick={() => this.props.history.push('/')}
@@ -171,24 +172,31 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
           <div className={this.props.classes.appBarSpacer} />
           <MuiAnimatedSwitch>
             <Route exact path={'/login'} render={props => (
+              setTitle('Login'),
               <SigninPage {...props} />
             )} />
             <Route exact path={'/pricing'} render={props => (
+              setTitle('Pricing'),
               <PricingPage {...props} />
             )} />
             <Route path={'/contact'} render={props => (
+              setTitle('Contact'),
               <ContactPage {...props} />
             )} />
             <Route exact path={'/signup'} render={props => (
+              setTitle('Sign up'),
               <SignupPage {...props} />
             )} />
             <Route exact path={'/(terms|terms-of-service)'} render={props => (
+              setTitle('Terms of Service'),
               <LegalPage type='terms' />
             )} />
             <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => (
+              setTitle('Privacy Policy'),
               <LegalPage type='privacy' />
             )} />
             <Route path={`/:projectId(demo)`} render={props => {
+              setTitle('Demo');
               if (!this.projectPromise) this.projectPromise = getProject(
                 templater => templater.demo(),
                 mocker => mocker.mockAll(),
@@ -204,20 +212,25 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               );
             }} />
             <Route exact path={`/features`} component={props => (
+              setTitle('Features'),
               <FeaturesPage />
             )} />
             <Route exact path={`/prioritization`} component={props => (
+              setTitle('Prioritization'),
               <PrioritizationPage />
             )} />
             <Route exact path={`/transparency`} component={props => (
+              setTitle('Transparency'),
               <TransparencyPage />
             )} />
             <Route exact path={`/`} component={props => (
+              setTitle(),
               <LandingPage />
             )} />
-            <Route>
+            <Route component={props => (
+              setTitle("Page not found"),
               <ErrorPage msg='Page not found' variant='error' />
-            </Route>
+            )} />
           </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>

@@ -7,6 +7,9 @@ import Block from './landing/Block';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 
+export const transparencyTitle = 'Strengthen user community with transparency';
+export const transparencyDescription = 'Keep your users involved and informed of your progress at every significant step with updates and a public roadmap';
+
 const styles = (theme: Theme) => createStyles({
 });
 
@@ -25,8 +28,8 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
   renderHero() {
     return (
       <Hero
-        title='Strengthen user community with transparency'
-        description='Keep your users involved and informed of your progress at every significant step with updates and a public roadmap'
+        title={transparencyTitle}
+        description={transparencyDescription}
         imagePath='/img/landing/transparency.svg'
       />
     );

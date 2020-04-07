@@ -14,6 +14,7 @@ import Menu, { MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
+import setTitle from '../common/util/titleUtil';
 import BillingPage from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import ExplorerPage from './dashboard/ExplorerPage';
@@ -97,34 +98,41 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
     var crumbs: { name: string, slug: string }[] | undefined;
     switch (activePath) {
       case '':
+        setTitle('Dashboard');
         page = (<div>This is home</div>);
         crumbs = [{ name: 'Home', slug: activePath }];
         break;
       case 'posts':
+        setTitle('Posts - Dashboard');
         page = (<ExplorerPage render={server => (
           <PostsPage server={server} />
         )} />);
         crumbs = [{ name: 'Posts', slug: activePath }];
         break;
       // case 'comments':
+      //   setTitle('Comments');
       //   page = (<div>This is comments</div>);
       //   crumbs = [{name: 'Comments', slug: activePath}];
       //   break;
       case 'users':
+        setTitle('Users - Dashboard');
         page = (<ExplorerPage render={server => (
           <UsersPage server={server} />
         )} />);
         crumbs = [{ name: 'Users', slug: activePath }];
         break;
       case 'billing':
+        setTitle('Billing - ');
         page = (<BillingPage />);
         crumbs = [{ name: 'Billing', slug: activePath }];
         break;
       case 'account':
+        setTitle('Account - Dashboard');
         page = (<SettingsPage />);
         crumbs = [{ name: 'Settings', slug: activePath }];
         break;
       case 'create':
+        setTitle('Create - Dashboard');
         if (!this.createProjectPromise) {
           this.createProjectPromise = getProject(undefined, undefined, 'create-preview');
           this.createProjectPromise.then(project => {
@@ -147,6 +155,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         );
         break;
       default:
+        setTitle('Page not found');
         if (activeProject === undefined) {
           page = (
             <Message innerStyle={{ margin: '40px auto' }}

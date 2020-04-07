@@ -22,8 +22,10 @@ import BrowserIcon from '@material-ui/icons/Web';
 import React, { Component } from 'react';
 import DividerCorner from '../app/utils/DividerCorner';
 import Feature from './landing/Feature';
+import Hero from './landing/Hero';
 
-
+export const featuresTitle = 'Wide selection of features to fit your needs';
+export const featuresDescription = '';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -39,6 +41,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   render() {
     return (
       <div className={this.props.classes.page}>
+        <Hero
+          title={featuresTitle}
+          description={featuresDescription}
+          imagePath='/img/landing/hero.svg'
+        />
         <Container maxWidth='md'>
           <DividerCorner title='Collect ideas'>
             <Grid container className={this.props.classes.grid}>
@@ -71,7 +78,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
               <Feature icon={<LinkIcon />} title='Logo and Website' description='Show off your logo and link your users back to your website' />
               <Feature icon={<BrightnessIcon />} title='Dark Mode' description='Invert colors to reduce eye-strain and match your style' />
               <Feature icon={<PaletteIcon />} title='Palette and Fonts' description='Change the colors and fonts to match your style' />
-              <Feature icon={<PolicyIcon />} title='Terms and Privacy Policy' description='Link your own legal documents' />
+              <Feature icon={<PolicyIcon />} title='Custom Terms' description='Link your own Terms and Privacy policy for users to accept' />
               <Feature icon={<MoreHorizIcon />} title='Need more?' description='We love customization, let us know!' />
             </Grid>
           </DividerCorner>

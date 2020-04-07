@@ -6,6 +6,9 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 
+export const prioritizationTitle = 'Proportionate voice based on customer value';
+export const prioritizationDescription = 'Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.';
+
 const styles = (theme: Theme) => createStyles({
 });
 
@@ -24,8 +27,8 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
   renderHero() {
     return (
       <Hero
-        title='Proportionate voice based on customer value'
-        description='Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.'
+        title={prioritizationTitle}
+        description={prioritizationDescription}
         imagePath='/img/landing/prioritization.svg'
       />
     );

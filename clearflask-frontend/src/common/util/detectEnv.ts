@@ -36,5 +36,13 @@ function isProd(): boolean {
   return detectEnv() === Environment.PRODUCTION;
 }
 
-export { isProd, isBeta, detectEnv, Environment };
+function isTracking(): boolean {
+  return !isDoNotTrack() && isProd();
+}
+
+function isDoNotTrack(): boolean {
+  return navigator.doNotTrack === "yes" || navigator.doNotTrack === "1" || navigator['msDoNotTrack'] === "1" || window.doNotTrack === "yes" || window.doNotTrack === "1" || window['msDoNotTrack'] === "1";
+}
+
+export { isProd, isBeta, isTracking, detectEnv, Environment };
 
