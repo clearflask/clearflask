@@ -40,7 +40,7 @@ export function getProject(
           configAdmin: editor.getConfig(),
         })
           .then(() => mock && mock(DataMock.get(projectId), editor.getConfig()))
-          .then(() => server.dispatch().configGetAndUserBind({ projectId: projectId }))
+          .then(() => server.dispatch().configGetAndUserBind({ projectId: projectId, configGetAndUserBind: {} }))
           .then(() => ({ server, templater, editor }));
       }));
 }

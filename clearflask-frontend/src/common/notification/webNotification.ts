@@ -21,6 +21,7 @@ export interface WebNotificationError {
 const KEY_PUBLIC = 'BP7Bm7jiQKOFKJTO2LEDVidsA_OtlHfsIeFZLZjc015R8iARXNX5QL5yWd3XGxmRkhII5kQrv97IjMQHpVJDO2U=';
 const KEY_DEV_PUBLIC = 'BP9VGiKBRz1O5xzZDh_QBS8t9HJHITCmh4qr4M07gSiA03IFoFiusd4DMmILjWoUOwEnlStidlofxldYb1-qLJ0';
 export const KEY_DEV_PRIVATE = '6xIMnmOfFz4xxsSw1h0ZhPCYuCfed56oNA7AEOSfHWE';
+const SERVICE_WORKER_URL = '/sw.js';
 
 export default class WebNotification {
   static instance: WebNotification;
@@ -29,6 +30,7 @@ export default class WebNotification {
   status: Status = Status.Unsupported;
   unsubscribeCall?: () => Promise<boolean>;
   swRegistration?: ServiceWorkerRegistration;
+  token?: string;
 
   constructor(status: Status = Status.Unsupported, mockAskPermission?: () => Promise<WebNotificationSubscription | WebNotificationError>) {
     this.isMock = !!mockAskPermission;
@@ -50,20 +52,44 @@ export default class WebNotification {
     return this.status;
   }
 
+  getSwRegistration(): ServiceWorkerRegistration | undefined {
+    return this.swRegistration;
+  }
+
   canAskPermission(): boolean {
     return this.status !== Status.Unsupported
       && this.status !== Status.Denied;
   }
 
+  async getPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
+    this.swRegistration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_URL);
+    const pushSubscription = await this.swRegistration?.pushManager.getSubscription();
+    if (pushSubscription === null) {
+      return {
+        type: 'error',
+        userFacingMsg: 'Failed to get notification permission',
+      };
+    } else {
+      return {
+        type: 'success',
+        token: JSON.stringify(pushSubscription),
+      };
+    }
+  }
+
   async askPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
     if (this.isMock) return this.mockAskPermission ? this.mockAskPermission() : Promise.reject('Mock incorrectly setup');
+
+    if (this.status === Status.Granted) {
+      this.getPermission();
+    }
 
     if (this.status === Status.Unsupported) {
       throw Error('Cannot ask for permission when unsupported');
     }
 
     try {
-      this.swRegistration = await (navigator['serviceWorker']['register']('/sw.js') as Promise<ServiceWorkerRegistration>);
+      this.swRegistration = await (navigator.serviceWorker.register(SERVICE_WORKER_URL));
     } catch (err) {
       this.status = Status.Unsupported;
       return {
@@ -107,7 +133,7 @@ export default class WebNotification {
     if ('Notification' in window
       && 'serviceWorker' in navigator
       && 'PushManager' in window) {
-      switch (window['Notification']['permission']) {
+      switch (window.Notification.permission) {
         case 'granted':
           this.status = Status.Granted;
           break;

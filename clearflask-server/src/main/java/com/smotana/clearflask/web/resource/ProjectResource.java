@@ -9,10 +9,10 @@ import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ConfigAndBindResult;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
+import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
 import com.smotana.clearflask.api.model.Legal;
 import com.smotana.clearflask.api.model.LegalDocuments;
 import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -36,7 +36,10 @@ import javax.inject.Singleton;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.Optional;
+
+import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME;
 
 @Slf4j
 @Singleton
@@ -48,6 +51,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             new LegalDocuments("Privacy", "Privacy Policy", "https://clearflask.com/privacy")
     ));
 
+    @Inject
+    private UserResource.Config userResourceConfig;
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -62,19 +67,32 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public ConfigAndBindResult configGetAndUserBind(String projectId) {
+    public ConfigAndBindResult configGetAndUserBind(String projectId, ConfigGetAndUserBind configGetAndUserBind) {
         Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, true)
                 .or(() -> projectStore.getProject(projectId, true));
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
-        Optional<UserMeWithBalance> userMeWithBalanceOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
+        Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
-                .flatMap(userId -> userStore.getUser(projectId, userId))
-                .map(UserStore.UserModel::toUserMeWithBalance);
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getBrowserPushToken())) {
+            userOpt = userStore.getUserByIdentifier(
+                    projectId,
+                    UserStore.IdentifierType.BROWSER_PUSH,
+                    configGetAndUserBind.getBrowserPushToken());
+
+            userOpt.ifPresent(user -> {
+                UserStore.UserSession session = userStore.createSession(
+                        projectId,
+                        user.getUserId(),
+                        Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
+                setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+            });
+        }
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
-                userMeWithBalanceOpt.orElse(null));
+                userOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
     }
 
     @PermitAll

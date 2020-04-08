@@ -396,7 +396,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({ projectId: ownProps.server.getProjectId() });
+    ownProps.server.dispatch().configGetAndUserBind({ projectId: ownProps.server.getProjectId(), configGetAndUserBind: {} });
   }
   return {
     configver: state.conf.ver, // force rerender on config change

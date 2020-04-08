@@ -160,11 +160,6 @@ public final class RealCookie {
             return this;
         }
 
-        public RealCookieBuilder expiry(long ttlInEpochSec) {
-            this.ttlInEpochSec = ttlInEpochSec;
-            return this;
-        }
-
         public RealCookieBuilder addAdditionalProperty(String key, String value) {
             this.additionalProperties.put(key, value);
             return this;

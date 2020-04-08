@@ -57,7 +57,6 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
-import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -161,8 +160,6 @@ public class DynamoElasticUserStore implements UserStore {
     private RestHighLevelClient elastic;
     @Inject
     private ElasticUtil elasticUtil;
-    @Inject
-    private PasswordUtil passwordUtil;
     @Inject
     private Gson gson;
 

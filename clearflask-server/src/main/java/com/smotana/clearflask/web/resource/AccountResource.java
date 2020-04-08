@@ -21,7 +21,6 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
-import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
@@ -79,7 +78,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession,
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            setAuthCookie(accountSession);
+            setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
         // Fetch account
@@ -88,7 +87,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.info("Account bind on valid session to non-existent account, revoking all sessions for email {}",
                     accountSession.getEmail());
             accountStore.revokeSessions(accountSession.getEmail());
-            unsetAuthCookie();
+            unsetAuthCookie(ACCOUNT_AUTH_COOKIE_NAME);
             return new AccountBindAdminResponse(null);
         }
         Account account = accountOpt.get();
@@ -117,7 +116,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(accountSession);
+        setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         return account.toAccountAdmin(planStore);
     }
@@ -136,7 +135,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         log.debug("Logout session for email {}", accountSession.getEmail());
         accountStore.revokeSession(accountSession);
 
-        unsetAuthCookie();
+        unsetAuthCookie(ACCOUNT_AUTH_COOKIE_NAME);
     }
 
     @PermitAll
@@ -166,7 +165,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(accountSession);
+        setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         // TODO setup recurring billing
         // TODO for now, the only way to signup is if you guess the payment token to be "letmein"
@@ -203,34 +202,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public LegalResponse legalGet() {
         return new LegalResponse(legalStore.termsOfService(), legalStore.privacyPolicy());
-    }
-
-    private void setAuthCookie(AccountSession accountSession) {
-        log.trace("Setting account auth cookie for email {}", accountSession.getEmail());
-        RealCookie.builder()
-                .name(ACCOUNT_AUTH_COOKIE_NAME)
-                .value(accountSession.getSessionId())
-                .path("/")
-                .secure(securityContext.isSecure())
-                .httpOnly(true)
-                .expiry(accountSession.getTtlInEpochSec())
-                .sameSite(RealCookie.SameSite.STRICT)
-                .build()
-                .addToResponse(response);
-    }
-
-    private void unsetAuthCookie() {
-        log.trace("Removing account auth cookie");
-        RealCookie.builder()
-                .name(ACCOUNT_AUTH_COOKIE_NAME)
-                .value("")
-                .path("/")
-                .secure(securityContext.isSecure())
-                .httpOnly(true)
-                .ttlInEpochSec(0L)
-                .sameSite(RealCookie.SameSite.STRICT)
-                .build()
-                .addToResponse(response);
     }
 
     public static Module module() {

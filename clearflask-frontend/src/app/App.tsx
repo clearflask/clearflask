@@ -5,6 +5,7 @@ import { match } from 'react-router';
 import { Redirect, Route } from 'react-router-dom';
 import { Server } from '../api/server';
 import ServerMock from '../api/serverMock';
+import WebNotification, { Status } from '../common/notification/webNotification';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
 import AccountPage from './AccountPage';
@@ -51,7 +52,15 @@ class App extends Component<Props> {
     }
 
     if (this.server.getStore().getState().conf.status === undefined) {
-      this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId() });
+      if (WebNotification.getInstance().getStatus() === Status.Granted) {
+        WebNotification.getInstance().getPermission().then(subscription => {
+          this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: { browserPushToken: subscription.type === 'success' ? subscription.token : undefined } })
+        }).catch(err => {
+          this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: {} });
+        });
+      } else {
+        this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: {} });
+      }
     }
   }
 

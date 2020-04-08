@@ -300,7 +300,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                             // TODO verify fetchSource is actually working
                             .fetchSource(new String[]{"parentCommentIds"}, null)
                             .size(fetchMax)
-                            .sort("bestScore", SortOrder.DESC)
+                            .sort("score", SortOrder.DESC)
                             .sort("upvotes", SortOrder.DESC)
                             .sort("created", SortOrder.ASC)
                             .query(queryBuilder));

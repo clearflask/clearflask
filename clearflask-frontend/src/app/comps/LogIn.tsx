@@ -308,7 +308,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             <Button
               color='primary'
               disabled={!isSubmittable || this.state.isSubmitting}
-              onClick={this.onSubmit.bind(this)}
+              onClick={() => this.onSubmit(selectedNotificationType)}
             >Continue</Button>
           </DialogActions>
         </React.Fragment>
@@ -334,7 +334,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     );
   }
 
-  onSubmit() {
+  onSubmit(selectedNotificationType: NotificationType) {
     this.setState({ isSubmitting: true });
     this.props.server.dispatch().userCreate({
       projectId: this.props.server.getProjectId(),
@@ -342,9 +342,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         name: this.state.displayName,
         email: this.state.email,
         password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
-        iosPushToken: this.state.notificationDataIos,
-        androidPushToken: this.state.notificationDataAndroid,
-        browserPushToken: this.state.notificationDataBrowser,
+        iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
+        androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
+        browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
       },
     }).then(() => {
       this.setState({ isSubmitting: false });

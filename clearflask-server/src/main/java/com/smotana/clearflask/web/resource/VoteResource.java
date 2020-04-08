@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.VoteAdminApi;
 import com.smotana.clearflask.api.VoteApi;
@@ -44,6 +43,7 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.update.UpdateResponse;
 
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Path;

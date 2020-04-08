@@ -28,7 +28,6 @@ import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
-import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
@@ -193,7 +192,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(projectId, session);
+        setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -212,7 +211,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);
 
-        unsetAuthCookie();
+        unsetAuthCookie(USER_AUTH_COOKIE_NAME);
     }
 
     @PermitAll
@@ -282,34 +281,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                         .filter(Objects::nonNull)
                         .map(UserModel::toUserAdmin)
                         .collect(ImmutableList.toImmutableList()));
-    }
-
-    private void setAuthCookie(String projectId, UserStore.UserSession session) {
-        log.trace("Setting user auth cookie for user id {}", session.getUserId());
-        RealCookie.builder()
-                .name(USER_AUTH_COOKIE_NAME)
-                .value(session.getSessionId())
-                .path("/")
-                .secure(securityContext.isSecure())
-                .httpOnly(true)
-                .expiry(session.getTtlInEpochSec())
-                .sameSite(RealCookie.SameSite.STRICT)
-                .build()
-                .addToResponse(response);
-    }
-
-    private void unsetAuthCookie() {
-        log.trace("Removing user auth cookie");
-        RealCookie.builder()
-                .name(USER_AUTH_COOKIE_NAME)
-                .value("")
-                .path("/")
-                .secure(securityContext.isSecure())
-                .httpOnly(true)
-                .expiry(0L)
-                .sameSite(RealCookie.SameSite.STRICT)
-                .build()
-                .addToResponse(response);
     }
 
     public static Module module() {

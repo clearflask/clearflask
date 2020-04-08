@@ -1,6 +1,8 @@
 package com.smotana.clearflask.web.resource;
 
+import com.smotana.clearflask.util.RealCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
@@ -35,4 +37,34 @@ public abstract class AbstractResource {
         }
         return Optional.of((ExtendedPrincipal) securityContext.getUserPrincipal());
     }
+
+    protected void setAuthCookie(@NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
+        log.trace("Setting {} auth cookie for session id {} ttl {}",
+                cookieName, sessionId, ttlInEpochSec);
+        RealCookie.builder()
+                .name(cookieName)
+                .value(sessionId)
+                .path("/")
+                .secure(securityContext.isSecure())
+                .httpOnly(true)
+                .ttlInEpochSec(ttlInEpochSec)
+                .sameSite(RealCookie.SameSite.STRICT)
+                .build()
+                .addToResponse(response);
+    }
+
+    protected void unsetAuthCookie(@NonNull String cookieName) {
+        log.trace("Removing account auth cookie");
+        RealCookie.builder()
+                .name(cookieName)
+                .value("")
+                .path("/")
+                .secure(securityContext.isSecure())
+                .httpOnly(true)
+                .ttlInEpochSec(0L)
+                .sameSite(RealCookie.SameSite.STRICT)
+                .build()
+                .addToResponse(response);
+    }
+
 }

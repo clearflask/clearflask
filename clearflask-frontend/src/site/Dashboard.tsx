@@ -155,8 +155,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         );
         break;
       default:
-        setTitle('Page not found');
         if (activeProject === undefined) {
+          setTitle('Page not found');
           page = (
             <Message innerStyle={{ margin: '40px auto' }}
               message='Oops, cannot find project'
@@ -168,6 +168,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         try {
           var currentPage = activeProject.editor.getPage(activeSubPath);
         } catch (ex) {
+          setTitle('Page not found');
           page = (
             <Message innerStyle={{ margin: '40px auto' }}
               message='Oops, page failed to load'
@@ -183,6 +184,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           const pageIndex = activeSubPath[2];
           forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
         }
+        setTitle(activeProject.server.getStore().getState().conf.conf?.name);
         page = (
           <Page
             key={currentPage.key}

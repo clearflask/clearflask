@@ -104,7 +104,6 @@ public interface IdeaStore {
         @NonNull
         private final String authorUserId;
 
-        @NonNull
         private final String authorName;
 
         @NonNull

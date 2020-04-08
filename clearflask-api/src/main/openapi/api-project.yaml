@@ -736,7 +736,7 @@ components:
           type: string
 
 /project/{projectId}/config:
-  get:
+  post:
     operationId: configGetAndUserBind
     tags: [Project]
     parameters:
@@ -745,6 +745,16 @@ components:
       required: true
       schema:
         type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            title: ConfigGetAndUserBind
+            properties:
+              browserPushToken:
+                type: string
     responses:
       '200':
         content:

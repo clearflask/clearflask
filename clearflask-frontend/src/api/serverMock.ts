@@ -790,7 +790,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     };
     const notificationData = { notificationTitle: title, notificationOptions };
     // This was taken from sw.js, if changed, change it there too.
-    WebNotification.getInstance().swRegistration!.showNotification(
+    WebNotification.getInstance().getSwRegistration()!.showNotification(
       notificationData.notificationTitle,
       notificationData.notificationOptions,
     );

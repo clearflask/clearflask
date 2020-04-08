@@ -44,7 +44,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         <Hero
           title={featuresTitle}
           description={featuresDescription}
-          imagePath='/img/landing/hero.svg'
+          imagePath='/img/landing/features.svg'
         />
         <Container maxWidth='md'>
           <DividerCorner title='Collect ideas'>

@@ -18,7 +18,9 @@ public class LogExFilter implements Filter {
         try {
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Throwable ex) {
-            log.error("Uncaught exception", ex);
+            if (!"Broken pipe".equals(ex.getMessage())) {
+                log.error("Uncaught exception", ex);
+            }
             throw ex;
         }
     }
