@@ -83,7 +83,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.N;
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.SS;
@@ -453,19 +452,33 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valMap = Maps.newHashMap();
+        valMap.put(":zero", 1);
+        List<String> setUpdates = Lists.newArrayList();
+
         if (voteDiff != 0) {
-            updateExpressionBuilder.addUpdate(N("voteValue").set(N("voteValue").plus(voteDiff)));
+            nameMap.put("#voteValue", "voteValue");
+            valMap.put(":voteDiff", voteDiff);
+            setUpdates.add("#voteValue = if_not_exists(#voteValue, :zero) + :voteDiff");
         }
+
         if (votersCountDiff != 0) {
-            updateExpressionBuilder.addUpdate(N("votersCount").set(N("votersCount").plus(votersCountDiff)));
+            nameMap.put("#votersCount", "votersCount");
+            valMap.put(":votersCountDiff", votersCountDiff);
+            setUpdates.add("#votersCount = if_not_exists(#votersCount, :zero) + :votersCountDiff");
         }
+
+        String updateExpression = "SET " + String.join(", ", setUpdates);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
-                .withExpressionSpec(updateExpressionBuilder.buildForUpdate()))
+                .withNameMap(nameMap)
+                .withValueMap(valMap)
+                .withUpdateExpression(updateExpression))
                 .getItem());
 
         boolean updateTrend = false;
@@ -537,7 +550,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             setUpdates.add("expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionsValueDiff > 0 ? "+" : "-") + " :expValDiff");
         }
 
-        String updateExpression = "SET " + setUpdates.stream().collect(Collectors.joining(", "));
+        String updateExpression = "SET " + String.join(", ", setUpdates);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(

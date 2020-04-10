@@ -241,7 +241,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 <NavLink to='/contact/sales' className={this.props.classes.bottomItem}>Talk to Sales</NavLink>
                 <NavLink to='/pricing' className={this.props.classes.bottomItem}>Pricing</NavLink>
                 <NavLink to='/demo' className={this.props.classes.bottomItem}>Demo</NavLink>
-                <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink>
+                {/* <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink> */}
               </Grid>
               <Grid item xs={10} sm={4} md={3} xl={2}>
                 <div className={this.props.classes.bottomHeader}>RESOURCES</div>

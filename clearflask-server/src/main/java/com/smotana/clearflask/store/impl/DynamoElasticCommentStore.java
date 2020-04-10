@@ -259,6 +259,9 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Override
     public ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, ImmutableCollection<String> commentIds) {
+        if (commentIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
         return dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
                 .withPrimaryKeys(commentIds.stream()
                         .map(commentId -> commentSchema.primaryKey(ImmutableMap.of(
@@ -326,6 +329,9 @@ public class DynamoElasticCommentStore implements CommentStore {
                     })
                     .collect(ImmutableSet.toImmutableSet());
 
+            if (commentIdsToFetch.isEmpty()) {
+                return ImmutableSet.of();
+            }
             return ImmutableSet.copyOf(getComments(projectId, ideaId, commentIdsToFetch).values());
         } else {
             Optional<String> latestCommentIdOpt = Streams.concat(parentCommentIdOpt.stream(), excludeChildrenCommentIds.stream())

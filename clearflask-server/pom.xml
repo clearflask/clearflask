@@ -331,6 +331,7 @@
                     <clusterName>test</clusterName>
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
+                    <skip>${skipTests}</skip>
                 </configuration>
                 <executions>
                     <execution>
