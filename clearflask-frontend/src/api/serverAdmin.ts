@@ -18,7 +18,7 @@ export interface Project {
   server: Server;
   hasUnsavedChanges(): boolean;
   subscribeToUnsavedChanges: (subscriber: () => void) => () => void;
-  resetUnsavedChanges();
+  resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
 
 export default class ServerAdmin {
@@ -103,36 +103,41 @@ export default class ServerAdmin {
       var result = await store.dispatch(msg);
     } catch (response) {
       console.log("Dispatch error: ", response);
-      if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
-        if (!challengeSubscriber) {
-          errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
-          throw response;
+      try {
+        if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
+          if (!challengeSubscriber) {
+            errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
+            throw response;
+          }
+          var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
+          if (solution) {
+            return msg.meta.retry({ 'x-cf-solution': solution });
+          }
         }
-        var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
-        if (solution) {
-          return msg.meta.retry({ 'x-cf-solution': solution });
+        var body;
+        if (response && response.json) {
+          body = await response.json();
         }
+        var errorMsg;
+        var isUserFacing = false;
+        var action = msg && msg.meta && msg.meta.action || 'unknown action';
+        if (body && body.userFacingMessage) {
+          errorMsg = body.userFacingMessage;
+          isUserFacing = true;
+        } else if (response.status && response.status >= 100 && response.status < 300) {
+          errorMsg = `${response.status} failed ${action}`;
+        } else if (response.status && response.status >= 300 && response.status < 600) {
+          errorMsg = `${response.status} failed ${action}`;
+          isUserFacing = true;
+        } else {
+          errorMsg = `Connection failure processing ${action}`;
+          isUserFacing = true;
+        }
+        errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
+      } catch (err) {
+        console.log("Erroro dispatching error: ", err);
+        errorSubscribers.forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", isUserFacing));
       }
-      var body;
-      if (response && response.json) {
-        body = await response.json();
-      }
-      var errorMsg;
-      var isUserFacing = false;
-      var action = msg && msg.meta && msg.meta.action || 'unknown action';
-      if (body && body.userFacingMessage) {
-        errorMsg = body.userFacingMessage;
-        isUserFacing = true;
-      } else if (response.status && response.status >= 100 && response.status < 300) {
-        errorMsg = `${response.status} failed ${action}`;
-      } else if (response.status && response.status >= 300 && response.status < 600) {
-        errorMsg = `${response.status} failed ${action}`;
-        isUserFacing = true;
-      } else {
-        errorMsg = `Connection failure processing ${action}`;
-        isUserFacing = true;
-      }
-      errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
       throw response;
     }
     return result.value;
@@ -168,7 +173,8 @@ export default class ServerAdmin {
             if (subscriberIndex !== -1) subscribers.splice(subscriberIndex, 1);
           };
         },
-        resetUnsavedChanges: () => {
+        resetUnsavedChanges: (newConfig) => {
+          project.configVersion = newConfig.version;
           hasUnsavedChanges = false;
           subscribers.forEach(subscriber => subscriber());
         },

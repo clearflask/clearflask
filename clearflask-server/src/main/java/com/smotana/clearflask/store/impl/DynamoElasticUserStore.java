@@ -77,6 +77,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -315,12 +316,14 @@ public class DynamoElasticUserStore implements UserStore {
             sortFields = ImmutableList.of();
         }
 
+        QueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                .fuzziness("AUTO");
+        log.trace("User search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
                         .source(new SearchSourceBuilder()
                                 .fetchSource(false)
-                                .query(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                                        .fuzziness("AUTO"))),
+                                .query(queryBuilder)),
                 cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, pageSizeOpt, configSearch);
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();

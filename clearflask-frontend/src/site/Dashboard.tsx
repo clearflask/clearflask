@@ -270,8 +270,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 versionLast: currentProject.configVersion,
                 configAdmin: currentProject.editor.getConfig(),
               })
-                .then(() => {
-                  currentProject.resetUnsavedChanges()
+                .then((versionedConfigAdmin) => {
+                  currentProject.resetUnsavedChanges(versionedConfigAdmin)
                 }));
             }}>Publish</Button>
           </React.Fragment>

@@ -356,6 +356,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             query.filter(lastActivityRangeQuery);
         }
 
+        log.trace("Idea search query: {}", query);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)).source(new SearchSourceBuilder()
                         .fetchSource(false)

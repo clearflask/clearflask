@@ -99,6 +99,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null);
         userStore.createUser(user);
+
+        UserStore.UserSession session = userStore.createSession(
+                projectId,
+                user.getUserId(),
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+
         return user.toUserMeWithBalance();
     }
 

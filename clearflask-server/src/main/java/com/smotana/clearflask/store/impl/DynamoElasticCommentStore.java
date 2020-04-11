@@ -286,7 +286,6 @@ public class DynamoElasticCommentStore implements CommentStore {
                 ? config.searchInitialFetchMax()
                 : config.searchSubsequentFetchMax();
         if (config.useElasticForSearch()) {
-
             BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
                     .must(QueryBuilders.termQuery("ideaId", ideaId));
             parentCommentIdOpt.ifPresent(parentCommentId -> queryBuilder.must(QueryBuilders
@@ -296,8 +295,9 @@ public class DynamoElasticCommentStore implements CommentStore {
             int searchInitialDepthLimit = config.searchInitialDepthLimit();
             if (isInitial && searchInitialDepthLimit >= 0) {
                 queryBuilder.must(QueryBuilders
-                        .termQuery("level", searchInitialDepthLimit));
+                        .rangeQuery("level").lt(searchInitialDepthLimit));
             }
+            log.trace("Comment search query: {}", queryBuilder);
             SearchRequest searchRequest = new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             // TODO verify fetchSource is actually working
