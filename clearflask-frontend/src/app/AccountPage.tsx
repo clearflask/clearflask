@@ -1,5 +1,7 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, Switch, TextField, Typography } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import VisibilityIcon from '@material-ui/icons/Visibility';
+import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -33,6 +35,8 @@ interface State {
   deleteDialogOpen?: boolean;
   displayName?: string;
   email?: string;
+  password?: string;
+  revealPassword?: boolean;
 }
 
 class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
@@ -44,42 +48,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     }
 
     const browserPushControl = this.renderBrowserPushControl();
-    const androidPushControl = this.renderMobilePushControl(MobileNotificationDevice.Android);
-    const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
+    // const androidPushControl = this.renderMobilePushControl(MobileNotificationDevice.Android);
+    // const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
     const emailControl = this.renderEmailControl();
     return (
       <div className={this.props.classes.page}>
-        <DividerCorner title='Notification destinations'>
-          {browserPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{browserPushControl}</Grid>
-            </Grid>
-          )}
-          {androidPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{androidPushControl}</Grid>
-            </Grid>
-          )}
-          {iosPushControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
-              <Grid item xs={12} sm={6}>{iosPushControl}</Grid>
-            </Grid>
-          )}
-          {emailControl && (
-            <Grid container alignItems='baseline' className={this.props.classes.item}>
-              <Grid item xs={12} sm={6}>
-                <Typography>
-                  Email
-                  {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>{emailControl}</Grid>
-            </Grid>
-          )}
-        </DividerCorner>
         <DividerCorner title='Account'>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
@@ -107,6 +80,72 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   userId: this.props.userMe.userId,
                   userUpdate: { name: this.state.displayName },
                 });
+              }}>Save</Button>
+            </Grid>
+          </Grid>
+          <Grid container alignItems='baseline' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id='email'
+                value={this.state.email === undefined
+                  ? (this.props.userMe.email || '')
+                  : (this.state.email || '')}
+                onChange={e => this.setState({ email: e.target.value })}
+              />
+              <Button aria-label="Save" color='primary' style={{
+                visibility:
+                  !this.state.email
+                    || this.state.email === this.props.userMe.email
+                    ? 'hidden' : undefined
+              }} onClick={() => {
+                if (!this.state.email
+                  || !this.props.userMe
+                  || this.state.email === this.props.userMe.email) {
+                  return;
+                }
+                this.props.server.dispatch().userUpdate({
+                  projectId: this.props.server.getProjectId(),
+                  userId: this.props.userMe.userId,
+                  userUpdate: { email: this.state.email },
+                });
+              }}>Save</Button>
+            </Grid>
+          </Grid>
+          <Grid container alignItems='baseline' className={this.props.classes.item}>
+            <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id='password'
+                value={this.state.password === undefined
+                  ? ('')
+                  : (this.state.password)}
+                onChange={e => this.setState({ password: e.target.value })}
+                type={this.state.revealPassword ? 'text' : 'password'}
+                disabled={!this.state.email && !this.props.userMe.email}
+              />
+              <IconButton
+                aria-label='Toggle password visibility'
+                onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                disabled={!this.state.email && !this.props.userMe.email}
+              >
+                {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+              </IconButton>
+              <Button aria-label="Save" color='primary' style={{
+                visibility:
+                  !this.state.password
+                    || this.state.password === this.props.userMe.name
+                    ? 'hidden' : undefined
+              }} onClick={() => {
+                if (!this.state.password
+                  || !this.props.userMe) {
+                  return;
+                }
+                this.props.server.dispatch().userUpdate({
+                  projectId: this.props.server.getProjectId(),
+                  userId: this.props.userMe.userId,
+                  userUpdate: { password: this.state.password },
+                }).then(() => this.setState({ password: undefined }));
               }}>Save</Button>
             </Grid>
           </Grid>
@@ -141,6 +180,37 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </Dialog>
             </Grid>
           </Grid>
+        </DividerCorner>
+        <DividerCorner title='Notification destinations'>
+          {browserPushControl && (
+            <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>
+              <Grid item xs={12} sm={6}>{browserPushControl}</Grid>
+            </Grid>
+          )}
+          {/* {androidPushControl && (
+            <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Android Push messages</Typography></Grid>
+              <Grid item xs={12} sm={6}>{androidPushControl}</Grid>
+            </Grid>
+          )}
+          {iosPushControl && (
+            <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Apple iOS Push messages</Typography></Grid>
+              <Grid item xs={12} sm={6}>{iosPushControl}</Grid>
+            </Grid>
+          )} */}
+          {emailControl && (
+            <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}>
+                <Typography>
+                  Email
+                  {this.props.userMe.email !== undefined && (<Typography variant='caption'>&nbsp;({this.props.userMe.email})</Typography>)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>{emailControl}</Grid>
+            </Grid>
+          )}
         </DividerCorner>
       </div>
     );
