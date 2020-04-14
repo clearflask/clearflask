@@ -135,7 +135,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/Comment'
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
 /project/{projectId}/idea/{ideaId}/comment/{commentId}:
   patch:
     operationId: commentUpdate

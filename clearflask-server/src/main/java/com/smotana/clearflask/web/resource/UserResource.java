@@ -176,7 +176,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @PermitAll
-    @Limit(requiredPermits = 10, challengeAfter = 5)
+    @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
     public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
         Optional<UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
@@ -231,7 +231,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     }
 
     @RolesAllowed({Role.PROJECT_USER})
-    @Limit(requiredPermits = 1, challengeAfter = 2)
+    @Limit(requiredPermits = 1, challengeAfter = 20)
     @Override
     public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate

@@ -37,7 +37,6 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 "my@email.com",
                 "planId1",
-                "company",
                 "name",
                 "password",
                 "123456",
@@ -91,7 +90,6 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 "my@email.com",
                 "planId1",
-                "company",
                 "name",
                 "password",
                 "123456",

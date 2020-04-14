@@ -2,6 +2,7 @@ package com.smotana.clearflask.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -33,6 +34,19 @@ import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO
 @Slf4j
 @Singleton
 public class ElasticUtil {
+
+    public static String AUTOCOMPLETE_TOKENIZER_NAME = "autocomplete_tokenizer";
+    public static ImmutableMap<String, Object> AUTOCOMPLETE_TOKENIZER = ImmutableMap.of(
+            "type", "edge_ngram",
+            "min_gram", 3,
+            "max_gram", 10,
+            "token_chars", ImmutableList.of(
+                    "letter",
+                    "digit"));
+    public static String AUTOCOMPLETE_ANALYZER_NAME = "autocomplete_analyzer";
+    public static ImmutableMap<String, Object> AUTOCOMPLETE_ANALYZER = ImmutableMap.of(
+            "type", "custom",
+            "tokenizer", AUTOCOMPLETE_TOKENIZER_NAME);
 
     public interface ConfigSearch {
         @DefaultValue("100")

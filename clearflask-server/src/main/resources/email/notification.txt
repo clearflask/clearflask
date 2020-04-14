@@ -1,0 +1,11 @@
+__CONTENT__
+
+__BUTTON_TEXT__ (__BUTTON_URL__)
+
+
+
+Privacy Policy (https://clearflask.com/privacy)
+Terms of Service (https://clearflask.com/terms)
+Unsubscribe: (__UNSUBSCRIBE_URL__)
+
+Powered by ClearFlask (https://clearflask.com)

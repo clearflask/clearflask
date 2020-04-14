@@ -24,10 +24,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.core.push.PushProvider;
 import com.smotana.clearflask.util.LogUtil;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
@@ -36,7 +34,7 @@ import java.time.Duration;
 
 @Slf4j
 @Singleton
-public class EmailPushProvider implements PushProvider {
+public class EmailServiceImpl implements EmailService {
 
     public interface Config {
         @DefaultValue("true")
@@ -80,62 +78,70 @@ public class EmailPushProvider implements PushProvider {
     }
 
     @Override
-    public boolean send(NotificationModel notification, String email) {
+    public void send(Email email) {
         if (!config.enabled()) {
-            return false;
+            log.debug("Not enabled, skipping");
+            return;
         }
 
         if (!rateLimiter.tryAcquire()) {
             if (LogUtil.rateLimitAllowLog("emailpush-ratelimited")) {
-                log.warn("Email service self rate limited, projectId {} userId {}",
-                        notification.getProjectId(), notification.getUserId());
+                log.warn("Email service self rate limited, projectId {} toAddress {} subject {}",
+                        email.getProjectId(), email.getToAddress(), email.getSubject());
             }
-            return false;
+            return;
         }
 
         SendEmailResult result;
         try {
             result = ses.sendEmail(new SendEmailRequest()
                     .withDestination(new Destination()
-                            .withToAddresses(email))
+                            .withToAddresses(email.getToAddress()))
                     .withFromEmailAddress(config.fromEmail())
-                    .withEmailTags(new MessageTag().withName("projectId").withValue(notification.getProjectId()))
+                    .withEmailTags(new MessageTag().withName("projectId").withValue(email.getProjectId()),
+                            new MessageTag().withName("type").withValue(email.getTypeTag()))
                     .withContent(new EmailContent().withSimple(new Message()
                             .withSubject(new Content()
                                     .withCharset(Charsets.UTF_8.name())
-                                    .withData(notification.getTitle()))
-                            .withBody(new Body().withText(new Content()
-                                    .withCharset(Charsets.UTF_8.name())
-                                    .withData(notification.getBody()))))));
+                                    .withData(email.getSubject()))
+                            .withBody(new Body()
+                                    .withHtml(new Content()
+                                            .withCharset(Charsets.UTF_8.name())
+                                            .withData(email.getContentHtml()))
+                                    .withText(new Content()
+                                            .withCharset(Charsets.UTF_8.name())
+                                            .withData(email.getContentText()))))));
         } catch (TooManyRequestsException | SendingPausedException | LimitExceededException ex) {
             if (LogUtil.rateLimitAllowLog("emailpush-toomanyreqs")) {
-                log.warn("Email service limited, projectId {} userId {}",
-                        notification.getProjectId(), notification.getUserId(), ex);
+                log.warn("Email service limited, projectId {} toAddress {} subject {}",
+                        email.getProjectId(), email.getToAddress(), email.getSubject(), ex);
             }
-            return false;
+            return;
         } catch (AccountSuspendedException ex) {
             if (LogUtil.rateLimitAllowLog("emailpush-accountsuspended")) {
-                log.error("Email service account suspended", ex);
+                log.warn("Email service account suspended", ex);
             }
-            return false;
+            return;
         } catch (MessageRejectedException | MailFromDomainNotVerifiedException | NotFoundException | BadRequestException ex) {
             if (LogUtil.rateLimitAllowLog("emailpush-misconfigured")) {
                 log.warn("Email service misconfigured", ex);
             }
-            return false;
+            return;
+        } catch (Exception ex) {
+            if (LogUtil.rateLimitAllowLog("emailpush-exception")) {
+                log.warn("Email cannot be delivered", ex);
+            }
+            return;
         }
-
-        log.trace("Email sent to userId {} projectId {} with message id {}",
-                notification.getUserId(), notification.getProjectId(), result.getMessageId());
-        return true;
+        log.trace("Email sent to {} projectId {} message id {} subject {}",
+                email.getToAddress(), email.getProjectId(), result.getMessageId(), email.getSubject());
     }
 
     public static Module module() {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(PushProvider.class).annotatedWith(Names.named("Email"))
-                        .to(EmailPushProvider.class).asEagerSingleton();
+                bind(EmailService.class).to(EmailServiceImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

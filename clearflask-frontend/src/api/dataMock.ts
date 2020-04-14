@@ -125,7 +125,6 @@ class DataMock {
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
         planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7',
-        company: 'A.C.M.E. LLC',
         name: 'John Doe',
         email: 'a@a.a',
         phone: '89032789',
@@ -146,12 +145,14 @@ class DataMock {
         // browserPushToken: 'fake-browser-push-token',
       }
     }).then(userMe => {
-      ServerMock.get().transactionCreateAdmin({
+      ServerMock.get().userUpdateAdmin({
         projectId: this.projectId,
         userId: userMe.userId,
-        transactionCreateAdmin: {
-          amount: bankBalance,
-          summary: 'Mock amount given, spend it wisely',
+        userUpdateAdmin: {
+          transactionCreate: {
+            amount: bankBalance,
+            summary: 'Mock amount given, spend it wisely',
+          }
         },
       });
       return userMe;

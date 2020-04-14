@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Map;
 
@@ -65,6 +66,12 @@ public interface DynamoMapper {
         ImmutableMap<String, AttributeValue> toAttrMap(T obj);
 
         T fromAttrMap(Map<String, AttributeValue> attrMap);
+
+        String upsertExpression(T object, Map<String, String> nameMap, Map<String, Object> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression);
+
+        String serializeLastEvaluatedKey(Map<String, AttributeValue> lastEvaluatedKey);
+
+        PrimaryKey toExclusiveStartKey(String serializedlastEvaluatedKey);
     }
 
     interface TableSchema<T> extends Schema<T> {

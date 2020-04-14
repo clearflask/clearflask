@@ -18,6 +18,9 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+
 public interface VoteStore {
 
     /**
@@ -30,7 +33,9 @@ public interface VoteStore {
     /**
      * Ordered by targetId desc.
      */
-    ListResponse<VoteModel> voteList(String projectId, String userId, Optional<String> cursorOpt);
+    ListResponse<VoteModel> voteListByUser(String projectId, String userId, Optional<String> cursorOpt);
+
+    ListResponse<VoteModel> voteListByTarget(String projectId, String targetId, Optional<String> cursorOpt);
 
 
     /**
@@ -53,7 +58,9 @@ public interface VoteStore {
     /**
      * Ordered by targetId desc.
      */
-    ListResponse<ExpressModel> expressList(String projectId, String userId, Optional<String> cursorOpt);
+    ListResponse<ExpressModel> expressListByUser(String projectId, String userId, Optional<String> cursorOpt);
+
+    ListResponse<ExpressModel> expressListByTarget(String projectId, String targetId, Optional<String> cursorOpt);
 
 
     default String genTransactionId() {
@@ -69,7 +76,9 @@ public interface VoteStore {
     /**
      * Ordered by targetId desc.
      */
-    ListResponse<FundModel> fundList(String projectId, String userId, Optional<String> cursorOpt);
+    ListResponse<FundModel> fundListByUser(String projectId, String userId, Optional<String> cursorOpt);
+
+    ListResponse<FundModel> fundListByTarget(String projectId, String targetId, Optional<String> cursorOpt);
 
     /**
      * Ordered by created desc.
@@ -96,7 +105,8 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "vote", rangeKeys = "targetId")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "vote", rangeKeys = "targetId")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "voteByTarget", rangeKeys = "userId")
     class VoteModel {
         @NonNull
         private final String userId;
@@ -114,7 +124,8 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "express", rangeKeys = "targetId")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "express", rangeKeys = "targetId")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "expressByTarget", rangeKeys = "userId")
     class ExpressModel {
         @NonNull
         private final String userId;
@@ -132,7 +143,8 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "fund", rangeKeys = {"targetId"})
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "fund", rangeKeys = {"targetId"})
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "fundByTarget", rangeKeys = {"userId"})
     class FundModel {
         @NonNull
         private final String userId;

@@ -13,8 +13,12 @@ public class RetryUtil {
     }
 
     public static void retry(Assertable assertable) throws Exception {
+        retry(assertable, 5L);
+    }
+
+    public static void retry(Assertable assertable, long waitInSec) throws Exception {
         RetryerBuilder.newBuilder()
-                .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterDelay(waitInSec, TimeUnit.SECONDS))
                 .withWaitStrategy(WaitStrategies.exponentialWait())
                 .retryIfExceptionOfType(Throwable.class)
                 .build()

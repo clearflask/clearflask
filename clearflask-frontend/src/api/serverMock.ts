@@ -151,7 +151,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!plan) return this.throwLater(404, 'Requested plan could not be found');
     const account: Admin.AccountAdmin = {
       plan: AvailablePlans[request.accountSignupAdmin.planid]!,
-      company: request.accountSignupAdmin.company,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       phone: request.accountSignupAdmin.phone,
@@ -441,18 +440,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       results: votes
     });
   }
-  voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.VoteUpdateResponse> {
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
-    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
-    return this.voteUpdateAdmin({
-      ...request,
-      voteUpdateAdmin: {
-        ...(request.voteUpdate),
-        vote: request.voteUpdate.vote,
-        voterUserId: loggedInUser.userId,
-      }
-    });
-  }
   notificationClear(request: Client.NotificationClearRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -484,22 +471,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.author = undefined;
     comment.edited = new Date();
     return this.returnLater(comment);
-  }
-  transactionCreateAdmin(request: Admin.TransactionCreateAdminRequest): Promise<Admin.Transaction> {
-    var balance = this.getProject(request.projectId).balances[request.userId] || 0;
-    balance += request.transactionCreateAdmin.amount;
-    const transaction = {
-      userId: request.userId,
-      transactionId: randomUuid(),
-      created: new Date(),
-      amount: request.transactionCreateAdmin.amount,
-      balance: balance,
-      transactionType: Admin.TransactionType.Adjustment,
-      summary: request.transactionCreateAdmin.summary,
-    };
-    this.getProject(request.projectId).transactions.push(transaction);
-    this.getProject(request.projectId).balances[request.userId] = balance;
-    return this.returnLater(transaction);
   }
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {
     throw new Error("Method not implemented.");
@@ -649,48 +620,44 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       balance: balance,
     });
   }
-  voteDeleteAdmin(request: Admin.VoteDeleteAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  voteDeleteBulkAdmin(request: Admin.VoteDeleteBulkAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
   voteSearchAdmin(request: Admin.VoteSearchAdminRequest): Promise<Admin.VoteSearchResponse> {
     throw new Error("Method not implemented.");
   }
-  voteUpdateAdmin(request: Admin.VoteUpdateAdminRequest): Promise<Admin.VoteUpdateAdminResponse> {
+  voteUpdate(request: Client.VoteUpdateRequest): Promise<Client.VoteUpdateResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     const idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
-      idea => idea.ideaId === request.voteUpdateAdmin.ideaId);
+      idea => idea.ideaId === request.voteUpdate.ideaId);
     const vote: VoteWithAuthorAndIdeaId = this.getImmutable(
       this.getProject(request.projectId).votes,
-      vote => vote.voterUserId === request.voteUpdateAdmin.voterUserId && vote.ideaId === request.voteUpdateAdmin.ideaId,
-      () => ({ ideaId: idea.ideaId, voterUserId: request.voteUpdateAdmin.voterUserId }));
+      vote => vote.voterUserId === loggedInUser.userId && vote.ideaId === request.voteUpdate.ideaId,
+      () => ({ ideaId: idea.ideaId, voterUserId: loggedInUser.userId }));
     var balance: number | undefined;
     var transaction: Admin.Transaction | undefined;
-    if (request.voteUpdateAdmin.fundDiff !== undefined) {
-      const fundDiff = request.voteUpdateAdmin.fundDiff;
+    if (request.voteUpdate.fundDiff !== undefined) {
+      const fundDiff = request.voteUpdate.fundDiff;
       if (fundDiff === 0) return this.throwLater(400, 'Cannot fund zero');
-      balance = this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] || 0;
+      balance = this.getProject(request.projectId).balances[loggedInUser.userId] || 0;
       balance -= fundDiff;
       if (balance < 0) return this.throwLater(403, 'Insufficient funds');
       const fundersCountDiff = ((vote.fundAmount || 0) + fundDiff > 0 ? 1 : 0) - ((vote.fundAmount || 0) > 0 ? 1 : 0)
       transaction = {
-        userId: request.voteUpdateAdmin.voterUserId,
+        userId: loggedInUser.userId,
         transactionId: randomUuid(),
         created: new Date(),
         amount: fundDiff,
         transactionType: Admin.TransactionType.Vote,
-        targetId: request.voteUpdateAdmin.ideaId,
+        targetId: request.voteUpdate.ideaId,
         summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0, 47) + '...' : idea.title}"`
       };
       this.getProject(request.projectId).transactions.push(transaction);
-      vote.fundAmount = (vote.fundAmount || 0) + request.voteUpdateAdmin.fundDiff;
-      this.getProject(request.projectId).balances[request.voteUpdateAdmin.voterUserId] = balance;
+      vote.fundAmount = (vote.fundAmount || 0) + request.voteUpdate.fundDiff;
+      this.getProject(request.projectId).balances[loggedInUser.userId] = balance;
       idea.funded = (idea.funded || 0) + fundDiff;
       if (fundersCountDiff !== 0) idea.fundersCount = (idea.fundersCount || 0) + fundersCountDiff;
     }
-    if (request.voteUpdateAdmin.vote) {
+    if (request.voteUpdate.vote) {
       var votePrevValue: number = 0;
       switch (vote.vote) {
         case Admin.VoteOption.Upvote:
@@ -701,7 +668,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           break;
       }
       var voteValue: number = 0;
-      switch (request.voteUpdateAdmin.vote) {
+      switch (request.voteUpdate.vote) {
         case Admin.VoteOption.Upvote:
           voteValue = 1;
           vote.vote = Admin.VoteOption.Upvote;
@@ -720,29 +687,29 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       const voteValueDiff = voteValue - votePrevValue;
       if (voteValueDiff !== 0) idea.voteValue = (idea.voteValue || 0) + voteValueDiff;
     }
-    if (request.voteUpdateAdmin.expressions) {
+    if (request.voteUpdate.expressions) {
       var expressionsSet = new Set<string>(vote.expression || []);
       idea.expressionsValue = idea.expressionsValue || 0;
       idea.expressions = idea.expressions || [];
 
       var expressionsToAdd: string[] = [];
       var expressionsToRemove: string[] = [];
-      if (request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Set) {
-        expressionsSet = new Set<string>([request.voteUpdateAdmin.expressions.expression!]);
-        expressionsToAdd.push(request.voteUpdateAdmin.expressions.expression!);
-        expressionsToRemove = (vote.expression || []).filter(e => e !== request.voteUpdateAdmin.expressions!.expression);
-      } else if (request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Unset) {
+      if (request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set) {
+        expressionsSet = new Set<string>([request.voteUpdate.expressions.expression!]);
+        expressionsToAdd.push(request.voteUpdate.expressions.expression!);
+        expressionsToRemove = (vote.expression || []).filter(e => e !== request.voteUpdate.expressions!.expression);
+      } else if (request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset) {
         expressionsSet = new Set<string>();
         expressionsToRemove = vote.expression || [];
-      } else if (request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Add) {
-        if (!expressionsSet.has(request.voteUpdateAdmin.expressions.expression!)) {
-          expressionsToAdd.push(request.voteUpdateAdmin.expressions.expression!);
-          expressionsSet.add(request.voteUpdateAdmin.expressions.expression!);
+      } else if (request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add) {
+        if (!expressionsSet.has(request.voteUpdate.expressions.expression!)) {
+          expressionsToAdd.push(request.voteUpdate.expressions.expression!);
+          expressionsSet.add(request.voteUpdate.expressions.expression!);
         }
-      } else if (request.voteUpdateAdmin.expressions.action === Admin.VoteUpdateExpressionsActionEnum.Remove) {
-        if (expressionsSet.has(request.voteUpdateAdmin.expressions.expression!)) {
-          expressionsToRemove.push(request.voteUpdateAdmin.expressions.expression!);
-          expressionsSet.delete(request.voteUpdateAdmin.expressions.expression!);
+      } else if (request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove) {
+        if (expressionsSet.has(request.voteUpdate.expressions.expression!)) {
+          expressionsToRemove.push(request.voteUpdate.expressions.expression!);
+          expressionsSet.delete(request.voteUpdate.expressions.expression!);
         }
       }
 

@@ -82,13 +82,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                     UserStore.IdentifierType.BROWSER_PUSH,
                     configGetAndUserBind.getBrowserPushToken());
 
-            userOpt.ifPresent(user -> {
-                UserStore.UserSession session = userStore.createSession(
-                        projectId,
-                        user.getUserId(),
-                        Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-                setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
-            });
+            if (userOpt.isPresent()) {
+                if (!Strings.isNullOrEmpty(userOpt.get().getPassword())) {
+                    userOpt = Optional.empty();
+                } else {
+                    UserStore.UserSession session = userStore.createSession(
+                            projectId,
+                            userOpt.get().getUserId(),
+                            Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
+                    setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+                }
+            }
         }
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),

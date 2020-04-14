@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -57,6 +58,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -73,6 +75,8 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 @Slf4j
 @Singleton
 public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
+
+    public static final String TTL_IN_EPOCH_SEC_KEY = "ttlInEpochSec";
 
     public interface Config {
         @DefaultValue("true")
@@ -375,7 +379,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         ImmutableMap<String, Function<T, Object>> objToFieldVals = objToFieldValsBuilder.build();
         ImmutableMap.Builder<String, Function<T, String>> toItemOtherKeysMapperBuilder = ImmutableMap.builder();
         for (DynamoTable dt : dynamoTables) {
-            if (dt == dynamoTable) {
+            if (dt.type() == dynamoTable.type() && dt.indexNumber() == dynamoTable.indexNumber()) {
                 continue;
             }
             checkState(!Strings.isNullOrEmpty(dt.rangePrefix()) || rangeKeys.length > 0,
@@ -797,6 +801,37 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+
+        @Override
+        public String upsertExpression(T object, Map<String, String> nameMap, Map<String, Object> valMap, ImmutableSet<String> skipFieldNames, String additionalExpression) {
+            List<String> setUpdates = Lists.newArrayList();
+            toItemMapper.apply(object).attributes().forEach(entry -> {
+                if (partitionKeyName.equals(entry.getKey()) || rangeKeyName.equals(entry.getKey())) {
+                    return;
+                }
+                if (skipFieldNames.contains(entry.getKey())) {
+                    return;
+                }
+                nameMap.put("#" + entry.getKey(), entry.getKey());
+                valMap.put(":" + entry.getKey(), entry.getValue());
+                setUpdates.add("#" + entry.getKey() + " = " + ":" + entry.getKey());
+            });
+            return "SET " + String.join(", ", setUpdates) + additionalExpression;
+        }
+
+        @Override
+        public String serializeLastEvaluatedKey(Map<String, AttributeValue> lastEvaluatedKey) {
+            return GsonProvider.GSON.toJson(Maps.transformValues(lastEvaluatedKey, AttributeValue::getS));
+        }
+
+        @Override
+        public PrimaryKey toExclusiveStartKey(String serializedlastEvaluatedKey) {
+            Map<String, String> attributes = GsonProvider.GSON.fromJson(serializedlastEvaluatedKey, new TypeToken<Map<String, String>>() {
+            }.getType());
+            return new PrimaryKey(attributes.entrySet().stream()
+                    .map(e -> new KeyAttribute(e.getKey(), e.getValue()))
+                    .toArray(KeyAttribute[]::new));
         }
     }
 

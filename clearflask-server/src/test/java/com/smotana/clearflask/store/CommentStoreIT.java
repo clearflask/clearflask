@@ -181,7 +181,7 @@ public class CommentStoreIT extends AbstractIT {
         return new CommentModel(
                 projectId,
                 ideaId,
-                store.genCommentId(),
+                store.genCommentId(IdUtil.randomId()),
                 parentCommentIds,
                 parentCommentIds.size(),
                 0,
@@ -211,7 +211,7 @@ public class CommentStoreIT extends AbstractIT {
                 0L,
                 0L,
                 100L,
-                ImmutableSet.of(),
+                0L,
                 0L,
                 0L,
                 0d,

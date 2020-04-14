@@ -45,6 +45,7 @@ public class LocalRateLimiter implements RateLimiter {
     @Override
     public boolean tryAcquire(String target, int permits, double prechargedDuration, double... altPermCap) {
         if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
             return true;
         }
         checkArgument(altPermCap.length % 2 == 0);

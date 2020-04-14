@@ -70,7 +70,6 @@ public class DemoData extends ManagedService {
         AccountStore.Account account = new AccountStore.Account(
                 email,
                 plan.getPlanid(),
-                "Smotana",
                 "Matus Faro",
                 password,
                 "12345678",

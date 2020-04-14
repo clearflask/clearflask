@@ -23,6 +23,7 @@ class PlanPeriodSelect extends Component<Props & WithStyles<typeof styles, true>
       .map(plan => plan.pricing?.period)
       .filter(notEmpty));
     const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
+    if (periods.length <= 0) return null;
     return (
       <Select
         className={this.props.classes.billingSelect}

@@ -52,6 +52,7 @@ public class LocalChallengeLimiter implements ChallengeLimiter {
     @Override
     public Optional<String> process(long challengeAfter, String remoteIp, String target, Optional<String> challengeResponse) {
         if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
             return Optional.empty();
         }
 

@@ -140,33 +140,6 @@ components:
               required:
               - results
               - balance
-/project/{projectId}/admin/user/{userId}/transaction:
-  post:
-    operationId: transactionCreateAdmin
-    tags: [CreditAdmin]
-    parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: userId
-      in: path
-      required: true
-      schema:
-        type: string
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-credit.yaml#/components/schemas/Transaction'
 /project/{projectId}/admin/transaction/search:
   post:
     operationId: transactionSearchAdmin

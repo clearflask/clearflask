@@ -1,7 +1,6 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
@@ -32,6 +31,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -48,6 +48,10 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 public class DynamoVoteStore implements VoteStore {
+
+    private String apply(Map<String, AttributeValue> m) {
+        return fundSchemaByTarget.serializeLastEvaluatedKey(m);
+    }
 
     public interface Config {
         @DefaultValue("10")
@@ -69,29 +73,35 @@ public class DynamoVoteStore implements VoteStore {
     @Named("cursor")
     private ServerSecret serverSecretCursor;
 
-    private TableSchema<VoteModel> voteSchema;
-    private TableSchema<ExpressModel> expressSchema;
-    private TableSchema<FundModel> fundSchema;
+    private TableSchema<VoteModel> voteSchemaByUser;
+    private IndexSchema<VoteModel> voteSchemaByTarget;
+    private TableSchema<ExpressModel> expressSchemaByUser;
+    private IndexSchema<ExpressModel> expressSchemaByTarget;
+    private TableSchema<FundModel> fundSchemaByUser;
+    private IndexSchema<FundModel> fundSchemaByTarget;
     private TableSchema<TransactionModel> transactionSchema;
 
     @Inject
     private void setup() {
-        voteSchema = dynamoMapper.parseTableSchema(VoteModel.class);
-        expressSchema = dynamoMapper.parseTableSchema(ExpressModel.class);
-        fundSchema = dynamoMapper.parseTableSchema(FundModel.class);
+        voteSchemaByUser = dynamoMapper.parseTableSchema(VoteModel.class);
+        voteSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, VoteModel.class);
+        expressSchemaByUser = dynamoMapper.parseTableSchema(ExpressModel.class);
+        expressSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, ExpressModel.class);
+        fundSchemaByUser = dynamoMapper.parseTableSchema(FundModel.class);
+        fundSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, FundModel.class);
         transactionSchema = dynamoMapper.parseTableSchema(TransactionModel.class);
     }
 
     @Override
     public VoteValue vote(String projectId, String userId, String targetId, VoteValue vote) {
-        return Optional.ofNullable(voteSchema.fromItem(
+        return Optional.ofNullable(voteSchemaByUser.fromItem(
                 vote != VoteValue.None
-                        ? voteSchema.table().putItem(new PutItemSpec()
-                        .withItem(voteSchema.toItem(new VoteModel(userId, projectId, targetId, vote.getValue())))
+                        ? voteSchemaByUser.table().putItem(new PutItemSpec()
+                        .withItem(voteSchemaByUser.toItem(new VoteModel(userId, projectId, targetId, vote.getValue())))
                         .withReturnValues(ReturnValue.ALL_OLD))
                         .getItem()
-                        : voteSchema.table().deleteItem(new DeleteItemSpec()
-                        .withPrimaryKey(voteSchema.primaryKey(Map.of(
+                        : voteSchemaByUser.table().deleteItem(new DeleteItemSpec()
+                        .withPrimaryKey(voteSchemaByUser.primaryKey(Map.of(
                                 "userId", userId,
                                 "projectId", projectId,
                                 "targetId", targetId)))
@@ -104,8 +114,11 @@ public class DynamoVoteStore implements VoteStore {
 
     @Override
     public ImmutableMap<String, VoteModel> voteSearch(String projectId, String userId, ImmutableSet<String> targetIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(voteSchema.tableName()).withPrimaryKeys(targetIds.stream()
-                .map(targetId -> voteSchema.primaryKey(Map.of(
+        if (targetIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(voteSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+                .map(targetId -> voteSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
@@ -114,7 +127,7 @@ public class DynamoVoteStore implements VoteStore {
                 .values()
                 .stream()
                 .flatMap(Collection::stream)
-                .map(voteSchema::fromItem)
+                .map(voteSchemaByUser::fromItem)
                 .filter(v -> v.getVote() != VoteValue.None.getValue())
                 .collect(ImmutableMap.toImmutableMap(
                         VoteModel::getTargetId,
@@ -122,49 +135,78 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
-    public ListResponse<VoteModel> voteList(String projectId, String userId, Optional<String> cursorOpt) {
-        Page<Item, QueryOutcome> page = voteSchema.table().query(new QuerySpec()
-                .withHashKey(voteSchema.partitionKey(Map.of(
+    public ListResponse<VoteModel> voteListByUser(String projectId, String userId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = voteSchemaByUser.table().query(new QuerySpec()
+                .withHashKey(voteSchemaByUser.partitionKey(Map.of(
                         "userId", userId,
                         "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(voteSchema.rangeKeyName())
-                        .beginsWith(voteSchema.rangeValuePartial(Map.of())))
+                .withRangeKeyCondition(new RangeKeyCondition(voteSchemaByUser.rangeKeyName())
+                        .beginsWith(voteSchemaByUser.rangeValuePartial(Map.of())))
                 .withMaxPageSize(config.listFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
                         .map(lastEvaluatedKey -> new PrimaryKey(
-                                voteSchema.partitionKey(Map.of(
+                                voteSchemaByUser.partitionKey(Map.of(
                                         "userId", userId,
                                         "projectId", projectId)),
-                                new KeyAttribute(voteSchema.rangeKeyName(), lastEvaluatedKey)))
+                                new KeyAttribute(voteSchemaByUser.rangeKeyName(), lastEvaluatedKey)))
                         .orElse(null)))
                 .firstPage();
         return new ListResponse<>(
                 page.getLowLevelResult()
                         .getItems()
                         .stream()
-                        .map(item -> voteSchema.fromItem(item))
+                        .map(item -> voteSchemaByUser.fromItem(item))
                         .filter(v -> v.getVote() != VoteValue.None.getValue())
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(page.getLowLevelResult()
                         .getQueryResult()
                         .getLastEvaluatedKey())
-                        .map(m -> m.get(voteSchema.rangeKeyName()))
+                        .map(m -> m.get(voteSchemaByUser.rangeKeyName()))
                         .map(AttributeValue::getS)
                         .map(serverSecretCursor::encryptString));
     }
 
     @Override
+    public ListResponse<VoteModel> voteListByTarget(String projectId, String targetId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = voteSchemaByTarget.index().query(new QuerySpec()
+                .withHashKey(voteSchemaByTarget.partitionKey(Map.of(
+                        "targetId", targetId,
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(voteSchemaByTarget.rangeKeyName())
+                        .beginsWith(voteSchemaByTarget.rangeValuePartial(Map.of())))
+                .withMaxPageSize(config.listFetchMax())
+                .withScanIndexForward(false)
+                .withExclusiveStartKey(cursorOpt
+                        .map(serverSecretCursor::decryptString)
+                        .map(voteSchemaByTarget::toExclusiveStartKey)
+                        .orElse(null)))
+                .firstPage();
+        return new ListResponse<>(
+                page.getLowLevelResult()
+                        .getItems()
+                        .stream()
+                        .map(item -> voteSchemaByTarget.fromItem(item))
+                        .filter(v -> v.getVote() != VoteValue.None.getValue())
+                        .collect(ImmutableList.toImmutableList()),
+                Optional.ofNullable(page.getLowLevelResult()
+                        .getQueryResult()
+                        .getLastEvaluatedKey())
+                        .map(voteSchemaByTarget::serializeLastEvaluatedKey)
+                        .map(serverSecretCursor::encryptString));
+    }
+
+    @Override
     public ImmutableSet<String> express(String projectId, String userId, String targetId, Optional<String> expression) {
-        return Optional.ofNullable(expressSchema.fromItem(
+        return Optional.ofNullable(expressSchemaByUser.fromItem(
                 expression.isPresent()
-                        ? expressSchema.table().putItem(new PutItemSpec()
-                        .withItem(expressSchema.toItem(new ExpressModel(userId, projectId, targetId, expression.map(ImmutableSet::of).orElse(ImmutableSet.of()))))
+                        ? expressSchemaByUser.table().putItem(new PutItemSpec()
+                        .withItem(expressSchemaByUser.toItem(new ExpressModel(userId, projectId, targetId, expression.map(ImmutableSet::of).orElse(ImmutableSet.of()))))
                         .withReturnValues(ReturnValue.ALL_OLD))
                         .getItem()
-                        : expressSchema.table().deleteItem(new DeleteItemSpec()
-                        .withPrimaryKey(expressSchema.primaryKey(Map.of(
+                        : expressSchemaByUser.table().deleteItem(new DeleteItemSpec()
+                        .withPrimaryKey(expressSchemaByUser.primaryKey(Map.of(
                                 "userId", userId,
                                 "projectId", projectId,
                                 "targetId", targetId)))
@@ -176,23 +218,29 @@ public class DynamoVoteStore implements VoteStore {
 
     @Override
     public ImmutableSet<String> expressMultiAdd(String projectId, String userId, String targetId, ImmutableSet<String> addExpressions) {
-        return expressMulti(projectId, userId, targetId,
-                new AttributeUpdate("expressions").addElements(addExpressions.toArray()));
+        return expressMulti(projectId, userId, targetId, addExpressions, true);
     }
 
     @Override
     public ImmutableSet<String> expressMultiRemove(String projectId, String userId, String targetId, ImmutableSet<String> removeExpressions) {
-        return expressMulti(projectId, userId, targetId,
-                new AttributeUpdate("expressions").removeElements(removeExpressions.toArray()));
+        return expressMulti(projectId, userId, targetId, removeExpressions, false);
     }
 
-    private ImmutableSet<String> expressMulti(String projectId, String userId, String targetId, AttributeUpdate update) {
-        return Optional.ofNullable(expressSchema.fromItem(expressSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(expressSchema.primaryKey(Map.of(
+    private ImmutableSet<String> expressMulti(String projectId, String userId, String targetId, ImmutableSet<String> expressions, boolean isAdd) {
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valueMap = Maps.newHashMap();
+        nameMap.put("#expressions", "expressions");
+        valueMap.put(":expressions", expressions);
+        String updateExpression = expressSchemaByUser.upsertExpression(new ExpressModel(userId, projectId, targetId, ImmutableSet.of()), nameMap, valueMap,
+                ImmutableSet.of("expressions"), (isAdd ? " ADD " : " DELETE ") + " #expressions :expressions");
+        return Optional.ofNullable(expressSchemaByUser.fromItem(expressSchemaByUser.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(expressSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
-                .withAttributeUpdate(update)
+                .withUpdateExpression(updateExpression)
+                .withNameMap(nameMap)
+                .withValueMap(valueMap)
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))
                 .map(ExpressModel::getExpressions)
@@ -201,8 +249,11 @@ public class DynamoVoteStore implements VoteStore {
 
     @Override
     public ImmutableMap<String, ExpressModel> expressSearch(String projectId, String userId, ImmutableSet<String> targetIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(expressSchema.tableName()).withPrimaryKeys(targetIds.stream()
-                .map(targetId -> expressSchema.primaryKey(Map.of(
+        if (targetIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(expressSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+                .map(targetId -> expressSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
@@ -211,7 +262,7 @@ public class DynamoVoteStore implements VoteStore {
                 .values()
                 .stream()
                 .flatMap(Collection::stream)
-                .map(expressSchema::fromItem)
+                .map(expressSchemaByUser::fromItem)
                 .filter(e -> !e.getExpressions().isEmpty())
                 .collect(ImmutableMap.toImmutableMap(
                         ExpressModel::getTargetId,
@@ -219,36 +270,65 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
-    public ListResponse<ExpressModel> expressList(String projectId, String userId, Optional<String> cursorOpt) {
-        Page<Item, QueryOutcome> page = expressSchema.table().query(new QuerySpec()
-                .withHashKey(expressSchema.partitionKey(Map.of(
+    public ListResponse<ExpressModel> expressListByUser(String projectId, String userId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = expressSchemaByUser.table().query(new QuerySpec()
+                .withHashKey(expressSchemaByUser.partitionKey(Map.of(
                         "userId", userId,
                         "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(expressSchema.rangeKeyName())
-                        .beginsWith(expressSchema.rangeValuePartial(Map.of())))
+                .withRangeKeyCondition(new RangeKeyCondition(expressSchemaByUser.rangeKeyName())
+                        .beginsWith(expressSchemaByUser.rangeValuePartial(Map.of())))
                 .withMaxPageSize(config.listFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
                         .map(lastEvaluatedKey -> new PrimaryKey(
-                                expressSchema.partitionKey(Map.of(
+                                expressSchemaByUser.partitionKey(Map.of(
                                         "userId", userId,
                                         "projectId", projectId)),
-                                new KeyAttribute(expressSchema.rangeKeyName(), lastEvaluatedKey)))
+                                new KeyAttribute(expressSchemaByUser.rangeKeyName(), lastEvaluatedKey)))
                         .orElse(null)))
                 .firstPage();
         return new ListResponse<>(
                 page.getLowLevelResult()
                         .getItems()
                         .stream()
-                        .map(item -> expressSchema.fromItem(item))
+                        .map(item -> expressSchemaByUser.fromItem(item))
                         .filter(e -> !e.getExpressions().isEmpty())
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(page.getLowLevelResult()
                         .getQueryResult()
                         .getLastEvaluatedKey())
-                        .map(m -> m.get(expressSchema.rangeKeyName()))
+                        .map(m -> m.get(expressSchemaByUser.rangeKeyName()))
                         .map(AttributeValue::getS)
+                        .map(serverSecretCursor::encryptString));
+    }
+
+    @Override
+    public ListResponse<ExpressModel> expressListByTarget(String projectId, String targetId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = expressSchemaByTarget.index().query(new QuerySpec()
+                .withHashKey(expressSchemaByTarget.partitionKey(Map.of(
+                        "targetId", targetId,
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(expressSchemaByTarget.rangeKeyName())
+                        .beginsWith(expressSchemaByTarget.rangeValuePartial(Map.of())))
+                .withMaxPageSize(config.listFetchMax())
+                .withScanIndexForward(false)
+                .withExclusiveStartKey(cursorOpt
+                        .map(serverSecretCursor::decryptString)
+                        .map(expressSchemaByTarget::toExclusiveStartKey)
+                        .orElse(null)))
+                .firstPage();
+        return new ListResponse<>(
+                page.getLowLevelResult()
+                        .getItems()
+                        .stream()
+                        .map(item -> expressSchemaByTarget.fromItem(item))
+                        .filter(e -> !e.getExpressions().isEmpty())
+                        .collect(ImmutableList.toImmutableList()),
+                Optional.ofNullable(page.getLowLevelResult()
+                        .getQueryResult()
+                        .getLastEvaluatedKey())
+                        .map(expressSchemaByTarget::serializeLastEvaluatedKey)
                         .map(serverSecretCursor::encryptString));
     }
 
@@ -278,20 +358,25 @@ public class DynamoVoteStore implements VoteStore {
     @Override
     public TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary) {
         Optional<String> conditionExpressionOpt = Optional.empty();
+        HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valueMap = Maps.newHashMap();
+        nameMap.put("#fundAmount", "fundAmount");
         valueMap.put(":zero", 0L);
         valueMap.put(":fundDiff", fundDiff);
         if (fundDiff < 0) {
             valueMap.put(":minFundAmount", Math.abs(fundDiff));
-            conditionExpressionOpt = Optional.of("attribute_exists(fundAmount) AND fundAmount >= :minFundAmount");
+            conditionExpressionOpt = Optional.of("attribute_exists(#fundAmount) AND #fundAmount >= :minFundAmount");
         }
-        long fundAmountPrevious = Optional.ofNullable(fundSchema.fromItem(fundSchema.table().updateItem(new UpdateItemSpec()
-                .withPrimaryKey(fundSchema.primaryKey(Map.of(
+        String updateExpression = fundSchemaByUser.upsertExpression(new FundModel(userId, projectId, targetId, 0L), nameMap, valueMap,
+                ImmutableSet.of("fundAmount"), ", #fundAmount = if_not_exists(#fundAmount, :zero) + :fundDiff");
+        long fundAmountPrevious = Optional.ofNullable(fundSchemaByUser.fromItem(fundSchemaByUser.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(fundSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
                 .withConditionExpression(conditionExpressionOpt.orElse(null))
-                .withUpdateExpression("SET fundAmount = if_not_exists(fundAmount, :zero) + :fundDiff")
+                .withUpdateExpression(updateExpression)
+                .withNameMap(nameMap)
                 .withValueMap(valueMap)
                 .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem()))
@@ -320,8 +405,11 @@ public class DynamoVoteStore implements VoteStore {
 
     @Override
     public ImmutableMap<String, FundModel> fundSearch(String projectId, String userId, ImmutableSet<String> targetIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(fundSchema.tableName()).withPrimaryKeys(targetIds.stream()
-                .map(targetId -> fundSchema.primaryKey(Map.of(
+        if (targetIds.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(fundSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+                .map(targetId -> fundSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
@@ -330,7 +418,7 @@ public class DynamoVoteStore implements VoteStore {
                 .values()
                 .stream()
                 .flatMap(Collection::stream)
-                .map(fundSchema::fromItem)
+                .map(fundSchemaByUser::fromItem)
                 .filter(f -> f.getFundAmount() != 0L)
                 .collect(ImmutableMap.toImmutableMap(
                         FundModel::getTargetId,
@@ -338,36 +426,65 @@ public class DynamoVoteStore implements VoteStore {
     }
 
     @Override
-    public ListResponse<FundModel> fundList(String projectId, String userId, Optional<String> cursorOpt) {
-        Page<Item, QueryOutcome> page = fundSchema.table().query(new QuerySpec()
-                .withHashKey(fundSchema.partitionKey(Map.of(
+    public ListResponse<FundModel> fundListByUser(String projectId, String userId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = fundSchemaByUser.table().query(new QuerySpec()
+                .withHashKey(fundSchemaByUser.partitionKey(Map.of(
                         "userId", userId,
                         "projectId", projectId)))
-                .withRangeKeyCondition(new RangeKeyCondition(fundSchema.rangeKeyName())
-                        .beginsWith(fundSchema.rangeValuePartial(Map.of())))
+                .withRangeKeyCondition(new RangeKeyCondition(fundSchemaByUser.rangeKeyName())
+                        .beginsWith(fundSchemaByUser.rangeValuePartial(Map.of())))
                 .withMaxPageSize(config.listFetchMax())
                 .withScanIndexForward(false)
                 .withExclusiveStartKey(cursorOpt
                         .map(serverSecretCursor::decryptString)
                         .map(lastEvaluatedKey -> new PrimaryKey(
-                                fundSchema.partitionKey(Map.of(
+                                fundSchemaByUser.partitionKey(Map.of(
                                         "userId", userId,
                                         "projectId", projectId)),
-                                new KeyAttribute(fundSchema.rangeKeyName(), lastEvaluatedKey)))
+                                new KeyAttribute(fundSchemaByUser.rangeKeyName(), lastEvaluatedKey)))
                         .orElse(null)))
                 .firstPage();
         return new ListResponse<>(
                 page.getLowLevelResult()
                         .getItems()
                         .stream()
-                        .map(item -> fundSchema.fromItem(item))
+                        .map(item -> fundSchemaByUser.fromItem(item))
                         .filter(f -> f.getFundAmount() != 0L)
                         .collect(ImmutableList.toImmutableList()),
                 Optional.ofNullable(page.getLowLevelResult()
                         .getQueryResult()
                         .getLastEvaluatedKey())
-                        .map(m -> m.get(fundSchema.rangeKeyName()))
+                        .map(m -> m.get(fundSchemaByUser.rangeKeyName()))
                         .map(AttributeValue::getS)
+                        .map(serverSecretCursor::encryptString));
+    }
+
+    @Override
+    public ListResponse<FundModel> fundListByTarget(String projectId, String targetId, Optional<String> cursorOpt) {
+        Page<Item, QueryOutcome> page = fundSchemaByTarget.index().query(new QuerySpec()
+                .withHashKey(fundSchemaByTarget.partitionKey(Map.of(
+                        "targetId", targetId,
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(fundSchemaByTarget.rangeKeyName())
+                        .beginsWith(fundSchemaByTarget.rangeValuePartial(Map.of())))
+                .withMaxPageSize(config.listFetchMax())
+                .withScanIndexForward(false)
+                .withExclusiveStartKey(cursorOpt
+                        .map(serverSecretCursor::decryptString)
+                        .map(fundSchemaByTarget::toExclusiveStartKey)
+                        .orElse(null)))
+                .firstPage();
+        return new ListResponse<>(
+                page.getLowLevelResult()
+                        .getItems()
+                        .stream()
+                        .map(item -> fundSchemaByTarget.fromItem(item))
+                        .filter(f -> f.getFundAmount() != 0L)
+                        .collect(ImmutableList.toImmutableList()),
+                Optional.ofNullable(page.getLowLevelResult()
+                        .getQueryResult()
+                        .getLastEvaluatedKey())
+                        .map(fundSchemaByTarget::serializeLastEvaluatedKey)
                         .map(serverSecretCursor::encryptString));
     }
 

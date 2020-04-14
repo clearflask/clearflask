@@ -2,6 +2,7 @@ package com.smotana.clearflask.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.UUID;
 
@@ -20,8 +21,8 @@ public class IdUtil {
 
     public static String contentUnique(String content) {
         return String.format("%1.3s-%s",
-                content.trim().replaceAll("[^0-9a-z]+", "-"),
-                RandomStringUtils.randomAlphanumeric(3))
+                StringUtils.left(content, 50).trim().replaceAll("[^0-9a-z]+", "-"),
+                RandomStringUtils.randomAlphanumeric(5))
                 .toLowerCase();
     }
 }

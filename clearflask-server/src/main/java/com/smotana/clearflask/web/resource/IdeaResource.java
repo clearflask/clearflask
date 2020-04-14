@@ -10,6 +10,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Idea;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
@@ -28,6 +29,7 @@ import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
@@ -65,9 +67,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private VoteStore voteStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private ProjectStore projectStore;
 
     @RolesAllowed({Role.PROJECT_USER})
-    @Limit(requiredPermits = 30, challengeAfter = 10)
+    @Limit(requiredPermits = 30, challengeAfter = 20)
     @Override
     public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserModel user = getExtendedPrincipal()
@@ -91,7 +95,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 null,
                 null,
-                ImmutableSet.of(),
+                null,
                 null,
                 null,
                 null,
@@ -123,7 +127,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0L,
                 null,
                 ideaCreateAdmin.getFundGoal(),
-                ImmutableSet.of(),
+                null,
                 null,
                 null,
                 null,
@@ -220,12 +224,17 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
+        ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
         IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin).getIdea();
         if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
             boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
             boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
             if (statusChanged || responseChanged) {
-                notificationService.onStatusOrResponseChanged(idea, statusChanged, responseChanged);
+                notificationService.onStatusOrResponseChanged(
+                        configAdmin,
+                        idea,
+                        statusChanged,
+                        responseChanged);
             }
         }
         return idea.toIdea();

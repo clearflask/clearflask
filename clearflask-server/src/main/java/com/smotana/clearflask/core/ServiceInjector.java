@@ -22,8 +22,12 @@ import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
-import com.smotana.clearflask.core.push.MultiPushProviderImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
+import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
+import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
+import com.smotana.clearflask.core.push.provider.EmailServiceImpl;
 import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
@@ -137,8 +141,12 @@ public enum ServiceInjector {
 
                 // Notification
                 install(NotificationServiceImpl.module());
-                install(MultiPushProviderImpl.module());
                 install(AmazonSimpleEmailServiceProvider.module());
+                install(EmailNotificationTemplate.module());
+                install(EmailServiceImpl.module());
+                install(BrowserPushServiceImpl.module());
+                install(OnCommentReply.module());
+                install(OnStatusOrResponseChange.module());
 
                 // Security
                 install(TieredWebLimiter.module());

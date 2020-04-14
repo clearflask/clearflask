@@ -114,15 +114,25 @@ export default class ServerAdmin {
             return msg.meta.retry({ 'x-cf-solution': solution });
           }
         }
-        var body;
-        if (response && response.json) {
-          body = await response.json();
-        }
-        var errorMsg;
+        var errorMsg: string = '';
         var isUserFacing = false;
+        if (response && response.json) {
+          try {
+            var body = await response.json();
+            if (body && body.userFacingMessage) {
+              errorMsg = body.userFacingMessage;
+              isUserFacing = true;
+            }
+          } catch (err) {
+          }
+        }
         var action = msg && msg.meta && msg.meta.action || 'unknown action';
-        if (body && body.userFacingMessage) {
-          errorMsg = body.userFacingMessage;
+        if (errorMsg && isUserFacing) {
+        } else if (response.status && response.status === 403) {
+          errorMsg = `You are not allowed to do this`;
+          isUserFacing = true;
+        } else if (response.status && response.status === 501) {
+          errorMsg = `This feature is not yet available`;
           isUserFacing = true;
         } else if (response.status && response.status >= 100 && response.status < 300) {
           errorMsg = `${response.status} failed ${action}`;
@@ -135,8 +145,8 @@ export default class ServerAdmin {
         }
         errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
       } catch (err) {
-        console.log("Erroro dispatching error: ", err);
-        errorSubscribers.forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", isUserFacing));
+        console.log("Error dispatching error: ", err);
+        errorSubscribers.forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", true));
       }
       throw response;
     }

@@ -134,8 +134,7 @@ public interface IdeaStore {
 
         private final Long fundGoal;
 
-        @NonNull
-        private final ImmutableSet<String> funderUserIds;
+        private final Long fundersCount;
 
         private final Long voteValue;
 
@@ -164,7 +163,7 @@ public interface IdeaStore {
                     getChildCommentCount(),
                     getFunded(),
                     getFundGoal(),
-                    (long) getFunderUserIds().size(),
+                    getFundersCount(),
                     getVoteValue(),
                     getVotersCount(),
                     getExpressionsValue(),
@@ -187,7 +186,7 @@ public interface IdeaStore {
                     getChildCommentCount(),
                     getFunded(),
                     getFundGoal(),
-                    (long) getFunderUserIds().size(),
+                    getFundersCount(),
                     getVoteValue(),
                     getVotersCount(),
                     getExpressionsValue(),

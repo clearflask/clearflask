@@ -173,7 +173,7 @@ public class UserStoreIT extends AbstractIT {
         assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("bobby matt").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
         assertEquals(1, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), true, Optional.empty(), Optional.empty()).getUserIds().size());
         store.updateUser(projectId, user1.getUserId(), UserUpdate.builder()
-                .name("bubbbe").build())
+                .name("bubbby").build())
                 .getIndexingFuture().get();
         assertEquals(2, store.searchUsers(projectId, UserSearchAdmin.builder().searchText("Bobbby").build(), false, Optional.empty(), Optional.empty()).getUserIds().size());
 

@@ -3,6 +3,7 @@ package com.smotana.clearflask.web.security;
 import com.google.common.base.Strings;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.UserStore;
@@ -33,6 +34,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private UserStore userStore;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private CommentStore commentStore;
     @Inject
     private PlanStore planStore;
 
@@ -119,6 +122,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 role, accountSession.map(AccountSession::getEmail), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
 
         Optional<AccountStore.Account> accountOpt;
+        Optional<String> pathParamIdeaIdOpt;
+        Optional<String> pathParamCommentIdOpt;
         switch (role) {
             case Role.ADMINISTRATOR:
                 return accountSession.isPresent();
@@ -136,16 +141,20 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.PROJECT_USER:
                 return userSession.isPresent() && pathParamProjectIdOpt.isPresent();
             case Role.IDEA_OWNER:
-                Optional<String> pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
+                pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
                 if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent()) {
                     return false;
                 }
                 Optional<IdeaStore.IdeaModel> idea = ideaStore.getIdea(userSession.get().getProjectId(), pathParamIdeaIdOpt.get());
                 return idea.isPresent() && idea.get().getAuthorUserId().equals(userSession.get().getUserId());
             case Role.COMMENT_OWNER:
-                // TODO
-//                Optional<String> pathParamCommentIdOpt = getPathParameter(requestContext, "commentId");
-                return false;
+                pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
+                pathParamCommentIdOpt = getPathParameter(requestContext, "commentId");
+                if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent() || !pathParamCommentIdOpt.isPresent()) {
+                    return false;
+                }
+                Optional<CommentStore.CommentModel> comment = commentStore.getComment(userSession.get().getProjectId(), pathParamIdeaIdOpt.get(), pathParamCommentIdOpt.get());
+                return comment.isPresent() && comment.get().getAuthorUserId().equals(userSession.get().getUserId());
             default:
                 log.warn("Unknown role {}", role);
                 return false;

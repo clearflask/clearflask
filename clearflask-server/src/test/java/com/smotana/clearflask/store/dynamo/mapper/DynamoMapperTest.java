@@ -25,6 +25,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @Slf4j
 public class DynamoMapperTest extends AbstractTest {
@@ -93,7 +94,7 @@ public class DynamoMapperTest extends AbstractTest {
         log.info("Table description {}", primary.table().describe());
         log.info("primary.toItem(data) {}", primary.toItem(data));
         log.info("primary.primaryKey(data) {}", primary.primaryKey(data));
-        assertEquals(null, primary.fromItem(primary.table().putItem(new PutItemSpec()
+        assertNull(primary.fromItem(primary.table().putItem(new PutItemSpec()
                 .withItem(primary.toItem(data)).withReturnValues(ReturnValue.ALL_OLD)).getItem()));
         assertEquals(data, primary.fromItem(primary.table().getItem(primary.primaryKey(data))));
         assertEquals(Optional.of(data), StreamSupport.stream(lsi1.index().query(lsi1.partitionKey(data)).pages().spliterator(), false).flatMap(p -> StreamSupport.stream(p.spliterator(), false)).map(lsi1::fromItem).findAny());

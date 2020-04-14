@@ -86,15 +86,12 @@ components:
       type: object
       required:
       - planid
-      - company
       - name
       - email
       - password
       - paymentToken
       properties:
         planid:
-          type: string
-        company:
           type: string
         name:
           type: string
@@ -110,14 +107,11 @@ components:
       type: object
       required:
       - plan
-      - company
       - name
       - email
       properties:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
-        company:
-          type: string
         name:
           type: string
         email:

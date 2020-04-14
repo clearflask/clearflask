@@ -70,6 +70,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -84,8 +85,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.N;
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.SS;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
@@ -216,7 +215,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("childCommentCount", idea.getCommentCount())
                                 .put("funded", orNull(idea.getFunded()))
                                 .put("fundGoal", orNull(idea.getFundGoal()))
-                                .put("funderUserIds", idea.getFunderUserIds())
+                                .put("fundersCount", orNull(idea.getFundersCount()))
                                 .put("voteValue", orNull(idea.getVoteValue()))
                                 .put("votersCount", orNull(idea.getVotersCount()))
                                 .put("expressionsValue", orNull(idea.getExpressionsValue()))
@@ -318,7 +317,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             query.should(QueryBuilders.multiMatchQuery(ideaSearchAdmin.getSearchText(),
                     "title", "description", "response")
                     .field("title", 3f)
-                    .fuzziness("AUTO"));
+                    .fuzziness("AUTO")
+                    .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
         }
 
         if (ideaSearchAdmin.getFilterCategoryIds() != null) {
@@ -455,7 +455,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valMap = Maps.newHashMap();
-        valMap.put(":zero", 1);
+        valMap.put(":zero", 0);
         List<String> setUpdates = Lists.newArrayList();
 
         if (voteDiff != 0) {
@@ -525,7 +525,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valMap = Maps.newHashMap();
         valMap.put(":one", 1);
-        valMap.put(":zero", 1);
+        valMap.put(":zero", 0);
 
         double expressionsValueDiff = 0;
         List<String> setUpdates = Lists.newArrayList();
@@ -647,8 +647,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary) {
-        ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
-
         if (fundDiff == 0L) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot fund zero");
         }
@@ -657,28 +655,44 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         boolean hasFundedBefore = transactionAndFundPrevious.getFundAmountPrevious() > 0L;
         long resultingFundAmount = transactionAndFundPrevious.getFundAmountPrevious() + fundDiff;
 
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valMap = Maps.newHashMap();
+        valMap.put(":zero", 0);
+        List<String> setUpdates = Lists.newArrayList();
+
+        nameMap.put("#funded", "funded");
+        valMap.put(":fundDiff", fundDiff);
+        setUpdates.add("#funded = if_not_exists(#funded, :zero) + :fundDiff");
+
         boolean funderUserIdsChanged = false;
-        updateExpressionBuilder.addUpdate(N("funded").set(N("funded").plus(fundDiff)));
         if (!hasFundedBefore && resultingFundAmount != 0L) {
-            updateExpressionBuilder.addUpdate(SS("funderUserIds").append(userId));
+            nameMap.put("#fundersCount", "fundersCount");
+            valMap.put(":one", 1);
+            setUpdates.add("#fundersCount = if_not_exists(#fundersCount, :zero) + :one");
             funderUserIdsChanged = true;
         } else if (resultingFundAmount == 0L) {
-            updateExpressionBuilder.addUpdate(SS("funderUserIds").delete(userId));
+            nameMap.put("#fundersCount", "fundersCount");
+            valMap.put(":one", 1);
+            setUpdates.add("#fundersCount = if_not_exists(#fundersCount, :zero) - :one");
             funderUserIdsChanged = true;
         }
+
+        String updateExpression = "SET " + String.join(", ", setUpdates);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
-                .withExpressionSpec(updateExpressionBuilder.buildForUpdate()))
+                .withNameMap(nameMap)
+                .withValueMap(valMap)
+                .withUpdateExpression(updateExpression))
                 .getItem());
 
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("funded", orNull(idea.getFunded()));
         if (funderUserIdsChanged) {
-            indexUpdates.put("funderUserIds", idea.getFunderUserIds());
+            indexUpdates.put("fundersCount", idea.getFundersCount());
         }
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())

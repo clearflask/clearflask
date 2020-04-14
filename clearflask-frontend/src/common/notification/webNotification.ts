@@ -89,7 +89,9 @@ export default class WebNotification {
     }
 
     try {
-      this.swRegistration = await (navigator.serviceWorker.register(SERVICE_WORKER_URL));
+      this.swRegistration = await (navigator.serviceWorker.register(SERVICE_WORKER_URL, {
+        scope: '/',
+      }));
     } catch (err) {
       this.status = Status.Unsupported;
       return {
@@ -97,6 +99,9 @@ export default class WebNotification {
         userFacingMsg: 'Failed to register notification service',
       };
     }
+
+    // Await sw to be ready before continuing
+    await navigator.serviceWorker.ready;
 
     var pushSubscription: PushSubscription;
     try {

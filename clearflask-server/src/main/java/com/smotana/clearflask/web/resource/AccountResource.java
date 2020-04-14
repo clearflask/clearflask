@@ -139,13 +139,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @PermitAll
-    @Limit(requiredPermits = 10, challengeAfter = 1)
+    @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
         Optional<Plan> planOpt = planStore.getPlan(signup.getPlanid());
         if (!planOpt.isPresent()) {
-            log.error("Signup for plan that does not exist, planid {} email {} company {} phone {}",
-                    signup.getPlanid(), signup.getEmail(), signup.getCompany(), signup.getPhone());
+            log.error("Signup for plan that does not exist, planid {} email {} phone {}",
+                    signup.getPlanid(), signup.getEmail(), signup.getPhone());
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan does not exist");
         }
         Plan plan = planOpt.get();
@@ -154,7 +154,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = new Account(
                 signup.getEmail(),
                 plan.getPlanid(),
-                signup.getCompany(),
                 signup.getName(),
                 passwordHashed,
                 signup.getPhone(),

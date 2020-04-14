@@ -57,7 +57,7 @@ public interface NotificationStore {
         private final Instant created;
 
         @NonNull
-        private final Instant expiry;
+        private final long ttlInEpochSec;
 
         @NonNull
         private final String description;

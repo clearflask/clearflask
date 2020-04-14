@@ -28,8 +28,8 @@ import java.util.Optional;
 
 public interface CommentStore {
 
-    default String genCommentId() {
-        return IdUtil.randomAscId();
+    default String genCommentId(String content) {
+        return IdUtil.contentUnique(content);
     }
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);

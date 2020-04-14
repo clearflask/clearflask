@@ -164,6 +164,9 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
     @Override
     public ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache) {
+        if (projectIds.isEmpty()) {
+            return ImmutableSet.of();
+        }
         ImmutableSet<Project> projects = dynamoDoc.batchGetItem(new BatchGetItemSpec()
                 .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
                         .withConsistentRead(!useCache)

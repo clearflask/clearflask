@@ -98,6 +98,7 @@ public class CaptchaChallenger implements Challenger {
     @Override
     public boolean verify(String remoteIp, String target, String solutionStr) {
         if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
             return true;
         }
 

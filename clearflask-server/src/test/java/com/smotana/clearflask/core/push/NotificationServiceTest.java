@@ -3,20 +3,36 @@ package com.smotana.clearflask.core.push;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
-import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
-import com.google.inject.util.Modules;
-import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
-import com.smotana.clearflask.core.push.provider.BrowserPushProvider;
-import com.smotana.clearflask.core.push.provider.EmailPushProvider;
-import com.smotana.clearflask.security.limiter.challenge.MockChallenger;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
+import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
+import com.smotana.clearflask.core.push.provider.EmailService.Email;
+import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
+import com.smotana.clearflask.core.push.provider.MockEmailService;
+import com.smotana.clearflask.core.push.provider.MockNotificationStore;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore.IdeaModel;
+import com.smotana.clearflask.store.MockModelUtil;
+import com.smotana.clearflask.store.NotificationStore.NotificationModel;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.ExpressModel;
+import com.smotana.clearflask.store.VoteStore.FundModel;
+import com.smotana.clearflask.store.VoteStore.VoteModel;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.ModelUtil;
+import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Base64Encoder;
 import nl.martijndwars.webpush.Utils;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -28,47 +44,49 @@ import org.junit.Test;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
+import java.util.Optional;
 
 import static nl.martijndwars.webpush.Utils.ALGORITHM;
 import static nl.martijndwars.webpush.Utils.CURVE;
 import static org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+@Slf4j
 public class NotificationServiceTest extends AbstractTest {
 
     @Inject
     private NotificationService service;
+    @Inject
+    private MockEmailService mockEmailService;
+    @Inject
+    private MockBrowserPushService mockBrowserPushService;
+    @Inject
+    private VoteStore mockVoteStore;
+    @Inject
+    private UserStore mockUserStore;
+    @Inject
+    private MockNotificationStore mockNotificationStore;
 
     @Override
     protected void configure() {
         super.configure();
 
         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
+
+        bindMock(VoteStore.class);
         bindMock(UserStore.class);
 
-        install(Modules.override(
-                NotificationServiceImpl.module(),
-                MultiPushProviderImpl.module(),
-                AmazonSimpleEmailServiceProvider.module()
-        ).with(new AbstractModule() {
-            @Override
-            protected void configure() {
-                install(ConfigSystem.overrideModule(BrowserPushProvider.Config.class, om -> {
-                    KeyPair keyPair = generateKeyPair();
-                    om.override(om.id().publicKey()).withValue(encodePublicKey(keyPair));
-                    om.override(om.id().privateKey()).withValue(encodePrivateKey(keyPair));
-                    om.override(om.id().enabled()).withValue(false);
-                }));
-                install(ConfigSystem.overrideModule(EmailPushProvider.Config.class, om -> {
-                    om.override(om.id().enabled()).withValue(false);
-                }));
-                install(ConfigSystem.overrideModule(AmazonSimpleEmailServiceProvider.Config.class, om -> {
-                    om.override(om.id().region()).withValue(Regions.US_GOV_EAST_1.getName());
-                }));
-            }
-        }));
+        install(NotificationServiceImpl.module());
+        install(EmailNotificationTemplate.module());
+        install(OnCommentReply.module());
+        install(OnStatusOrResponseChange.module());
 
-        install(MockChallenger.module());
-
+        install(MockBrowserPushService.module());
+        install(MockEmailService.module());
+        install(MockNotificationStore.module());
         install(LocalRateLimiter.module());
         ControllableSleepingStopwatch controllableSleepingStopwatch = new ControllableSleepingStopwatch();
         install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
@@ -77,12 +95,128 @@ public class NotificationServiceTest extends AbstractTest {
 
     @Test(timeout = 5_000L)
     public void testOnStatusOrResponseChanged() throws Exception {
-        service.onStatusOrResponseChanged(null, true, true);
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .statusId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getWorkflow().getStatuses().get(0).getStatusId())
+                .response("My response")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .fundersCount(3L).funded(300L)
+                .votersCount(4L).voteValue(2L)
+                .expressions(ImmutableMap.of("😘", 4L)).expressionsValue(3.4d)
+                .build();
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        when(this.mockVoteStore.expressListByTarget(any(), any(), any())).thenReturn(new VoteStore.ListResponse<>(ImmutableList.of(ExpressModel.builder()
+                .userId(user.getUserId())
+                .projectId(projectId)
+                .targetId(idea.getIdeaId())
+                .expressions(ImmutableSet.of())
+                .build()), Optional.empty()));
+        when(this.mockVoteStore.fundListByTarget(any(), any(), any())).thenReturn(new VoteStore.ListResponse<>(ImmutableList.of(FundModel.builder()
+                .userId(user.getUserId())
+                .projectId(projectId)
+                .targetId(idea.getIdeaId())
+                .fundAmount(400L)
+                .build()), Optional.empty()));
+        when(this.mockVoteStore.voteListByTarget(any(), any(), any())).thenReturn(new VoteStore.ListResponse<>(ImmutableList.of(VoteModel.builder()
+                .userId(user.getUserId())
+                .projectId(projectId)
+                .targetId(idea.getIdeaId())
+                .vote(1)
+                .build()), Optional.empty()));
+        when(this.mockUserStore.getUsers(any(), any())).thenReturn(ImmutableMap.of(user.getUserId(), user));
+
+        service.onStatusOrResponseChanged(
+                versionedConfigAdmin.getConfig(),
+                idea,
+                true,
+                true);
+
+        Email email = mockEmailService.sent.take();
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        log.info("email {}", email);
+        log.info("push {}", push);
+        log.info("inApp {}", inApp);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+        assertNotNull(push);
+        assertFalse(push.getTitle().contains("__"));
+        assertFalse(push.getBody().contains("__"));
+        assertNotNull(inApp);
+        assertFalse(inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 5_000L)
     public void testOnCommentReply() throws Exception {
-        service.onCommentReply(null, null, null);
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .statusId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getWorkflow().getStatuses().get(0).getStatusId())
+                .response("My response")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .fundersCount(3L).funded(300L)
+                .votersCount(4L).voteValue(2L)
+                .expressions(ImmutableMap.of("😘", 4L)).expressionsValue(3.4d)
+                .build();
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        UserModel sender = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("sender@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        CommentStore.CommentModel parentComment = MockModelUtil.getRandomComment().toBuilder()
+                .projectId(projectId)
+                .ideaId(idea.getIdeaId())
+                .authorUserId(user.getUserId())
+                .build();
+        CommentStore.CommentModel comment = MockModelUtil.getRandomComment().toBuilder()
+                .projectId(projectId)
+                .ideaId(idea.getIdeaId())
+                .authorUserId(sender.getUserId())
+                .build();
+        when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+
+        service.onCommentReply(
+                versionedConfigAdmin.getConfig(),
+                idea,
+                Optional.of(parentComment),
+                comment,
+                sender);
+
+        Email email = mockEmailService.sent.take();
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        log.info("email {}", email);
+        log.info("push {}", push);
+        log.info("inApp {}", inApp);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+        assertNotNull(push);
+        assertFalse(push.getTitle().contains("__"));
+        assertFalse(push.getBody().contains("__"));
+        assertNotNull(inApp);
+        assertFalse(inApp.getDescription().contains("__"));
     }
 
     private KeyPair generateKeyPair() {

@@ -56,7 +56,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
-import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
+import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -79,6 +79,7 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -94,6 +95,7 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static com.smotana.clearflask.util.ElasticUtil.*;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
@@ -180,16 +182,33 @@ public class DynamoElasticUserStore implements UserStore {
     @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)).mapping(gson.toJson(ImmutableMap.of(
+        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)).settings(
+                gson.toJson(ImmutableMap.of(
+                        "index", ImmutableMap.of(
+                                "analysis", ImmutableMap.of(
+                                        "analyzer", ImmutableMap.of(
+                                                AUTOCOMPLETE_ANALYZER_NAME, AUTOCOMPLETE_ANALYZER
+                                        ),
+                                        "tokenizer", ImmutableMap.of(
+                                                AUTOCOMPLETE_TOKENIZER_NAME, AUTOCOMPLETE_TOKENIZER
+                                        )
+                                )
+                        )
+                )), XContentType.JSON).mapping(gson.toJson(ImmutableMap.of(
                 "dynamic", "false",
                 "properties", ImmutableMap.builder()
-                        // TODO explore index_prefixes and norms for name and email
                         .put("name", ImmutableMap.of(
                                 "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
+                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                "index_prefixes", ImmutableMap.of(
+                                        "min_chars", 1,
+                                        "max_chars", 4)))
                         .put("email", ImmutableMap.of(
                                 "type", "text",
-                                "index_prefixes", ImmutableMap.of()))
+                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                "index_prefixes", ImmutableMap.of(
+                                        "min_chars", 1,
+                                        "max_chars", 4)))
                         .put("balance", ImmutableMap.of(
                                 "type", "double"))
                         .build())), XContentType.JSON),
@@ -317,7 +336,7 @@ public class DynamoElasticUserStore implements UserStore {
         }
 
         QueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                .fuzziness("AUTO");
+                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
         log.trace("User search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))

@@ -18,8 +18,6 @@ import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.api.model.VoteSearchAdmin;
 import com.smotana.clearflask.api.model.VoteSearchResponse;
 import com.smotana.clearflask.api.model.VoteUpdate;
-import com.smotana.clearflask.api.model.VoteUpdateAdmin;
-import com.smotana.clearflask.api.model.VoteUpdateAdminResponse;
 import com.smotana.clearflask.api.model.VoteUpdateExpressions;
 import com.smotana.clearflask.api.model.VoteUpdateResponse;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -52,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-// TODO
 @Slf4j
 @Singleton
 @Path("/v1")
@@ -70,32 +67,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public void voteDeleteAdmin(String projectId, String voteId) {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
-    @Override
-    public void voteDeleteBulkAdmin(String projectId, VoteSearchAdmin voteSearchAdmin) {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
-    @Override
     public VoteSearchResponse voteSearchAdmin(String projectId, VoteSearchAdmin voteSearchAdmin, String cursor) {
-        // TODO
-        throw new NotImplementedException();
-    }
-
-    @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
-    @Override
-    public VoteUpdateAdminResponse voteUpdateAdmin(String projectId, VoteUpdateAdmin voteUpdateAdmin) {
-        // TODO
         throw new NotImplementedException();
     }
 

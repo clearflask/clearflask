@@ -79,16 +79,10 @@ paths:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user~1{userId}'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
-  /project/{projectId}/admin/user/{userId}/transaction:
-    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1user~1{userId}~1transaction'
   /project/{projectId}/admin/transaction/search:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction~1search'
   /project/{projectId}/admin/votesearch:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1votesearch'
-  /project/{projectId}/admin/vote:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote'
-  /project/{projectId}/admin/idea/{ideaId}/vote:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1vote'
   /project/config/admin:
     $ref: 'api-project.yaml#/~1project~1config~1admin'
   /project/admin:

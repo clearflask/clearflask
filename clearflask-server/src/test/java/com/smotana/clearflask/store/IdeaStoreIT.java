@@ -66,8 +66,8 @@ public class IdeaStoreIT extends AbstractIT {
     public void test() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        IdeaModel idea = getRandomIdea(projectId);
-        IdeaModel idea2 = getRandomIdea(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
+        IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
         store.createIdea(idea2).get();
         assertEquals(Optional.of(idea), store.getIdea(projectId, idea.getIdeaId()));
@@ -101,17 +101,20 @@ public class IdeaStoreIT extends AbstractIT {
     public void testSearch() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        IdeaModel idea1 = getRandomIdea(projectId).toBuilder()
+        IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
                 .title("aaaaaaaaaaaaaa")
                 .created(Instant.now().minus(3, ChronoUnit.DAYS))
                 .funded(10L)
                 .build();
-        IdeaModel idea2 = getRandomIdea(projectId).toBuilder()
+        IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
                 .title("bbbbbbbbbbbbbb")
                 .created(Instant.now().minus(2, ChronoUnit.DAYS))
                 .funded(30L)
                 .build();
-        IdeaModel idea3 = getRandomIdea(projectId).toBuilder()
+        IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
                 .title("cccccccccccccc")
                 .created(Instant.now().minus(1, ChronoUnit.DAYS))
                 .funded(20L)
@@ -201,7 +204,7 @@ public class IdeaStoreIT extends AbstractIT {
     public void testVote() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        IdeaModel idea = getRandomIdea(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
         String userId1 = IdUtil.randomId();
         String userId2 = IdUtil.randomId();
@@ -242,7 +245,7 @@ public class IdeaStoreIT extends AbstractIT {
     public void testExpress() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        IdeaModel idea = getRandomIdea(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
         String userId1 = IdUtil.randomId();
         String userId2 = IdUtil.randomId();
@@ -291,53 +294,28 @@ public class IdeaStoreIT extends AbstractIT {
     public void testFund() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
-        IdeaModel idea = getRandomIdea(projectId);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
         String userId1 = IdUtil.randomId();
         String userId2 = IdUtil.randomId();
 
-        assertEquals(ImmutableSet.of(), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
+        assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId1, 10L, "transactionType", "summary").getIndexingFuture().get();
-        assertEquals(ImmutableSet.of(userId1), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(10L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId1, -5L, "transactionType", "summary").getIndexingFuture().get();
-        assertEquals(ImmutableSet.of(userId1), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(5L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId2, 7L, "transactionType", "summary").getIndexingFuture().get();
-        assertEquals(ImmutableSet.of(userId1, userId2), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
+        assertEquals(Long.valueOf(2L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(12L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
 
         store.fundIdea(projectId, idea.getIdeaId(), userId1, -5L, "transactionType", "summary").getIndexingFuture().get();
-        assertEquals(ImmutableSet.of(userId2), store.getIdea(projectId, idea.getIdeaId()).get().getFunderUserIds());
+        assertEquals(Long.valueOf(1L), store.getIdea(projectId, idea.getIdeaId()).get().getFundersCount());
         assertEquals(Long.valueOf(7L), store.getIdea(projectId, idea.getIdeaId()).get().getFunded());
-    }
-
-    private IdeaModel getRandomIdea(String projectId) {
-        return new IdeaModel(
-                projectId,
-                store.genIdeaId(" this !@#$%^&*()is my title 9032 "),
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                Instant.now(),
-                "title",
-                "description",
-                "response",
-                IdUtil.randomId(),
-                IdUtil.randomId(),
-                ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
-                0L,
-                0L,
-                0L,
-                100L,
-                ImmutableSet.of(),
-                0L,
-                0L,
-                0d,
-                ImmutableMap.of(),
-                0d);
     }
 }

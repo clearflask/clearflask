@@ -99,7 +99,7 @@ public class NotificationStoreTest extends AbstractTest {
                 IdUtil.randomId(),
                 null,
                 Instant.now(),
-                Instant.now().plus(1, ChronoUnit.HOURS),
+                Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond(),
                 description
         );
     }

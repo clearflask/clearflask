@@ -138,6 +138,7 @@ public class TieredWebLimiter implements Limiter {
     @Override
     public void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) throws WebApplicationException {
         if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
             return;
         }
 

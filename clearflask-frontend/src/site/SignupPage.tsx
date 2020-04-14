@@ -46,7 +46,6 @@ interface State {
   isSubmitting?: boolean;
   planId?: string;
   period?: Admin.PlanPricingPeriodEnum;
-  company?: string;
   name?: string;
   email?: string;
   phone?: string;
@@ -140,13 +139,6 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                 <Box display='flex' flexDirection='column' alignItems='flex-start'>
                   <TextField
                     className={this.props.classes.item}
-                    id='company'
-                    label='Company'
-                    value={this.state.company || ''}
-                    onChange={e => this.setState({ company: e.target.value })}
-                  />
-                  <TextField
-                    className={this.props.classes.item}
                     id='name'
                     label='Name'
                     required
@@ -163,7 +155,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                   <TextField
                     className={this.props.classes.item}
                     id='email'
-                    label='Email'
+                    label='Work email'
                     required
                     value={this.state.email || ''}
                     onChange={e => this.setState({ email: e.target.value })}
@@ -219,7 +211,6 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                     <TableBody>
                       {[
                         { name: 'Plan', value: (selectedPlan && selectedPlan.pricing) ? `${selectedPlan.title} (${selectedPlan.pricing.period === Admin.PlanPricingPeriodEnum.Yearly ? 'Yearly' : 'Quarterly'})` : 'No plan selected', error: !selectedPlan },
-                        { name: 'Company', value: this.state.company || 'Not set' },
                         { name: 'Name', value: this.state.name || 'Missing name', error: !this.state.name },
                         { name: 'Phone', value: this.state.phone ? 'Completed' : 'Skipped' },
                         { name: 'Email', value: this.state.email || 'Missing email', error: !this.state.email },
@@ -262,7 +253,6 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           planid: this.state.planId!,
-          company: this.state.company!,
           name: this.state.name!,
           email: this.state.email!,
           phone: this.state.phone,

@@ -81,9 +81,6 @@ public interface AccountStore {
         private final String planId;
 
         @NonNull
-        private final String company;
-
-        @NonNull
         private final String name;
 
         @NonNull
@@ -101,7 +98,6 @@ public interface AccountStore {
         public AccountAdmin toAccountAdmin(PlanStore planStore) {
             return new AccountAdmin(
                     planStore.getPlan(getPlanId()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanId())),
-                    getCompany(),
                     getName(),
                     getEmail(),
                     getPhone());
