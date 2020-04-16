@@ -12,6 +12,7 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
@@ -83,6 +84,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(EmailNotificationTemplate.module());
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
+        install(OnForgotPassword.module());
 
         install(MockBrowserPushService.module());
         install(MockEmailService.module());
@@ -132,6 +134,7 @@ public class NotificationServiceTest extends AbstractTest {
                 .vote(1)
                 .build()), Optional.empty()));
         when(this.mockUserStore.getUsers(any(), any())).thenReturn(ImmutableMap.of(user.getUserId(), user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
 
         service.onStatusOrResponseChanged(
                 versionedConfigAdmin.getConfig(),
@@ -194,6 +197,7 @@ public class NotificationServiceTest extends AbstractTest {
                 .authorUserId(sender.getUserId())
                 .build();
         when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
 
         service.onCommentReply(
                 versionedConfigAdmin.getConfig(),
@@ -217,6 +221,32 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(push.getBody().contains("__"));
         assertNotNull(inApp);
         assertFalse(inApp.getDescription().contains("__"));
+    }
+
+    @Test(timeout = 5_000L)
+    public void testOnForgotPassword() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onForgotPassword(
+                versionedConfigAdmin.getConfig(),
+                user);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
     }
 
     private KeyPair generateKeyPair() {

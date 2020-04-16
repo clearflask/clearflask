@@ -50,7 +50,7 @@ public class OnCommentReply {
     @Inject
     private EmailNotificationTemplate emailNotificationTemplate;
 
-    public Email email(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, ConfigAdmin configAdmin, String link) {
+    public Email email(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, ConfigAdmin configAdmin, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
 
         String subject = config.subjectTemplate();
@@ -95,10 +95,11 @@ public class OnCommentReply {
         templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
         templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
 
+        link += "?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account";
+        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
@@ -112,7 +113,7 @@ public class OnCommentReply {
         );
     }
 
-    public BrowserPush browserPush(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link) {
+    public BrowserPush browserPush(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getBrowserPushToken()));
 
         String subject = config.subjectTemplate();
@@ -136,7 +137,7 @@ public class OnCommentReply {
                 content,
                 idea.getProjectId(),
                 user.getUserId(),
-                link
+                link + "?authToken=" + authToken
         );
     }
 

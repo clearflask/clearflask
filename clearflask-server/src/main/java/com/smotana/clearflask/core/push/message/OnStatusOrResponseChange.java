@@ -65,7 +65,7 @@ public class OnStatusOrResponseChange {
     @Inject
     private EmailNotificationTemplate emailNotificationTemplate;
 
-    public Email email(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse) {
+    public Email email(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse, String authToken) {
         checkArgument(changedStatus.isPresent() || changedResponse.isPresent());
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
 
@@ -129,10 +129,11 @@ public class OnStatusOrResponseChange {
         templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW POST");
         templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW POST");
 
+        link += "?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account";
+        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
@@ -146,7 +147,7 @@ public class OnStatusOrResponseChange {
         );
     }
 
-    public BrowserPush browserPush(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse) {
+    public BrowserPush browserPush(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse, String authToken) {
         checkArgument(changedStatus.isPresent() || changedResponse.isPresent());
         checkArgument(!Strings.isNullOrEmpty(user.getBrowserPushToken()));
 
@@ -184,7 +185,7 @@ public class OnStatusOrResponseChange {
                 content,
                 configAdmin.getProjectId(),
                 user.getUserId(),
-                link
+                link + "?authToken=" + authToken
         );
     }
 

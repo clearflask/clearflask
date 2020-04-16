@@ -32,8 +32,8 @@ export default class WebNotification {
   swRegistration?: ServiceWorkerRegistration;
   token?: string;
 
-  constructor(status: Status = Status.Unsupported, mockAskPermission?: () => Promise<WebNotificationSubscription | WebNotificationError>) {
-    this.isMock = !!mockAskPermission;
+  constructor(isMock: boolean = false, status: Status = Status.Unsupported, mockAskPermission?: () => Promise<WebNotificationSubscription | WebNotificationError>) {
+    this.isMock = isMock;
     this.mockAskPermission = mockAskPermission;
     this.status = status;
     if (!this.isMock) {
@@ -45,7 +45,7 @@ export default class WebNotification {
     return this.instance || (this.instance = new this());
   }
   static getMockInstance(status: Status = Status.Unsupported, mockAskPermission?: () => Promise<WebNotificationSubscription | WebNotificationError>): WebNotification {
-    return new this(status, mockAskPermission);
+    return new this(true, status, mockAskPermission);
   }
 
   getStatus(): Status {
@@ -78,7 +78,7 @@ export default class WebNotification {
   }
 
   async askPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
-    if (this.isMock) return this.mockAskPermission ? this.mockAskPermission() : Promise.reject('Mock incorrectly setup');
+    if (this.isMock) return this.mockAskPermission!();
 
     if (this.status === Status.Granted) {
       this.getPermission();

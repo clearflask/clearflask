@@ -1,4 +1,4 @@
-import { Divider, IconButton, Link, Tab, Tabs, Typography } from '@material-ui/core';
+import { Badge, Divider, IconButton, Link, Tab, Tabs, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
@@ -190,7 +190,13 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           aria-label='Account'
           onClick={() => this.props.history.push('/account')}
         >
-          <AccountIcon fontSize='small' />
+          <Badge
+            color='secondary'
+            invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
+            variant='dot'
+          >
+            <AccountIcon fontSize='small' />
+          </Badge>
         </IconButton>
       </div>
     );

@@ -25,6 +25,7 @@ import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
 import com.smotana.clearflask.core.push.provider.EmailServiceImpl;
@@ -147,6 +148,7 @@ public enum ServiceInjector {
                 install(BrowserPushServiceImpl.module());
                 install(OnCommentReply.module());
                 install(OnStatusOrResponseChange.module());
+                install(OnForgotPassword.module());
 
                 // Security
                 install(TieredWebLimiter.module());

@@ -45,6 +45,8 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
+import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
@@ -58,6 +60,13 @@ import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -84,10 +93,13 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import javax.crypto.SecretKey;
 import javax.ws.rs.core.Response;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -124,6 +136,9 @@ public class DynamoElasticUserStore implements UserStore {
 
         @DefaultValue("100")
         long fundBloomFilterExpectedInsertions();
+
+        @NoDefaultValue
+        SecretKey tokenSignerPrivKey();
     }
 
     @Value
@@ -378,11 +393,13 @@ public class DynamoElasticUserStore implements UserStore {
                         "userId", userId)))
                 .withReturnValues(ReturnValue.ALL_NEW);
         Map<String, Object> indexUpdates = Maps.newHashMap();
+        boolean updateAuthTokenValidityStart = false;
         if (updates.getName() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("name").put(userSchema.toDynamoValue("name", updates.getName())));
             indexUpdates.put("name", updates.getName());
         }
         if (updates.getEmail() != null) {
+            updateAuthTokenValidityStart = true;
             if (updates.getEmail().isEmpty()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("email").delete());
             } else {
@@ -391,6 +408,7 @@ public class DynamoElasticUserStore implements UserStore {
             indexUpdates.put("email", updates.getEmail());
         }
         if (updates.getPassword() != null) {
+            updateAuthTokenValidityStart = true;
             if (updates.getPassword().isEmpty()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("password").delete());
             } else {
@@ -421,7 +439,11 @@ public class DynamoElasticUserStore implements UserStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken").put(userSchema.toDynamoValue("browserPushToken", updates.getBrowserPushToken())));
             }
         }
+        if (updateAuthTokenValidityStart) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("authTokenValidityStart").put(userSchema.toDynamoValue("authTokenValidityStart", Instant.now())));
+        }
 
+        // TODO bug need to update user identifiers here
         UserModel userModel = userSchema.fromItem(userSchema.table().updateItem(updateItemSpec).getItem());
 
         if (!indexUpdates.isEmpty()) {
@@ -535,6 +557,71 @@ public class DynamoElasticUserStore implements UserStore {
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
         return indexingFuture;
+    }
+
+    @Override
+    public String createToken(String projectId, String userId, Duration ttl) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .setIssuedAt(new Date(now.toEpochMilli()))
+                .setExpiration(new Date(now.plus(ttl).toEpochMilli()))
+                .addClaims(ImmutableMap.of(
+                        "pid", projectId,
+                        "uid", userId))
+                .signWith(config.tokenSignerPrivKey(), MoreConfigValueConverters.TOKEN_ALGO)
+                .compact();
+    }
+
+    @Override
+    public Optional<UserModel> verifyToken(String token) {
+        if (Strings.isNullOrEmpty(token)) {
+            return Optional.empty();
+        }
+
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(config.tokenSignerPrivKey())
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
+            log.warn("Failed to parse token {}", token, ex);
+            return Optional.empty();
+        } catch (ExpiredJwtException ex) {
+            log.trace("Token is past expiration {}", token);
+            return Optional.empty();
+        }
+
+        String projectId;
+        String userId;
+        try {
+            projectId = claims.get("pid", String.class);
+        } catch (RequiredTypeException ex) {
+            log.warn("Missing pid in token {}", token);
+            return Optional.empty();
+        }
+        try {
+            userId = claims.get("uid", String.class);
+        } catch (RequiredTypeException ex) {
+            log.warn("Missing uid in token {}", token);
+            return Optional.empty();
+        }
+
+        Optional<UserModel> userOpt = getUser(projectId, userId);
+        if (!userOpt.isPresent()) {
+            log.info("User in auth token does not exists, projectId {} userId {}",
+                    projectId, userId);
+            return Optional.empty();
+        }
+
+        if (userOpt.get().getAuthTokenValidityStart() != null
+                && userOpt.get().getAuthTokenValidityStart().isAfter(claims.getIssuedAt().toInstant())) {
+            log.info("Token is created prior to revokation {}, projectId {} userId {}",
+                    userOpt.get().getAuthTokenValidityStart(), projectId, userId);
+            return Optional.empty();
+        }
+
+        return userOpt;
     }
 
     @Override

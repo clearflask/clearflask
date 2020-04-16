@@ -13,4 +13,5 @@ public interface NotificationService {
 
     void onCommentReply(ConfigAdmin configAdmin, IdeaModel idea, Optional<CommentModel> parentCommentOpt, CommentModel comment, UserModel sender);
 
+    void onForgotPassword(ConfigAdmin configAdmin, UserModel user);
 }

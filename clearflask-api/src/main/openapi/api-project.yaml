@@ -45,6 +45,8 @@ components:
           $ref: 'api-project.yaml#/components/schemas/style'
         users:
           $ref: 'api-project.yaml#/components/schemas/users'
+        legal:
+          $ref: 'api-project.yaml#/components/schemas/legal'
     credits:
       x-clearflask-page: { order: 13, name: 'Credits', description: 'Define a currency to use.' }
       title: CreditFormatter
@@ -578,10 +580,10 @@ components:
         - $ref: 'api-project.yaml#/components/schemas/Config'
         - type: object
           required:
-          - legal
           properties:
-            legal:
-              $ref: 'api-project.yaml#/components/schemas/legal'
+            dummy: # Only here because this can't be empty
+              x-clearflask-hide: true
+              type: string
       # TODO OAuth
       # TODO Email/Push notifications
       # TODO Credit income
@@ -753,6 +755,8 @@ components:
             type: object
             title: ConfigGetAndUserBind
             properties:
+              authToken:
+                type: string
               browserPushToken:
                 type: string
     responses:

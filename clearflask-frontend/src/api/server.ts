@@ -632,6 +632,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: Client.Acti
             }, {}),
         }
       };
+    case Client.userBindActionStatus.Fulfilled:
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {
@@ -971,6 +972,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: Clien
           transactionSearch: {},
         } : {}),
       };
+    case Client.userBindActionStatus.Fulfilled:
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       if (!action.payload.user) return state;
       return {

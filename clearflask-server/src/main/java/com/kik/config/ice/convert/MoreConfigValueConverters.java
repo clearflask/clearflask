@@ -23,18 +23,26 @@ import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.util.Types;
+import io.jsonwebtoken.SignatureAlgorithm;
 import nl.martijndwars.webpush.Urgency;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.DateTimeException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 
 /**
  * Extends {@link com.kik.config.ice.convert.ConfigValueConverters} with additional converters.
  */
 public class MoreConfigValueConverters {
+
+    public static final SignatureAlgorithm TOKEN_ALGO = HS512;
 
     public static <T extends Enum<T>> T toGenericEnum(Class<T> enumClazz, String input) {
         if (Strings.isNullOrEmpty(input)) {
@@ -69,6 +77,14 @@ public class MoreConfigValueConverters {
         }
     }
 
+    public static SecretKeySpec toSecretKey(String input) {
+        if (Strings.isNullOrEmpty(input)) {
+            return null;
+        }
+        byte[] keyBytes = Base64.getDecoder().decode(input);
+        return new SecretKeySpec(keyBytes, 0, keyBytes.length, TOKEN_ALGO.getJcaName());
+    }
+
     public static Module module() {
         return module(ImmutableSet.of(
                 Urgency.class
@@ -90,13 +106,14 @@ public class MoreConfigValueConverters {
                     bindEnum(enumClazz, mapBinder);
                 }
 
-                final TypeLiteral<List<Duration>> listOfDurationType = new TypeLiteral<List<Duration>>() {
-                };
-                bindConverter(listOfDurationType, mapBinder, MoreConfigValueConverters::toDurationList);
+                bindConverter(new TypeLiteral<List<Duration>>() {
+                }, mapBinder, MoreConfigValueConverters::toDurationList);
 
-                final TypeLiteral<Set<Duration>> setOfDurationType = new TypeLiteral<Set<Duration>>() {
-                };
-                bindConverter(setOfDurationType, mapBinder, MoreConfigValueConverters::toDurationSet);
+                bindConverter(new TypeLiteral<Set<Duration>>() {
+                }, mapBinder, MoreConfigValueConverters::toDurationSet);
+
+                bindConverter(new TypeLiteral<SecretKey>() {
+                }, mapBinder, MoreConfigValueConverters::toSecretKey);
             }
 
             private <T> void bindConverter(

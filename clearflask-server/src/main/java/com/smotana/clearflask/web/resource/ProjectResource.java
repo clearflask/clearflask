@@ -76,14 +76,27 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+
+        // Auto login using auth token
+        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getAuthToken())) {
+            userOpt = userStore.verifyToken(configGetAndUserBind.getAuthToken());
+            if (userOpt.isPresent()) {
+                UserStore.UserSession session = userStore.createSession(
+                        projectId,
+                        userOpt.get().getUserId(),
+                        Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
+                setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+            }
+        }
+
+        // Auto login using browser push token (if email nor password is set)
         if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getBrowserPushToken())) {
             userOpt = userStore.getUserByIdentifier(
                     projectId,
                     UserStore.IdentifierType.BROWSER_PUSH,
                     configGetAndUserBind.getBrowserPushToken());
-
             if (userOpt.isPresent()) {
-                if (!Strings.isNullOrEmpty(userOpt.get().getPassword())) {
+                if (!Strings.isNullOrEmpty(userOpt.get().getPassword()) || !Strings.isNullOrEmpty(userOpt.get().getEmail())) {
                     userOpt = Optional.empty();
                 } else {
                     UserStore.UserSession session = userStore.createSession(
@@ -94,6 +107,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 }
             }
         }
+
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
                 userOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));

@@ -22,6 +22,9 @@ import CaptchaChallenger from './utils/CaptchaChallenger';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
 
+/** Broadcast successful bind to other tabs */
+export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
+
 interface Props {
   projectId: string;
   serverOverride?: Server;
@@ -51,15 +54,28 @@ class App extends Component<Props> {
       this.server = new Server(projectId);
     }
 
+    this.configGetAndUserBind();
+  }
+
+  async configGetAndUserBind() {
     if (this.server.getStore().getState().conf.status === undefined) {
+      var subscriptionResult;
       if (WebNotification.getInstance().getStatus() === Status.Granted) {
-        WebNotification.getInstance().getPermission().then(subscription => {
-          this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: { browserPushToken: subscription.type === 'success' ? subscription.token : undefined } })
-        }).catch(err => {
-          this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: {} });
-        });
-      } else {
-        this.server.dispatch().configGetAndUserBind({ projectId: this.server.getProjectId(), configGetAndUserBind: {} });
+        subscriptionResult = await WebNotification.getInstance().getPermission();
+      }
+
+      const configAndBindResult = await this.server.dispatch().configGetAndUserBind({
+        projectId: this.server.getProjectId(),
+        configGetAndUserBind: {
+          authToken: new URL(window.location.href).searchParams.get('authToken') || undefined,
+          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+            ? subscriptionResult.token : undefined,
+        },
+      });
+
+      if (configAndBindResult.user !== undefined) {
+        localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
+        localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
       }
     }
   }

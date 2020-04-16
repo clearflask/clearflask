@@ -24,6 +24,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -59,6 +60,10 @@ public interface UserStore {
     UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
+
+    String createToken(String projectId, String userId, Duration ttl);
+
+    Optional<UserModel> verifyToken(String token);
 
     default String genUserSessionId() {
         return IdUtil.randomAscId();
@@ -147,6 +152,9 @@ public interface UserStore {
         @ToString.Exclude
         private final String password;
 
+        /** All auth tokens will be invalid prior to this date */
+        private final Instant authTokenValidityStart;
+
         @NonNull
         private final boolean emailNotify;
 
@@ -175,7 +183,8 @@ public interface UserStore {
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
-                    !Strings.isNullOrEmpty(this.getBrowserPushToken()));
+                    !Strings.isNullOrEmpty(this.getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(this.getPassword()));
         }
 
         public UserMeWithBalance toUserMeWithBalance() {
@@ -187,6 +196,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(this.getPassword()),
                     this.getBalance());
         }
 
@@ -199,6 +209,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
+                    !Strings.isNullOrEmpty(this.getPassword()),
                     this.getBalance(),
                     this.getCreated());
         }

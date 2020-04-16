@@ -2,14 +2,21 @@ components:
   schemas:
     UserLogin:
       type: object
+      required:
+        - email
+        - password
       properties:
         email:
           type: string
         password:
           type: string
+    ForgotPassword:
+      type: object
       required:
         - email
-        - password
+      properties:
+        email:
+          type: string
     UserSearchAdmin:
       type: object
       properties:
@@ -49,6 +56,7 @@ components:
             - androidPush
             - browserPush
             - emailNotify
+            - hasPassword
           properties:
             email:
               type: string
@@ -59,6 +67,8 @@ components:
             androidPush:
               type: boolean
             browserPush:
+              type: boolean
+            hasPassword:
               type: boolean
     UserMeWithBalance:
       allOf:
@@ -139,6 +149,45 @@ components:
         transactionCreate:
           $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
 
+/project/{projectId}/forgot:
+  post:
+    operationId: forgotPassword
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/ForgotPassword'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/project/{projectId}/bind:
+  post:
+    operationId: userBind
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: UserBindResponse
+              type: object
+              properties:
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/login:
   post:
     operationId: userLogin

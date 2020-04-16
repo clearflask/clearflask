@@ -12,7 +12,8 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  delimiter?: React.ReactNode;
+  delimiter?: React.ReactNode | string;
+  delimiterLast?: React.ReactNode | string;
 }
 
 class Delimited extends Component<Props & WithStyles<typeof styles, true>> {
@@ -21,11 +22,14 @@ class Delimited extends Component<Props & WithStyles<typeof styles, true>> {
     if (!Array.isArray(this.props.children)) {
       return this.props.children || null;
     }
-    const delimiter = this.props.delimiter || (
+    var delimiter: React.ReactNode = this.props.delimiter || (
       <div className={this.props.classes.separator} />
     );
     const result: React.ReactNode[] = [];
     for (let i = 0; i < this.props.children.length; i++) {
+      if (i === this.props.children.length - 1 && this.props.delimiterLast !== undefined) {
+        delimiter = this.props.delimiterLast;
+      }
       const el = this.props.children[i];
       if (!el) continue;
       if (i > 0) result.push(<span key={i}>{delimiter}</span>);

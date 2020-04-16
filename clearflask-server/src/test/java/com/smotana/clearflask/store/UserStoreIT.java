@@ -19,13 +19,18 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.StringableSecretKey;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
+import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -51,7 +56,10 @@ public class UserStoreIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
+                StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
+                log.trace("Using generated priv key: {}", privKey);
                 install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
+                    om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
             }
@@ -66,6 +74,7 @@ public class UserStoreIT extends AbstractIT {
                 "john",
                 "john.doe@example.com",
                 "password",
+                null,
                 true,
                 1L,
                 "myIosPushToken",
@@ -100,7 +109,7 @@ public class UserStoreIT extends AbstractIT {
                 .androidPushToken("myAndroidPushToken2")
                 .browserPushToken("myBrowserPushToken2")
                 .build();
-        store.updateUser(user.getProjectId(), user.getUserId(), UserUpdate.builder()
+        UserStore.UserAndIndexingFuture<UpdateResponse> updateResult = store.updateUser(user.getProjectId(), user.getUserId(), UserUpdate.builder()
                 .name(userUpdated.getName())
                 .email(userUpdated.getEmail())
                 .password(userUpdated.getPassword())
@@ -108,7 +117,9 @@ public class UserStoreIT extends AbstractIT {
                 .iosPushToken(userUpdated.getIosPushToken())
                 .androidPushToken(userUpdated.getAndroidPushToken())
                 .browserPushToken(userUpdated.getBrowserPushToken())
-                .build()).getIndexingFuture().get();
+                .build());
+        updateResult.getIndexingFuture().get();
+        userUpdated = userUpdated.toBuilder().authTokenValidityStart(updateResult.getUser().getAuthTokenValidityStart()).build();
         assertEquals(userUpdated, store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).get());
 
         store.deleteUsers(userUpdated.getProjectId(), ImmutableList.of(userUpdated.getUserId())).get();
@@ -124,6 +135,7 @@ public class UserStoreIT extends AbstractIT {
                 "john",
                 "john.doe@example.com",
                 "password",
+                null,
                 true,
                 1L,
                 "myIosPushToken1",
@@ -139,6 +151,7 @@ public class UserStoreIT extends AbstractIT {
                 "matt",
                 "matt@example.com",
                 "jilasjdklad",
+                null,
                 true,
                 1L,
                 "myIosPushToken2",
@@ -154,6 +167,7 @@ public class UserStoreIT extends AbstractIT {
                 "Bobby",
                 "bobby@example.com",
                 "fawferfva",
+                null,
                 true,
                 1L,
                 "myIosPushToken3",
@@ -199,6 +213,38 @@ public class UserStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 5_000L)
+    public void testUserToken() throws Exception {
+        UserModel user = new UserModel(
+                IdUtil.randomId(),
+                store.genUserId(),
+                "john",
+                "john.doe@example.com",
+                "password",
+                null,
+                true,
+                1L,
+                "myIosPushToken",
+                "myAndroidPushToken",
+                "myBrowserPushToken",
+                Instant.now(),
+                null,
+                null,
+                null);
+
+        store.createIndex(user.getProjectId()).get();
+        store.createUser(user).getIndexingFuture().get();
+
+        String token = store.createToken(user.getProjectId(), user.getUserId(), Duration.ofDays(1));
+
+        assertEquals(Optional.of(user), store.verifyToken(token));
+
+        store.updateUser(user.getProjectId(), user.getUserId(), UserUpdate.builder()
+                .password("newPassword").build());
+
+        assertEquals(Optional.empty(), store.verifyToken(token));
+    }
+
+    @Test(timeout = 5_000L)
     public void testUserSession() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
@@ -206,6 +252,7 @@ public class UserStoreIT extends AbstractIT {
                 "john",
                 "john.doe@example.com",
                 "password",
+                null,
                 true,
                 1L,
                 "myIosPushToken",

@@ -21,8 +21,11 @@ import ThumbsUpDownIcon from '@material-ui/icons/ThumbsUpDown';
 import BrowserIcon from '@material-ui/icons/Web';
 import React, { Component } from 'react';
 import DividerCorner from '../app/utils/DividerCorner';
+import Demo from './landing/Demo';
 import Feature from './landing/Feature';
 import Hero from './landing/Hero';
+import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import OnboardingDemo from './landing/OnboardingDemo';
 
 export const featuresTitle = 'Wide selection of features to fit your needs';
 export const featuresDescription = '';
@@ -83,12 +86,24 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             </Grid>
           </DividerCorner>
         </Container>
+        {this.renderOnboarding()}
       </div>
     );
   }
 
-  renderFeature() {
-    return
+  onboardingDemoRef: React.RefObject<any> = React.createRef();
+  renderOnboarding(mirror?: boolean) {
+    return (
+      <Demo
+        mirror={mirror}
+        title='Notify users when their wishes are fulfilled'
+        description='It is important to keep a communication channel from users leaving feedback. To minimize friction, users can choose between browser push notifications, mobile push or standard email.'
+        initialSubPath='/embed/demo'
+        template={templater => setInitSignupMethodsTemplate(templater)}
+        controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+        demo={project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />)}
+      />
+    );
   }
 }
 

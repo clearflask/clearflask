@@ -62,7 +62,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
   render() {
     return (
       <div>
-        <Typography variant='caption' display='block'>Platform</Typography>
+        {/* <Typography variant='caption' display='block'>Platform</Typography>
         <ToggleButtonGroup
           {...{ size: 'small' }}
           value={this.state.device}
@@ -87,7 +87,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
         >
           <ToggleButton value='desktop'>Desktop</ToggleButton>
           <ToggleButton value='mobile'>Mobile</ToggleButton>
-        </ToggleButtonGroup>
+        </ToggleButtonGroup> */}
         <Typography variant='caption' display='block'>Signup methods</Typography>
         <ToggleButtonGroup
           size='small'
@@ -99,9 +99,9 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
             setSignupMethodsTemplate(this.props.templater, signupMethods);
           }}
         >
-          <ToggleButton
+          {/* <ToggleButton
             disabled={this.state.device === Device.Desktop}
-            value={SignupMethods.Mobile}>Mobile</ToggleButton>
+            value={SignupMethods.Mobile}>Mobile</ToggleButton> */}
           <ToggleButton
             disabled={this.state.device === Device.Mobile}
             value={SignupMethods.Web}>Web</ToggleButton>

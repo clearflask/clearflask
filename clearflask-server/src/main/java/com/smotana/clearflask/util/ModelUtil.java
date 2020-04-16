@@ -56,7 +56,8 @@ public class ModelUtil {
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
                                 new NotificationMethods(new AnonymousSignup(true), true, false, null))),
-                new Legal(null)
+                new Legal(null),
+                null
         ), createConfigVersion());
     }
 

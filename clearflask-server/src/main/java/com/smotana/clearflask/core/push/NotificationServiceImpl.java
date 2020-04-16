@@ -18,6 +18,7 @@ import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
@@ -59,6 +60,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
         @DefaultValue("P90D")
         Duration notificationExpiry();
+
+        @DefaultValue("P7D")
+        Duration autoLoginExpiry();
     }
 
     @Inject
@@ -77,6 +81,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnCommentReply onCommentReply;
     @Inject
     private OnStatusOrResponseChange onStatusOrResponseChange;
+    @Inject
+    private OnForgotPassword onForgotPassword;
 
     private ListeningExecutorService executor;
 
@@ -147,21 +153,27 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 } catch (Exception ex) {
                     log.warn("Failed to send in-app notification", ex);
                 }
+                Optional<String> authTokenOpt = Optional.empty();
                 try {
                     if (user.isEmailNotify() && !Strings.isNullOrEmpty(user.getEmail())) {
+                        if (!authTokenOpt.isPresent()) {
+                            authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                        }
                         emailService.send(onStatusOrResponseChange.email(
                                 user, idea, configAdmin, subscriptionAction,
-                                link, changedStatus, changedResponse));
+                                link, changedStatus, changedResponse, authTokenOpt.get()));
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to send email notification", ex);
                 }
                 try {
                     if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
+                        if (!authTokenOpt.isPresent()) {
+                            authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                        }
                         browserPushService.send(onStatusOrResponseChange.browserPush(
                                 user, idea, configAdmin, subscriptionAction,
-                                link, changedStatus, changedResponse
-                        ));
+                                link, changedStatus, changedResponse, authTokenOpt.get()));
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to send browser push notification", ex);
@@ -203,19 +215,46 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             } catch (Exception ex) {
                 log.warn("Failed to send in-app notification", ex);
             }
+            Optional<String> authTokenOpt = Optional.empty();
             try {
                 if (user.isEmailNotify() && !Strings.isNullOrEmpty(user.getEmail())) {
-                    emailService.send(onCommentReply.email(user, userAuthorType, sender, idea, comment, configAdmin, link));
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                    }
+                    emailService.send(onCommentReply.email(user, userAuthorType, sender, idea, comment, configAdmin, link, authTokenOpt.get()));
                 }
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }
             try {
                 if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
-                    browserPushService.send(onCommentReply.browserPush(user, userAuthorType, sender, idea, comment, link));
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                    }
+                    browserPushService.send(onCommentReply.browserPush(user, userAuthorType, sender, idea, comment, link, authTokenOpt.get()));
                 }
             } catch (Exception ex) {
                 log.warn("Failed to send browser push notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onForgotPassword(ConfigAdmin configAdmin, UserModel user) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configAdmin.getSlug() + ".clearflask.com/account";
+            checkState(!Strings.isNullOrEmpty(user.getEmail()));
+
+            String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());
+
+            try {
+                emailService.send(onForgotPassword.email(configAdmin, user, link, authToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
             }
         });
     }

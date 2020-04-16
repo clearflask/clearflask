@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography } from '@material-ui/core';
+import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -17,7 +17,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   item: {
-    margin: theme.spacing(4),
+    margin: theme.spacing(2),
   },
 });
 
@@ -57,13 +57,19 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                id='displayName'
-                value={this.state.displayName === undefined
-                  ? (this.props.userMe.name || '')
-                  : (this.state.displayName || '')}
-                onChange={e => this.setState({ displayName: e.target.value })}
-              />
+              <Badge
+                color='secondary'
+                invisible={!!this.props.userMe.name}
+                variant='dot'
+              >
+                <TextField
+                  id='displayName'
+                  value={this.state.displayName === undefined
+                    ? (this.props.userMe.name || '')
+                    : (this.state.displayName || '')}
+                  onChange={e => this.setState({ displayName: e.target.value })}
+                />
+              </Badge>
               <Button aria-label="Save" color='primary' style={{
                 visibility:
                   !this.state.displayName
@@ -86,13 +92,19 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                id='email'
-                value={this.state.email === undefined
-                  ? (this.props.userMe.email || '')
-                  : (this.state.email || '')}
-                onChange={e => this.setState({ email: e.target.value })}
-              />
+              <Badge
+                color='secondary'
+                invisible={!!this.props.userMe.email}
+                variant='dot'
+              >
+                <TextField
+                  id='email'
+                  value={this.state.email === undefined
+                    ? (this.props.userMe.email || '')
+                    : (this.state.email || '')}
+                  onChange={e => this.setState({ email: e.target.value })}
+                />
+              </Badge>
               <Button aria-label="Save" color='primary' style={{
                 visibility:
                   !this.state.email
@@ -115,15 +127,21 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                id='password'
-                value={this.state.password === undefined
-                  ? ('')
-                  : (this.state.password)}
-                onChange={e => this.setState({ password: e.target.value })}
-                type={this.state.revealPassword ? 'text' : 'password'}
-                disabled={!this.state.email && !this.props.userMe.email}
-              />
+              <Badge
+                color='secondary'
+                invisible={!!this.props.userMe.hasPassword || (!this.state.email && !this.props.userMe.email)}
+                variant='dot'
+              >
+                <TextField
+                  id='password'
+                  value={this.state.password === undefined
+                    ? ('')
+                    : (this.state.password)}
+                  onChange={e => this.setState({ password: e.target.value })}
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  disabled={!this.state.email && !this.props.userMe.email}
+                />
+              </Badge>
               <IconButton
                 aria-label='Toggle password visibility'
                 onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
@@ -181,7 +199,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Grid>
           </Grid>
         </DividerCorner>
-        <DividerCorner title='Notification destinations'>
+        <DividerCorner title='Notifications'>
           {browserPushControl && (
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>

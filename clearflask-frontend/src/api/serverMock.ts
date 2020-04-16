@@ -370,8 +370,21 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
     return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
   }
+  userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    return this.returnLater({
+      user: loggedInUser,
+    });
+  }
+  forgotPassword(request: Client.ForgotPasswordRequest): Promise<void> {
+    return this.returnLater();
+  }
   userLogin(request: Client.UserLoginRequest): Promise<Client.UserMeWithBalance> {
-    throw new Error("Method not implemented.");
+    const user = this.getProject(request.projectId).users.find(user => user.email === request.userLogin.email);
+    if (!user) return this.throwLater(404, 'Incorrect email or password');
+    if (!request.userLogin.password) this.throwLater(403, '');
+    if (user['password'] !== request.userLogin.password) this.throwLater(403, 'Incorrect email or password');
+    return this.returnLater(user);
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
@@ -405,7 +418,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.userUpdate.name !== undefined) user.name = request.userUpdate.name;
     if (request.userUpdate.email !== undefined) user.email = request.userUpdate.email === '' ? undefined : request.userUpdate.email;
     if (request.userUpdate.emailNotify !== undefined) user.emailNotify = request.userUpdate.emailNotify;
-    if (request.userUpdate.password !== undefined) user.password = request.userUpdate.password === '' ? undefined : request.userUpdate.password;
+    if (request.userUpdate.password !== undefined) {
+      user.password = request.userUpdate.password;
+      user.hasPassword = true;
+    }
     if (request.userUpdate.iosPushToken !== undefined) {
       user.iosPushToken = request.userUpdate.iosPushToken === '' ? undefined : request.userUpdate.iosPushToken;
       user.iosPush = request.userUpdate.iosPushToken !== '';
@@ -551,6 +567,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       iosPush: !!request.userCreateAdmin.iosPushToken,
       androidPush: !!request.userCreateAdmin.androidPushToken,
       browserPush: !!request.userCreateAdmin.browserPushToken,
+      hasPassword: !!request.userCreateAdmin.password,
       ...request.userCreateAdmin,
     };
     this.getProject(request.projectId).users.push(user);
@@ -587,7 +604,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.userUpdateAdmin.name !== undefined) user.name = request.userUpdateAdmin.name;
     if (request.userUpdateAdmin.email !== undefined) user.email = request.userUpdateAdmin.email === '' ? undefined : request.userUpdateAdmin.email;
     if (request.userUpdateAdmin.emailNotify !== undefined) user.emailNotify = request.userUpdateAdmin.emailNotify;
-    if (request.userUpdateAdmin.password !== undefined) user.password = request.userUpdateAdmin.password === '' ? undefined : request.userUpdateAdmin.password;
+    if (request.userUpdateAdmin.password !== undefined) {
+      user.password = request.userUpdateAdmin.password;
+      user.hasPassword = true;
+    }
     if (request.userUpdateAdmin.iosPush === false) {
       user.iosPushToken = undefined;
       user.iosPush = false;

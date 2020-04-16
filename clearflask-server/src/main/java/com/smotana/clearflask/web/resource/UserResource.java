@@ -9,8 +9,10 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
+import com.smotana.clearflask.api.model.ForgotPassword;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBindResponse;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserCreateAdmin;
 import com.smotana.clearflask.api.model.UserLogin;
@@ -21,8 +23,10 @@ import com.smotana.clearflask.api.model.UserSearchResponse;
 import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -73,6 +77,33 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private ProjectStore projectStore;
     @Inject
     private PasswordUtil passwordUtil;
+    @Inject
+    private NotificationService notificationService;
+
+    @PermitAll
+    @Limit(requiredPermits = 100, challengeAfter = 3)
+    @Override
+    public void forgotPassword(String projectId, ForgotPassword forgotPassword) {
+        Optional<Project> projectOpt = projectStore.getProject(projectId, true);
+        if (!projectOpt.isPresent()) return;
+        userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, forgotPassword.getEmail())
+                .ifPresent(user -> notificationService.onForgotPassword(
+                        projectOpt.get().getVersionedConfigAdmin().getConfig(),
+                        user));
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10)
+    @Override
+    public UserBindResponse userBind(String projectId) {
+        Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+
+        return new UserBindResponse(userOpt
+                .map(UserStore.UserModel::toUserMeWithBalance)
+                .orElse(null));
+    }
 
     @PermitAll
     @Limit(requiredPermits = 100)
@@ -89,6 +120,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreate.getName(),
                 userCreate.getEmail(),
                 passwordHashed.orElse(null),
+                null,
                 userCreate.getEmail() != null,
                 0L,
                 userCreate.getIosPushToken(),
@@ -124,6 +156,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
                 passwordHashed.orElse(null),
+                null,
                 userCreateAdmin.getEmail() != null,
                 userCreateAdmin.getBalance() == null ? 0 : userCreateAdmin.getBalance(),
                 userCreateAdmin.getIosPushToken(),
