@@ -33,6 +33,7 @@ import com.smotana.clearflask.store.VoteStore.VoteModel;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Base64Encoder;
 import nl.martijndwars.webpush.Utils;
@@ -80,6 +81,7 @@ public class NotificationServiceTest extends AbstractTest {
         bindMock(VoteStore.class);
         bindMock(UserStore.class);
 
+        install(Application.module());
         install(NotificationServiceImpl.module());
         install(EmailNotificationTemplate.module());
         install(OnCommentReply.module());

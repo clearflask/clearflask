@@ -25,6 +25,7 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.AuthCookieUtil;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +64,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private IdeaStore ideaStore;
     @Inject
     private CommentStore commentStore;
+    @Inject
+    private AuthCookieUtil authCookieUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -85,7 +88,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         projectId,
                         userOpt.get().getUserId(),
                         Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-                setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+                authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
             }
         }
 
@@ -103,7 +106,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                             projectId,
                             userOpt.get().getUserId(),
                             Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-                    setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+                    authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
                 }
             }
         }
@@ -178,10 +181,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = accountStore.getAccount(accountSession.getEmail()).get();
         Project project = projectStore.createProject(projectId, new VersionedConfigAdmin(configAdmin, "new"));
         commentStore.createIndex(projectId);
         userStore.createIndex(projectId);
         ideaStore.createIndex(projectId);
+        userStore.getOrCreateAccountOwner(projectId, account);
         accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }

@@ -50,6 +50,7 @@ import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -113,6 +114,9 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 @Slf4j
 @Singleton
 public class DynamoElasticUserStore implements UserStore {
+
+    /** A prefix for userId and sessionId indicating owner */
+    public static final String OWNER_USER_PREFIX = "o-";
 
     public interface Config {
         /** Intended for tests. Force immediate index refresh after write request. */
@@ -272,6 +276,30 @@ public class DynamoElasticUserStore implements UserStore {
                 ActionListeners.fromFuture(indexingFuture));
 
         return new UserAndIndexingFuture<>(user, indexingFuture);
+    }
+
+    @Override
+    public UserModel getOrCreateAccountOwner(String projectId, Account account) {
+        String userId = OWNER_USER_PREFIX + projectId;
+        return getUser(projectId, userId)
+                .orElseGet(() -> createUser(new UserModel(
+                        projectId,
+                        userId,
+                        true,
+                        account.getName(),
+                        null,
+                        null,
+                        Instant.MAX,
+                        false,
+                        0L,
+                        null,
+                        null,
+                        null,
+                        account.getCreated(),
+                        null,
+                        null,
+                        null))
+                        .getUser());
     }
 
     @Override
@@ -634,6 +662,19 @@ public class DynamoElasticUserStore implements UserStore {
         sessionByIdSchema.table().putItem(new PutItemSpec()
                 .withItem(sessionByIdSchema.toItem(userSession)));
         return userSession;
+    }
+
+    @Override
+    public UserSession getOrCreateAccountOwnerSession(String projectId, long accountSessionTtlInEpochSec) {
+        // Creates a session not-backed by database
+        // This is so the account and user sessions are tied together
+        // It would be weird if the acount signed out and the user would be signed in
+        // A lot of edge cases in any case.
+        return new UserSession(
+                OWNER_USER_PREFIX + projectId,
+                projectId,
+                OWNER_USER_PREFIX + projectId,
+                accountSessionTtlInEpochSec);
     }
 
     @Override

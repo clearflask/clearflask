@@ -1,5 +1,9 @@
 package com.smotana.clearflask.web;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +19,12 @@ import javax.ws.rs.ApplicationPath;
 @Slf4j
 @ApplicationPath("/")
 public class Application extends ResourceConfig {
+
+    public interface Config {
+        @DefaultValue("clearflask.com")
+        String domain();
+    }
+
     @Inject
     public Application(ServiceLocator serviceLocator) {
         super();
@@ -28,5 +38,14 @@ public class Application extends ResourceConfig {
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
         serviceLocator.getService(GuiceIntoHK2Bridge.class)
                 .bridgeGuiceInjector(ServiceInjector.INSTANCE.get());
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                install(ConfigSystem.configModule(Config.class));
+            }
+        };
     }
 }

@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
@@ -47,15 +48,17 @@ public class SupportResource extends AbstractResource implements SupportApi {
     private static final String CONTACT_FIELD = "contact";
 
     public interface Config {
-        @DefaultValue("support@clearflask.com")
-        String supportEmail();
+        @DefaultValue("support")
+        String supportEmailLocalPart();
 
-        @DefaultValue("no-reply@clearflask.com")
-        String fromEmail();
+        @DefaultValue("noreply")
+        String fromEmailLocalPart();
     }
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private AmazonSimpleEmailServiceV2 ses;
     @Inject
@@ -72,8 +75,8 @@ public class SupportResource extends AbstractResource implements SupportApi {
             generateReplyTo(supportMessage).ifPresent(sendEmailRequest::withReplyToAddresses);
             ses.sendEmail(sendEmailRequest
                     .withDestination(new Destination()
-                            .withToAddresses(config.supportEmail()))
-                    .withFromEmailAddress(config.fromEmail())
+                            .withToAddresses(config.supportEmailLocalPart() + "@" + configApp.domain()))
+                    .withFromEmailAddress(config.fromEmailLocalPart() + "@" + configApp.domain())
                     .withReplyToAddresses()
                     .withEmailTags(new MessageTag().withName("supportType").withValue(supportMessage.getContent().getOrDefault(TYPE_FIELD, "unknown")))
                     .withContent(new EmailContent().withSimple(new Message()

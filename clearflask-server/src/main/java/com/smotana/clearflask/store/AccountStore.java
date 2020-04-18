@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
@@ -79,6 +80,9 @@ public interface AccountStore {
 
         @NonNull
         private final String planId;
+
+        @NonNull
+        private final Instant created;
 
         @NonNull
         private final String name;

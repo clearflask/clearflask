@@ -93,9 +93,10 @@ export default class ServerAdmin {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
   }
 
-  isAdminLoggedIn(): boolean {
-    return this.store.getState().account.account.status === Status.FULFILLED
-      && !!this.store.getState().account.account.account;
+  isAccountLoggedIn(): boolean {
+    const state = this.store.getState();
+    return state.account.account.status === Status.FULFILLED
+      && !!state.account.account.account;
   }
 
   static async _dispatch(msg: any, store: Store, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
@@ -129,7 +130,7 @@ export default class ServerAdmin {
         var action = msg && msg.meta && msg.meta.action || 'unknown action';
         if (errorMsg && isUserFacing) {
         } else if (response.status && response.status === 403) {
-          errorMsg = `You are not allowed to do this`;
+          errorMsg = `Action not allowed, please refresh and try again`;
           isUserFacing = true;
         } else if (response.status && response.status === 501) {
           errorMsg = `This feature is not yet available`;

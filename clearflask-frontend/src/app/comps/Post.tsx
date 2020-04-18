@@ -17,7 +17,6 @@ import TimeAgo from 'react-timeago';
 import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import notEmpty from '../../common/util/arrayUtil';
@@ -553,7 +552,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.category
       || !this.props.credits
-      || (!ServerAdmin.get().isAdminLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
+      || (!this.props.server.isOwnerLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
 
     return (
       <React.Fragment>

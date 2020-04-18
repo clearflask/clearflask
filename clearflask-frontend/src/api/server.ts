@@ -93,6 +93,13 @@ export class Server {
     return this.store;
   }
 
+  isOwnerLoggedIn(): boolean {
+    const state = this.store.getState();
+    return state.users.loggedIn.status === Status.FULFILLED
+      && !!state.users.loggedIn.user
+      && ServerAdmin.get().isAccountLoggedIn();
+  }
+
   dispatch(): Client.Dispatcher {
     return this.dispatcherClient;
   }

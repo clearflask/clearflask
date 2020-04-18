@@ -13,6 +13,7 @@ import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -47,6 +48,8 @@ public class OnCommentReply {
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private EmailNotificationTemplate emailNotificationTemplate;
 
@@ -99,7 +102,7 @@ public class OnCommentReply {
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account?authToken=" + authToken;
+        String unsubscribeLink = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 

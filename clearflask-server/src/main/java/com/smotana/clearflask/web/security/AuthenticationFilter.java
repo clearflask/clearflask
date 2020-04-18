@@ -14,9 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
@@ -28,6 +30,10 @@ import java.util.Optional;
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
+    @Inject
+    private UserResource.Config configUserResource;
+    @Context
+    protected HttpServletResponse response;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -45,20 +51,20 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<AccountSession> accountSession = authenticateAccount(requestContext);
-        Optional<UserSession> userSession = authenticateUser(requestContext);
+        Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext);
+        Optional<UserSession> userSessionOpt = authenticateUser(accountSessionOpt, requestContext);
 
-        if (!accountSession.isPresent() && !userSession.isPresent()) {
+        if (!accountSessionOpt.isPresent() && !userSessionOpt.isPresent()) {
             return ExtendedSecurityContext.notAuthenticated(requestContext);
         }
 
         log.trace("Setting authenticated security context, email {} user id {}",
-                accountSession.map(AccountSession::getEmail),
-                userSession.map(UserSession::getUserId));
+                accountSessionOpt.map(AccountSession::getEmail),
+                userSessionOpt.map(UserSession::getUserId));
         return ExtendedSecurityContext.authenticated(
-                accountSession,
-                userSession,
-                role -> hasRole(role, accountSession, userSession, requestContext),
+                accountSessionOpt,
+                userSessionOpt,
+                role -> hasRole(role, accountSessionOpt, userSessionOpt, requestContext),
                 requestContext);
     }
 
@@ -75,9 +81,21 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return accountStore.getSession(cookie.getValue());
     }
 
-    private Optional<UserSession> authenticateUser(ContainerRequestContext requestContext) {
+    private Optional<UserSession> authenticateUser(Optional<AccountSession> accountSessionOpt, ContainerRequestContext requestContext) {
         Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME);
         if (cookie == null) {
+            if (accountSessionOpt.isPresent()) {
+                Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
+                if (pathParamProjectIdOpt.isPresent()) {
+                    Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountSessionOpt.get().getEmail());
+                    if (accountOpt.isPresent() && accountOpt.get().getProjectIds().contains(pathParamProjectIdOpt.get())) {
+                        UserSession session = userStore.getOrCreateAccountOwnerSession(
+                                pathParamProjectIdOpt.get(),
+                                accountSessionOpt.get().getTtlInEpochSec());
+                        return Optional.of(session);
+                    }
+                }
+            }
             return Optional.empty();
         }
 

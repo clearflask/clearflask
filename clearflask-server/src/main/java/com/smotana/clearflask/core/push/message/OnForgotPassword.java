@@ -11,6 +11,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -29,6 +30,8 @@ public class OnForgotPassword {
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private UserStore userStore;
     @Inject
@@ -54,7 +57,7 @@ public class OnForgotPassword {
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + ".clearflask.com/account?authToken=" + authToken;
+        String unsubscribeLink = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account?authToken=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 

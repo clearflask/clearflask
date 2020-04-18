@@ -21,7 +21,9 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.AuthCookieUtil;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +56,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private Config config;
     @Inject
+    private Application.Config configApp;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private PlanStore planStore;
@@ -61,6 +65,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private LegalStore legalStore;
     @Inject
     private PasswordUtil passwordUtil;
+    @Inject
+    private AuthCookieUtil authCookieUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -78,7 +84,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession,
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+            authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
         }
 
         // Fetch account
@@ -87,7 +93,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.info("Account bind on valid session to non-existent account, revoking all sessions for email {}",
                     accountSession.getEmail());
             accountStore.revokeSessions(accountSession.getEmail());
-            unsetAuthCookie(ACCOUNT_AUTH_COOKIE_NAME);
+            authCookieUtil.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
             return new AccountBindAdminResponse(null);
         }
         Account account = accountOpt.get();
@@ -116,7 +122,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
 
         return account.toAccountAdmin(planStore);
     }
@@ -135,7 +141,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         log.debug("Logout session for email {}", accountSession.getEmail());
         accountStore.revokeSession(accountSession);
 
-        unsetAuthCookie(ACCOUNT_AUTH_COOKIE_NAME);
+        authCookieUtil.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
     }
 
     @PermitAll
@@ -154,6 +160,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = new Account(
                 signup.getEmail(),
                 plan.getPlanid(),
+                Instant.now(),
                 signup.getName(),
                 passwordHashed,
                 signup.getPhone(),
@@ -164,7 +171,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
 
         // TODO setup recurring billing
         // TODO for now, the only way to signup is if you guess the payment token to be "letmein"

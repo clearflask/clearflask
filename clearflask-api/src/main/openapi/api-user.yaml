@@ -58,6 +58,8 @@ components:
             - emailNotify
             - hasPassword
           properties:
+            isAccountOwner:
+              type: boolean
             email:
               type: string
             emailNotify:

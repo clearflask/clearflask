@@ -70,6 +70,11 @@ public class ServerSecretTest extends AbstractTest {
 
     @Test(timeout = 5_000L)
     public void test() throws Exception {
+        log.info("KEY: {}", getRandomSharedKey());
+        log.info("KEY: {}", getRandomSharedKey());
+        log.info("KEY: {}", getRandomSharedKey());
+        log.info("KEY: {}", getRandomSharedKey());
+        log.info("KEY: {}", getRandomSharedKey());
         String cipherTextOne = serverSecretOne.encryptString(expected);
         String cipherTextTwo = serverSecretTwo.encryptString(expected);
         String actualOne = serverSecretOne.decryptString(cipherTextOne);

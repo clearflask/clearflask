@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ex
+
+rsync -P ./clearflask-server/target/clearflask-server-0.1.war ec2-23-20-222-8.compute-1.amazonaws.com:~
+
+ssh ec2-23-20-222-8.compute-1.amazonaws.com "sudo service tomcat stop && cp -n /home/ec2-user/clearflask-server-0.1.war /home/ec2-user/tomcat/webapps/ROOT.war && sudo service tomcat restart"
+
+

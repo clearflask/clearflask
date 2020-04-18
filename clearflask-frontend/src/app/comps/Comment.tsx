@@ -4,7 +4,6 @@ import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
@@ -119,7 +118,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   renderAdminDelete() {
     if (!this.props.comment
       || !this.props.comment.author
-      || !ServerAdmin.get().isAdminLoggedIn()
+      || !this.props.server.isOwnerLoggedIn()
       // Only show admin delete if the regular edit is not shown as it already contains a delete
       || (this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 

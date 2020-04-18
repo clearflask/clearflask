@@ -27,6 +27,7 @@ import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
@@ -40,8 +41,8 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue("true")
         boolean enabled();
 
-        @DefaultValue("noreply@clearflask.com")
-        String fromEmail();
+        @DefaultValue("noreply")
+        String fromEmailLocalPart();
 
         @DefaultValue("0.1")
         double rateLimitPerSecond();
@@ -56,6 +57,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private AmazonSimpleEmailServiceV2 ses;
     @Inject
@@ -97,7 +100,7 @@ public class EmailServiceImpl implements EmailService {
             result = ses.sendEmail(new SendEmailRequest()
                     .withDestination(new Destination()
                             .withToAddresses(email.getToAddress()))
-                    .withFromEmailAddress(config.fromEmail())
+                    .withFromEmailAddress(config.fromEmailLocalPart() + "@" + configApp.domain())
                     .withEmailTags(new MessageTag().withName("projectId").withValue(email.getProjectId()),
                             new MessageTag().withName("type").withValue(email.getTypeTag()))
                     .withContent(new EmailContent().withSimple(new Message()

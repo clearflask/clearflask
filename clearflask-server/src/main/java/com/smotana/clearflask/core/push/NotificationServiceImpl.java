@@ -30,6 +30,7 @@ import com.smotana.clearflask.store.NotificationStore.NotificationModel;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.web.Application;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -67,6 +68,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
     @Inject
     private Config config;
+    @Inject
+    private Application.Config configApp;
     @Inject
     private EmailService emailService;
     @Inject
@@ -135,7 +138,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 changedResponse = Optional.empty();
             }
 
-            String link = "https://" + configAdmin.getSlug() + ".clearflask.com/post/" + idea.getIdeaId();
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId();
 
             BiConsumer<SubscriptionAction, UserModel> sendToUser = (subscriptionAction, user) -> {
                 try {
@@ -193,7 +196,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + ".clearflask.com/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
 
             UserModel user = userStore.getUser(idea.getProjectId(), parentCommentOpt.isPresent()
                     ? parentCommentOpt.get().getAuthorUserId()
@@ -246,7 +249,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configAdmin.getSlug() + ".clearflask.com/account";
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
             checkState(!Strings.isNullOrEmpty(user.getEmail()));
 
             String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());

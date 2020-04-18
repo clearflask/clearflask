@@ -34,6 +34,7 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
+import com.smotana.clearflask.web.security.AuthCookieUtil;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +80,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private PasswordUtil passwordUtil;
     @Inject
     private NotificationService notificationService;
+    @Inject
+    private AuthCookieUtil authCookieUtil;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -117,6 +120,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserModel user = new UserModel(
                 projectId,
                 userId,
+                null,
                 userCreate.getName(),
                 userCreate.getEmail(),
                 passwordHashed.orElse(null),
@@ -136,7 +140,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -153,6 +157,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserModel user = new UserModel(
                 projectId,
                 userId,
+                null,
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
                 passwordHashed.orElse(null),
@@ -232,7 +237,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        setAuthCookie(USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -251,7 +256,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);
 
-        unsetAuthCookie(USER_AUTH_COOKIE_NAME);
+        authCookieUtil.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
     }
 
     @PermitAll

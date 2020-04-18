@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -40,6 +41,8 @@ public interface UserStore {
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);
 
     UserAndIndexingFuture<IndexResponse> createUser(UserModel user);
+
+    UserModel getOrCreateAccountOwner(String projectId, Account account);
 
     Optional<UserModel> getUser(String projectId, String userId);
 
@@ -70,6 +73,8 @@ public interface UserStore {
     }
 
     UserSession createSession(String projectId, String userId, long ttlInEpochSec);
+
+    UserSession getOrCreateAccountOwnerSession(String projectId, long accountSessionTtlInEpochSec);
 
     Optional<UserSession> getSession(String sessionId);
 
@@ -145,6 +150,8 @@ public interface UserStore {
         @NonNull
         private final String userId;
 
+        private final Boolean isAccountOwner;
+
         private final String name;
 
         private final String email;
@@ -167,6 +174,7 @@ public interface UserStore {
 
         private final String browserPushToken;
 
+        @NonNull
         private final Instant created;
 
         private final byte[] expressBloom;
@@ -179,6 +187,7 @@ public interface UserStore {
             return new UserMe(
                     this.getUserId(),
                     this.getName(),
+                    this.getIsAccountOwner(),
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
@@ -191,6 +200,7 @@ public interface UserStore {
             return new UserMeWithBalance(
                     this.getUserId(),
                     this.getName(),
+                    this.getIsAccountOwner(),
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
@@ -204,6 +214,7 @@ public interface UserStore {
             return new UserAdmin(
                     this.getUserId(),
                     this.getName(),
+                    this.getIsAccountOwner(),
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),

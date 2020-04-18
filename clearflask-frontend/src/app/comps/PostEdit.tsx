@@ -3,7 +3,6 @@ import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import CreditView from '../../common/config/CreditView';
 import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
@@ -41,7 +40,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
   state: State = {};
 
   render() {
-    const isAdminLoggedIn = ServerAdmin.get().isAdminLoggedIn();
+    const isOwnerLoggedIn = this.props.server.isOwnerLoggedIn();
     const fundGoalHasError = this.state.fundGoal !== undefined && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
     const canSubmit = (
       this.state.tagIdsHasError !== true
@@ -60,7 +59,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     const nextStatusValues: Label[] = [];
     const nextStatusOptions: Label[] = [];
     const nextStatusColorLookup: ColorLookup = {};
-    if (isAdminLoggedIn) {
+    if (isOwnerLoggedIn) {
       const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
       const nextStatusIds: Set<string> | undefined = new Set(status?.nextStatusIds);
       if (nextStatusIds && nextStatusIds.size > 0) {
@@ -90,7 +89,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <DialogTitle>Edit post</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
-              {isAdminLoggedIn && (
+              {isOwnerLoggedIn && (
                 <React.Fragment>
                   {(nextStatusOptions && nextStatusOptions.length > 0) && (
                     <Grid item xs={12} className={this.props.classes.row}>
@@ -164,7 +163,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   rowsMax={15}
                 />
               </Grid>
-              {isAdminLoggedIn && (
+              {isOwnerLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
                     <TextField
@@ -207,7 +206,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             >Delete</Button>
             <Button color='primary' disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
               this.setState({ isSubmitting: true });
-              (isAdminLoggedIn
+              (isOwnerLoggedIn
                 ? this.props.server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
@@ -261,7 +260,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
-                (isAdminLoggedIn
+                (isOwnerLoggedIn
                   ? this.props.server.dispatchAdmin().then(d => d.ideaDeleteAdmin({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,

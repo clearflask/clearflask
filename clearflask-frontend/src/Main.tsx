@@ -117,7 +117,9 @@ class Main extends Component {
         break;
       case Environment.DEVELOPMENT_FRONTEND:
       case Environment.DEVELOPMENT_LOCAL:
-        if (hostSplit.length === 2) {
+        if (hostSplit.length === 2 && hostSplit[1] === 'localhost') {
+          subdomain = hostSplit[0];
+        } else if (hostSplit.length === 3) {
           subdomain = hostSplit[0];
         }
         break;

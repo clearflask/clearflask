@@ -20,6 +20,7 @@ import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 
 import javax.inject.Singleton;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Comparator;
 
@@ -70,6 +71,7 @@ public class DemoData extends ManagedService {
         AccountStore.Account account = new AccountStore.Account(
                 email,
                 plan.getPlanid(),
+                Instant.now(),
                 "Matus Faro",
                 password,
                 "12345678",
@@ -81,6 +83,7 @@ public class DemoData extends ManagedService {
         commentStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
         userStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
         ideaStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
+        userStore.getOrCreateAccountOwner(versionedConfigAdmin.getConfig().getProjectId(), account);
         accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }
 

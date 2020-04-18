@@ -49,6 +49,7 @@ import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
@@ -171,6 +172,7 @@ public enum ServiceInjector {
                 bind(Duration.class).annotatedWith(Names.named(FileDynamicConfigSource.POLL_INTERVAL_NAME)).toInstance(Duration.ofSeconds(10));
 
                 // API endpoints
+                install(Application.module());
                 bind(HealthResource.class);
                 install(UserResource.module());
                 install(AccountResource.module());

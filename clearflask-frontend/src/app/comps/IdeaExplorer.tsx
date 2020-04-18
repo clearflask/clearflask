@@ -7,7 +7,6 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
 import debounce from '../../common/util/debounce';
 import UserSelection from '../../site/dashboard/UserSelection';
 import ExplorerTemplate from './ExplorerTemplate';
@@ -250,7 +249,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     var categoryOptions = (this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
       ? this.props.config.content.categories.filter(c => this.props.explorer.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories;
-    if (!ServerAdmin.get().isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
+    if (!this.props.server.isOwnerLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
     if (this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
       this.setState({ newItemChosenCategoryId: categoryOptions[0].categoryId })
     }
@@ -273,7 +272,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           rows={1}
           rowsMax={5}
         />
-        {ServerAdmin.get().isAdminLoggedIn() && (
+        {this.props.server.isOwnerLoggedIn() && (
           <UserSelection
             server={this.props.server}
             className={this.props.classes.createFormField}
