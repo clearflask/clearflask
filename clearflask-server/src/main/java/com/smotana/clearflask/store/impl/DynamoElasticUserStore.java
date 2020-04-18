@@ -543,7 +543,7 @@ public class DynamoElasticUserStore implements UserStore {
             userUpdatedBuilder.authTokenValidityStart(authTokenValidityStart);
         }
 
-        String updateExpression = "SET " + String.join(", ", setUpdates)
+        String updateExpression = (setUpdates.isEmpty() ? "" : "SET " + String.join(", ", setUpdates))
                 + (removeUpdates.isEmpty() ? "" : " REMOVE " + String.join(", ", removeUpdates));
         nameMap.put("#partitionKey", userSchema.partitionKeyName());
         log.info("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
