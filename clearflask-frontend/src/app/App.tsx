@@ -64,14 +64,23 @@ class App extends Component<Props> {
         subscriptionResult = await WebNotification.getInstance().getPermission();
       }
 
-      const configAndBindResult = await this.server.dispatch().configGetAndUserBind({
-        projectId: this.server.getProjectId(),
-        configGetAndUserBind: {
-          authToken: new URL(window.location.href).searchParams.get('authToken') || undefined,
-          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-            ? subscriptionResult.token : undefined,
-        },
-      });
+      var configAndBindResult;
+      try {
+        configAndBindResult = await this.server.dispatch().configGetAndUserBind({
+          projectId: this.server.getProjectId(),
+          configGetAndUserBind: {
+            authToken: new URL(window.location.href).searchParams.get('authToken') || undefined,
+            browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
+              ? subscriptionResult.token : undefined,
+          },
+        });
+      } catch (err) {
+        if (err.status === 404) {
+          // If project is not found, redirect to homepage
+          window.location.replace(window.location.origin.replace(`${this.server.getProjectId()}\.`, ''));
+        }
+        throw err;
+      }
 
       if (configAndBindResult.user !== undefined) {
         localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');

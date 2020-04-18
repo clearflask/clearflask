@@ -82,6 +82,7 @@ export interface Props {
   open?: boolean;
   onClose: () => void;
   onLoggedInAndClose: () => void;
+  actionTitle?: string;
   overrideWebNotification?: WebNotification;
   overrideMobileNotification?: MobileNotification;
   DialogProps?: Partial<DialogProps>;
@@ -227,7 +228,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
               >
                 <List component="nav" className={this.props.classes.notificationList}>
-                  <ListSubheader className={this.props.classes.noWrap} component="div">Get notified of replies</ListSubheader>
+                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle || 'Sign up'}</ListSubheader>
                   <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                     <ListItem
                       // https://github.com/mui-org/material-ui/pull/15049
@@ -289,7 +290,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 >
                   {!singleColumnLayout && (<Hr vertical length='25%' />)}
                   <div>
-                    <ListSubheader className={this.props.classes.noWrap} component="div">Your information</ListSubheader>
+                    <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
                     {showDisplayNameInput && (
                       <TextField
                         fullWidth
@@ -313,7 +314,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           onChange={e => this.setState({ email: e.target.value })}
                           label='Email'
                           type='email'
-                          helperText={(<div className={this.props.classes.noWrap}>Where to send you notifications</div>)}
+                          helperText={(<div className={this.props.classes.noWrap}>Where to send you updates</div>)}
                           margin='normal'
                           style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
@@ -464,9 +465,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             onClose={() => this.setState({ checkForgotEmailDialogOpen: false })}
             maxWidth='xs'
           >
-            <DialogTitle>Check your email...</DialogTitle>
+            <DialogTitle>Awaiting confirmation...</DialogTitle>
             <DialogContent>
-              <DialogContentText>We sent you an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after you click the confirmation link.</DialogContentText>
+              <DialogContentText>We sent you an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after you click the confirmation link in your email.</DialogContentText>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ checkForgotEmailDialogOpen: false })}>Cancel</Button>

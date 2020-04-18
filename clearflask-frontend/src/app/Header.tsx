@@ -11,6 +11,7 @@ import { ReduxState, Server, Status } from '../api/server';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import DropdownTab from '../common/DropdownTab';
 import notEmpty from '../common/util/arrayUtil';
+import LogIn from './comps/LogIn';
 import NotificationBadge from './NotificationBadge';
 
 const styles = (theme: Theme) => createStyles({
@@ -85,8 +86,11 @@ interface ConnectProps {
   page?: Client.Page;
   loggedInUser?: Client.UserMe;
 }
-
-class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps> {
+interface State {
+  logInOpen?: boolean;
+}
+class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+  state: State = {};
   render() {
     var menu;
     if (this.props.config && this.props.config.layout.menu.length > 0) {
@@ -170,36 +174,56 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       </div>
     ) : undefined;
 
-    var rightSide = this.props.config && this.props.loggedInUser && (
-      <div className={this.props.classes.actions}>
-        <IconButton
-          aria-label='Notifications'
-          onClick={() => this.props.history.push('/notification')}
-        >
-          <NotificationBadge server={this.props.server}>
-            <NotificationsIcon fontSize='small' />
-          </NotificationBadge>
-        </IconButton>
-        <IconButton
-          aria-label='Balance'
-          onClick={() => this.props.history.push('/transaction')}
-        >
-          <BalanceIcon fontSize='small' />
-        </IconButton>
-        <IconButton
-          aria-label='Account'
-          onClick={() => this.props.history.push('/account')}
-        >
-          <Badge
-            color='secondary'
-            invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
-            variant='dot'
+    var rightSide;
+    if (this.props.config && this.props.loggedInUser) {
+      rightSide = (
+        <div className={this.props.classes.actions}>
+          <IconButton
+            aria-label='Notifications'
+            onClick={() => this.props.history.push('/notification')}
+          >
+            <NotificationBadge server={this.props.server}>
+              <NotificationsIcon fontSize='small' />
+            </NotificationBadge>
+          </IconButton>
+          <IconButton
+            aria-label='Balance'
+            onClick={() => this.props.history.push('/transaction')}
+          >
+            <BalanceIcon fontSize='small' />
+          </IconButton>
+          <IconButton
+            aria-label='Account'
+            onClick={() => this.props.history.push('/account')}
+          >
+            <Badge
+              color='secondary'
+              invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
+              variant='dot'
+            >
+              <AccountIcon fontSize='small' />
+            </Badge>
+          </IconButton>
+        </div>
+      );
+    } else if (this.props.config && !this.props.loggedInUser) {
+      rightSide = (
+        <div className={this.props.classes.actions}>
+          <IconButton
+            aria-label='Account'
+            onClick={() => this.setState({ logInOpen: true })}
           >
             <AccountIcon fontSize='small' />
-          </Badge>
-        </IconButton>
-      </div>
-    );
+          </IconButton>
+          <LogIn
+            server={this.props.server}
+            open={this.state.logInOpen}
+            onClose={() => this.setState({ logInOpen: false })}
+            onLoggedInAndClose={() => this.setState({ logInOpen: false })}
+          />
+        </div>
+      );
+    }
 
     return (
       <div className={this.props.classes.header}>

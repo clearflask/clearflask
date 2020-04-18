@@ -26,20 +26,21 @@ const styles = (theme: Theme) => createStyles({
     marginTop: theme.spacing(3),
   },
   slider: {
-    marginTop: theme.spacing(-1),
-    marginBottom: theme.spacing(-2),
+    padding: 0,
   },
   sliderTransitionNone: {
     transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
       duration: 0,
       easing: theme.transitions.easing.easeOut,
     }),
+    color: theme.palette.text.primary,
   },
   sliderTransitionSmooth: {
     transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
       duration: theme.transitions.duration.shortest,
       easing: theme.transitions.easing.easeOut,
     }),
+    color: theme.palette.text.primary,
   },
   msg: {
     color: theme.palette.text.hint,
@@ -173,7 +174,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     return (
       <div>
         <Slider
-          className={transitionClassName}
+          className={this.props.classes.slider}
           style={{ width: widthPerc + '%' }}
           disabled={this.state.sliderIsSubmitting || min === max}
           min={min}

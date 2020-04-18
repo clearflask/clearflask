@@ -97,7 +97,7 @@ export class Server {
     const state = this.store.getState();
     return state.users.loggedIn.status === Status.FULFILLED
       && !!state.users.loggedIn.user
-      && ServerAdmin.get().isAccountLoggedIn();
+      && !!state.users.loggedIn.user.isAccountOwner;
   }
 
   dispatch(): Client.Dispatcher {

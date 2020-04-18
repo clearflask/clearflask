@@ -330,6 +330,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           Submit
         </Button>
         <LogIn
+          actionTitle='Get notified of replies'
           server={this.props.server}
           open={this.state.logInOpen}
           onClose={() => this.setState({ logInOpen: false })}

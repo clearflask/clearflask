@@ -13,6 +13,7 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
+import setTitle from './common/util/titleUtil';
 import ScrollToTop from './ScrollToTop';
 
 const theme: Theme = createMuiTheme({
@@ -47,10 +48,16 @@ class Main extends Component {
       });
       ReactGA.pageview(window.location.pathname + window.location.search);
     }
+
+    setTitle();
   }
 
   render() {
     const subdomain = this.getSubdomain();
+    if (subdomain === 'www') {
+      // Redirect www to homepage
+      window.location.replace(window.location.origin.replace(`${subdomain}\.`, ''));
+    }
     const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => (closeLoadingScreen(), i)));
     const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => (closeLoadingScreen(), i)));
     const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => (closeLoadingScreen(), i)));

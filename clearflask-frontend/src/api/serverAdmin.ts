@@ -93,12 +93,6 @@ export default class ServerAdmin {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
   }
 
-  isAccountLoggedIn(): boolean {
-    const state = this.store.getState();
-    return state.account.account.status === Status.FULFILLED
-      && !!state.account.account.account;
-  }
-
   static async _dispatch(msg: any, store: Store, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
     try {
       var result = await store.dispatch(msg);

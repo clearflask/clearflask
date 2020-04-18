@@ -404,6 +404,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             </div>
           </div>
           <LogIn
+            actionTitle='Get notified of replies'
             server={this.props.server}
             open={this.state.logInOpen}
             onClose={() => this.setState({ logInOpen: false })}
