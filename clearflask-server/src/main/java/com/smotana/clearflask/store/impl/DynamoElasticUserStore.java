@@ -434,12 +434,12 @@ public class DynamoElasticUserStore implements UserStore {
         HashMap<String, AttributeValue> valMap = Maps.newHashMap();
         List<String> setUpdates = Lists.newArrayList();
         List<String> removeUpdates = Lists.newArrayList();
-        ImmutableList.Builder<TransactWriteItem> extraTransactions = ImmutableList.builder();
+        ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.builder();
         Map<String, Object> indexUpdates = Maps.newHashMap();
         boolean updateAuthTokenValidityStart = false;
         UpdateIdentifierFunction updateIdentifier = (type, oldVal, newVal) -> {
-            if (!Strings.isNullOrEmpty(oldVal)) {
-                extraTransactions.add(new TransactWriteItem().withPut(new Put()
+            if (!Strings.isNullOrEmpty(newVal)) {
+                transactionsBuilder.add(new TransactWriteItem().withPut(new Put()
                         .withTableName(identifierToUserIdSchema.tableName())
                         .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
                                 type.getType(),
@@ -449,8 +449,8 @@ public class DynamoElasticUserStore implements UserStore {
                         .withConditionExpression("attribute_not_exists(#partitionKey)")
                         .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))));
             }
-            if (!Strings.isNullOrEmpty(newVal)) {
-                extraTransactions.add(new TransactWriteItem().withDelete(new Delete()
+            if (!Strings.isNullOrEmpty(oldVal)) {
+                transactionsBuilder.add(new TransactWriteItem().withDelete(new Delete()
                         .withTableName(identifierToUserIdSchema.tableName())
                         .withKey(ItemUtils.toAttributeValueMap(identifierToUserIdSchema.primaryKey(ImmutableMap.of(
                                 "identifierHash", type.isHashed() ? hashIdentifier(oldVal) : oldVal,
@@ -548,19 +548,21 @@ public class DynamoElasticUserStore implements UserStore {
         nameMap.put("#partitionKey", userSchema.partitionKeyName());
         log.info("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
 
+        Update update = new Update()
+                .withTableName(userSchema.tableName())
+                .withKey(ItemUtils.toAttributeValueMap(userSchema.primaryKey(Map.of(
+                        "userId", userId,
+                        "projectId", projectId))))
+                .withUpdateExpression(updateExpression)
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withExpressionAttributeNames(nameMap);
+        if (!valMap.isEmpty()) {
+            update.withExpressionAttributeValues(valMap);
+        }
+        transactionsBuilder.add(new TransactWriteItem().withUpdate(update));
         try {
-            TransactWriteItemsResult transactWriteItemsResult = dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
-                    .add(new TransactWriteItem().withUpdate(new Update()
-                            .withTableName(userSchema.tableName())
-                            .withKey(ItemUtils.toAttributeValueMap(userSchema.primaryKey(Map.of(
-                                    "userId", userId,
-                                    "projectId", projectId))))
-                            .withUpdateExpression(updateExpression)
-                            .withConditionExpression("attribute_exists(#partitionKey)")
-                            .withExpressionAttributeNames(nameMap)
-                            .withExpressionAttributeValues(valMap)))
-                    .addAll(extraTransactions.build())
-                    .build()));
+            TransactWriteItemsResult transactWriteItemsResult = dynamo.transactWriteItems(new TransactWriteItemsRequest()
+                    .withTransactItems(transactionsBuilder.build()));
             log.info("transactWriteItemsResult {} {}", transactWriteItemsResult.getConsumedCapacity(), transactWriteItemsResult.getItemCollectionMetrics());
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {

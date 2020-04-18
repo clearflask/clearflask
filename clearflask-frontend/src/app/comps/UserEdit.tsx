@@ -114,7 +114,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   control={(
                     <Switch
                       checked={this.state.emailNotify === undefined ? this.props.user.emailNotify : this.state.emailNotify}
-                      onChange={(e, checked) => this.setState({ emailNotify: checked ? undefined : false })}
+                      onChange={(e, checked) => this.setState({ emailNotify: checked ? true : undefined })}
                       color='primary'
                     />
                   )}
@@ -129,7 +129,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     control={(
                       <Switch
                         checked={this.state.iosPush === undefined ? this.props.user.iosPush : this.state.iosPush}
-                        onChange={(e, checked) => this.setState({ iosPush: checked ? undefined : false })}
+                        onChange={(e, checked) => this.setState({ iosPush: checked ? true : undefined })}
                         color='primary'
                       />
                     )}
@@ -145,7 +145,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     control={(
                       <Switch
                         checked={this.state.androidPush === undefined ? this.props.user.androidPush : this.state.androidPush}
-                        onChange={(e, checked) => this.setState({ androidPush: checked ? undefined : false })}
+                        onChange={(e, checked) => this.setState({ androidPush: checked ? true : undefined })}
                         color='primary'
                       />
                     )}
@@ -161,7 +161,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     control={(
                       <Switch
                         checked={this.state.browserPush === undefined ? this.props.user.browserPush : this.state.browserPush}
-                        onChange={(e, checked) => this.setState({ browserPush: checked ? undefined : false })}
+                        onChange={(e, checked) => this.setState({ browserPush: checked ? true : undefined })}
                         color='primary'
                       />
                     )}
