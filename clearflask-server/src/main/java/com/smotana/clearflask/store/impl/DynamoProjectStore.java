@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -194,17 +195,18 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
                 versionedConfigAdmin.getVersion(),
                 gson.toJson(versionedConfigAdmin.getConfig()));
         try {
-            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
-                    new TransactWriteItem().withPut(new Put()
+            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+                    .add(new TransactWriteItem().withPut(new Put()
                             .withTableName(slugSchema.tableName())
                             .withItem(slugSchema.toAttrMap(slugModel))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
-                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", slugSchema.partitionKeyName()))),
-                    new TransactWriteItem().withPut(new Put()
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", slugSchema.partitionKeyName()))))
+                    .add(new TransactWriteItem().withPut(new Put()
                             .withTableName(projectSchema.tableName())
                             .withItem(projectSchema.toAttrMap(projectModel))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
-                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName())))));
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName()))))
+                    .build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);

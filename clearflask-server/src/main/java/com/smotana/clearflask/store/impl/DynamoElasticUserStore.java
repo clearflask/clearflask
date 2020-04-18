@@ -3,6 +3,7 @@ package com.smotana.clearflask.store.impl;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
@@ -14,12 +15,16 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
@@ -101,6 +106,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -239,13 +245,13 @@ public class DynamoElasticUserStore implements UserStore {
     @Override
     public UserAndIndexingFuture<IndexResponse> createUser(UserModel user) {
         try {
-            dynamo.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(new TransactWriteItem().withPut(new Put()
+            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+                    .add(new TransactWriteItem().withPut(new Put()
                             .withTableName(userSchema.tableName())
                             .withItem(userSchema.toAttrMap(user))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
                             .withExpressionAttributeNames(Map.of("#partitionKey", userSchema.partitionKeyName()))))
-                    .withTransactItems(getUserIdentifiers(user).entrySet().stream()
+                    .addAll(getUserIdentifiers(user).entrySet().stream()
                             .map(e -> new TransactWriteItem().withPut(new Put()
                                     .withTableName(identifierToUserIdSchema.tableName())
                                     .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
@@ -255,7 +261,8 @@ public class DynamoElasticUserStore implements UserStore {
                                             user.getUserId())))
                                     .withConditionExpression("attribute_not_exists(#partitionKey)")
                                     .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))))
-                            .toArray(TransactWriteItem[]::new)));
+                            .collect(ImmutableList.toImmutableList()))
+                    .build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
@@ -413,76 +420,165 @@ public class DynamoElasticUserStore implements UserStore {
         ));
     }
 
+    @FunctionalInterface
+    private interface UpdateIdentifierFunction {
+        void apply(IdentifierType type, String oldVal, String newVal);
+    }
+
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
-        UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withReturnValues(ReturnValue.ALL_NEW);
+        UserModel user = getUser(projectId, userId).get();
+        UserModel.UserModelBuilder userUpdatedBuilder = user.toBuilder();
+
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, AttributeValue> valMap = Maps.newHashMap();
+        List<String> setUpdates = Lists.newArrayList();
+        List<String> removeUpdates = Lists.newArrayList();
+        ImmutableList.Builder<TransactWriteItem> extraTransactions = ImmutableList.builder();
         Map<String, Object> indexUpdates = Maps.newHashMap();
         boolean updateAuthTokenValidityStart = false;
+        UpdateIdentifierFunction updateIdentifier = (type, oldVal, newVal) -> {
+            if (!Strings.isNullOrEmpty(oldVal)) {
+                extraTransactions.add(new TransactWriteItem().withPut(new Put()
+                        .withTableName(identifierToUserIdSchema.tableName())
+                        .withItem(identifierToUserIdSchema.toAttrMap(new IdentifierUser(
+                                type.getType(),
+                                type.isHashed() ? hashIdentifier(newVal) : newVal,
+                                projectId,
+                                userId)))
+                        .withConditionExpression("attribute_not_exists(#partitionKey)")
+                        .withExpressionAttributeNames(Map.of("#partitionKey", identifierToUserIdSchema.partitionKeyName()))));
+            }
+            if (!Strings.isNullOrEmpty(newVal)) {
+                extraTransactions.add(new TransactWriteItem().withDelete(new Delete()
+                        .withTableName(identifierToUserIdSchema.tableName())
+                        .withKey(ItemUtils.toAttributeValueMap(identifierToUserIdSchema.primaryKey(ImmutableMap.of(
+                                "identifierHash", type.isHashed() ? hashIdentifier(oldVal) : oldVal,
+                                "type", type.getType(),
+                                "projectId", projectId))))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #userId = :userId")
+                        .withExpressionAttributeNames(Map.of(
+                                "#partitionKey", identifierToUserIdSchema.partitionKeyName(),
+                                "#userId", "userId"))
+                        .withExpressionAttributeValues(Map.of(
+                                ":userId", identifierToUserIdSchema.toAttrValue("userId", userId)))));
+            }
+        };
+
         if (updates.getName() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("name").put(userSchema.toDynamoValue("name", updates.getName())));
+            nameMap.put("#name", "name");
+            valMap.put(":name", userSchema.toAttrValue("name", updates.getName()));
+            setUpdates.add("#name = :name");
             indexUpdates.put("name", updates.getName());
+            userUpdatedBuilder.name(updates.getName());
         }
         if (updates.getEmail() != null) {
             updateAuthTokenValidityStart = true;
+            nameMap.put("#email", "email");
             if (updates.getEmail().isEmpty()) {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("email").delete());
+                removeUpdates.add("#email");
             } else {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("email").put(userSchema.toDynamoValue("email", updates.getEmail())));
+                valMap.put(":email", userSchema.toAttrValue("email", updates.getEmail()));
+                setUpdates.add("#email = :email");
             }
             indexUpdates.put("email", updates.getEmail());
+            updateIdentifier.apply(IdentifierType.EMAIL, user.getEmail(), updates.getEmail());
+            userUpdatedBuilder.email(updates.getEmail());
         }
         if (updates.getPassword() != null) {
             updateAuthTokenValidityStart = true;
+            nameMap.put("#password", "password");
             if (updates.getPassword().isEmpty()) {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("password").delete());
+                removeUpdates.add("#password");
             } else {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("password").put(userSchema.toDynamoValue("password", updates.getPassword())));
+                valMap.put(":password", userSchema.toAttrValue("password", updates.getPassword()));
+                setUpdates.add("#password = :password");
             }
+            userUpdatedBuilder.password(updates.getPassword());
         }
         if (updates.getEmailNotify() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("emailNotify").put(userSchema.toDynamoValue("emailNotify", updates.getEmailNotify())));
+            nameMap.put("#emailNotify", "emailNotify");
+            valMap.put(":emailNotify", userSchema.toAttrValue("emailNotify", updates.getEmailNotify()));
+            setUpdates.add("#emailNotify = :emailNotify");
+            userUpdatedBuilder.emailNotify(updates.getEmailNotify());
         }
         if (updates.getIosPushToken() != null) {
+            nameMap.put("#iosPushToken", "iosPushToken");
             if (updates.getIosPushToken().isEmpty()) {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken").delete());
+                removeUpdates.add("#iosPushToken");
             } else {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("iosPushToken").put(userSchema.toDynamoValue("iosPushToken", updates.getIosPushToken())));
+                valMap.put(":iosPushToken", userSchema.toAttrValue("iosPushToken", updates.getIosPushToken()));
+                setUpdates.add("#iosPushToken = :iosPushToken");
             }
+            updateIdentifier.apply(IdentifierType.IOS_PUSH, user.getIosPushToken(), updates.getIosPushToken());
+            userUpdatedBuilder.iosPushToken(updates.getIosPushToken());
         }
         if (updates.getAndroidPushToken() != null) {
+            nameMap.put("#androidPushToken", "androidPushToken");
             if (updates.getAndroidPushToken().isEmpty()) {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("androidPushToken").delete());
+                removeUpdates.add("#androidPushToken");
             } else {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("androidPushToken").put(userSchema.toDynamoValue("androidPushToken", updates.getAndroidPushToken())));
+                valMap.put(":androidPushToken", userSchema.toAttrValue("androidPushToken", updates.getAndroidPushToken()));
+                setUpdates.add("#androidPushToken = :androidPushToken");
             }
+            updateIdentifier.apply(IdentifierType.ANDROID_PUSH, user.getAndroidPushToken(), updates.getAndroidPushToken());
+            userUpdatedBuilder.androidPushToken(updates.getAndroidPushToken());
         }
         if (updates.getBrowserPushToken() != null) {
+            nameMap.put("#browserPushToken", "browserPushToken");
             if (updates.getBrowserPushToken().isEmpty()) {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken").delete());
+                removeUpdates.add("#browserPushToken");
             } else {
-                updateItemSpec.addAttributeUpdate(new AttributeUpdate("browserPushToken").put(userSchema.toDynamoValue("browserPushToken", updates.getBrowserPushToken())));
+                valMap.put(":browserPushToken", userSchema.toAttrValue("browserPushToken", updates.getBrowserPushToken()));
+                setUpdates.add("#browserPushToken = :browserPushToken");
             }
+            updateIdentifier.apply(IdentifierType.BROWSER_PUSH, user.getBrowserPushToken(), updates.getBrowserPushToken());
+            userUpdatedBuilder.browserPushToken(updates.getBrowserPushToken());
         }
         if (updateAuthTokenValidityStart) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("authTokenValidityStart").put(userSchema.toDynamoValue("authTokenValidityStart", Instant.now())));
+            Instant authTokenValidityStart = Instant.now();
+            nameMap.put("#authTokenValidityStart", "authTokenValidityStart");
+            valMap.put(":authTokenValidityStart", userSchema.toAttrValue("authTokenValidityStart", authTokenValidityStart));
+            setUpdates.add("#authTokenValidityStart = :authTokenValidityStart");
+            userUpdatedBuilder.authTokenValidityStart(authTokenValidityStart);
         }
 
-        // TODO bug need to update user identifiers here
-        UserModel userModel = userSchema.fromItem(userSchema.table().updateItem(updateItemSpec).getItem());
+        String updateExpression = "SET " + String.join(", ", setUpdates)
+                + (removeUpdates.isEmpty() ? "" : " REMOVE " + String.join(", ", removeUpdates));
+        nameMap.put("#partitionKey", userSchema.partitionKeyName());
+        log.info("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
 
+        try {
+            TransactWriteItemsResult transactWriteItemsResult = dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+                    .add(new TransactWriteItem().withUpdate(new Update()
+                            .withTableName(userSchema.tableName())
+                            .withKey(ItemUtils.toAttributeValueMap(userSchema.primaryKey(Map.of(
+                                    "userId", userId,
+                                    "projectId", projectId))))
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression("attribute_exists(#partitionKey)")
+                            .withExpressionAttributeNames(nameMap)
+                            .withExpressionAttributeValues(valMap)))
+                    .addAll(extraTransactions.build())
+                    .build()));
+            log.info("transactWriteItemsResult {} {}", transactWriteItemsResult.getConsumedCapacity(), transactWriteItemsResult.getItemCollectionMetrics());
+        } catch (TransactionCanceledException ex) {
+            if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
+                throw new ErrorWithMessageException(Response.Status.CONFLICT, "User with your sign in details already exists, please choose another.", ex);
+            }
+            throw ex;
+        }
+
+        UserModel userUpdated = userUpdatedBuilder.build();
         if (!indexUpdates.isEmpty()) {
             SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
-            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())
+            elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userId)
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new UserAndIndexingFuture<>(userModel, indexingFuture);
+            return new UserAndIndexingFuture<>(userUpdated, indexingFuture);
         } else {
-            return new UserAndIndexingFuture<>(userModel, Futures.immediateFuture(null));
+            return new UserAndIndexingFuture<>(userUpdated, Futures.immediateFuture(null));
         }
     }
 

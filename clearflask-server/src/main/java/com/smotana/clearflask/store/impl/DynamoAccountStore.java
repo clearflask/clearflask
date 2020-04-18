@@ -17,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -173,15 +174,16 @@ public class DynamoAccountStore implements AccountStore {
     public Account updateAccountEmail(String emailCurrent, String emailNew) {
         Account accountNew = getAccount(emailCurrent).get().toBuilder().email(emailNew).build();
         // TODO race condition here. If account gets updated here, it won't be transferred over
-        dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
-                new TransactWriteItem().withDelete(new Delete()
+        dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+                .add(new TransactWriteItem().withDelete(new Delete()
                         .withTableName(accountSchema.tableName())
                         .withKey(ItemUtils.toAttributeValueMap(accountSchema.primaryKey(Map.of("email", emailCurrent))))
                         .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", accountSchema.partitionKeyName()))),
-                new TransactWriteItem().withPut(new Put()
+                        .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", accountSchema.partitionKeyName()))))
+                .add(new TransactWriteItem().withPut(new Put()
                         .withTableName(accountSchema.tableName())
-                        .withItem(accountSchema.toAttrMap(accountNew)))));
+                        .withItem(accountSchema.toAttrMap(accountNew))))
+                .build()));
         revokeSessions(emailCurrent);
         return accountNew;
     }

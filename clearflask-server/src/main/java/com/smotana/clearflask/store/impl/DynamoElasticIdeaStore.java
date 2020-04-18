@@ -12,7 +12,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -444,8 +443,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
-        ExpressionSpecBuilder updateExpressionBuilder = new ExpressionSpecBuilder();
-
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         int voteDiff = vote.getValue() - votePrev.getValue();
         int votersCountDiff = Math.abs(vote.getValue()) - Math.abs((votePrev.getValue()));

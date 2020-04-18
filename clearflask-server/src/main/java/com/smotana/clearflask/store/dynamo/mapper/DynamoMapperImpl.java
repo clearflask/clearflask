@@ -252,6 +252,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
         ImmutableMap.Builder<String, MarshallerItem> fieldMarshallersBuilder = ImmutableMap.builder();
         ImmutableMap.Builder<String, UnMarshallerItem> fieldUnMarshallersBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, MarshallerAttrVal> fieldAttrMarshallersBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, UnMarshallerAttrVal> fieldAttrUnMarshallersBuilder = ImmutableMap.builder();
         ImmutableList.Builder<Function<Item, Object>> fromItemToCtorArgsListBuilder = ImmutableList.builder();
         ImmutableList.Builder<Function<Map<String, AttributeValue>, Object>> fromAttrMapToCtorArgsListBuilder = ImmutableList.builder();
         ImmutableMap.Builder<String, Function<T, Object>> objToFieldValsBuilder = ImmutableMap.builder();
@@ -357,6 +359,10 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             // toDynamoValue fromDynamoValue
             fieldMarshallersBuilder.put(fieldName, marshallerItem);
             fieldUnMarshallersBuilder.put(fieldName, unMarshallerItem);
+
+            // toAttrValue fromAttrValue
+            fieldAttrMarshallersBuilder.put(fieldName, marshallerAttrVal);
+            fieldAttrUnMarshallersBuilder.put(fieldName, unMarshallerAttrVal);
         }
 
         // fromItem fromAttrVal ctor
@@ -456,6 +462,10 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         ImmutableMap<String, MarshallerItem> fieldMarshallers = fieldMarshallersBuilder.build();
         ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers = fieldUnMarshallersBuilder.build();
 
+        // toAttrValue fromAttrValue
+        ImmutableMap<String, MarshallerAttrVal> fieldAttrMarshallers = fieldAttrMarshallersBuilder.build();
+        ImmutableMap<String, UnMarshallerAttrVal> fieldAttrUnMarshallers = fieldAttrUnMarshallersBuilder.build();
+
         return new SchemaImpl<T>(
                 partitionKeys,
                 rangeKeys,
@@ -469,6 +479,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 index,
                 fieldMarshallers,
                 fieldUnMarshallers,
+                fieldAttrMarshallers,
+                fieldAttrUnMarshallers,
                 fromItemToCtorArgs,
                 fromAttrMapToCtorArgs,
                 objCtor,
@@ -580,6 +592,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         private final Index index;
         private final ImmutableMap<String, MarshallerItem> fieldMarshallers;
         private final ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers;
+        private final ImmutableMap<String, MarshallerAttrVal> fieldAttrMarshallers;
+        private final ImmutableMap<String, UnMarshallerAttrVal> fieldAttrUnMarshallers;
         private final Function<Item, Object[]> fromItemToCtorArgs;
         private final Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs;
         private final Constructor<T> objCtor;
@@ -599,6 +613,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 Index index,
                 ImmutableMap<String, MarshallerItem> fieldMarshallers,
                 ImmutableMap<String, UnMarshallerItem> fieldUnMarshallers,
+                ImmutableMap<String, MarshallerAttrVal> fieldAttrMarshallers,
+                ImmutableMap<String, UnMarshallerAttrVal> fieldAttrUnMarshallers,
                 Function<Item, Object[]> fromItemToCtorArgs,
                 Function<Map<String, AttributeValue>, Object[]> fromAttrMapToCtorArgs,
                 Constructor<T> objCtor, Function<T, Item> toItemMapper,
@@ -615,6 +631,8 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             this.index = index;
             this.fieldMarshallers = fieldMarshallers;
             this.fieldUnMarshallers = fieldUnMarshallers;
+            this.fieldAttrMarshallers = fieldAttrMarshallers;
+            this.fieldAttrUnMarshallers = fieldAttrUnMarshallers;
             this.fromItemToCtorArgs = fromItemToCtorArgs;
             this.fromAttrMapToCtorArgs = fromAttrMapToCtorArgs;
             this.objCtor = objCtor;
@@ -760,6 +778,16 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
             tempItem.with("tempAttr", object);
             return checkNotNull(fieldUnMarshallers.get(fieldName), "Unknown field name %s", fieldName)
                     .unmarshall("tempAttr", tempItem);
+        }
+
+        @Override
+        public AttributeValue toAttrValue(String fieldName, Object object) {
+            return fieldAttrMarshallers.get(fieldName).marshall(object);
+        }
+
+        @Override
+        public Object fromAttrValue(String fieldName, AttributeValue attrVal) {
+            return fieldAttrUnMarshallers.get(fieldName).unmarshall(attrVal);
         }
 
         @Override

@@ -195,12 +195,16 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             log.debug("Not enabled, skipping");
             return;
         }
+        String userId = parentCommentOpt.isPresent()
+                ? parentCommentOpt.get().getAuthorUserId()
+                : idea.getAuthorUserId();
+        if (sender.getUserId().equals(userId)) {
+            return;
+        }
         submit(() -> {
             String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
 
-            UserModel user = userStore.getUser(idea.getProjectId(), parentCommentOpt.isPresent()
-                    ? parentCommentOpt.get().getAuthorUserId()
-                    : idea.getAuthorUserId()).get();
+            UserModel user = userStore.getUser(idea.getProjectId(), userId).get();
             AuthorType userAuthorType = parentCommentOpt.isPresent()
                     ? AuthorType.COMMENT_REPLY
                     : AuthorType.IDEA_REPLY;

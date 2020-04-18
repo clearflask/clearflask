@@ -59,6 +59,10 @@ public interface DynamoMapper {
 
         Object fromDynamoValue(String fieldName, Object object);
 
+        AttributeValue toAttrValue(String fieldName, Object object);
+
+        Object fromAttrValue(String fieldName, AttributeValue attrVal);
+
         Item toItem(T obj);
 
         T fromItem(Item item);

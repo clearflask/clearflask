@@ -120,11 +120,12 @@ public class UserStoreIT extends AbstractIT {
                 .browserPushToken(userUpdated.getBrowserPushToken())
                 .build());
         updateResult.getIndexingFuture().get();
-        userUpdated = userUpdated.toBuilder().authTokenValidityStart(updateResult.getUser().getAuthTokenValidityStart()).build();
-        assertEquals(userUpdated, store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()).get());
+        UserModel userUpdatedWithToken = userUpdated.toBuilder().authTokenValidityStart(updateResult.getUser().getAuthTokenValidityStart()).build();
+        assertEquals(userUpdatedWithToken, updateResult.getUser());
+        assertEquals(userUpdatedWithToken, store.getUser(userUpdatedWithToken.getProjectId(), userUpdatedWithToken.getUserId()).get());
 
-        store.deleteUsers(userUpdated.getProjectId(), ImmutableList.of(userUpdated.getUserId())).get();
-        assertEquals(Optional.empty(), store.getUser(userUpdated.getProjectId(), userUpdated.getUserId()));
+        store.deleteUsers(userUpdatedWithToken.getProjectId(), ImmutableList.of(userUpdatedWithToken.getUserId())).get();
+        assertEquals(Optional.empty(), store.getUser(userUpdatedWithToken.getProjectId(), userUpdatedWithToken.getUserId()));
     }
 
     @Test(timeout = 5_000L)
