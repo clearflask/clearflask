@@ -16,6 +16,7 @@ components:
       - commentId
       - childCommentCount
       - created
+      - voteValue
       properties:
         ideaId:
           type: string
@@ -23,6 +24,8 @@ components:
           type: string
         parentCommentId:
           type: string
+        author:
+          $ref: 'api-user.yaml#/components/schemas/User'
         childCommentCount:
           type: integer
           format: int64
@@ -39,13 +42,16 @@ components:
         content:
           description: Comment content. If null, comment is deleted
           type: string
-    CommentWithAuthor:
+        voteValue:
+          type: integer
+          format: int64
+    CommentWithVote:
       allOf:
       - $ref: 'api-comment.yaml#/components/schemas/Comment'
       - type: object
         properties:
-          author:
-            $ref: 'api-user.yaml#/components/schemas/User'
+          vote:
+            $ref: 'api-vote.yaml#/components/schemas/VoteOption'
     CommentCreate:
       type: object
       properties:
@@ -107,7 +113,7 @@ components:
                 results:
                   type: array
                   items:
-                    $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
+                    $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
 
 /project/{projectId}/idea/{ideaId}/comment:
   post:
@@ -135,7 +141,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
 /project/{projectId}/idea/{ideaId}/comment/{commentId}:
   patch:
     operationId: commentUpdate
@@ -167,7 +173,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   delete:
@@ -194,7 +200,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
@@ -222,6 +228,6 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-comment.yaml#/components/schemas/CommentWithAuthor'
+              $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

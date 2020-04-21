@@ -38,6 +38,7 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -119,6 +120,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private Gson gson;
     @Inject
     private VoteStore voteStore;
+    @Inject
+    private UserStore userStore;
 
     private TableSchema<IdeaModel> ideaSchema;
     private ExpDecayScore expDecayScoreWeek;
@@ -376,7 +379,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
+    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
                 ideaUpdate.getTitle(),
                 ideaUpdate.getDescription(),
@@ -388,7 +391,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
+    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -402,13 +405,21 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             indexUpdates.put("title", ideaUpdateAdmin.getTitle());
         }
         if (ideaUpdateAdmin.getDescription() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
-                    .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
+            if (ideaUpdateAdmin.getTitle().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("description").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
+                        .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
+            }
             indexUpdates.put("description", ideaUpdateAdmin.getDescription());
         }
         if (ideaUpdateAdmin.getResponse() != null) {
-            updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
-                    .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
+            if (ideaUpdateAdmin.getResponse().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("response").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
+                        .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
+            }
             indexUpdates.put("response", ideaUpdateAdmin.getResponse());
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
@@ -435,19 +446,18 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                             .doc(gson.toJson(indexUpdates), XContentType.JSON)
                             .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+            return new IdeaAndIndexingFuture(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
         }
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
+    public IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
+        userStore.userVoteUpdateBloom(projectId, userId, ideaId);
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
-        int voteDiff = vote.getValue() - votePrev.getValue();
-        int votersCountDiff = Math.abs(vote.getValue()) - Math.abs((votePrev.getValue()));
-        if (vote == votePrev || (voteDiff == 0 && votersCountDiff == 0)) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+        if (vote == votePrev) {
+            return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         HashMap<String, String> nameMap = Maps.newHashMap();
@@ -455,12 +465,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         valMap.put(":zero", 0);
         List<String> setUpdates = Lists.newArrayList();
 
+        int voteDiff = vote.getValue() - votePrev.getValue();
         if (voteDiff != 0) {
             nameMap.put("#voteValue", "voteValue");
             valMap.put(":voteDiff", voteDiff);
             setUpdates.add("#voteValue = if_not_exists(#voteValue, :zero) + :voteDiff");
         }
 
+        int votersCountDiff = Math.abs(vote.getValue()) - Math.abs((votePrev.getValue()));
         if (votersCountDiff != 0) {
             nameMap.put("#votersCount", "votersCount");
             valMap.put(":votersCountDiff", votersCountDiff);
@@ -501,19 +513,20 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             }
             elastic.updateAsync(updateRequest.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                     RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-            return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+            return new IdeaAndIndexingFuture(idea, indexingFuture);
         } else {
-            return new IdeaAndIndexingFuture<>(idea, Futures.immediateFuture(null));
+            return new IdeaAndIndexingFuture(idea, Futures.immediateFuture(null));
         }
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt) {
+    public IdeaAndExpressionsAndIndexingFuture expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt) {
+        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.express(projectId, userId, ideaId, expressionOpt);
         ImmutableSet<String> expressions = expressionOpt.map(ImmutableSet::of).orElse(ImmutableSet.of());
 
         if (expressionsPrev.equals(expressions)) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressions, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         SetView<String> expressionsAdded = Sets.difference(expressions, expressionsPrev);
@@ -573,15 +586,16 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaAndExpressionsAndIndexingFuture(expressions, idea, indexingFuture);
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+    public IdeaAndExpressionsAndIndexingFuture expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiAdd(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (expressionsPrev.contains(expression)) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         double expressionValueDiff = expressionToWeightMapper.apply(expression);
@@ -606,15 +620,21 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaAndExpressionsAndIndexingFuture(
+                ImmutableSet.<String>builder()
+                        .addAll(expressionsPrev)
+                        .add(expression)
+                        .build(),
+                idea, indexingFuture);
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+    public IdeaAndExpressionsAndIndexingFuture expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
+        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiRemove(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (!expressionsPrev.contains(expression)) {
-            return new IdeaAndIndexingFuture<>(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
+            return new IdeaAndExpressionsAndIndexingFuture(expressionsPrev, getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
         }
 
         double expressionValueDiff = -expressionToWeightMapper.apply(expression);
@@ -639,7 +659,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "extraUpdates", indexUpdates)))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaAndExpressionsAndIndexingFuture(
+                ImmutableSet.copyOf(Sets.difference(expressionsPrev, ImmutableSet.of(expression))),
+                idea, indexingFuture);
     }
 
     @Override
@@ -700,13 +722,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
         return new IdeaTransactionAndIndexingFuture(
+                resultingFundAmount,
                 idea,
                 transactionAndFundPrevious.getTransaction(),
                 indexingFuture);
     }
 
     @Override
-    public IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
+    public IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
         ImmutableList.Builder<AttributeUpdate> attrUpdates = ImmutableList.builder();
         attrUpdates.add(new AttributeUpdate("commentCount").addNumeric(1));
         if (incrementChildCount) {
@@ -731,7 +754,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
-        return new IdeaAndIndexingFuture<>(idea, indexingFuture);
+        return new IdeaAndIndexingFuture(idea, indexingFuture);
     }
 
     @Override

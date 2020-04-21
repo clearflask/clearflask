@@ -13,7 +13,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
-  comment: Client.CommentWithAuthor;
+  comment: Client.CommentWithVote;
   loggedInUser?: Client.User;
   open?: boolean;
   onClose: () => void;
@@ -97,7 +97,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
 
 export const CommentDelete = withTheme((props: {
   server: Server;
-  comment: Client.CommentWithAuthor;
+  comment: Client.CommentWithVote;
   asAdmin: boolean
   open?: boolean;
   onClose: () => void;

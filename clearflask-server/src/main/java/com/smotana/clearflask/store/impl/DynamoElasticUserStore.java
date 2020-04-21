@@ -132,7 +132,7 @@ public class DynamoElasticUserStore implements UserStore {
         @DefaultValue("0.001")
         double voteBloomFilterFalsePositiveProbability();
 
-        @DefaultValue("100")
+        @DefaultValue("200")
         long voteBloomFilterExpectedInsertions();
 
         @DefaultValue("0.001")
@@ -144,7 +144,7 @@ public class DynamoElasticUserStore implements UserStore {
         @DefaultValue("0.001")
         double fundBloomFilterFalsePositiveProbability();
 
-        @DefaultValue("100")
+        @DefaultValue("50")
         long fundBloomFilterExpectedInsertions();
 
         @NoDefaultValue
@@ -585,7 +585,7 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
-    public UserModel userVote(String projectId, String userId, String ideaId) {
+    public UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId) {
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
@@ -604,7 +604,7 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
-    public UserModel userExpress(String projectId, String userId, String ideaId) {
+    public UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId) {
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getExpressBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))

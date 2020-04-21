@@ -36,6 +36,9 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
+import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -43,6 +46,7 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.WilsonScoreInterval;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -68,6 +72,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import rx.Observable;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -131,6 +136,10 @@ public class DynamoElasticCommentStore implements CommentStore {
     private Gson gson;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private VoteStore voteStore;
+    @Inject
+    private UserStore userStore;
 
     private TableSchema<CommentModel> commentSchema;
     private WilsonScoreInterval wilsonScoreInterval;
@@ -219,7 +228,7 @@ public class DynamoElasticCommentStore implements CommentStore {
             parentIndexingFutureOpt = Optional.of(parentIndexingFuture);
         }
 
-        IdeaStore.IdeaAndIndexingFuture<UpdateResponse> incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId(), comment.getLevel() == 0);
+        IdeaAndIndexingFuture incrementResponse = ideaStore.incrementIdeaCommentCount(comment.getProjectId(), comment.getIdeaId(), comment.getLevel() == 0);
 
         SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
         elastic.indexAsync(new IndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, comment.getProjectId()))
@@ -374,8 +383,12 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, VoteValue votePrev, VoteValue vote) {
-        checkArgument(vote != votePrev);
+    public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote) {
+        userStore.userVoteUpdateBloom(projectId, userId, ideaId);
+        VoteValue votePrev = voteStore.vote(projectId, userId, commentId, vote);
+        if (vote == votePrev) {
+            return new CommentAndIndexingFuture<>(getComment(projectId, ideaId, commentId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Comment not found")), Futures.immediateFuture(null));
+        }
 
         ImmutableList.Builder<AttributeUpdate> attrUpdatesBuilder = ImmutableList.builder();
         ImmutableList.Builder<String> updateExpressionBuilder = ImmutableList.builder();

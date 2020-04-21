@@ -79,6 +79,7 @@ export class Server {
       comments: stateCommentsDefault,
       users: stateUsersDefault,
       votes: stateVotesDefault,
+      commentVotes: stateCommentVotesDefault,
       credits: stateCreditsDefault,
       notifications: stateNotificationsDefault,
     };
@@ -345,18 +346,18 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
           action.payload.results.reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
           state.maxFundAmountSeen),
       };
-    case Client.voteUpdateActionStatus.Pending:
-    case Client.voteUpdateActionStatus.Rejected:
+    case Client.ideaVoteUpdateActionStatus.Pending:
+    case Client.ideaVoteUpdateActionStatus.Rejected:
       // All of this below fakes the vote counts before server returns a real value
       // In case of rejection, it undoes the faking
-      const isPending = action.type === Client.voteUpdateActionStatus.Pending;
-      const idea = state.byId[action.meta.request.voteUpdate.ideaId];
+      const isPending = action.type === Client.ideaVoteUpdateActionStatus.Pending;
+      const idea = state.byId[action.meta.request.ideaId];
       if (!idea || !idea.idea) return state;
-      state.byId[action.meta.request.voteUpdate.ideaId] = idea;
-      const previousVote: Client.Vote = action.meta['previousVote'] || {};
+      state.byId[action.meta.request.ideaId] = idea;
+      const previousVote: Client.IdeaVote = action.meta['previousVote'] || {};
       if (previousVote === undefined) throw Error('voteUpdate expecting previousVote in extra meta, set to null if not present');
-      if (action.meta.request.voteUpdate.fundDiff !== undefined) {
-        const fundDiff = isPending ? action.meta.request.voteUpdate.fundDiff : -action.meta.request.voteUpdate.fundDiff;
+      if (action.meta.request.ideaVoteUpdate.fundDiff !== undefined) {
+        const fundDiff = isPending ? action.meta.request.ideaVoteUpdate.fundDiff : -action.meta.request.ideaVoteUpdate.fundDiff;
         if (fundDiff !== 0) {
           idea.idea.funded = (idea.idea.funded || 0) + fundDiff;
         }
@@ -367,36 +368,32 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
           idea.idea.fundersCount = fundersCountDiff;
         }
       }
-      if (action.meta.request.voteUpdate.vote !== undefined) {
+      if (action.meta.request.ideaVoteUpdate.vote !== undefined) {
         const previousVoteVal = (previousVote.vote === Client.VoteOption.Upvote ? 1 : (previousVote.vote === Client.VoteOption.Downvote ? -1 : 0));
-        const voteVal = (action.meta.request.voteUpdate.vote === Client.VoteOption.Upvote ? 1 : (action.meta.request.voteUpdate.vote === Client.VoteOption.Downvote ? -1 : 0));
+        const voteVal = (action.meta.request.ideaVoteUpdate.vote === Client.VoteOption.Upvote ? 1 : (action.meta.request.ideaVoteUpdate.vote === Client.VoteOption.Downvote ? -1 : 0));
         const voteDiff = isPending ? voteVal - previousVoteVal : previousVoteVal - voteVal;
         if (voteDiff !== 0) {
           idea.idea.voteValue = (idea.idea.voteValue || 0) + voteDiff;
         }
-        const votersCountDiff = isPending ? Math.abs(voteVal) - Math.abs(previousVoteVal) : Math.abs(previousVoteVal) - Math.abs(voteVal);
-        if (votersCountDiff !== 0) {
-          idea.idea.votersCount = (idea.idea.votersCount || 0) + votersCountDiff;
-        }
       }
-      if (action.meta.request.voteUpdate.expressions !== undefined) {
-        const expression: string | undefined = action.meta.request.voteUpdate.expressions.expression;
+      if (action.meta.request.ideaVoteUpdate.expressions !== undefined) {
+        const expression: string | undefined = action.meta.request.ideaVoteUpdate.expressions.expression;
         var addExpressions: string[] = [];
         var removeExpressions: string[] = [];
-        switch (action.meta.request.voteUpdate.expressions.action) {
-          case Client.VoteUpdateExpressionsActionEnum.Set:
+        switch (action.meta.request.ideaVoteUpdate.expressions.action) {
+          case Client.IdeaVoteUpdateExpressionsActionEnum.Set:
             expression && addExpressions.push(expression);
             removeExpressions = (previousVote.expression || []).filter(e => e !== expression);
             break;
-          case Client.VoteUpdateExpressionsActionEnum.Unset:
+          case Client.IdeaVoteUpdateExpressionsActionEnum.Unset:
             removeExpressions = (previousVote.expression || []);
             break;
-          case Client.VoteUpdateExpressionsActionEnum.Add:
+          case Client.IdeaVoteUpdateExpressionsActionEnum.Add:
             if (expression && !(previousVote.expression || []).includes(expression)) {
               addExpressions.push(expression);
             }
             break;
-          case Client.VoteUpdateExpressionsActionEnum.Remove:
+          case Client.IdeaVoteUpdateExpressionsActionEnum.Remove:
             if (expression && (previousVote.expression || []).includes(expression)) {
               removeExpressions.push(expression);
             }
@@ -415,13 +412,13 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Acti
         ...state,
         byId: {
           ...state.byId,
-          [action.meta.request.voteUpdate.ideaId]: {
-            ...state.byId[action.meta.request.voteUpdate.ideaId],
+          [action.meta.request.ideaId]: {
+            ...state.byId[action.meta.request.ideaId],
             idea: idea.idea,
           }
         }
       };
-    case Client.voteUpdateActionStatus.Fulfilled:
+    case Client.ideaVoteUpdateActionStatus.Fulfilled:
       return {
         ...state,
         byId: {
@@ -442,7 +439,7 @@ export interface StateComments {
   byId: {
     [commentId: string]: {
       status: Status;
-      comment?: Client.CommentWithAuthor;
+      comment?: Client.Comment;
     }
   };
   byIdeaIdOrParentCommentId: {
@@ -483,13 +480,16 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Cl
     case Client.commentDeleteActionStatus.Fulfilled:
     case Admin.commentDeleteAdminActionStatus.Fulfilled:
     case Client.commentUpdateActionStatus.Fulfilled:
+    case Client.commentVoteUpdateActionStatus.Fulfilled:
+      const comment = action.type === Client.commentVoteUpdateActionStatus.Fulfilled
+        ? action.payload.comment : action.payload;
       return {
         ...state,
         byId: {
           ...state.byId,
           [action.meta.request.commentId]: {
             status: Status.FULFILLED,
-            comment: action.payload,
+            comment,
           }
         },
       };
@@ -708,7 +708,7 @@ const stateVotesDefault = {
 };
 function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Actions | Admin.Actions): StateVotes {
   switch (action.type) {
-    case Client.voteGetOwnActionStatus.Pending:
+    case Client.ideaVoteGetOwnActionStatus.Pending:
       return {
         ...state,
         statusByIdeaId: {
@@ -720,7 +720,7 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Acti
             }, {}),
         },
       };
-    case Client.voteGetOwnActionStatus.Rejected:
+    case Client.ideaVoteGetOwnActionStatus.Rejected:
       return {
         ...state,
         statusByIdeaId: {
@@ -732,7 +732,7 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Acti
             }, {}),
         },
       };
-    case Client.voteGetOwnActionStatus.Fulfilled:
+    case Client.ideaVoteGetOwnActionStatus.Fulfilled:
       return {
         ...state,
         statusByIdeaId: {
@@ -756,84 +756,86 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Acti
           ...action.payload.fundAmountByIdeaId,
         },
       };
-    case Client.voteUpdateActionStatus.Pending:
+    case Client.ideaVoteUpdateActionStatus.Pending:
       return {
         ...state,
         statusByIdeaId: {
           ...state.statusByIdeaId,
-          [action.meta.request.voteUpdate.ideaId]: Status.PENDING,
+          [action.meta.request.ideaId]: Status.PENDING,
         },
-        ...(action.meta.request.voteUpdate.vote ? {
+        ...(action.meta.request.ideaVoteUpdate.vote ? {
           votesByIdeaId: {
             ...state.votesByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: action.meta.request.voteUpdate.vote,
+            [action.meta.request.ideaId]: action.meta.request.ideaVoteUpdate.vote,
           },
         } : {}),
-        ...(action.meta.request.voteUpdate.expressions ? {
+        ...(action.meta.request.ideaVoteUpdate.expressions ? {
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]:
-              action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
-              && [action.meta.request.voteUpdate.expressions.expression!]
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
+            [action.meta.request.ideaId]:
+              action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
+              && [action.meta.request.ideaVoteUpdate.expressions.expression!]
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
               && []
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
               && [...new Set<string>([
-                action.meta.request.voteUpdate.expressions.expression!,
-                ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
-              && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
+                action.meta.request.ideaVoteUpdate.expressions.expression!,
+                ...(state.expressionByIdeaId[action.meta.request.ideaId] || []),])]
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
+              && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
               || [],
           },
         } : {}),
-        ...(action.meta.request.voteUpdate.fundDiff ? {
+        ...(action.meta.request.ideaVoteUpdate.fundDiff ? {
           fundAmountByIdeaId: {
             ...state.fundAmountByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: (state.fundAmountByIdeaId[action.meta.request.voteUpdate.ideaId] || 0) + action.meta.request.voteUpdate.fundDiff,
+            [action.meta.request.ideaId]: (state.fundAmountByIdeaId[action.meta.request.ideaId] || 0) + action.meta.request.ideaVoteUpdate.fundDiff,
           },
         } : {}),
       };
-    case Client.voteUpdateActionStatus.Rejected:
+    case Client.ideaVoteUpdateActionStatus.Rejected:
       return {
         ...state,
         statusByIdeaId: {
           ...state.statusByIdeaId,
-          [action.meta.request.voteUpdate.ideaId]: Status.REJECTED,
+          [action.meta.request.ideaId]: Status.REJECTED,
         },
-        ...(action.meta.request.voteUpdate.vote ? {
+        ...(action.meta.request.ideaVoteUpdate.vote ? {
           votesByIdeaId: {
             ...state.votesByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: Client.VoteOption.None,
+            [action.meta.request.ideaId]: Client.VoteOption.None,
           },
         } : {}),
-        ...(action.meta.request.voteUpdate.expressions ? {
+        ...(action.meta.request.ideaVoteUpdate.expressions ? {
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]:
-              action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Set
+            [action.meta.request.ideaId]:
+              action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
               && []
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Unset
-              && [...(action.meta.request.voteUpdate.expressions.expression ? [action.meta.request.voteUpdate.expressions.expression] : [])]
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Add
-              && (state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []).filter(e => e !== action.meta.request.voteUpdate.expressions!.expression)
-              || action.meta.request.voteUpdate.expressions.action === Client.VoteUpdateExpressionsActionEnum.Remove
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
+              && [...(action.meta.request.ideaVoteUpdate.expressions.expression ? [action.meta.request.ideaVoteUpdate.expressions.expression] : [])]
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
+              && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
+              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
               && [...new Set<string>([
-                action.meta.request.voteUpdate.expressions.expression!,
-                ...(state.expressionByIdeaId[action.meta.request.voteUpdate.ideaId] || []),])]
+                action.meta.request.ideaVoteUpdate.expressions.expression!,
+                ...(state.expressionByIdeaId[action.meta.request.ideaId] || []),])]
               || [],
           },
         } : {}),
-        ...(action.meta.request.voteUpdate.fundDiff ? {
+        ...(action.meta.request.ideaVoteUpdate.fundDiff ? {
           fundAmountByIdeaId: {
             ...state.fundAmountByIdeaId,
-            [action.meta.request.voteUpdate.ideaId]: (state.fundAmountByIdeaId[action.meta.request.voteUpdate.ideaId] || 0) - action.meta.request.voteUpdate.fundDiff,
+            [action.meta.request.ideaId]: (state.fundAmountByIdeaId[action.meta.request.ideaId] || 0) - action.meta.request.ideaVoteUpdate.fundDiff,
           },
         } : {}),
       };
-    case Client.voteUpdateActionStatus.Fulfilled:
+    case Client.ideaVoteUpdateActionStatus.Fulfilled:
     case Client.ideaGetActionStatus.Fulfilled:
-      const ideaId = action.type === Client.voteUpdateActionStatus.Fulfilled
-        ? action.meta.request.voteUpdate.ideaId : action.meta.request.ideaId;
+    case Client.ideaCreateActionStatus.Fulfilled:
+    case Admin.ideaCreateAdminActionStatus.Fulfilled:
+      const ideaId = action.type === Client.ideaVoteUpdateActionStatus.Fulfilled
+        ? action.meta.request.ideaId : action.payload.ideaId;
       return {
         ...state,
         statusByIdeaId: {
@@ -910,6 +912,136 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Acti
   }
 }
 
+export interface StateCommentVotes {
+  statusByCommentId: { [commentId: string]: Status };
+  votesByCommentId: { [commentId: string]: Client.VoteOption };
+}
+const stateCommentVotesDefault = {
+  statusByCommentId: {},
+  votesByCommentId: {},
+};
+function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault, action: Client.Actions | Admin.Actions): StateCommentVotes {
+  switch (action.type) {
+    case Client.commentVoteGetOwnActionStatus.Pending:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          ...action.meta.request.commentIds.reduce(
+            (byCommentId, commentId) => {
+              byCommentId[commentId] = Status.PENDING;
+              return byCommentId;
+            }, {}),
+        },
+      };
+    case Client.commentVoteGetOwnActionStatus.Rejected:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          ...action.meta.request.commentIds.reduce(
+            (byCommentId, commentId) => {
+              byCommentId[commentId] = Status.REJECTED;
+              return byCommentId;
+            }, {}),
+        },
+      };
+    case Client.commentVoteGetOwnActionStatus.Fulfilled:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          ...action.meta.request.commentIds.reduce(
+            (byCommentId, commentId) => {
+              byCommentId[commentId] = Status.FULFILLED;
+              return byCommentId;
+            }, {}),
+        },
+        votesByCommentId: {
+          ...state.votesByCommentId,
+          ...action.payload.votesByCommentId,
+        },
+      };
+    case Client.commentVoteUpdateActionStatus.Pending:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          [action.meta.request.commentId]: Status.PENDING,
+        },
+        ...(action.meta.request.commentVoteUpdate.vote ? {
+          votesByCommentId: {
+            ...state.votesByCommentId,
+            [action.meta.request.commentId]: action.meta.request.commentVoteUpdate.vote,
+          },
+        } : {}),
+      };
+    case Client.commentVoteUpdateActionStatus.Rejected:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          [action.meta.request.commentId]: Status.REJECTED,
+        },
+        ...(action.meta.request.commentVoteUpdate.vote ? {
+          votesByCommentId: {
+            ...state.votesByCommentId,
+            [action.meta.request.commentId]: Client.VoteOption.None,
+          },
+        } : {}),
+      };
+    case Client.commentCreateActionStatus.Fulfilled:
+    case Client.commentVoteUpdateActionStatus.Fulfilled:
+      const vote = action.type === Client.commentCreateActionStatus.Fulfilled
+        ? action.payload.vote : action.payload.comment.vote;
+      const commentId = action.type === Client.commentCreateActionStatus.Fulfilled
+        ? action.payload.commentId : action.payload.comment.commentId;
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          [commentId]: Status.FULFILLED,
+        },
+        ...(vote ? {
+          votesByCommentId: {
+            ...state.votesByCommentId,
+            [commentId]: vote,
+          },
+        } : {}),
+      };
+    case Client.commentListActionStatus.Fulfilled:
+      return {
+        ...state,
+        statusByCommentId: {
+          ...state.statusByCommentId,
+          ...action.payload.results.reduce(
+            (byCommentId, comment) => {
+              byCommentId[comment.commentId] = Status.FULFILLED;
+              return byCommentId;
+            }, {}),
+        },
+        votesByCommentId: {
+          ...state.votesByCommentId,
+          ...action.payload.results.reduce(
+            (votesByCommentId, comment) => {
+              if (comment.vote) votesByCommentId[comment.commentId] = comment.vote;
+              return votesByCommentId;
+            }, {}),
+        },
+      };
+    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
+    case Client.userCreateActionStatus.Fulfilled:
+    case Client.userLogoutActionStatus.Fulfilled:
+    case Client.userDeleteActionStatus.Fulfilled:
+      return { // Clear on login/logout
+        statusByCommentId: {},
+        votesByCommentId: {},
+      };
+    default:
+      return state;
+  }
+}
+
 export interface StateCredits {
   transactionSearch: {
     searchKey?: string;
@@ -966,7 +1098,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: Clien
           balance: action.payload.balance.balance,
         },
       };
-    case Client.voteUpdateActionStatus.Fulfilled:
+    case Client.ideaVoteUpdateActionStatus.Fulfilled:
       return {
         ...state,
         ...(action.payload.balance !== undefined ? {
@@ -1082,6 +1214,7 @@ export interface ReduxState {
   comments: StateComments;
   users: StateUsers;
   votes: StateVotes;
+  commentVotes: StateCommentVotes;
   credits: StateCredits;
   notifications: StateNotifications;
 }
@@ -1092,6 +1225,7 @@ export const reducers = combineReducers({
   comments: reducerComments,
   users: reducerUsers,
   votes: reducerVotes,
+  commentVotes: reducerCommentVotes,
   credits: reducerCredits,
   notifications: reducerNotifications,
 });

@@ -56,9 +56,9 @@ public interface UserStore {
 
     UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates);
 
-    UserModel userVote(String projectId, String userId, String ideaId);
+    UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId);
 
-    UserModel userExpress(String projectId, String userId, String ideaId);
+    UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId);
 
     UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt);
 

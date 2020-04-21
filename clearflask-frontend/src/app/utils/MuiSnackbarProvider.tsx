@@ -9,6 +9,7 @@ const muiSnackbarStyles = createStyles({
 });
 const MuiSnackbarProvider = withStyles((theme: Theme) => muiSnackbarStyles, { withTheme: true })((props: any) => (
   <SnackbarProvider
+    preventDuplicate
     maxSnack={3}
     hideIconVariant
     classes={{

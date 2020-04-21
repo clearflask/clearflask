@@ -20,6 +20,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   beta: {
+    fontSize: '0.5em',
     color: theme.palette.text.hint,
   },
   box: {
@@ -55,7 +56,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           title={(
             <React.Fragment>
               {this.props.plan.title}
-              {this.props.plan.beta && (<span className={this.props.classes.beta}>*</span>)}
+              {this.props.plan.beta && (<span className={this.props.classes.beta}>BETA</span>)}
             </React.Fragment>
           )}
           titleTypographyProps={{ align: 'center' }}
@@ -74,7 +75,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </React.Fragment>
           ) : (
               <div className={this.props.classes.cardPricing}>
-                <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>Not yet available...</Typography>
+                <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>Coming soon...</Typography>
               </div>
             )}
           {this.props.plan.perks.map(perk => (
@@ -91,9 +92,6 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </div>
           ))}
         </CardContent>
-        {this.props.plan.beta && (
-          <Typography variant='caption' className={this.props.classes.cardBeta}>*Currently in beta for public use</Typography>
-        )}
         {
           !!this.props.actionTitle && (
             <CardActions>

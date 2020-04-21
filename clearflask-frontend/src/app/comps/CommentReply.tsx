@@ -79,11 +79,10 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
                   content: this.state.newCommentInput!,
                   parentCommentId: this.props.parentCommentId,
                 },
-              }))
-                .then(comment => {
-                  this.setState({ newCommentInput: undefined })
-                  this.props.onSubmitted && this.props.onSubmitted();
-                });
+              })).then(comment => {
+                this.setState({ newCommentInput: undefined })
+                this.props.onSubmitted && this.props.onSubmitted();
+              });
             }}
           >
             Submit

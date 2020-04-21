@@ -1,27 +1,31 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.smotana.clearflask.api.VoteAdminApi;
 import com.smotana.clearflask.api.VoteApi;
 import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.CommentVoteGetOwnResponse;
+import com.smotana.clearflask.api.model.CommentVoteUpdate;
+import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
 import com.smotana.clearflask.api.model.Expressing;
+import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
+import com.smotana.clearflask.api.model.IdeaVoteUpdate;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
 import com.smotana.clearflask.api.model.Transaction;
 import com.smotana.clearflask.api.model.TransactionType;
-import com.smotana.clearflask.api.model.Vote;
-import com.smotana.clearflask.api.model.VoteGetOwnResponse;
 import com.smotana.clearflask.api.model.VoteOption;
-import com.smotana.clearflask.api.model.VoteSearchAdmin;
-import com.smotana.clearflask.api.model.VoteSearchResponse;
-import com.smotana.clearflask.api.model.VoteUpdate;
-import com.smotana.clearflask.api.model.VoteUpdateExpressions;
-import com.smotana.clearflask.api.model.VoteUpdateResponse;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.IdeaStore.IdeaAndExpressionsAndIndexingFuture;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaTransactionAndIndexingFuture;
 import com.smotana.clearflask.store.ProjectStore;
@@ -33,7 +37,6 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.FundModel;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +56,7 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 @Path("/v1")
-public class VoteResource extends AbstractResource implements VoteApi, VoteAdminApi {
+public class VoteResource extends AbstractResource implements VoteApi {
 
     @Inject
     private ProjectStore projectStore;
@@ -63,18 +66,49 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     private IdeaStore ideaStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private CommentStore commentStore;
 
-    @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 5)
     @Override
-    public VoteSearchResponse voteSearchAdmin(String projectId, VoteSearchAdmin voteSearchAdmin, String cursor) {
-        throw new NotImplementedException();
+    public CommentVoteGetOwnResponse commentVoteGetOwn(String projectId, List<String> commentIds) {
+        UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId))
+                .get();
+
+        Map<String, VoteOption> votesByCommentId = Optional.ofNullable(user.getVoteBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .map(bloomFilter -> commentIds.stream()
+                        .filter(bloomFilter::mightContain)
+                        .collect(ImmutableSet.toImmutableSet()))
+                .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
+                .map(m -> Maps.transformValues(m, voteModel -> VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
+                .orElse(Map.of());
+
+        return new CommentVoteGetOwnResponse(votesByCommentId);
+    }
+
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 10, challengeAfter = 50)
+    @Override
+    public CommentVoteUpdateResponse commentVoteUpdate(String projectId, String ideaId, String commentId, CommentVoteUpdate commentVoteUpdate) {
+        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
+        Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
+
+        VoteStore.VoteValue vote = VoteStore.VoteValue.fromVoteOption(commentVoteUpdate.getVote());
+        CommentModel comment = commentStore.voteComment(projectId, ideaId, commentId, userId, vote)
+                .getCommentModel();
+
+        return new CommentVoteUpdateResponse(comment.toCommentWithVote(vote.toVoteOption()));
     }
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
     @Override
-    public VoteGetOwnResponse voteGetOwn(String projectId, List<String> ideaIds) {
+    public IdeaVoteGetOwnResponse ideaVoteGetOwn(String projectId, List<String> ideaIds) {
         UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
@@ -107,7 +141,7 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
                 .map(m -> Maps.transformValues(m, FundModel::getFundAmount))
                 .orElse(Map.of());
 
-        return new VoteGetOwnResponse(
+        return new IdeaVoteGetOwnResponse(
                 votesByIdeaId,
                 expressionByIdeaId,
                 fundAmountByIdeaId);
@@ -116,22 +150,21 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
     @Override
-    public VoteUpdateResponse voteUpdate(String projectId, VoteUpdate voteUpdate) {
+    public IdeaVoteUpdateResponse ideaVoteUpdate(String projectId, String ideaId, IdeaVoteUpdate voteUpdate) {
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
-        IdeaModel idea = ideaStore.getIdea(projectId, voteUpdate.getIdeaId()).orElseThrow(BadRequestException::new);
+        IdeaModel idea = ideaStore.getIdea(projectId, ideaId).orElseThrow(BadRequestException::new);
 
         Optional<VoteOption> voteOptionOpt = Optional.empty();
         if (voteUpdate.getVote() != null) {
-            idea = ideaStore.voteIdea(projectId, voteUpdate.getIdeaId(), userId, VoteStore.VoteValue.fromVoteOption(voteUpdate.getVote()))
+            idea = ideaStore.voteIdea(projectId, ideaId, userId, VoteStore.VoteValue.fromVoteOption(voteUpdate.getVote()))
                     .getIdea();
-            userStore.userVote(projectId, userId, voteUpdate.getIdeaId());
+            voteOptionOpt = Optional.of(voteUpdate.getVote());
         }
 
-        Optional<List<String>> expressionOpt = Optional.empty();
+        Optional<ImmutableSet<String>> expressionOpt = Optional.empty();
         if (voteUpdate.getExpressions() != null) {
-            userStore.userExpress(projectId, userId, voteUpdate.getIdeaId());
             String categoryId = idea.getCategoryId();
             Expressing expressing = project.getCategory(categoryId)
                     .orElseThrow(BadRequestException::new)
@@ -144,24 +177,23 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expression not allowed");
             }
 
+            IdeaAndExpressionsAndIndexingFuture result;
             if (expressing.getLimitEmojiPerIdea() == Boolean.TRUE) {
-                idea = ideaStore.expressIdeaSet(projectId, voteUpdate.getIdeaId(), userId,
+                result = ideaStore.expressIdeaSet(projectId, ideaId, userId,
                         e -> project.getCategoryExpressionWeight(categoryId, e),
-                        voteUpdate.getExpressions().getAction() == VoteUpdateExpressions.ActionEnum.ADD
-                                ? Optional.of(voteUpdate.getExpressions().getExpression()) : Optional.empty())
-                        .getIdea();
-            } else if (voteUpdate.getExpressions().getAction() == VoteUpdateExpressions.ActionEnum.ADD) {
-                idea = ideaStore.expressIdeaAdd(projectId, voteUpdate.getIdeaId(), userId,
+                        voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.ADD
+                                ? Optional.of(voteUpdate.getExpressions().getExpression()) : Optional.empty());
+            } else if (voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.ADD) {
+                result = ideaStore.expressIdeaAdd(projectId, ideaId, userId,
                         e -> project.getCategoryExpressionWeight(categoryId, e),
-                        voteUpdate.getExpressions().getExpression())
-                        .getIdea();
+                        voteUpdate.getExpressions().getExpression());
             } else {
-                idea = ideaStore.expressIdeaRemove(projectId, voteUpdate.getIdeaId(), userId,
+                result = ideaStore.expressIdeaRemove(projectId, ideaId, userId,
                         e -> project.getCategoryExpressionWeight(categoryId, e),
-                        voteUpdate.getExpressions().getExpression())
-                        .getIdea();
+                        voteUpdate.getExpressions().getExpression());
             }
-            userStore.userExpress(projectId, userId, idea.getIdeaId());
+            idea = result.getIdea();
+            expressionOpt = Optional.of(result.getExpressions());
         }
 
         Optional<Long> fundAmountOpt = Optional.empty();
@@ -174,23 +206,24 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
             IdeaTransactionAndIndexingFuture fundIdeaResponse;
             if (voteUpdate.getFundDiff() > 0) {
                 // For funding, first take from user, then give to idea
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), Optional.of(voteUpdate.getIdeaId()));
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), Optional.of(ideaId));
                 // Note: here is a critical time when funds have been taken but not yet given
-                fundIdeaResponse = ideaStore.fundIdea(projectId, voteUpdate.getIdeaId(), userId, voteUpdate.getFundDiff(), transactionType, summary);
+                fundIdeaResponse = ideaStore.fundIdea(projectId, ideaId, userId, voteUpdate.getFundDiff(), transactionType, summary);
             } else {
                 // For *RE*funding, first take from idea, then give to user
-                fundIdeaResponse = ideaStore.fundIdea(projectId, voteUpdate.getIdeaId(), userId, -voteUpdate.getFundDiff(), transactionType, summary);
+                fundIdeaResponse = ideaStore.fundIdea(projectId, ideaId, userId, -voteUpdate.getFundDiff(), transactionType, summary);
                 // Note: here is a critical time when funds have been taken but not yet given
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, voteUpdate.getFundDiff(), Optional.of(voteUpdate.getIdeaId()));
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, voteUpdate.getFundDiff(), Optional.of(ideaId));
             }
             balanceOpt = Optional.of(updateUserBalanceResponse.getUser().toBalance());
             transactionOpt = Optional.of(fundIdeaResponse.getTransaction().toTransaction());
+            fundAmountOpt = Optional.of(fundIdeaResponse.getIdeaFundAmount());
         }
 
-        return new VoteUpdateResponse(
-                new Vote(
+        return new IdeaVoteUpdateResponse(
+                new IdeaVote(
                         voteOptionOpt.orElse(null),
-                        expressionOpt.orElse(null),
+                        expressionOpt.map(ImmutableList::copyOf).orElse(null),
                         fundAmountOpt.orElse(null)),
                 idea.toIdea(),
                 balanceOpt.orElse(null),

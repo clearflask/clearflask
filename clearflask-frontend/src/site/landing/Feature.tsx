@@ -13,7 +13,10 @@ const styles = (theme: Theme) => createStyles({
   icon: {
     position: 'absolute',
     transform: 'translate(-100%, -100%)',
-  }
+  },
+  beta: {
+    color: theme.palette.text.hint,
+  },
 });
 
 interface Props {
@@ -36,7 +39,7 @@ class Feature extends Component<Props & WithStyles<typeof styles, true>> {
           <Typography variant='h5'>
             {this.props.title}
             {this.props.beta && (
-              <Typography variant='caption'>BETA</Typography>
+              <Typography variant='caption' className={this.props.classes.beta}>BETA</Typography>
             )}
           </Typography>
           <Typography gutterBottom className={this.props.classes.description}>

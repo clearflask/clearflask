@@ -160,7 +160,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         : undefined;
     });
     if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByIdeaIds.length > 0) {
-      ownProps.server.dispatch().voteGetOwn({
+      ownProps.server.dispatch().ideaVoteGetOwn({
         projectId: state.projectId,
         ideaIds: missingVotesByIdeaIds,
       });

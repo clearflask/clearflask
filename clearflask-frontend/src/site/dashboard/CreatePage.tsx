@@ -566,7 +566,6 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
         ...{ funded: funded || 0 },
         ...{ fundersCount: funded ? Math.round(Math.random() * 5) + 1 : 0 },
         ...{ voteValue: voteValue || 0 },
-        ...{ votersCount: voteValue ? Math.round(Math.random() * voteValue) + 1 : 0 },
         ...{ expressions: expressions },
         authorUserId: user.userId,
         title: title,

@@ -10,8 +10,8 @@ import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaWithVote;
-import com.smotana.clearflask.api.model.Vote;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -49,22 +49,22 @@ public interface IdeaStore {
 
     SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
-    IdeaAndIndexingFuture<UpdateResponse> updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
 
-    IdeaAndIndexingFuture<UpdateResponse> voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
+    IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
 
-    IdeaAndIndexingFuture<UpdateResponse> expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt);
+    IdeaAndExpressionsAndIndexingFuture expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt);
 
-    IdeaAndIndexingFuture<UpdateResponse> expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
+    IdeaAndExpressionsAndIndexingFuture expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
 
-    IdeaAndIndexingFuture<UpdateResponse> expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
+    IdeaAndExpressionsAndIndexingFuture expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression);
 
     IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary);
 
     /** Increments total comment count. If incrementChildCount is true, also increments immediate child count too. */
-    IdeaAndIndexingFuture<UpdateResponse> incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
+    IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
     ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
 
@@ -77,13 +77,21 @@ public interface IdeaStore {
     }
 
     @Value
-    class IdeaAndIndexingFuture<T> {
+    class IdeaAndIndexingFuture {
         private final IdeaModel idea;
-        private final ListenableFuture<T> indexingFuture;
+        private final ListenableFuture<UpdateResponse> indexingFuture;
+    }
+
+    @Value
+    class IdeaAndExpressionsAndIndexingFuture {
+        private final ImmutableSet<String> expressions;
+        private final IdeaModel idea;
+        private final ListenableFuture<UpdateResponse> indexingFuture;
     }
 
     @Value
     class IdeaTransactionAndIndexingFuture {
+        private final long ideaFundAmount;
         private final IdeaModel idea;
         private final TransactionModel transaction;
         private final ListenableFuture<UpdateResponse> indexingFuture;
@@ -165,12 +173,11 @@ public interface IdeaStore {
                     getFundGoal(),
                     getFundersCount(),
                     getVoteValue(),
-                    getVotersCount(),
                     getExpressionsValue(),
                     getExpressions());
         }
 
-        public IdeaWithVote toIdeaWithVote(Vote vote) {
+        public IdeaWithVote toIdeaWithVote(IdeaVote vote) {
             return new IdeaWithVote(
                     getIdeaId(),
                     getAuthorUserId(),
@@ -188,7 +195,6 @@ public interface IdeaStore {
                     getFundGoal(),
                     getFundersCount(),
                     getVoteValue(),
-                    getVotersCount(),
                     getExpressionsValue(),
                     getExpressions(),
                     vote);

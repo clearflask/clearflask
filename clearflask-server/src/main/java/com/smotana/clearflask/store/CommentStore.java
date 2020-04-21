@@ -7,8 +7,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Comment;
 import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.api.model.CommentWithAuthor;
+import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
@@ -46,7 +47,7 @@ public interface CommentStore {
 
     CommentAndIndexingFuture<UpdateResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
 
-    CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, VoteValue votePrev, VoteValue vote);
+    CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote);
 
     CommentAndIndexingFuture<UpdateResponse> markAsDeletedComment(String projectId, String ideaId, String commentId);
 
@@ -122,24 +123,28 @@ public interface CommentStore {
                     getIdeaId(),
                     getCommentId(),
                     getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
-                    getChildCommentCount(),
-                    getAuthorUserId(),
-                    getCreated(),
-                    getEdited(),
-                    getContent());
-        }
-
-        public CommentWithAuthor toCommentWithAuthor() {
-            return new CommentWithAuthor(
-                    getIdeaId(),
-                    getCommentId(),
-                    getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
+                    new User(getAuthorUserId(), getAuthorName()),
                     getChildCommentCount(),
                     getAuthorUserId(),
                     getCreated(),
                     getEdited(),
                     getContent(),
-                    new User(getAuthorUserId(), getAuthorName()));
+                    (long) (getUpvotes() - getDownvotes()));
+        }
+
+        public CommentWithVote toCommentWithVote(VoteOption vote) {
+            return new CommentWithVote(
+                    getIdeaId(),
+                    getCommentId(),
+                    getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
+                    new User(getAuthorUserId(), getAuthorName()),
+                    getChildCommentCount(),
+                    getAuthorUserId(),
+                    getCreated(),
+                    getEdited(),
+                    getContent(),
+                    (long) (getUpvotes() - getDownvotes()),
+                    vote);
         }
     }
 }

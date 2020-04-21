@@ -40,8 +40,14 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/user/{userId}/transactionsearch:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1user~1{userId}~1transactionsearch'
-  /project/{projectId}/idea/{ideaId}/vote:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote'
+  /project/{projectId}/vote/ideas:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1vote~1ideas'
+  /project/{projectId}/vote/idea/{ideaId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1vote~1idea~1{ideaId}'
+  /project/{projectId}/vote/comments:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1vote~1comments'
+  /project/{projectId}/idea/{ideaId}/vote/comment/{commentId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1comment~1{commentId}'
   /project/{projectId}/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
   /project/{projectId}/legal:
@@ -85,8 +91,6 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/admin/transaction/search:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction~1search'
-  /project/{projectId}/admin/votesearch:
-    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1votesearch'
   /project/config/admin:
     $ref: 'api-project.yaml#/~1project~1config~1admin'
   /project/admin:

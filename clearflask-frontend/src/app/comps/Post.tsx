@@ -1,10 +1,8 @@
-import { Button, CardActionArea, Chip, Collapse, Fade, IconButton, Popover, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Chip, Collapse, Fade, Popover, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
-import DownvoteIcon from '@material-ui/icons/ArrowDropDownRounded';
-import UpvoteIcon from '@material-ui/icons/ArrowDropUpRounded';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
@@ -28,6 +26,7 @@ import FundingBar from './FundingBar';
 import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
+import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -309,7 +308,7 @@ interface ConnectProps {
   expression?: Array<string>;
   fundAmount?: number;
   loggedInUser?: Client.User;
-  updateVote: (voteUpdate: Partial<Client.VoteUpdate>) => Promise<Client.VoteUpdateResponse>;
+  updateVote: (voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
 }
 
 interface State {
@@ -318,8 +317,7 @@ interface State {
   expressionExpanded?: boolean;
   expressionExpandedAnchor?: PopoverPosition;
   logInOpen?: boolean;
-  isSubmittingUpvote?: boolean;
-  isSubmittingDownvote?: boolean;
+  isSubmittingVote?: Client.VoteOption;
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
   editExpanded?: boolean;
@@ -638,73 +636,51 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const votingAllowed: boolean = !this.props.idea.statusId
       || this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea!.statusId)?.disableVoting !== true;
     if (!votingAllowed
-      && !this.props.idea.voteValue
-      && !this.props.idea.votersCount) return null;
-
-    const upvoted: boolean = (this.props.vote === Client.VoteOption.Upvote) !== !!this.state.isSubmittingUpvote;
-    const downvoted: boolean = (this.props.vote === Client.VoteOption.Downvote) !== !!this.state.isSubmittingDownvote;
+      && !this.props.idea.voteValue) return null;
 
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}>
-        <IconButton
-          color={upvoted ? 'primary' : undefined}
-          className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}
-          disabled={!votingAllowed}
-          onClick={votingAllowed ? e => {
-            const upvote = () => {
-              if (this.state.isSubmittingUpvote) return;
-              this.setState({ isSubmittingUpvote: true });
-              this.props.updateVote({
-                vote: (this.props.vote === Client.VoteOption.Upvote)
-                  ? Client.VoteOption.None : Client.VoteOption.Upvote
-              })
-                .then(() => this.setState({ isSubmittingUpvote: false }),
-                  () => this.setState({ isSubmittingUpvote: false }));
-            };
-            if (this.props.loggedInUser) {
-              upvote();
-            } else {
-              this.onLoggedIn = upvote;
-              this.setState({ logInOpen: true });
-            }
-          } : undefined}>
-          <UpvoteIcon fontSize='inherit' />
-        </IconButton>
-        <Typography variant='overline' className={this.props.classes.voteCount}>
-          {this.props.idea.voteValue || 0}
-        </Typography>
-
-        {this.props.category.support.vote.enableDownvotes && (
-          <IconButton
-            color={downvoted ? 'primary' : undefined}
-            className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''}`}
-            disabled={!votingAllowed}
-            onClick={votingAllowed ? e => {
-              if (this.state.isSubmittingDownvote) return;
-              const downvote = () => {
-                this.setState({ isSubmittingDownvote: true });
-                this.props.updateVote({
-                  vote: (this.props.vote === Client.VoteOption.Downvote)
-                    ? Client.VoteOption.None : Client.VoteOption.Downvote
-                })
-                  .then(() => this.setState({ isSubmittingDownvote: false }),
-                    () => this.setState({ isSubmittingDownvote: false }));
-              };
-              if (this.props.loggedInUser) {
-                downvote();
-              } else {
-                this.onLoggedIn = downvote;
-                this.setState({ logInOpen: true });
-              }
-            } : undefined}>
-            <DownvoteIcon fontSize='inherit' />
-          </IconButton>
-        )}
-      </div>
+      <VotingControl
+        vote={this.props.vote}
+        voteValue={this.props.idea.voteValue || 0}
+        isSubmittingVote={this.state.isSubmittingVote}
+        votingAllowed={votingAllowed}
+        onUpvote={() => {
+          const upvote = () => {
+            if (!votingAllowed || this.state.isSubmittingVote) return;
+            this.setState({ isSubmittingVote: Client.VoteOption.Upvote });
+            this.props.updateVote({
+              vote: (this.props.vote === Client.VoteOption.Upvote)
+                ? Client.VoteOption.None : Client.VoteOption.Upvote
+            })
+              .then(() => this.setState({ isSubmittingVote: undefined }),
+                () => this.setState({ isSubmittingVote: undefined }));
+          };
+          if (this.props.loggedInUser) {
+            upvote();
+          } else {
+            this.onLoggedIn = upvote;
+            this.setState({ logInOpen: true });
+          }
+        }}
+        onDownvote={this.props.category.support.vote.enableDownvotes ? () => {
+          if (!votingAllowed || this.state.isSubmittingVote) return;
+          const downvote = () => {
+            this.setState({ isSubmittingVote: Client.VoteOption.Downvote });
+            this.props.updateVote({
+              vote: (this.props.vote === Client.VoteOption.Downvote)
+                ? Client.VoteOption.None : Client.VoteOption.Downvote
+            })
+              .then(() => this.setState({ isSubmittingVote: undefined }),
+                () => this.setState({ isSubmittingVote: undefined }));
+          };
+          if (this.props.loggedInUser) {
+            downvote();
+          } else {
+            this.onLoggedIn = downvote;
+            this.setState({ logInOpen: true });
+          }
+        } : undefined}
+      />
     );
   }
 
@@ -864,21 +840,21 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     };
     const clickExpression = (display: string) => {
       if (!expressionAllowed) return;
-      var expressionDiff: Client.VoteUpdateExpressions | undefined = undefined;
+      var expressionDiff: Client.IdeaVoteUpdateExpressions | undefined = undefined;
       const hasExpressed = getHasExpressed(display);
       if (limitEmojiPerIdea) {
         if (hasExpressed) {
-          expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Unset, expression: display };
+          expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Unset, expression: display };
         } else {
-          expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Set, expression: display };
+          expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Set, expression: display };
         }
       } else if (!hasExpressed && reachedLimitPerIdea) {
         this.props.enqueueSnackbar("Whoa, that's too many", { variant: 'warning', preventDuplicate: true });
         return;
       } else if (hasExpressed) {
-        expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Remove, expression: display };
+        expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove, expression: display };
       } else {
-        expressionDiff = { action: Client.VoteUpdateExpressionsActionEnum.Add, expression: display };
+        expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Add, expression: display };
       }
       this.props.updateVote({ expressions: expressionDiff })
     };
@@ -1066,7 +1042,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     if (voteStatus === undefined) {
       // Don't refresh votes if inside a panel which will refresh votes for us
       if (ownProps.variant === 'page') {
-        ownProps.server.dispatch().voteGetOwn({
+        ownProps.server.dispatch().ideaVoteGetOwn({
           projectId: state.projectId,
           ideaIds: [ownProps.idea.ideaId],
         });
@@ -1091,12 +1067,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
-    updateVote: (voteUpdate: Partial<Client.VoteUpdate>): Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
+    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
       projectId: state.projectId,
-      voteUpdate: {
-        ideaId: ownProps.idea!.ideaId,
-        ...voteUpdate,
-      },
+      ideaId: ownProps.idea!.ideaId,
+      ideaVoteUpdate,
     }),
   };
 })(withStyles(styles, { withTheme: true })(withRouter(withSnackbar(Post))));

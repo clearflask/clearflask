@@ -9,24 +9,7 @@ components:
     FundAmount:
       type: integer
       format: int64
-    VoteSearchAdmin:
-      type: object
-      properties:
-        filterIdeaIds:
-          type: array
-          items:
-            type: string
-        filterUserIds:
-          type: array
-          items:
-            type: string
-        sortBy:
-          type: string
-          enum:
-          - Recent
-      required:
-      - sortBy
-    Vote:
+    IdeaVote:
       type: object
       properties:
         vote:
@@ -38,13 +21,9 @@ components:
             type: string
         fundAmount:
           $ref: 'api-vote.yaml#/components/schemas/FundAmount'
-    VoteUpdate:
+    IdeaVoteUpdate:
       type: object
-      required:
-      - ideaId
       properties:
-        ideaId:
-          type: string
         fundDiff:
           type: integer
           format: int64
@@ -64,10 +43,17 @@ components:
               - remove
             expression:
               type: string
+    CommentVoteUpdate:
+      type: object
+      required:
+      - vote
+      properties:
+        vote:
+          $ref: 'api-vote.yaml#/components/schemas/VoteOption'
 
-/project/{projectId}/idea/{ideaId}/vote:
+/project/{projectId}/vote/ideas:
   get:
-    operationId: voteGetOwn
+    operationId: ideaVoteGetOwn
     tags: [Vote]
     parameters:
     - name: projectId
@@ -87,7 +73,7 @@ components:
         content:
           application/json:
             schema:
-              title: VoteGetOwnResponse
+              title: IdeaVoteGetOwnResponse
               type: object
               required:
               - votesByIdeaId
@@ -112,11 +98,17 @@ components:
                   type: object
                   additionalProperties:
                     $ref: 'api-vote.yaml#/components/schemas/FundAmount'
+/project/{projectId}/vote/idea/{ideaId}:
   patch:
-    operationId: voteUpdate
+    operationId: ideaVoteUpdate
     tags: [Vote]
     parameters:
     - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
       in: path
       required: true
       schema:
@@ -126,20 +118,20 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'api-vote.yaml#/components/schemas/VoteUpdate'
+            $ref: 'api-vote.yaml#/components/schemas/IdeaVoteUpdate'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: VoteUpdateResponse
+              title: IdeaVoteUpdateResponse
               type: object
               required:
               - vote
               - idea
               properties:
                 vote:
-                  $ref: 'api-vote.yaml#/components/schemas/Vote'
+                  $ref: 'api-vote.yaml#/components/schemas/IdeaVote'
                 idea:
                   $ref: 'api-idea.yaml#/components/schemas/Idea'
                 balance:
@@ -148,39 +140,76 @@ components:
                   $ref: 'api-credit.yaml#/components/schemas/Transaction'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/votesearch:
+/project/{projectId}/vote/comments:
   get:
-    operationId: voteSearchAdmin
-    tags: [VoteAdmin]
+    operationId: commentVoteGetOwn
+    tags: [Vote]
     parameters:
     - name: projectId
       in: path
       required: true
       schema:
         type: string
-    - name: cursor
+    - name: commentIds
       in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
-    requestBody:
       required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-vote.yaml#/components/schemas/VoteSearchAdmin'
+      schema:
+        type: array
+        items:
+          type: string
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: VoteSearchResponse
+              title: CommentVoteGetOwnResponse
               type: object
-              properties:
-                cursor:
-                  $ref: 'api-client.yaml#/components/schemas/Cursor'
-                results:
-                  type: array
-                  items:
-                    $ref: 'api-vote.yaml#/components/schemas/Vote'
               required:
-              - results
+              - votesByCommentId
+              properties:
+                votesByCommentId:
+                  description: Mapping commentId to vote
+                  type: object
+                  additionalProperties:
+                    $ref: 'api-vote.yaml#/components/schemas/VoteOption'
+/project/{projectId}/idea/{ideaId}/vote/comment/{commentId}:
+  patch:
+    operationId: commentVoteUpdate
+    tags: [Vote]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-vote.yaml#/components/schemas/CommentVoteUpdate'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CommentVoteUpdateResponse
+              type: object
+              required:
+              - vote
+              - comment
+              properties:
+                comment:
+                  $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'

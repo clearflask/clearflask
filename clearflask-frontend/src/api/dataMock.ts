@@ -65,7 +65,6 @@ class DataMock {
           fundersCount: 5,
           fundGoal: 60,
           voteValue: 3,
-          votersCount: 2,
           expressionsValue: 7,
           expressions: {
             '👍': 4,
@@ -87,7 +86,6 @@ class DataMock {
             fundersCount: 5,
             fundGoal: 200,
             voteValue: 42,
-            votersCount: 53,
             expressionsValue: 56,
             expressions: {
               '👍': 34,
@@ -95,10 +93,10 @@ class DataMock {
             },
           },
         },
-      }).then(idea => ServerMock.get().voteUpdate({
+      }).then(idea => ServerMock.get().ideaVoteUpdate({
         projectId: this.projectId,
-        voteUpdate: {
-          ideaId: idea.ideaId,
+        ideaId: idea.ideaId,
+        ideaVoteUpdate: {
           fundDiff: 40,
         },
       }))));
@@ -237,7 +235,6 @@ class DataMock {
         fundGoal: Math.round(Math.random() * 10) * 5000,
       } : {}),
       ...(Math.random() < 0.9 ? {
-        votersCount: Math.round(Math.random() * 30),
         voteValue: Math.round(Math.random() * 1000) - 300,
       } : {}),
       ...(Math.random() < 0.9 ? {
@@ -310,6 +307,7 @@ class DataMock {
           ...{
             author: user,
             created: this.mockDate(),
+            voteValue: Math.round(Math.random() * 120 - 40),
           },
         },
       }))

@@ -7,10 +7,27 @@ import { Server } from '../../api/server';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
+import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(2),
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gridTemplateRows: '1fr auto',
+    gridTemplateAreas:
+      "'v c'"
+      + " 'v f'",
+  },
+  content: {
+    gridArea: 'c',
+    alignSelf: 'end',
+  },
+  votingControl: {
+    gridArea: 'v',
+  },
+  footer: {
+    gridArea: 'f',
   },
   barItem: {
     whiteSpace: 'nowrap',
@@ -46,15 +63,17 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
-  comment?: Client.CommentWithAuthor;
+  comment?: Client.CommentWithVote;
   loggedInUser?: Client.User;
   replyOpen?: boolean;
   onReplyClicked: () => void;
+  logIn: () => Promise<void>;
 }
 interface State {
   editExpanded?: boolean;
   adminDeleteExpanded?: boolean;
   deleteExpanded?: boolean;
+  isSubmittingVote?: Client.VoteOption;
 }
 
 class Comment extends Component<Props & WithStyles<typeof styles, true>, State> {
@@ -63,16 +82,49 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   render() {
     return (
       <div className={this.props.classes.comment}>
-        {this.props.comment && !this.props.comment.author ? (
-          <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
-        ) : (
-            <Typography variant='body1' className={this.props.classes.pre}>
-              {this.props.comment && this.props.comment.content}
-            </Typography>
-          )}
-        {this.renderBottomBar()}
+        <div className={this.props.classes.content}>{this.renderContent()}</div>
+        <div className={this.props.classes.votingControl}>{this.renderVotingControl()}</div>
+        <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
       </div>
     );
+  }
+
+  renderContent() {
+    return this.props.comment && !this.props.comment.author ? (
+      <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
+    ) : (
+        <Typography variant='body1' className={this.props.classes.pre}>
+          {this.props.comment && this.props.comment.content}
+        </Typography>
+      );
+  }
+
+  renderVotingControl() {
+    return (
+      <VotingControl
+        vote={this.props.comment?.vote}
+        hidden={!this.props.comment?.content}
+        voteValue={this.props.comment?.voteValue || 0}
+        isSubmittingVote={this.state.isSubmittingVote}
+        votingAllowed={!!this.props.comment}
+        onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
+        onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
+      />
+    );
+  }
+
+  voteUpdate(vote: Client.VoteOption) {
+    this.setState({ isSubmittingVote: vote });
+    this.props.logIn().then(() => this.props.server.dispatch().commentVoteUpdate({
+      projectId: this.props.server.getProjectId(),
+      commentId: this.props.comment!.commentId,
+      ideaId: this.props.comment!.ideaId,
+      commentVoteUpdate: { vote: vote },
+    })).then(commentResult => {
+      this.setState({ isSubmittingVote: undefined });
+    }).catch(err => {
+      this.setState({ isSubmittingVote: undefined });
+    });
   }
 
   renderBottomBar() {

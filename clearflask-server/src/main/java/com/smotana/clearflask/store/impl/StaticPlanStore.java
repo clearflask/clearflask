@@ -20,7 +20,7 @@ import java.util.Optional;
 public class StaticPlanStore implements PlanStore {
 
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
-    private static final String TERMS_ACTIVE_USERS = "Active users are users that have signed up or made public contributions counted on a 3 month-average";
+    private static final String TERMS_ACTIVE_USERS = "Active users are users that have signed up or made public contributions counted on a rolling 3 month-median";
     private static final String TERMS_ANALYTICS = "View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.";
     private static final String TERMS_VOTING = "Voting and Credit system allows precise expression of value for each idea.";
     private static final String TERMS_CREDIT = "Spend time credits on future ClearFlask development features";

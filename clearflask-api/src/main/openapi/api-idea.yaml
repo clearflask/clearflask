@@ -106,9 +106,6 @@ components:
         voteValue:
           type: integer
           format: int64
-        votersCount:
-          type: integer
-          format: int64
         expressionsValue:
           description: Combined value of all expressions. Not the expression count.
           type: number
@@ -136,7 +133,7 @@ components:
             - vote
           properties:
             vote:
-              $ref: 'api-vote.yaml#/components/schemas/Vote'
+              $ref: 'api-vote.yaml#/components/schemas/IdeaVote'
     IdeaCreate:
       type: object
       properties:
@@ -254,7 +251,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/Idea'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
 /project/{projectId}/idea/{ideaId}:
   get:
     operationId: ideaGet
@@ -382,7 +379,7 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-idea.yaml#/components/schemas/Idea'
+              $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
   delete:
     operationId: ideaDeleteBulkAdmin
     tags: [IdeaAdmin]

@@ -110,20 +110,22 @@ public class CommentStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         ideaStore.createIndex(projectId);
         String ideaId = createRandomIdea(projectId).getIdeaId();
+        String userId1 = IdUtil.randomId();
+        String userId2 = IdUtil.randomId();
 
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(1).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.None, VoteValue.Upvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), userId1, VoteValue.Upvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().downvotes(1).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.None, VoteValue.Downvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), userId2, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().upvotes(0).downvotes(2).build();
-        store.voteComment(projectId, ideaId, c.getCommentId(), VoteValue.Upvote, VoteValue.Downvote).getIndexingFuture().get();
+        store.voteComment(projectId, ideaId, c.getCommentId(), userId1, VoteValue.Downvote).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 

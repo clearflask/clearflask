@@ -19,9 +19,9 @@ import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaSearchResponse;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
-import com.smotana.clearflask.api.model.Vote;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -34,6 +34,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -73,7 +74,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
     @Override
-    public Idea ideaCreate(String projectId, IdeaCreate ideaCreate) {
+    public IdeaWithVote ideaCreate(String projectId, IdeaCreate ideaCreate) {
         UserModel user = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
@@ -102,13 +103,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableMap.of(),
                 0d);
         ideaStore.createIdea(ideaModel);
-        return ideaModel.toIdea();
+        ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote);
+        return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
-    public Idea ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
+    public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
         UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         IdeaModel ideaModel = new IdeaModel(
@@ -134,7 +136,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableMap.of(),
                 0d);
         ideaStore.createIdea(ideaModel);
-        return ideaModel.toIdea();
+        ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote);
+        return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
     @PermitAll
@@ -147,7 +150,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
                 .map(ideaModel -> userOpt.map(user -> addVote(user, ideaModel))
-                        .orElseGet(() -> ideaModel.toIdeaWithVote(new Vote(null, null, null))))
+                        .orElseGet(() -> ideaModel.toIdeaWithVote(new IdeaVote(null, null, null))))
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -188,7 +191,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 searchResponse.getCursorOpt().orElse(null),
                 userOpt.map(user -> addVotes(user, ideaModels))
                         .orElseGet(() -> ideaModels.stream()
-                                .map(ideaModel -> ideaModel.toIdeaWithVote(new Vote(null, null, null)))
+                                .map(ideaModel -> ideaModel.toIdeaWithVote(new IdeaVote(null, null, null)))
                                 .collect(ImmutableList.toImmutableList())));
     }
 
@@ -282,7 +285,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .mightContain(idea.getIdeaId())) {
             voteOptionOpt = Optional.ofNullable(voteStore.voteSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
                     .get(idea.getIdeaId()))
-                    .map(voteModel -> VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption());
+                    .map(voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption());
         }
         Optional<List<String>> expressionOpt = Optional.empty();
         if (user.getExpressBloom() != null
@@ -301,7 +304,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     .map(VoteStore.FundModel::getFundAmount);
         }
 
-        return idea.toIdeaWithVote(new Vote(
+        return idea.toIdeaWithVote(new IdeaVote(
                 voteOptionOpt.orElse(null),
                 expressionOpt.orElse(null),
                 fundAmountOpt.orElse(null)
@@ -338,10 +341,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         return ideas.stream()
                 .map(idea -> {
-                    Vote.VoteBuilder voteBuilder = Vote.builder();
+                    IdeaVote.IdeaVoteBuilder voteBuilder = IdeaVote.builder();
                     VoteStore.VoteModel voteModel = voteResults.get(idea.getIdeaId());
                     if (voteModel != null) {
-                        voteBuilder.vote(VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption());
+                        voteBuilder.vote(VoteValue.fromValue(voteModel.getVote()).toVoteOption());
                     }
                     VoteStore.ExpressModel expressModel = expressResults.get(idea.getIdeaId());
                     if (expressModel != null) {

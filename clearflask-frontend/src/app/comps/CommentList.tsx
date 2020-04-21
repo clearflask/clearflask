@@ -29,7 +29,7 @@ interface Props {
 }
 
 interface ConnectProps {
-  comments: Client.CommentWithAuthor[];
+  comments: Client.CommentWithVote[];
   commentsStatus?: Status;
   loadMore: () => Promise<CommentSearchResponse>;
 }
@@ -53,14 +53,16 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
   render() {
     return (
       <div key={this.props.parentCommentId || this.props.ideaId} className={this.props.parentCommentId ? this.props.classes.commentIndent : undefined}>
-        {this.props.comments.map(comment => (
+        {this.props.comments.sort((l, r) => r.voteValue - l.voteValue).map(comment => (
           <React.Fragment key={comment.commentId}>
             <Comment
+              key={comment.commentId}
               server={this.props.server}
               comment={comment}
               loggedInUser={this.props.loggedInUser}
               replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
               onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
+              logIn={this.props.logIn}
             />
             {comment.childCommentCount > 0 && (
               <CommentList
@@ -101,17 +103,31 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 }
 
 const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
-  const comments: Client.CommentWithAuthor[] = [];
+  const comments: Client.CommentWithVote[] = [];
   var ideaIdOrParentCommentId = ownProps.parentCommentId || ownProps.ideaId;
   const commentIds = state.comments.byIdeaIdOrParentCommentId[ideaIdOrParentCommentId];
   const commentsStatus = commentIds && commentIds.status;
   if (commentIds && commentIds.status === Status.FULFILLED && commentIds.commentIds) {
+    const missingVotesByCommentIds: string[] = [];
     commentIds.commentIds.forEach(commentId => {
       const comment = state.comments.byId[commentId];
-      if (comment && comment.status === Status.FULFILLED && comment.comment) {
-        comments.push(comment.comment);
+      if (!comment || comment.status !== Status.FULFILLED || !comment.comment) {
+        return;
       }
+      const commentWithVote: Client.CommentWithVote = comment.comment;
+      if (state.commentVotes.statusByCommentId[commentId] === undefined) {
+        missingVotesByCommentIds.push(commentId);
+      } else {
+        commentWithVote.vote = state.commentVotes.votesByCommentId[commentId];
+      }
+      comments.push(comment.comment);
     });
+    if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByCommentIds.length > 0) {
+      ownProps.server.dispatch().commentVoteGetOwn({
+        projectId: state.projectId,
+        commentIds: missingVotesByCommentIds,
+      });
+    }
   }
   return {
     commentsStatus: commentsStatus,

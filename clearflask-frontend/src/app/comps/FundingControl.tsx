@@ -63,7 +63,7 @@ interface ConnectProps {
   otherFundedIdeas: SearchResult;
   balance: number;
   maxFundAmountSeen: number;
-  updateVote: (voteUpdate: Client.VoteUpdate) => Promise<Client.VoteUpdateResponse>;
+  updateVote: (voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
   callOnMount: () => void,
   loadMore?: () => void;
 }
@@ -206,7 +206,6 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
               sliderIsSubmitting: true,
             });
             this.props.updateVote({
-              ideaId: idea.ideaId,
               fundDiff: minmax(-fundAmount, sliderFundAmountDiff, this.props.balance),
             })
               .finally(() => this.setState({
@@ -295,9 +294,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       cursor: undefined,
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
-    updateVote: (voteUpdate: Client.VoteUpdate): Promise<Client.VoteUpdateResponse> => ownProps.server.dispatch().voteUpdate({
+    updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
       projectId: state.projectId,
-      voteUpdate: voteUpdate,
+      ideaId: ownProps.idea!.ideaId,
+      ideaVoteUpdate: ideaVoteUpdate,
     }),
     callOnMount: () => {
       ownProps.server.dispatch().ideaSearch({

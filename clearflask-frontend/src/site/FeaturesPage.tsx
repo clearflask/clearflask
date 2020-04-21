@@ -71,9 +71,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             <Grid container className={this.props.classes.grid}>
               <Feature icon={<ReplyAllIcon />} title='Response' description='Quick public responses will notify subscribed users and remain visible' />
               <Feature icon={<EmailIcon />} title='Email' description='Keep your users updated via Email' />
-              <Feature icon={<AndroidIcon />} title='Android Push' description='Keep your users updated via Android Push' />
+              <Feature icon={<BrowserIcon />} title='Browser Push' description='Keep your users updated via Browser Push' />
+              <Feature beta icon={<AndroidIcon />} title='Android Push' description='Keep your users updated via Android Push' />
               <Feature beta icon={<AppleIcon />} title='Apple Push' description='Keep your users updated via Apple Push' />
-              <Feature beta icon={<BrowserIcon />} title='Browser Push' description='Keep your users updated via Browser Push' />
             </Grid>
           </DividerCorner>
           <DividerCorner title='Customization'>
