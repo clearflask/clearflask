@@ -16,6 +16,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -37,6 +38,8 @@ public class IdeaStoreIT extends AbstractIT {
 
     @Inject
     private IdeaStore store;
+    @Inject
+    private UserStore userStore;
 
     @Override
     protected void configure() {
@@ -46,6 +49,7 @@ public class IdeaStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticIdeaStore.module(),
+                DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
@@ -101,20 +105,27 @@ public class IdeaStoreIT extends AbstractIT {
     public void testSearch() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId3 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
         IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId1)
                 .title("aaaaaaaaaaaaaa")
                 .created(Instant.now().minus(3, ChronoUnit.DAYS))
                 .funded(10L)
                 .build();
         IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId2)
                 .title("bbbbbbbbbbbbbb")
                 .created(Instant.now().minus(2, ChronoUnit.DAYS))
                 .funded(30L)
                 .build();
         IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId3)
                 .title("cccccccccccccc")
                 .created(Instant.now().minus(1, ChronoUnit.DAYS))
                 .funded(20L)
@@ -206,8 +217,9 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
-        String userId1 = IdUtil.randomId();
-        String userId2 = IdUtil.randomId();
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getVotersCount());
         assertEquals(Long.valueOf(0L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
@@ -247,8 +259,9 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         store.createIdea(idea).get();
-        String userId1 = IdUtil.randomId();
-        String userId2 = IdUtil.randomId();
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         assertEquals(ImmutableMap.<String, Long>of(), store.getIdea(projectId, idea.getIdeaId()).get().getExpressions());
         assertEquals(0d, store.getIdea(projectId, idea.getIdeaId()).get().getExpressionsValue(), 0.001);

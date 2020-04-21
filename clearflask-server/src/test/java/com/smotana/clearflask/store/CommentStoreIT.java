@@ -16,6 +16,7 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
@@ -37,6 +38,8 @@ public class CommentStoreIT extends AbstractIT {
     private CommentStore store;
     @Inject
     private IdeaStore ideaStore;
+    @Inject
+    private UserStore userStore;
 
     @Override
     protected void configure() {
@@ -46,6 +49,7 @@ public class CommentStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticCommentStore.module(),
+                DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 ElasticUtil.module(),
                 DynamoElasticIdeaStore.module(),
@@ -110,8 +114,9 @@ public class CommentStoreIT extends AbstractIT {
         store.createIndex(projectId).get();
         ideaStore.createIndex(projectId);
         String ideaId = createRandomIdea(projectId).getIdeaId();
-        String userId1 = IdUtil.randomId();
-        String userId2 = IdUtil.randomId();
+        userStore.createIndex(projectId);
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+        String userId2 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));

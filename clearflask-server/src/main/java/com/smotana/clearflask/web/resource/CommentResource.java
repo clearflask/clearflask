@@ -93,7 +93,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 0,
                 0))
                 .getCommentModel();
-        commentStore.voteComment(projectId, commentModel.getIdeaId(), commentModel.getCommentId(), commentModel.getAuthorUserId(), VoteValue.Upvote);
+        commentModel = commentStore.voteComment(projectId, commentModel.getIdeaId(), commentModel.getCommentId(), commentModel.getAuthorUserId(), VoteValue.Upvote).getCommentModel();
         notificationService.onCommentReply(
                 configAdmin,
                 idea,

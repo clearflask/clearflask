@@ -209,6 +209,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       idea.childCommentCount++;
     }
     this.getProject(request.projectId).comments.push(comment);
+    this.getProject(request.projectId).commentVotes.push({
+      voterUserId: loggedInUser.userId,
+      commentId: comment.commentId,
+      vote: Client.VoteOption.Upvote,
+    });
     return this.returnLater({
       ...comment,
       vote: Client.VoteOption.Upvote,
@@ -532,6 +537,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         .find(c => c.categoryId === request.ideaCreateAdmin.categoryId)!.workflow.entryStatus;
     }
     this.getProject(request.projectId).ideas.push(idea);
+    this.getProject(request.projectId).votes.push({
+      voterUserId: author.userId,
+      ideaId: idea.ideaId,
+      vote: Client.VoteOption.Upvote,
+    });
     return this.returnLater({
       ...idea,
       vote: {
