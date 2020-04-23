@@ -91,9 +91,6 @@ public interface AccountStore {
         @ToString.Exclude
         private final String password;
 
-        private final String phone;
-
-        @NonNull
         private final String paymentToken;
 
         @NonNull
@@ -103,8 +100,7 @@ public interface AccountStore {
             return new AccountAdmin(
                     planStore.getPlan(getPlanId()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanId())),
                     getName(),
-                    getEmail(),
-                    getPhone());
+                    getEmail());
         }
     }
 }

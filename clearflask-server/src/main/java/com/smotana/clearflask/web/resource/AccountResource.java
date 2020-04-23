@@ -84,7 +84,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession,
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
+            authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
         // Fetch account
@@ -122,7 +122,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
+        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         return account.toAccountAdmin(planStore);
     }
@@ -148,13 +148,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
-        Optional<Plan> planOpt = planStore.getPlan(signup.getPlanid());
-        if (!planOpt.isPresent()) {
-            log.error("Signup for plan that does not exist, planid {} email {} phone {}",
-                    signup.getPlanid(), signup.getEmail(), signup.getPhone());
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan does not exist");
-        }
-        Plan plan = planOpt.get();
+        Plan plan = planStore.getTrialPlan();
 
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
         Account account = new Account(
@@ -163,15 +157,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now(),
                 signup.getName(),
                 passwordHashed,
-                signup.getPhone(),
-                signup.getPaymentToken(),
                 ImmutableSet.of());
         accountStore.createAccount(account);
 
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec(), configApp.domain());
+        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         // TODO setup recurring billing
         // TODO for now, the only way to signup is if you guess the payment token to be "letmein"

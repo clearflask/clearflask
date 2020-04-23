@@ -71,6 +71,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  adminsOnly?: boolean;
 }
 
 interface ConnectProps {
@@ -117,7 +118,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
             <TextField
               disabled={this.state.newUserIsSubmitting}
               className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-              label='Create'
+              label={this.props.adminsOnly ? 'Invite' : 'Create'}
               placeholder='Name'
               value={this.state.newUserName || ''}
               onChange={e => {
@@ -151,26 +152,28 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                   this.updateSearchText(this.state.newUserName, e.target.value);
                 }}
               />
-              <TextField
-                disabled={this.state.newUserIsSubmitting}
-                className={this.props.classes.createFormField}
-                placeholder='Password'
-                value={this.state.newUserPassword || ''}
-                onChange={e => this.setState({ newUserPassword: e.target.value })}
-                type={this.state.revealPassword ? 'text' : 'password'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton
-                        aria-label='Toggle password visibility'
-                        onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                      >
-                        {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
+              {!this.props.adminsOnly && (
+                <TextField
+                  disabled={this.state.newUserIsSubmitting}
+                  className={this.props.classes.createFormField}
+                  placeholder='Password'
+                  value={this.state.newUserPassword || ''}
+                  onChange={e => this.setState({ newUserPassword: e.target.value })}
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              )}
               <Button
                 color='primary'
                 disabled={!enableSubmit || this.state.newUserIsSubmitting}
@@ -184,6 +187,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                       email: this.state.newUserEmail,
                       password: this.state.newUserPassword,
                       balance: this.state.newUserBalance,
+                      isAdmin: this.props.adminsOnly,
                     },
                   })).then(user => this.setState({
                     createRefFocused: false,
@@ -204,7 +208,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                 }}
               >
                 Submit
-            </Button>
+              </Button>
             </div>
           )}
           search={(
@@ -245,7 +249,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                             <TableCell><Typography>
                               {!!user.balance && (<CreditView
                                 val={user.balance}
-                                credits={this.props.server.getStore().getState().conf.conf?.credits || { increment: 1 }} />)}
+                                credits={this.props.credits || { increment: 1 }} />)}
                             </Typography></TableCell>
                             <TableCell><Typography>
                               {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}
@@ -314,6 +318,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
         userSearchAdmin: {
+          isAdmin: !!this.props.adminsOnly,
           searchText: `${name || ''} ${email || ''}`.trim(),
         },
       }))
@@ -328,9 +333,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
   const connectProps: ConnectProps = {
-    credits: state.conf.conf
-      ? state.conf.conf.credits
-      : undefined,
+    credits: state.conf.conf?.users.credits,
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(UsersPage));

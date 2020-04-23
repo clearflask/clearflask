@@ -94,11 +94,11 @@ export class Server {
     return this.store;
   }
 
-  isOwnerLoggedIn(): boolean {
+  isAdminLoggedIn(): boolean {
     const state = this.store.getState();
     return state.users.loggedIn.status === Status.FULFILLED
       && !!state.users.loggedIn.user
-      && !!state.users.loggedIn.user.isAccountOwner;
+      && !!state.users.loggedIn.user.isAdmin;
   }
 
   dispatch(): Client.Dispatcher {

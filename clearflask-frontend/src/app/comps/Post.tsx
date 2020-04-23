@@ -551,7 +551,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.category
       || !this.props.credits
-      || (!this.props.server.isOwnerLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
+      || (!this.props.server.isAdminLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
 
     return (
       <React.Fragment>
@@ -1012,7 +1012,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
           Reply:&nbsp;&nbsp;
         </Typography>
-        <Typography variant='body1' component={'span'}>
+        <Typography variant='body1' component={'span'} className={variant === 'page' ? this.props.classes.pre : ''}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
             : this.props.idea.response}
@@ -1062,9 +1062,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     category: (ownProps.idea && state.conf.conf)
       ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
       : undefined,
-    credits: state.conf.conf
-      ? state.conf.conf.credits
-      : undefined,
+    credits: state.conf.conf?.users.credits,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
     updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({

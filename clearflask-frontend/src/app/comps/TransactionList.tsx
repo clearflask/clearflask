@@ -131,7 +131,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     isLoggedIn: !!userId,
     transactions: state.credits.transactionSearch.transactions,
     balance: state.credits.myBalance.balance,
-    credits: state.conf.conf ? state.conf.conf.credits : undefined,
+    credits: state.conf.conf?.users.credits,
     getNextTransactions: getNextTransactions,
   };
   return connectProps;

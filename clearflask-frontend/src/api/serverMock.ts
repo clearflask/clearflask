@@ -10,6 +10,10 @@ const termsActiveUsers = 'Active users are users that have signed up or made pub
 const termsAnalytics = 'View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.';
 const termsVoting = 'Voting and Credit system allows precise expression of value for each idea.';
 const termsCredit = 'Spend time credits on future ClearFlask development features';
+const TrialPlan = {
+  planid: 'EF6E893B-7B39-4A59-8ADA-4101E6B7DC40', title: 'Trial',
+  perks: [],
+};
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7': {
     planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Standard',
@@ -155,13 +159,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater();
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
-    const plan = AvailablePlans[request.accountSignupAdmin.planid];
-    if (!plan) return this.throwLater(404, 'Requested plan could not be found');
     const account: Admin.AccountAdmin = {
-      plan: AvailablePlans[request.accountSignupAdmin.planid]!,
+      plan: TrialPlan,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
-      phone: request.accountSignupAdmin.phone,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -603,6 +604,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       userId: randomUuid(),
       created: new Date(),
       balance: 0,
+      isAdmin: request.userCreateAdmin.isAdmin,
       emailNotify: !!request.userCreateAdmin.email,
       iosPush: !!request.userCreateAdmin.iosPushToken,
       androidPush: !!request.userCreateAdmin.androidPushToken,
@@ -628,14 +630,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
+      .filter(user => request.userSearchAdmin.isAdmin === undefined || request.userSearchAdmin.isAdmin === user.isAdmin)
       .filter(user => !request.userSearchAdmin.searchText
         || user.name && user.name.indexOf(request.userSearchAdmin.searchText) >= 0
         || user.email && user.email.indexOf(request.userSearchAdmin.searchText) >= 0)
       .map(user => ({
         ...user,
         balance: this.getProject(request.projectId).balances[user.userId],
-      }))
-      , this.DEFAULT_LIMIT, request.cursor));
+      })), this.DEFAULT_LIMIT, request.cursor));
   }
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
     const user = this.getImmutable(

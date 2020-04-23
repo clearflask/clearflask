@@ -16,8 +16,10 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
@@ -86,6 +88,10 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnStatusOrResponseChange onStatusOrResponseChange;
     @Inject
     private OnForgotPassword onForgotPassword;
+    @Inject
+    private OnAdminInvite onAdminInvite;
+    @Inject
+    private OnEmailChanged onEmailChanged;
 
     private ListeningExecutorService executor;
 
@@ -198,13 +204,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         String userId = parentCommentOpt.isPresent()
                 ? parentCommentOpt.get().getAuthorUserId()
                 : idea.getAuthorUserId();
+        if (userId == null) {
+            log.trace("Not sending notification, parent comment is deleted");
+            return;
+        }
         if (sender.getUserId().equals(userId)) {
+            log.trace("Not sending notification, user is replying to self");
             return;
         }
         submit(() -> {
             String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId() + "/comment/" + comment.getCommentId();
 
-            UserModel user = userStore.getUser(idea.getProjectId(), userId).get();
+            Optional<UserModel> userOpt = userStore.getUser(idea.getProjectId(), userId);
+            if (!userOpt.isPresent()) {
+                log.warn("Cannot send comment notification, user disappeared {} commentId {}",
+                        userId, comment.getCommentId());
+                return;
+            }
+            UserModel user = userOpt.get();
             AuthorType userAuthorType = parentCommentOpt.isPresent()
                     ? AuthorType.COMMENT_REPLY
                     : AuthorType.IDEA_REPLY;
@@ -260,6 +277,54 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             try {
                 emailService.send(onForgotPassword.email(configAdmin, user, link, authToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onAdminInvite(ConfigAdmin configAdmin, UserModel user) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        if (Strings.isNullOrEmpty(user.getEmail())) {
+            log.warn("On admin invite with user having no email {}", user);
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
+            checkState(!Strings.isNullOrEmpty(user.getEmail()));
+
+            String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry());
+
+            try {
+                emailService.send(onAdminInvite.email(configAdmin, user, link, authToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        if (Strings.isNullOrEmpty(oldEmail)) {
+            log.warn("On email changed with user having no email {}", user);
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account";
+            checkState(!Strings.isNullOrEmpty(user.getEmail()));
+
+            String authToken = userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry(), false);
+
+            try {
+                emailService.send(onEmailChanged.email(configAdmin, user, oldEmail, link, authToken));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

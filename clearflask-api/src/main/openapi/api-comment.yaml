@@ -61,18 +61,6 @@ components:
           type: string
       required:
       - content
-    CommentCreateAdmin:
-      allOf:
-      - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
-      - type: object
-        required:
-        - authorUserId
-        properties:
-          authorUserId:
-            type: string
-          suppressNotifications:
-            description: Suppresses notifications
-            type: boolean
     CommentUpdate:
       type: object
       properties:

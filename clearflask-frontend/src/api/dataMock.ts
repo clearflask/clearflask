@@ -122,12 +122,9 @@ class DataMock {
   mockAccountCreate(): Promise<Admin.AccountAdmin> {
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
-        planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7',
         name: 'John Doe',
         email: 'a@a.a',
-        phone: '89032789',
         password: 'pass',
-        paymentToken: 'fakeToken',
       }
     });
   }

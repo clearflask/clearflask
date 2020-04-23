@@ -89,7 +89,7 @@ class PresetWidget extends Component<Props> {
         actionTitle: 'Set', action: (templater, path) => templater.workflowBug(path[2] as number)
       },
     ],
-    'credits': [
+    'users.credits': [
       {
         title: 'Currency', body: 'Direct monetary value shows users exactly how much an idea is worth.',
         actionTitle: 'Set', action: (templater, path) => templater.creditsCurrency()

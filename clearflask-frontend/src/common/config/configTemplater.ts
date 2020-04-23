@@ -781,16 +781,18 @@ export default class Templater {
   }
 
   creditsCurrencyWithoutCents() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+    this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 100, minimumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$' }),
     ]);
   }
   creditsCurrency() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+    this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', lessOrEqual: 0 }),
@@ -798,8 +800,9 @@ export default class Templater {
     ]);
   }
   creditsTime() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+    this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: ' weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1 }),
       Admin.CreditFormatterEntryToJSON({ suffix: ' week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40 }),
       Admin.CreditFormatterEntryToJSON({ suffix: ' days', multiplier: 0.125, greaterOrEqual: 9, lessOrEqual: 39, maximumFractionDigits: 1 }),
@@ -809,8 +812,9 @@ export default class Templater {
     ]);
   }
   creditsUnitless() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+    this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
@@ -828,8 +832,9 @@ export default class Templater {
    * - Goal??
    */
   // creditsScale() {
-  //   this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(0.01);
-  //   this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+  //   this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+  //   this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(0.01);
+  //   this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
   //     Admin.CreditFormatterEntryToJSON({suffix: 'Critical', multiplier: 100, greaterOrEqual: 0.9}),
   //     Admin.CreditFormatterEntryToJSON({suffix: 'High', multiplier: 100, greaterOrEqual: 10000000}),
   //     Admin.CreditFormatterEntryToJSON({suffix: 'Medium', multiplier: 100, greaterOrEqual: 0.2}),
@@ -837,8 +842,9 @@ export default class Templater {
   //   ]);
   // }
   creditsBeer() {
-    this._get<ConfigEditor.NumberProperty>(['credits', 'increment']).set(1);
-    this._get<ConfigEditor.ArrayProperty>(['credits', 'formats']).setRaw([
+    this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
+    this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 1000000, maximumFractionDigits: 2 }),
@@ -849,11 +855,10 @@ export default class Templater {
     ]);
   }
 
-  usersOnboardingEmail(enable: boolean, passwordRequirement: Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional, confirmEmails: boolean = false) {
+  usersOnboardingEmail(enable: boolean, passwordRequirement: Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'email']).set(enable ? true : undefined);
     if (enable) {
       this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'password']).set(passwordRequirement);
-      this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'confirmEmails']).set(confirmEmails);
     }
   }
 

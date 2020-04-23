@@ -186,12 +186,14 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               <NotificationsIcon fontSize='small' />
             </NotificationBadge>
           </IconButton>
-          <IconButton
-            aria-label='Balance'
-            onClick={() => this.props.history.push('/transaction')}
-          >
-            <BalanceIcon fontSize='small' />
-          </IconButton>
+          {this.props.config.users.credits && (
+            <IconButton
+              aria-label='Balance'
+              onClick={() => this.props.history.push('/transaction')}
+            >
+              <BalanceIcon fontSize='small' />
+            </IconButton>
+          )}
           <IconButton
             aria-label='Account'
             onClick={() => this.props.history.push('/account')}

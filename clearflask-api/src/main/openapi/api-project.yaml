@@ -9,7 +9,6 @@ components:
         - projectId
         - name
         - slug
-        - credits
         - layout
         - content
         - style
@@ -39,8 +38,6 @@ components:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:
           $ref: 'api-project.yaml#/components/schemas/content'
-        credits:
-          $ref: 'api-project.yaml#/components/schemas/credits'
         style:
           $ref: 'api-project.yaml#/components/schemas/style'
         users:
@@ -97,13 +94,15 @@ components:
                 x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
     users:
-      x-clearflask-page: { order: 15, name: 'Users', description: 'Onboarding and authentication.' }
+      x-clearflask-page: { order: 14, name: 'Users', description: 'Onboarding and authentication.' }
       title: Users
       type: object
       required:
         - displayName
         - onboarding
       properties:
+        credits:
+          $ref: 'api-project.yaml#/components/schemas/credits'
         onboarding:
           x-clearflask-page: { order: 15, name: 'Onboarding' }
           title: Onboarding
@@ -129,7 +128,6 @@ components:
               type: object
               required:
                 - browserPush
-                - mobilePush
               properties:
                 anonymous:
                   x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }
@@ -139,25 +137,18 @@ components:
                     - onlyShowIfPushNotAvailable
                   properties:
                     onlyShowIfPushNotAvailable:
-                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only allow this option if neither Mobile Push nor Web Notifications are available.' }
+                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only allow this option if no other option is available.' }
                       type: boolean
                 browserPush:
                   x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: true }
-                  type: boolean
-                mobilePush:
-                  x-clearflask-prop: { order: 1, name: 'Mobile Push', defaultValue: true }
                   type: boolean
                 email:
                   x-clearflask-prop: { order: 1, name: 'Email', defaultValue: true }
                   type: object
                   title: EmailSignup
                   required:
-                    - confirmEmails
                     - password
                   properties:
-                    confirmEmails:
-                      x-clearflask-prop: { order: 1, name: 'Confirm emails' }
-                      type: boolean
                     password:
                       x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'Optional' }
                       type: string
@@ -171,7 +162,7 @@ components:
     #                    redirectUrl:
     #                      type: string
     style:
-      x-clearflask-page: { order: 14, name: 'Style', description: 'Adjust the look and feel to match your style.' }
+      x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your style.' }
       title: Style
       type: object
       required:
@@ -240,7 +231,7 @@ components:
               type: number
               format: double
     legal:
-      x-clearflask-page: { order: 20, name: 'Legal', description: 'End-user agreements.' }
+      x-clearflask-page: { order: 25, name: 'Legal', description: 'End-user agreements.' }
       title: Legal
       type: object
       properties:
@@ -337,7 +328,7 @@ components:
           x-clearflask-prop: { order: 1, name: 'Enable comments', defaultValue: true }
           type: boolean
     layout:
-      x-clearflask-page: { order: 11, name: 'Layout', description: 'Customize pages and menu.' }
+      x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and menu.' }
       title: Layout
       type: object
       required:
@@ -525,7 +516,7 @@ components:
                 items:
                   type: string
     content:
-      x-clearflask-page: { order: 12, name: 'Content', description: 'Define the user submitted and static content types and behavior.' }
+      x-clearflask-page: { order: 10, name: 'Content', description: 'Define the user submitted and static content types and behavior.' }
       title: Content
       type: object
       required:

@@ -141,17 +141,17 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
 
     const notifOpts: Set<NotificationType> = new Set();
     if (this.props.config) {
-      if (this.props.config.users.onboarding.notificationMethods.mobilePush === true
-        && (this.props.overrideMobileNotification || MobileNotification.getInstance()).canAskPermission()) {
-        switch ((this.props.overrideMobileNotification || MobileNotification.getInstance()).getDevice()) {
-          case Device.Android:
-            notifOpts.add(NotificationType.Android);
-            break;
-          case Device.Ios:
-            notifOpts.add(NotificationType.Ios);
-            break;
-        }
-      }
+      // if (this.props.config.users.onboarding.notificationMethods.mobilePush === true
+      //   && (this.props.overrideMobileNotification || MobileNotification.getInstance()).canAskPermission()) {
+      //   switch ((this.props.overrideMobileNotification || MobileNotification.getInstance()).getDevice()) {
+      //     case Device.Android:
+      //       notifOpts.add(NotificationType.Android);
+      //       break;
+      //     case Device.Ios:
+      //       notifOpts.add(NotificationType.Ios);
+      //       break;
+      //   }
+      // }
       if (this.props.config.users.onboarding.notificationMethods.browserPush === true
         && (this.props.overrideWebNotification || WebNotification.getInstance()).canAskPermission()) {
         notifOpts.add(NotificationType.Browser);

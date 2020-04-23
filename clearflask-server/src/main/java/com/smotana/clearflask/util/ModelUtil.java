@@ -47,12 +47,12 @@ public class ModelUtil {
                         new Support(null, null, null, true),
                         new Tagging(ImmutableList.of(), ImmutableList.of()),
                         Category.VisibilityEnum.PUBLIC))),
-                new Credits(1L, null),
                 new Style(
                         new Animation(true),
                         new Palette(false, null, null, null, null, null, null, null),
                         new Typography(null, null)),
                 new Users(
+                        null,
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
                                 new NotificationMethods(new AnonymousSignup(true), true, false, null))),

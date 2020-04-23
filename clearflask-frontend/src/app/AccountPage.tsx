@@ -7,7 +7,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
-import MobileNotification, { Device as MobileNotificationDevice, Status as MobileNotificationStatus } from '../common/notification/mobileNotification';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
@@ -304,88 +303,88 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
   }
 
-  renderMobilePushControl(device: MobileNotificationDevice) {
-    if (!this.props.config || !this.props.userMe || (!this.props.config.users.onboarding.notificationMethods.mobilePush && (
-      (device === MobileNotificationDevice.Android && !this.props.userMe.androidPush)
-      || (device === MobileNotificationDevice.Ios && !this.props.userMe.iosPush)
-    ))) {
-      return;
-    }
+  // renderMobilePushControl(device: MobileNotificationDevice) {
+  //   if (!this.props.config || !this.props.userMe || (!this.props.config.users.onboarding.notificationMethods.mobilePush && (
+  //     (device === MobileNotificationDevice.Android && !this.props.userMe.androidPush)
+  //     || (device === MobileNotificationDevice.Ios && !this.props.userMe.iosPush)
+  //   ))) {
+  //     return;
+  //   }
 
 
-    const mobilePushStatus = MobileNotification.getInstance().getStatus();
-    var mobilePushEnabled = false;
-    var mobilePushControlDisabled;
-    var mobilePushLabel;
-    if ((device === MobileNotificationDevice.Android && this.props.userMe.androidPush)
-      || (device === MobileNotificationDevice.Ios && this.props.userMe.iosPush)) {
-      mobilePushEnabled = true;
-      mobilePushControlDisabled = false;
-      mobilePushLabel = 'Enabled';
-    } else if (MobileNotification.getInstance().getDevice() !== device) {
-      mobilePushControlDisabled = true;
-      mobilePushLabel = 'Not supported on current device';
-    } else {
-      switch (mobilePushStatus) {
-        case MobileNotificationStatus.Disconnected:
-          mobilePushControlDisabled = true;
-          mobilePushLabel = 'Not supported on current device';
-          break;
-        case MobileNotificationStatus.Denied:
-          mobilePushControlDisabled = true;
-          mobilePushLabel = 'You have declined access to notifications';
-          break;
-        default:
-        case MobileNotificationStatus.Available:
-        case MobileNotificationStatus.Subscribed:
-          mobilePushControlDisabled = false;
-          mobilePushLabel = 'Supported by your browser';
-          break;
-      }
-    }
+  //   const mobilePushStatus = MobileNotification.getInstance().getStatus();
+  //   var mobilePushEnabled = false;
+  //   var mobilePushControlDisabled;
+  //   var mobilePushLabel;
+  //   if ((device === MobileNotificationDevice.Android && this.props.userMe.androidPush)
+  //     || (device === MobileNotificationDevice.Ios && this.props.userMe.iosPush)) {
+  //     mobilePushEnabled = true;
+  //     mobilePushControlDisabled = false;
+  //     mobilePushLabel = 'Enabled';
+  //   } else if (MobileNotification.getInstance().getDevice() !== device) {
+  //     mobilePushControlDisabled = true;
+  //     mobilePushLabel = 'Not supported on current device';
+  //   } else {
+  //     switch (mobilePushStatus) {
+  //       case MobileNotificationStatus.Disconnected:
+  //         mobilePushControlDisabled = true;
+  //         mobilePushLabel = 'Not supported on current device';
+  //         break;
+  //       case MobileNotificationStatus.Denied:
+  //         mobilePushControlDisabled = true;
+  //         mobilePushLabel = 'You have declined access to notifications';
+  //         break;
+  //       default:
+  //       case MobileNotificationStatus.Available:
+  //       case MobileNotificationStatus.Subscribed:
+  //         mobilePushControlDisabled = false;
+  //         mobilePushLabel = 'Supported by your browser';
+  //         break;
+  //     }
+  //   }
 
-    return (
-      <FormControlLabel
-        control={(
-          <Switch
-            color='default'
-            disabled={mobilePushControlDisabled}
-            checked={mobilePushEnabled}
-            onChange={(e, checked) => {
-              if (checked) {
-                WebNotification.getInstance().askPermission()
-                  .then(r => {
-                    if (r.type === 'success') {
-                      this.props.server.dispatch().userUpdate({
-                        projectId: this.props.server.getProjectId(),
-                        userId: this.props.userMe!.userId,
-                        userUpdate: device === MobileNotificationDevice.Android
-                          ? { androidPushToken: r.token }
-                          : { iosPushToken: r.token },
-                      });
-                    } else if (r.type === 'error') {
-                      if (r.userFacingMsg) {
-                        this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup mobile notifications', { variant: 'error', preventDuplicate: true });
-                      }
-                      this.forceUpdate();
-                    }
-                  });
-              } else {
-                this.props.server.dispatch().userUpdate({
-                  projectId: this.props.server.getProjectId(),
-                  userId: this.props.userMe!.userId,
-                  userUpdate: device === MobileNotificationDevice.Android
-                    ? { androidPushToken: '' }
-                    : { iosPushToken: '' },
-                });
-              }
-            }}
-          />
-        )}
-        label={<FormHelperText component='span' error={mobilePushControlDisabled}>{mobilePushLabel}</FormHelperText>}
-      />
-    );
-  }
+  //   return (
+  //     <FormControlLabel
+  //       control={(
+  //         <Switch
+  //           color='default'
+  //           disabled={mobilePushControlDisabled}
+  //           checked={mobilePushEnabled}
+  //           onChange={(e, checked) => {
+  //             if (checked) {
+  //               WebNotification.getInstance().askPermission()
+  //                 .then(r => {
+  //                   if (r.type === 'success') {
+  //                     this.props.server.dispatch().userUpdate({
+  //                       projectId: this.props.server.getProjectId(),
+  //                       userId: this.props.userMe!.userId,
+  //                       userUpdate: device === MobileNotificationDevice.Android
+  //                         ? { androidPushToken: r.token }
+  //                         : { iosPushToken: r.token },
+  //                     });
+  //                   } else if (r.type === 'error') {
+  //                     if (r.userFacingMsg) {
+  //                       this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup mobile notifications', { variant: 'error', preventDuplicate: true });
+  //                     }
+  //                     this.forceUpdate();
+  //                   }
+  //                 });
+  //             } else {
+  //               this.props.server.dispatch().userUpdate({
+  //                 projectId: this.props.server.getProjectId(),
+  //                 userId: this.props.userMe!.userId,
+  //                 userUpdate: device === MobileNotificationDevice.Android
+  //                   ? { androidPushToken: '' }
+  //                   : { iosPushToken: '' },
+  //               });
+  //             }
+  //           }}
+  //         />
+  //       )}
+  //       label={<FormHelperText component='span' error={mobilePushControlDisabled}>{mobilePushLabel}</FormHelperText>}
+  //     />
+  //   );
+  // }
 
   renderEmailControl() {
     if (!this.props.config || !this.props.userMe || (!this.props.config.users.onboarding.notificationMethods.email && !this.props.userMe.email)) {

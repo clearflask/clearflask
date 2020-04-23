@@ -10,10 +10,11 @@ import Message from '../app/comps/Message';
 import LoadingPage from '../app/LoadingPage';
 import * as ConfigEditor from '../common/config/configEditor';
 import Crumbs from '../common/config/settings/Crumbs';
-import Menu, { MenuProject } from '../common/config/settings/Menu';
+import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
+import notEmpty from '../common/util/arrayUtil';
 import setTitle from '../common/util/titleUtil';
 import BillingPage from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
@@ -115,9 +116,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
       //   crumbs = [{name: 'Comments', slug: activePath}];
       //   break;
       case 'users':
+      case 'moderators':
         setTitle('Users - Dashboard');
         page = (<ExplorerPage render={server => (
-          <UsersPage server={server} />
+          <UsersPage key={activePath} server={server} adminsOnly={activePath === 'moderators'} />
         )} />);
         crumbs = [{ name: 'Users', slug: activePath }];
         break;
@@ -221,20 +223,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         preview={preview}
         menu={(
           <Menu
-            /**
-             * TODO Brainstorm admin features:
-             * - Create/delete project
-             * - Analytics
-             * - Billing, plan, invoices, month estimate, stats
-             * - Account (email password 2fa)
-             */
             items={[
-              { type: 'item', slug: '', name: 'Home' },
-              { type: 'heading', text: 'Explore' },
-              { type: 'item', slug: 'posts', name: 'Posts', offset: 1 },
-              // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 },
-              { type: 'item', slug: 'users', name: 'Users', offset: 1 },
-              { type: 'heading', text: 'Config' },
+              { type: 'item', slug: '', name: 'Home' } as MenuItem,
+              { type: 'heading', text: 'Explore' } as MenuHeading,
+              { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
+              // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
+              { type: 'heading', text: 'Config' } as MenuHeading,
               ...(projects.map(project => {
                 const menuProject: MenuProject = {
                   type: 'project',
@@ -244,17 +240,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 };
                 return menuProject;
               })),
-              {
+              projects.length <= 0 ? {
                 type: 'item', slug: 'create', name: (
                   <span style={{ display: 'flex', alignItems: 'center' }}>
                     <AddIcon fontSize='inherit' />&nbsp;Create
                   </span>
                 ), offset: 1
-              },
-              { type: 'heading', text: 'Account' },
-              { type: 'item', slug: 'account', name: 'Settings', offset: 1 },
-              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 },
-            ]}
+              } as MenuItem : undefined,
+              { type: 'heading', text: 'Account' } as MenuHeading,
+              { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
+              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,
+            ].filter(notEmpty)}
             activePath={activePath}
             activeSubPath={activeSubPath}
             pageClicked={this.pageClicked.bind(this)}

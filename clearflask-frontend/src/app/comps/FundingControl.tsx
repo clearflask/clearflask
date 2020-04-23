@@ -286,7 +286,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const search = { fundedByMeAndActive: true };
   var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
-    credits: state.conf.conf ? state.conf.conf.credits : undefined,
+    credits: state.conf.conf ? state.conf.conf.users.credits : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     otherFundedIdeas: {
       status: Status.PENDING,

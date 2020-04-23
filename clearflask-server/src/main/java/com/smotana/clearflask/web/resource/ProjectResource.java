@@ -4,6 +4,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -39,6 +43,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME;
 
@@ -52,6 +57,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             new LegalDocuments("Privacy", "Privacy Policy", "https://clearflask.com/privacy")
     ));
 
+    public interface Config {
+        @DefaultValue(value = "www,feedback,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news", innerType = String.class)
+        Set<String> reservedProjectIds();
+    }
+
+    @Inject
+    private Config config;
     @Inject
     private UserResource.Config userResourceConfig;
     @Inject
@@ -180,14 +192,26 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric
+        if (this.config.reservedProjectIds().contains(projectId)) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "The name " + projectId + " is a reserver keyword");
+        }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccount(accountSession.getEmail()).get();
         Project project = projectStore.createProject(projectId, new VersionedConfigAdmin(configAdmin, "new"));
         commentStore.createIndex(projectId);
         userStore.createIndex(projectId);
         ideaStore.createIndex(projectId);
-        userStore.getOrCreateAccountOwner(projectId, account);
         accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(ProjectResource.class);
+                install(ConfigSystem.configModule(Config.class));
+            }
+        };
     }
 }

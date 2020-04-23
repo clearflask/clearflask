@@ -12,7 +12,6 @@ import HelpPopover from '../common/HelpPopover';
 import notEmpty from '../common/util/arrayUtil';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
-import { PRE_SELECTED_PLAN_ID } from './SignupPage';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -72,7 +71,7 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     plan={plan}
                     actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Contact us')}
                     actionOnClick={plan.comingSoon ? undefined : () => plan.pricing && !plan.beta
-                      ? this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })
+                      ? this.props.history.push('/signup')
                       : this.props.history.push('/contact/sales')
                     }
                   />

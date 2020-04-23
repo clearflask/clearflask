@@ -84,18 +84,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private Optional<UserSession> authenticateUser(Optional<AccountSession> accountSessionOpt, ContainerRequestContext requestContext) {
         Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME);
         if (cookie == null) {
-            if (accountSessionOpt.isPresent()) {
-                Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
-                if (pathParamProjectIdOpt.isPresent()) {
-                    Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountSessionOpt.get().getEmail());
-                    if (accountOpt.isPresent() && accountOpt.get().getProjectIds().contains(pathParamProjectIdOpt.get())) {
-                        UserSession session = userStore.getOrCreateAccountOwnerSession(
-                                pathParamProjectIdOpt.get(),
-                                accountSessionOpt.get().getTtlInEpochSec());
-                        return Optional.of(session);
-                    }
-                }
-            }
             return Optional.empty();
         }
 

@@ -24,7 +24,9 @@ import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
@@ -150,6 +152,8 @@ public enum ServiceInjector {
                 install(OnCommentReply.module());
                 install(OnStatusOrResponseChange.module());
                 install(OnForgotPassword.module());
+                install(OnAdminInvite.module());
+                install(OnEmailChanged.module());
 
                 // Security
                 install(TieredWebLimiter.module());
@@ -179,7 +183,7 @@ public enum ServiceInjector {
                 install(IdeaResource.module());
                 install(VoteResource.module());
                 bind(PlanResource.class);
-                bind(ProjectResource.class);
+                install(ProjectResource.module());
                 install(SupportResource.module());
 
                 switch (env) {

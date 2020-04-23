@@ -1,5 +1,6 @@
 import { createStyles, Table, TableBody, TableCell, TableRow, Theme, withStyles, WithStyles } from '@material-ui/core';
 import React, { Component } from 'react';
+import * as Client from '../../../../api/client';
 import * as ConfigEditor from '../../configEditor';
 import CreditView from '../../CreditView';
 
@@ -29,6 +30,9 @@ class CreditPreview extends Component<Props> {
   }
 
   render() {
+    const credits = this.props.editor.getConfig().users.credits;
+    if (!credits) return null;
+
     const headerRow: React.ReactNode[] = [];
     const dataRow: React.ReactNode[] = [];
     headerRow.push((
@@ -41,8 +45,7 @@ class CreditPreview extends Component<Props> {
         Value
       </TableCell>
     ));
-    const credits = this.props.editor.getConfig().credits;
-    this.getEdgeCases().forEach(preview => {
+    this.getEdgeCases(credits).forEach(preview => {
       headerRow.push((
         <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
           <CreditView val={preview} credits={credits} />
@@ -73,9 +76,8 @@ class CreditPreview extends Component<Props> {
     );
   }
 
-  getEdgeCases(): Array<number> {
-    const credits = this.props.editor.getConfig().credits;
-    if (!credits.formats || credits.formats.length === 0) {
+  getEdgeCases(credits: Client.Credits): Array<number> {
+    if (!credits || !credits.formats || credits.formats.length === 0) {
       return [0, 100];
     }
 

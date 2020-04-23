@@ -11,7 +11,9 @@ import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
@@ -87,6 +89,8 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
         install(OnForgotPassword.module());
+        install(OnAdminInvite.module());
+        install(OnEmailChanged.module());
 
         install(MockBrowserPushService.module());
         install(MockEmailService.module());
@@ -240,6 +244,32 @@ public class NotificationServiceTest extends AbstractTest {
         when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
 
         service.onForgotPassword(
+                versionedConfigAdmin.getConfig(),
+                user);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 5_000L)
+    public void testOnAdminInvite() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .isAdmin(true)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .build();
+        when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onAdminInvite(
                 versionedConfigAdmin.getConfig(),
                 user);
 

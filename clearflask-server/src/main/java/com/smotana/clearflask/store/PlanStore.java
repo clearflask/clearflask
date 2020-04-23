@@ -12,5 +12,7 @@ public interface PlanStore {
 
     ImmutableSet<Plan> mapIdsToPlans(ImmutableSet<String> planIds);
 
+    Plan getTrialPlan();
+
     Optional<Plan> getPlan(String planId);
 }

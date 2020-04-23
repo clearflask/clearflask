@@ -58,7 +58,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   const connectProps: ConnectProps = {
     isLoggedIn: !!userId,
     balance: state.credits.myBalance.balance,
-    credits: state.conf.conf ? state.conf.conf.credits : undefined,
+    credits: state.conf.conf ? state.conf.conf.users.credits : undefined,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BankPage));

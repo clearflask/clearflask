@@ -9,6 +9,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ForgotPassword;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
@@ -64,6 +65,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
         @DefaultValue(value = "10", innerType = Integer.class)
         Optional<Integer> searchPageSize();
+
+        @DefaultValue("P7D")
+        Duration sendOnEmailChangedEmailIfLastChangeGreaterThan();
     }
 
     public static final String USER_AUTH_COOKIE_NAME = "cf_usr_auth";
@@ -123,6 +127,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 userCreate.getName(),
                 userCreate.getEmail(),
+                null,
                 passwordHashed.orElse(null),
                 null,
                 userCreate.getEmail() != null,
@@ -157,9 +162,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserModel user = new UserModel(
                 projectId,
                 userId,
-                null,
+                userCreateAdmin.getIsAdmin() == Boolean.TRUE ? true : null,
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
+                null,
                 passwordHashed.orElse(null),
                 null,
                 userCreateAdmin.getEmail() != null,
@@ -172,6 +178,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null);
         userStore.createUser(user);
+        if (user.getIsAdmin()) {
+            ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+            notificationService.onAdminInvite(configAdmin, user);
+        }
         return user.toUserAdmin();
     }
 
@@ -273,7 +283,16 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Override
     public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
         // TODO Sanity check userUpdate
-        return userStore.updateUser(projectId, userId, userUpdate).getUser().toUserMe();
+        if (userUpdate.getEmail() != null) {
+            UserModel user = userStore.getUser(projectId, userId).get();
+            if (!Strings.isNullOrEmpty(user.getEmail())
+                    && (user.getEmailLastUpdated() == null || user.getEmailLastUpdated().plus(config.sendOnEmailChangedEmailIfLastChangeGreaterThan()).isBefore(Instant.now()))) {
+                ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+                notificationService.onEmailChanged(configAdmin, user, user.getEmail());
+            }
+        }
+        UserModel user = userStore.updateUser(projectId, userId, userUpdate).getUser();
+        return user.toUserMe();
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})

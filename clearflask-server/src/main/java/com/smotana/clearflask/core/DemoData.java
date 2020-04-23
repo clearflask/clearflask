@@ -83,7 +83,6 @@ public class DemoData extends ManagedService {
         commentStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
         userStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
         ideaStore.createIndex(versionedConfigAdmin.getConfig().getProjectId());
-        userStore.getOrCreateAccountOwner(versionedConfigAdmin.getConfig().getProjectId(), account);
         accountStore.addAccountProjectId(account.getEmail(), versionedConfigAdmin.getConfig().getProjectId());
     }
 

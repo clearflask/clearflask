@@ -85,23 +85,15 @@ components:
     AccountSignupAdmin:
       type: object
       required:
-      - planid
       - name
       - email
       - password
-      - paymentToken
       properties:
-        planid:
-          type: string
         name:
           type: string
         email:
           type: string
         password:
-          type: string
-        phone:
-          type: string
-        paymentToken:
           type: string
     AccountAdmin:
       type: object
@@ -115,8 +107,6 @@ components:
         name:
           type: string
         email:
-          type: string
-        phone:
           type: string
     AccountUpdateAdmin:
       type: object

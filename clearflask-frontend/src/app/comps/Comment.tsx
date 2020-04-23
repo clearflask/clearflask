@@ -170,7 +170,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   renderAdminDelete() {
     if (!this.props.comment
       || !this.props.comment.author
-      || !this.props.server.isOwnerLoggedIn()
+      || !this.props.server.isAdminLoggedIn()
       // Only show admin delete if the regular edit is not shown as it already contains a delete
       || (this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 

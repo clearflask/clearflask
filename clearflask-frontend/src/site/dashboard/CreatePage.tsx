@@ -293,7 +293,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
   createConfig(): Admin.ConfigAdmin {
     const editor = new ConfigEditor.EditorImpl();
     if (!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(this.state.infoSlug);
-    if (!!this.state.infoName) editor.getProperty<ConfigEditor.StringProperty>(['name']).set(this.state.infoName);
+    editor.getProperty<ConfigEditor.StringProperty>(['name']).set(this.state.infoName || 'My App');
     if (!!this.state.infoSlug) editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(this.state.infoSlug);
     if (!!this.state.infoWebsite) editor.getProperty<ConfigEditor.StringProperty>(['website']).set(this.state.infoWebsite);
     if (!!this.state.infoLogo) editor.getProperty<ConfigEditor.StringProperty>(['logoUrl']).set(this.state.infoLogo);

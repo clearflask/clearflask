@@ -12,16 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 public class AuthCookieUtil {
 
     public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
-        setAuthCookie(response, cookieName, sessionId, ttlInEpochSec, null);
-    }
-
-    public void setAuthCookie(@NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec, String domain) {
-        log.trace("Setting {} auth cookie for session id {} ttl {} domain {}",
-                cookieName, sessionId, ttlInEpochSec, domain);
+        log.trace("Setting {} auth cookie for session id {} ttl {}",
+                cookieName, sessionId, ttlInEpochSec);
         RealCookie.builder()
                 .name(cookieName)
                 .value(sessionId)
-                .domain(domain)
                 .path("/")
                 .secure(true)
                 .httpOnly(true)

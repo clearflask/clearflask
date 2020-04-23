@@ -55,7 +55,6 @@ import com.kik.config.ice.convert.MoreConfigValueConverters;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
-import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -92,7 +91,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
@@ -120,9 +119,6 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 @Slf4j
 @Singleton
 public class DynamoElasticUserStore implements UserStore {
-
-    /** A prefix for userId and sessionId indicating owner */
-    public static final String OWNER_USER_PREFIX = "o-";
 
     public interface Config {
         /** Intended for tests. Force immediate index refresh after write request. */
@@ -236,6 +232,8 @@ public class DynamoElasticUserStore implements UserStore {
                                         "max_chars", 4)))
                         .put("balance", ImmutableMap.of(
                                 "type", "double"))
+                        .put("isAdmin", ImmutableMap.of(
+                                "type", "boolean"))
                         .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
@@ -277,36 +275,13 @@ public class DynamoElasticUserStore implements UserStore {
                         .source(gson.toJson(ImmutableMap.of(
                                 "name", orNull(user.getName()),
                                 "email", orNull(user.getEmail()),
-                                "balance", orNull(user.getBalance())
+                                "balance", orNull(user.getBalance()),
+                                "isAdmin", user.getIsAdmin() != null && user.getIsAdmin()
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
 
         return new UserAndIndexingFuture<>(user, indexingFuture);
-    }
-
-    @Override
-    public UserModel getOrCreateAccountOwner(String projectId, Account account) {
-        String userId = OWNER_USER_PREFIX + projectId;
-        return getUser(projectId, userId)
-                .orElseGet(() -> createUser(new UserModel(
-                        projectId,
-                        userId,
-                        true,
-                        account.getName(),
-                        null,
-                        null,
-                        Instant.MAX,
-                        false,
-                        0L,
-                        null,
-                        null,
-                        null,
-                        account.getCreated(),
-                        null,
-                        null,
-                        null))
-                        .getUser());
     }
 
     @Override
@@ -385,8 +360,12 @@ public class DynamoElasticUserStore implements UserStore {
             sortFields = ImmutableList.of();
         }
 
-        QueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
-                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        if (userSearchAdmin.getIsAdmin() != null) {
+            queryBuilder.must(QueryBuilders.termQuery("isAdmin", userSearchAdmin.getIsAdmin().booleanValue()));
+        }
+        queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
+                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
         log.trace("User search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
@@ -481,9 +460,14 @@ public class DynamoElasticUserStore implements UserStore {
                 valMap.put(":email", userSchema.toAttrValue("email", updates.getEmail()));
                 setUpdates.add("#email = :email");
             }
+            nameMap.put("#emailLastUpdated", "emailLastUpdated");
+            Instant emailLastUpdated = Instant.now();
+            valMap.put(":emailLastUpdated", userSchema.toAttrValue("emailLastUpdated", emailLastUpdated));
+            setUpdates.add("#emailLastUpdated = :emailLastUpdated");
             indexUpdates.put("email", updates.getEmail());
             updateIdentifier.apply(IdentifierType.EMAIL, user.getEmail(), updates.getEmail());
-            userUpdatedBuilder.email(updates.getEmail());
+            userUpdatedBuilder.email(updates.getEmail())
+                    .emailLastUpdated(emailLastUpdated);
         }
         if (updates.getPassword() != null) {
             updateAuthTokenValidityStart = true;
@@ -687,9 +671,14 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public String createToken(String projectId, String userId, Duration ttl) {
+        return createToken(projectId, userId, ttl, true);
+    }
+
+    @Override
+    public String createToken(String projectId, String userId, Duration ttl, boolean revocable) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .setIssuedAt(new Date(now.toEpochMilli()))
+                .setIssuedAt(revocable ? new Date(now.toEpochMilli()) : null)
                 .setExpiration(new Date(now.plus(ttl).toEpochMilli()))
                 .addClaims(ImmutableMap.of(
                         "pid", projectId,
@@ -741,8 +730,9 @@ public class DynamoElasticUserStore implements UserStore {
         }
 
         if (userOpt.get().getAuthTokenValidityStart() != null
+                && claims.getIssuedAt() != null
                 && userOpt.get().getAuthTokenValidityStart().isAfter(claims.getIssuedAt().toInstant())) {
-            log.info("Token is created prior to revokation {}, projectId {} userId {}",
+            log.info("Token is created prior to revocation {}, projectId {} userId {}",
                     userOpt.get().getAuthTokenValidityStart(), projectId, userId);
             return Optional.empty();
         }
@@ -760,19 +750,6 @@ public class DynamoElasticUserStore implements UserStore {
         sessionByIdSchema.table().putItem(new PutItemSpec()
                 .withItem(sessionByIdSchema.toItem(userSession)));
         return userSession;
-    }
-
-    @Override
-    public UserSession getOrCreateAccountOwnerSession(String projectId, long accountSessionTtlInEpochSec) {
-        // Creates a session not-backed by database
-        // This is so the account and user sessions are tied together
-        // It would be weird if the acount signed out and the user would be signed in
-        // A lot of edge cases in any case.
-        return new UserSession(
-                OWNER_USER_PREFIX + projectId,
-                projectId,
-                OWNER_USER_PREFIX + projectId,
-                accountSessionTtlInEpochSec);
     }
 
     @Override

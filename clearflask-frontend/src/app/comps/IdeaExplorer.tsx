@@ -249,7 +249,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     var categoryOptions = (this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
       ? this.props.config.content.categories.filter(c => this.props.explorer.search.filterCategoryIds!.includes(c.categoryId))
       : this.props.config.content.categories;
-    if (!this.props.server.isOwnerLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
+    if (!this.props.server.isAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
     if (this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
       this.setState({ newItemChosenCategoryId: categoryOptions[0].categoryId })
     }
@@ -272,7 +272,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           rows={1}
           rowsMax={5}
         />
-        {this.props.server.isOwnerLoggedIn() && (
+        {this.props.server.isAdminLoggedIn() && (
           <UserSelection
             server={this.props.server}
             className={this.props.classes.createFormField}

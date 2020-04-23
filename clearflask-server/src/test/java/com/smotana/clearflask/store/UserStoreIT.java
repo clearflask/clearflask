@@ -74,6 +74,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "john",
                 "john.doe@example.com",
+                null,
                 "password",
                 null,
                 true,
@@ -120,7 +121,10 @@ public class UserStoreIT extends AbstractIT {
                 .browserPushToken(userUpdated.getBrowserPushToken())
                 .build());
         updateResult.getIndexingFuture().get();
-        UserModel userUpdatedWithToken = userUpdated.toBuilder().authTokenValidityStart(updateResult.getUser().getAuthTokenValidityStart()).build();
+        UserModel userUpdatedWithToken = userUpdated.toBuilder()
+                .authTokenValidityStart(updateResult.getUser().getAuthTokenValidityStart())
+                .emailLastUpdated(updateResult.getUser().getEmailLastUpdated())
+                .build();
         assertEquals(userUpdatedWithToken, updateResult.getUser());
         assertEquals(userUpdatedWithToken, store.getUser(userUpdatedWithToken.getProjectId(), userUpdatedWithToken.getUserId()).get());
 
@@ -137,6 +141,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "john",
                 "john.doe@example.com",
+                null,
                 "password",
                 null,
                 true,
@@ -154,6 +159,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "matt",
                 "matt@example.com",
+                null,
                 "jilasjdklad",
                 null,
                 true,
@@ -171,6 +177,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "Bobby",
                 "bobby@example.com",
+                null,
                 "fawferfva",
                 null,
                 true,
@@ -225,6 +232,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "john",
                 "john.doe@example.com",
+                null,
                 "password",
                 null,
                 true,
@@ -258,6 +266,7 @@ public class UserStoreIT extends AbstractIT {
                 false,
                 "john",
                 "john.doe@example.com",
+                null,
                 "password",
                 null,
                 true,

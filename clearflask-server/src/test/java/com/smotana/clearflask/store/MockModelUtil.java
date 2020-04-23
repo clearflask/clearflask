@@ -18,6 +18,7 @@ public class MockModelUtil {
                 false,
                 IdUtil.randomId(),
                 IdUtil.randomId() + "@example.com",
+                null,
                 IdUtil.randomId(),
                 null,
                 true,

@@ -17,8 +17,8 @@ import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
 import PrioritizationPage from './PrioritizationPage';
 import SigninPage from './SigninPage';
-import SignupPage from './SignupPage';
 import TransparencyPage from './TransparencyPage';
+import TrialSignupPage from './TrialSignupPage';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -185,7 +185,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             )} />
             <Route exact path={'/signup'} render={props => (
               setTitle('Sign up'),
-              <SignupPage {...props} />
+              <TrialSignupPage {...props} />
             )} />
             <Route exact path={'/(terms|terms-of-service)'} render={props => (
               setTitle('Terms of Service'),

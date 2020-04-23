@@ -20,6 +20,8 @@ components:
     UserSearchAdmin:
       type: object
       properties:
+        isAdmin:
+          type: boolean
         sortBy:
           type: string
           enum:
@@ -58,7 +60,7 @@ components:
             - emailNotify
             - hasPassword
           properties:
-            isAccountOwner:
+            isAdmin:
               type: boolean
             email:
               type: string
@@ -108,6 +110,8 @@ components:
         - $ref: 'api-user.yaml#/components/schemas/UserCreate'
         - type: object
           properties:
+            isAdmin:
+              type: boolean
             balance:
               type: integer
               format: int64
