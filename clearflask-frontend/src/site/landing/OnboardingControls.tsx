@@ -8,16 +8,16 @@ import { Device } from '../../common/DeviceContainer';
 
 enum SignupMethods {
   Email = 'email',
-  Mobile = 'mobile',
+  // Mobile = 'mobile',
   Web = 'web',
   Anonymous = 'anonymous',
 }
 
-const initialSignupMethods = [SignupMethods.Email, SignupMethods.Mobile, SignupMethods.Web];
+const initialSignupMethods = [SignupMethods.Email, SignupMethods.Web];
 
 const setSignupMethodsTemplate = (templater: Templater, signupMethods: SignupMethods[]) => {
   templater.usersOnboardingEmail(signupMethods.includes(SignupMethods.Email));
-  templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
+  // templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
   templater.usersOnboardingBrowserPush(signupMethods.includes(SignupMethods.Web));
   templater.usersOnboardingAnonymous(signupMethods.includes(SignupMethods.Anonymous), !signupMethods.includes(SignupMethods.Anonymous));
 }
@@ -42,7 +42,7 @@ interface State {
   device: Device;
   signupMethods: SignupMethods[];
   allowEmail: boolean;
-  allowMobilePush: boolean;
+  // allowMobilePush: boolean;
   allowDesktopPush: boolean;
   allowAnonymous: boolean;
   collectDisplayName: Client.AccountFieldsDisplayNameEnum;
@@ -53,7 +53,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
     device: Device.Desktop,
     signupMethods: initialSignupMethods,
     allowEmail: true,
-    allowMobilePush: true,
+    // allowMobilePush: true,
     allowDesktopPush: true,
     allowAnonymous: true,
     collectDisplayName: Client.AccountFieldsDisplayNameEnum.None,

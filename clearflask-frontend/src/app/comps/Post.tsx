@@ -14,7 +14,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import TimeAgo from 'react-timeago';
 import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
-import { ReduxState, Server } from '../../api/server';
+import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import notEmpty from '../../common/util/arrayUtil';
@@ -38,15 +38,37 @@ const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(1),
   },
+  // TODO pixel pushing, spacing between the grid items
+  post: {
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gridTemplateRows: 'auto 1fr',
+    gridTemplateAreas:
+      "'. f'"
+      + " 'v c'"
+      + " 'o o'",
+  },
+  postContent: {
+    gridArea: 'c',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: theme.spacing(0.5),
+  },
+  postVoting: {
+    gridArea: 'v',
+  },
+  postFunding: {
+    gridArea: 'f',
+  },
+  postComments: {
+    gridArea: 'o',
+  },
   leftColumn: {
     margin: theme.spacing(1),
     marginRight: '0px',
   },
   rightColumn: {
     margin: theme.spacing(1),
-  },
-  titleAndDescriptionOuter: {
-    padding: theme.spacing(0.5),
   },
   titleAndDescriptionCard: {
     background: 'transparent',
@@ -276,6 +298,33 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
+  pulsateFunding: {
+    opacity: 1,
+    animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 0ms infinite`,
+  },
+  pulsateVoting: {
+    opacity: 1,
+    animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 667ms infinite`,
+  },
+  pulsateExpressions: {
+    opacity: 1,
+    animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 1333ms infinite`,
+  },
+  '@keyframes postVotingPulsate': {
+    '0%': {
+      opacity: 1,
+    },
+    '34%': {
+      opacity: 0,
+    },
+    '67%': {
+      opacity: 0,
+    },
+    '100%': {
+      opacity: 1,
+    },
+  },
+  ...cssBlurry,
 });
 
 export type PostVariant = 'list' | 'page';
@@ -301,6 +350,7 @@ interface Props {
 interface ConnectProps {
   configver?: string;
   projectId: string;
+  settings: StateSettings;
   category?: Client.Category;
   credits?: Client.Credits;
   maxFundAmountSeen: number;
@@ -365,7 +415,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     }
     const variant = forceExpand ? 'page' : this.props.variant;
 
-    const voting = this.renderVoting(variant);
     return (
       <Loader loaded={!!this.props.idea}>
         <Expander expand={forceExpand}>
@@ -373,17 +422,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             display: 'flex',
             alignItems: 'flex-start',
           }}>
-            {voting && (
-              <div className={this.props.classes.leftColumn}>
-                {voting}
+            <div className={this.props.classes.post}>
+              <div className={this.props.classes.postVoting}>
+                {this.renderVoting(variant)}
               </div>
-            )}
-            <div className={this.props.classes.rightColumn} style={{
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              {this.renderFunding(variant)}
-              <div className={this.props.classes.titleAndDescriptionOuter}>
+              <div className={this.props.classes.postFunding}>
+                {this.renderFunding(variant)}
+              </div>
+              <div className={this.props.classes.postContent}>
                 <CardActionArea
                   className={this.props.classes.titleAndDescription}
                   disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
@@ -396,9 +442,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                   {this.renderDescription(variant)}
                   {this.renderResponse(variant)}
                 </CardActionArea>
+                {this.renderBottomBar(variant)}
               </div>
-              {this.renderBottomBar(variant)}
-              {this.renderComments(variant)}
+              <div className={this.props.classes.postComments}>
+                {this.renderComments(variant)}
+              </div>
             </div>
           </div>
           <LogIn
@@ -640,6 +688,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <VotingControl
+        className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateVoting : undefined}
         vote={this.props.vote}
         voteValue={this.props.idea.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}
@@ -745,7 +794,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
 
     return (
-      <div className={this.props.classes.funding}>
+      <div className={`${this.props.classes.funding} ${this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateFunding : ''}`}>
         <FundingBar
           fundingBarRef={this.fundingBarRef}
           idea={this.props.idea}
@@ -910,7 +959,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <div key='expression' style={{
+      <div key='expression' className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateExpressions : undefined} style={{
         position: 'relative',
       }}>
         <div style={{ display: 'flex' }}>
@@ -982,7 +1031,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='subtitle1' component={'span'} className={this.props.classes.title}>
+      <Typography variant='subtitle1' component={'span'} className={`${this.props.classes.title} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<Truncate lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></Truncate>)
           : this.props.idea.title}
@@ -995,7 +1044,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
-      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.pre : ''}`}>
+      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}
@@ -1012,7 +1061,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
           Reply:&nbsp;&nbsp;
         </Typography>
-        <Typography variant='body1' component={'span'} className={variant === 'page' ? this.props.classes.pre : ''}>
+        <Typography variant='body1' component={'span'} className={`${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
             : this.props.idea.response}
@@ -1056,6 +1105,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   return {
     configver: state.conf.ver, // force rerender on config change
     projectId: state.projectId,
+    settings: state.settings,
     vote,
     expression,
     fundAmount,

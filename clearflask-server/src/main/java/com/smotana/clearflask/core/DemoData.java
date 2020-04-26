@@ -74,8 +74,7 @@ public class DemoData extends ManagedService {
                 Instant.now(),
                 "Matus Faro",
                 password,
-                "12345678",
-                "dummy-payment-token",
+                null,
                 ImmutableSet.of());
         accountStore.createAccount(account);
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(DEMO_PROJECT_ID);

@@ -1,4 +1,4 @@
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link, Menu, MenuItem, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
@@ -22,6 +22,7 @@ import TrialSignupPage from './TrialSignupPage';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
+    alignItems: 'center',
   },
   grow: {
     flexGrow: 1,
@@ -60,14 +61,24 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
     fontWeight: 'bold',
   },
+  logoButton: {
+    display: 'flex',
+    alignItems: 'center',
+    margin: theme.spacing(0, 3),
+    textTransform: 'unset',
+    fontSize: '1.4em',
+    cursor: 'pointer',
+  },
   logo: {
-    margin: theme.spacing(1),
     maxWidth: '48px',
     maxHeight: '48px',
   },
   menuIndent: {
     marginLeft: theme.spacing(2),
   },
+  menuButton: {
+    textTransform: 'unset',
+  }
 });
 
 interface MenuDropdown {
@@ -91,7 +102,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
   render() {
-    const menuItems: Array<MenuButton | MenuDropdown> = [
+    const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
           { val: '/prioritization', name: 'Prioritization' },
@@ -101,13 +112,15 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         ],
       },
       { type: 'button', path: '/pricing', title: 'Pricing' },
-      { type: 'button', path: '/contact', title: 'Contact' },
-      { type: 'button', path: '/dashboard', title: 'Dashboard' },
+    ];
+    const menuItemsRight: Array<MenuButton | MenuDropdown> = [
+      { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
+      { type: 'button', path: '/dashboard', title: 'Sign in' },
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
         {/* <HideOnScroll> */}
-        <AppBar position='absolute' color='inherit' elevation={0} variant='outlined'>
+        <AppBar position='absolute' color='inherit' elevation={0} variant='elevation'>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>
               <Hidden smUp implementation='css'>
@@ -124,7 +137,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   open={!!this.state.menuOpen}
                   onClose={() => this.setState({ menuOpen: false })}
                 >
-                  {menuItems.map((menuItem, index) => menuItem.type === 'button' ? (
+                  {[...menuItemsLeft, ...menuItemsRight].map((menuItem, index) => menuItem.type === 'button' ? (
                     <MenuItem key={menuItem.path} onClick={() => {
                       this.setState({ menuOpen: false });
                       this.props.history.push(menuItem.path);
@@ -140,23 +153,38 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   ))])}
                 </Menu>
               </Hidden>
-              <img
-                alt='logo'
-                className={this.props.classes.logo}
-                src='/img/clearflask-logo.png' />
-              <Button
-                style={{ textTransform: 'unset' }}
+              <div
+                className={this.props.classes.logoButton}
                 onClick={() => this.props.history.push('/')}
               >
-                <Typography>ClearFlask</Typography>
-              </Button>
-              <div className={this.props.classes.grow} />
+                <img
+                  alt='logo'
+                  className={this.props.classes.logo}
+                  src='/img/clearflask-logo.png' />
+                ClearFlask
+              </div>
               <Hidden xsDown implementation='css'>
-                {menuItems.map(menuItem => menuItem.type === 'button' ? (
-                  <Button key={menuItem.path} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
+                {menuItemsLeft.map(menuItem => menuItem.type === 'button' ? (
+                  <Button key={menuItem.path} className={this.props.classes.menuButton} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
                 ) : (
                     <DropdownButton
                       key={menuItem.title}
+                      buttonClassName={this.props.classes.menuButton}
+                      label={menuItem.title}
+                      links={menuItem.items}
+                      // TODO value={}
+                      onChange={val => this.props.history.push(val)}
+                    />
+                  ))}
+              </Hidden>
+              <div className={this.props.classes.grow} />
+              <Hidden xsDown implementation='css'>
+                {menuItemsRight.map(menuItem => menuItem.type === 'button' ? (
+                  <Button key={menuItem.path} className={this.props.classes.menuButton} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
+                ) : (
+                    <DropdownButton
+                      key={menuItem.title}
+                      buttonClassName={this.props.classes.menuButton}
                       label={menuItem.title}
                       links={menuItem.items}
                       // TODO value={}

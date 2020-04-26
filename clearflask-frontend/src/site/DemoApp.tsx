@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { MemoryRouter, Route, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Admin from "../api/admin";
 import DataMock from '../api/dataMock';
-import { Server } from '../api/server';
+import { Server, StateSettings } from '../api/server';
 import ServerMock from '../api/serverMock';
 import App from '../app/App';
 import * as ConfigEditor from '../common/config/configEditor';
@@ -19,8 +19,9 @@ export function getProject(
   template: ((templater: Templater) => void) | undefined = undefined,
   mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => void) | undefined = undefined,
   projectId: string = randomUuid(),
+  settings?: StateSettings,
 ): Promise<Project> {
-  const server = new Server(projectId, ServerMock.get());
+  const server = new Server(projectId, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
   editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
@@ -53,6 +54,7 @@ interface Props {
   server: Server;
   intialSubPath?: string;
   forcePath?: string;
+  settings?: StateSettings;
 }
 
 export default class DemoApp extends Component<Props> {
@@ -67,7 +69,9 @@ export default class DemoApp extends Component<Props> {
               projectId={this.props.server.getProjectId()}
               supressCssBaseline
               isInsideContainer
-              serverOverride={this.props.server} />
+              serverOverride={this.props.server}
+              settings={this.props.settings}
+            />
           </React.Fragment>
         )} />
       </MemoryRouter>

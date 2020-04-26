@@ -43,35 +43,13 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
         mirror={mirror}
         scale={0.7}
         template={templater => templater.demoCategory()}
-        mock={(mocker, config) => mocker.mockIdea(config.content.categories[0], undefined, undefined, { ideaId: 'idea' }, true)
-          .then(idea => mocker.mockDetailedComments([
-            {
-              content: 'We should also consider adding an audio captcha for blind and visually impaired users', author: 'John', children: [
-                {
-                  content: 'The problem with audio captchas is that they are usually the easiest to break by spammers', author: 'Charlotte', children: [
-                    {
-                      content: 'We can always disable them later', author: 'John'
-                    },
-                  ]
-                },
-                {
-                  content: 'Ah yes, the AudioCaptcha service seems to be a good offer', author: 'Daisy', children: [
-                    {
-                      content: 'The pricing seems a bit high', author: 'John', children: [
-                        { content: 'Let me contact them to see if we can get a better price', author: 'John' }
-                      ]
-                    }
-                  ]
-                },
-              ]
-            },
-          ], idea)
-            .then(() => mocker.mockLoggedIn()))}
+        mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+          .then(() => mocker.mockLoggedIn())}
         demo={project => (
           <Provider store={project.server.getStore()}>
             <CommentList
               server={project.server}
-              ideaId='idea'
+              ideaId='ideaId'
               expectedCommentCount={1}
               logIn={() => Promise.resolve()}
               // TODO make commenting work in demo

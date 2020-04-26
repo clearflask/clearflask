@@ -42,7 +42,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-interface Props {
+export interface Props {
   className?: string;
   title?: string;
   description?: string;
@@ -63,7 +63,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         container
         wrap='wrap-reverse'
         direction={!this.props.mirror ? 'row-reverse' : undefined}
-        alignItems='center'
+        alignItems={this.props.imagePath ? 'center' : 'flex-end'}
       >
         <Grid item xs={12} md={6} className={this.props.classes.grid} direction='column'>
           {this.props.imagePath && (
@@ -86,7 +86,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           )}
         </Grid>
         <Grid item xs={false} md={false} lg={1} xl={false} />
-        <Grid item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+        <Grid item xs={12} md={6} lg={5} xl={4} className={this.props.classes.grid}>
           {this.props.icon && (
             <div className={this.props.classes.icon}>
               {this.props.icon}

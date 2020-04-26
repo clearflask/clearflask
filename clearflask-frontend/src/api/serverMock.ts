@@ -15,61 +15,38 @@ const TrialPlan = {
   perks: [],
 };
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
-  '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7': {
-    planid: '7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7', title: 'Standard',
-    pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Yearly },
-    perks: [
-      { desc: '1,000 Active users', terms: termsActiveUsers },
-      { desc: 'Multiple projects', terms: termsProjects },
-      { desc: 'Voting and Crowd-funding', terms: termsVoting },
-      { desc: '1hr feature credits', terms: termsCredit },
-    ],
-    beta: true,
-  },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
     planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Standard',
-    pricing: { price: 80, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { price: 57, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: '1,000 Active users', terms: termsActiveUsers },
+      { desc: 'Unlimited users', terms: termsActiveUsers },
       { desc: 'Multiple projects', terms: termsProjects },
       { desc: 'Voting and Crowd-funding', terms: termsVoting },
-      { desc: '5min feature credits', terms: termsCredit },
+      { desc: 'Feature credits', terms: termsCredit },
     ],
-    beta: true,
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
     planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
-      { desc: '10,000 Active users', terms: termsActiveUsers },
       { desc: 'Powerful Analytics', terms: termsAnalytics },
       { desc: 'Single sign-on' },
       { desc: 'API access' },
+      { desc: 'Multi-agent' },
     ],
-    comingSoon: true,
-  },
-  '597099E1-83B3-40AC-8AC3-52E9BF59A562': {
-    planid: '597099E1-83B3-40AC-8AC3-52E9BF59A562', title: 'Enterprise',
-    perks: [
-      { desc: '10,000+ Active users', terms: termsActiveUsers },
-      { desc: 'Multi-Agent Access' },
-      { desc: 'Whitelabel' },
-    ],
-    comingSoon: true,
+    beta: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable = {
-  plans: ['Standard', 'Analytic', 'Enterprise'],
+  plans: ['Standard', 'Analytic'],
   features: [
-    { feature: 'Pricing', values: ['Flat rate', 'Per agent', 'Custom'] },
-    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'], terms: termsProjects },
-    { feature: 'Users/contributors', values: ['No limit', 'No limit', 'No limit'], terms: termsActiveUsers },
-    { feature: 'Customizable pages', values: ['Yes', 'Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
-    { feature: 'Voting and Crowd-funding', values: ['Yes', 'Yes', 'Yes'], terms: termsVoting },
-    { feature: 'Powerful Analytics', values: ['No', 'Yes', 'Yes'], terms: termsAnalytics },
-    { feature: 'Single sign-on', values: ['No', 'Yes', 'Yes'] },
-    { feature: 'API access', values: ['No', 'Yes', 'Yes'] },
-    { feature: 'Multi-agent access', values: ['No', 'No', 'Yes'] },
-    { feature: 'Whitelabel', values: ['No', 'No', 'Yes'] },
+    { feature: 'Projects', values: ['No limit', 'No limit'], terms: termsProjects },
+    { feature: 'Users', values: ['No limit', 'No limit'], terms: termsActiveUsers },
+    { feature: 'Customization', values: ['Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
+    { feature: 'Voting and Crowd-funding', values: ['Yes', 'Yes'], terms: termsVoting },
+    { feature: 'Powerful Analytics', values: ['No', 'Yes'], terms: termsAnalytics },
+    { feature: 'Single sign-on', values: ['No', 'Yes'] },
+    { feature: 'API access', values: ['No', 'Yes'] },
+    { feature: 'Multi-agent access', values: ['No', 'Yes'] },
   ],
 };
 

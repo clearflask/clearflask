@@ -27,8 +27,12 @@ export default class Templater {
     // TODO FORUM
   }
 
-  demoPrioritization(type: 'fund' | 'vote' | 'express') {
+  styleWhite() {
     this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+  }
+
+  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'all') {
+    this.styleWhite();
 
     const categoryIndex = this.demoCategory();
 
@@ -38,9 +42,15 @@ export default class Templater {
         this.creditsCurrencyWithoutCents();
         break;
       case 'vote':
-        this.supportVoting(categoryIndex, false);
+        this.supportVoting(categoryIndex, true);
         break;
       case 'express':
+        this.supportExpressingAllEmojis(categoryIndex, true);
+        break;
+      case 'all':
+        this.supportFunding(categoryIndex);
+        this.creditsCurrencyWithoutCents();
+        this.supportVoting(categoryIndex, true);
         this.supportExpressingAllEmojis(categoryIndex, true);
         break;
     }
@@ -869,9 +879,9 @@ export default class Templater {
     }
   }
 
-  usersOnboardingMobilePush(enable: boolean) {
-    this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'mobilePush']).set(enable);
-  }
+  // usersOnboardingMobilePush(enable: boolean) {
+  //   this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'mobilePush']).set(enable);
+  // }
 
   usersOnboardingBrowserPush(enable: boolean) {
     this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'browserPush']).set(enable);

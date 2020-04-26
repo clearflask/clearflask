@@ -19,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
   },
   box: {
     border: '1px solid ' + theme.palette.grey[300],
+    borderBottom: 'none',
   },
   billingSelect: {
     margin: theme.spacing(3),
@@ -56,20 +57,25 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         <Container maxWidth='md'>
           <Typography component="h1" variant="h2" color="textPrimary">Compare pricing</Typography>
           <Typography component="h2" variant="h4" color="textSecondary">All plans include unlimited number of users.</Typography>
-          <PlanPeriodSelect
-            plans={this.props.plans}
-            value={selectedPeriod}
-            onChange={period => this.setState({ period })}
-          />
+          {periods.length > 1 && (
+            <PlanPeriodSelect
+              plans={this.props.plans}
+              value={selectedPeriod}
+              onChange={period => this.setState({ period })}
+            />
+          )}
         </Container>
+        <br />
+        <br />
+        <br />
         <Container maxWidth='md'>
           <Loader loaded={!!this.props.plans}>
-            <Grid container spacing={5} alignItems='stretch'>
+            <Grid container spacing={5} alignItems='stretch' justify='center'>
               {plans.map((plan, index) => (
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
-                    actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Contact us')}
+                    actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Talk to sales')}
                     actionOnClick={plan.comingSoon ? undefined : () => plan.pricing && !plan.beta
                       ? this.props.history.push('/signup')
                       : this.props.history.push('/contact/sales')

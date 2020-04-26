@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Redirect, Route } from 'react-router-dom';
-import { Server } from '../api/server';
+import { Server, StateSettings } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status } from '../common/notification/webNotification';
 import { detectEnv, Environment } from '../common/util/detectEnv';
@@ -30,6 +30,7 @@ interface Props {
   serverOverride?: Server;
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
+  settings?: StateSettings;
   // Router matching
   match: match;
   history: History;
@@ -49,9 +50,9 @@ class App extends Component<Props> {
     if (this.props.serverOverride) {
       this.server = this.props.serverOverride;
     } else if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      this.server = new Server(projectId, ServerMock.get());
+      this.server = new Server(projectId, this.props.settings, ServerMock.get());
     } else {
-      this.server = new Server(projectId);
+      this.server = new Server(projectId, this.props.settings);
     }
 
     this.configGetAndUserBind();
@@ -155,7 +156,7 @@ class App extends Component<Props> {
                 </BasePage>
               )} />
               {!isExpanded() && (
-                <Route key='post' path='/post/:postId' render={props => (
+                <Route key='post' path='/(embed)?/post/:postId' render={props => (
                   <BasePage showFooter>
                     <PostPage
                       postId={props.match.params['postId'] || ''}
@@ -165,7 +166,7 @@ class App extends Component<Props> {
                 )} />
               )}
               {!isExpanded() && (
-                <Route key='postWildcard' path='/*/post/:postId' render={props => (
+                <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => props.match.params['prefix'] === 'embed' ? null : (
                   <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
                 )} />
               )}

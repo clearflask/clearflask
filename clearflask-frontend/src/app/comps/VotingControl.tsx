@@ -39,6 +39,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string;
   vote?: Client.VoteOption;
   hidden?: boolean;
   voteValue?: number;
@@ -55,7 +56,7 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
     const downvoted: boolean = this.props.vote === Client.VoteOption.Downvote;
 
     return (
-      <div className={`${this.props.classes.container} ${this.props.hidden ? this.props.classes.hidden : ''}`}>
+      <div className={`${this.props.classes.container} ${this.props.hidden ? this.props.classes.hidden : ''} ${this.props.className || ''}`}>
         <IconButton
           color={upvoted ? 'primary' : undefined}
           className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}

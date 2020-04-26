@@ -1,7 +1,10 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { loremIpsum } from "lorem-ipsum";
 import React, { Component } from 'react';
 import { featuresDescription, featuresTitle } from './FeaturesPage';
 import Block from './landing/Block';
+import Demo from './landing/Demo';
+import Demos from './landing/Demos';
 import Hero from './landing/Hero';
 import { prioritizationDescription, prioritizationTitle } from './PrioritizationPage';
 import { transparencyDescription, transparencyTitle } from './TransparencyPage';
@@ -15,13 +18,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderCollect()}
-        {this.renderPrioritization(true)}
-        {this.renderTransparency()}
-        {this.renderFeatures(true)}
+        {this.renderPrioritization()}
+        {this.renderTransparency(true)}
+        {this.renderFeatures()}
         {/* {this.renderEngagement()} */}
         {/* {this.renderCustomize()} */}
-        {this.renderSales()}
+        {this.renderSales(true)}
       </React.Fragment>
     );
   }
@@ -36,39 +38,67 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderCollect(mirror?: boolean) {
-    return (
-      <Block
-        title='Give valuable customers a voice to drive your product'
-        description='A tool to empower your users to express their opinion for you to make better product decisions.'
-        mirror={mirror}
-        imagePath='/img/landing/collect.svg'
-      />
-    );
-  }
-
   renderPrioritization(mirror?: boolean) {
     return (
-      <Block
+      <Demo
         title={prioritizationTitle}
         description={prioritizationDescription}
         mirror={mirror}
         buttonTitle='Learn about prioritization'
         buttonLink='/prioritization'
-        imagePath='/img/landing/prioritization.svg'
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoPrioritization('all')}
+        mock={mocker => mocker.demoPrioritization()}
+        settings={{
+          demoFlashPostVotingControls: true,
+        }}
       />
     );
   }
 
   renderTransparency(mirror?: boolean) {
     return (
-      <Block
+      <Demos
         title={transparencyTitle}
         description={transparencyDescription}
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}
-        imagePath='/img/landing/transparency.svg'
+        demos={[
+          {
+            initialSubPath: '/embed/demo',
+            scale: 0.7,
+            template: templater => templater.demoBoard('Roadmap', [
+              { title: 'Planned' },
+              { title: 'In Progress' },
+            ]),
+            mock: mocker => mocker.demoBoard([
+              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+            ]),
+            settings: {
+              demoBlurryShadow: true,
+            },
+          },
+          {
+            scale: 0.7,
+            template: templater => {
+              const categoryId = templater.demoCategory();
+              templater.supportVoting(categoryId, true);
+              templater.workflowFeatures(categoryId);
+              templater.styleWhite();
+            },
+            mock: (mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
+              .then(() => mocker.mockLoggedIn()),
+            initialSubPath: '/embed/post/ideaid',
+          },
+        ]}
       />
     );
   }

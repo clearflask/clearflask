@@ -7,7 +7,7 @@ import com.smotana.clearflask.api.model.AnonymousSignup;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Content;
-import com.smotana.clearflask.api.model.Credits;
+import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.Layout;
 import com.smotana.clearflask.api.model.Legal;
@@ -55,7 +55,7 @@ public class ModelUtil {
                         null,
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
-                                new NotificationMethods(new AnonymousSignup(true), true, false, null))),
+                                new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.PasswordEnum.NONE)))),
                 new Legal(null),
                 null
         ), createConfigVersion());

@@ -6,7 +6,7 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 
-export const prioritizationTitle = 'Proportionate voice based on customer value';
+export const prioritizationTitle = 'Give your customers a proportionate voice to drive your product';
 export const prioritizationDescription = 'Assign each user voting power based on their value as a customer and let them spend the voting power prioritizing your roadmap. Your users will love knowing they have a voice.';
 
 const styles = (theme: Theme) => createStyles({

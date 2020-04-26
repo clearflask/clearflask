@@ -6,7 +6,6 @@ import { Redirect, RouteComponentProps } from 'react-router';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import Message from '../app/comps/Message';
 import LoadingPage from '../app/LoadingPage';
 import * as ConfigEditor from '../common/config/configEditor';
 import Crumbs from '../common/config/settings/Crumbs';
@@ -14,6 +13,7 @@ import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/setti
 import Page from '../common/config/settings/Page';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
+import Message from '../common/Message';
 import notEmpty from '../common/util/arrayUtil';
 import setTitle from '../common/util/titleUtil';
 import BillingPage from './dashboard/BillingPage';

@@ -40,7 +40,6 @@ public class AccountStoreTest extends AbstractTest {
                 Instant.now(),
                 "name",
                 "password",
-                "123456",
                 "paymentToken",
                 ImmutableSet.of());
         store.createAccount(account);
@@ -94,7 +93,6 @@ public class AccountStoreTest extends AbstractTest {
                 Instant.now(),
                 "name",
                 "password",
-                "123456",
                 "paymentToken",
                 ImmutableSet.of());
         store.createAccount(account);

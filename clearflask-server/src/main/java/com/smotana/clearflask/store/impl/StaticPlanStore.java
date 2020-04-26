@@ -24,6 +24,11 @@ public class StaticPlanStore implements PlanStore {
     private static final String TERMS_ANALYTICS = "View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.";
     private static final String TERMS_VOTING = "Voting and Credit system allows precise expression of value for each idea.";
     private static final String TERMS_CREDIT = "Spend time credits on future ClearFlask development features";
+    private static final Plan TRIAL_PLAN = new Plan("707DC779-CA57-4F9D-B588-6219424A7150", "Trial",
+            new PlanPricing(50L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
+            new PlanPerk("Time-limited trial", "After trial expires, please choose a plan to continue using our service."),
+            new PlanPerk("Access to all features", null)),
+            null, false);
     private static final ImmutableMap<String, Plan> AVAILABLE_PlANS = ImmutableMap.of(
             "7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", new Plan("7CC22CC8-16C5-49DF-8AEB-2FD98D9059A7", "Standard",
                     new PlanPricing(50L, PlanPricing.PeriodEnum.YEARLY), ImmutableList.of(
@@ -77,6 +82,11 @@ public class StaticPlanStore implements PlanStore {
         return planIds.stream()
                 .map(AVAILABLE_PlANS::get)
                 .collect(ImmutableSet.toImmutableSet());
+    }
+
+    @Override
+    public Plan getTrialPlan() {
+        return TRIAL_PLAN;
     }
 
     @Override

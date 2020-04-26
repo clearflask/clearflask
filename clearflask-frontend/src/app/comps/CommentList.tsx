@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { CommentSearchResponse } from '../../api/client';
-import { ReduxState, Server, Status } from '../../api/server';
+import { ReduxState, Server, StateSettings, Status } from '../../api/server';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
 import CommentReply from './CommentReply';
@@ -13,8 +13,6 @@ import LoadMoreButton from './LoadMoreButton';
 const styles = (theme: Theme) => createStyles({
   commentIndent: {
     marginLeft: theme.spacing(3),
-  },
-  loadMore: {
   },
 });
 
@@ -32,6 +30,7 @@ interface ConnectProps {
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
   loadMore: () => Promise<CommentSearchResponse>;
+  settings: StateSettings;
 }
 
 class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
@@ -59,6 +58,7 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
               key={comment.commentId}
               server={this.props.server}
               comment={comment}
+              isBlurry={this.props.settings.demoBlurryShadow}
               loggedInUser={this.props.loggedInUser}
               replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
               onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
@@ -132,6 +132,7 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
   return {
     commentsStatus: commentsStatus,
     comments: comments,
+    settings: state.settings,
     loadMore: (): Promise<CommentSearchResponse> => ownProps.server.dispatch().commentList({
       projectId: state.projectId,
       ideaId: ownProps.ideaId,

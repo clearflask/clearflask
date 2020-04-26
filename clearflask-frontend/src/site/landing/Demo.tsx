@@ -2,32 +2,31 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import * as Admin from "../../api/admin";
 import DataMock from '../../api/dataMock';
+import { StateSettings } from '../../api/server';
 import Templater from '../../common/config/configTemplater';
 import Promised from '../../common/Promised';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
-import Block from './Block';
+import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  mirror?: boolean;
-  title: string;
-  description: string;
   initialSubPath?: string;
   template?: (templater: Templater) => void;
   mock?: (mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>;
   controls?: (project: Project) => React.ReactNode;
   demo?: (project: Project) => React.ReactNode;
   scale?: number;
+  settings?: StateSettings;
 }
-class Demo extends Component<Props & WithStyles<typeof styles, true>> {
+class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
   readonly projectPromise: Promise<Project>;
 
   constructor(props) {
     super(props);
-    this.projectPromise = getProject(props.template, props.mock);
+    this.projectPromise = getProject(props.template, props.mock, undefined, props.settings);
   }
 
   componentWillUnmount() {
@@ -43,6 +42,7 @@ class Demo extends Component<Props & WithStyles<typeof styles, true>> {
             <DemoApp
               server={project.server}
               intialSubPath={this.props.initialSubPath}
+              settings={this.props.settings}
             />
           );
         if (this.props.scale !== undefined) {
@@ -51,6 +51,7 @@ class Demo extends Component<Props & WithStyles<typeof styles, true>> {
               transform: `scale(${this.props.scale})`,
               transformOrigin: '0 0',
               width: `${100 / this.props.scale}%`,
+              height: '100%',
               marginBottom: `${(this.props.scale - 1) * 100}%`,
             }}>
               {demo}
@@ -59,9 +60,7 @@ class Demo extends Component<Props & WithStyles<typeof styles, true>> {
         }
         return (
           <Block
-            title={this.props.title}
-            description={this.props.description}
-            mirror={this.props.mirror}
+            {...this.props}
             controls={this.props.controls && this.props.controls(project)}
             demo={demo}
           />

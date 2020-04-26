@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
-import { Server } from '../../api/server';
+import { cssBlurry, Server } from '../../api/server';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
@@ -59,11 +59,13 @@ const styles = (theme: Theme) => createStyles({
     padding: '0px',
     color: theme.palette.text.hint,
   },
+  ...cssBlurry,
 });
 
 interface Props {
   server: Server;
   comment?: Client.CommentWithVote;
+  isBlurry?: boolean;
   loggedInUser?: Client.User;
   replyOpen?: boolean;
   onReplyClicked: () => void;
@@ -93,7 +95,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     return this.props.comment && !this.props.comment.author ? (
       <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
     ) : (
-        <Typography variant='body1' className={this.props.classes.pre}>
+        <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
           {this.props.comment && this.props.comment.content}
         </Typography>
       );

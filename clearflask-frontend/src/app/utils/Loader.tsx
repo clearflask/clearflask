@@ -2,7 +2,7 @@ import { Fade } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Status } from '../../api/server';
-import Message from '../comps/Message';
+import Message from '../../common/Message';
 import Loading from './Loading';
 
 const styles = (theme: Theme) => createStyles({

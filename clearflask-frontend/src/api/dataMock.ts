@@ -8,6 +8,7 @@ interface MockedComment {
   created?: Date;
   edited?: Date;
   children?: MockedComment[];
+  voteValue?: number;
 }
 
 class DataMock {
@@ -21,13 +22,11 @@ class DataMock {
     return new DataMock(projectId);
   }
 
-  demoPage(andThen: (config: Admin.ConfigAdmin, user: Admin.UserAdmin) => Promise<any>) {
-    return Promise.all([
-      this.mockLoggedIn(80),
-      this.getConfig()
-        .then(config =>
-          this.mockUser('John Doe')
-            .then(user => andThen(config, user)))]);
+  async demoPage<T>(andThen: (config: Admin.ConfigAdmin, user: Admin.UserAdmin) => Promise<T>): Promise<T> {
+    await this.mockLoggedIn(80);
+    const config = await this.getConfig();
+    const user = await this.mockUser('John Doe');
+    return await andThen(config, user);
   }
 
   demoBoard(ideas: Array<{
@@ -255,6 +254,59 @@ class DataMock {
     return expressions;
   }
 
+  async mockFakeIdeaWithComments(ideaId: string = 'captcha-to-reduce-spam'): Promise<Admin.IdeaWithVote> {
+    const idea = await this.demoPage((config, user) => ServerMock.get().ideaCreateAdmin({
+      projectId: this.projectId,
+      ideaCreateAdmin: {
+        authorUserId: user.userId,
+        title: 'Captcha to reduce spam',
+        description: 'In order to reduce the growing spam problem we have seen recently, I propose to introduce a captcha during user registration.',
+        response: 'This is a good idea, we are planning to squeeze this into the next sprint.',
+        categoryId: config.content.categories[0].categoryId,
+        statusId: config.content.categories[0].workflow.entryStatus,
+        tagIds: [],
+        ...{ // Fake data
+          ideaId,
+          funded: 12,
+          fundersCount: 5,
+          fundGoal: 60,
+          voteValue: 89,
+          expressionsValue: 7,
+          expressions: {
+            '👍': 4,
+            '❤️': 1,
+          },
+        },
+      },
+    }));
+
+    await this.mockDetailedComments([
+      {
+        content: 'We should also consider adding an audio captcha for blind and visually impaired users', author: 'John', voteValue: 43, children: [
+          {
+            content: 'The problem with audio captchas is that they are usually the easiest to break by spammers', author: 'Charlotte', voteValue: 22, children: [
+              {
+                content: 'We can always disable them later', author: 'John', voteValue: 1, created: new Date(),
+              },
+            ]
+          },
+          {
+            content: 'Ah yes, the AudioCaptcha service seems to be a good offer', author: 'Daisy', voteValue: 12, children: [
+              {
+                content: 'The pricing seems a bit high', author: 'John', voteValue: -3, children: [
+                  { content: 'Let me contact them to see if we can get a better price', author: 'John', voteValue: 3 }
+                ]
+              }
+            ]
+          },
+        ]
+      },
+    ], idea);
+
+    return idea;
+  }
+
+
   async mockDetailedComments(comments: MockedComment[], item: Admin.Idea, parentCommentId: string | undefined = undefined): Promise<any> {
     const users: { [name: string]: Admin.User } = {};
     for (const comment of comments) {
@@ -277,6 +329,7 @@ class DataMock {
             author: user,
             created: comment.created || this.mockDate(),
             edited: comment.edited,
+            voteValue: comment.voteValue || 1,
           },
         },
       });

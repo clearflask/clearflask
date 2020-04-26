@@ -1,12 +1,14 @@
-import { Box, Button, Container, IconButton, TextField } from '@material-ui/core';
+import { Box, Button, Collapse, Container, IconButton, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { NavLink } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import Message from '../common/Message';
 import { saltHashPassword } from '../common/util/auth';
 
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
@@ -19,9 +21,12 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2),
   },
   link: {
-    cursor: 'pointer',
-    textDecoration: 'none!important',
-    color: theme.palette.text.primary,
+    color: 'unset',
+    borderBottom: '1px dashed',
+    textDecoration: 'none',
+    '&:hover': {
+      borderBottomStyle: 'solid',
+    },
   },
   reviewRowError: {
     color: theme.palette.error.main,
@@ -39,6 +44,7 @@ interface State {
   isSubmitting?: boolean;
   name?: string;
   email?: string;
+  emailIsFreeOrDisposable?: boolean;
   pass?: string;
   revealPassword?: boolean;
 }
@@ -47,7 +53,11 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
   state: State = {};
 
   render() {
-    const canSubmit = !!this.state.name && !!this.state.email && !!this.state.pass;
+    const canSubmit = !!this.state.name
+      && !!this.state.email
+      && !this.state.emailIsFreeOrDisposable
+      && !!this.state.pass;
+    const emailDisposableList = import('../common/util/emailDisposableList');
 
     return (
       <div className={this.props.classes.page}>
@@ -67,8 +77,21 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               label='Work email'
               required
               value={this.state.email || ''}
-              onChange={e => this.setState({ email: e.target.value })}
+              onChange={e => {
+                const newEmail = e.target.value;
+                this.setState({ email: newEmail });
+                emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
+              }}
             />
+            <Collapse in={!!this.state.emailIsFreeOrDisposable}>
+              <Message variant='warning' message={(
+                <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
+                  Please enter your work email. Don't have one?&nbsp;
+                  <NavLink to='/contact/sales' className={this.props.classes.link}>Schedule a demo</NavLink>
+                  &nbsp;with us.
+                </div>
+              )} />
+            </Collapse>
             <Box display='flex' flexDirection='row' alignItems='center'>
               <TextField
                 className={this.props.classes.item}

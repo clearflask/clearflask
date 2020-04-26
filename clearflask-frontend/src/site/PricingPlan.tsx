@@ -40,7 +40,6 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     var billed;
     switch (this.props.plan.pricing?.period) {
       case Admin.PlanPricingPeriodEnum.Monthly:
-        billed = `$${this.props.plan.pricing.price} billed ${this.props.plan.pricing.period.toLowerCase()}`;
         break;
       case Admin.PlanPricingPeriodEnum.Quarterly:
         billed = `$${this.props.plan.pricing.price * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
@@ -62,12 +61,18 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           titleTypographyProps={{ align: 'center' }}
         />
         <CardContent>
-          {!!this.props.plan.pricing ? (
+          {!this.props.plan.comingSoon ? (
             <React.Fragment>
               <div className={this.props.classes.cardPricing}>
-                <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                <Typography component='h2' variant='h3'>{this.props.plan.pricing.price}</Typography>
-                <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
+                {!!this.props.plan.pricing ? (
+                  <React.Fragment>
+                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component='h2' variant='h4'>{this.props.plan.pricing?.price || 'Custom'}</Typography>
+                    <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
+                  </React.Fragment>
+                ) : (
+                    <Typography component='h2' variant='h4' color='textSecondary'>Custom</Typography>
+                  )}
               </div>
               <div className={this.props.classes.cardPricing}>
                 <Typography component='h3'>{billed}</Typography>
@@ -75,7 +80,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </React.Fragment>
           ) : (
               <div className={this.props.classes.cardPricing}>
-                <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>Coming soon...</Typography>
+                <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>{this.props.plan.comingSoon ? 'Coming soon...' : 'Talk to sales'}</Typography>
               </div>
             )}
           {this.props.plan.perks.map(perk => (

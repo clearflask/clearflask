@@ -1,6 +1,6 @@
 import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
-import Message from './comps/Message';
+import Message from '../common/Message';
 
 interface Props {
   msg?: string;

@@ -8,6 +8,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props extends WithStyles<typeof styles, true> {
   label: string;
+  buttonClassName?: string;
   links: Array<{ name: string; val: string }>;
   value?: string;
   onChange: (val: string) => void;
@@ -23,6 +24,7 @@ class DropdownButton extends Component<Props, State> {
     return (
       <React.Fragment>
         <Button
+          className={this.props.buttonClassName}
           ref={this.menuButtonRef}
           onClick={() => this.setState({ menuOpen: true })}
         >
@@ -37,6 +39,7 @@ class DropdownButton extends Component<Props, State> {
           {this.props.links.map(link => (
             <MenuItem
               key={link.val}
+              className={this.props.buttonClassName}
               onClick={() => {
                 this.setState({ menuOpen: false });
                 this.props.onChange(link.val);

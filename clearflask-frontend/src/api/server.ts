@@ -24,7 +24,7 @@ export class Server {
   readonly errorSubscribers: ((errorMsg: string, isUserFacing: boolean) => void)[] = [];
   challengeSubscriber?: ((challenge: string) => Promise<string | undefined>);
 
-  constructor(projectId: string, apiOverride?: Client.ApiInterface & Admin.ApiInterface, versionedConfig?: Admin.VersionedConfigAdmin) {
+  constructor(projectId: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface, versionedConfig?: Admin.VersionedConfigAdmin) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
@@ -38,7 +38,7 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(projectId, versionedConfig),
+      Server.initialState(projectId, settings, versionedConfig),
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
@@ -69,9 +69,10 @@ export class Server {
     };
   }
 
-  static initialState(projectId: string, versionedConfig?: Admin.VersionedConfigAdmin): any {
+  static initialState(projectId: string, settings?: StateSettings, versionedConfig?: Admin.VersionedConfigAdmin): any {
     const state: ReduxState = {
       projectId: projectId,
+      settings: settings || stateSettingsDefault,
       conf: versionedConfig ? {
         status: Status.FULFILLED, conf: versionedConfig.config, ver: versionedConfig.version,
       } : {},
@@ -173,6 +174,21 @@ function reducerProjectId(projectId: string = 'unknown', action: Client.Actions 
     default:
       return projectId;
   }
+}
+
+export const cssBlurry = {
+  blurry: {
+    color: 'transparent',
+    textShadow: '0px 0px 5px rgba(0,0,0,0.5)',
+  }
+};
+export interface StateSettings {
+  demoFlashPostVotingControls?: boolean;
+  demoBlurryShadow?: boolean;
+};
+const stateSettingsDefault = {};
+function reducerSettings(state: StateSettings = stateSettingsDefault): StateSettings {
+  return state;
 }
 
 export interface StateConf {
@@ -1209,6 +1225,7 @@ function reducerNotifications(state: StateNotifications = stateNotificationsDefa
 
 export interface ReduxState {
   projectId: string;
+  settings: StateSettings;
   conf: StateConf;
   ideas: StateIdeas;
   comments: StateComments;
@@ -1220,6 +1237,7 @@ export interface ReduxState {
 }
 export const reducers = combineReducers({
   projectId: reducerProjectId,
+  settings: reducerSettings,
   conf: reducerConf,
   ideas: reducerIdeas,
   comments: reducerComments,
