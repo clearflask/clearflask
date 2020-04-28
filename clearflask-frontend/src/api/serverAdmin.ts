@@ -23,6 +23,7 @@ export interface Project {
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
+  static mockInstance: ServerAdmin | undefined;
 
   readonly apiOverride?: Client.ApiInterface & Admin.ApiInterface;
   readonly projects: { [projectId: string]: Project } = {};
@@ -58,15 +59,23 @@ export default class ServerAdmin {
       storeMiddleware);
   }
 
-  static get(): ServerAdmin {
-    if (ServerAdmin.instance === undefined) {
-      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-        ServerAdmin.instance = new ServerAdmin(ServerMock.get());
-      } else {
-        ServerAdmin.instance = new ServerAdmin();
+  static get(forceMock: boolean = false): ServerAdmin {
+    if (forceMock) {
+      if (ServerAdmin.mockInstance === undefined) {
+        ServerAdmin.mockInstance = new ServerAdmin(ServerMock.get());
       }
+      return ServerAdmin.mockInstance;
+    } else {
+      if (ServerAdmin.instance === undefined) {
+        if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+          ServerAdmin.mockInstance = new ServerAdmin(ServerMock.get())
+          ServerAdmin.instance = ServerAdmin.mockInstance;
+        } else {
+          ServerAdmin.instance = new ServerAdmin();
+        }
+      }
+      return ServerAdmin.instance;
     }
-    return ServerAdmin.instance;
   }
 
   getStore(): Store<ReduxStateAdmin> {

@@ -179,7 +179,7 @@ function reducerProjectId(projectId: string = 'unknown', action: Client.Actions 
 export const cssBlurry = {
   blurry: {
     color: 'transparent',
-    textShadow: '0px 0px 5px rgba(0,0,0,0.5)',
+    textShadow: '0px 0px 12px rgba(0,0,0,0.8)',
   }
 };
 export interface StateSettings {

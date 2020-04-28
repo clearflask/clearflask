@@ -1,5 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import Block from './landing/Block';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
@@ -17,8 +18,10 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderCredit()}
-        {this.renderVoting()}
+        {this.renderRewardCustomers()}
+        {this.renderCredit(true)}
+        {this.renderCreditUseCases()}
+        {this.renderVoting(true)}
         {this.renderExpressions()}
       </React.Fragment>
     );
@@ -59,6 +62,29 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
         template={templater => templater.demoPrioritization('fund')}
         mock={mocker => mocker.demoPrioritization()}
         controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+      />
+    );
+  }
+
+  renderRewardCustomers(mirror?: boolean) {
+    return (
+      <Block
+        title='Reward valuable customers with proportionate voice'
+        description='TODO Customer purchases (product purchase, subscription); loyalty, game rank'
+        mirror={mirror}
+        demo={'Picture of Scale, one side is voice the other is subscription, donation, purchases'}
+      />
+    );
+  }
+
+  renderCreditUseCases(mirror?: boolean) {
+    return (
+      <Block
+        title='Credit use cases'
+        description='TODO
+        Commercial product, SAAS, Donation-based
+         TODO Integrate with paying customers, Patreon, donation, mobile purchases, bounties, crowdfunding'
+        mirror={mirror}
       />
     );
   }

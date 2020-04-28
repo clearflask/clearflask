@@ -4,7 +4,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
-import { contentScrollApplyStyles } from '../common/ContentScroll';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';
 import ErrorPage from './ErrorPage';
@@ -27,13 +26,14 @@ const styles = (theme: Theme) => createStyles({
   },
   board: {
     display: 'flex',
+    flexWrap: 'wrap',
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
     paddingLeft: theme.spacing(2),
-    ...(contentScrollApplyStyles(theme)),
   },
   boardPanel: {
+    flex: '0 1 100px',
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
   },

@@ -53,6 +53,7 @@ export interface Props {
   imagePath?: string;
   icon?: React.ReactNode;
   mirror?: boolean;
+  largeDemo?: boolean;
 }
 class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
 
@@ -65,7 +66,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         direction={!this.props.mirror ? 'row-reverse' : undefined}
         alignItems={this.props.imagePath ? 'center' : 'flex-end'}
       >
-        <Grid item xs={12} md={6} className={this.props.classes.grid} direction='column'>
+        <Grid item xs={12} md={this.props.largeDemo ? 8 : 6} className={this.props.classes.grid} direction='column'>
           {this.props.imagePath && (
             <img
               className={this.props.classes.image}
@@ -86,7 +87,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           )}
         </Grid>
         <Grid item xs={false} md={false} lg={1} xl={false} />
-        <Grid item xs={12} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+        <Grid item xs={12} md={this.props.largeDemo ? 4 : 6} lg={this.props.largeDemo ? 3 : 5} xl={this.props.largeDemo ? 2 : 4} className={this.props.classes.grid}>
           {this.props.icon && (
             <div className={this.props.classes.icon}>
               {this.props.icon}

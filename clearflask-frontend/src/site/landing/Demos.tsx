@@ -1,4 +1,3 @@
-import { Paper, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import * as Admin from "../../api/admin";
@@ -6,6 +5,8 @@ import DataMock from '../../api/dataMock';
 import { StateSettings } from '../../api/server';
 import Templater from '../../common/config/configTemplater';
 import Promised from '../../common/Promised';
+import Scale from '../../common/Scale';
+import Stack, { Props as StackProps } from '../../common/Stack';
 import notEmpty from '../../common/util/arrayUtil';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
@@ -25,27 +26,15 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  demosContainer: {
-    position: 'relative',
-  },
-  demo: {
-    padding: theme.spacing(2),
-    width: '100%',
-    boxShadow: '0 10px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19)',
-    overflow: 'auto',
-  },
 });
 
 interface Props {
   demos: DemoItem[];
   demoHeight?: number;
   demoSpacing?: number;
+  stackProps?: Omit<StackProps, 'contents'>;
 }
-interface State {
-  hoveringDemo?: number;
-}
-class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true> & WithWidthProps, State> {
-  state: State = {};
+class Demo extends Component<Props & Omit<BlockProps, 'demo' | 'controls'> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
   readonly projectPromises: Promise<Array<Project>>;
 
@@ -78,15 +67,9 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           const scale = this.props.demos[demoIndex].scale;
           if (scale !== undefined) {
             d = (
-              <div style={{
-                transform: `scale(${scale})`,
-                transformOrigin: '0 0',
-                width: `${100 / scale}%`,
-                height: '100%',
-                marginBottom: `${(scale - 1) * 100}%`,
-              }}>
+              <Scale scale={scale}>
                 {d}
-              </div>
+              </Scale>
             );
           }
           return d;
@@ -101,23 +84,6 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           );
         }).filter(notEmpty);
 
-        const demoCount = demos.length;
-        var overlap = true;
-        var height = this.props.demoHeight || 300
-        var spacing = this.props.demoSpacing || 100;
-        switch (this.props.width) {
-          case "xs":
-            overlap = false;
-            break;
-          case "sm":
-            spacing = 150
-            break;
-          case "md":
-            spacing = 50
-            break;
-          default:
-            break;
-        }
         const { classes, ...blockProps } = this.props;
         return (
           <Block
@@ -128,29 +94,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
               </div>
             ) : undefined}
             demo={(
-              <div className={this.props.classes.demosContainer} style={{
-                margin: overlap ? spacing * (demoCount - 1) / 2 : 0,
-                height: overlap ? height : undefined,
-              }}>
-                {demos.map((demo, demoNumber) => (
-                  <Paper
-                    key={demoNumber}
-                    variant='outlined'
-                    className={this.props.classes.demo}
-                    onMouseOver={this.state.hoveringDemo !== demoNumber ? () => this.setState({ hoveringDemo: demoNumber }) : undefined}
-                    style={{
-                      height: height,
-                      marginBottom: overlap ? 0 : 40,
-                      position: overlap ? 'absolute' : 'static',
-                      left: overlap ? spacing * ((demoCount - 1) / 2 - demoNumber) : 0,
-                      top: overlap ? -spacing * ((demoCount - 1) / 2 - demoNumber) : 0,
-                      zIndex: this.state.hoveringDemo === demoNumber ? 1100 : 1000 + demoNumber,
-                    }}
-                  >
-                    {demo}
-                  </Paper>
-                ))}
-              </div>
+              <Stack contents={demos} {...this.props.stackProps} />
             )}
           />
         );
@@ -159,4 +103,4 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withWidth()(Demo));
+export default withStyles(styles, { withTheme: true })(Demo);

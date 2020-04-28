@@ -1,11 +1,11 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { loremIpsum } from "lorem-ipsum";
 import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import CommentList from '../app/comps/CommentList';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
+import RoadmapControls from './landing/RoadmapControls';
 
 export const transparencyTitle = 'Strengthen user community with transparency';
 export const transparencyDescription = 'Keep your users involved and informed of your progress at every significant step with updates and a public roadmap';
@@ -70,28 +70,26 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
       // - Custom (language courses): Gaining traction, Beta, Public
       // - Custom (Game ideas): Semi-finals, Selected
       <Demo
-        title='Transparent roadmap'
-        description='Include your users during development and get them excited for upcoming improvements.'
+        title='Show off your progress with a roadmap'
+        description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
         mirror={mirror}
         initialSubPath='/embed/demo'
         scale={0.7}
-        template={templater => templater.demoBoard('Roadmap', [
-          { title: 'Planned' },
-          { title: 'In Progress' },
-          { title: 'Recently Completed' },
-        ])}
+        largeDemo
+        template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([
-          { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '2', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '2', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-          { status: '2', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+          { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
+          { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
+          { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
+          { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
+          { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+          { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
+          { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
         ])}
-      // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+        settings={{
+          demoBlurryShadow: true,
+        }}
+        controls={project => (<RoadmapControls templater={project.templater} />)}
       />
     );
   }

@@ -83,14 +83,41 @@ export default class Templater {
     });
   }
 
+  demoBoardPreset(preset: 'development' | 'funding' | 'design') {
+    switch (preset) {
+      case 'development':
+        this.demoBoard('Roadmap', [
+          { title: 'Planned' },
+          { title: 'In Progress' },
+          { title: 'Completed' },
+        ]);
+        break;
+      case 'funding':
+        this.demoBoard('Crowd-funding', [
+          { title: 'Gathering interest', display: { showVoting: true } },
+          { title: 'Raising funds', display: { showFunding: true } },
+          { title: 'Funded', display: { showFunding: true } },
+        ]);
+        break;
+      case 'design':
+        this.demoBoard('Design process', [
+          { title: 'Ideas', display: { showExpression: true } },
+          { title: 'Concept', display: { showExpression: true } },
+          { title: 'Approved' },
+        ]);
+        break;
+    }
+  }
+
   demoBoard(title: string | undefined, panels: Array<{
     title?: string;
     status?: Partial<Admin.IdeaStatus>;
-    display?: Admin.PostDisplay;
+    display?: Partial<Admin.PostDisplay>;
   }>) {
-    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+    this.styleWhite();
+    this.creditsCurrency();
 
-    const categoryIndex = this.demoCategory(panels.map((panel, index) => Admin.IdeaStatusToJSON({
+    const categoryId = this.demoCategory(panels.map((panel, index) => Admin.IdeaStatusToJSON({
       statusId: index + '',
       name: index + '',
       disableFunding: false,
@@ -100,6 +127,9 @@ export default class Templater {
       disableComments: false,
       ...panel.status,
     })));
+    this.supportExpressingAllEmojis(categoryId);
+    this.supportFunding(categoryId);
+    this.supportVoting(categoryId);
 
     this.demoPage({
       board: Admin.PageBoardToJSON({
@@ -108,6 +138,18 @@ export default class Templater {
           title: panel.title,
           search: Admin.IdeaSearchToJSON({ filterStatusIds: [panel.status?.statusId || (index + '')] }),
           display: Admin.PostDisplayToJSON({
+            titleTruncateLines: 1,
+            descriptionTruncateLines: 0,
+            showDescription: false,
+            showCommentCount: false,
+            showCategoryName: false,
+            showCreated: false,
+            showAuthor: false,
+            showStatus: false,
+            showTags: false,
+            showVoting: false,
+            showFunding: false,
+            showExpression: false,
             disableExpand: true,
             ...panel.display,
           }),
@@ -118,22 +160,31 @@ export default class Templater {
   }
 
   demoCategory(statuses?: Array<Admin.IdeaStatus>) {
-    const categoryId = randomUuid();
+    const categoryId = 'demoCategoryId';
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
-    categories.insert().setRaw(Admin.CategoryToJSON({
+    var categoryIndex = categories.getChildPages().findIndex(category => category.getChildren().props.find(prop => prop.path[prop.path.length - 1] === 'categoryId')?.value === categoryId);
+    var demoCategory;
+    if (categoryIndex >= 0) {
+      demoCategory = categories.getChildPages()[categoryIndex];
+    } else {
+      demoCategory = categories.insert();
+      categoryIndex = categories.getChildPages().length - 1;
+    }
+    demoCategory.setRaw(Admin.CategoryToJSON({
       categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
       workflow: Admin.WorkflowToJSON({ statuses: statuses || [] }),
       support: Admin.SupportToJSON({ comment: true }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
-    const categoryIndex = categories.getChildPages().length - 1;
     return categoryIndex;
   }
 
   demoPage(pageProps: Partial<Admin.Page>) {
-    const pageId = randomUuid();
-    this._get<ConfigEditor.PageGroup>(['layout', 'pages']).insert().setRaw(Admin.PageToJSON({
+    const pageId = 'demoPageId';
+    const pages = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    const demoPage = pages.getChildPages().find(page => page.getChildren().props.find(prop => prop.path[prop.path.length - 1] === 'pageId')?.value === pageId) || pages.insert();
+    demoPage.setRaw(Admin.PageToJSON({
       pageId: pageId,
       name: 'Demo',
       slug: stringToSlug('demo'),

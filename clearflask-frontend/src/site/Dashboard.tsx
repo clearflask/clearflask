@@ -25,6 +25,7 @@ import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
 interface Props {
+  forceMock?: boolean;
 }
 interface ConnectProps {
   accountStatus?: Status;
@@ -51,7 +52,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         currentPagePath: [],
         binding: true,
       };
-      ServerAdmin.get().dispatchAdmin()
+      ServerAdmin.get(props.forceMock).dispatchAdmin()
         .then(d => d.accountBindAdmin()
           .then(result => {
             this.setState({ binding: false })
@@ -61,7 +62,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
       this.state = {
         currentPagePath: [],
       };
-      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
+      ServerAdmin.get(props.forceMock).dispatchAdmin().then(d => d.configGetAllAdmin());
     } else {
       this.state = {
         currentPagePath: [],
@@ -82,7 +83,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
       return (<LoadingPage />);
     }
-    const projects = this.props.configs.map(c => ServerAdmin.get().getProject(c));
+    const projects = this.props.configs.map(c => ServerAdmin.get(this.props.forceMock).getProject(c));
     projects.forEach(project => {
       if (!this.unsubscribes[project.projectId]) {
         this.unsubscribes[project.projectId] = project.subscribeToUnsavedChanges(() => {
@@ -215,7 +216,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           <IconButton
             color="inherit"
             aria-label="Preview changes"
-            onClick={() => ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin())}
+            onClick={() => ServerAdmin.get(this.props.forceMock).dispatchAdmin().then(d => d.accountLogoutAdmin())}
           >
             <LogoutIcon />
           </IconButton>

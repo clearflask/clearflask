@@ -34,7 +34,7 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
       >
         <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
         <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
-        <FormControlLabel value='beer' control={<Radio color='primary' />} label="Customizable" />
+        <FormControlLabel value='beer' control={<Radio color='primary' />} label="Custom" />
       </RadioGroup>
     );
   }

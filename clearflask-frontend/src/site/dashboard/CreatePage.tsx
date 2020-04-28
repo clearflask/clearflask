@@ -166,7 +166,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                     >
                       <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
                       <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
-                      <FormControlLabel value='beer' control={<Radio color='primary' />} label="Customizable" />
+                      <FormControlLabel value='beer' control={<Radio color='primary' />} label="Custom" />
                     </RadioGroup>
                   </div></Collapse>
                   <Collapse in={this.state.votingAllowed}><div className={this.props.classes.extraControls}>

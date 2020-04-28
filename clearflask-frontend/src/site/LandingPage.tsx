@@ -64,7 +64,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         buttonTitle='Learn about transparency'
         buttonLink='/transparency'
         mirror={mirror}
+        stackProps={{
+          contentSpacingVertical: 100,
+          ascendingLevel: true,
+          topLeftToBottomRight: true,
+          raiseOnHover: true,
+        }}
         demos={[
+          {
+            scale: 0.7,
+            template: templater => {
+              const categoryId = templater.demoCategory();
+              templater.supportVoting(categoryId, true);
+              templater.workflowFeatures(categoryId);
+              templater.styleWhite();
+            },
+            mock: (mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
+              .then(() => mocker.mockLoggedIn()),
+            initialSubPath: '/embed/post/ideaid',
+          },
           {
             initialSubPath: '/embed/demo',
             scale: 0.7,
@@ -85,18 +103,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             settings: {
               demoBlurryShadow: true,
             },
-          },
-          {
-            scale: 0.7,
-            template: templater => {
-              const categoryId = templater.demoCategory();
-              templater.supportVoting(categoryId, true);
-              templater.workflowFeatures(categoryId);
-              templater.styleWhite();
-            },
-            mock: (mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
-              .then(() => mocker.mockLoggedIn()),
-            initialSubPath: '/embed/post/ideaid',
           },
         ]}
       />

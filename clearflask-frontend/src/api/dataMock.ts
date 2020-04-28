@@ -31,7 +31,7 @@ class DataMock {
 
   demoBoard(ideas: Array<{
     status: string,
-    title: string,
+    title?: string,
     description?: string,
     extra?: Partial<Admin.Idea>
   }>) {
@@ -39,9 +39,9 @@ class DataMock {
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: user.userId,
-        title: idea.title,
+        title: idea.title || loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }),
         description: idea.description,
-        categoryId: config.content.categories[0].categoryId,
+        categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         statusId: idea.status,
         // Fake data
@@ -57,7 +57,7 @@ class DataMock {
         authorUserId: user.userId,
         title: 'Add Dark Mode',
         description: 'To reduce eye-strain, please add a dark mode option',
-        categoryId: config.content.categories[0].categoryId,
+        categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         ...{ // Fake data
           funded: 12,

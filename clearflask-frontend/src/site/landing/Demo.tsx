@@ -5,6 +5,7 @@ import DataMock from '../../api/dataMock';
 import { StateSettings } from '../../api/server';
 import Templater from '../../common/config/configTemplater';
 import Promised from '../../common/Promised';
+import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 
@@ -47,20 +48,15 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           );
         if (this.props.scale !== undefined) {
           demo = (
-            <div style={{
-              transform: `scale(${this.props.scale})`,
-              transformOrigin: '0 0',
-              width: `${100 / this.props.scale}%`,
-              height: '100%',
-              marginBottom: `${(this.props.scale - 1) * 100}%`,
-            }}>
+            <Scale scale={this.props.scale}>
               {demo}
-            </div>
+            </Scale>
           );
         }
+        const { classes, ...blockProps } = this.props;
         return (
           <Block
-            {...this.props}
+            {...blockProps}
             controls={this.props.controls && this.props.controls(project)}
             demo={demo}
           />

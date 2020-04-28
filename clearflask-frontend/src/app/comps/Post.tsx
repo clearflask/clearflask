@@ -40,6 +40,7 @@ const styles = (theme: Theme) => createStyles({
   },
   // TODO pixel pushing, spacing between the grid items
   post: {
+    margin: theme.spacing(2, 1, 0, 2),
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: 'auto 1fr',
