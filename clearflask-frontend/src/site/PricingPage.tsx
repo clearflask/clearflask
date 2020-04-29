@@ -77,8 +77,8 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     plan={plan}
                     actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Talk to sales')}
                     actionOnClick={plan.comingSoon ? undefined : () => plan.pricing && !plan.beta
-                      ? this.props.history.push('/signup')
-                      : this.props.history.push('/contact/sales')
+                      ? this.props.history.push('/contact/demo')
+                      : this.props.history.push('/contact/demo')
                     }
                   />
                 </Grid>

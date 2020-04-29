@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import Message from '../common/Message';
 
 interface Props {
-  msg?: string;
+  msg?: string | React.ReactNode;
   variant?: 'success' | 'warning' | 'error' | 'info';
 }
 

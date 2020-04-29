@@ -16,18 +16,13 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
+import AcceptTerms from '../../common/AcceptTerms';
 import Hr from '../../common/Hr';
 import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import WebNotification from '../../common/notification/webNotification';
 import { saltHashPassword } from '../../common/util/auth';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
-import Delimited from '../utils/Delimited';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
-
-const legalDefault: Array<Client.LegalDocuments> = [
-  { shortName: 'Privacy', name: 'Privacy Policy', link: 'https://clearflask.com/privacy' },
-  { shortName: 'Terms', name: 'Terms of Service', link: 'https://clearflask.com/terms' },
-];
 
 enum NotificationType {
   Email = 'email',
@@ -60,17 +55,6 @@ const styles = (theme: Theme) => createStyles({
   allowButton: {
     margin: 'auto',
     display: 'block',
-  },
-  legal: {
-    marginTop: theme.spacing(1),
-    display: 'flex',
-    justifyContent: 'center',
-    whiteSpace: 'pre-wrap',
-    fontSize: '0.7em',
-    color: theme.palette.text.hint,
-  },
-  legalLink: {
-    color: 'unset',
   },
   bold: {
     fontWeight: 'bold',
@@ -119,25 +103,6 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
 
   render() {
     if (!this.props.open) return null;
-
-    var legalDocs;
-    if (this.props.config?.legal.documents !== undefined) {
-      if (this.props.config.legal.documents.length > 0) {
-        legalDocs = this.props.config.legal.documents;
-      }
-    } else {
-      legalDocs = legalDefault;
-    }
-    const legal = legalDocs && (
-      <React.Fragment>
-        {'You agree to our '}
-        <Delimited delimiter={', '} delimiterLast={' and '}>
-          {legalDocs.map(doc => (
-            <a href={doc.link} target="_blank" rel="noopener nofollow" className={this.props.classes.legalLink}>{doc.shortName}</a>
-          ))}
-        </Delimited>
-      </React.Fragment>
-    );
 
     const notifOpts: Set<NotificationType> = new Set();
     if (this.props.config) {
@@ -353,7 +318,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   </div>
                 </div>
               </div>
-              <div className={this.props.classes.legal}>{legal}</div>
+              <AcceptTerms overrideTerms={this.props.config?.users.onboarding.terms?.documents} />
             </Collapse>
             <Collapse in={!!this.state.isLogin}>
               <div className={this.props.classes.loginFieldsContainer}>

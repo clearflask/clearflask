@@ -29,6 +29,10 @@ public class EmailNotificationTemplate {
         return notificationTemplateText;
     }
 
+    public String sanitize(String input) {
+        return input.replaceAll("[^A-Za-z0-9 ]+", "");
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override

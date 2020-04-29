@@ -160,7 +160,7 @@ export default class ServerAdmin {
   getProject(versionedConfig: Admin.VersionedConfigAdmin): Project {
     const projectId = versionedConfig.config.projectId;
     var project = this.projects[projectId];
-    if (!project || versionedConfig.version !== project.configVersion) {
+    if (!project) {
       const server = new Server(projectId, undefined, this.apiOverride, versionedConfig);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
@@ -170,8 +170,6 @@ export default class ServerAdmin {
         if (!hasUnsavedChanges) {
           hasUnsavedChanges = true;
           subscribers.forEach(subscriber => subscriber());
-        } else {
-          hasUnsavedChanges = true;
         }
       });
       project = {

@@ -37,6 +37,7 @@ interface ContactForm {
   title: string;
   subtitle: string;
   submitTitle: string;
+  hideFromMainPage?: boolean;
   fields: {
     attrName: string;
     title?: string;
@@ -47,35 +48,48 @@ interface ContactForm {
   }[];
 }
 
-const forms: ContactForm[] = [{
-  type: 'sales',
-  title: 'Talk to sales',
-  subtitle: 'Our experts will work with you to find the right solution',
-  submitTitle: 'Contact',
-  fields: [
-    { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
-    { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
-  ],
-}, {
-  type: 'support',
-  title: 'Customer support',
-  submitTitle: 'Get support',
-  subtitle: 'Need help? Found an issue?',
-  fields: [
-    { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
-    { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
-    { attrName: IMPORTANT, type: 'checkbox', title: 'Requires immediate attention' },
-  ],
-}, {
-  type: 'general',
-  title: 'Other inquiry',
-  subtitle: 'Have a question for our team?',
-  submitTitle: 'Contact us',
-  fields: [
-    { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
-    { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
-  ],
-},
+const forms: ContactForm[] = [
+  {
+    type: 'demo',
+    title: 'Product walkthrough',
+    subtitle: 'Our experts will work with you to find the right solution',
+    submitTitle: 'Schedule a demo',
+    hideFromMainPage: true,
+    fields: [
+      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
+    ],
+  },
+  {
+    type: 'sales',
+    title: 'Talk to sales',
+    subtitle: 'Our experts will work with you to find the right solution',
+    submitTitle: 'Contact',
+    fields: [
+      { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
+      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
+    ],
+  },
+  {
+    type: 'support',
+    title: 'Customer support',
+    submitTitle: 'Get support',
+    subtitle: 'Need help? Found an issue?',
+    fields: [
+      { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
+      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
+      { attrName: IMPORTANT, type: 'checkbox', title: 'Requires immediate attention' },
+    ],
+  },
+  {
+    type: 'general',
+    title: 'Other inquiry',
+    subtitle: 'Have a question for our team?',
+    submitTitle: 'Contact us',
+    fields: [
+      { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
+      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
+    ],
+  },
 ];
 
 interface Props {
@@ -182,7 +196,7 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                 <Grid item xs={12}>
                   <Typography component="h1" variant="h2" color="textPrimary">How can we help?</Typography>
                 </Grid>
-                {forms.map(form => (
+                {forms.filter(form => !form.hideFromMainPage).map(form => (
                   <Grid key={form.title} item xs={12} sm={6} md={4} className={this.props.classes.growAndFlex}>
                     <CardHeader
                       title={form.title}

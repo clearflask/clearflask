@@ -43,6 +43,10 @@ public class OnEmailChanged {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
+        String projectName = emailNotificationTemplate.sanitize(configAdmin.getName());
+        subject = subject.replaceAll("__project_name__", projectName);
+        content = content.replaceAll("__project_name__", projectName);
+
         String templateHtml = emailNotificationTemplate.getNotificationTemplateHtml();
         String templateText = emailNotificationTemplate.getNotificationTemplateText();
 

@@ -52,42 +52,37 @@ export default class Property extends Component<Props> {
                 display: 'inline-flex',
                 flexDirection: 'column',
               }}>
-                <div ref={this.colorRef} > {/* Div-wrapped so the absolutely positioned picker shows up in the right place */}
+                <div ref={this.colorRef} style={{ position: 'relative' }}> {/* Div-wrapped so the absolutely positioned picker shows up in the right place */}
                   <ColorPicker
                     label={!this.props.bare ? name : undefined}
                     name='color'
-                    placeholder='#000'
+                    placeholder='#FFF'
                     defaultValue={prop.defaultValue}
                     value={prop.value || ''}
                     onChange={color => (prop as ConfigEditor.StringProperty).set(color)}
                     error={!!prop.errorMsg}
-                    // Undocumented typescript definition
-                    {...{
-                      TextFieldProps: {
-                        // Hack to modify material-ui-color-picker to fix bug
-                        // where a click inside the empty space inside the
-                        // picker would dismiss the picker.
-                        onFocus: () => setTimeout(() => {
-                          var ptr: any = this.colorRef;
-                          ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
-                          ptr && (ptr.position = 'relative');
-                        }, 500),
-                        InputLabelProps: {
-                          shrink: shrink,
-                          error: !!prop.errorMsg,
-                        },
-                        InputProps: {
-                          inputProps: {
-                            autoComplete: 'off',
-                          },
-                          style: {
-                            color: prop.value,
-                            minWidth: Property.inputMinWidth,
-                            width: this.props.width,
-                          },
-                          error: !!prop.errorMsg,
-                        }
-                      }
+                    // Hack to modify material-ui-color-picker to fix bug
+                    // where a click inside the empty space inside the
+                    // picker would dismiss the picker.
+                    onFocus={() => setTimeout(() => {
+                      var ptr: any = this.colorRef;
+                      ['current', 'children', 1, 'children', 1, 'style'].forEach(next => ptr && (ptr = ptr[next]));
+                      ptr && (ptr.position = 'relative');
+                    }, 500)}
+                    InputLabelProps={{
+                      shrink: shrink,
+                      error: !!prop.errorMsg,
+                    }}
+                    InputProps={{
+                      inputProps: {
+                        autoComplete: 'off',
+                      },
+                      style: {
+                        color: prop.value + '',
+                        minWidth: Property.inputMinWidth,
+                        width: this.props.width,
+                      },
+                      error: !!prop.errorMsg,
                     }}
                   />
                 </div>
@@ -240,7 +235,7 @@ export default class Property extends Component<Props> {
         var currentItem;
         if (prop.type === ConfigEditor.PropertyType.Boolean) {
           items = [
-            { name: 'Not set', value: 'undefined' },
+            { name: 'Default', value: 'undefined' },
             { name: 'Enabled', value: 'true' },
             { name: 'Disabled', value: 'false' },
           ];

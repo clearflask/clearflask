@@ -14,8 +14,6 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ConfigAndBindResult;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
 import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
-import com.smotana.clearflask.api.model.Legal;
-import com.smotana.clearflask.api.model.LegalDocuments;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -51,11 +49,6 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 @Singleton
 @Path("/v1")
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
-
-    private static final Legal DEFAULT_LEGAL = new Legal(ImmutableList.of(
-            new LegalDocuments("Terms", "Terms of Service", "https://clearflask.com/terms"),
-            new LegalDocuments("Privacy", "Privacy Policy", "https://clearflask.com/privacy")
-    ));
 
     public interface Config {
         @DefaultValue(value = "www,feedback,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news", innerType = String.class)
@@ -128,19 +121,6 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 userOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
     }
 
-    @PermitAll
-    @Limit(requiredPermits = 1)
-    @Override
-    public Legal projectLegalGet(String projectId) {
-        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, true)
-                .or(() -> projectStore.getProject(projectId, false));
-        if (!projectOpt.isPresent()) {
-            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
-        }
-        return Optional.ofNullable(projectOpt.get().getVersionedConfigAdmin().getConfig().getLegal())
-                .orElse(DEFAULT_LEGAL);
-    }
-
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
@@ -193,7 +173,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric
         if (this.config.reservedProjectIds().contains(projectId)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "The name " + projectId + " is a reserver keyword");
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "The name " + projectId + " is a reserved keyword");
         }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccount(accountSession.getEmail()).get();

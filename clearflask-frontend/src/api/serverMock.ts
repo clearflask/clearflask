@@ -333,17 +333,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       } : undefined,
     });
   }
-  projectLegalGet(request: Client.ProjectLegalGetRequest): Promise<Client.Legal> {
-    if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
-    return this.returnLater(this.getProject(request.projectId).config.config.legal
-      ? this.getProject(request.projectId).config.config.legal
-      : {
-        documents: [
-          { shortName: 'Privacy', name: 'Privacy Policy', link: 'https://clearflask.com/privacy-policy' },
-          { shortName: 'Terms', name: 'Terms of Service', link: 'https://clearflask.com/terms-of-service' },
-        ]
-      });
-  }
   userCreate(request: Client.UserCreateRequest): Promise<Client.UserMeWithBalance> {
     return this.userCreateAdmin({
       projectId: request.projectId,
@@ -749,12 +738,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
       const expressing: Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
       expressionsToAdd.forEach(expression => {
-        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
+        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! += weight;
         idea.expressions[expression] = (idea.expressions[expression] || 0) + 1
       })
       expressionsToRemove.forEach(expression => {
-        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)!.weight : 1;
+        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! -= weight;
         idea.expressions[expression] = (idea.expressions[expression] || 0) - 1
         if (idea.expressions[expression] <= 0) delete idea.expressions[expression];

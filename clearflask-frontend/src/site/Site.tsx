@@ -115,7 +115,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     ];
     const menuItemsRight: Array<MenuButton | MenuDropdown> = [
       { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
-      { type: 'button', path: '/dashboard', title: 'Sign in' },
+      { type: 'button', path: '/dashboard', title: 'Log in' },
     ];
     return (
       <div className={this.props.classes.growAndFlex}>

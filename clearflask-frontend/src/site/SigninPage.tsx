@@ -1,4 +1,4 @@
-import { Button, Container, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Container, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -8,12 +8,17 @@ import { Redirect, RouteComponentProps } from 'react-router';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { saltHashPassword } from '../common/util/auth';
+import { isProd } from '../common/util/detectEnv';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(2),
+    flex: '1 1 auto',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
 });
 
@@ -48,7 +53,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='xs'>
-          <Typography component="h1" variant="h4" color="textPrimary">Sign in</Typography>
+          <Typography component="h1" variant="h4" color="textPrimary">Log in to Dashboard</Typography>
           <TextField
             fullWidth
             required
@@ -81,11 +86,19 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             margin='normal'
             disabled={this.state.isSubmitting}
           />
-          <Button
-            color='primary'
-            disabled={this.state.isSubmitting}
-            onClick={this.onSubmit.bind(this)}
-          >Continue</Button>
+          <DialogActions>
+            {!isProd() && ( // TODO Enable signups
+              <Button
+                onClick={() => this.props.history.push('/signup')}
+                disabled={this.state.isSubmitting}
+              >Or Signup</Button>
+            )}
+            <Button
+              color='primary'
+              disabled={this.state.isSubmitting}
+              onClick={this.onSubmit.bind(this)}
+            >Continue</Button>
+          </DialogActions>
         </Container>
       </div>
     );

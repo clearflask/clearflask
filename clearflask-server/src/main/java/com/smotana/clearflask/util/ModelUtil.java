@@ -2,15 +2,14 @@ package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.AccountFields;
-import com.smotana.clearflask.api.model.Animation;
 import com.smotana.clearflask.api.model.AnonymousSignup;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Content;
 import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.Flow;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.Layout;
-import com.smotana.clearflask.api.model.Legal;
 import com.smotana.clearflask.api.model.NotificationMethods;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.Palette;
@@ -48,15 +47,15 @@ public class ModelUtil {
                         new Tagging(ImmutableList.of(), ImmutableList.of()),
                         Category.VisibilityEnum.PUBLIC))),
                 new Style(
-                        new Animation(true),
+                        new Flow(true),
                         new Palette(false, null, null, null, null, null, null, null),
                         new Typography(null, null)),
                 new Users(
                         null,
                         new Onboarding(
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
-                                new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.PasswordEnum.NONE)))),
-                new Legal(null),
+                                new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.PasswordEnum.NONE)),
+                                null)),
                 null
         ), createConfigVersion());
     }

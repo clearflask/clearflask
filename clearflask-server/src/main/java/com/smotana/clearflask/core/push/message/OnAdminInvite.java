@@ -43,7 +43,7 @@ public class OnAdminInvite {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String projectName = configAdmin.getName().replaceAll("[^A-Za-z0-9 ]+", "");
+        String projectName = emailNotificationTemplate.sanitize(configAdmin.getName());
         subject = subject.replaceAll("__project_name__", projectName);
         content = content.replaceAll("__project_name__", projectName);
 

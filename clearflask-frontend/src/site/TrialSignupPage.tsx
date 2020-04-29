@@ -1,4 +1,4 @@
-import { Box, Button, Collapse, Container, IconButton, TextField } from '@material-ui/core';
+import { Box, Button, Collapse, Container, DialogActions, IconButton, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -8,8 +8,11 @@ import { connect } from 'react-redux';
 import { NavLink } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import ErrorPage from '../app/ErrorPage';
+import AcceptTerms from '../common/AcceptTerms';
 import Message from '../common/Message';
 import { saltHashPassword } from '../common/util/auth';
+import { isProd } from '../common/util/detectEnv';
 
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 
@@ -53,6 +56,16 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
   state: State = {};
 
   render() {
+    if (isProd() && new URL(window.location.href).searchParams.get('please') !== 'letmein') {
+      return <ErrorPage variant='warning' msg={(
+        <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
+          Direct sign ups are currently disabled. Instead,&nbsp;
+          <NavLink to='/contact/demo' className={this.props.classes.link}>schedule a demo</NavLink>
+          &nbsp;with us.
+        </div>
+      )} />
+    }
+
     const canSubmit = !!this.state.name
       && !!this.state.email
       && !this.state.emailIsFreeOrDisposable
@@ -61,61 +74,65 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
     return (
       <div className={this.props.classes.page}>
-        <Container maxWidth='md'>
-          <Box display='flex' flexDirection='column' alignItems='flex-start'>
-            <TextField
-              className={this.props.classes.item}
-              id='name'
-              label='Name'
-              required
-              value={this.state.name || ''}
-              onChange={e => this.setState({ name: e.target.value })}
-            />
-            <TextField
-              className={this.props.classes.item}
-              id='email'
-              label='Work email'
-              required
-              value={this.state.email || ''}
-              onChange={e => {
-                const newEmail = e.target.value;
-                this.setState({ email: newEmail });
-                emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
-              }}
-            />
-            <Collapse in={!!this.state.emailIsFreeOrDisposable}>
-              <Message variant='warning' message={(
-                <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
-                  Please enter your work email. Don't have one?&nbsp;
-                  <NavLink to='/contact/sales' className={this.props.classes.link}>Schedule a demo</NavLink>
+        <Container maxWidth='xs'>
+          <TextField
+            className={this.props.classes.item}
+            id='name'
+            label='Name'
+            required
+            value={this.state.name || ''}
+            onChange={e => this.setState({ name: e.target.value })}
+          />
+          <TextField
+            className={this.props.classes.item}
+            id='email'
+            label='Work email'
+            required
+            value={this.state.email || ''}
+            onChange={e => {
+              const newEmail = e.target.value;
+              this.setState({ email: newEmail });
+              emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
+            }}
+          />
+          <Collapse in={!!this.state.emailIsFreeOrDisposable}>
+            <Message variant='warning' message={(
+              <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
+                Please enter your work email. Don't have one?&nbsp;
+                <NavLink to='/contact/demo' className={this.props.classes.link}>Schedule a demo</NavLink>
                   &nbsp;with us.
-                </div>
-              )} />
-            </Collapse>
-            <Box display='flex' flexDirection='row' alignItems='center'>
-              <TextField
-                className={this.props.classes.item}
-                id='pass'
-                label='Password'
-                required
-                value={this.state.pass || ''}
-                onChange={e => this.setState({ pass: e.target.value })}
-                type={this.state.revealPassword ? 'text' : 'password'}
-              />
-              <IconButton
-                aria-label='Toggle password visibility'
-                onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-              >
-                {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-              </IconButton>
-            </Box>
+              </div>
+            )} />
+          </Collapse>
+          <Box display='flex' flexDirection='row' alignItems='center'>
+            <TextField
+              className={this.props.classes.item}
+              id='pass'
+              label='Password'
+              required
+              value={this.state.pass || ''}
+              onChange={e => this.setState({ pass: e.target.value })}
+              type={this.state.revealPassword ? 'text' : 'password'}
+            />
+            <IconButton
+              aria-label='Toggle password visibility'
+              onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+            >
+              {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+            </IconButton>
           </Box>
-          <Box display='flex' className={this.props.classes.item}>
-            <Button onClick={() => this.signUp()}
+          <AcceptTerms />
+          <DialogActions>
+            <Button
+              onClick={() => this.props.history.push('/dashboard')}
+              disabled={this.state.isSubmitting}
+            >Or Login</Button>
+            <Button
               color='primary'
               disabled={this.state.isSubmitting || !canSubmit}
+              onClick={this.signUp.bind(this)}
             >Create account</Button>
-          </Box>
+          </DialogActions>
         </Container>
       </div>
     );

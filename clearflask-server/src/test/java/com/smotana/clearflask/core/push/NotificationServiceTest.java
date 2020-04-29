@@ -281,6 +281,33 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(email.getContentText().contains("__"));
     }
 
+    @Test(timeout = 5_000L)
+    public void testOnEmailChanged() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .isAdmin(true)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .build();
+        when(this.mockUserStore.getUser(any(), any())).thenReturn(Optional.of(user));
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onEmailChanged(
+                versionedConfigAdmin.getConfig(),
+                user,
+                "oldEmail@email.com");
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+    }
+
     private KeyPair generateKeyPair() {
         try {
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());

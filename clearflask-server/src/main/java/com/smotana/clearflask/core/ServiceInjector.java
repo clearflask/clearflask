@@ -52,6 +52,7 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.filter.LogExFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
@@ -185,6 +186,9 @@ public enum ServiceInjector {
                 bind(PlanResource.class);
                 install(ProjectResource.module());
                 install(SupportResource.module());
+
+                // Other
+                install(LogExFilter.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

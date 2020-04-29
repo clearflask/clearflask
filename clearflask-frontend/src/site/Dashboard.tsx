@@ -241,13 +241,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 };
                 return menuProject;
               })),
-              projects.length <= 0 ? {
+              {
                 type: 'item', slug: 'create', name: (
                   <span style={{ display: 'flex', alignItems: 'center' }}>
                     <AddIcon fontSize='inherit' />&nbsp;Create
                   </span>
                 ), offset: 1
-              } as MenuItem : undefined,
+              } as MenuItem,
               { type: 'heading', text: 'Account' } as MenuHeading,
               { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
               { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,

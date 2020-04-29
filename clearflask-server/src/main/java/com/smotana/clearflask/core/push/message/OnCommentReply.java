@@ -68,7 +68,7 @@ public class OnCommentReply {
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
 
-        String title = StringUtils.abbreviate(idea.getTitle().replaceAll("[^A-Za-z0-9 ]+", ""), 50);
+        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 50);
         templateHtml = templateHtml.replaceAll("__title__",
                 "<span style=\"font-weight: bold\">" +
                         title +
@@ -77,14 +77,14 @@ public class OnCommentReply {
         title = StringUtils.abbreviate(title, 20);
         subject = subject.replaceAll("__title__", title);
 
-        String reply = StringUtils.abbreviate(comment.getContent().replaceAll("[^A-Za-z0-9 ]+", ""), 50);
+        String reply = StringUtils.abbreviate(emailNotificationTemplate.sanitize(comment.getContent()), 50);
         templateHtml = templateHtml.replaceAll("__reply__",
                 "<span style=\"font-weight: bold\">" +
                         reply +
                         "</span>");
         templateText = templateText.replaceAll("__reply__", reply);
 
-        String senderName = StringUtils.abbreviate((sender.getName() == null ? "" : sender.getName()).replaceAll("[^A-Za-z0-9 ]+", ""), 10);
+        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
@@ -123,16 +123,16 @@ public class OnCommentReply {
 
         subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
 
-        String senderName = StringUtils.abbreviate((sender.getName() == null ? "" : sender.getName()).replaceAll("[^A-Za-z0-9 ]+", ""), 10);
+        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
         subject = subject.replaceAll("__sender__", senderName);
 
-        String title = StringUtils.abbreviate(idea.getTitle().replaceAll("[^A-Za-z0-9 ]+", ""), 20);
+        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
-        String content = StringUtils.abbreviate(comment.getContent().replaceAll("[^A-Za-z0-9 ]+", ""), 50);
+        String content = StringUtils.abbreviate(emailNotificationTemplate.sanitize(comment.getContent()), 50);
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
@@ -151,13 +151,13 @@ public class OnCommentReply {
 
         subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
 
-        String senderName = StringUtils.abbreviate((sender.getName() == null ? "" : sender.getName()).replaceAll("[^A-Za-z0-9 ]+", ""), 10);
+        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
         subject = subject.replaceAll("__sender__", senderName);
 
-        String title = StringUtils.abbreviate(idea.getTitle().replaceAll("[^A-Za-z0-9 ]+", ""), 20);
+        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
         return subject;

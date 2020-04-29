@@ -13,7 +13,6 @@ components:
         - content
         - style
         - users
-        - legal
       properties:
         # TODO remove test page
         # test:
@@ -22,17 +21,17 @@ components:
           x-clearflask-prop: { subType: 'id' }
           type: string
         website:
-          x-clearflask-prop: { order: 1, name: 'Website', description: 'Your external website. Used for linking users back to your website. Leave blank for no link', placeholder: 'https://' }
+          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your website; used for linking your users back to your website. Leave blank for no link.', placeholder: 'https://' }
           type: string
         name:
-          x-clearflask-prop: { order: 2, name: 'Name', description: 'Project name visible on your page' }
+          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
           type: string
         logoUrl:
           x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url. (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
         slug:
-          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url suffix of your project. Changes may take up to a day to propagate. (ie: "https://clearflask.com/<slug>")' }
+          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url subdomain of your project. Changes may take up to a day to propagate. (ie: "https://<slug>.clearflask.com")' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
@@ -42,10 +41,8 @@ components:
           $ref: 'api-project.yaml#/components/schemas/style'
         users:
           $ref: 'api-project.yaml#/components/schemas/users'
-        legal:
-          $ref: 'api-project.yaml#/components/schemas/legal'
     credits:
-      x-clearflask-page: { order: 13, name: 'Credits', description: 'Define a currency to use.' }
+      x-clearflask-page: { order: 13, name: 'Credits', description: 'Enable funding using virtual credits' }
       title: CreditFormatter
       type: object
       required:
@@ -56,7 +53,7 @@ components:
           type: integer
           format: int64
         formats:
-          x-clearflask-prop: { order: 3, name: 'Display rules', description: '
+          x-clearflask-prop: { order: 1, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
             1/ "Range" matching a value.
             2/ The credits will be multiplied by the Multiplier.
@@ -104,7 +101,7 @@ components:
         credits:
           $ref: 'api-project.yaml#/components/schemas/credits'
         onboarding:
-          x-clearflask-page: { order: 15, name: 'Onboarding' }
+          x-clearflask-page: { order: 15, name: 'Onboarding', description: 'Define how users can sign up before posting' }
           title: Onboarding
           type: object
           required:
@@ -112,7 +109,7 @@ components:
             - notificationMethods
           properties:
             accountFields:
-              x-clearflask-prop: { order: 1, name: 'Account fields to collect' }
+              x-clearflask-prop: { order: 1, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
               title: AccountFields
               type: object
               required:
@@ -123,44 +120,59 @@ components:
                   type: string
                   enum: [None, Optional, Required]
             notificationMethods:
-              x-clearflask-prop: { order: 2, name: 'Collection methods' }
+              x-clearflask-prop: { order: 2, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you.' }
               title: NotificationMethods
               type: object
               required:
                 - browserPush
               properties:
                 anonymous:
-                  x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: true }
+                  x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: false, description: 'Allow users to sign up with no contact. Not recommended in most cases as it invites feedback from users that do not care about the outcome.' }
                   type: object
                   title: AnonymousSignup
                   required:
                     - onlyShowIfPushNotAvailable
                   properties:
                     onlyShowIfPushNotAvailable:
-                      x-clearflask-prop: { order: 1, name: 'Fallback', description: 'If enabled, only allow this option if no other option is available.' }
+                      x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
                       type: boolean
                 browserPush:
-                  x-clearflask-prop: { order: 1, name: 'Browser Notification', defaultValue: true }
+                  x-clearflask-prop: { order: 3, name: 'Browser Notification', defaultValue: true }
                   type: boolean
                 email:
-                  x-clearflask-prop: { order: 1, name: 'Email', defaultValue: true }
+                  x-clearflask-prop: { order: 2, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
                   type: object
                   title: EmailSignup
                   required:
                     - password
                   properties:
                     password:
-                      x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'Optional' }
+                      x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                       type: string
                       enum: [None, Optional, Required]
-    #                TODO not yet supported
-    #                singleSignOn:
-    #                  x-clearflask-prop: { order: 1, name: 'Single sign-on', defaultValue: false }
-    #                  title: singleSignOn
-    #                  type: object
-    #                  properties:
-    #                    redirectUrl:
-    #                      type: string
+            terms:
+              x-clearflask-prop: { order: 2, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
+              title: CustomTerms
+              type: object
+              required:
+                - documents
+              properties:
+                documents:
+                  x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents to show during sign-up. Leave blank to show no terms.' }
+                  type: array
+                  items:
+                    x-clearflask-prop: { name: 'Object', description: 'Document' }
+                    type: object
+                    properties:
+                      shortName:
+                        x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
+                        type: string
+                      name:
+                        x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
+                        type: string
+                      link:
+                        x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
+                        type: string
     style:
       x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your style.' }
       title: Style
@@ -171,8 +183,8 @@ components:
         - animation
       properties:
         animation:
-          x-clearflask-prop: { order: 1, name: 'Animation' }
-          title: Animation
+          x-clearflask-prop: { order: 1, name: 'Animation', description: 'Control all animations across this project. Turn off for faster and sharper look.' }
+          title: Flow
           type: object
           required:
             - enableTransitions
@@ -224,33 +236,12 @@ components:
           type: object
           properties:
             fontFamily:
-              x-clearflask-prop: { order: 1, name: 'Font Family' }
+              x-clearflask-prop: { order: 1, name: 'Font Family', placeholder: '"Times New Roman", Times, serif' }
               type: string
             fontSize:
-              x-clearflask-prop: { order: 2, name: 'Font Size' }
+              x-clearflask-prop: { order: 2, name: 'Font Size', placeholder: '14' }
               type: number
               format: double
-    legal:
-      x-clearflask-page: { order: 25, name: 'Legal', description: 'End-user agreements.' }
-      title: Legal
-      type: object
-      properties:
-        documents:
-          x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents end-users will agree to when using your service. You can override default ClearFlask Terms of Service and Privacy Policy by linking to your own.' }
-          type: array
-          items:
-            x-clearflask-prop: { name: 'Object', description: 'Document' }
-            type: object
-            properties:
-              shortName:
-                x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
-                type: string
-              name:
-                x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
-                type: string
-              link:
-                x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
-                type: string
     support:
       x-clearflask-page: { order: 4, name: 'Support' }
       title: Support
@@ -294,6 +285,8 @@ components:
           x-clearflask-prop: { order: 1, name: 'Enable expression' }
           title: Expressing
           type: object
+          required:
+          - limitEmojiPerIdea
           properties:
             limitEmojiPerIdea:
               x-clearflask-prop: { order: 1, name: 'Limit one per Idea', description: 'If set, limit a single expression that can be added per idea', defaultValue: true }
@@ -336,7 +329,7 @@ components:
         - menu
       properties:
         menu:
-          x-clearflask-prop: { order: 2, name: 'Tabs', description: 'Customize menu tabs with buttons and dropdowns.' }
+          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize menu tabs with buttons and dropdowns.' }
           type: array
           items:
             title: Menu
@@ -453,7 +446,7 @@ components:
                 x-clearflask-prop: { order: 7, name: 'Disable Commenting', description: 'Overrides parent settings to disable commenting during this status' }
                 type: boolean
     tagging:
-      x-clearflask-page: { order: 6, name: 'Tagging' }
+      x-clearflask-page: { order: 6, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }
       title: Tagging
       type: object
       required:
@@ -764,22 +757,6 @@ components:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
-/project/{projectId}/legal:
-  get:
-    operationId: projectLegalGet
-    tags: [Project]
-    parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-project.yaml#/components/schemas/legal'
 /project/config/admin:
   get:
     operationId: configGetAllAdmin

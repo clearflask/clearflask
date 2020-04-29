@@ -1,4 +1,4 @@
-import { FormHelperText, IconButton, InputLabel, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
+import { Collapse, FormControlLabel, FormHelperText, IconButton, InputLabel, Switch, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/AddRounded';
 import MoveDownIcon from '@material-ui/icons/ArrowDownward';
@@ -92,14 +92,8 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
         });
     }
 
-    return (
-      <div>
-        <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>
-        {(this.props.errorMsg || this.props.helperText) && (
-          <div><div className={this.props.classes.helperText}>
-            <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
-          </div></div>
-        )}
+    var content = (
+      <React.Fragment>
         {rows.length > 0 && (
           <div className={this.props.classes.table}>
             <Table style={{ width: 'inherit' }}>
@@ -124,8 +118,46 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
             <AddIcon />
           </IconButton>
         </div>
-      </div>
+      </React.Fragment>
     );
+    const label = (
+      <InputLabel error={!!this.props.errorMsg} shrink={false}>{this.props.label}</InputLabel>
+    );
+    const helperText = (this.props.errorMsg || this.props.helperText) && (
+      <div><div className={this.props.classes.helperText}>
+        <FormHelperText error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>
+      </div></div>
+    );
+    if (this.props.data.required) {
+      return (
+        <div>
+          {label}
+          {helperText}
+          {content}
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <div>
+            {label}
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={!!this.props.data.value}
+                  onChange={(e, checked) => this.props.data.set(checked ? true : undefined)}
+                  color='default'
+                />
+              )}
+              label={helperText}
+            />
+          </div>
+          <Collapse in={this.props.data.value || false}>
+            {content}
+          </Collapse>
+        </div>
+      );
+    }
   }
 
   renderRow(rowCells, key: string, index: number, showLink: boolean = false) {
