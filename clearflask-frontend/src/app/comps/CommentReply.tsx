@@ -18,7 +18,7 @@ const styles = (theme: Theme) => createStyles({
     width: 73,
   },
   addCommentFieldExpanded: {
-    width: 400,
+    width: 250,
   },
   addCommentSubmitButton: {
   },

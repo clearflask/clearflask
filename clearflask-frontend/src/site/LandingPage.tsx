@@ -31,7 +31,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderHero() {
     return (
       <Hero
-        title='Product Feedback Solution for customer transparency'
+        title='Product Feedback Solution for transparent organizations'
         description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
         imagePath='/img/landing/hero.svg'
       />
@@ -41,17 +41,24 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderAddIdea(mirror?: boolean) {
     return (
       <Demo
-        title='Collect feedback'
-        description='fasfsd fs afas fasd fas'
+        title='Collect feedback from your users'
+        description=''
         mirror={mirror}
         initialSubPath='/embed/demo'
-        template={templater => templater.demoExplorer({ allowCreate: true })}
+        template={templater => templater.demoExplorer({
+          allowCreate: true,
+          allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+        }, {
+          title: 'Idea bucket',
+          description: 'Let us know what features you would like to see',
+        })}
         mock={mocker => mocker.demoExplorer()}
         scale={0.7}
+        demoFixedHeight={300}
         settings={{
-          // demoBlurryShadow: true,
-          demoCreateOpen: {
-            title: 'Cannot save',
+          demoBlurryShadow: true,
+          demoCreateAnimate: {
+            title: 'Add Dark Mode',
           },
         }}
       />

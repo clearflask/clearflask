@@ -7,8 +7,8 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import RoadmapControls from './landing/RoadmapControls';
 
-export const transparencyTitle = 'Strengthen user community with transparency';
-export const transparencyDescription = 'Keep your users involved and informed of your progress at every significant step with updates and a public roadmap';
+export const transparencyTitle = 'Keep your users engaged with transparent communication';
+export const transparencyDescription = 'Inform your users of your progress at every step with updates and a transparent roadmap. Let them be involved in your decision making and make them feel valued.';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -74,7 +74,7 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
         description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
         mirror={mirror}
         initialSubPath='/embed/demo'
-        scale={0.65}
+        scale={0.7}
         largeDemo
         template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([

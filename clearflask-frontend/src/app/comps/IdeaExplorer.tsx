@@ -95,19 +95,28 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, desc?: string) => void;
+  _isMounted: boolean = false;
 
   constructor(props) {
     super(props);
-    this.state = {
-      newItemTitle: props.settings.demoCreateOpen?.title,
-      newItemDescription: props.settings.demoCreateOpen?.description,
-    };
+    this.state = {};
     this.updateSearchText = debounce(
       (title?: string, desc?: string) => this.setState({
         newItemSearchText:
           `${title || ''} ${desc || ''}`
       }),
       1000);
+  }
+
+  componentDidMount() {
+    this._isMounted = true;
+    if (!!this.props.settings.demoCreateAnimate) {
+      this.demoCreateAnimate(this.props.settings.demoCreateAnimate.title);
+    }
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   render() {
@@ -195,7 +204,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       <TextField
         disabled={this.state.newItemIsSubmitting}
         className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        label='New'
+        label='Add'
         placeholder='Title'
         value={this.state.newItemTitle || ''}
         onChange={e => {
@@ -396,6 +405,27 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     }).catch(e => this.setState({
       newItemIsSubmitting: false,
     }));
+  }
+
+  async demoCreateAnimate(title: string) {
+    for (; ;) {
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      for (var i = 0; i < title.length; i++) {
+        if (!this._isMounted) return;
+        this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] });
+        await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
+        if (!this._isMounted) return;
+        const currentTitle = this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1);
+        this.updateSearchText(currentTitle);
+        this.setState({ newItemTitle: currentTitle });
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+    }
   }
 }
 

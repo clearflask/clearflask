@@ -16,6 +16,7 @@ export default class Templater {
 
   demo() {
     this._get<ConfigEditor.StringProperty>(['name']).set('Demo App');
+    this.styleWhite();
     this.creditsCurrency();
     // TODO Home
     // TODO FAQ
@@ -83,7 +84,7 @@ export default class Templater {
     });
   }
 
-  demoExplorer(explorer?: Partial<Admin.PageExplorer>) {
+  demoExplorer(explorer?: Partial<Admin.PageExplorer>, extraPageProps?: Partial<Admin.Page>) {
     this.styleWhite();
     const categoryId = this.demoCategory();
 
@@ -92,11 +93,25 @@ export default class Templater {
       explorer: Admin.PageExplorerToJSON({
         search: Admin.IdeaSearchToJSON({}),
         display: Admin.PostDisplayToJSON({
-          showDescription: false,
+          titleTruncateLines: 1,
+          descriptionTruncateLines: 2,
+          showDescription: true,
+          showResponse: false,
+          showCommentCount: false,
+          showCategoryName: false,
+          showCreated: false,
+          showAuthor: false,
+          showStatus: false,
+          showTags: false,
+          showVoting: false,
+          showFunding: false,
+          showExpression: false,
+          disableExpand: false,
         }),
         allowCreate: false,
         ...(explorer || {}),
       }),
+      ...(extraPageProps || {}),
     });
   }
 
