@@ -69,7 +69,14 @@ interface State {
 }
 
 class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps, State> {
-  state: State = {};
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      hasExpanded: props.createShown,
+    };
+  }
 
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);

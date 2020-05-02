@@ -6,8 +6,9 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server } from '../../api/server';
+import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
 import debounce from '../../common/util/debounce';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
@@ -72,6 +73,7 @@ interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
+  settings: StateSettings;
 }
 
 interface State {
@@ -96,7 +98,10 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
 
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      newItemTitle: props.settings.demoCreateOpen?.title,
+      newItemDescription: props.settings.demoCreateOpen?.description,
+    };
     this.updateSearchText = debounce(
       (title?: string, desc?: string) => this.setState({
         newItemSearchText:
@@ -190,7 +195,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       <TextField
         disabled={this.state.newItemIsSubmitting}
         className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        label='Create'
+        label='New'
         placeholder='Title'
         value={this.state.newItemTitle || ''}
         onChange={e => {
@@ -232,7 +237,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
 
     return (
       <ExplorerTemplate
-        createSize={expand ? '364px' : '116px'}
+        createSize={expand ? '250px' : '116px'}
         createShown={expand}
         createVisible={createVisible}
         createCollapsible={createCollapsible}
@@ -387,7 +392,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });
-      this.props.history.push(`/post/${idea.ideaId}`);
+      this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location));
     }).catch(e => this.setState({
       newItemIsSubmitting: false,
     }));
@@ -402,5 +407,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
+    settings: state.settings,
   }
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(Explorer)));

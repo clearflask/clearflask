@@ -50,6 +50,47 @@ class DataMock {
     }))));
   }
 
+  demoExplorer() {
+    return this.demoPage((config, user) => Promise.all([
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Crash on save',
+          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Progress saving fails',
+          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Impossible to save',
+          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'App crashes during save',
+          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          tagIds: [],
+        },
+      }),
+    ]));
+  }
+
   demoPrioritization() {
     return this.demoPage((config, user) => ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
@@ -153,13 +194,13 @@ class DataMock {
     });
   }
 
-  mockItems(userMe?: Admin.UserMeWithBalance): Promise<any> {
+  mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 4): Promise<any> {
     return ServerMock.get().configGetAdmin({ projectId: this.projectId })
       .then((versionedConfig: Admin.VersionedConfigAdmin) => {
         const promises: Promise<any>[] = [];
         versionedConfig.config.content.categories.forEach((category: Admin.Category) => {
           [undefined, ...category.workflow.statuses].forEach((status: Admin.IdeaStatus | undefined) => {
-            var n = 4;
+            var n = ideaPerTypeCount;
             while (n-- > 0) {
               promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser())
                 .then((user: Admin.User) =>
@@ -198,7 +239,7 @@ class DataMock {
         authorUserId: user.userId,
         title: loremIpsum({
           units: 'words',
-          count: Math.round(Math.random() * 10 + 3),
+          count: Math.round(Math.random() * 5 + 3),
         }),
         description: loremIpsum({
           units: 'paragraphs',

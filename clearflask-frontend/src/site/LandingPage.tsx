@@ -1,5 +1,4 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { loremIpsum } from "lorem-ipsum";
 import React, { Component } from 'react';
 import { featuresDescription, featuresTitle } from './FeaturesPage';
 import Block from './landing/Block';
@@ -18,6 +17,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
+        {this.renderAddIdea()}
         {this.renderPrioritization()}
         {this.renderTransparency(true)}
         {this.renderFeatures()}
@@ -34,6 +34,26 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         title='Product Feedback Solution for customer transparency'
         description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
         imagePath='/img/landing/hero.svg'
+      />
+    );
+  }
+
+  renderAddIdea(mirror?: boolean) {
+    return (
+      <Demo
+        title='Collect feedback'
+        description='fasfsd fs afas fasd fas'
+        mirror={mirror}
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoExplorer({ allowCreate: true })}
+        mock={mocker => mocker.demoExplorer()}
+        scale={0.7}
+        settings={{
+          // demoBlurryShadow: true,
+          demoCreateOpen: {
+            title: 'Cannot save',
+          },
+        }}
       />
     );
   }
@@ -85,20 +105,16 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           },
           {
             initialSubPath: '/embed/demo',
-            scale: 0.7,
-            template: templater => templater.demoBoard('Roadmap', [
-              { title: 'Planned' },
-              { title: 'In Progress' },
-            ]),
+            scale: 0.5,
+            template: templater => templater.demoBoardPreset('development'),
             mock: mocker => mocker.demoBoard([
-              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '0', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
-              { status: '1', title: loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }) },
+              { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
+              { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
+              { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
+              { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
+              { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+              { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
+              { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
             ]),
             settings: {
               demoBlurryShadow: true,

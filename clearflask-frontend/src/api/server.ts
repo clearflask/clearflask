@@ -185,6 +185,10 @@ export const cssBlurry = {
 export interface StateSettings {
   demoFlashPostVotingControls?: boolean;
   demoBlurryShadow?: boolean;
+  demoCreateOpen?: {
+    title: string;
+    description?: string;
+  };
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault): StateSettings {

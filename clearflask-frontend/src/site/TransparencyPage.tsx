@@ -74,7 +74,7 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
         description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
         mirror={mirror}
         initialSubPath='/embed/demo'
-        scale={0.7}
+        scale={0.65}
         largeDemo
         template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([

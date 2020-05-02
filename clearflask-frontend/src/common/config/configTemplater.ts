@@ -83,6 +83,23 @@ export default class Templater {
     });
   }
 
+  demoExplorer(explorer?: Partial<Admin.PageExplorer>) {
+    this.styleWhite();
+    const categoryId = this.demoCategory();
+
+
+    this.demoPage({
+      explorer: Admin.PageExplorerToJSON({
+        search: Admin.IdeaSearchToJSON({}),
+        display: Admin.PostDisplayToJSON({
+          showDescription: false,
+        }),
+        allowCreate: false,
+        ...(explorer || {}),
+      }),
+    });
+  }
+
   demoBoardPreset(preset: 'development' | 'funding' | 'design') {
     switch (preset) {
       case 'development':

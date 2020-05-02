@@ -302,14 +302,23 @@ const styles = (theme: Theme) => createStyles({
   pulsateFunding: {
     opacity: 1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 0ms infinite`,
+    '&:hover': {
+      opacity: 1 + '!important',
+    },
   },
   pulsateVoting: {
     opacity: 1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 667ms infinite`,
+    '&:hover': {
+      opacity: 1 + '!important',
+    },
   },
   pulsateExpressions: {
     opacity: 1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 1333ms infinite`,
+    '&:hover': {
+      opacity: 1 + '!important',
+    },
   },
   '@keyframes postVotingPulsate': {
     '0%': {
@@ -418,7 +427,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <Loader loaded={!!this.props.idea}>
-        <Expander expand={forceExpand}>
+        <Expander expand={forceExpand} onBackButtonPress={() => this.props.history.goBack()}>
           <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
             display: 'flex',
             alignItems: 'flex-start',

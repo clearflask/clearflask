@@ -140,24 +140,24 @@ class App extends Component<Props> {
                   </BasePage>
                 )} />
               )} >
-              <Route key='transaction' path='/transaction' render={props => (
-                <BasePage showFooter>
+              <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
+                <BasePage showFooter={!props.match.params['embed']}>
                   <BankPage server={this.server} />
                 </BasePage>
               )} />
-              <Route key='notification' path='/notification' render={props => (
-                <BasePage showFooter>
+              <Route key='notification' path='/:embed(embed)?/notification' render={props => (
+                <BasePage showFooter={!props.match.params['embed']}>
                   <NotificationPage server={this.server} />
                 </BasePage>
               )} />
-              <Route key='account' path='/account' render={props => (
-                <BasePage showFooter>
+              <Route key='account' path='/:embed(embed)?/account' render={props => (
+                <BasePage showFooter={!props.match.params['embed']}>
                   <AccountPage server={this.server} />
                 </BasePage>
               )} />
               {!isExpanded() && (
-                <Route key='post' path='/(embed)?/post/:postId' render={props => (
-                  <BasePage showFooter>
+                <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
                     <PostPage
                       postId={props.match.params['postId'] || ''}
                       server={this.server}

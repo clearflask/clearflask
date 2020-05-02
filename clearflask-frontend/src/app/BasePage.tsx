@@ -36,7 +36,7 @@ class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
             </div>
           </div>
         </div>
-        {this.props.showFooter && (
+        {!!this.props.showFooter && (
           <Footer />
         )}
       </React.Fragment>
