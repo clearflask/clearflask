@@ -300,11 +300,11 @@ class DataMock {
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: user.userId,
-        title: 'Captcha to reduce spam',
-        description: 'In order to reduce the growing spam problem we have seen recently, I propose to introduce a captcha during user registration.',
-        response: 'This is a good idea, we are planning to squeeze this into the next sprint.',
+        title: 'Add Dark Mode',
+        description: 'To reduce eye-strain, please add a dark mode option',
+        response: 'Added to our backlog, thanks!',
         categoryId: config.content.categories[0].categoryId,
-        statusId: config.content.categories[0].workflow.entryStatus,
+        statusId: config.content.categories[0].workflow.statuses[3].statusId,
         tagIds: [],
         ...{ // Fake data
           ideaId,
@@ -323,19 +323,19 @@ class DataMock {
 
     await this.mockDetailedComments([
       {
-        content: 'We should also consider adding an audio captcha for blind and visually impaired users', author: 'John', voteValue: 43, children: [
+        content: 'Also, it would be great if the black color can be a pure black in order to save mobile battery life.', author: 'John', voteValue: 43, children: [
           {
-            content: 'The problem with audio captchas is that they are usually the easiest to break by spammers', author: 'Charlotte', voteValue: 22, children: [
+            content: 'A pure black color does not look good in all cases', author: 'Charlotte', voteValue: 22, children: [
               {
-                content: 'We can always disable them later', author: 'John', voteValue: 1, created: new Date(),
+                content: 'I disagree, a pure black looks nice if done right', author: 'John', voteValue: 1, created: new Date(),
               },
             ]
           },
           {
-            content: 'Ah yes, the AudioCaptcha service seems to be a good offer', author: 'Daisy', voteValue: 12, children: [
+            content: 'It would be great if you could choose between various themes', author: 'Daisy', voteValue: 12, children: [
               {
-                content: 'The pricing seems a bit high', author: 'John', voteValue: -3, children: [
-                  { content: 'Let me contact them to see if we can get a better price', author: 'John', voteValue: 3 }
+                content: 'They wont have time do all of that', author: 'John', voteValue: -3, children: [
+                  { content: 'Lets see what they say', author: 'John', voteValue: 3 }
                 ]
               }
             ]

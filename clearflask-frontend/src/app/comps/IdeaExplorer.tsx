@@ -32,8 +32,8 @@ const styles = (theme: Theme) => createStyles({
   createFormFields: {
     display: 'flex',
     flexDirection: 'column',
-    // Uncomment these to align with corner
-    // marginTop: theme.spacing(1),
+    // (Un)comment these to align with corner
+    marginTop: theme.spacing(1),
     marginRight: theme.spacing(2),
   },
   createFormField: {
@@ -52,13 +52,13 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   panelSearch: {
-    // Uncomment these to align with corner
-    // marginBottom: -1,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
   },
   createField: {
     minWidth: 100,
-    // Uncomment these to align with corner
-    // marginBottom: -1,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
     marginRight: theme.spacing(3),
   },
 });
@@ -409,14 +409,14 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
 
   async demoCreateAnimate(title: string) {
     for (; ;) {
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       for (var i = 0; i < title.length; i++) {
         if (!this._isMounted) return;
         this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] });
         await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
       }
 
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
         if (!this._isMounted) return;

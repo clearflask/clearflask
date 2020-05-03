@@ -27,6 +27,8 @@ const styles = (theme: Theme) => createStyles({
   searchInput: {
     margin: theme.spacing(1),
     width: 100,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
   },
   addIcon: {
     cursor: 'text',
@@ -41,6 +43,8 @@ const styles = (theme: Theme) => createStyles({
   createFormFields: {
     display: 'flex',
     flexDirection: 'column',
+    // (Un)comment these to align with corner
+    marginTop: theme.spacing(1),
     marginRight: theme.spacing(2),
   },
   createFormField: {
@@ -50,6 +54,8 @@ const styles = (theme: Theme) => createStyles({
   },
   createField: {
     minWidth: 100,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
     marginRight: theme.spacing(3),
   },
   resultContainer: {
@@ -211,7 +217,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
               </Button>
             </div>
           )}
-          search={(
+          search={expand ? undefined : (
             <TextField
               className={this.props.classes.searchInput}
               label='Search'

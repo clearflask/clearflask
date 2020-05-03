@@ -86,7 +86,6 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             </DividerCorner>
           )}
         </Grid>
-        <Grid item xs={false} md={false} lg={1} xl={false} />
         <Grid item xs={12} md={this.props.largeDemo ? 12 : 6} lg={this.props.largeDemo ? 3 : 5} xl={this.props.largeDemo ? 2 : 4} className={this.props.classes.grid}>
           {this.props.icon && (
             <div className={this.props.classes.icon}>

@@ -18,12 +18,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <React.Fragment>
         {this.renderHero()}
         {this.renderAddIdea()}
-        {this.renderPrioritization()}
-        {this.renderTransparency(true)}
-        {this.renderFeatures()}
+        {this.renderPrioritization(true)}
+        {/* Add: crowdfunding, prioritization */}
+        {this.renderTransparency()}
+        {this.renderFeatures(true)}
         {/* {this.renderEngagement()} */}
         {/* {this.renderCustomize()} */}
-        {this.renderSales(true)}
+        {this.renderSales()}
       </React.Fragment>
     );
   }
@@ -41,16 +42,16 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderAddIdea(mirror?: boolean) {
     return (
       <Demo
-        title='Collect feedback from your users'
-        description=''
+        title='Collect user feedback in one place'
+        description='Capture feedback from all channels into one bucket.'
         mirror={mirror}
         initialSubPath='/embed/demo'
         template={templater => templater.demoExplorer({
           allowCreate: true,
           allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
         }, {
-          title: 'Idea bucket',
-          description: 'Let us know what features you would like to see',
+          title: 'Give feedback',
+          description: 'Let us know how we can improve our product. We want to hear your ideas!',
         })}
         mock={mocker => mocker.demoExplorer()}
         scale={0.7}

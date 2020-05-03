@@ -45,7 +45,6 @@ interface State {
   templateFeedback?: boolean;
   templateChangelog?: boolean;
   templateKnowledgeBase?: boolean;
-  templateBlog?: boolean;
 
   fundingAllowed: boolean;
   votingAllowed: boolean;
@@ -123,12 +122,12 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   checked={!!this.state.templateFeedback}
                   onChange={() => this.setStateAndPreview({templateFeedback: !this.state.templateFeedback})}
                 /> */}
-                <TemplateCard
+                {/* <TemplateCard
                   title='Blog'
                   content='Add articles for your users'
                   checked={!!this.state.templateBlog}
                   onChange={() => this.setStateAndPreview({ templateBlog: !this.state.templateBlog })}
-                />
+                /> */}
               </Grid>
               <Typography variant='caption'>You can add additional templates later.</Typography>
               <Box display='flex' className={this.props.classes.item}>
@@ -356,7 +355,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       }
     }
     if (this.state.templateChangelog) templater.templateChangelog();
-    if (this.state.templateBlog) templater.templateBlog();
+    // if (this.state.templateBlog) templater.templateBlog();
     if (this.state.templateKnowledgeBase) templater.templateKnowledgeBase();
     return editor.getConfig();
   }
@@ -429,30 +428,30 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
         [bugCategory.tagging.tags.find(s => s.name.match(/Windows/))!.tagId],
       );
     }
-    if (this.state.templateBlog) {
-      const articleCategory = config.content.categories.find(c => c.name.match(/Article/))!;
-      await this.mockItem(
-        config.projectId, articleCategory.categoryId, user1,
-        'How we scaled up our system in one week',
-        "Shortly after launch, we had an unexpected number of users signing up for our platform."
-        + " The increase in traffic was overwhelming our servers, particularly our database."
-        + " We solved this by adding caching layers for our most requested API calls. The end.",
-        undefined, undefined, undefined, undefined,
-        mocker.fakeExpressions(articleCategory, 4),
-        undefined, undefined,
-      );
-      await this.mockItem(
-        config.projectId, articleCategory.categoryId, user3,
-        'Cutting server costs',
-        "After our publicity on our launch, the number of users has dropped off significantly."
-        + " We noticed that the resource cost per user was quite high."
-        + " This also applied to inactive users that have either abandoned our platform or are simply using it less frequently."
-        + " We have started offloading this data into a long term storage to save costs. The end.",
-        undefined, undefined, undefined, undefined,
-        mocker.fakeExpressions(articleCategory, 2),
-        undefined, undefined,
-      );
-    }
+    // if (this.state.templateBlog) {
+    //   const articleCategory = config.content.categories.find(c => c.name.match(/Article/))!;
+    //   await this.mockItem(
+    //     config.projectId, articleCategory.categoryId, user1,
+    //     'How we scaled up our system in one week',
+    //     "Shortly after launch, we had an unexpected number of users signing up for our platform."
+    //     + " The increase in traffic was overwhelming our servers, particularly our database."
+    //     + " We solved this by adding caching layers for our most requested API calls. The end.",
+    //     undefined, undefined, undefined, undefined,
+    //     mocker.fakeExpressions(articleCategory, 4),
+    //     undefined, undefined,
+    //   );
+    //   await this.mockItem(
+    //     config.projectId, articleCategory.categoryId, user3,
+    //     'Cutting server costs',
+    //     "After our publicity on our launch, the number of users has dropped off significantly."
+    //     + " We noticed that the resource cost per user was quite high."
+    //     + " This also applied to inactive users that have either abandoned our platform or are simply using it less frequently."
+    //     + " We have started offloading this data into a long term storage to save costs. The end.",
+    //     undefined, undefined, undefined, undefined,
+    //     mocker.fakeExpressions(articleCategory, 2),
+    //     undefined, undefined,
+    //   );
+    // }
     if (this.state.templateChangelog) {
       const changelogCategory = config.content.categories.find(c => c.name.match(/Changelog/))!;
       await this.mockItem(
