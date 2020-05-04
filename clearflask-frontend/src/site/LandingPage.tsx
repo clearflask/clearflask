@@ -2,9 +2,11 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { featuresDescription, featuresTitle } from './FeaturesPage';
 import Block from './landing/Block';
+import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Demos from './landing/Demos';
 import Hero from './landing/Hero';
+import HorizontalPanels from './landing/HorizontalPanels';
 import { prioritizationDescription, prioritizationTitle } from './PrioritizationPage';
 import { transparencyDescription, transparencyTitle } from './TransparencyPage';
 
@@ -17,7 +19,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderAddIdea()}
+        {this.renderCollectFeedback()}
         {this.renderPrioritization(true)}
         {/* Add: crowdfunding, prioritization */}
         {this.renderTransparency()}
@@ -39,48 +41,91 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderAddIdea(mirror?: boolean) {
+  renderCollectFeedback(mirror?: boolean) {
     return (
-      <Demo
-        title='Collect user feedback in one place'
-        description='Capture feedback from all channels into one bucket.'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoExplorer({
-          allowCreate: true,
-          allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-        }, {
-          title: 'Suggest an idea',
-          description: 'Let us know how we can improve our product. We want to hear your ideas!',
-        })}
-        mock={mocker => mocker.demoExplorer()}
-        scale={0.7}
-        demoFixedHeight={300}
-        settings={{
-          demoBlurryShadow: true,
-          demoCreateAnimate: {
-            title: 'Add Dark Mode',
-          },
-        }}
-      />
+      <React.Fragment>
+        <Demo
+          title='Collect user feedback in one place'
+          description='Capture feedback from all channels into one bucket.'
+          mirror={mirror}
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoExplorer({
+            allowCreate: true,
+            allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+          }, {
+            title: 'Suggest an idea',
+            description: 'Let us know how we can improve our product. We want to hear your ideas!',
+          })}
+          mock={mocker => mocker.demoExplorer()}
+          scale={0.7}
+          demoFixedHeight={300}
+          settings={{
+            demoBlurryShadow: true,
+            demoCreateAnimate: {
+              title: 'Add Dark Mode',
+            },
+          }}
+        />
+        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerMinHeight={400}>
+          <BlockContent
+            variant='h5'
+            title='Seamless onboarding'
+            description='asfa sfa fasd fdas fdsa fads fadsf asd fads fasdf asd fads fads fas fasdf adsf dasfas '
+            buttonTitle='See More'
+            buttonLink='/collect#onboarding'
+          />
+          <BlockContent
+            variant='h5'
+            title='Powerful search reduces duplicate submissions'
+            description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
+            buttonTitle='See More'
+            buttonLink='/collect#powerful-search'
+          />
+          <BlockContent
+            variant='h5'
+            title='Customize user experience'
+            description='Our platform is fully customizable in both style and functionality to maximize effectiveness.'
+            buttonTitle='See More'
+            buttonLink='/collect#user-experience'
+          />
+        </HorizontalPanels>
+      </React.Fragment>
     );
   }
 
   renderPrioritization(mirror?: boolean) {
     return (
-      <Demo
-        title={prioritizationTitle}
-        description={prioritizationDescription}
-        mirror={mirror}
-        buttonTitle='Learn about prioritization'
-        buttonLink='/prioritization'
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('all')}
-        mock={mocker => mocker.demoPrioritization()}
-        settings={{
-          demoFlashPostVotingControls: true,
-        }}
-      />
+      <React.Fragment>
+        <Demo
+          title={prioritizationTitle}
+          description={prioritizationDescription}
+          mirror={mirror}
+          buttonTitle='Learn about prioritization'
+          buttonLink='/prioritization'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('all')}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoFlashPostVotingControls: true,
+          }}
+        />
+        <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerMinHeight={300}>
+          <BlockContent
+            variant='h5'
+            title='Crowdfunding'
+            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            buttonTitle='See More'
+            buttonLink='/prioritization#crowdfunding'
+          />
+          <BlockContent
+            variant='h5'
+            title='Simple voting'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/prioritization#simple-voting'
+          />
+        </HorizontalPanels>
+      </React.Fragment>
     );
   }
 

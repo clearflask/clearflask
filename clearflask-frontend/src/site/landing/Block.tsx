@@ -1,8 +1,9 @@
-import { Button, Grid, Typography } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
+import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
   outer: {
@@ -18,24 +19,11 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  title: {
-  },
-  description: {
-    marginTop: theme.spacing(2),
-    color: theme.palette.text.hint,
-  },
-  icon: {
-    position: 'absolute',
-    transform: 'translate(-100%, -100%)',
-  },
   controlsOuter: {
     margin: theme.spacing(3),
   },
   controlsInner: {
     margin: theme.spacing(4),
-  },
-  button: {
-    alignSelf: 'flex-end',
   },
   image: {
     width: '100%',
@@ -55,7 +43,7 @@ export interface Props {
   mirror?: boolean;
   largeDemo?: boolean;
 }
-class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
+class Block extends Component<Props & BlockContentProps & WithStyles<typeof styles, true> & RouteComponentProps> {
 
   render() {
     return (
@@ -87,20 +75,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           )}
         </Grid>
         <Grid item xs={12} md={this.props.largeDemo ? 12 : 6} lg={this.props.largeDemo ? 3 : 5} xl={this.props.largeDemo ? 2 : 4} className={this.props.classes.grid}>
-          {this.props.icon && (
-            <div className={this.props.classes.icon}>
-              {this.props.icon}
-            </div>
-          )}
-          <Typography variant='h4' component='h3' className={this.props.classes.title}>{this.props.title}</Typography>
-          <Typography variant='body1' component='div' className={this.props.classes.description}>{this.props.description}</Typography>
-          {this.props.buttonLink && (
-            <Button
-              className={this.props.classes.button}
-              variant='text'
-              onClick={() => this.props.history.push(this.props.buttonLink!)}
-            >{this.props.buttonTitle}</Button>
-          )}
+          <BlockContent {...this.props as BlockContentProps} />
         </Grid>
       </Grid>
     );

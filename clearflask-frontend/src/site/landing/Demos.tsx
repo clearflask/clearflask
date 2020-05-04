@@ -84,10 +84,9 @@ class Demo extends Component<Props & Omit<BlockProps, 'demo' | 'controls'> & Wit
           );
         }).filter(notEmpty);
 
-        const { classes, ...blockProps } = this.props;
         return (
           <Block
-            {...blockProps}
+            {...this.props as BlockProps}
             controls={controls.length > 0 ? (
               <div className={this.props.classes.controlsContainer}>
                 {controls}
