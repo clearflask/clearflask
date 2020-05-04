@@ -50,7 +50,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           allowCreate: true,
           allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
         }, {
-          title: 'Give feedback',
+          title: 'Suggest an idea',
           description: 'Let us know how we can improve our product. We want to hear your ideas!',
         })}
         mock={mocker => mocker.demoExplorer()}
