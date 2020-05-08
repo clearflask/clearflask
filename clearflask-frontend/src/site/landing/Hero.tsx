@@ -47,6 +47,7 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
           {this.props.imagePath && (
             <Grid item xs={12} md={6}>
               <img
+                alt=''
                 className={this.props.classes.image}
                 src={this.props.imagePath}
               />

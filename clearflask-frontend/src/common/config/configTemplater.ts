@@ -15,7 +15,7 @@ export default class Templater {
   }
 
   demo() {
-    this._get<ConfigEditor.StringProperty>(['name']).set('Demo App');
+    this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');
     this.styleWhite();
     this.creditsCurrency();
     // TODO Home
@@ -30,6 +30,19 @@ export default class Templater {
 
   styleWhite() {
     this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+  }
+
+  styleDark() {
+    this._get<ConfigEditor.BooleanProperty>(['style', 'palette', 'darkMode']).set(true);
+  }
+
+  setFontFamily(fontFamily: string) {
+    this._get<ConfigEditor.StringProperty>(['style', 'typography', 'fontFamily']).set(fontFamily);
+  }
+
+  setAppName(appName: string, logoUrl: string) {
+    this._get<ConfigEditor.StringProperty>(['name']).set(appName);
+    this._get<ConfigEditor.StringProperty>(['logoUrl']).set(logoUrl);
   }
 
   demoPrioritization(type: 'fund' | 'vote' | 'express' | 'all') {
@@ -84,10 +97,10 @@ export default class Templater {
     });
   }
 
-  demoExplorer(explorer?: Partial<Admin.PageExplorer>, extraPageProps?: Partial<Admin.Page>) {
+  demoExplorer(explorer?: Partial<Admin.PageExplorer>, extraPageProps?: Partial<Admin.Page>, suppressDefaultCategory?: boolean) {
     this.styleWhite();
-    const categoryId = this.demoCategory();
 
+    !suppressDefaultCategory && this.demoCategory();
 
     this.demoPage({
       explorer: Admin.PageExplorerToJSON({
@@ -95,7 +108,7 @@ export default class Templater {
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 1,
           descriptionTruncateLines: 2,
-          showDescription: true,
+          showDescription: false,
           showResponse: false,
           showCommentCount: false,
           showCategoryName: false,

@@ -199,30 +199,30 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
           <div className={this.props.classes.appBarSpacer} />
           <MuiAnimatedSwitch>
-            <Route exact path={'/login'} render={props => (
-              setTitle('Login'),
-              <SigninPage {...props} />
-            )} />
-            <Route exact path={'/pricing'} render={props => (
-              setTitle('Pricing'),
-              <PricingPage {...props} />
-            )} />
-            <Route path={'/contact'} render={props => (
-              setTitle('Contact'),
-              <ContactPage {...props} />
-            )} />
-            <Route exact path={'/signup'} render={props => (
-              setTitle('Sign up'),
-              <TrialSignupPage {...props} />
-            )} />
-            <Route exact path={'/(terms|terms-of-service)'} render={props => (
-              setTitle('Terms of Service'),
-              <LegalPage type='terms' />
-            )} />
-            <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => (
-              setTitle('Privacy Policy'),
-              <LegalPage type='privacy' />
-            )} />
+            <Route exact path={'/login'} render={props => {
+              setTitle('Login');
+              return (<SigninPage {...props} />);
+            }} />
+            <Route exact path={'/pricing'} render={props => {
+              setTitle('Pricing');
+              return (<PricingPage {...props} />);
+            }} />
+            <Route path={'/contact'} render={props => {
+              setTitle('Contact');
+              return (<ContactPage {...props} />);
+            }} />
+            <Route exact path={'/signup'} render={props => {
+              setTitle('Sign up');
+              return (<TrialSignupPage {...props} />);
+            }} />
+            <Route exact path={'/(terms|terms-of-service)'} render={props => {
+              setTitle('Terms of Service');
+              return (<LegalPage type='terms' />);
+            }} />
+            <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => {
+              setTitle('Privacy Policy');
+              return (<LegalPage type='privacy' />);
+            }} />
             <Route path={`/:projectId(demo)`} render={props => {
               setTitle('Demo');
               if (!this.projectPromise) this.projectPromise = getProject(
@@ -239,26 +239,26 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 )} />
               );
             }} />
-            <Route exact path={`/features`} component={props => (
-              setTitle('Features'),
-              <FeaturesPage />
-            )} />
-            <Route exact path={`/prioritization`} component={props => (
-              setTitle('Prioritization'),
-              <PrioritizationPage />
-            )} />
-            <Route exact path={`/transparency`} component={props => (
-              setTitle('Transparency'),
-              <TransparencyPage />
-            )} />
-            <Route exact path={`/`} component={props => (
-              setTitle(),
-              <LandingPage />
-            )} />
-            <Route component={props => (
-              setTitle("Page not found"),
-              <ErrorPage msg='Page not found' variant='error' />
-            )} />
+            <Route exact path={`/features`} component={props => {
+              setTitle('Features');
+              return (<FeaturesPage />);
+            }} />
+            <Route exact path={`/prioritization`} component={props => {
+              setTitle('Prioritization');
+              return (<PrioritizationPage />);
+            }} />
+            <Route exact path={`/transparency`} component={props => {
+              setTitle('Transparency');
+              return (<TransparencyPage />);
+            }} />
+            <Route exact path={`/`} component={props => {
+              setTitle();
+              return (<LandingPage />);
+            }} />
+            <Route component={props => {
+              setTitle("Page not found");
+              return (<ErrorPage msg='Page not found' variant='error' />);
+            }} />
           </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>

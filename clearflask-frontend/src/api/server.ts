@@ -188,6 +188,10 @@ export interface StateSettings {
   demoCreateAnimate?: {
     title: string;
   };
+  demoSearchAnimate?: Array<{
+    term: string;
+    update: Partial<Client.IdeaSearch>;
+  }>;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault): StateSettings {

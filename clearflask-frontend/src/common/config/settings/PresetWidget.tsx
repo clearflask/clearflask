@@ -46,10 +46,10 @@ class PresetWidget extends Component<Props> {
         title: 'Knowledge Base', body: 'Helpful articles around your product',
         actionTitle: 'Add', action: (templater, path) => templater.templateKnowledgeBase()
       },
-      {
-        title: 'Blog', body: 'Add articles for your users',
-        actionTitle: 'Add', action: (templater, path) => templater.templateBlog(true)
-      },
+      // {
+      //   title: 'Blog', body: 'Add articles for your users',
+      //   actionTitle: 'Add', action: (templater, path) => templater.templateBlog(true)
+      // },
     ],
     'content.categories.<>.support': [
       {

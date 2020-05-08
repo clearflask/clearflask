@@ -70,6 +70,7 @@ export interface Props {
   overrideWebNotification?: WebNotification;
   overrideMobileNotification?: MobileNotification;
   DialogProps?: Partial<DialogProps>;
+  forgotEmailDialogProps?: Partial<DialogProps>;
 }
 
 interface ConnectProps {
@@ -144,29 +145,20 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           </DialogActions>
         </React.Fragment>
       );
-    } else if (notifOpts.size === 0) {
-      dialogContent = (
-        <React.Fragment>
-          <DialogContent>
-            <DialogContentText>Sign ups are currently disabled</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
-          </DialogActions>
-        </React.Fragment>
-      );
     } else {
+      const noSignupOption = notifOpts.size <= 0;
+      const isLogin = this.state.isLogin || noSignupOption;
       const onlySingleOption = notifOpts.size === 1;
       const singleColumnLayout = this.props.fullScreen || onlySingleOption;
 
-      const selectedNotificationType = !this.state.isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
+      const selectedNotificationType = !isLogin && (this.state.notificationType && notifOpts.has(this.state.notificationType))
         ? this.state.notificationType
         : (onlySingleOption ? notifOpts.values().next().value : undefined);
 
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const showDisplayNameInput = this.props.config && this.props.config.users.onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
       const isDisplayNameRequired = this.props.config && this.props.config.users.onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
-      const showAccountFields = showEmailInput || showDisplayNameInput;
+      const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
       const showPasswordInput = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
       const isPasswordRequired = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
       const isSignupSubmittable = selectedNotificationType
@@ -177,7 +169,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         && (selectedNotificationType !== NotificationType.Email || this.state.email)
         && (!isPasswordRequired || this.state.pass);
       const isLoginSubmittable = !!this.state.email;
-      const isSubmittable = this.state.isLogin ? isLoginSubmittable : isSignupSubmittable;
+      const isSubmittable = isLogin ? isLoginSubmittable : isSignupSubmittable;
 
       const onlySingleOptionRequiresAllow = onlySingleOption &&
         ((selectedNotificationType === NotificationType.Android && !this.state.notificationDataAndroid)
@@ -187,7 +179,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       dialogContent = (
         <React.Fragment>
           <DialogContent>
-            <Collapse in={!this.state.isLogin}>
+            <Collapse in={!isLogin}>
               <div
                 className={this.props.classes.content}
                 style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
@@ -320,7 +312,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               </div>
               <AcceptTerms overrideTerms={this.props.config?.users.onboarding.terms?.documents} />
             </Collapse>
-            <Collapse in={!!this.state.isLogin}>
+            <Collapse in={!!isLogin}>
               <div className={this.props.classes.loginFieldsContainer}>
                 <ListSubheader className={this.props.classes.noWrap} component="div">Login</ListSubheader>
                 <div>
@@ -363,15 +355,17 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             </Collapse>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => this.setState({ isLogin: !this.state.isLogin })}
-              disabled={this.state.isSubmitting}
-            >{this.state.isLogin ? 'Or Signup' : 'Or Login'}</Button>
+            {!noSignupOption && (
+              <Button
+                onClick={() => this.setState({ isLogin: !isLogin })}
+                disabled={this.state.isSubmitting}
+              >{isLogin ? 'Or Signup' : 'Or Login'}</Button>
+            )}
             <Button
               color='primary'
               disabled={!isSubmittable || this.state.isSubmitting}
               onClick={() => {
-                if (!!this.state.isLogin && !this.state.pass) {
+                if (!!isLogin && !this.state.pass) {
                   this.storageListener = (ev: StorageEvent) => {
                     if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
                     this.props.server.dispatch().userBind({
@@ -389,7 +383,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   }).catch(() => {
                     this.setState({ isSubmitting: false });
                   });
-                } else if (!!this.state.isLogin && !!this.state.pass) {
+                } else if (!!isLogin && !!this.state.pass) {
                   this.setState({ isSubmitting: true });
                   this.props.server.dispatch().userLogin({
                     projectId: this.props.server.getProjectId(),
@@ -429,6 +423,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             open={!!this.state.checkForgotEmailDialogOpen}
             onClose={() => this.setState({ checkForgotEmailDialogOpen: false })}
             maxWidth='xs'
+            {...this.props.forgotEmailDialogProps}
           >
             <DialogTitle>Awaiting confirmation...</DialogTitle>
             <DialogContent>

@@ -38,11 +38,12 @@ interface Props {
 class AcceptTerms extends React.Component<Props & WithStyles<typeof styles, true>> {
   render() {
     var legalDocs: Array<Term> = this.props.overrideTerms || legalDefault;
+
     return (legalDocs && legalDocs.length > 0) ? (
       <div className={this.props.classes.legal}>
         {'You agree to our '}
         <Delimited delimiter={', '} delimiterLast={' and '}>
-          {legalDocs.map(doc => (
+          {legalDocs.map(doc => ( // eslint-disable-next-line react/jsx-no-target-blank
             <a href={doc.link} target="_blank" rel="noopener nofollow" className={this.props.classes.legalLink}>{doc.shortName}</a>
           ))}
         </Delimited>

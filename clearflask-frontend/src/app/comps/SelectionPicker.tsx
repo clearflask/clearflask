@@ -53,6 +53,8 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   placeholder?: string;
   errorMsg?: string;
   value?: Label[];
+  inputValue?: string;
+  menuIsOpen?: boolean;
   options: Label[];
   colorLookup?: ColorLookup;
   disabled?: boolean;
@@ -73,6 +75,7 @@ class SelectionPicker extends Component<Props> {
     const selectComponentProps: SelectProps<Label> = {
       options: this.props.options || [],
       openOnFocus: true,
+      menuIsOpen: this.props.menuIsOpen,
       components: {
         IndicatorSeparator: () => null,
         Control,
@@ -97,6 +100,7 @@ class SelectionPicker extends Component<Props> {
           this.props.onValueChange((value ? [value] : []) as Label[], action);
         }
       },
+      inputValue: this.props.inputValue,
       onInputChange: !!this.props.onInputChange ? (newValue, actionMeta) => {
         this.props.onInputChange!(newValue, actionMeta);
         // Prevent returning any value here as it updates inputValue without documentation
@@ -172,7 +176,8 @@ const Control = (props) => {
         style: {
           marginTop: '1px',
         },
-        shrink: (outerProps.value !== undefined && outerProps.value.length !== 0 || outerProps.placeholder) ? true : undefined,
+        shrink: (((outerProps.value !== undefined && outerProps.value.length !== 0) || (outerProps.inputValue !== undefined && outerProps.inputValue !== ''))
+          || outerProps.placeholder) ? true : undefined,
       }}
       error={!!outerProps.errorMsg}
     />

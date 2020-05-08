@@ -55,8 +55,8 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
-          <Typography component="h1" variant="h2" color="textPrimary">Compare pricing</Typography>
-          <Typography component="h2" variant="h4" color="textSecondary">All plans include unlimited number of users.</Typography>
+          <Typography component="h1" variant="h2" color="textPrimary">Pricing</Typography>
+          <Typography component="h2" variant="h4" color="textSecondary">Flat-rate value-based pricing</Typography>
           {periods.length > 1 && (
             <PlanPeriodSelect
               plans={this.props.plans}

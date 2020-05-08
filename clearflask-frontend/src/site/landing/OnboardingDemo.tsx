@@ -31,6 +31,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  defaultDevice: Device;
 }
 
 interface State {
@@ -39,14 +40,19 @@ interface State {
 }
 
 class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, State> {
-  state: State = {
-    loginOpen: true,
-    device: Device.Desktop,
-  };
   mobileNotification = MobileNotification.getMockInstance();
   mobileNotificationNotSupported = MobileNotification.getMockInstance(MobileStatus.Disconnected);
   webNotification = WebNotification.getMockInstance();
   webNotificationNotSupported = WebNotification.getMockInstance(WebStatus.Unsupported);
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      loginOpen: true,
+      device: this.props.defaultDevice,
+    };
+  }
 
   render() {
     return (
@@ -71,21 +77,28 @@ class OnboardingDemo extends Component<Props & WithStyles<typeof styles, true>, 
               <div id='onboardingDemo' className={this.props.classes.content}>
                 {this.state.loginOpen ? (
                   <LogIn
+                    actionTitle='Get notified of replies'
                     server={this.props.server}
                     open={this.state.loginOpen}
                     onClose={() => this.setState({ loginOpen: false })}
                     onLoggedInAndClose={() => this.setState({ loginOpen: false })}
                     overrideMobileNotification={this.state.device === Device.Mobile ? this.mobileNotification : this.mobileNotificationNotSupported}
-                    overrideWebNotification={this.state.device === Device.Desktop ? this.webNotification : this.webNotificationNotSupported}
+                    overrideWebNotification={(this.state.device === Device.Desktop || this.state.device === Device.None) ? this.webNotification : this.webNotificationNotSupported}
                     DialogProps={{
                       disablePortal: true,
                       disableBackdropClick: true,
                       disableEscapeKeyDown: true,
+                      hideBackdrop: this.state.device === Device.None,
                       disableAutoFocus: true,
                       classes: {
                         root: this.props.classes.loginDialog,
                         paperScrollBody: this.props.classes.loginPaperScrollBody,
                       },
+                    }}
+                    forgotEmailDialogProps={{
+                      disableBackdropClick: true,
+                      disableEscapeKeyDown: true,
+                      hideBackdrop: this.state.device === Device.None,
                     }}
                   />
                 ) : (

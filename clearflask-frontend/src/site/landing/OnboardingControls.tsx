@@ -104,7 +104,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
             value={SignupMethods.Mobile}>Mobile</ToggleButton> */}
           <ToggleButton
             disabled={this.state.device === Device.Mobile}
-            value={SignupMethods.Web}>Web</ToggleButton>
+            value={SignupMethods.Web}>Web Push</ToggleButton>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
           <ToggleButton value={SignupMethods.Anonymous}>Anonymous</ToggleButton>
         </ToggleButtonGroup>

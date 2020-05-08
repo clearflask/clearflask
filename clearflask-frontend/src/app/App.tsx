@@ -78,7 +78,7 @@ class App extends Component<Props> {
       } catch (err) {
         if (err.status === 404) {
           // If project is not found, redirect to homepage
-          window.location.replace(window.location.origin.replace(`${this.server.getProjectId()}\.`, ''));
+          window.location.replace(window.location.origin.replace(`${this.server.getProjectId()}.`, ''));
         }
         throw err;
       }

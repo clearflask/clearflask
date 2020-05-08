@@ -21,6 +21,7 @@ import ThumbsUpDownIcon from '@material-ui/icons/ThumbsUpDown';
 import BrowserIcon from '@material-ui/icons/Web';
 import React, { Component } from 'react';
 import DividerCorner from '../app/utils/DividerCorner';
+import { Device } from '../common/DeviceContainer';
 import Demo from './landing/Demo';
 import Feature from './landing/Feature';
 import Hero from './landing/Hero';
@@ -101,7 +102,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         initialSubPath='/embed/demo'
         template={templater => setInitSignupMethodsTemplate(templater)}
         controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
-        demo={project => (<OnboardingDemo innerRef={this.onboardingDemoRef} server={project.server} />)}
+        demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
       />
     );
   }

@@ -47,6 +47,7 @@ components:
       type: object
       required:
         - increment
+        - formats
       properties:
         increment:
           x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: 1 }

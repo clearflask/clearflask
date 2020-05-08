@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ActionMeta } from 'react-select/lib/types';
 import * as Client from '../../api/client';
-import { ReduxState, Server } from '../../api/server';
+import { ReduxState, Server, StateSettings } from '../../api/server';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 
 export enum FilterType {
@@ -43,12 +43,24 @@ interface Props {
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
 }
-
 interface ConnectProps {
   config?: Client.Config;
+  settings: StateSettings;
 }
+interface State {
+  searchValue?: string;
+  menuIsOpen?: boolean;
+}
+class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  state: State = {};
+  _isMounted: boolean = false;
 
-class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+  componentDidMount() {
+    this._isMounted = true;
+    if (!!this.props.settings.demoSearchAnimate) {
+      this.demoSearchAnimate(this.props.settings.demoSearchAnimate);
+    }
+  }
 
   onClickTag(tagId: string): void {
     this.props.onSearchChanged({ ...this.props.search, filterTagIds: [tagId] });
@@ -67,6 +79,9 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         <SelectionPicker
           label='Search'
           value={controls.values}
+          menuIsOpen={this.state.menuIsOpen}
+          inputValue={this.state.searchValue || ''}
+          onInputChange={(newValue, actionMeta) => this.setState({ searchValue: newValue })}
           options={controls.options}
           colorLookup={controls.colorLookup}
           isMulti={true}
@@ -328,11 +343,42 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         return true;
     }
   }
+
+  async demoSearchAnimate(searchTerms: Array<{
+    term: string;
+    update: Partial<Client.IdeaSearch>;
+  }>) {
+    for (; ;) {
+      for (const searchTerm of searchTerms) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!this._isMounted) return;
+        this.setState({ menuIsOpen: true });
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        for (var i = 0; i < searchTerm.term.length; i++) {
+          if (!this._isMounted) return;
+          this.setState({ searchValue: (this.state.searchValue || '') + searchTerm.term[i], menuIsOpen: true });
+          await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (!this._isMounted) return;
+        this.setState({ searchValue: '', menuIsOpen: undefined }, () => {
+          this.props.onSearchChanged({ ...this.props.search, ...searchTerm.update });
+        });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!this._isMounted) return;
+      this.props.onSearchChanged({});
+    }
+  }
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
   return {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
+    settings: state.settings,
   }
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(PanelSearch));

@@ -6,7 +6,7 @@ import * as Admin from './admin';
 import * as Client from './client';
 
 const termsProjects = 'You can create separate projects each having their own set of users and content';
-const termsActiveUsers = 'Active users are users that have signed up or made public contributions counted on a rolling 3 month-median';
+const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
 const termsAnalytics = 'View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.';
 const termsVoting = 'Voting and Credit system allows precise expression of value for each idea.';
 const termsCredit = 'Spend time credits on future ClearFlask development features';
@@ -19,8 +19,8 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Standard',
     pricing: { price: 57, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: 'Unlimited users', terms: termsActiveUsers },
-      { desc: 'Multiple projects', terms: termsProjects },
+      { desc: 'Unlimited projects', terms: termsProjects },
+      { desc: 'Up to 1,000 contributors', terms: termsActiveUsers },
       { desc: 'Voting and Crowd-funding', terms: termsVoting },
       { desc: 'Feature credits', terms: termsCredit },
     ],
@@ -29,6 +29,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
       { desc: 'Powerful Analytics', terms: termsAnalytics },
+      { desc: 'Unlimited contributors', terms: termsActiveUsers },
       { desc: 'Single sign-on' },
       { desc: 'API access' },
       { desc: 'Multi-agent' },
@@ -41,12 +42,13 @@ const FeaturesTable: Admin.FeaturesTable = {
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit'], terms: termsProjects },
     { feature: 'Users', values: ['No limit', 'No limit'], terms: termsActiveUsers },
-    { feature: 'Customization', values: ['Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
     { feature: 'Voting and Crowd-funding', values: ['Yes', 'Yes'], terms: termsVoting },
+    { feature: 'Layout and Style customization', values: ['Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
     { feature: 'Powerful Analytics', values: ['No', 'Yes'], terms: termsAnalytics },
     { feature: 'Single sign-on', values: ['No', 'Yes'] },
     { feature: 'API access', values: ['No', 'Yes'] },
-    { feature: 'Multi-agent access', values: ['No', 'Yes'] },
+    { feature: 'Advanced template customization', values: ['No', 'Yes'], terms: '' },
+    { feature: 'Whitelabel', values: ['No', 'Yes'], terms: '' },
   ],
 };
 

@@ -4,6 +4,7 @@ import React from 'react';
 export enum Device {
   Desktop = 'desktop',
   Mobile = 'mobile',
+  None = 'none',
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -143,6 +144,9 @@ class DeviceContainer extends React.Component<Props & WithStyles<typeof styles, 
             </div>
           </div>
         );
+      default:
+      case Device.None:
+        return this.props.children;
     }
   }
 }

@@ -72,7 +72,6 @@ class FundingBar extends Component<Props & WithStyles<typeof styles, true>> {
       ? this.props.idea.fundGoal : undefined;
     const fundPerc = Math.floor(100 * (this.props.idea.funded || 0) / (fundGoal || this.props.maxFundAmountSeen));
     const fundPercNew = this.props.fundAmountDiff ? Math.floor(100 * ((this.props.idea.funded || 0) + this.props.fundAmountDiff) / (fundGoal || this.props.maxFundAmountSeen)) : fundPerc;
-    const fundingReached = fundGoal ? ((this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)) >= fundGoal : false;
     const fundFractionDisplay = (
       <CreditFractionView
         numerator={(this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)}

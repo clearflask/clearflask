@@ -86,6 +86,7 @@ class Demo extends Component<Props & Omit<BlockProps, 'demo' | 'controls'> & Wit
 
         return (
           <Block
+            suppressShadow
             {...this.props as BlockProps}
             controls={controls.length > 0 ? (
               <div className={this.props.classes.controlsContainer}>

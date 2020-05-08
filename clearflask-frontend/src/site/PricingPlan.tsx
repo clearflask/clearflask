@@ -71,7 +71,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                     <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
                   </React.Fragment>
                 ) : (
-                    <Typography component='h2' variant='h4' color='textSecondary'>Custom</Typography>
+                    <Typography component='h2' variant='h4' color='textSecondary'>Contact us</Typography>
                   )}
               </div>
               <div className={this.props.classes.cardPricing}>

@@ -56,11 +56,11 @@ class Main extends Component {
     const subdomain = this.getSubdomain();
     if (subdomain === 'www') {
       // Redirect www to homepage
-      window.location.replace(window.location.origin.replace(`${subdomain}\.`, ''));
+      window.location.replace(window.location.origin.replace(`${subdomain}.`, ''));
     }
-    const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => (closeLoadingScreen(), i)));
-    const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => (closeLoadingScreen(), i)));
-    const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => (closeLoadingScreen(), i)));
+    const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => { closeLoadingScreen(); return i; }));
+    const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => { closeLoadingScreen(); return i; }));
+    const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => { closeLoadingScreen(); return i; }));
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>

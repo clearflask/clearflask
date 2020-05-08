@@ -57,7 +57,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Crash on save',
-          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
       }),
@@ -66,16 +66,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Progress saving fails',
-          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
-          tagIds: [],
-        },
-      }),
-      ServerMock.get().ideaCreateAdmin({
-        projectId: this.projectId,
-        ideaCreateAdmin: {
-          authorUserId: user.userId,
-          title: 'Impossible to save',
-          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
       }),
@@ -84,7 +75,16 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'App crashes during save',
-          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Impossible to save',
+          categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
       }),
@@ -304,7 +304,7 @@ class DataMock {
         description: 'To reduce eye-strain, please add a dark mode option',
         response: 'Added to our backlog, thanks!',
         categoryId: config.content.categories[0].categoryId,
-        statusId: config.content.categories[0].workflow.statuses[3].statusId,
+        statusId: config.content.categories[0].workflow.entryStatus,
         tagIds: [],
         ...{ // Fake data
           ideaId,
