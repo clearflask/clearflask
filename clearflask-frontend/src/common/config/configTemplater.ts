@@ -3,6 +3,39 @@ import stringToSlug from "../util/slugger";
 import randomUuid from "../util/uuid";
 import * as ConfigEditor from "./configEditor";
 
+// TODO Home
+// TODO FAQ
+// TODO KNOWLEDGE BASE
+// TODO BLOG
+// TODO BUG BOUNTY
+// TODO QUESTION AND ANSWER
+// TODO FORUM
+export interface CreateTemplateOptions {
+  templateFeedback?: boolean;
+  templateChangelog?: boolean;
+  templateKnowledgeBase?: boolean;
+
+  fundingAllowed: boolean;
+  votingAllowed: boolean;
+  expressionAllowed: boolean;
+  fundingType: 'currency' | 'time' | 'beer';
+  votingEnableDownvote?: boolean;
+  expressionsLimitEmojis?: boolean;
+  expressionsAllowMultiple?: boolean;
+
+  infoWebsite?: string;
+  infoName?: string;
+  infoSlug?: string;
+  infoLogo?: string;
+}
+export const createTemplateOptionsDefault: CreateTemplateOptions = {
+  templateFeedback: true,
+  fundingAllowed: true,
+  votingAllowed: true,
+  expressionAllowed: false,
+  fundingType: 'currency',
+};
+
 export default class Templater {
   editor: ConfigEditor.Editor;
 
@@ -14,18 +47,81 @@ export default class Templater {
     return new Templater(editor);
   }
 
-  demo() {
+  demo(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
+    this.createTemplate({
+      infoName: 'Sandbox App',
+      ...opts,
+    });
     this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');
     this.styleWhite();
-    this.creditsCurrency();
-    // TODO Home
-    // TODO FAQ
-    this.baseFeatures();
-    // TODO KNOWLEDGE BASE
-    // TODO BLOG
-    // TODO BUG BOUNTY
-    // TODO QUESTION AND ANSWER
-    // TODO FORUM
+  }
+
+  createTemplate(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
+    if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['projectId']).set(opts.infoSlug);
+    this._get<ConfigEditor.StringProperty>(['name']).set(opts.infoName || 'My App');
+    if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
+    if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
+    if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
+    this.templateBase();
+    if (opts.templateFeedback) {
+      this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed);
+      const ideaCategoryIndex = 0;
+      if (opts.votingAllowed) {
+        this.supportVoting(ideaCategoryIndex, opts.votingEnableDownvote);
+      }
+      if (opts.expressionAllowed) {
+        if (opts.expressionsLimitEmojis) {
+          this.supportExpressingFacebookStyle(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+        } else {
+          this.supportExpressingAllEmojis(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+        }
+        this.supportExpressingLimitEmojiPerIdea(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+      }
+      if (opts.fundingAllowed) {
+        this.supportFunding(ideaCategoryIndex);
+        switch (opts.fundingType) {
+          case 'currency':
+            this.creditsCurrency();
+            break;
+          case 'time':
+            this.creditsTime();
+            break;
+          case 'beer':
+            this.creditsBeer();
+            break;
+        }
+      }
+
+      const bugCategoryIndex = 1;
+      if (opts.votingAllowed) {
+        this.supportVoting(bugCategoryIndex, opts.votingEnableDownvote);
+      }
+      if (opts.expressionAllowed) {
+        if (opts.expressionsLimitEmojis) {
+          this.supportExpressingFacebookStyle(bugCategoryIndex, !opts.expressionsAllowMultiple);
+        } else {
+          this.supportExpressingAllEmojis(bugCategoryIndex, !opts.expressionsAllowMultiple);
+        }
+        this.supportExpressingLimitEmojiPerIdea(bugCategoryIndex, !opts.expressionsAllowMultiple);
+      }
+      if (opts.fundingAllowed && !opts.votingAllowed && !opts.expressionAllowed) {
+        this.supportFunding(bugCategoryIndex);
+        switch (opts.fundingType) {
+          case 'currency':
+            this.creditsCurrency();
+            break;
+          case 'time':
+            this.creditsTime();
+            break;
+          case 'beer':
+            this.creditsBeer();
+            break;
+        }
+      }
+    }
+    if (opts.templateChangelog) this.templateChangelog();
+    // if (opts.templateBlog) this.templateBlog();
+    if (opts.templateKnowledgeBase) this.templateKnowledgeBase();
   }
 
   styleWhite() {
@@ -238,142 +334,6 @@ export default class Templater {
     }));
   }
 
-  baseFeatures() {
-    // Enable display name
-    this._get<ConfigEditor.EnumProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(Admin.AccountFieldsDisplayNameEnum.None);
-
-    // Style
-    this._get<ConfigEditor.EnumProperty>(['style', 'palette', 'expressionColor']).set(Admin.PaletteExpressionColorEnum.Washed);
-
-    // Categories
-    const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
-    // Idea
-    const ideaCategoryId = randomUuid();
-    categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
-      userCreatable: true,
-      workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: true }),
-      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
-    }));
-    const ideaCategoryIndex = categories.getChildPages().length - 1;
-    this.supportFunding(ideaCategoryIndex);
-    this.supportVoting(ideaCategoryIndex, true);
-    this.supportExpressingFacebookStyle(ideaCategoryIndex);
-    this.taggingOsPlatform(ideaCategoryIndex);
-    const statuses = this.workflowFeatures(ideaCategoryIndex);
-
-    // tags: Feature Requests, Bug Reports, Translations
-    // TODO redo to: Frontend, Mobile App, Public API, Bugs, Security
-    const tagGroupIdIdeas = randomUuid();
-    const tags = [Admin.TagToJSON({ tagId: randomUuid(), name: 'Feature' }),
-    Admin.TagToJSON({ tagId: randomUuid(), name: 'Bug' }),
-    Admin.TagToJSON({ tagId: randomUuid(), name: 'Translation' })];
-    this.tagging(ideaCategoryIndex, tags, Admin.TagGroupToJSON({
-      tagGroupId: tagGroupIdIdeas, name: 'Ideas', userSettable: true, tagIds: [],
-      minRequired: 1, maxRequired: 1,
-    }));
-
-    // Layout
-    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    // Home
-    const pageHomeId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: pageHomeId,
-      name: 'Home',
-      slug: '',
-      description: undefined,
-      panels: [
-        Admin.PagePanelWithHideIfEmptyToJSON({
-          title: 'Funding', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [ideaCategoryId],
-            filterStatusIds: statuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
-          })
-        }),
-      ],
-      board: Admin.PageBoardToJSON({
-        title: 'Roadmap',
-        panels: [
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'Planned', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId],
-              filterStatusIds: statuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
-            })
-          }),
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'In progress', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId],
-              filterStatusIds: statuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-            })
-          }),
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'Completed', display: Admin.PostDisplayToJSON({}), hideIfEmpty: false, search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId],
-              filterStatusIds: statuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
-            })
-          }),
-        ],
-      }),
-      explorer: undefined,
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-    // Features
-    const pageIdeaIds: string[] = [];
-    tags.forEach(tag => {
-      const pageIdeaId = randomUuid();
-      pageIdeaIds.push(pageIdeaId);
-      pagesProp.insert().setRaw(Admin.PageToJSON({
-        pageId: pageIdeaId,
-        name: tag.name,
-        slug: stringToSlug(tag.name),
-        title: tag.name,
-        description: undefined,
-        panels: [],
-        board: undefined,
-        explorer: Admin.PageExplorerToJSON({
-          allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-          allowCreate: true,
-          display: Admin.PostDisplayToJSON({}),
-          search: Admin.IdeaSearchToJSON({
-            filterCategoryIds: [ideaCategoryId],
-            filterTagIds: [tag.tagId],
-          }),
-        }),
-      }));
-    });
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: pageIdeaIds, name: 'Ideas',
-    }));
-    // Blog
-    this.templateBlog();
-    // Explorer
-    const pageExplorerId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: pageExplorerId,
-      name: 'Search',
-      slug: stringToSlug('Explorer'),
-      description: undefined,
-      panels: [],
-      board: undefined,
-      explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: true,
-        display: Admin.PostDisplayToJSON({}),
-        search: Admin.IdeaSearchToJSON({}),
-      }),
-    }));
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageExplorerId],
-    }));
-  }
-
   templateBase() {
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const pageHomeId = randomUuid();
@@ -403,7 +363,7 @@ export default class Templater {
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const ideaCategoryIndex = categories.getChildPages().length - 1;
-    const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withStandaloneFunding);
+    const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withFunding, withStandaloneFunding);
 
     // Bugs
     const bugCategoryId = randomUuid();
@@ -493,19 +453,19 @@ export default class Templater {
         filterCategoryIds: [ideaCategoryId],
       })
     }));
-    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
-      title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-        ...postDisplay,
-        showDescription: true,
-        showResponse: true,
-        showFunding: true,
-        showExpression: true,
-        showVoting: true,
-      }), search: Admin.IdeaSearchToJSON({
-        sortBy: Admin.IdeaSearchSortByEnum.New,
-        filterCategoryIds: [bugCategoryId],
-      })
-    }));
+    // homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
+    //   title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+    //     ...postDisplay,
+    //     showDescription: true,
+    //     showResponse: true,
+    //     showFunding: true,
+    //     showExpression: true,
+    //     showVoting: true,
+    //   }), search: Admin.IdeaSearchToJSON({
+    //     sortBy: Admin.IdeaSearchSortByEnum.New,
+    //     filterCategoryIds: [bugCategoryId],
+    //   })
+    // }));
     this._get<ConfigEditor.Page>(['layout', 'pages', 0, 'board'])
       .setRaw(Admin.PageBoardToJSON({
         title: 'Roadmap',
@@ -859,17 +819,17 @@ export default class Templater {
     }));
   }
 
-  workflowFeatures(categoryIndex: number, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
+  workflowFeatures(categoryIndex: number, withFunding: boolean = true, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
     const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
-    const planned = Admin.IdeaStatusToJSON({ name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding: withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const planned = Admin.IdeaStatusToJSON({ name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     var funding;
-    if (withStandaloneFunding) {
+    if (withFunding && withStandaloneFunding) {
       funding = Admin.IdeaStatusToJSON({ name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     }
-    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...(withStandaloneFunding ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
-    return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...(withStandaloneFunding ? [funding] : [])]);
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...((withFunding && withStandaloneFunding) ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...((withFunding && withStandaloneFunding) ? [funding] : [])]);
   }
   workflowBug(categoryIndex: number): Admin.IdeaStatus[] {
     const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });

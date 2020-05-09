@@ -1,78 +1,88 @@
-import { History, Location } from 'history';
 import React, { Component } from 'react';
-import { Route } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router';
 
-interface Props {
+export const SCROLL_TO_STATE_KEY = 'scrollTo';
+
+export interface Props {
+  scrollOnNavigate?: boolean;
   scrollOnMount?: boolean;
   scrollOnStateName?: string;
   scrollOnAnchorTag?: string;
 }
-
-class ScrollAnchor extends Component<Props> {
-  static readonly SCROLL_TO_STATE_KEY = 'scrollTo';
+class ScrollAnchor extends Component<Props & RouteComponentProps> {
   readonly scrollToRef: React.RefObject<HTMLDivElement> = React.createRef();
-  location: Location | undefined = undefined;
-  history: History | undefined = undefined;
+  unlisten?: () => void;
 
-  scrollNow() {
+  async scrollNow() {
+    await new Promise(resolve => setTimeout(resolve, 1));
+    console.log('DEBUG Scrolling...', this.props, this.scrollToRef.current?.offsetTop);
     if (!this.scrollToRef.current) {
       return;
     }
+
     // TODO polyfill or go back to window.scrollTo
     this.scrollToRef.current.scrollIntoView({
       behavior: 'smooth',
-      block: 'nearest',
+      block: 'center',
       inline: 'nearest',
     });
   }
 
   static scrollToState(anchorName: string) {
     return {
-      [ScrollAnchor.SCROLL_TO_STATE_KEY]: anchorName
+      [SCROLL_TO_STATE_KEY]: anchorName
     }
   }
 
   render() {
     return (
       <span ref={this.scrollToRef}>
-        <Route render={props => {
-          this.location = props.location;
-          this.history = props.history;
-          return null;
-        }} />
+        {this.props.children}
       </span>
     );
   }
 
   componentDidMount() {
+    console.log('DEBUG mounted', this.props, this.scrollToRef.current?.offsetTop);
+    if (this.props.scrollOnNavigate || !!this.props.scrollOnStateName) {
+      this.unlisten = this.props.history.listen((location, action) => {
+        if (action !== 'PUSH') {
+          return;
+        }
+        if (this.props.scrollOnNavigate && !location.state?.[SCROLL_TO_STATE_KEY]) {
+          this.scrollNow();
+          return;
+        }
+        if (!!this.props.scrollOnStateName
+          && this.props.scrollOnStateName === location.state?.[SCROLL_TO_STATE_KEY]) {
+          this.scrollNow();
+          return;
+        }
+      });
+    }
+
     if (this.props.scrollOnMount) {
       this.scrollNow();
-      return;
     }
-    if (this.props.scrollOnStateName
-      && this.location
-      && this.location.state
-      && this.location.state[ScrollAnchor.SCROLL_TO_STATE_KEY] === this.props.scrollOnStateName) {
+
+    if (!!this.props.scrollOnStateName
+      && this.props.scrollOnStateName === this.props.location.state?.[SCROLL_TO_STATE_KEY]) {
       this.scrollNow();
-      // Clear state so a refresh will not navigate again
-      if (this.history) {
-        this.history.replace({
-          ...this.location,
-          state: {
-            ...this.location.state,
-            [ScrollAnchor.SCROLL_TO_STATE_KEY]: undefined,
-          }
-        });
-      }
       return;
     }
+
     if (this.props.scrollOnAnchorTag
-      && this.location
-      && this.location.hash.substr(1) === this.props.scrollOnAnchorTag) {
+      && this.props.location
+      && this.props.location.hash.substr(1) === this.props.scrollOnAnchorTag) {
       this.scrollNow();
       return;
     }
   }
+
+  componentWillUnmount() {
+    console.log('DEBUG unmounted', this.props, this.scrollToRef.current?.offsetTop);
+    this.unlisten && this.unlisten();
+  }
 }
 
-export default ScrollAnchor;
+export default withRouter(ScrollAnchor);

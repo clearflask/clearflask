@@ -6,6 +6,7 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props {
   scale: number;
+  height?: number;
 }
 class Scale extends Component<Props & WithStyles<typeof styles, true>> {
   // containerRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -32,8 +33,13 @@ class Scale extends Component<Props & WithStyles<typeof styles, true>> {
         transform: `scale(${this.props.scale})`,
         transformOrigin: '0 0',
         width: `${100 / this.props.scale}%`,
+        height: this.props.height ? this.props.height * this.props.scale : undefined,
       }}>
-        {this.props.children}
+        <div style={{
+          height: this.props.height ? this.props.height / this.props.scale : undefined,
+        }}>
+          {this.props.children}
+        </div>
       </div>
       // </div>
       // </div>

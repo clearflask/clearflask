@@ -6,6 +6,14 @@ import DividerCorner from '../../app/utils/DividerCorner';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
+  heroSpacing: {
+    [theme.breakpoints.up('md')]: {
+      padding: '20vh 10vw',
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: '10vh 1vw',
+    },
+  },
   spacing: {
     [theme.breakpoints.up('md')]: {
       padding: '10vh 10vw 10vh',
@@ -42,6 +50,7 @@ const styles = (theme: Theme) => createStyles({
 
 export interface Props extends BlockContentProps {
   className?: string;
+  type?: 'largeDemo' | 'hero' | 'column';
   title?: string;
   description?: string;
   buttonTitle?: string;
@@ -51,15 +60,30 @@ export interface Props extends BlockContentProps {
   imagePath?: string;
   icon?: React.ReactNode;
   mirror?: boolean;
-  largeDemo?: boolean;
-  column?: boolean;
   suppressShadow?: boolean;
 }
 class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
 
   render() {
+    const isHero = this.props.type === 'hero';
+    var blockVariant;
+    switch (this.props.type) {
+      case 'hero':
+        blockVariant = 'hero';
+        break;
+      default:
+      case 'largeDemo':
+        blockVariant = 'heading';
+        break;
+      case 'column':
+        blockVariant = 'content';
+        break;
+    }
     const content = (
-      <BlockContent {...this.props as BlockContentProps} />
+      <BlockContent
+        variant={blockVariant}
+        {...this.props as BlockContentProps}
+      />
     );
     const display = (
       <React.Fragment>
@@ -89,31 +113,37 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       </React.Fragment>
     );
 
-    return this.props.column ? (
-      <div
-        className={`${this.props.classes.columnOnly} ${this.props.className || ''}`}
-      >
-        <div className={this.props.classes.columnContent}>
-          {content}
+    if (this.props.type === 'column') {
+      return (
+        <div
+          className={`${this.props.classes.columnOnly} ${this.props.className || ''}`}
+        >
+          <div className={this.props.classes.columnContent}>
+            {content}
+          </div>
+          {display}
         </div>
-        {display}
-      </div>
-    ) : (
+      );
+    } else {
+      const isLargeDemo = this.props.type === 'largeDemo';
+      return (
         <Grid
-          className={`${this.props.classes.spacing} ${this.props.className || ''}`}
+          className={`${isHero ? this.props.classes.heroSpacing : this.props.classes.spacing} ${this.props.className || ''}`}
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}
-          alignItems={this.props.imagePath ? 'center' : 'flex-end'}
+          alignItems={(this.props.imagePath || isHero) ? 'center' : 'flex-end'}
+          justify='center'
         >
-          <Grid item xs={12} md={this.props.largeDemo ? 12 : 6} className={this.props.classes.grid} direction='column'>
+          <Grid item xs={12} md={isLargeDemo ? 8 : 6} className={this.props.classes.grid} direction='column'>
             {display}
           </Grid>
-          <Grid item xs={12} md={this.props.largeDemo ? 12 : 6} lg={this.props.largeDemo ? 3 : 5} xl={this.props.largeDemo ? 2 : 4} className={this.props.classes.grid}>
+          <Grid item xs={12} sm={8} md={isLargeDemo ? 4 : 6} lg={isLargeDemo ? 3 : 5} xl={isLargeDemo ? 2 : 4} className={this.props.classes.grid}>
             {content}
           </Grid>
         </Grid>
       );
+    }
   }
 }
 

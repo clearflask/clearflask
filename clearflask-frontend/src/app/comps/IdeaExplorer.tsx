@@ -111,7 +111,10 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   componentDidMount() {
     this._isMounted = true;
     if (!!this.props.settings.demoCreateAnimate) {
-      this.demoCreateAnimate(this.props.settings.demoCreateAnimate.title);
+      this.demoCreateAnimate(
+        this.props.settings.demoCreateAnimate.title,
+        this.props.settings.demoCreateAnimate.description,
+      );
     }
   }
 
@@ -246,10 +249,11 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
 
     return (
       <ExplorerTemplate
-        createSize={expand ? '250px' : '116px'}
+        createSize={this.props.explorer.allowCreate ? (expand ? 250 : 116) : 0}
         createShown={expand}
         createVisible={createVisible}
         createCollapsible={createCollapsible}
+        searchSize={this.props.explorer.allowSearch ? 100 : undefined}
         search={topBar}
         content={content}
       />
@@ -407,23 +411,43 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     }));
   }
 
-  async demoCreateAnimate(title: string) {
+  async demoCreateAnimate(title: string, description?: string) {
     for (; ;) {
       await new Promise(resolve => setTimeout(resolve, 1500));
+
       for (var i = 0; i < title.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         if (!this._isMounted) return;
         this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] });
-        await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+      }
+
+      if (description !== undefined) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        for (var i = 0; i < description.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
+          if (!this._isMounted) return;
+          this.setState({ newItemDescription: (this.state.newItemDescription || '') + description[i] });
+        }
       }
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      if (description !== undefined) {
+        while (this.state.newItemDescription !== undefined && this.state.newItemDescription.length !== 0) {
+          await new Promise(resolve => setTimeout(resolve, 5));
+          if (!this._isMounted) return;
+          const currentDescription = this.state.newItemDescription.substr(0, this.state.newItemDescription.length - 1);
+          this.setState({ newItemDescription: currentDescription });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
+        await new Promise(resolve => setTimeout(resolve, 5));
         if (!this._isMounted) return;
         const currentTitle = this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1);
-        this.updateSearchText(currentTitle);
         this.setState({ newItemTitle: currentTitle });
-        await new Promise(resolve => setTimeout(resolve, 20));
       }
     }
   }

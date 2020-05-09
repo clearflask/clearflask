@@ -12,17 +12,6 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroLogo: {
-    [theme.breakpoints.up('md')]: {
-      width: '200px',
-      height: '200px',
-    },
-    [theme.breakpoints.down('sm')]: {
-      width: '200px',
-      height: '200px',
-      opacity: 0.1,
-    },
-  },
   heroDescription: {
     marginTop: theme.spacing(2),
     color: theme.palette.text.hint,

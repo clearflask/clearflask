@@ -20,13 +20,14 @@ import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import debounce from '../../common/util/debounce';
 
+const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
   },
   searchInput: {
     margin: theme.spacing(1),
-    width: 100,
+    width: searchWidth,
     // (Un)comment these to align with corner
     marginBottom: -1,
   },
@@ -118,7 +119,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
     return (
       <div className={this.props.classes.page}>
         <ExplorerTemplate
-          createSize={expand ? '364px' : '116px'}
+          createSize={expand ? 364 : 116}
           createShown={expand}
           createVisible={(
             <TextField
@@ -217,6 +218,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
               </Button>
             </div>
           )}
+          searchSize={searchWidth}
           search={expand ? undefined : (
             <TextField
               className={this.props.classes.searchInput}

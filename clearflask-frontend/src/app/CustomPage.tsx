@@ -152,10 +152,13 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
         <div className={this.props.classes.page}>
           {this.props.page && (this.props.page.title || this.props.page.description) && (
-            <DividerCorner header={this.props.page.title && (
-              <Typography className={this.props.classes.spacing} variant='h5' component='h1'>{this.props.page.title}</Typography>
-            )}>
-              <Typography className={this.props.classes.spacing} variant='body1' component='p'>{this.props.page.description}</Typography>
+            <DividerCorner
+              height='90%'
+              title={this.props.page.title}
+            >
+              {this.props.page.description !== undefined && (
+                <Typography className={this.props.classes.spacing} variant='body1' component='p'>{this.props.page.description}</Typography>
+              )}
             </DividerCorner>
           )}
           {panelsCmpt}

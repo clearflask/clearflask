@@ -427,7 +427,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           >
             <DialogTitle>Awaiting confirmation...</DialogTitle>
             <DialogContent>
-              <DialogContentText>We sent you an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after you click the confirmation link in your email.</DialogContentText>
+              <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. After clicking the confirmation link in your email, return to this page.</DialogContentText>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ checkForgotEmailDialogOpen: false })}>Cancel</Button>

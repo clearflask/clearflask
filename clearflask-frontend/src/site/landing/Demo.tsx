@@ -18,7 +18,8 @@ interface Props {
   mock?: (mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>;
   controls?: (project: Project) => React.ReactNode;
   demo?: (project: Project) => React.ReactNode;
-  demoFixedHeight?: string | number;
+  demoFixedHeight?: number;
+  demoFixedWidth?: number;
   scale?: number;
   settings?: StateSettings;
 }
@@ -49,18 +50,21 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           );
         if (this.props.scale !== undefined) {
           demo = (
-            <Scale scale={this.props.scale}>
+            <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
               {demo}
             </Scale>
           );
         }
-        if (this.props.demoFixedHeight !== undefined) {
-          demo = (
-            <div style={{ height: this.props.demoFixedHeight }}>
-              {demo}
-            </div>
-          );
-        }
+        demo = (
+          <div style={{
+            height: this.props.demoFixedHeight,
+            width: this.props.demoFixedWidth,
+            overflowX: 'hidden',
+            overflowY: 'scroll',
+          }}>
+            {demo}
+          </div>
+        );
         const { classes, ...blockProps } = this.props;
         return (
           <Block

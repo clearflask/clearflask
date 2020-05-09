@@ -1,7 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { AnimatedSwitch } from 'react-router-transition';
-import muiSpring from './muiSpring';
+import { Switch } from 'react-router';
 
 const styles = (theme: Theme) => createStyles({
   switch: {
@@ -12,45 +11,50 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  className?: string;
   classes; // Conflicted property
 }
 
 class MuiAnimatedSwitch extends Component<Props> {
   render() {
     return (
-      <AnimatedSwitch
-        className={`${this.props.classes.switch} ${this.props.className || ''}`}
-        // props https://maisano.github.io/react-router-transition/animated-switch/props
-        atEnter={{
-          opacity: 0,
-          offset: -25,
-        }}
-        atLeave={{
-          opacity: muiSpring(-1),
-          offset: muiSpring(25),
-        }}
-        atActive={{
-          opacity: muiSpring(1),
-          offset: muiSpring(0),
-        }}
-        mapStyles={(styles) => {
-          return {
-            width: '100%',
-            height: '100%',
-            position: styles.opacity >= 0.5 ? 'relative' : 'absolute',
-            opacity: styles.opacity,
-            transform: `translateY(${styles.offset}px)`,
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-          }
-        }}
-        runOnMount
-      >
+      <Switch>
         {this.props.children}
-      </AnimatedSwitch>
+      </Switch>
     );
+    // TODO Animated switch causes issues with ScrollAnchor and generally is not as nice as I thought before. Either revisit or delete
+    // return (
+    //   <AnimatedSwitch
+    //     className={this.props.classes.switch}
+    //     // props https://maisano.github.io/react-router-transition/animated-switch/props
+    //     atEnter={{
+    //       opacity: 0,
+    //       offset: -25,
+    //     }}
+    //     atLeave={{
+    //       opacity: muiSpring(-1),
+    //       offset: muiSpring(25),
+    //     }}
+    //     atActive={{
+    //       opacity: muiSpring(1),
+    //       offset: muiSpring(0),
+    //     }}
+    //     mapStyles={(styles) => {
+    //       return {
+    //         width: '100%',
+    //         height: '100%',
+    //         position: styles.opacity >= 0.5 ? 'relative' : 'absolute',
+    //         opacity: styles.opacity,
+    //         transform: `translateY(${styles.offset}px)`,
+    //         flexGrow: 1,
+    //         display: 'flex',
+    //         flexDirection: 'column',
+    //       }
+    //     }}
+    //     runOnMount
+    //   >
+    //     {this.props.children}
+    //   </AnimatedSwitch>
+    // );
   }
 }
 

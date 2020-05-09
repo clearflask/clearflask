@@ -14,22 +14,19 @@ const styles = (theme: Theme) => createStyles({
   },
   contentFirst: {
     justifyContent: 'flex-start',
-    alignSelf: 'flex-start',
   },
   contentMiddle: {
     justifyContent: 'center',
-    alignSelf: 'center',
   },
   contentLast: {
     justifyContent: 'flex-end',
-    alignSelf: 'flex-end',
   },
 });
 interface Props {
   wrapBelow: Breakpoint;
   maxContentWidth?: Breakpoint;
   maxWidth?: Breakpoint;
-  staggerMinHeight?: number | string;
+  staggerHeight?: number;
 }
 class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true> & WithWidthProps> {
 
@@ -42,7 +39,6 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
         maxWidth={this.props.maxWidth}
         style={{
           flexDirection: isHorizontal ? 'row' : 'column',
-          minHeight: isHorizontal ? this.props.staggerMinHeight : undefined,
         }}
       >
         {React.Children.map(this.props.children, (content, index) => {
@@ -58,6 +54,7 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
             <div
               key={content?.['key'] || index}
               className={`${this.props.classes.content} ${contentClass}`}
+              style={{ marginTop: isHorizontal ? index * (this.props.staggerHeight || 0) : undefined }}
             >
               <Container maxWidth={this.props.maxContentWidth} style={{
                 margin: 'unset',

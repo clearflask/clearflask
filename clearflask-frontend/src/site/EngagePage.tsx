@@ -13,7 +13,7 @@ export const transparencyDescription = 'Inform your users of your progress at ev
 const styles = (theme: Theme) => createStyles({
 });
 
-class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
+class EngagePage extends Component<WithStyles<typeof styles, true>> {
   render() {
     return (
       <React.Fragment>
@@ -75,7 +75,7 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
         mirror={mirror}
         initialSubPath='/embed/demo'
         scale={0.7}
-        largeDemo
+        type='largeDemo'
         template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([
           { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
@@ -107,4 +107,4 @@ class TransparencyPage extends Component<WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(TransparencyPage);
+export default withStyles(styles, { withTheme: true })(EngagePage);

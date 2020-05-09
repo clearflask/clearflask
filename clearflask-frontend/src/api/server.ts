@@ -187,6 +187,7 @@ export interface StateSettings {
   demoBlurryShadow?: boolean;
   demoCreateAnimate?: {
     title: string;
+    description?: string;
   };
   demoSearchAnimate?: Array<{
     term: string;

@@ -13,8 +13,8 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
+import ScrollAnchor from './common/util/ScrollAnchor';
 import setTitle from './common/util/titleUtil';
-import ScrollToTop from './ScrollToTop';
 
 const theme: Theme = createMuiTheme({
   palette: {
@@ -76,7 +76,7 @@ class Main extends Component {
             background: theme.palette.background.default,
           }}>
             <Router>
-              <ScrollToTop />
+              <ScrollAnchor scrollOnNavigate />
               {isTracking() && (
                 <Route path="/" render={({ location }) => {
                   ReactGA.set({ page: location.pathname + location.search });

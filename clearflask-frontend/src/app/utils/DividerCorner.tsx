@@ -26,8 +26,8 @@ interface Props {
   innerClassName?: string;
   title?: string | React.ReactNode;
   header?: React.ReactNode;
-  width?: string;
-  height?: string;
+  width?: string | number;
+  height?: string | number;
   rtl?: boolean;
   isExplorer?: boolean
 }
@@ -42,11 +42,11 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
         alignItems: this.props.rtl ? 'flex-end' : 'flex-start',
       }}>
         <div className={this.props.classes.widthTransition} style={{
-          minWidth: this.props.width || '24px',
+          minWidth: this.props.width !== undefined ? this.props.width : '24px',
           display: 'inline-block',
         }}>
           {this.props.title !== undefined ? (
-            <Typography variant='overline' className={this.props.classes.title}>
+            <Typography variant='body1' className={this.props.classes.title}>
               {this.props.title}
             </Typography>
           ) : null}
@@ -63,7 +63,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
           }}>
             <DividerVertical
               className={this.props.classes.heightTransition}
-              style={{ height: this.props.height || '24px' }}
+              style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
             />
           </div>
           <div style={{ width: '100%' }} className={this.props.innerClassName}>

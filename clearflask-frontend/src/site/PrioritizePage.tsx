@@ -13,7 +13,7 @@ export const prioritizationDescription = 'Assign each user voting power based on
 const styles = (theme: Theme) => createStyles({
 });
 
-class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
+class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
   render() {
     return (
       <React.Fragment>
@@ -104,4 +104,4 @@ class PrioritizationPage extends Component<WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(PrioritizationPage);
+export default withStyles(styles, { withTheme: true })(PrioritizePage);

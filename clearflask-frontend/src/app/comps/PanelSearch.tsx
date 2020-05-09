@@ -1,6 +1,6 @@
 import { MenuItem, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import FilterIcon from '@material-ui/icons/FilterListRounded';
+import FilterIcon from '@material-ui/icons/SearchRounded';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ActionMeta } from 'react-select/lib/types';
@@ -350,25 +350,25 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
   }>) {
     for (; ;) {
       for (const searchTerm of searchTerms) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 150));
         if (!this._isMounted) return;
         this.setState({ menuIsOpen: true });
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         for (var i = 0; i < searchTerm.term.length; i++) {
           if (!this._isMounted) return;
           this.setState({ searchValue: (this.state.searchValue || '') + searchTerm.term[i], menuIsOpen: true });
-          await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+          await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         }
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 150));
         if (!this._isMounted) return;
         this.setState({ searchValue: '', menuIsOpen: undefined }, () => {
           this.props.onSearchChanged({ ...this.props.search, ...searchTerm.update });
         });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 300));
       if (!this._isMounted) return;
       this.props.onSearchChanged({});
     }

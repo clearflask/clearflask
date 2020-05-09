@@ -56,7 +56,8 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  createSize?: string;
+  createSize?: number;
+  searchSize?: number;
   createShown?: boolean;
   createVisible?: React.ReactNode;
   createCollapsible?: React.ReactNode;
@@ -80,6 +81,29 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
 
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
+    var results = (
+      <Fade
+        in={!expandInMotion}
+        mountOnEnter
+        unmountOnExit
+        timeout={30}
+      >
+        {this.props.content}
+      </Fade>
+    );
+    if (!!this.props.search || !!this.props.createVisible) {
+      results = (
+        <DividerCorner
+          isExplorer
+          width={this.props.createShown ? 80 : (
+            (this.props.createSize || 0) + (this.props.searchSize || 0) + 20
+          )}
+          height={this.props.createShown ? 180 : 0}
+        >
+          {results}
+        </DividerCorner>
+      );
+    }
     return (
       <div className={this.props.classes.explorer}>
         <div className={this.props.classes.top}>
@@ -130,20 +154,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
           </div>
         )}
         <div className={this.props.classes.results}>
-          <DividerCorner
-            isExplorer
-            width={this.props.createShown ? '80px' : '320px'}
-            height={this.props.createShown ? '180px' : '80px'}
-          >
-            <Fade
-              in={!expandInMotion}
-              mountOnEnter
-              unmountOnExit
-              timeout={30}
-            >
-              {this.props.content}
-            </Fade>
-          </DividerCorner>
+          {results}
         </div>
       </div>
     );

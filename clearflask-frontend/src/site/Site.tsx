@@ -9,15 +9,17 @@ import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import setTitle from '../common/util/titleUtil';
+import CaseStudyPage from './CaseStudyPage';
+import CollectPage from './CollectPage';
 import ContactPage from './ContactPage';
+import CustomizePage from './CustomizePage';
 import DemoApp, { getProject, Project } from './DemoApp';
-import FeaturesPage from './FeaturesPage';
+import EngagePage from './EngagePage';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
-import PrioritizationPage from './PrioritizationPage';
+import PrioritizePage from './PrioritizePage';
 import SigninPage from './SigninPage';
-import TransparencyPage from './TransparencyPage';
 import TrialSignupPage from './TrialSignupPage';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
@@ -105,9 +107,11 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
       {
         type: 'dropdown', title: 'Product', items: [
-          { val: '/prioritization', name: 'Prioritization' },
-          { val: '/transparency', name: 'Transparency' },
-          { val: '/features', name: 'Features' },
+          { val: '/collect', name: 'Collect' },
+          { val: '/prioritize', name: 'Prioritize' },
+          { val: '/case-study', name: 'Case Studies' },
+          { val: '/engage', name: 'Engage' },
+          { val: '/customize', name: 'Customize' },
           { val: '/demo', name: 'Demo' },
         ],
       },
@@ -239,17 +243,25 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 )} />
               );
             }} />
-            <Route exact path={`/features`} component={props => {
-              setTitle('Features');
-              return (<FeaturesPage />);
+            <Route exact path={`/collect`} component={props => {
+              setTitle('Collect');
+              return (<CollectPage />);
             }} />
-            <Route exact path={`/prioritization`} component={props => {
-              setTitle('Prioritization');
-              return (<PrioritizationPage />);
+            <Route exact path={`/prioritize`} component={props => {
+              setTitle('Prioritize');
+              return (<PrioritizePage />);
             }} />
-            <Route exact path={`/transparency`} component={props => {
-              setTitle('Transparency');
-              return (<TransparencyPage />);
+            <Route exact path={`/engage`} component={props => {
+              setTitle('Engage');
+              return (<EngagePage />);
+            }} />
+            <Route exact path={`/customize`} component={props => {
+              setTitle('Customize');
+              return (<CustomizePage />);
+            }} />
+            <Route exact path={`/case-study`} component={props => {
+              setTitle('Case Studies');
+              return (<CaseStudyPage />);
             }} />
             <Route exact path={`/`} component={props => {
               setTitle();

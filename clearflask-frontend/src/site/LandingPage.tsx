@@ -1,24 +1,25 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import * as Client from '../api/client';
+import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import { Device } from '../common/DeviceContainer';
-import { featuresDescription, featuresTitle } from './FeaturesPage';
+import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
+import { description as collectDescription, title as collectTitle } from './CollectPage';
+import { transparencyDescription, transparencyTitle } from './EngagePage';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Demos from './landing/Demos';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
 import OnboardingDemo from './landing/OnboardingDemo';
-import { prioritizationDescription, prioritizationTitle } from './PrioritizationPage';
-import { transparencyDescription, transparencyTitle } from './TransparencyPage';
+import { prioritizationDescription, prioritizationTitle } from './PrioritizePage';
 
 const styles = (theme: Theme) => createStyles({
 });
 
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
-  onboardingDemoRef: React.RefObject<any> = React.createRef();
 
   render() {
     return (
@@ -26,11 +27,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderHero()}
         {this.renderCollectFeedback()}
         {this.renderPrioritization(true)}
-        {/* Add: crowdfunding, prioritization */}
-        {this.renderEngagement()}
-        {this.renderFeatures(true)}
-        {/* {this.renderCustomize()} */}
-        {this.renderSales()}
+        {this.renderCaseStudies()}
+        {this.renderEngagement(true)}
+        {this.renderCustomize()}
+        {this.renderSales(true)}
       </React.Fragment>
     );
   }
@@ -46,59 +46,57 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   }
 
   renderCollectFeedback(mirror?: boolean) {
+    const opts: CreateTemplateOptions = {
+      ...createTemplateOptionsDefault,
+      fundingAllowed: false,
+    };
     return (
       <React.Fragment>
         <Demo
-          title='Collect user feedback in one place'
-          description='Capture feedback from all channels into one bucket.'
+          title={collectTitle}
+          description={collectDescription}
           mirror={mirror}
-          initialSubPath='/embed/demo'
-          template={templater => templater.demoExplorer({
-            allowCreate: true,
-            allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-          }, {
-            title: 'Suggest an idea',
-            description: 'Let us know how we can improve our product. We want to hear your ideas!',
-          })}
-          mock={mocker => mocker.demoExplorer()}
-          scale={0.7}
-          demoFixedHeight={300}
-          settings={{
-            demoBlurryShadow: true,
-            demoCreateAnimate: {
-              title: 'Add Dark Mode',
-            },
-          }}
+          suppressShadow
+          type='largeDemo'
+          // scale={0.7}
+          demoFixedHeight={400}
+          template={templater => templater.demo(opts)}
+          mock={mocker => mocker.templateMock(opts)}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerMinHeight={1000}>
+        <HorizontalPanels wrapBelow='lg' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
           <Demo
-            variant='h5'
-            column
+            variant='content'
+            type='column'
             title='Seamless onboarding'
-            description='asfa sfa fasd fdas fdsa fads fadsf asd fads fasdf asd fads fads fas fasdf adsf dasfas '
+            description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
             initialSubPath='/embed/demo'
             template={templater => {
               setInitSignupMethodsTemplate(templater);
               templater.styleWhite();
             }}
-            scale={0.7}
-            controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
-            demo={project => (<OnboardingDemo defaultDevice={Device.None} innerRef={this.onboardingDemoRef} server={project.server} />)}
-            buttonTitle='See More'
-            buttonLink='/collect#onboarding'
+            scale={0.6}
+            demoFixedHeight={330}
+            demo={project => (<OnboardingDemo defaultDevice={Device.None} server={project.server} />)}
+            buttonTitle='See all options'
+            buttonLink='/collect'
+            buttonState={{ [SCROLL_TO_STATE_KEY]: 'onboarding' }}
             suppressShadow
           />
           <Demo
-            variant='h5'
-            column
+            variant='content'
+            type='column'
             title='Powerful search reduces duplicate submissions'
             description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
             buttonTitle='See More'
-            buttonLink='/collect#powerful-search'
+            buttonLink='/collect'
+            buttonState={{ [SCROLL_TO_STATE_KEY]: 'search' }}
+            suppressShadow
             initialSubPath='/embed/demo'
-            scale={0.7}
+            scale={0.6}
+            demoFixedWidth={330}
+            demoFixedHeight={300}
             template={templater => {
-              templater.baseFeatures();
+              templater.demo();
               templater.demoExplorer({
                 search: { limit: 4 },
                 allowCreate: false,
@@ -121,24 +119,30 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             }}
           />
           <Demo
-            variant='h5'
-            column
-            title='Customize user experience'
-            description='Our platform is fully customizable in both style and functionality to maximize effectiveness.'
+            variant='content'
+            type='column'
+            title='Collect on-behalf of users'
+            description='asdfasdasf asf dsafdasfmkjldsf lkadsf dasf dasfds fdsa fdsakhfjklashflk sdf sadf '
             buttonTitle='See More'
-            buttonLink='/collect#user-experience'
-            initialSubPath={'/post/ideaid'}
-            scale={0.7}
-            template={templater => {
-              const categoryId = templater.demoCategory();
-              templater.supportVoting(categoryId, true);
-              templater.workflowFeatures(categoryId);
-              templater.styleDark();
-              // templater.setFontFamily('"Comic Sans MS", cursive, sans-serif');
-              templater.setAppName('Smotana', 'https://smotana.com/favicon.ico');
+            buttonLink='/collect'
+            buttonState={{ [SCROLL_TO_STATE_KEY]: 'on-behalf' }}
+            suppressShadow
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoExplorer({
+              allowCreate: true,
+              allowSearch: undefined,
+            })}
+            mock={mocker => mocker.demoExplorer()}
+            scale={0.6}
+            demoFixedWidth={330}
+            demoFixedHeight={300}
+            settings={{
+              demoBlurryShadow: true,
+              demoCreateAnimate: {
+                title: 'Add Dark Mode',
+                description: 'To reduce eye-strain, please add a dark mode option',
+              },
             }}
-            mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
-              .then(() => mocker.mockLoggedIn())}
           />
         </HorizontalPanels>
       </React.Fragment>
@@ -152,6 +156,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={prioritizationTitle}
           description={prioritizationDescription}
           mirror={mirror}
+          suppressShadow
           buttonTitle='Learn about prioritization'
           buttonLink='/prioritization'
           initialSubPath='/embed/demo'
@@ -161,23 +166,58 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             demoFlashPostVotingControls: true,
           }}
         />
-        <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerMinHeight={300}>
+        <HorizontalPanels wrapBelow='sm' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
           <BlockContent
-            variant='h5'
+            variant='content'
             title='Crowdfunding'
             description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
             buttonTitle='See More'
             buttonLink='/prioritization#crowdfunding'
           />
           <BlockContent
-            variant='h5'
+            variant='content'
             title='Simple voting'
             description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
             buttonTitle='See More'
             buttonLink='/prioritization#simple-voting'
           />
+          <BlockContent
+            variant='content'
+            title='Threaded comments'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/prioritization#threaded-comments'
+          />
         </HorizontalPanels>
       </React.Fragment>
+    );
+  }
+
+  renderCaseStudies() {
+    return (
+      <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerHeight={50}>
+        <BlockContent
+          variant='content'
+          title='Support credit system for SAAS companies'
+          description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          buttonTitle='See Demo'
+          buttonLink='/case-study#saas'
+        />
+        <BlockContent
+          variant='content'
+          title='Donation-based open-source library'
+          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          buttonTitle='See Demo'
+          buttonLink='/case-study#open-source'
+        />
+        <BlockContent
+          variant='content'
+          title='Mobile social media app'
+          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          buttonTitle='See Demo'
+          buttonLink='/case-study#mobile-social-media'
+        />
+      </HorizontalPanels>
     );
   }
 
@@ -228,53 +268,87 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           ]}
         />
-        <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerMinHeight={300}>
+        <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerHeight={50}>
           <BlockContent
-            variant='h5'
-            title='Let your users know, Notifications and Admin reply'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/engagement#notifications'
-          />
-          <BlockContent
-            variant='h5'
+            variant='content'
             title='Roadmap'
             description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
             buttonTitle='See More'
             buttonLink='/engagement#roadmap'
           />
           <BlockContent
-            variant='h5'
+            variant='content'
             title='Admin replies'
             description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
             buttonTitle='See More'
             buttonLink='/engagement#admin-reply'
+          />
+          <BlockContent
+            variant='content'
+            title='Notifications activate lost users'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/engagement#notifications'
           />
         </HorizontalPanels>
       </React.Fragment>
     );
   }
 
-  renderFeatures(mirror?: boolean) {
-    return (
-      <Block
-        title={featuresTitle}
-        description={featuresDescription}
-        buttonTitle='Browse features'
-        buttonLink='/features'
-        mirror={mirror}
-        imagePath='/img/landing/features.svg'
-      />
-    );
-  }
-
   renderCustomize(mirror?: boolean) {
     return (
-      <Block
-        title=''
-        description=''
-        mirror={mirror}
-      />
+      <React.Fragment>
+        <Block
+          title='Customization afasdfsdaf fas fdsasf sadf dsaa fs'
+          description='fasdfsdaf asf d fdsafds fasf asf asasf asf fa fasd  sad as as asfd asfd'
+          mirror={mirror}
+          buttonTitle='See templates'
+          buttonLink='/customize'
+        />
+        <HorizontalPanels wrapBelow='sm' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
+          <BlockContent
+            variant='content'
+            title='Predefined templates'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/customize#templates'
+          />
+          <BlockContent
+            variant='content'
+            title='Content types'
+            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            buttonTitle='See More'
+            buttonLink='/customize#content'
+          />
+          <BlockContent
+            variant='content'
+            title='Site layout'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/customize#layout'
+          />
+          <Demo
+            variant='content'
+            type='column'
+            title='Look and feel'
+            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+            buttonTitle='See More'
+            buttonLink='/customize#look-and-feel'
+            initialSubPath={'/post/ideaid'}
+            scale={0.7}
+            template={templater => {
+              const categoryId = templater.demoCategory();
+              templater.supportVoting(categoryId, true);
+              templater.workflowFeatures(categoryId);
+              templater.styleDark();
+              // templater.setFontFamily('"Comic Sans MS", cursive, sans-serif');
+              templater.setAppName('Smotana', 'https://smotana.com/favicon.ico');
+            }}
+            mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
+              .then(() => mocker.mockLoggedIn())}
+          />
+        </HorizontalPanels>
+      </React.Fragment>
     );
   }
 

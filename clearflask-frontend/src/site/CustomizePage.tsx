@@ -40,7 +40,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-class LandingPage extends Component<WithStyles<typeof styles, true>> {
+class CustomizePage extends Component<WithStyles<typeof styles, true>> {
 
   render() {
     return (
@@ -108,4 +108,4 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(LandingPage);
+export default withStyles(styles, { withTheme: true })(CustomizePage);
