@@ -273,28 +273,30 @@ class DataMock {
   }
 
   demoPrioritization() {
-    return this.demoPage((config, user) => ServerMock.get().ideaCreateAdmin({
-      projectId: this.projectId,
-      ideaCreateAdmin: {
-        authorUserId: user.userId,
-        title: 'Add Dark Mode',
-        description: 'To reduce eye-strain, please add a dark mode option',
-        categoryId: 'demoCategoryId', // From configTemplater.demoCategory
-        tagIds: [],
-        ...{ // Fake data
-          funded: 12,
-          fundersCount: 5,
-          fundGoal: 60,
-          voteValue: 3,
-          expressionsValue: 7,
-          expressions: {
-            '👍': 4,
-            '❤️': 1,
+    return this.demoPage(async (config, user) => {
+      const idea1 = await ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Add Dark Mode',
+          description: 'To reduce eye-strain, please add a dark mode option',
+          categoryId: 'demoCategoryId', // From configTemplater.demoCategory
+          tagIds: [],
+          ...{ // Fake data
+            ideaId: 'add-dark-mode',
+            funded: 12,
+            fundersCount: 5,
+            fundGoal: 60,
+            voteValue: 3,
+            expressionsValue: 7,
+            expressions: {
+              '👍': 4,
+              '❤️': 1,
+            },
           },
         },
-      },
-    }).then(() =>
-      ServerMock.get().ideaCreateAdmin({
+      });
+      const idea2 = await ServerMock.get().ideaCreateAdmin({
         projectId: this.projectId,
         ideaCreateAdmin: {
           authorUserId: user.userId,
@@ -303,6 +305,7 @@ class DataMock {
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
           ...{ // Fake data
+            ideaId: 'support-jira-integration',
             funded: 80,
             fundersCount: 5,
             fundGoal: 200,
@@ -314,13 +317,42 @@ class DataMock {
             },
           },
         },
-      }).then(idea => ServerMock.get().ideaVoteUpdate({
+      });
+      await ServerMock.get().ideaVoteUpdate({
         projectId: this.projectId,
-        ideaId: idea.ideaId,
+        ideaId: idea2.ideaId,
         ideaVoteUpdate: {
           fundDiff: 40,
         },
-      }))));
+      });
+      const idea3 = await ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Customize order of options',
+          description: 'I want to be able to re-order the options we have in the main settings page.',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+          ...{ // Fake data
+            funded: 20,
+            fundersCount: 5,
+            fundGoal: 20,
+            voteValue: 12,
+            expressionsValue: 4,
+            expressions: {
+              '👍': 4,
+            },
+          },
+        },
+      });
+      await ServerMock.get().ideaVoteUpdate({
+        projectId: this.projectId,
+        ideaId: idea3.ideaId,
+        ideaVoteUpdate: {
+          fundDiff: 20,
+        },
+      });
+    });
   }
 
   mockAll(): Promise<any> {

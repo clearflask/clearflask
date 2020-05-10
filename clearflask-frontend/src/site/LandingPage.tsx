@@ -1,6 +1,8 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { Provider } from 'react-redux';
 import * as Client from '../api/client';
+import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import { Device } from '../common/DeviceContainer';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
@@ -10,6 +12,7 @@ import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Demos from './landing/Demos';
+import FundingControlDemo from './landing/FundingControlDemo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
@@ -56,8 +59,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={collectTitle}
           description={collectDescription}
           mirror={mirror}
-          suppressShadow
           type='largeDemo'
+          edgeType='outline'
+          edgeSpacing
           // scale={0.7}
           demoFixedHeight={400}
           template={templater => templater.demo(opts)}
@@ -80,7 +84,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             buttonTitle='See all options'
             buttonLink='/collect'
             buttonState={{ [SCROLL_TO_STATE_KEY]: 'onboarding' }}
-            suppressShadow
           />
           <Demo
             variant='content'
@@ -90,7 +93,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             buttonTitle='See More'
             buttonLink='/collect'
             buttonState={{ [SCROLL_TO_STATE_KEY]: 'search' }}
-            suppressShadow
             initialSubPath='/embed/demo'
             scale={0.6}
             demoFixedWidth={330}
@@ -126,7 +128,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             buttonTitle='See More'
             buttonLink='/collect'
             buttonState={{ [SCROLL_TO_STATE_KEY]: 'on-behalf' }}
-            suppressShadow
             initialSubPath='/embed/demo'
             template={templater => templater.demoExplorer({
               allowCreate: true,
@@ -156,7 +157,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={prioritizationTitle}
           description={prioritizationDescription}
           mirror={mirror}
-          suppressShadow
           buttonTitle='Learn about prioritization'
           buttonLink='/prioritization'
           initialSubPath='/embed/demo'
@@ -166,27 +166,27 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             demoFlashPostVotingControls: true,
           }}
         />
-        <HorizontalPanels wrapBelow='sm' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
+        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerHeight={0}>
           <BlockContent
             variant='content'
-            title='Crowdfunding'
-            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-            buttonTitle='See More'
-            buttonLink='/prioritization#crowdfunding'
-          />
-          <BlockContent
-            variant='content'
-            title='Simple voting'
+            title='Keep it simple with voting and expressions'
             description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
+            buttonTitle='See how it looks'
             buttonLink='/prioritization#simple-voting'
           />
-          <BlockContent
+          <Demo
             variant='content'
-            title='Threaded comments'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/prioritization#threaded-comments'
+            type='column'
+            title='Credit system for advanced prioritization'
+            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            buttonTitle='See the benefits'
+            buttonLink='/prioritization#crowdfunding'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('fund')}
+            mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={330}
+            edgeType='outline'
+            demo={project => (<FundingControlDemo server={project.server} ideaId='add-dark-mode' />)}
           />
         </HorizontalPanels>
       </React.Fragment>
@@ -195,7 +195,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
 
   renderCaseStudies() {
     return (
-      <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerHeight={50}>
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <BlockContent
           variant='content'
           title='Support credit system for SAAS companies'
@@ -268,7 +268,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           ]}
         />
-        <HorizontalPanels wrapBelow='sm' maxWidth='md' maxContentWidth='xs' staggerHeight={50}>
+        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
           <BlockContent
             variant='content'
             title='Roadmap'
@@ -278,17 +278,34 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           />
           <BlockContent
             variant='content'
-            title='Admin replies'
+            title='Admin replies and notifications'
             description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
             buttonTitle='See More'
             buttonLink='/engagement#admin-reply'
           />
-          <BlockContent
+          <Demo
             variant='content'
-            title='Notifications activate lost users'
+            type='column'
+            title='Organized discussion with threaded comments'
             description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
             buttonTitle='See More'
             buttonLink='/engagement#notifications'
+            scale={0.5}
+            template={templater => templater.demoCategory()}
+            mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+              .then(() => mocker.mockLoggedIn())}
+            demo={project => (
+              <Provider store={project.server.getStore()}>
+                <CommentList
+                  server={project.server}
+                  ideaId='ideaId'
+                  expectedCommentCount={1}
+                  logIn={() => Promise.resolve()}
+                  newCommentsAllowed
+                  loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+                />
+              </Provider>
+            )}
           />
         </HorizontalPanels>
       </React.Fragment>

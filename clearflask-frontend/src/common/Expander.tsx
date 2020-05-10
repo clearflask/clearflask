@@ -1,4 +1,4 @@
-import { Collapse, IconButton } from '@material-ui/core';
+import { IconButton } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BackIcon from '@material-ui/icons/ArrowBack';
 import React, { Component } from 'react';
@@ -72,15 +72,13 @@ class Expander extends Component<Props> {
                   left: motion.left,
                   minWidth: motion.minWidth,
                 }}>
-                  {!!this.props.onBackButtonPress && (
-                    <Collapse in={this.props.expand}>
-                      <IconButton
-                        aria-label='Back'
-                        onClick={this.props.onBackButtonPress.bind(this)}
-                      >
-                        <BackIcon fontSize='small' />
-                      </IconButton>
-                    </Collapse>
+                  {!!this.props.onBackButtonPress && !isFullyAttached && (
+                    <IconButton
+                      aria-label='Back'
+                      onClick={this.props.onBackButtonPress.bind(this)}
+                    >
+                      <BackIcon fontSize='small' />
+                    </IconButton>
                   )}
                   {this.props.children}
                 </div>

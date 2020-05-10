@@ -1,5 +1,6 @@
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
+import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
@@ -905,7 +906,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async returnLater<T>(returnValue: T | undefined = undefined): Promise<T> {
-    // console.log('Server SEND:', returnValue);
+    if (!isProd()) console.log('Server SEND:', returnValue);
     await this.waitLatency();
     return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
   }

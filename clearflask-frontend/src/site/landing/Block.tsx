@@ -43,9 +43,21 @@ const styles = (theme: Theme) => createStyles({
   columnContent: {
     marginBottom: theme.spacing(4),
   },
-  demoShadow: {
-    boxShadow: '-10px -10px 40px 0 rgba(0,0,0,0.04)',
+  edgeshadow: { // from edgeType prop
+    boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
   },
+  edgeoutline: { // from edgeType prop
+    boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.2)',
+    border: '1px solid ' + theme.palette.grey[300],
+  },
+  edgeSpacing: {
+    [theme.breakpoints.up('md')]: {
+      padding: theme.spacing(4),
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2),
+    },
+  }
 });
 
 export interface Props extends BlockContentProps {
@@ -60,7 +72,8 @@ export interface Props extends BlockContentProps {
   imagePath?: string;
   icon?: React.ReactNode;
   mirror?: boolean;
-  suppressShadow?: boolean;
+  edgeType?: 'shadow' | 'outline';
+  edgeSpacing?: boolean;
 }
 class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
 
@@ -85,6 +98,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         {...this.props as BlockContentProps}
       />
     );
+    var demo = this.props.demo;
+    if (demo && this.props.edgeType) {
+      demo = (
+        <div className={`${this.props.edgeType ? this.props.classes['edge' + this.props.edgeType] : ''} ${this.props.edgeSpacing ? this.props.classes.edgeSpacing : ''}`}>
+          {demo}
+        </div>
+      );
+    }
     const display = (
       <React.Fragment>
         {this.props.imagePath && (
@@ -94,11 +115,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             src={this.props.imagePath}
           />
         )}
-        {this.props.demo && (
-          <div className={this.props.suppressShadow ? undefined : this.props.classes.demoShadow}>
-            {this.props.demo}
-          </div>
-        )}
+        {demo}
         {this.props.controls && (
           <DividerCorner
             className={this.props.classes.controlsOuter}

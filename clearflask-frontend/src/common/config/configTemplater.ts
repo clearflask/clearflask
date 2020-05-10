@@ -136,6 +136,10 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['style', 'typography', 'fontFamily']).set(fontFamily);
   }
 
+  setFontSize(fontSize: number) {
+    this._get<ConfigEditor.NumberProperty>(['style', 'typography', 'fontSize']).set(fontSize);
+  }
+
   setAppName(appName: string, logoUrl: string) {
     this._get<ConfigEditor.StringProperty>(['name']).set(appName);
     this._get<ConfigEditor.StringProperty>(['logoUrl']).set(logoUrl);

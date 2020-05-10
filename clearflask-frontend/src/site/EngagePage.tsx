@@ -52,7 +52,6 @@ class EngagePage extends Component<WithStyles<typeof styles, true>> {
               ideaId='ideaId'
               expectedCommentCount={1}
               logIn={() => Promise.resolve()}
-              // TODO make commenting work in demo
               newCommentsAllowed
               loggedInUser={project.server.getStore().getState().users.loggedIn.user}
             />

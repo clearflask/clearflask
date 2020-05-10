@@ -8,7 +8,7 @@ import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/Onbo
 import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 
-export const title = 'Collect customer feedback all in one place';
+export const title = 'Collect customer feedback in one place';
 export const description = 'Capture feedback from all channels seamlessly into one funnel'
 
 const styles = (theme: Theme) => createStyles({
@@ -38,7 +38,6 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
         title={title}
         description={description}
         type='hero'
-        suppressShadow
         scale={0.7}
         demoFixedHeight={400}
         template={templater => templater.demo(opts)}
@@ -74,7 +73,6 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
         }}
         controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
         demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-        suppressShadow
       />
     );
   }

@@ -11,15 +11,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flex: '1 1 auto',
     padding: theme.spacing(4),
-  },
-  contentFirst: {
-    justifyContent: 'flex-start',
-  },
-  contentMiddle: {
     justifyContent: 'center',
-  },
-  contentLast: {
-    justifyContent: 'flex-end',
   },
 });
 interface Props {
@@ -33,28 +25,28 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
   render() {
     const isHorizontal = !this.props.width || isWidthUp(this.props.wrapBelow, this.props.width);
     const contentsSize = React.Children.count(this.props.children);
+
+    const staggerHeight = Math.abs(this.props.staggerHeight || 0);
+    const staggerAsc = (this.props.staggerHeight || 0) < 0;
+    const childrenCount = React.Children.count(this.props.children);
     return (
       <Container
         className={this.props.classes.container}
         maxWidth={this.props.maxWidth}
         style={{
-          flexDirection: isHorizontal ? 'row' : 'column',
+          flexDirection: isHorizontal ? 'row' : (staggerAsc ? 'column-reverse' : 'column'),
         }}
       >
         {React.Children.map(this.props.children, (content, index) => {
-          var contentClass;
-          if (index === 0) {
-            contentClass = this.props.classes.contentFirst;
-          } else if (index === contentsSize - 1) {
-            contentClass = this.props.classes.contentLast;
-          } else {
-            contentClass = this.props.classes.contentMiddle;
-          }
           return (
             <div
               key={content?.['key'] || index}
-              className={`${this.props.classes.content} ${contentClass}`}
-              style={{ marginTop: isHorizontal ? index * (this.props.staggerHeight || 0) : undefined }}
+              className={this.props.classes.content}
+              style={isHorizontal ? {
+                marginTop: staggerAsc
+                  ? (childrenCount - index) * staggerHeight
+                  : index * staggerHeight
+              } : undefined}
             >
               <Container maxWidth={this.props.maxContentWidth} style={{
                 margin: 'unset',

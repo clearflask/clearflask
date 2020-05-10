@@ -10,6 +10,14 @@ import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
+  edgeSpacing: {
+    [theme.breakpoints.up('md')]: {
+      padding: theme.spacing(4),
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2),
+    },
+  }
 });
 
 interface Props {
@@ -22,6 +30,7 @@ interface Props {
   demoFixedWidth?: number;
   scale?: number;
   settings?: StateSettings;
+  edgeSpacing?: boolean;
 }
 class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
@@ -48,6 +57,13 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
               settings={this.props.settings}
             />
           );
+        if (this.props.edgeSpacing) {
+          demo = (
+            <div className={this.props.classes.edgeSpacing}>
+              {demo}
+            </div>
+          );
+        }
         if (this.props.scale !== undefined) {
           demo = (
             <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
@@ -69,6 +85,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
         return (
           <Block
             {...blockProps}
+            edgeSpacing={undefined}
             controls={this.props.controls && this.props.controls(project)}
             demo={demo}
           />

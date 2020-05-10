@@ -47,7 +47,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-interface Props {
+export interface Props {
   server: Server;
   className?: string;
   style?: React.CSSProperties;
