@@ -85,11 +85,8 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
         description='asfa sfa fasd fdas fdsa fads fadsf asd fads fasdf asd fads fads fas fasdf adsf dasfas '
         initialSubPath='/embed/demo'
         template={templater => templater.demoExplorer({
-          allowCreate: true,
+          allowCreate: { actionTitle: 'Suggest' },
           allowSearch: undefined,
-        }, {
-          title: 'Suggest an idea',
-          description: 'Let us know how we can improve our product. We want to hear your ideas!',
         })}
         mock={mocker => mocker.demoExplorer()}
         scale={0.7}
@@ -117,12 +114,10 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
           templater.demo();
           templater.demoExplorer({
             search: { limit: 4 },
-            allowCreate: false,
+            allowCreate: undefined,
             allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-          }, {
-            // title: 'Suggest an idea',
-            // description: 'Let us know how we can improve our product. We want to hear your ideas!',
-          }, true);
+          }, undefined, true);
+          templater.workflow(1); // Remove statuses for Bugs as it clutters the search bar
         }}
         mock={mocker => mocker.demoExplorer()}
         settings={{

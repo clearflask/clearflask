@@ -33,7 +33,7 @@ class PostsPage extends Component<Props & WithStyles<typeof styles, true>> {
               forceDisablePostExpand
               explorer={{
                 allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-                allowCreate: true,
+                allowCreate: {},
                 search: {},
                 display: {},
               }}

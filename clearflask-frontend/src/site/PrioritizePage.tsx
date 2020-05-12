@@ -2,6 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
+import FundingControlDemo from './landing/FundingControlDemo';
 import Hero from './landing/Hero';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
@@ -68,11 +69,17 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
 
   renderRewardCustomers(mirror?: boolean) {
     return (
-      <Block
+      <Demo
         title='Reward valuable customers with proportionate voice'
         description='TODO Customer purchases (product purchase, subscription); loyalty, game rank'
         mirror={mirror}
-        demo={'Picture of Scale, one side is voice the other is subscription, donation, purchases'}
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoPrioritization('fund')}
+        mock={mocker => mocker.demoPrioritization()}
+        demoFixedHeight={330}
+        demoFixedWidth={350}
+        edgeType='outline'
+        demo={project => (<FundingControlDemo server={project.server} />)}
       />
     );
   }

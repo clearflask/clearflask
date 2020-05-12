@@ -17,7 +17,7 @@ export enum Status {
 }
 
 export class Server {
-  readonly store: Store<ReduxState>;
+  readonly store: Store<ReduxState, Admin.Actions | Client.Actions>;
   readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
@@ -91,7 +91,7 @@ export class Server {
     return this.store.getState().projectId;
   }
 
-  getStore(): Store<ReduxState> {
+  getStore(): Store<ReduxState, Admin.Actions | Client.Actions> {
     return this.store;
   }
 
@@ -183,7 +183,19 @@ export const cssBlurry = {
   }
 };
 export interface StateSettings {
+  demoPortalContainer?: React.RefObject<any>;
   demoFlashPostVotingControls?: boolean;
+  demoFundingControlAnimate?: Array<{
+    index: number;
+    fundDiff: number;
+  }>,
+  demoVotingExpressionsAnimate?: Array<{
+    type: 'vote';
+    upvote: boolean;
+  } | {
+    type: 'express';
+    update: Client.IdeaVoteUpdateExpressions;
+  }>,
   demoBlurryShadow?: boolean;
   demoCreateAnimate?: {
     title: string;
@@ -195,7 +207,7 @@ export interface StateSettings {
   }>;
 };
 const stateSettingsDefault = {};
-function reducerSettings(state: StateSettings = stateSettingsDefault): StateSettings {
+function reducerSettings(state: StateSettings = stateSettingsDefault, action: Client.Actions | Admin.Actions): StateSettings {
   return state;
 }
 

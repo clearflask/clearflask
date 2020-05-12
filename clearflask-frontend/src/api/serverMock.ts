@@ -739,7 +739,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         }
       }
 
-      const expressing: Admin.Expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express as Admin.Expressing;
+      const expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express!;
       expressionsToAdd.forEach(expression => {
         const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! += weight;

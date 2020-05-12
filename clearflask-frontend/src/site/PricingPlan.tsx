@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import React, { Component } from 'react';
 import * as Admin from '../api/admin';
-import HelpPopover from '../common/HelpPopover';
+import HelpPopper from '../common/HelpPopper';
 
 const styles = (theme: Theme) => createStyles({
   cardPricing: {
@@ -91,7 +91,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                 {perk.desc}
                 {!!perk.terms && (<React.Fragment>
                   &nbsp;
-                  <HelpPopover description={perk.terms} />
+                  <HelpPopper description={perk.terms} />
                 </React.Fragment>)}
               </Typography>
             </div>

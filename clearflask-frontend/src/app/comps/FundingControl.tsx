@@ -7,7 +7,9 @@ import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
+import InViewObserver from '../../common/InViewObserver';
 import minmax from '../../common/util/mathutil';
+import { MutableRef } from '../../common/util/refUtil';
 import Loader from '../utils/Loader';
 import FundingBar, { FundingMaxWidth } from './FundingBar';
 import LoadMoreButton from './LoadMoreButton';
@@ -47,17 +49,19 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-export interface Props {
+interface Props {
+  myRef?: MutableRef<FundingControl>;
   server: Server;
   className?: string;
   style?: React.CSSProperties;
-  /** If you want to show a particular idea first, set idea and vote here */
-  idea?: Client.Idea;
-  fundAmount?: number;
+  /** If you want to show a particular idea first, set idea id here */
+  ideaId?: string;
   onOtherFundedIdeasLoaded?: () => void;
 }
 
 interface ConnectProps {
+  idea?: Client.Idea;
+  fundAmount?: number;
   configver?: string;
   credits?: Client.Credits;
   otherFundedIdeas: SearchResult;
@@ -78,9 +82,21 @@ interface State {
 
 class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = { maxTarget: 0 };
+  _isMounted: boolean = false;
+  readonly inViewObserverRef = React.createRef<InViewObserver>();
+
+  constructor(props: Readonly<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps>) {
+    super(props);
+    if (this.props.myRef) this.props.myRef.current = this;
+  }
 
   componentDidMount() {
+    this._isMounted = true;
     this.props.callOnMount();
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   static getDerivedStateFromProps(props: Props & ConnectProps & WithStyles<typeof styles, true>, state: State): Partial<State> | null {
@@ -115,47 +131,49 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     }
 
     return (
-      <div style={this.props.style} className={`${this.props.className} ${this.props.classes.container}`}>
-        {showFirstIdea && this.props.idea && (<div>
-          <FundingBar
-            idea={this.props.idea}
-            credits={this.props.credits}
-            maxFundAmountSeen={this.props.maxFundAmountSeen}
-            fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
-          />
-          {this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
-        </div>)}
-        {msg && (
-          <Typography
-            className={`${this.props.classes.separatorMargin} ${this.props.classes.msg}`}
-            variant='overline'
-          >{msg}</Typography>
-        )}
-        <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
-          {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
-            <div className={this.props.classes.separatorMargin}>
-              <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
-                <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
-                {!showFirstIdea && (
-                  <Button onClick={() => this.props.history.push(`/post/${idea.ideaId}`)}>
-                    View
-                  </Button>
-                )}
-              </Typography>
-              <FundingBar
-                idea={idea}
-                credits={this.props.credits}
-                maxFundAmountSeen={this.props.maxFundAmountSeen}
-                fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
-              />
-              {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
-            </div>
-          ))}
-          {this.props.loadMore && (
-            <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
+      <InViewObserver ref={this.inViewObserverRef}>
+        <div style={this.props.style} className={`${this.props.className} ${this.props.classes.container}`}>
+          {showFirstIdea && this.props.idea && (<div>
+            <FundingBar
+              idea={this.props.idea}
+              credits={this.props.credits}
+              maxFundAmountSeen={this.props.maxFundAmountSeen}
+              fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
+            />
+            {this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
+          </div>)}
+          {msg && (
+            <Typography
+              className={`${this.props.classes.separatorMargin} ${this.props.classes.msg}`}
+              variant='overline'
+            >{msg}</Typography>
           )}
-        </Loader>
-      </div>
+          <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
+            {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
+              <div className={this.props.classes.separatorMargin}>
+                <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
+                  <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
+                  {!showFirstIdea && (
+                    <Button onClick={() => this.props.history.push(`/post/${idea.ideaId}`)}>
+                      View
+                    </Button>
+                  )}
+                </Typography>
+                <FundingBar
+                  idea={idea}
+                  credits={this.props.credits}
+                  maxFundAmountSeen={this.props.maxFundAmountSeen}
+                  fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
+                />
+                {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
+              </div>
+            ))}
+            {this.props.loadMore && (
+              <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
+            )}
+          </Loader>
+        </div>
+      </InViewObserver>
     );
   }
 
@@ -280,11 +298,66 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     })
     return output;
   }
+
+  async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>, isReverse: boolean = false) {
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!this._isMounted) return;
+    await this.inViewObserverRef.current?.get();
+
+    for (const change of (isReverse ? [...changes].reverse() : changes)) {
+      const fundDiff = change.fundDiff * (isReverse ? -1 : 1)
+
+      var idea: Client.Idea | undefined;
+      if (change.index === 0 && !!this.props.idea) {
+        idea = this.props.idea;
+      } else {
+        idea = this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
+      }
+      if (!idea) continue;
+
+      const increment = (this.props.credits?.increment || 1) * (fundDiff >= 0 ? 1 : -1);
+
+      while (Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
+        && this.props.balance >= fundDiff + increment
+        && (idea.funded || 0) + fundDiff + increment >= 0) {
+        await new Promise(resolve => this.setState({
+          sliderCurrentIdeaId: idea!.ideaId,
+          sliderFundAmountDiff: (this.state.sliderFundAmountDiff || 0) + increment,
+        }, resolve));
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+        if (!this._isMounted) return;
+        await this.inViewObserverRef.current?.get();
+      }
+
+      await new Promise(resolve => this.setState({ sliderIsSubmitting: true }, resolve));
+      try {
+        await this.props.updateVote(idea.ideaId, {
+          fundDiff: this.state.sliderFundAmountDiff!,
+        });
+      } catch (er) {
+      }
+      await new Promise(resolve => this.setState({
+        sliderCurrentIdeaId: undefined,
+        fixedTarget: undefined,
+        sliderFundAmountDiff: undefined,
+        sliderIsSubmitting: false,
+      }, resolve));
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!this._isMounted) return;
+      await this.inViewObserverRef.current?.get();
+    }
+  }
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
   const search = { fundedByMeAndActive: true };
+  const dispatchIdeaGetOnIdeaId = (ownProps.ideaId && state.ideas.byId[ownProps.ideaId]?.status === undefined) ? ownProps.ideaId : undefined;
   var newProps: ConnectProps = {
+    idea: ownProps.ideaId ? state.ideas.byId[ownProps.ideaId]?.idea : undefined,
+    fundAmount: ownProps.ideaId ? state.votes.fundAmountByIdeaId[ownProps.ideaId] : undefined,
     configver: state.conf.ver, // force rerender on config change
     credits: state.conf.conf ? state.conf.conf.users.credits : undefined,
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
@@ -300,6 +373,12 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       ideaVoteUpdate: ideaVoteUpdate,
     }),
     callOnMount: () => {
+      if (dispatchIdeaGetOnIdeaId) {
+        ownProps.server.dispatch().ideaGet({
+          projectId: state.projectId,
+          ideaId: dispatchIdeaGetOnIdeaId,
+        });
+      }
       ownProps.server.dispatch().ideaSearch({
         projectId: state.projectId,
         ideaSearch: search,
@@ -312,7 +391,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     newProps.otherFundedIdeas.status = bySearch.status;
     newProps.otherFundedIdeas.cursor = bySearch.cursor;
     newProps.otherFundedIdeas.ideas = (bySearch.ideaIds || [])
-      .filter(ideaId => ideaId !== (ownProps.idea && ownProps.idea.ideaId))
+      .filter(ideaId => ideaId !== ownProps.ideaId)
       .map(ideaId => {
         const idea = state.ideas.byId[ideaId];
         if (!idea || !idea.idea || idea.status !== Status.FULFILLED) return undefined;
@@ -336,4 +415,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(withRouter(FundingControl)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(FundingControl)));

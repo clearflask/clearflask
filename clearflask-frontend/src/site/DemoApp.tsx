@@ -15,12 +15,13 @@ export interface Project {
   editor: ConfigEditor.Editor;
 }
 
-export function getProject(
+export async function getProject(
   template: ((templater: Templater) => void) | undefined = undefined,
-  mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => void) | undefined = undefined,
+  mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>) | undefined = undefined,
   projectId: string = randomUuid(),
   settings?: StateSettings,
 ): Promise<Project> {
+  await new Promise(resolve => setTimeout(resolve, 1));
   const server = new Server(projectId, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
@@ -28,22 +29,21 @@ export function getProject(
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);
   const templater = Templater.get(editor);
   template && template(templater);
-  return server.dispatchAdmin()
-    .then(d => d.projectCreateAdmin({
-      projectId: projectId,
-      configAdmin: editor.getConfig(),
-    })
-      .then(project => {
-        server.subscribeToChanges(editor);
-        return d.configSetAdmin({
-          projectId: projectId,
-          versionLast: project.config.version,
-          configAdmin: editor.getConfig(),
-        })
-          .then(() => mock && mock(DataMock.get(projectId), editor.getConfig()))
-          .then(() => server.dispatch().configGetAndUserBind({ projectId: projectId, configGetAndUserBind: {} }))
-          .then(() => ({ server, templater, editor }));
-      }));
+  const d = await server.dispatchAdmin();
+  const projectCreateResult = await d.projectCreateAdmin({
+    projectId: projectId,
+    configAdmin: editor.getConfig(),
+  });
+  server.subscribeToChanges(editor);
+  await d.configSetAdmin({
+    projectId: projectId,
+    versionLast: projectCreateResult.config.version,
+    configAdmin: editor.getConfig(),
+  });
+  mock && await mock(DataMock.get(projectId), editor.getConfig());
+  await server.dispatch().configGetAndUserBind({ projectId: projectId, configGetAndUserBind: {} });
+  const project = { server, templater, editor };
+  return project;
 }
 
 export function deleteProject(projectId: string) {

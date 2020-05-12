@@ -29,7 +29,7 @@ export default class ServerAdmin {
   readonly projects: { [projectId: string]: Project } = {};
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
-  readonly store: Store<ReduxStateAdmin>;
+  readonly store: Store<ReduxStateAdmin, Admin.Actions>;
   readonly errorSubscribers: ErrorSubscribers = [];
   challengeSubscriber?: ChallengeSubscriber;
 
@@ -78,7 +78,7 @@ export default class ServerAdmin {
     }
   }
 
-  getStore(): Store<ReduxStateAdmin> {
+  getStore(): Store<ReduxStateAdmin, Admin.Actions> {
     return this.store;
   }
 
@@ -102,7 +102,7 @@ export default class ServerAdmin {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
   }
 
-  static async _dispatch(msg: any, store: Store, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
+  static async _dispatch(msg: any, store: Store<any, any>, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
     try {
       var result = await store.dispatch(msg);
     } catch (response) {

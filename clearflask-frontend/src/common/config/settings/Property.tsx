@@ -1,10 +1,10 @@
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
-import { BaseEmoji, Picker } from 'emoji-mart';
-import 'emoji-mart/css/emoji-mart.css';
+import { BaseEmoji } from 'emoji-mart';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
 import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';
+import EmojiPicker from '../../EmojiPicker';
 import Overlay from '../../Overlay';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
@@ -147,8 +147,7 @@ export default class Property extends Component<Props> {
             <Overlay
               isInsideMuiTable={this.props.isInsideMuiTable}
               popup={(
-                <Picker
-                  native
+                <EmojiPicker
                   onSelect={emoji => prop.set(((emoji as BaseEmoji).native) as never)}
                 />
               )}

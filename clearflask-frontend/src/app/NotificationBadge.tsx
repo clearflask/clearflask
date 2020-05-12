@@ -6,6 +6,7 @@ import { ReduxState, Server, Status } from '../api/server';
 
 interface Props {
   server: Server;
+  children?: React.ReactNode;
 }
 interface ConnectProps {
   isLoggedIn: boolean;

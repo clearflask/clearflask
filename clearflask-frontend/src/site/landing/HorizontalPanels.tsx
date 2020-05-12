@@ -13,6 +13,15 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(4),
     justifyContent: 'center',
   },
+  contentFirst: {
+    justifyContent: 'flex-start',
+  },
+  contentMiddle: {
+    justifyContent: 'center',
+  },
+  contentLast: {
+    justifyContent: 'flex-end',
+  },
 });
 interface Props {
   wrapBelow: Breakpoint;
@@ -38,10 +47,20 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
         }}
       >
         {React.Children.map(this.props.children, (content, index) => {
+          var contentClass: string | undefined = undefined;
+          if (!isHorizontal) {
+            if (index === 0) {
+              contentClass = this.props.classes.contentFirst;
+            } else if (index === contentsSize - 1) {
+              contentClass = this.props.classes.contentLast;
+            } else {
+              contentClass = this.props.classes.contentMiddle;
+            }
+          }
           return (
             <div
               key={content?.['key'] || index}
-              className={this.props.classes.content}
+              className={`${this.props.classes.content} ${contentClass || ''}`}
               style={isHorizontal ? {
                 marginTop: staggerAsc
                   ? (childrenCount - index) * staggerHeight

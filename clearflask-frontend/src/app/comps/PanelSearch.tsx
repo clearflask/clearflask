@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { ActionMeta } from 'react-select/lib/types';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
+import InViewObserver from '../../common/InViewObserver';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 
 export enum FilterType {
@@ -54,6 +55,7 @@ interface State {
 class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   _isMounted: boolean = false;
+  readonly inViewObserverRef = React.createRef<InViewObserver>();
 
   componentDidMount() {
     this._isMounted = true;
@@ -75,78 +77,80 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
   render() {
     const controls = this.getControls();
     return (
-      <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
-        <SelectionPicker
-          label='Search'
-          value={controls.values}
-          menuIsOpen={this.state.menuIsOpen}
-          inputValue={this.state.searchValue || ''}
-          onInputChange={(newValue, actionMeta) => this.setState({ searchValue: newValue })}
-          options={controls.options}
-          colorLookup={controls.colorLookup}
-          isMulti={true}
-          inputMinWidth='100px'
-          onValueChange={this.onValueChange.bind(this)}
-          onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
-          formatCreateLabel={inputValue => `Search '${inputValue}'`}
-          overrideComponents={{
-            DropdownIndicator: (dropdownIndicatorProps) => (
-              <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
-            ),
-            MenuList: (menuProps) => {
-              var newSearch: React.ReactNode | undefined;
-              const tagColumns: any = {};
-              const baseColumns: any = {};
-              const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-              children.forEach((child: any) => {
-                if (!child.props.data) {
-                  // child is "No option(s)" text, ignore
-                } else if (child.props.data.__isNew__) {
-                  newSearch = child; // child is "Search '...'" option
-                } else {
-                  const type = this.getType(child.props.data);
-                  const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
-                  if (!columns[type]) columns[type] = [];
-                  columns[type].push(child);
-                }
-              });
-              const menuItems: React.ReactNode[] = [];
-              const addColumn = (title, content) => menuItems.push((
-                <div className={this.props.classes.menuItem}>
-                  <Typography variant='overline'>{title}</Typography>
-                  {content ? content : (
-                    <MenuItem component="div" disabled>
-                      No option
-                    </MenuItem>
-                  )}
-                </div>
-              ));
-              Object.values(FilterType)
-                .filter(t => this.isFilterControllable(t)
-                  && t !== FilterType.Search
-                  && t !== FilterType.Tag
-                  && baseColumns[t])
-                .forEach(t => addColumn(t, baseColumns[t]));
-              Object.keys(tagColumns)
-                .forEach(t => addColumn(t, tagColumns[t]));
-              return (
-                <div {...menuProps} className={this.props.classes.menuContainer}>
-                  {newSearch ? newSearch : (
-                    <MenuItem component="div" disabled>
-                      Type to search
-                    </MenuItem>
-                  )}
-                  <div style={{
-                    columnWidth: '150px',
-                  }}>
-                    {menuItems}
+      <InViewObserver ref={this.inViewObserverRef}>
+        <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
+          <SelectionPicker
+            label='Search'
+            value={controls.values}
+            menuIsOpen={this.state.menuIsOpen}
+            inputValue={this.state.searchValue || ''}
+            onInputChange={(newValue, actionMeta) => this.setState({ searchValue: newValue })}
+            options={controls.options}
+            colorLookup={controls.colorLookup}
+            isMulti={true}
+            inputMinWidth='100px'
+            onValueChange={this.onValueChange.bind(this)}
+            onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
+            formatCreateLabel={inputValue => `Search '${inputValue}'`}
+            overrideComponents={{
+              DropdownIndicator: (dropdownIndicatorProps) => (
+                <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
+              ),
+              MenuList: (menuProps) => {
+                var newSearch: React.ReactNode | undefined;
+                const tagColumns: any = {};
+                const baseColumns: any = {};
+                const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
+                children.forEach((child: any) => {
+                  if (!child.props.data) {
+                    // child is "No option(s)" text, ignore
+                  } else if (child.props.data.__isNew__) {
+                    newSearch = child; // child is "Search '...'" option
+                  } else {
+                    const type = this.getType(child.props.data);
+                    const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
+                    if (!columns[type]) columns[type] = [];
+                    columns[type].push(child);
+                  }
+                });
+                const menuItems: React.ReactNode[] = [];
+                const addColumn = (title, content) => menuItems.push((
+                  <div className={this.props.classes.menuItem}>
+                    <Typography variant='overline'>{title}</Typography>
+                    {content ? content : (
+                      <MenuItem component="div" disabled>
+                        No option
+                      </MenuItem>
+                    )}
                   </div>
-                </div>
-              );
-            },
-          }}
-        />
-      </div>
+                ));
+                Object.values(FilterType)
+                  .filter(t => this.isFilterControllable(t)
+                    && t !== FilterType.Search
+                    && t !== FilterType.Tag
+                    && baseColumns[t])
+                  .forEach(t => addColumn(t, baseColumns[t]));
+                Object.keys(tagColumns)
+                  .forEach(t => addColumn(t, tagColumns[t]));
+                return (
+                  <div {...menuProps} className={this.props.classes.menuContainer}>
+                    {newSearch ? newSearch : (
+                      <MenuItem component="div" disabled>
+                        Type to search
+                      </MenuItem>
+                    )}
+                    <div style={{
+                      columnWidth: '150px',
+                    }}>
+                      {menuItems}
+                    </div>
+                  </div>
+                );
+              },
+            }}
+          />
+        </div>
+      </InViewObserver>
     );
   }
 
@@ -348,28 +352,35 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     term: string;
     update: Partial<Client.IdeaSearch>;
   }>) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     for (; ;) {
       for (const searchTerm of searchTerms) {
         await new Promise(resolve => setTimeout(resolve, 150));
         if (!this._isMounted) return;
-        this.setState({ menuIsOpen: true });
+        await this.inViewObserverRef.current?.get();
+        await new Promise(resolve => this.setState({ menuIsOpen: true }, resolve));
 
         await new Promise(resolve => setTimeout(resolve, 2000));
         for (var i = 0; i < searchTerm.term.length; i++) {
           if (!this._isMounted) return;
-          this.setState({ searchValue: (this.state.searchValue || '') + searchTerm.term[i], menuIsOpen: true });
+          await this.inViewObserverRef.current?.get();
+          await new Promise(resolve => this.setState({ searchValue: (this.state.searchValue || '') + searchTerm.term[i], menuIsOpen: true }, resolve));
           await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         }
 
         await new Promise(resolve => setTimeout(resolve, 150));
         if (!this._isMounted) return;
-        this.setState({ searchValue: '', menuIsOpen: undefined }, () => {
+        await this.inViewObserverRef.current?.get();
+        await new Promise(resolve => this.setState({ searchValue: '', menuIsOpen: undefined }, () => {
           this.props.onSearchChanged({ ...this.props.search, ...searchTerm.update });
-        });
+          resolve();
+        }));
       }
 
       await new Promise(resolve => setTimeout(resolve, 300));
       if (!this._isMounted) return;
+      await this.inViewObserverRef.current?.get();
       this.props.onSearchChanged({});
     }
   }

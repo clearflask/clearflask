@@ -1,4 +1,4 @@
-import { Button, CardActionArea, Chip, Collapse, Fade, Popover, Typography } from '@material-ui/core';
+import { Button, CardActionArea, Chip, Collapse, Fade, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -6,7 +6,7 @@ import AddIcon from '@material-ui/icons/Add';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
-import { BaseEmoji, Picker } from 'emoji-mart';
+import { BaseEmoji } from 'emoji-mart';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -15,9 +15,13 @@ import TimeAgo from 'react-timeago';
 import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
+import ClosablePopover from '../../common/ClosablePopover';
+import EmojiPicker from '../../common/EmojiPicker';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
+import InViewObserver from '../../common/InViewObserver';
 import notEmpty from '../../common/util/arrayUtil';
+import { createMutableRef } from '../../common/util/refUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
 import CommentList from './CommentList';
@@ -230,28 +234,6 @@ const styles = (theme: Theme) => createStyles({
     top: -4,
     left: -6,
   },
-  expressionPicker: {
-    '& .emoji-mart': {
-      color: theme.palette.text.primary + '!important',
-    },
-    '& .emoji-mart-emoji': {
-      filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)!important`) : undefined,
-    },
-    '& .emoji-mart-anchor-icon svg': {
-      fill: theme.palette.text.hint + '!important',
-    },
-    '& .emoji-mart-search input::placeholder': {
-      color: theme.palette.text.hint + '!important',
-    },
-    '& .emoji-mart-search input': {
-      background: 'inherit!important',
-      border: '0px!important',
-      color: theme.palette.text.primary + '!important',
-    },
-    '& .emoji-mart-category-label span': {
-      background: fade(theme.palette.background.paper, .95) + '!important',
-    },
-  },
   bottomBarLine: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -394,13 +376,27 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   static expandedPath: string | undefined;
   expandedPath: string | undefined;
   onLoggedIn?: () => void;
+  _isMounted: boolean = false;
+  readonly fundingControlRef = createMutableRef<any>();
+  readonly inViewObserverRef = React.createRef<InViewObserver>();
 
   constructor(props) {
     super(props);
     this.state = {};
   }
 
+  componentDidMount() {
+    this._isMounted = true;
+    if (!!this.props.settings.demoFundingControlAnimate) {
+      this.demoFundingControlAnimate(this.props.settings.demoFundingControlAnimate);
+    }
+    if (!!this.props.settings.demoVotingExpressionsAnimate) {
+      this.demoVotingExpressionsAnimate(this.props.settings.demoVotingExpressionsAnimate);
+    }
+  }
+
   componentWillUnmount() {
+    this._isMounted = false;
     if (Post.expandedPath === this.expandedPath) {
       Post.expandedPath = undefined;
     }
@@ -428,48 +424,50 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Loader loaded={!!this.props.idea}>
         <Expander expand={forceExpand} onBackButtonPress={() => this.props.history.goBack()}>
-          <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-          }}>
-            <div className={this.props.classes.post}>
-              <div className={this.props.classes.postVoting}>
-                {this.renderVoting(variant)}
-              </div>
-              <div className={this.props.classes.postFunding}>
-                {this.renderFunding(variant)}
-              </div>
-              <div className={this.props.classes.postContent}>
-                <CardActionArea
-                  className={this.props.classes.titleAndDescription}
-                  disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
-                  onClick={this.onExpand.bind(this)}
-                  classes={{
-                    focusHighlight: this.props.classes.titleAndDescriptionCard,
-                  }}
-                >
-                  {this.renderTitle(variant)}
-                  {this.renderDescription(variant)}
-                  {this.renderResponse(variant)}
-                </CardActionArea>
-                {this.renderBottomBar(variant)}
-              </div>
-              <div className={this.props.classes.postComments}>
-                {this.renderComments(variant)}
+          <InViewObserver ref={this.inViewObserverRef}>
+            <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+            }}>
+              <div className={this.props.classes.post}>
+                <div className={this.props.classes.postVoting}>
+                  {this.renderVoting(variant)}
+                </div>
+                <div className={this.props.classes.postFunding}>
+                  {this.renderFunding(variant)}
+                </div>
+                <div className={this.props.classes.postContent}>
+                  <CardActionArea
+                    className={this.props.classes.titleAndDescription}
+                    disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
+                    onClick={this.onExpand.bind(this)}
+                    classes={{
+                      focusHighlight: this.props.classes.titleAndDescriptionCard,
+                    }}
+                  >
+                    {this.renderTitle(variant)}
+                    {this.renderDescription(variant)}
+                    {this.renderResponse(variant)}
+                  </CardActionArea>
+                  {this.renderBottomBar(variant)}
+                </div>
+                <div className={this.props.classes.postComments}>
+                  {this.renderComments(variant)}
+                </div>
               </div>
             </div>
-          </div>
-          <LogIn
-            actionTitle='Get notified of replies'
-            server={this.props.server}
-            open={this.state.logInOpen}
-            onClose={() => this.setState({ logInOpen: false })}
-            onLoggedInAndClose={() => {
-              this.setState({ logInOpen: false });
-              this.onLoggedIn && this.onLoggedIn();
-              this.onLoggedIn = undefined;
-            }}
-          />
+            <LogIn
+              actionTitle='Get notified of replies'
+              server={this.props.server}
+              open={this.state.logInOpen}
+              onClose={() => this.setState({ logInOpen: false })}
+              onLoggedInAndClose={() => {
+                this.setState({ logInOpen: false });
+                this.onLoggedIn && this.onLoggedIn();
+                this.onLoggedIn = undefined;
+              }}
+            />
+          </InViewObserver>
         </Expander>
       </Loader>
     );
@@ -686,6 +684,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
+  upvoteRef: React.RefObject<HTMLButtonElement> = React.createRef();
+  downvoteRef: React.RefObject<HTMLButtonElement> = React.createRef();
   renderVoting(variant: PostVariant) {
     if (variant !== 'page' && this.props.display && this.props.display.showVoting === false
       || !this.props.idea
@@ -698,6 +698,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <VotingControl
+        upvoteRef={this.upvoteRef}
+        downvoteRef={this.downvoteRef}
         className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateVoting : undefined}
         vote={this.props.vote}
         voteValue={this.props.idea.voteValue || 0}
@@ -743,6 +745,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
+  readonly fundingPadding = this.props.theme.spacing(3);
+  fundingExpand(callback?: () => void) {
+    const rect = this.fundingBarRef.current!.getBoundingClientRect();
+    const rectParent = this.props.settings.demoPortalContainer?.current?.getBoundingClientRect();
+    this.setState({
+      fundingExpanded: true,
+      fundingExpandedAnchor: {
+        width: rect.width,
+        top: rect.top - this.fundingPadding - (rectParent?.top || 0),
+        left: rect.left - this.fundingPadding - (rectParent?.left || 0),
+      }
+    }, callback);
+  }
+
   fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
   fundingPopoverActions?: PopoverActions;
   renderFunding(variant: PostVariant) {
@@ -759,7 +775,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       && !this.props.idea.fundersCount) return null;
 
     const iFundedThis = !!this.props.fundAmount && this.props.fundAmount > 0;
-    const padding = this.props.theme.spacing(3);
 
     const fundThisButton = (
       <Button
@@ -770,15 +785,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         disabled={!fundingAllowed}
         onClick={!fundingAllowed ? undefined : (e => {
           const onLoggedInClick = () => {
-            this.setState({
-              fundingExpanded: true,
-              fundingExpandedAnchor: {
-                width: this.fundingBarRef.current!.getBoundingClientRect().width,
-                top: this.fundingBarRef.current!.getBoundingClientRect().top - padding,
-                left: this.fundingBarRef.current!.getBoundingClientRect().left - padding
-              }
-            },
-            )
+            this.fundingExpand();
           };
           if (this.props.loggedInUser) {
             onLoggedInClick();
@@ -814,7 +821,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           overrideRight={fundThisButton}
         />
         {fundingAllowed && (
-          <Popover
+          <ClosablePopover
+            container={this.props.settings.demoPortalContainer?.current}
+            BackdropProps={{ invisible: !!this.props.settings.demoPortalContainer }}
+            unlockScroll={!!this.props.settings.demoPortalContainer}
             elevation={0}
             TransitionComponent={Fade}
             open={!!this.state.fundingExpanded}
@@ -828,20 +838,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               className: this.props.classes.popover,
               style: {
                 overflow: 'hidden',
-                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + padding * 2 : 0,
-                padding: padding,
+                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + this.fundingPadding * 2 : 0,
+                padding: this.fundingPadding,
               }
             }}
             disableRestoreFocus
             action={actions => this.fundingPopoverActions = actions || undefined}
           >
             <FundingControl
+              myRef={this.fundingControlRef}
               server={this.props.server}
-              idea={this.props.idea}
-              fundAmount={this.props.fundAmount}
+              ideaId={this.props.idea.ideaId}
               onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
             />
-          </Popover>
+          </ClosablePopover>
         )}
       </div>
     );
@@ -877,6 +887,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
+  readonly expressPadding = this.props.theme.spacing(0.5);
+  expressExpand(callback?: () => void) {
+    const rect = this.expressBarRef.current!.getBoundingClientRect();
+    const rectParent = this.props.settings.demoPortalContainer?.current?.getBoundingClientRect();
+    this.setState({
+      expressionExpanded: true,
+      expressionExpandedAnchor: {
+        top: rect.top - this.expressPadding - (rectParent?.top || 0),
+        left: rect.left - this.expressPadding - (rectParent?.left || 0),
+      }
+    }, callback);
+  }
+
+  expressBarRef: React.RefObject<HTMLDivElement> = React.createRef();
   renderExpression(variant: PostVariant) {
     if (variant !== 'page' && this.props.display && this.props.display.showExpression === false
       || !this.props.idea
@@ -888,7 +912,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       && (!this.props.idea.expressions || Object.keys(this.props.idea.expressions).length === 0)
       && !this.props.idea.expressionsValue) return null;
 
-    const padding = this.props.theme.spacing(0.5);
     const limitEmojiPerIdea = this.props.category.support.express.limitEmojiPerIdea;
     const reachedLimitPerIdea = limitEmojiPerIdea && (!!this.props.expression && Object.keys(this.props.expression).length || 0) > 0;
 
@@ -945,22 +968,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         expressionAllowed ? () => clickExpression(expressionDisplay) : undefined,
         0));
     const picker = limitEmojiSet ? undefined : (
-      <span key='picker' className={this.props.classes.expressionPicker}>
-        <Picker
-          native
-          onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
-          showPreview={false}
-          showSkinTones={false}
-          emojiSize={16}
-          exclude={['recent']}
-          style={{
-            border: 'unset',
-            background: 'unset',
-            display: 'block',
-          }}
-          color={this.props.theme.palette.primary.main}
-        />
-      </span>
+      <EmojiPicker
+        key='picker'
+        inline
+        onSelect={emoji => clickExpression(((emoji as BaseEmoji).native) as never)}
+      />
     );
 
     const maxItems = 3;
@@ -969,7 +981,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <div key='expression' className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateExpressions : undefined} style={{
+      <div key='expression' ref={this.expressBarRef} className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateExpressions : undefined} style={{
         position: 'relative',
       }}>
         <div style={{ display: 'flex' }}>
@@ -993,20 +1005,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               </span>
             ),
             false,
-            currentTarget => {
-              const targetElement = currentTarget.parentElement || currentTarget;
-              this.setState({
-                expressionExpanded: true,
-                expressionExpandedAnchor: {
-                  top: targetElement.getBoundingClientRect().top - padding,
-                  left: targetElement.getBoundingClientRect().left - padding
-                }
-              },
-              )
-            }
+            () => this.expressExpand(),
           )}
         </div>
-        <Popover
+        <ClosablePopover
+          container={this.props.settings.demoPortalContainer?.current}
+          BackdropProps={{ invisible: !!this.props.settings.demoPortalContainer }}
+          unlockScroll={!!this.props.settings.demoPortalContainer}
           elevation={0}
           TransitionComponent={Fade}
           open={!!this.state.expressionExpanded}
@@ -1021,8 +1026,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             style: {
               overflow: 'hidden',
               ...(limitEmojiSet ? {} : { width: 'min-content' }),
-              padding: padding,
-              paddingBottom: limitEmojiSet ? padding : 0,
+              padding: this.expressPadding,
+              paddingBottom: limitEmojiSet ? this.expressPadding : 0,
             }
           }}
           disableRestoreFocus
@@ -1032,7 +1037,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             ...expressionsUnused,
             picker,
           ]}
-        </Popover>
+        </ClosablePopover>
       </div>
     );
   }
@@ -1088,6 +1093,82 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.expandedPath = `${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;
       this.props.history.push(this.expandedPath);
+    }
+  }
+
+  async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!this._isMounted) return;
+    await this.inViewObserverRef.current?.get();
+    var isReverse = false;
+
+    for (; ;) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!this._isMounted) return;
+      await this.inViewObserverRef.current?.get();
+      await new Promise(resolve => this.fundingExpand(resolve));
+
+      if (!this.fundingControlRef.current) return;
+      await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
+
+      if (!this._isMounted) return;
+      await this.inViewObserverRef.current?.get();
+      await new Promise(resolve => this.setState({ fundingExpanded: false }, resolve));
+
+      isReverse = !isReverse;
+    }
+  }
+
+  async demoVotingExpressionsAnimate(changes: Array<{
+    type: 'vote';
+    upvote: boolean;
+  } | {
+    type: 'express';
+    update: Client.IdeaVoteUpdateExpressions;
+  }>) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!this._isMounted) return;
+    await this.inViewObserverRef.current?.get();
+
+    for (; ;) {
+      for (const change of changes) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!this._isMounted) return;
+        await this.inViewObserverRef.current?.get();
+
+        switch (change.type) {
+          case 'vote':
+            if (change.upvote) {
+              this.upvoteRef.current?.click();
+            } else {
+              this.downvoteRef.current?.click();
+            }
+            break;
+          case 'express':
+            await new Promise(resolve => this.expressExpand(resolve));
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!this._isMounted) return;
+            await this.inViewObserverRef.current?.get();
+
+            await this.props.updateVote({ expressions: change.update });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!this._isMounted) return;
+            await this.inViewObserverRef.current?.get();
+            await new Promise(resolve => this.setState({ expressionExpanded: false }, resolve));
+
+            break;
+        }
+
+
+        //   if (!this.fundingControlRef.current) return;
+        //   await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
+
+        //   if (!this._isMounted) return;
+        //   await this.inViewObserverRef.current?.get();
+        //   await new Promise(resolve => this.setState({ fundingExpanded: false }, resolve));
+      }
     }
   }
 }

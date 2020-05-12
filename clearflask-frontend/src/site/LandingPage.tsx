@@ -12,7 +12,6 @@ import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Demos from './landing/Demos';
-import FundingControlDemo from './landing/FundingControlDemo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
@@ -101,12 +100,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
               templater.demo();
               templater.demoExplorer({
                 search: { limit: 4 },
-                allowCreate: false,
+                allowCreate: undefined,
                 allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-              }, {
-                // title: 'Suggest an idea',
-                // description: 'Let us know how we can improve our product. We want to hear your ideas!',
-              }, true);
+              }, undefined, true);
+              templater.workflow(1); // Remove statuses for Bugs as it clutters the search bar
             }}
             mock={mocker => mocker.demoExplorer()}
             settings={{
@@ -130,7 +127,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             buttonState={{ [SCROLL_TO_STATE_KEY]: 'on-behalf' }}
             initialSubPath='/embed/demo'
             template={templater => templater.demoExplorer({
-              allowCreate: true,
+              allowCreate: { actionTitle: 'Suggest' },
               allowSearch: undefined,
             })}
             mock={mocker => mocker.demoExplorer()}
@@ -167,12 +164,26 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           }}
         />
         <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerHeight={0}>
-          <BlockContent
+          <Demo
             variant='content'
+            type='column'
             title='Keep it simple with voting and expressions'
             description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
             buttonTitle='See how it looks'
             buttonLink='/prioritization#simple-voting'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('voteAndExpress')}
+            mock={mocker => mocker.demoPrioritization()}
+            settings={{
+              demoVotingExpressionsAnimate: [
+                { type: 'vote', upvote: true },
+                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Add } },
+                { type: 'vote', upvote: false },
+                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+              ],
+            }}
+            demoFixedHeight={450}
+            containerPortal
           />
           <Demo
             variant='content'
@@ -184,9 +195,15 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             initialSubPath='/embed/demo'
             template={templater => templater.demoPrioritization('fund')}
             mock={mocker => mocker.demoPrioritization()}
-            demoFixedHeight={330}
-            edgeType='outline'
-            demo={project => (<FundingControlDemo server={project.server} ideaId='add-dark-mode' />)}
+            demoFixedHeight={450}
+            containerPortal
+            settings={{
+              demoFundingControlAnimate: [
+                { index: 0, fundDiff: 20 },
+                { index: 1, fundDiff: -30 },
+                { index: 2, fundDiff: 20 },
+              ],
+            }}
           />
         </HorizontalPanels>
       </React.Fragment>

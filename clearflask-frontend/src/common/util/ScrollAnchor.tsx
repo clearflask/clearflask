@@ -15,7 +15,6 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
 
   async scrollNow() {
     await new Promise(resolve => setTimeout(resolve, 1));
-    console.log('DEBUG Scrolling...', this.props, this.scrollToRef.current?.offsetTop);
     if (!this.scrollToRef.current) {
       return;
     }
@@ -43,7 +42,6 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   }
 
   componentDidMount() {
-    console.log('DEBUG mounted', this.props, this.scrollToRef.current?.offsetTop);
     if (this.props.scrollOnNavigate || !!this.props.scrollOnStateName) {
       this.unlisten = this.props.history.listen((location, action) => {
         if (action !== 'PUSH') {
@@ -80,7 +78,6 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   }
 
   componentWillUnmount() {
-    console.log('DEBUG unmounted', this.props, this.scrollToRef.current?.offsetTop);
     this.unlisten && this.unlisten();
   }
 }

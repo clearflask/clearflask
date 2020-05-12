@@ -145,7 +145,7 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['logoUrl']).set(logoUrl);
   }
 
-  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'all') {
+  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'all' | 'voteAndExpress') {
     this.styleWhite();
 
     const categoryIndex = this.demoCategory();
@@ -160,6 +160,10 @@ export default class Templater {
         break;
       case 'express':
         this.supportExpressingAllEmojis(categoryIndex, true);
+        break;
+      case 'voteAndExpress':
+        this.supportExpressingAllEmojis(categoryIndex, true);
+        this.supportVoting(categoryIndex, true);
         break;
       case 'all':
         this.supportFunding(categoryIndex);
@@ -221,7 +225,7 @@ export default class Templater {
           showExpression: false,
           disableExpand: false,
         }),
-        allowCreate: false,
+        allowCreate: undefined,
         ...(explorer || {}),
       }),
       ...(extraPageProps || {}),
@@ -395,7 +399,7 @@ export default class Templater {
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
         allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: true,
+        allowCreate: { actionTitle: 'Suggest' },
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [ideaCategoryId],
@@ -413,7 +417,7 @@ export default class Templater {
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
         allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: true,
+        allowCreate: { actionTitle: 'Report' },
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [bugCategoryId],
@@ -569,7 +573,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowCreate: false,
+        allowCreate: undefined,
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
@@ -637,7 +641,7 @@ export default class Templater {
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
-        allowCreate: false,
+        allowCreate: undefined,
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
@@ -715,7 +719,7 @@ export default class Templater {
       })],
       explorer: Admin.PageExplorerToJSON({
         allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: false,
+        allowCreate: undefined,
         display: Admin.PostDisplayToJSON(postDisplay),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [helpCategoryId],
@@ -843,7 +847,7 @@ export default class Templater {
     const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [notReproducible, wontFix, fixed, inProgress, underReview]);
   }
-  workflow(categoryIndex: number, entryStatusId: string, statuses: Admin.IdeaStatus[]): Admin.IdeaStatus[] {
+  workflow(categoryIndex: number, entryStatusId: string | undefined = undefined, statuses: Admin.IdeaStatus[] = []): Admin.IdeaStatus[] {
     this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(undefined);
     this._get<ConfigEditor.PageGroup>(['content', 'categories', categoryIndex, 'workflow', 'statuses']).setRaw(statuses);
     this._get<ConfigEditor.LinkProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus']).set(entryStatusId);

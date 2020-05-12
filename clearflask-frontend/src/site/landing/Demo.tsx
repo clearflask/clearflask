@@ -31,14 +31,21 @@ interface Props {
   scale?: number;
   settings?: StateSettings;
   edgeSpacing?: boolean;
+  containerPortal?: boolean;
 }
 class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
   demoProjectId?: string;
   readonly projectPromise: Promise<Project>;
+  readonly containerRef = React.createRef<any>();
+  readonly settings: StateSettings;
 
   constructor(props) {
     super(props);
-    this.projectPromise = getProject(props.template, props.mock, undefined, props.settings);
+    this.settings = props.containerPortal ? {
+      ...props.settings,
+      demoPortalContainer: this.containerRef,
+    } : props.settings;
+    this.projectPromise = getProject(props.template, props.mock, undefined, this.settings);
   }
 
   componentWillUnmount() {
@@ -54,7 +61,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
             <DemoApp
               server={project.server}
               intialSubPath={this.props.initialSubPath}
-              settings={this.props.settings}
+              settings={this.settings}
             />
           );
         if (this.props.edgeSpacing) {
@@ -72,12 +79,16 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           );
         }
         demo = (
-          <div style={{
-            height: this.props.demoFixedHeight,
-            width: this.props.demoFixedWidth,
-            overflowX: 'hidden',
-            overflowY: 'scroll',
-          }}>
+          <div
+            style={{
+              height: this.props.demoFixedHeight,
+              width: this.props.demoFixedWidth,
+              overflowX: 'hidden',
+              overflowY: 'scroll',
+              position: 'relative', // For containerPortal
+            }}
+            ref={this.containerRef}
+          >
             {demo}
           </div>
         );

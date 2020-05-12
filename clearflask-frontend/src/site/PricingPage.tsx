@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
-import HelpPopover from '../common/HelpPopover';
+import HelpPopper from '../common/HelpPopper';
 import notEmpty from '../common/util/arrayUtil';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
@@ -163,7 +163,7 @@ const FeatureListItem = (props: {
         {props.helpText && (
           <React.Fragment>
             &nbsp;
-            <HelpPopover description={props.helpText} />
+            <HelpPopper description={props.helpText} />
           </React.Fragment>
         )}
       </TableCell>

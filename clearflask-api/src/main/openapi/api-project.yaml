@@ -670,8 +670,6 @@ components:
         - $ref: 'api-project.yaml#/components/schemas/PagePanel'
         - type: object
           x-clearflask-page: { order: 7, name: 'Explorer', nameFromProp: 'title', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
-          required:
-            - allowCreate
           properties:
             allowSearch:
               x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
@@ -700,7 +698,11 @@ components:
                   type: boolean
             allowCreate:
               x-clearflask-prop: { order: 2, name: 'Allow creating', defaultValue: true }
-              type: boolean
+              type: object
+              properties:
+                actionTitle:
+                  x-clearflask-prop: { order: 1, name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add'}
+                  type: string
     VersionedConfig:
       type: object
       required:

@@ -7,6 +7,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
+import InViewObserver from '../../common/InViewObserver';
 import debounce from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
@@ -95,6 +96,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, desc?: string) => void;
+  readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
 
   constructor(props) {
@@ -203,11 +205,11 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       );
     }
 
-    const createVisible = this.props.explorer.allowCreate && (
+    const createVisible = !!this.props.explorer.allowCreate && (
       <TextField
         disabled={this.state.newItemIsSubmitting}
         className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        label='Add'
+        label={this.props.explorer.allowCreate.actionTitle}
         placeholder='Title'
         value={this.state.newItemTitle || ''}
         onChange={e => {
@@ -245,18 +247,20 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         }}
       />
     );
-    const createCollapsible = this.props.explorer.allowCreate && this.renderCreate(expand);
+    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate(expand);
 
     return (
-      <ExplorerTemplate
-        createSize={this.props.explorer.allowCreate ? (expand ? 250 : 116) : 0}
-        createShown={expand}
-        createVisible={createVisible}
-        createCollapsible={createCollapsible}
-        searchSize={this.props.explorer.allowSearch ? 100 : undefined}
-        search={topBar}
-        content={content}
-      />
+      <InViewObserver ref={this.inViewObserverRef}>
+        <ExplorerTemplate
+          createSize={this.props.explorer.allowCreate ? (expand ? 250 : 116) : 0}
+          createShown={expand}
+          createVisible={createVisible}
+          createCollapsible={createCollapsible}
+          searchSize={this.props.explorer.allowSearch ? 100 : undefined}
+          search={topBar}
+          content={content}
+        />
+      </InViewObserver>
     );
   }
 
@@ -412,13 +416,20 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   }
 
   async demoCreateAnimate(title: string, description?: string) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!this._isMounted) return;
+    await this.inViewObserverRef.current?.get();
+
     for (; ;) {
       await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!this._isMounted) return;
+      await this.inViewObserverRef.current?.get();
 
       for (var i = 0; i < title.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         if (!this._isMounted) return;
-        this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] });
+        await this.inViewObserverRef.current?.get();
+        await new Promise(resolve => this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] }, resolve));
       }
 
       if (description !== undefined) {
@@ -426,7 +437,8 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         for (var i = 0; i < description.length; i++) {
           await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
           if (!this._isMounted) return;
-          this.setState({ newItemDescription: (this.state.newItemDescription || '') + description[i] });
+          await this.inViewObserverRef.current?.get();
+          await new Promise(resolve => this.setState({ newItemDescription: (this.state.newItemDescription || '') + description[i] }, resolve));
         }
       }
 
@@ -436,8 +448,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         while (this.state.newItemDescription !== undefined && this.state.newItemDescription.length !== 0) {
           await new Promise(resolve => setTimeout(resolve, 5));
           if (!this._isMounted) return;
+          await this.inViewObserverRef.current?.get();
           const currentDescription = this.state.newItemDescription.substr(0, this.state.newItemDescription.length - 1);
-          this.setState({ newItemDescription: currentDescription });
+          await new Promise(resolve => this.setState({ newItemDescription: currentDescription }, resolve));
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -446,8 +459,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
         await new Promise(resolve => setTimeout(resolve, 5));
         if (!this._isMounted) return;
+        await this.inViewObserverRef.current?.get();
         const currentTitle = this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1);
-        this.setState({ newItemTitle: currentTitle });
+        await new Promise(resolve => this.setState({ newItemTitle: currentTitle }, resolve));
       }
     }
   }
