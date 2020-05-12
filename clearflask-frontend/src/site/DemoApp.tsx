@@ -53,17 +53,24 @@ export function deleteProject(projectId: string) {
 interface Props {
   server: Server;
   intialSubPath?: string;
-  forcePath?: string;
+  forcePathSubscribe?: (listener: (forcePath: string) => void) => void;
   settings?: StateSettings;
 }
 
 export default class DemoApp extends Component<Props> {
+
+  shouldComponentUpdate(nextProps) {
+    return false;
+  }
+
   render() {
     return (
       <MemoryRouter initialEntries={this.props.intialSubPath ? [`${this.props.intialSubPath || '/'}`] : undefined}>
         <Route path="/" render={props => (
           <React.Fragment>
-            <ForceUrl forcePath={this.props.forcePath} />
+            {this.props.forcePathSubscribe && (
+              <ForceUrl forcePathSubscribe={this.props.forcePathSubscribe} />
+            )}
             <App
               {...props}
               projectId={this.props.server.getProjectId()}
@@ -80,11 +87,12 @@ export default class DemoApp extends Component<Props> {
 }
 
 var lastForcedPath;
-const ForceUrl = withRouter((props: RouteComponentProps & { forcePath?: string }) => {
-  if (props.forcePath !== undefined
-    && props.forcePath !== lastForcedPath) {
-    setTimeout(() => props.history.push(`/${props.match.params['projectId']}${props.forcePath}`), 1);
-  };
-  lastForcedPath = props.forcePath
+const ForceUrl = withRouter((props: RouteComponentProps & { forcePathSubscribe: (listener: (forcePath: string) => void) => void }) => {
+  props.forcePathSubscribe(forcePath => {
+    if (forcePath !== lastForcedPath) {
+      setTimeout(() => props.history.push(forcePath!), 1);
+      lastForcedPath = forcePath;
+    };
+  });
   return null;
 });

@@ -90,6 +90,10 @@ class App extends Component<Props> {
     }
   }
 
+  shouldComponentUpdate(nextProps) {
+    return false;
+  }
+
   render() {
     const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (

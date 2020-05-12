@@ -43,6 +43,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
+  forcePathListener: ((forcePath: string) => void) | undefined;
 
   constructor(props) {
     super(props);
@@ -180,12 +181,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           );
           break;
         }
-        var forcePath;
-        if (activeSubPath.length >= 3
+        if (!!this.forcePathListener
+          && activeSubPath.length >= 3
           && activeSubPath[0] === 'layout'
           && activeSubPath[1] === 'pages') {
           const pageIndex = activeSubPath[2];
-          forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
+          const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
+          this.forcePathListener(forcePath);
         }
         setTitle(activeProject.server.getStore().getState().conf.conf?.name);
         page = (
@@ -200,7 +202,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           <DemoApp
             key={activeProject.configVersion}
             server={activeProject.server}
-            forcePath={forcePath}
+            forcePathSubscribe={listener => this.forcePathListener = listener}
           />
         );
         break;
