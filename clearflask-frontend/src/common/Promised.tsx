@@ -1,7 +1,7 @@
 import React from 'react';
-import Loading from '../app/utils/Loading';
+import Loading, { Props as LoadingProps } from '../app/utils/Loading';
 
-interface Props<T> {
+interface Props<T> extends LoadingProps {
   promise: Promise<T>,
   render: (val: T) => React.ReactNode,
   renderError?: (err) => React.ReactNode,
@@ -32,7 +32,7 @@ class Promised<T> extends React.Component<Props<T>, State<T>> {
 
   render() {
     return this.state.result === undefined
-      ? (this.props.loading || (<Loading />))
+      ? (this.props.loading || (<Loading {...this.props} />))
       : (this.state.result
         ? this.renderVal(this.state.val!)
         : this.renderError(this.state.error));

@@ -64,8 +64,8 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Demo
         scrollAnchor={{ scrollOnStateName: 'onboarding' }}
-        title='Seamless onboarding'
-        description='asfa sfa fasd fdas fdsa fads fadsf asd fads fasdf asd fads fads fas fasdf adsf dasfas '
+        title='Frictionless onboarding'
+        description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
         initialSubPath='/embed/demo'
         template={templater => {
           setInitSignupMethodsTemplate(templater);
@@ -106,7 +106,7 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <Demo
         scrollAnchor={{ scrollOnStateName: 'search' }}
-        title='Suggest existing ideas to prevent duplicates'
+        title='Powerful search reduces duplicate submissions'
         description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
         initialSubPath='/embed/demo'
         scale={0.7}

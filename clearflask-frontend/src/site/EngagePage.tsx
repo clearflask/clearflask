@@ -7,7 +7,7 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import RoadmapControls from './landing/RoadmapControls';
 
-export const transparencyTitle = 'Keep your users engaged with transparent communication';
+export const transparencyTitle = 'Keep users engaged with your roadmap';
 export const transparencyDescription = 'Inform your users of your progress at every step with updates and a transparent roadmap. Let them be involved in your decision making and make them feel valued.';
 
 const styles = (theme: Theme) => createStyles({

@@ -1160,14 +1160,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
             break;
         }
-
-
-        //   if (!this.fundingControlRef.current) return;
-        //   await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
-
-        //   if (!this._isMounted) return;
-        //   await this.inViewObserverRef.current?.get();
-        //   await new Promise(resolve => this.setState({ fundingExpanded: false }, resolve));
       }
     }
   }

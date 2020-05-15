@@ -205,6 +205,9 @@ export interface StateSettings {
     term: string;
     update: Partial<Client.IdeaSearch>;
   }>;
+  demoMenuAnimate?: Array<{
+    path: string;
+  }>;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: Client.Actions | Admin.Actions): StateSettings {

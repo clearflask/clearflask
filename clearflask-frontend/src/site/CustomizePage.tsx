@@ -75,6 +75,7 @@ class CustomizePage extends Component<WithStyles<typeof styles, true>> {
               <Feature icon={<BrowserIcon />} title='Browser Push' description='Keep your users updated via Browser Push' />
               <Feature beta icon={<AndroidIcon />} title='Android Push' description='Keep your users updated via Android Push' />
               <Feature beta icon={<AppleIcon />} title='Apple Push' description='Keep your users updated via Apple Push' />
+              <Feature beta icon={<AppleIcon />} title='Sign in with Apple' description='Let your users sign in with Apple' />
             </Grid>
           </DividerCorner>
           <DividerCorner title='Customization'>

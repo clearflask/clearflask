@@ -7,9 +7,10 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
-import { ReduxState, Server, Status } from '../api/server';
+import { ReduxState, Server, StateSettings, Status } from '../api/server';
 import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import DropdownTab from '../common/DropdownTab';
+import InViewObserver from '../common/InViewObserver';
 import notEmpty from '../common/util/arrayUtil';
 import LogIn from './comps/LogIn';
 import NotificationBadge from './NotificationBadge';
@@ -85,12 +86,27 @@ interface ConnectProps {
   config?: Client.Config;
   page?: Client.Page;
   loggedInUser?: Client.UserMe;
+  settings: StateSettings;
 }
 interface State {
   logInOpen?: boolean;
 }
 class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = {};
+  _isMounted: boolean = false;
+  readonly inViewObserverRef = React.createRef<InViewObserver>();
+
+  componentDidMount() {
+    this._isMounted = true;
+    if (!!this.props.settings.demoMenuAnimate) {
+      this.demoMenuAnimate(this.props.settings.demoMenuAnimate);
+    }
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
+  }
+
   render() {
     var menu;
     if (this.props.config && this.props.config.layout.menu.length > 0) {
@@ -228,20 +244,34 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     }
 
     return (
-      <div className={this.props.classes.header}>
-        <div className={this.props.classes.logoAndActions}>
-          {logo}
-          <div className={this.props.classes.grow} />
-          {rightSide}
+      <InViewObserver ref={this.inViewObserverRef}>
+        <div className={this.props.classes.header}>
+          <div className={this.props.classes.logoAndActions}>
+            {logo}
+            <div className={this.props.classes.grow} />
+            {rightSide}
+          </div>
+          <Divider />
+          {menu}
         </div>
-        <Divider />
-        {menu}
-      </div>
+      </InViewObserver>
     );
   }
 
-  menuSelected(menuId: string) {
+  async demoMenuAnimate(changes: Array<{ path: string }>) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!this._isMounted) return;
+    await this.inViewObserverRef.current?.get();
 
+    for (; ;) {
+      for (const change of changes) {
+        this.props.pageChanged(change.path);
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!this._isMounted) return;
+        await this.inViewObserverRef.current?.get();
+      }
+    }
   }
 }
 
@@ -255,5 +285,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     page: page,
     loggedInUser: state.users.loggedIn.user,
+    settings: state.settings,
   };
 })(withStyles(styles, { withTheme: true })(withRouter(Header)));

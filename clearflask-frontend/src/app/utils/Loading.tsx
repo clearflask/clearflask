@@ -2,7 +2,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Fade from '@material-ui/core/Fade';
 import React, { Component } from 'react';
 
-interface Props {
+export interface Props {
   showImmediately?: boolean;
 }
 

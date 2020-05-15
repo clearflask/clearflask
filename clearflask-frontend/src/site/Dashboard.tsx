@@ -233,7 +233,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
               // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
               { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
               { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
-              { type: 'heading', text: 'Config' } as MenuHeading,
+              { type: 'heading', text: 'Settings' } as MenuHeading,
               ...(projects.map(project => {
                 const menuProject: MenuProject = {
                   type: 'project',

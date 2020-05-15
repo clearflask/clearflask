@@ -17,6 +17,11 @@ const styles = (theme: Theme) => createStyles({
   spacing: {
     margin: theme.spacing(2),
   },
+  balanceAndFundingContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-star',
+  },
 });
 
 interface Props {
@@ -37,16 +42,19 @@ class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles
     }
     return (
       <div className={this.props.classes.page}>
-        <DividerCorner title='Balance'>
-          {this.props.balance !== undefined && this.props.credits && (
-            <Typography className={this.props.classes.spacing} variant='subtitle1' component='div'>
-              <CreditView val={this.props.balance} credits={this.props.credits} />
-            </Typography>
-          )}
-        </DividerCorner>
-        <DividerCorner title='Funding'>
-          <FundingControl server={this.props.server} className={this.props.classes.spacing} />
-        </DividerCorner>
+        <div className={this.props.classes.balanceAndFundingContainer}>
+          <DividerCorner title='Balance'>
+            {this.props.balance !== undefined && this.props.credits && (
+              <Typography className={this.props.classes.spacing} variant='subtitle1' component='div'>
+                <CreditView val={this.props.balance} credits={this.props.credits} />
+              </Typography>
+            )}
+          </DividerCorner>
+          <div className={this.props.classes.spacing} />
+          <DividerCorner title='Funding'>
+            <FundingControl server={this.props.server} className={this.props.classes.spacing} />
+          </DividerCorner>
+        </div>
         <TransactionList server={this.props.server} />
       </div>
     );

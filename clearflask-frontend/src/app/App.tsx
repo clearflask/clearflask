@@ -90,8 +90,11 @@ class App extends Component<Props> {
     }
   }
 
+  isExpandedLast = isExpanded();
   shouldComponentUpdate(nextProps) {
-    return false;
+    const shouldUpdate = isExpanded() !== this.isExpandedLast;
+    this.isExpandedLast = isExpanded();
+    return shouldUpdate;
   }
 
   render() {

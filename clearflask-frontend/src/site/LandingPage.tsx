@@ -4,8 +4,6 @@ import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
-import { Device } from '../common/DeviceContainer';
-import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { description as collectDescription, title as collectTitle } from './CollectPage';
 import { transparencyDescription, transparencyTitle } from './EngagePage';
 import Block from './landing/Block';
@@ -14,8 +12,6 @@ import Demo from './landing/Demo';
 import Demos from './landing/Demos';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
-import { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
 import { prioritizationDescription, prioritizationTitle } from './PrioritizePage';
 
 const styles = (theme: Theme) => createStyles({
@@ -62,87 +58,16 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           edgeType='outline'
           edgeSpacing
           // scale={0.7}
-          demoFixedHeight={400}
+          demoFixedHeight={500}
           template={templater => templater.demo(opts)}
           mock={mocker => mocker.templateMock(opts)}
+          settings={{
+            demoMenuAnimate: [
+              { path: '' },
+              { path: 'ideas' },
+            ],
+          }}
         />
-        <HorizontalPanels wrapBelow='lg' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
-          <Demo
-            variant='content'
-            type='column'
-            title='Seamless onboarding'
-            description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
-            initialSubPath='/embed/demo'
-            template={templater => {
-              setInitSignupMethodsTemplate(templater);
-              templater.styleWhite();
-            }}
-            scale={0.6}
-            demoFixedHeight={330}
-            demo={project => (<OnboardingDemo defaultDevice={Device.None} server={project.server} />)}
-            buttonTitle='See all options'
-            buttonLink='/collect'
-            buttonState={{ [SCROLL_TO_STATE_KEY]: 'onboarding' }}
-          />
-          <Demo
-            variant='content'
-            type='column'
-            title='Powerful search reduces duplicate submissions'
-            description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
-            buttonTitle='See More'
-            buttonLink='/collect'
-            buttonState={{ [SCROLL_TO_STATE_KEY]: 'search' }}
-            initialSubPath='/embed/demo'
-            scale={0.6}
-            demoFixedWidth={330}
-            demoFixedHeight={300}
-            template={templater => {
-              templater.demo();
-              templater.demoExplorer({
-                search: { limit: 4 },
-                allowCreate: undefined,
-                allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-              }, undefined, true);
-              templater.workflow(1); // Remove statuses for Bugs as it clutters the search bar
-            }}
-            mock={mocker => mocker.demoExplorer()}
-            settings={{
-              demoBlurryShadow: true,
-              demoSearchAnimate: [{
-                term: 'Trending',
-                update: { sortBy: Client.IdeaSearchSortByEnum.Trending },
-              }, {
-                term: 'Dark Mode',
-                update: { searchText: 'Dark Mode' },
-              }],
-            }}
-          />
-          <Demo
-            variant='content'
-            type='column'
-            title='Collect on-behalf of users'
-            description='asdfasdasf asf dsafdasfmkjldsf lkadsf dasf dasfds fdsa fdsakhfjklashflk sdf sadf '
-            buttonTitle='See More'
-            buttonLink='/collect'
-            buttonState={{ [SCROLL_TO_STATE_KEY]: 'on-behalf' }}
-            initialSubPath='/embed/demo'
-            template={templater => templater.demoExplorer({
-              allowCreate: { actionTitle: 'Suggest' },
-              allowSearch: undefined,
-            })}
-            mock={mocker => mocker.demoExplorer()}
-            scale={0.6}
-            demoFixedWidth={330}
-            demoFixedHeight={300}
-            settings={{
-              demoBlurryShadow: true,
-              demoCreateAnimate: {
-                title: 'Add Dark Mode',
-                description: 'To reduce eye-strain, please add a dark mode option',
-              },
-            }}
-          />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -163,7 +88,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             demoFlashPostVotingControls: true,
           }}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerHeight={0}>
+        <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs' staggerHeight={0}>
           <Demo
             variant='content'
             type='column'
@@ -177,7 +102,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             settings={{
               demoVotingExpressionsAnimate: [
                 { type: 'vote', upvote: true },
-                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Add } },
+                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
                 { type: 'vote', upvote: false },
                 { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
               ],
@@ -215,21 +140,21 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
       <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
         <BlockContent
           variant='content'
-          title='Support credit system for SAAS companies'
+          title='Support and Feedback for SAAS companies'
           description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
           buttonTitle='See Demo'
           buttonLink='/case-study#saas'
         />
         <BlockContent
           variant='content'
-          title='Donation-based open-source library'
+          title='Community-funded Open-Source product'
           description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
           buttonTitle='See Demo'
           buttonLink='/case-study#open-source'
         />
         <BlockContent
           variant='content'
-          title='Mobile social media app'
+          title='Mobile App monetization strategy'
           description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
           buttonTitle='See Demo'
           buttonLink='/case-study#mobile-social-media'

@@ -318,9 +318,10 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
       const increment = (this.props.credits?.increment || 1) * (fundDiff >= 0 ? 1 : -1);
 
-      while (Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
-        && this.props.balance >= fundDiff + increment
-        && (idea.funded || 0) + fundDiff + increment >= 0) {
+      while (this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId
+        && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
+        && this.props.balance >= (this.state.sliderFundAmountDiff || 0) + increment
+        && (idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment >= 0) {
         await new Promise(resolve => this.setState({
           sliderCurrentIdeaId: idea!.ideaId,
           sliderFundAmountDiff: (this.state.sliderFundAmountDiff || 0) + increment,
@@ -331,19 +332,22 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
         await this.inViewObserverRef.current?.get();
       }
 
-      await new Promise(resolve => this.setState({ sliderIsSubmitting: true }, resolve));
-      try {
-        await this.props.updateVote(idea.ideaId, {
-          fundDiff: this.state.sliderFundAmountDiff!,
-        });
-      } catch (er) {
+      if (this.state.sliderCurrentIdeaId === idea.ideaId
+        && this.state.sliderFundAmountDiff !== 0) {
+        await new Promise(resolve => this.setState({ sliderIsSubmitting: true }, resolve));
+        try {
+          await this.props.updateVote(idea.ideaId, {
+            fundDiff: this.state.sliderFundAmountDiff!,
+          });
+        } catch (er) {
+        }
+        await new Promise(resolve => this.setState({
+          sliderCurrentIdeaId: undefined,
+          fixedTarget: undefined,
+          sliderFundAmountDiff: undefined,
+          sliderIsSubmitting: false,
+        }, resolve));
       }
-      await new Promise(resolve => this.setState({
-        sliderCurrentIdeaId: undefined,
-        fixedTarget: undefined,
-        sliderFundAmountDiff: undefined,
-        sliderIsSubmitting: false,
-      }, resolve));
 
       await new Promise(resolve => setTimeout(resolve, 500));
       if (!this._isMounted) return;
