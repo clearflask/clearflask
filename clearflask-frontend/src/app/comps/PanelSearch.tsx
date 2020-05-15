@@ -363,9 +363,10 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
 
         await new Promise(resolve => setTimeout(resolve, 2000));
         for (var i = 0; i < searchTerm.term.length; i++) {
+          const term = searchTerm.term[i];
           if (!this._isMounted) return;
           await this.inViewObserverRef.current?.get();
-          await new Promise(resolve => this.setState({ searchValue: (this.state.searchValue || '') + searchTerm.term[i], menuIsOpen: true }, resolve));
+          await new Promise(resolve => this.setState({ searchValue: (this.state.searchValue || '') + term, menuIsOpen: true }, resolve));
           await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         }
 

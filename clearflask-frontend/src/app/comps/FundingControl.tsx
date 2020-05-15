@@ -308,12 +308,9 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     for (const change of (isReverse ? [...changes].reverse() : changes)) {
       const fundDiff = change.fundDiff * (isReverse ? -1 : 1)
 
-      var idea: Client.Idea | undefined;
-      if (change.index === 0 && !!this.props.idea) {
-        idea = this.props.idea;
-      } else {
-        idea = this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
-      }
+      const idea = (change.index === 0 && !!this.props.idea)
+        ? this.props.idea
+        : this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
       if (!idea) continue;
 
       const increment = (this.props.credits?.increment || 1) * (fundDiff >= 0 ? 1 : -1);

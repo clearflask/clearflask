@@ -97,10 +97,11 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         blockVariant = 'content';
         break;
     }
+    const { classes, ...blockContentProps } = this.props;
     const content = (
       <BlockContent
         variant={blockVariant}
-        {...this.props as BlockContentProps}
+        {...blockContentProps}
       />
     );
     var demo = this.props.demo;
@@ -157,7 +158,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           alignItems={(this.props.imagePath || isHero) ? 'center' : 'flex-end'}
           justify='center'
         >
-          <Grid item xs={12} md={isLargeDemo ? 8 : 6} className={this.props.classes.grid} direction='column'>
+          <Grid item xs={12} md={isLargeDemo ? 8 : 6} className={this.props.classes.grid}>
             {display}
           </Grid>
           <Grid item xs={12} sm={8} md={isLargeDemo ? 4 : 6} lg={isLargeDemo ? 3 : 5} xl={isLargeDemo ? 2 : 4} className={this.props.classes.grid}>
@@ -169,4 +170,4 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(Block));
+export default withRouter(withStyles(styles, { withTheme: true })(Block));

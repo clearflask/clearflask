@@ -274,7 +274,7 @@ class DataMock {
 
   demoPrioritization() {
     return this.demoPage(async (config, user) => {
-      const idea1 = await ServerMock.get().ideaCreateAdmin({
+      await ServerMock.get().ideaCreateAdmin({
         projectId: this.projectId,
         ideaCreateAdmin: {
           authorUserId: user.userId,

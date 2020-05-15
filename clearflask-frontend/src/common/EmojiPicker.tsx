@@ -37,6 +37,7 @@ interface Props {
 }
 class EmojiPicker extends React.Component<Props & PickerProps & WithStyles<typeof styles, true>> {
   render() {
+    const { classes, ...pickerProps } = this.props;
     return (
       <span className={this.props.classes.picker}>
         <Picker
@@ -52,7 +53,7 @@ class EmojiPicker extends React.Component<Props & PickerProps & WithStyles<typeo
             display: 'block',
           } : undefined}
           color={this.props.theme.palette.primary.main}
-          {...this.props}
+          {...pickerProps}
         />
       </span>
     );

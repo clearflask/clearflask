@@ -611,7 +611,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <React.Fragment>
-        <Button key='edit' variant='text' className={this.props.classes.editButton}
+        <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
           <Typography variant='caption'>Edit</Typography>
         </Button>

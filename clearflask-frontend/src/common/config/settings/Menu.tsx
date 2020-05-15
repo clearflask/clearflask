@@ -120,6 +120,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
     const expanded = this.isExpanded(this.props.page.path);
     const padding = Menu.paddingForLevel(1, this.props.page.path);
     const color = this.props.page.getColor();
+    const { classes, ...menuProps } = this.props;
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
         <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
@@ -145,9 +146,9 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
             .map(child => {
               switch (child.type) {
                 case ConfigEditor.PageType:
-                  return (<MenuPage {...this.props} hasUnsavedChanges={false} key={child.key} page={child} />);
+                  return (<MenuPage {...menuProps} hasUnsavedChanges={false} key={child.key} page={child} />);
                 case ConfigEditor.PageGroupType:
-                  return (<MenuPageGroup {...this.props} key={child.key} pageGroup={child} />);
+                  return (<MenuPageGroup {...menuProps} key={child.key} pageGroup={child} />);
                 default:
                   return null;
               }
@@ -204,6 +205,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
   render() {
     const childPages = this.props.pageGroup.getChildPages();
     const padding = Menu.paddingForLevel(1, this.props.pageGroup.path);
+    const { classes, ...menuProps } = this.props;
     return (
       <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>
         <div>
@@ -215,7 +217,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
           <div className={this.props.classes.childrenContainer}>
             <div className={this.props.classes.childrenPadder} style={padding} />
             {childPages.map(childPage =>
-              <MenuPage {...this.props} key={childPage.key} page={childPage} />
+              <MenuPage {...menuProps} key={childPage.key} page={childPage} />
             )}
           </div>
         </div>

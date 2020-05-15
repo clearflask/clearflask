@@ -426,19 +426,21 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       await this.inViewObserverRef.current?.get();
 
       for (var i = 0; i < title.length; i++) {
+        const character = title[i];
         await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
         if (!this._isMounted) return;
         await this.inViewObserverRef.current?.get();
-        await new Promise(resolve => this.setState({ newItemTitle: (this.state.newItemTitle || '') + title[i] }, resolve));
+        await new Promise(resolve => this.setState({ newItemTitle: (this.state.newItemTitle || '') + character }, resolve));
       }
 
       if (description !== undefined) {
         await new Promise(resolve => setTimeout(resolve, 100));
-        for (var i = 0; i < description.length; i++) {
+        for (var j = 0; j < description.length; j++) {
+          const character = description[j];
           await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
           if (!this._isMounted) return;
           await this.inViewObserverRef.current?.get();
-          await new Promise(resolve => this.setState({ newItemDescription: (this.state.newItemDescription || '') + description[i] }, resolve));
+          await new Promise(resolve => this.setState({ newItemDescription: (this.state.newItemDescription || '') + character }, resolve));
         }
       }
 

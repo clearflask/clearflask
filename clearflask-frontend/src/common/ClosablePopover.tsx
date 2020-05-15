@@ -23,6 +23,7 @@ interface Props extends PopoverProps {
 }
 class ClosablePopover extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
+    const { classes, ...popoverProps } = this.props;
     return (
       <Popover
         disableAutoFocus={this.props.unlockScroll}
@@ -34,9 +35,9 @@ class ClosablePopover extends Component<Props & WithStyles<typeof styles, true>>
         disableScrollLock={this.props.unlockScroll}
         manager={this.props.unlockScroll ? new ModalManager() : undefined}
         style={this.props.unlockScroll ? {
-          position: 'relative' + '!important' as 'absolute',
+          position: 'relative!important' as 'absolute',
         } : undefined}
-        {...this.props}
+        {...popoverProps}
       >
         <IconButton className={this.props.classes.closeButton} aria-label="Close" onClick={() => this.props.onClose()}>
           <CloseIcon className={this.props.classes.closeIcon} fontSize='inherit' />

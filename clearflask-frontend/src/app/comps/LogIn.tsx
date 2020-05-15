@@ -255,7 +255,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         value={this.state.displayName || ''}
                         onChange={e => this.setState({ displayName: e.target.value })}
                         label='Display name'
-                        helperText={(<div className={this.props.classes.noWrap}>How others see you</div>)}
+                        helperText={(<span className={this.props.classes.noWrap}>How others see you</span>)}
                         margin='normal'
                         classes={{ root: this.props.classes.noWrap }}
                         style={{ marginTop: '0px' }}
@@ -271,7 +271,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           onChange={e => this.setState({ email: e.target.value })}
                           label='Email'
                           type='email'
-                          helperText={(<div className={this.props.classes.noWrap}>Where to send you updates</div>)}
+                          helperText={(<span className={this.props.classes.noWrap}>Where to send you updates</span>)}
                           margin='normal'
                           style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
@@ -283,11 +283,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                             value={this.state.pass || ''}
                             onChange={e => this.setState({ pass: e.target.value })}
                             label='Password'
-                            helperText={(<div className={this.props.classes.noWrap}>
+                            helperText={(<span className={this.props.classes.noWrap}>
                               {isPasswordRequired
                                 ? 'Secure your account'
                                 : 'Optionally secure your account'}
-                            </div>)}
+                            </span>)}
                             type={this.state.revealPassword ? 'text' : 'password'}
                             InputProps={{
                               endAdornment: (
@@ -323,7 +323,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     onChange={e => this.setState({ email: e.target.value })}
                     label='Email'
                     type='email'
-                    helperText={(<div className={this.props.classes.noWrap}>Email you used to sign up</div>)}
+                    helperText={(<span className={this.props.classes.noWrap}>Email you used to sign up</span>)}
                     margin='normal'
                     style={{ marginTop: '0px' }}
                     disabled={this.state.isSubmitting}
@@ -333,7 +333,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     value={this.state.pass || ''}
                     onChange={e => this.setState({ pass: e.target.value })}
                     label='Password'
-                    helperText={(<div className={this.props.classes.noWrap}>Leave blank if you forgot</div>)}
+                    helperText={(<span className={this.props.classes.noWrap}>Leave blank if you forgot</span>)}
                     type={this.state.revealPassword ? 'text' : 'password'}
                     InputProps={{
                       endAdornment: (
