@@ -80,6 +80,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
         }
         demo = (
           <div
+            onClickCapture={(e) => this.onClickCapture(e, project)}
             style={{
               height: this.props.demoFixedHeight,
               width: this.props.demoFixedWidth,
@@ -103,6 +104,18 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
         );
       }} />
     );
+  }
+
+  onClickCapture(event, project: Project) {
+    if (project.server.getStore().getState().settings.demoUserIsInteracting) {
+      return;
+    }
+    project.server.getStore().dispatch({
+      type: 'updateSettings',
+      payload: {
+        demoUserIsInteracting: true,
+      }
+    });
   }
 }
 

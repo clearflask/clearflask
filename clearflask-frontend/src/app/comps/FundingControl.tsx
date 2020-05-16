@@ -5,11 +5,12 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
+import { getSearchKey, ReduxState, Server, StateSettings, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import InViewObserver from '../../common/InViewObserver';
 import minmax from '../../common/util/mathutil';
 import { MutableRef } from '../../common/util/refUtil';
+import { animateWrapper } from '../../site/landing/animateUtil';
 import Loader from '../utils/Loader';
 import FundingBar, { FundingMaxWidth } from './FundingBar';
 import LoadMoreButton from './LoadMoreButton';
@@ -67,6 +68,7 @@ interface ConnectProps {
   otherFundedIdeas: SearchResult;
   balance: number;
   maxFundAmountSeen: number;
+  settings: StateSettings;
   updateVote: (ideaId: string, voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
   callOnMount: () => void,
   loadMore?: () => void;
@@ -150,7 +152,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
           )}
           <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
             {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
-              <div className={this.props.classes.separatorMargin}>
+              <div key={idea.ideaId} className={this.props.classes.separatorMargin}>
                 <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
                   <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
                   {!showFirstIdea && (
@@ -300,10 +302,13 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
   }
 
   async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>, isReverse: boolean = false) {
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (!this._isMounted) return;
-    await this.inViewObserverRef.current?.get();
+    if (await animate({ sleepInMs: 500 })) return;
 
     for (const change of (isReverse ? [...changes].reverse() : changes)) {
       const fundDiff = change.fundDiff * (isReverse ? -1 : 1)
@@ -319,36 +324,33 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
         && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
         && this.props.balance >= (this.state.sliderFundAmountDiff || 0) + increment
         && (idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment >= 0) {
-        await new Promise(resolve => this.setState({
-          sliderCurrentIdeaId: idea!.ideaId,
-          sliderFundAmountDiff: (this.state.sliderFundAmountDiff || 0) + increment,
-        }, resolve));
 
-        await new Promise(resolve => setTimeout(resolve, 50));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
+        if (await animate({
+          setState: {
+            sliderCurrentIdeaId: idea.ideaId,
+            sliderFundAmountDiff: (this.state.sliderFundAmountDiff || 0) + increment,
+          }
+        })) return;
+        if (await animate({ sleepInMs: 50 })) return;
       }
 
       if (this.state.sliderCurrentIdeaId === idea.ideaId
         && this.state.sliderFundAmountDiff !== 0) {
-        await new Promise(resolve => this.setState({ sliderIsSubmitting: true }, resolve));
-        try {
-          await this.props.updateVote(idea.ideaId, {
-            fundDiff: this.state.sliderFundAmountDiff!,
-          });
-        } catch (er) {
-        }
-        await new Promise(resolve => this.setState({
-          sliderCurrentIdeaId: undefined,
-          fixedTarget: undefined,
-          sliderFundAmountDiff: undefined,
-          sliderIsSubmitting: false,
-        }, resolve));
+        if (await animate({ setState: { sliderIsSubmitting: true } })) return;
+        await this.props.updateVote(idea.ideaId, {
+          fundDiff: this.state.sliderFundAmountDiff!,
+        });
+        if (await animate({
+          setState: {
+            sliderCurrentIdeaId: undefined,
+            fixedTarget: undefined,
+            sliderFundAmountDiff: undefined,
+            sliderIsSubmitting: false,
+          }
+        })) return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (!this._isMounted) return;
-      await this.inViewObserverRef.current?.get();
+      if (await animate({ sleepInMs: 500 })) return;
     }
   }
 }
@@ -368,6 +370,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       cursor: undefined,
     } as SearchResult,
     balance: state.credits.myBalance.balance || 0,
+    settings: state.settings,
     updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
       projectId: state.projectId,
       ideaId: ideaId,

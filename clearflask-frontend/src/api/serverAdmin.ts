@@ -106,7 +106,8 @@ export default class ServerAdmin {
     try {
       var result = await store.dispatch(msg);
     } catch (response) {
-      console.log("Dispatch error: ", response);
+      console.log("Dispatch error: ", msg, response);
+      console.trace();
       try {
         if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
           if (!challengeSubscriber) {

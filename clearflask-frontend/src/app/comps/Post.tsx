@@ -22,6 +22,7 @@ import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
 import notEmpty from '../../common/util/arrayUtil';
 import { createMutableRef } from '../../common/util/refUtil';
+import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
 import CommentList from './CommentList';
@@ -610,7 +611,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || (!this.props.server.isAdminLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
 
     return (
-      <React.Fragment>
+      <React.Fragment key='edit'>
         <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
           <Typography variant='caption'>Edit</Typography>
@@ -684,8 +685,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  upvoteRef: React.RefObject<HTMLButtonElement> = React.createRef();
-  downvoteRef: React.RefObject<HTMLButtonElement> = React.createRef();
   renderVoting(variant: PostVariant) {
     if (variant !== 'page' && this.props.display && this.props.display.showVoting === false
       || !this.props.idea
@@ -698,51 +697,53 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <VotingControl
-        upvoteRef={this.upvoteRef}
-        downvoteRef={this.downvoteRef}
         className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateVoting : undefined}
         vote={this.props.vote}
         voteValue={this.props.idea.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}
         votingAllowed={votingAllowed}
-        onUpvote={() => {
-          const upvote = () => {
-            if (!votingAllowed || this.state.isSubmittingVote) return;
-            this.setState({ isSubmittingVote: Client.VoteOption.Upvote });
-            this.props.updateVote({
-              vote: (this.props.vote === Client.VoteOption.Upvote)
-                ? Client.VoteOption.None : Client.VoteOption.Upvote
-            })
-              .then(() => this.setState({ isSubmittingVote: undefined }),
-                () => this.setState({ isSubmittingVote: undefined }));
-          };
-          if (this.props.loggedInUser) {
-            upvote();
-          } else {
-            this.onLoggedIn = upvote;
-            this.setState({ logInOpen: true });
-          }
-        }}
-        onDownvote={this.props.category.support.vote.enableDownvotes ? () => {
-          if (!votingAllowed || this.state.isSubmittingVote) return;
-          const downvote = () => {
-            this.setState({ isSubmittingVote: Client.VoteOption.Downvote });
-            this.props.updateVote({
-              vote: (this.props.vote === Client.VoteOption.Downvote)
-                ? Client.VoteOption.None : Client.VoteOption.Downvote
-            })
-              .then(() => this.setState({ isSubmittingVote: undefined }),
-                () => this.setState({ isSubmittingVote: undefined }));
-          };
-          if (this.props.loggedInUser) {
-            downvote();
-          } else {
-            this.onLoggedIn = downvote;
-            this.setState({ logInOpen: true });
-          }
-        } : undefined}
+        onUpvote={() => this.upvote()}
+        onDownvote={this.props.category.support.vote.enableDownvotes ? () => this.downvote() : undefined}
       />
     );
+  }
+
+  upvote() {
+    const upvote = () => {
+      if (this.state.isSubmittingVote) return;
+      this.setState({ isSubmittingVote: Client.VoteOption.Upvote });
+      this.props.updateVote({
+        vote: (this.props.vote === Client.VoteOption.Upvote)
+          ? Client.VoteOption.None : Client.VoteOption.Upvote
+      })
+        .then(() => this.setState({ isSubmittingVote: undefined }),
+          () => this.setState({ isSubmittingVote: undefined }));
+    };
+    if (this.props.loggedInUser) {
+      upvote();
+    } else {
+      this.onLoggedIn = upvote;
+      this.setState({ logInOpen: true });
+    }
+  }
+
+  downvote() {
+    if (this.state.isSubmittingVote) return;
+    const downvote = () => {
+      this.setState({ isSubmittingVote: Client.VoteOption.Downvote });
+      this.props.updateVote({
+        vote: (this.props.vote === Client.VoteOption.Downvote)
+          ? Client.VoteOption.None : Client.VoteOption.Downvote
+      })
+        .then(() => this.setState({ isSubmittingVote: undefined }),
+          () => this.setState({ isSubmittingVote: undefined }));
+    };
+    if (this.props.loggedInUser) {
+      downvote();
+    } else {
+      this.onLoggedIn = downvote;
+      this.setState({ logInOpen: true });
+    }
   }
 
   readonly fundingPadding = this.props.theme.spacing(3);
@@ -1097,23 +1098,23 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!this._isMounted) return;
-    await this.inViewObserverRef.current?.get();
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
     var isReverse = false;
 
     for (; ;) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (!this._isMounted) return;
-      await this.inViewObserverRef.current?.get();
+      if (await animate({ sleepInMs: 500 })) return;
       await new Promise(resolve => this.fundingExpand(resolve));
 
       if (!this.fundingControlRef.current) return;
       await this.fundingControlRef.current.demoFundingControlAnimate(changes, isReverse);
 
-      if (!this._isMounted) return;
-      await this.inViewObserverRef.current?.get();
-      await new Promise(resolve => this.setState({ fundingExpanded: false }, resolve));
+      if (await animate({ setState: { fundingExpanded: false } })) return;
 
       isReverse = !isReverse;
     }
@@ -1126,37 +1127,32 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     type: 'express';
     update: Client.IdeaVoteUpdateExpressions;
   }>) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!this._isMounted) return;
-    await this.inViewObserverRef.current?.get();
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
 
+    if (await animate({ sleepInMs: 1000 })) return;
     for (; ;) {
       for (const change of changes) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
-
+        if (await animate({ sleepInMs: 1000 })) return;
         switch (change.type) {
           case 'vote':
             if (change.upvote) {
-              this.upvoteRef.current?.click();
+              this.upvote();
             } else {
-              this.downvoteRef.current?.click();
+              this.downvote();
             }
             break;
           case 'express':
             await new Promise(resolve => this.expressExpand(resolve));
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (!this._isMounted) return;
-            await this.inViewObserverRef.current?.get();
+            if (await animate({ sleepInMs: 1000 })) return;
 
             await this.props.updateVote({ expressions: change.update });
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            if (!this._isMounted) return;
-            await this.inViewObserverRef.current?.get();
-            await new Promise(resolve => this.setState({ expressionExpanded: false }, resolve));
+            if (await animate({ sleepInMs: 1000, setState: { expressionExpanded: false } })) return;
 
             break;
         }

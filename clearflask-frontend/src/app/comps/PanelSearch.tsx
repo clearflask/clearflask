@@ -7,6 +7,7 @@ import { ActionMeta } from 'react-select/lib/types';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
+import { animateWrapper } from '../../site/landing/animateUtil';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 
 export enum FilterType {
@@ -352,36 +353,32 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     term: string;
     update: Partial<Client.IdeaSearch>;
   }>) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
       for (const searchTerm of searchTerms) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
-        await new Promise(resolve => this.setState({ menuIsOpen: true }, resolve));
+        if (await animate({ sleepInMs: 150, setState: { menuIsOpen: true } })) return;
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (await animate({ sleepInMs: 2000 })) return;
         for (var i = 0; i < searchTerm.term.length; i++) {
           const term = searchTerm.term[i];
-          if (!this._isMounted) return;
-          await this.inViewObserverRef.current?.get();
-          await new Promise(resolve => this.setState({ searchValue: (this.state.searchValue || '') + term, menuIsOpen: true }, resolve));
-          await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
+          if (await animate({
+            sleepInMs: 10 + Math.random() * 30,
+            setState: { searchValue: (this.state.searchValue || '') + term, menuIsOpen: true }
+          })) return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 150));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
-        await new Promise(resolve => this.setState({ searchValue: '', menuIsOpen: undefined }, () => {
-          this.props.onSearchChanged({ ...this.props.search, ...searchTerm.update });
-          resolve();
-        }));
+        if (await animate({ sleepInMs: 2000, setState: { searchValue: '', menuIsOpen: undefined } })) return;
+        this.props.onSearchChanged({ ...this.props.search, ...searchTerm.update });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-      if (!this._isMounted) return;
-      await this.inViewObserverRef.current?.get();
+      if (await animate({ sleepInMs: 300 })) return;
       this.props.onSearchChanged({});
     }
   }

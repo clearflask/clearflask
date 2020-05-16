@@ -1,8 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { Provider } from 'react-redux';
 import * as Client from '../api/client';
-import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import { description as collectDescription, title as collectTitle } from './CollectPage';
 import { transparencyDescription, transparencyTitle } from './EngagePage';
@@ -169,8 +167,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         <Demos
           title={transparencyTitle}
           description={transparencyDescription}
-          buttonTitle='Learn about transparency'
-          buttonLink='/transparency'
+          buttonTitle='Engage with your community'
+          buttonLink='/engage'
           mirror={mirror}
           stackProps={{
             contentSpacingVertical: 100,
@@ -210,46 +208,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           ]}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
-          <BlockContent
-            variant='content'
-            title='Roadmap'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/engagement#roadmap'
-          />
-          <BlockContent
-            variant='content'
-            title='Admin replies and notifications'
-            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-            buttonTitle='See More'
-            buttonLink='/engagement#admin-reply'
-          />
-          <Demo
-            variant='content'
-            type='column'
-            title='Organized discussion with threaded comments'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/engagement#notifications'
-            scale={0.5}
-            template={templater => templater.demoCategory()}
-            mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
-              .then(() => mocker.mockLoggedIn())}
-            demo={project => (
-              <Provider store={project.server.getStore()}>
-                <CommentList
-                  server={project.server}
-                  ideaId='ideaId'
-                  expectedCommentCount={1}
-                  logIn={() => Promise.resolve()}
-                  newCommentsAllowed
-                  loggedInUser={project.server.getStore().getState().users.loggedIn.user}
-                />
-              </Provider>
-            )}
-          />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -258,55 +216,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         <Block
-          title='Customization afasdfsdaf fas fdsasf sadf dsaa fs'
+          title='Made with customization in mind'
           description='fasdfsdaf asf d fdsafds fasf asf asasf asf fa fasd  sad as as asfd asfd'
           mirror={mirror}
           buttonTitle='See templates'
           buttonLink='/customize'
         />
-        <HorizontalPanels wrapBelow='sm' maxWidth='xl' maxContentWidth='xs' staggerHeight={50}>
-          <BlockContent
-            variant='content'
-            title='Predefined templates'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/customize#templates'
-          />
-          <BlockContent
-            variant='content'
-            title='Content types'
-            description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-            buttonTitle='See More'
-            buttonLink='/customize#content'
-          />
-          <BlockContent
-            variant='content'
-            title='Site layout'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/customize#layout'
-          />
-          <Demo
-            variant='content'
-            type='column'
-            title='Look and feel'
-            description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-            buttonTitle='See More'
-            buttonLink='/customize#look-and-feel'
-            initialSubPath={'/post/ideaid'}
-            scale={0.7}
-            template={templater => {
-              const categoryId = templater.demoCategory();
-              templater.supportVoting(categoryId, true);
-              templater.workflowFeatures(categoryId);
-              templater.styleDark();
-              // templater.setFontFamily('"Comic Sans MS", cursive, sans-serif');
-              templater.setAppName('Smotana', 'https://smotana.com/favicon.ico');
-            }}
-            mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
-              .then(() => mocker.mockLoggedIn())}
-          />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }

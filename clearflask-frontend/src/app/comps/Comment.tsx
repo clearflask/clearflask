@@ -177,8 +177,8 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       || (this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 
     return (
-      <React.Fragment>
-        <Button key='edit' variant='text' className={this.props.classes.editButton}
+      <React.Fragment key='adminDelete'>
+        <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}>
           <Typography variant='caption'>Delete</Typography>
         </Button>
@@ -202,8 +202,8 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       || !(this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 
     return (
-      <React.Fragment>
-        <Button key='edit' variant='text' className={this.props.classes.editButton}
+      <React.Fragment key='edit'>
+        <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
           <Typography variant='caption'>Edit</Typography>
         </Button>
@@ -225,7 +225,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     if (!this.props.comment || !this.props.comment.edited) return null;
 
     return (
-      <Typography className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
+      <Typography key='edited' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
         {!this.props.comment.author ? 'deleted' : 'edited'}
         &nbsp;
         <TimeAgo date={this.props.comment.edited} />
@@ -239,7 +239,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       || !this.props.comment.author.name) return null;
 
     return (
-      <Typography className={this.props.classes.barItem} variant='caption'>
+      <Typography key='author' className={this.props.classes.barItem} variant='caption'>
         {this.props.comment.author.name}
       </Typography>
     );
@@ -249,7 +249,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     if (!this.props.comment) return null;
 
     return (
-      <Typography className={this.props.classes.barItem} variant='caption'>
+      <Typography key='created' className={this.props.classes.barItem} variant='caption'>
         <TimeAgo date={this.props.comment.created} />
       </Typography>
     );

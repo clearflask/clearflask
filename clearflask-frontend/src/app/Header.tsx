@@ -12,6 +12,7 @@ import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
 import DropdownTab from '../common/DropdownTab';
 import InViewObserver from '../common/InViewObserver';
 import notEmpty from '../common/util/arrayUtil';
+import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import NotificationBadge from './NotificationBadge';
 
@@ -259,17 +260,19 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
   }
 
   async demoMenuAnimate(changes: Array<{ path: string }>) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!this._isMounted) return;
-    await this.inViewObserverRef.current?.get();
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
       for (const change of changes) {
         this.props.pageChanged(change.path);
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
+        if (await animate({ sleepInMs: 2000 })) return;
       }
     }
   }

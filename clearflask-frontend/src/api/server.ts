@@ -16,8 +16,10 @@ export enum Status {
   REJECTED = 'REJECTED',
 }
 
+type AllActions = Admin.Actions | Client.Actions | updateSettingsAction;
+
 export class Server {
-  readonly store: Store<ReduxState, Admin.Actions | Client.Actions>;
+  readonly store: Store<ReduxState, AllActions>;
   readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
@@ -91,7 +93,7 @@ export class Server {
     return this.store.getState().projectId;
   }
 
-  getStore(): Store<ReduxState, Admin.Actions | Client.Actions> {
+  getStore(): Store<ReduxState, AllActions> {
     return this.store;
   }
 
@@ -165,7 +167,7 @@ export const getTransactionSearchKey = (search: Client.TransactionSearch): strin
   ].join('-');
 }
 
-function reducerProjectId(projectId: string = 'unknown', action: Client.Actions | Admin.Actions): string {
+function reducerProjectId(projectId: string = 'unknown', action: AllActions): string {
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
       return (action as any).payload.config.projectId || projectId;
@@ -182,7 +184,12 @@ export const cssBlurry = {
     textShadow: '0px 0px 12px rgba(0,0,0,0.8)',
   }
 };
+interface updateSettingsAction {
+  type: 'updateSettings';
+  payload: Partial<StateSettings>;
+}
 export interface StateSettings {
+  demoUserIsInteracting?: boolean;
   demoPortalContainer?: React.RefObject<any>;
   demoFlashPostVotingControls?: boolean;
   demoFundingControlAnimate?: Array<{
@@ -210,8 +217,16 @@ export interface StateSettings {
   }>;
 };
 const stateSettingsDefault = {};
-function reducerSettings(state: StateSettings = stateSettingsDefault, action: Client.Actions | Admin.Actions): StateSettings {
-  return state;
+function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {
+  switch (action.type) {
+    case 'updateSettings':
+      return {
+        ...state,
+        ...action.payload,
+      };
+    default:
+      return state;
+  }
 }
 
 export interface StateConf {
@@ -219,7 +234,7 @@ export interface StateConf {
   conf?: Client.Config;
   ver?: string;
 }
-function reducerConf(state: StateConf = {}, action: Client.Actions | Admin.Actions): StateConf {
+function reducerConf(state: StateConf = {}, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
@@ -264,7 +279,7 @@ const stateIdeasDefault = {
   bySearch: {},
   maxFundAmountSeen: 0,
 };
-function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: Client.Actions | Admin.Actions): StateIdeas {
+function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions): StateIdeas {
   var searchKey;
   switch (action.type) {
     case Client.ideaGetActionStatus.Pending:
@@ -492,7 +507,7 @@ const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
 };
-function reducerComments(state: StateComments = stateCommentsDefault, action: Client.Actions | Admin.Actions): StateComments {
+function reducerComments(state: StateComments = stateCommentsDefault, action: AllActions): StateComments {
   switch (action.type) {
     case Client.commentListActionStatus.Pending:
       return {
@@ -631,7 +646,7 @@ const stateUsersDefault = {
   byId: {},
   loggedIn: {},
 };
-function reducerUsers(state: StateUsers = stateUsersDefault, action: Client.Actions | Admin.Actions): StateUsers {
+function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions): StateUsers {
   switch (action.type) {
     case Client.userGetActionStatus.Pending:
       return {
@@ -745,7 +760,7 @@ const stateVotesDefault = {
   expressionByIdeaId: {},
   fundAmountByIdeaId: {},
 };
-function reducerVotes(state: StateVotes = stateVotesDefault, action: Client.Actions | Admin.Actions): StateVotes {
+function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions): StateVotes {
   switch (action.type) {
     case Client.ideaVoteGetOwnActionStatus.Pending:
       return {
@@ -959,7 +974,7 @@ const stateCommentVotesDefault = {
   statusByCommentId: {},
   votesByCommentId: {},
 };
-function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault, action: Client.Actions | Admin.Actions): StateCommentVotes {
+function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault, action: AllActions): StateCommentVotes {
   switch (action.type) {
     case Client.commentVoteGetOwnActionStatus.Pending:
       return {
@@ -1097,7 +1112,7 @@ const stateCreditsDefault = {
   transactionSearch: {},
   myBalance: {},
 };
-function reducerCredits(state: StateCredits = stateCreditsDefault, action: Client.Actions | Admin.Actions): StateCredits {
+function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllActions): StateCredits {
   switch (action.type) {
     case Client.transactionSearchActionStatus.Pending:
       return {
@@ -1191,7 +1206,7 @@ export interface StateNotifications {
 const stateNotificationsDefault = {
   notificationSearch: {},
 };
-function reducerNotifications(state: StateNotifications = stateNotificationsDefault, action: Client.Actions | Admin.Actions): StateNotifications {
+function reducerNotifications(state: StateNotifications = stateNotificationsDefault, action: AllActions): StateNotifications {
   switch (action.type) {
     case Client.notificationSearchActionStatus.Pending:
       return {

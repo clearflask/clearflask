@@ -7,7 +7,7 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import RoadmapControls from './landing/RoadmapControls';
 
-export const transparencyTitle = 'Keep users engaged with your roadmap';
+export const transparencyTitle = 'Create a community around your product roadmap';
 export const transparencyDescription = 'Inform your users of your progress at every step with updates and a transparent roadmap. Let them be involved in your decision making and make them feel valued.';
 
 const styles = (theme: Theme) => createStyles({
@@ -19,6 +19,8 @@ class EngagePage extends Component<WithStyles<typeof styles, true>> {
       <React.Fragment>
         {this.renderHero()}
         {this.renderRoadmap()}
+        {this.renderDiscussion()}
+        {this.renderNotifications()}
         {this.renderThread()}
         {this.renderSales(true)}
       </React.Fragment>
@@ -89,6 +91,45 @@ class EngagePage extends Component<WithStyles<typeof styles, true>> {
           demoBlurryShadow: true,
         }}
         controls={project => (<RoadmapControls templater={project.templater} />)}
+      />
+    );
+  }
+
+  renderDiscussion(mirror?: boolean) {
+    return (
+      <Demo
+        variant='content'
+        type='column'
+        title='Organized discussion with threaded comments'
+        description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+        buttonTitle='See More'
+        buttonLink='/engagement#notifications'
+        scale={0.5}
+        template={templater => templater.demoCategory()}
+        mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+          .then(() => mocker.mockLoggedIn())}
+        demo={project => (
+          <Provider store={project.server.getStore()}>
+            <CommentList
+              server={project.server}
+              ideaId='ideaId'
+              expectedCommentCount={1}
+              logIn={() => Promise.resolve()}
+              newCommentsAllowed
+              loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+            />
+          </Provider>
+        )}
+      />
+    );
+  }
+
+  renderNotifications(mirror?: boolean) {
+    return (
+      <Block
+        title='Admin replies and notifications'
+        description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+        mirror={mirror}
       />
     );
   }

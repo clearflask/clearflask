@@ -23,7 +23,7 @@ interface Props extends PopoverProps {
 }
 class ClosablePopover extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    const { classes, ...popoverProps } = this.props;
+    const { classes, spacing, unlockScroll, onClose, ...popoverProps } = this.props;
     return (
       <Popover
         disableAutoFocus={this.props.unlockScroll}

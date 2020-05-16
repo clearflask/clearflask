@@ -40,8 +40,6 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   className?: string;
-  upvoteRef?: React.RefObject<HTMLButtonElement>;
-  downvoteRef?: React.RefObject<HTMLButtonElement>;
   vote?: Client.VoteOption;
   hidden?: boolean;
   voteValue?: number;
@@ -60,7 +58,6 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={`${this.props.classes.container} ${this.props.hidden ? this.props.classes.hidden : ''} ${this.props.className || ''}`}>
         <IconButton
-          ref={this.props.upvoteRef}
           color={upvoted ? 'primary' : undefined}
           className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonUp} ${upvoted ? this.props.classes.voteIconVoted : ''}`}
           disabled={!this.props.votingAllowed}
@@ -75,7 +72,6 @@ class VotingControl extends Component<Props & WithStyles<typeof styles, true>> {
         )}
         {this.props.onDownvote !== undefined && (
           <IconButton
-            ref={this.props.downvoteRef}
             color={downvoted ? 'primary' : undefined}
             className={`${this.props.classes.voteIconButton} ${this.props.classes.voteIconButtonDown} ${downvoted ? this.props.classes.voteIconVoted : ''} ${this.props.voteValue === undefined ? this.props.classes.voteIconButtonDownWithoutValue : ''}`}
             disabled={!this.props.votingAllowed}

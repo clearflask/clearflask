@@ -29,41 +29,43 @@ class HelpPopper extends Component<Props, State> {
   readonly arrowRef: React.RefObject<HTMLSpanElement> = React.createRef();
 
   render() {
-    return [
-      <Button
-        className={this.props.classes.iconButton}
-        onClick={e => this.setState({ open: this.state.open ? undefined : e.currentTarget })}
-        onMouseOver={e => this.setState({ open: e.currentTarget })}
-        onMouseOut={e => this.setState({ open: undefined })}
-      >
-        <HelpIcon fontSize='inherit' />
-      </Button>,
-      <Popper
-        open={!!this.state.open}
-        anchorEl={this.state.open}
-        placement='bottom'
-        transition
-        modifiers={{
-          flip: {
-            enabled: true,
-          },
-          preventOverflow: {
-            enabled: true,
-            boundariesElement: 'scrollParent',
-          },
-        }}
-      >
-        {({ TransitionProps }) => (
-          <Fade {...TransitionProps}>
-            <Paper variant='outlined' className={this.props.classes.content}>
-              {this.props.title && (<Typography variant='subtitle2'>{this.props.title}</Typography>)}
-              {this.props.description && (<Typography variant='body1'>{this.props.description}</Typography>)}
-              {this.props.children}
-            </Paper>
-          </Fade>
-        )}
-      </Popper>,
-    ];
+    return (
+      <React.Fragment>
+        <Button
+          className={this.props.classes.iconButton}
+          onClick={e => this.setState({ open: this.state.open ? undefined : e.currentTarget })}
+          onMouseOver={e => this.setState({ open: e.currentTarget })}
+          onMouseOut={e => this.setState({ open: undefined })}
+        >
+          <HelpIcon fontSize='inherit' />
+        </Button>
+        <Popper
+          open={!!this.state.open}
+          anchorEl={this.state.open}
+          placement='bottom'
+          transition
+          modifiers={{
+            flip: {
+              enabled: true,
+            },
+            preventOverflow: {
+              enabled: true,
+              boundariesElement: 'scrollParent',
+            },
+          }}
+        >
+          {({ TransitionProps }) => (
+            <Fade {...TransitionProps}>
+              <Paper variant='outlined' className={this.props.classes.content}>
+                {this.props.title && (<Typography variant='subtitle2'>{this.props.title}</Typography>)}
+                {this.props.description && (<Typography variant='body1'>{this.props.description}</Typography>)}
+                {this.props.children}
+              </Paper>
+            </Fade>
+          )}
+        </Popper>
+      </React.Fragment>
+    );
   }
 }
 

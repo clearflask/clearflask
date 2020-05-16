@@ -11,6 +11,7 @@ import InViewObserver from '../../common/InViewObserver';
 import debounce from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
+import { animateWrapper } from '../../site/landing/animateUtil';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
 import Panel, { Direction } from './Panel';
@@ -416,54 +417,55 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   }
 
   async demoCreateAnimate(title: string, description?: string) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!this._isMounted) return;
-    await this.inViewObserverRef.current?.get();
+    const animate = animateWrapper(
+      () => this._isMounted,
+      this.inViewObserverRef,
+      () => this.props.settings,
+      this.setState.bind(this));
+
+    if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      if (!this._isMounted) return;
-      await this.inViewObserverRef.current?.get();
+      if (await animate({ sleepInMs: 1500 })) return;
 
       for (var i = 0; i < title.length; i++) {
         const character = title[i];
-        await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
-        await new Promise(resolve => this.setState({ newItemTitle: (this.state.newItemTitle || '') + character }, resolve));
+        if (await animate({
+          sleepInMs: 10 + Math.random() * 30,
+          setState: { newItemTitle: (this.state.newItemTitle || '') + character },
+        })) return;
       }
 
       if (description !== undefined) {
+        if (await animate({ sleepInMs: 100 })) return;
         await new Promise(resolve => setTimeout(resolve, 100));
         for (var j = 0; j < description.length; j++) {
           const character = description[j];
-          await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 30));
-          if (!this._isMounted) return;
-          await this.inViewObserverRef.current?.get();
-          await new Promise(resolve => this.setState({ newItemDescription: (this.state.newItemDescription || '') + character }, resolve));
+          if (await animate({
+            sleepInMs: 10 + Math.random() * 30,
+            setState: { newItemDescription: (this.state.newItemDescription || '') + character },
+          })) return;
         }
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (await animate({ sleepInMs: 500 })) return;
 
       if (description !== undefined) {
         while (this.state.newItemDescription !== undefined && this.state.newItemDescription.length !== 0) {
-          await new Promise(resolve => setTimeout(resolve, 5));
-          if (!this._isMounted) return;
-          await this.inViewObserverRef.current?.get();
-          const currentDescription = this.state.newItemDescription.substr(0, this.state.newItemDescription.length - 1);
-          await new Promise(resolve => this.setState({ newItemDescription: currentDescription }, resolve));
+          if (await animate({
+            sleepInMs: 5,
+            setState: { newItemDescription: this.state.newItemDescription.substr(0, this.state.newItemDescription.length - 1) },
+          })) return;
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       while (this.state.newItemTitle !== undefined && this.state.newItemTitle.length !== 0) {
-        await new Promise(resolve => setTimeout(resolve, 5));
-        if (!this._isMounted) return;
-        await this.inViewObserverRef.current?.get();
-        const currentTitle = this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1);
-        await new Promise(resolve => this.setState({ newItemTitle: currentTitle }, resolve));
+        if (await animate({
+          sleepInMs: 5,
+          setState: { newItemTitle: this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1) },
+        })) return;
       }
     }
   }
