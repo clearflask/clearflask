@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import CommentList from '../app/comps/CommentList';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
+import Demos from './landing/Demos';
 import Hero from './landing/Hero';
 import RoadmapControls from './landing/RoadmapControls';
 
@@ -21,6 +22,7 @@ class EngagePage extends Component<WithStyles<typeof styles, true>> {
         {this.renderRoadmap()}
         {this.renderDiscussion()}
         {this.renderNotifications()}
+        {this.renderEngagement()}
         {this.renderThread()}
         {this.renderSales(true)}
       </React.Fragment>
@@ -121,6 +123,57 @@ class EngagePage extends Component<WithStyles<typeof styles, true>> {
           </Provider>
         )}
       />
+    );
+  }
+
+  renderEngagement(mirror?: boolean) {
+    return (
+      <React.Fragment>
+        <Demos
+          title={transparencyTitle}
+          description={transparencyDescription}
+          buttonTitle='Engage with your community'
+          buttonLink='/engage'
+          mirror={mirror}
+          stackProps={{
+            contentSpacingVertical: 100,
+            ascendingLevel: true,
+            topLeftToBottomRight: true,
+            raiseOnHover: true,
+          }}
+          demos={[
+            {
+              scale: 0.7,
+              template: templater => {
+                const categoryId = templater.demoCategory();
+                templater.supportVoting(categoryId, true);
+                templater.workflowFeatures(categoryId);
+                templater.styleWhite();
+              },
+              mock: (mocker, config) => mocker.mockFakeIdeaWithComments('ideaid')
+                .then(() => mocker.mockLoggedIn()),
+              initialSubPath: '/embed/post/ideaid',
+            },
+            {
+              initialSubPath: '/embed/demo',
+              scale: 0.5,
+              template: templater => templater.demoBoardPreset('development'),
+              mock: mocker => mocker.demoBoard([
+                { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
+                { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
+                { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
+                { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
+                { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+                { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
+                { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
+              ]),
+              settings: {
+                demoBlurryShadow: true,
+              },
+            },
+          ]}
+        />
+      </React.Fragment>
     );
   }
 

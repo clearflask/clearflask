@@ -29,7 +29,6 @@ enum FilterType {
 
 const styles = (theme: Theme) => createStyles({
   content: {
-    margin: theme.spacing(2),
   },
   createFormFields: {
     display: 'flex',

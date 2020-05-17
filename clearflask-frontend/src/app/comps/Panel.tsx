@@ -24,6 +24,7 @@ interface SearchResult {
 
 const styles = (theme: Theme) => createStyles({
   container: {
+    // padding: theme.spacing(1, 0, 0, 1),
     display: 'flex',
   },
   nothing: {

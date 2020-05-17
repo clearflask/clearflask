@@ -16,6 +16,7 @@ const styles = (theme: Theme) => createStyles({
   },
   fundingGoal: {
     fontSize: '0.8em',
+    color: theme.palette.text.hint,
   },
   fundingBarColorPrimary: {
     zIndex: 0,
@@ -76,7 +77,7 @@ class FundingBar extends Component<Props & WithStyles<typeof styles, true>> {
       <CreditFractionView
         numerator={(this.props.idea.funded || 0) + (this.props.fundAmountDiff || 0)}
         numeratorClassName={this.props.classes.fundingAmount}
-        denominator={this.props.idea.fundGoal || 0}
+        denominator={this.props.idea.fundGoal}
         denominatorClassName={this.props.classes.fundingGoal}
         additionalSuffix='raised'
         credits={this.props.credits}

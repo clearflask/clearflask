@@ -13,6 +13,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
+  className?: string;
   loaded?: boolean;
   error?: string;
   status?: Status;
@@ -29,7 +30,7 @@ class Loader extends Component<Props> {
     }
     return this.props.inline ? this.props.children : (
       <Fade in={this.props.status === Status.FULFILLED || this.props.loaded}>
-        <div>
+        <div className={this.props.className}>
           {this.props.children}
         </div>
       </Fade>

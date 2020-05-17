@@ -11,7 +11,7 @@ import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(2, 2, 2, 0),
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: '1fr auto',
@@ -25,6 +25,7 @@ const styles = (theme: Theme) => createStyles({
   },
   votingControl: {
     gridArea: 'v',
+    margin: theme.spacing(0, 2),
   },
   footer: {
     gridArea: 'f',

@@ -4,19 +4,24 @@ import BackIcon from '@material-ui/icons/ArrowBack';
 import React, { Component } from 'react';
 import { Motion } from 'react-motion';
 import muiSpring from './muiSpring';
-import getAbsoluteBoundingRect from './util/absoluteBoundingRect';
+
+const sizeOfBackButton = 44;
 
 const styles = (theme: Theme) => createStyles({
   screen: {
     background: theme.palette.background.default,
   },
+  backButton: {
+    maxHeight: sizeOfBackButton,
+    position: 'absolute',
+    transform: 'translate(0%, -100%)',
+  }
 });
-
 interface Props extends WithStyles<typeof styles, true> {
   expand: boolean;
   onBackButtonPress?: () => void;
+  onRest?: () => void;
 }
-
 class Expander extends Component<Props> {
   readonly contentRef: React.RefObject<HTMLDivElement> = React.createRef();
   prevExpandValue: boolean;
@@ -36,44 +41,47 @@ class Expander extends Component<Props> {
 
     if (expandChanged) {
       if (this.props.expand) {
-        this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && getAbsoluteBoundingRect(this.contentRef.current.offsetParent) || undefined;
-        this.contentRect = this.contentRef.current && getAbsoluteBoundingRect(this.contentRef.current) || undefined;
+        this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && this.contentRef.current.offsetParent.getBoundingClientRect() || undefined;
+        this.contentRect = this.contentRef.current && this.contentRef.current.getBoundingClientRect() || undefined;
       }
     }
 
     return (
       <Motion style={{
         top: muiSpring(this.props.expand && this.parentRect && this.contentRect
-          ? this.parentRect.top - this.contentRect.top : 0),
+          ? this.parentRect.top - this.contentRect.top : 0, 0.001),
         left: muiSpring(this.props.expand && this.parentRect && this.contentRect
-          ? this.parentRect.left - this.contentRect.left : 0),
+          ? this.parentRect.left - this.contentRect.left : 0, 0.001),
         minWidth: muiSpring(this.props.expand && this.parentRect
-          ? this.parentRect.right - this.parentRect.left : 0),
+          ? this.parentRect.right - this.parentRect.left : 0, 10),
         minHeight: muiSpring(this.props.expand && this.parentRect
-          ? this.parentRect.bottom - this.parentRect.top : 0),
-        opacity: muiSpring(this.props.expand ? 1 : 0),
+          ? this.parentRect.bottom - this.parentRect.top : 0, 10),
+        opacity: muiSpring(this.props.expand ? 1 : 0, 0.01),
       }}>
         {motion => {
-          const isFullyDetached = motion.opacity > 0.999;
-          const isFullyAttached = motion.opacity < 0.001;
+          const isFullyDetached = motion.opacity > 0.99;
+          const isFullyAttached = motion.opacity < 0.01;
           return (
             <div>
               {/* content */}
               <div ref={this.contentRef} style={{
+                top: isFullyAttached ? undefined : (this.contentRect?.top || 0) - (this.parentRect?.top || 0),
+                left: isFullyAttached ? undefined : (this.contentRect?.left || 0) - (this.parentRect?.left || 0),
                 position: isFullyAttached ? undefined : 'absolute',
               }}>
                 <div style={{
                   position: isFullyAttached ? undefined : 'relative',
                   zIndex: !isFullyAttached ? 600 : undefined,
                   width: this.contentRect ? Math.max(this.contentRect.width, motion.minWidth) : undefined,
-                  overflowY: !isFullyAttached && !isFullyDetached ? 'scroll' : undefined,
+                  overflow: !isFullyAttached && !isFullyDetached ? 'hidden' : undefined,
                   height: this.contentRect ? Math.max(this.contentRect.height, motion.minHeight) : undefined,
                   top: motion.top,
                   left: motion.left,
                   minWidth: motion.minWidth,
                 }}>
-                  {!!this.props.onBackButtonPress && !isFullyAttached && (
+                  {!!this.props.onBackButtonPress && isFullyDetached && (
                     <IconButton
+                      className={this.props.classes.backButton}
                       aria-label='Back'
                       onClick={this.props.onBackButtonPress.bind(this)}
                     >

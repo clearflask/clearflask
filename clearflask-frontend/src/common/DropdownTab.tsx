@@ -87,6 +87,17 @@ class DropdownTab extends Component<Props> {
               id: id,
             }}
             displayEmpty
+            MenuProps={{
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'center',
+              },
+              anchorReference: 'anchorEl',
+            }}
           >
             {this.props.label && (<MenuItem style={{ display: 'none' }} divider disabled value='__NOT_SELECTED__'>{this.props.label}</MenuItem>)}
             {items}

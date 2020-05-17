@@ -6,6 +6,7 @@ import AddIcon from '@material-ui/icons/Add';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
+import classNames from 'classnames';
 import { BaseEmoji } from 'emoji-mart';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
@@ -33,19 +34,19 @@ import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
+export type PostVariant = 'list' | 'page';
+
+export const isExpanded = (): boolean => !!Post.expandedPath;
+
 const styles = (theme: Theme) => createStyles({
-  page: {
-    minWidth: 300,
-  },
-  list: {
-    minWidth: 300,
-  },
   comment: {
     margin: theme.spacing(1),
   },
-  // TODO pixel pushing, spacing between the grid items
+  outer: {
+    minWidth: 300,
+    margin: theme.spacing(0.5),
+  },
   post: {
-    margin: theme.spacing(2, 1, 0, 2),
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: 'auto 1fr',
@@ -58,7 +59,7 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 'c',
     display: 'flex',
     flexDirection: 'column',
-    padding: theme.spacing(0.5),
+    margin: theme.spacing(1),
   },
   postVoting: {
     gridArea: 'v',
@@ -69,21 +70,17 @@ const styles = (theme: Theme) => createStyles({
   postComments: {
     gridArea: 'o',
   },
-  leftColumn: {
-    margin: theme.spacing(1),
-    marginRight: '0px',
+  votingControl: {
+    margin: theme.spacing(0, 1, 0, 2),
   },
-  rightColumn: {
-    margin: theme.spacing(1),
-  },
-  titleAndDescriptionCard: {
+  titleAndDescriptionCardFocusHighlight: {
     background: 'transparent',
   },
   title: {
-    fontSize: '1.1rem',
+    lineHeight: 'unset',
   },
   titleAndDescription: {
-    padding: theme.spacing(0.5),
+    margin: theme.spacing(0.5),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -93,14 +90,19 @@ const styles = (theme: Theme) => createStyles({
     },
   },
   description: {
-    marginTop: theme.spacing(0.5),
+    marginTop: theme.spacing(1),
+  },
+  descriptionPage: {
+    whiteSpace: 'pre-wrap',
+  },
+  descriptionList: {
+    color: theme.palette.text.hint,
   },
   pre: {
     whiteSpace: 'pre-wrap',
   },
   responseContainer: {
-    margin: theme.spacing(0.5),
-    padding: theme.spacing(0.5, 1),
+    paddingLeft: theme.spacing(3),
   },
   responsePrefixText: {
     fontSize: '0.8rem',
@@ -165,8 +167,6 @@ const styles = (theme: Theme) => createStyles({
   },
   expressionOuter: {
     height: 'auto',
-    marginLeft: theme.spacing(0.25),
-    marginRight: theme.spacing(0.25),
     borderRadius: '18px',
   },
   expressionHasExpressed: {
@@ -244,8 +244,6 @@ const styles = (theme: Theme) => createStyles({
     flexGrow: 1,
   },
   bottomBar: {
-    margin: theme.spacing(1),
-    marginTop: `-${theme.spacing(0.5)}px`,
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
@@ -277,7 +275,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   funding: {
-    margin: theme.spacing(1),
+    margin: theme.spacing(1, 1.5, 0, 1.5),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -319,9 +317,6 @@ const styles = (theme: Theme) => createStyles({
   },
   ...cssBlurry,
 });
-
-export type PostVariant = 'list' | 'page';
-
 interface Props {
   server: Server;
   idea?: Client.Idea;
@@ -339,7 +334,6 @@ interface Props {
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
 }
-
 interface ConnectProps {
   configver?: string;
   projectId: string;
@@ -353,8 +347,8 @@ interface ConnectProps {
   loggedInUser?: Client.User;
   updateVote: (voteUpdate: Client.IdeaVoteUpdate) => Promise<Client.IdeaVoteUpdateResponse>;
 }
-
 interface State {
+  currentVariant: PostVariant;
   fundingExpanded?: boolean;
   fundingExpandedAnchor?: PopoverPosition & { width: number };
   expressionExpanded?: boolean;
@@ -366,9 +360,6 @@ interface State {
   editExpanded?: boolean;
   commentExpanded?: boolean
 }
-
-export const isExpanded = (): boolean => !!Post.expandedPath;
-
 class Post extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   /**
    * expandedPath allows a page transition from a list of posts into a
@@ -383,7 +374,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      currentVariant: props.variant,
+    };
   }
 
   componentDidMount() {
@@ -420,41 +413,46 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         forceExpand = true;
       }
     }
-    const variant = forceExpand ? 'page' : this.props.variant;
+    const targetVariant = forceExpand ? 'page' : this.props.variant;
+    const variant = this.state.currentVariant;
+    const isMoving = variant !== targetVariant;
 
     return (
-      <Loader loaded={!!this.props.idea}>
-        <Expander expand={forceExpand} onBackButtonPress={() => this.props.history.goBack()}>
+      <Loader className={this.props.classes.outer} loaded={!!this.props.idea}>
+        <Expander
+          expand={forceExpand}
+          onBackButtonPress={() => this.props.history.goBack()}
+          onRest={() => {
+            if (isMoving) {
+              this.setState({ currentVariant: targetVariant });
+            }
+          }}
+        >
           <InViewObserver ref={this.inViewObserverRef}>
-            <div className={variant === 'page' ? this.props.classes.page : this.props.classes.list} style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-            }}>
-              <div className={this.props.classes.post}>
-                <div className={this.props.classes.postVoting}>
-                  {this.renderVoting(variant)}
-                </div>
-                <div className={this.props.classes.postFunding}>
-                  {this.renderFunding(variant)}
-                </div>
-                <div className={this.props.classes.postContent}>
-                  <CardActionArea
-                    className={this.props.classes.titleAndDescription}
-                    disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
-                    onClick={this.onExpand.bind(this)}
-                    classes={{
-                      focusHighlight: this.props.classes.titleAndDescriptionCard,
-                    }}
-                  >
-                    {this.renderTitle(variant)}
-                    {this.renderDescription(variant)}
-                    {this.renderResponse(variant)}
-                  </CardActionArea>
-                  {this.renderBottomBar(variant)}
-                </div>
-                <div className={this.props.classes.postComments}>
-                  {this.renderComments(variant)}
-                </div>
+            <div className={this.props.classes.post}>
+              <div className={this.props.classes.postVoting}>
+                {this.renderVoting(isMoving ? 'page' : variant)}
+              </div>
+              <div className={this.props.classes.postFunding}>
+                {this.renderFunding(isMoving ? 'page' : variant)}
+              </div>
+              <div className={this.props.classes.postContent}>
+                <CardActionArea
+                  className={this.props.classes.titleAndDescription}
+                  disabled={!this.props.expandable || variant === 'page' || (this.props.display && this.props.display.disableExpand)}
+                  onClick={this.onExpand.bind(this)}
+                  classes={{
+                    focusHighlight: this.props.classes.titleAndDescriptionCardFocusHighlight,
+                  }}
+                >
+                  {this.renderTitle(isMoving ? 'page' : variant)}
+                  {this.renderDescription(isMoving ? 'page' : variant)}
+                </CardActionArea>
+                {this.renderBottomBar(isMoving ? 'page' : variant)}
+                {this.renderResponse(isMoving ? 'page' : variant)}
+              </div>
+              <div className={this.props.classes.postComments}>
+                {this.renderComments(isMoving ? 'page' : variant)}
               </div>
             </div>
             <LogIn
@@ -697,7 +695,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <VotingControl
-        className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateVoting : undefined}
+        className={classNames(this.props.classes.votingControl, !!this.props.settings.demoFlashPostVotingControls && this.props.classes.pulsateVoting)}
         vote={this.props.vote}
         voteValue={this.props.idea.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}
@@ -1060,7 +1058,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
-      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+      <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
           : this.props.idea.description}

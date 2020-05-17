@@ -20,6 +20,7 @@ interface Props extends PopoverProps {
   spacing?: number;
   onClose: () => void;
   unlockScroll?: boolean;
+  suppressCloseButton?: boolean;
 }
 class ClosablePopover extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
