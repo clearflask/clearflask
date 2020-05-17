@@ -5,6 +5,7 @@ import AndroidIcon from '@material-ui/icons/Android';
 import IosIcon from '@material-ui/icons/Apple';
 import EmailIcon from '@material-ui/icons/Email';
 import NotificationsOffIcon from '@material-ui/icons/NotificationsOff';
+import FilterIcon from '@material-ui/icons/SearchRounded';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import BrowserIcon from '@material-ui/icons/Web';
@@ -73,7 +74,10 @@ const styles = (theme: Theme) => createStyles({
   },
   created: {
     whiteSpace: 'nowrap',
-  }
+  },
+  searchIcon: {
+    color: theme.palette.text.hint,
+  },
 });
 
 interface Props {
@@ -230,6 +234,13 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                   searchText: e.target.value,
                 });
                 this.updateSearchText(e.target.value);
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <FilterIcon color='inherit' className={this.props.classes.searchIcon} />
+                  </InputAdornment>
+                ),
               }}
             />
           )}

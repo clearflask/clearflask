@@ -1,9 +1,10 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import * as Client from '../api/client';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
 import FundingControlDemo from './landing/FundingControlDemo';
-import Hero from './landing/Hero';
+import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
@@ -19,7 +20,8 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderRewardCustomers()}
+        {this.renderTypesOfVoting()}
+        {/* {this.renderRewardCustomers()} */}
         {this.renderCredit(true)}
         {this.renderCreditUseCases()}
         {this.renderVoting(true)}
@@ -30,11 +32,79 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
 
   renderHero() {
     return (
-      <Hero
+      <Demo
         title={prioritizationTitle}
         description={prioritizationDescription}
-        imagePath='/img/landing/prioritization.svg'
+        type='hero'
+        mirror={true}
+        initialSubPath='/embed/demo'
+        template={templater => templater.demoPrioritization('all')}
+        mock={mocker => mocker.demoPrioritization()}
+        settings={{
+          demoFlashPostVotingControls: true,
+        }}
       />
+    );
+  }
+
+  renderTypesOfVoting(mirror?: boolean) {
+    return (
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={-200}>
+        <Demo
+          variant='content'
+          type='column'
+          title='Keep it simple with voting'
+          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('vote')}
+          controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoVotingExpressionsAnimate: [
+              { type: 'vote', upvote: true },
+            ],
+          }}
+          demoFixedHeight={150}
+          containerPortal
+        />
+        <Demo
+          variant='content'
+          type='column'
+          title='Expressions for a wider range of feedback'
+          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('express')}
+          controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          settings={{
+            demoVotingExpressionsAnimate: [
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
+              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+            ],
+          }}
+          demoFixedHeight={420}
+          containerPortal
+        />
+        <Demo
+          variant='content'
+          type='column'
+          title='Credit system for advanced prioritization'
+          description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoPrioritization('fund')}
+          controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={450}
+          containerPortal
+          settings={{
+            demoFundingControlAnimate: [
+              { index: 0, fundDiff: 20 },
+              { index: 1, fundDiff: -30 },
+              { index: 2, fundDiff: 20 },
+            ],
+          }}
+        />
+      </HorizontalPanels>
     );
   }
 

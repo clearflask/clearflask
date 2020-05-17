@@ -210,7 +210,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       <TextField
         disabled={this.state.newItemIsSubmitting}
         className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        label={this.props.explorer.allowCreate.actionTitle}
+        label={this.props.explorer.allowCreate.actionTitle || 'Add'}
         placeholder='Title'
         value={this.state.newItemTitle || ''}
         onChange={e => {
