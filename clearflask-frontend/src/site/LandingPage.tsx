@@ -52,15 +52,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           mirror={mirror}
           type='largeDemo'
           edgeType='outline'
-          edgeSpacing
-          // scale={0.7}
           demoFixedHeight={500}
           template={templater => templater.demo(opts)}
           mock={mocker => mocker.templateMock(opts)}
           settings={{
             demoMenuAnimate: [
-              { path: '' },
-              { path: 'ideas' },
+              { path: 'feedback' },
+              { path: 'roadmap' },
             ],
           }}
         />
@@ -126,7 +124,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           buttonLink='/engage'
           mirror={mirror}
           initialSubPath='/embed/demo'
-          scale={0.5}
+          scale={0.7}
           template={templater => templater.demoBoardPreset('development')}
           mock={mocker => mocker.demoBoard([
             { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },

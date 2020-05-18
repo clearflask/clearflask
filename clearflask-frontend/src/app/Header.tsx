@@ -50,6 +50,13 @@ const styles = (theme: Theme) => createStyles({
   //   height: '100px',
   // },
   // },
+  tabRoot: {
+    minWidth: '0px!important',
+    padding: '6px 12px',
+    [theme.breakpoints.up('md')]: {
+      padding: '6px 24px',
+    },
+  },
   tabsFlexContainer: {
     alignItems: 'center',
     ...(contentScrollApplyStyles(theme, Side.Left)),
@@ -126,6 +133,9 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               value={page.slug}
               disableRipple
               label={menu.name || page.name}
+              classes={{
+                root: this.props.classes.tabRoot,
+              }}
             />
           );
         }
@@ -153,7 +163,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       });
       menu = (
         <Tabs
-          centered
+          // centered
           variant='standard'
           scrollButtons='off'
           classes={{
@@ -281,7 +291,11 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
   var page: Client.Page | undefined = undefined;
   if (state.conf.status === Status.FULFILLED && state.conf.conf) {
-    page = state.conf.conf.layout.pages.find(p => p.slug === ownProps.pageSlug);
+    const pages = state.conf.conf.layout.pages;
+    page = pages.find(p => p.slug === ownProps.pageSlug);
+    if (!page && pages.length > 0) {
+      page = pages[0];
+    }
   }
   return {
     configver: state.conf.ver, // force rerender on config change

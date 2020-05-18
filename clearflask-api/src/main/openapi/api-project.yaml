@@ -270,17 +270,9 @@ components:
           type: object
           required:
             - enableDownvotes
-            - showVotes
-            - showVoters
           properties:
             enableDownvotes:
               x-clearflask-prop: { order: 1, name: 'Enable downvoting', description: '' }
-              type: boolean
-            showVotes:
-              x-clearflask-prop: { order: 1, name: 'Show votes', description: '' }
-              type: boolean
-            showVoters:
-              x-clearflask-prop: { order: 1, name: 'Show voters', description: '' }
               type: boolean
         express:
           x-clearflask-prop: { order: 1, name: 'Enable expression' }

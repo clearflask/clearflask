@@ -118,7 +118,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
             <Step key='prioritization' completed={false}>
               <StepLabel>
                 <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
-                  Feedback prioritization
+                  Feedback
                 </Link>
               </StepLabel>
               <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
@@ -271,7 +271,6 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
   createConfig(): Admin.ConfigAdmin {
     const editor = new ConfigEditor.EditorImpl();
     const templater = Templater.get(editor);
-    templater.templateBase();
     templater.createTemplate(this.state);
     return editor.getConfig();
   }

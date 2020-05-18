@@ -6,6 +6,7 @@ import DividerVertical from './DividerVertical';
 const styles = (theme: Theme) => createStyles({
   title: {
     margin: theme.spacing(1),
+    color: theme.palette.text.hint,
   },
   dividerHorizontal: {
     gridArea: 'divider-horizontal',

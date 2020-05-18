@@ -43,7 +43,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   outer: {
-    minWidth: 300,
+    minWidth: 200,
     margin: theme.spacing(0.5),
   },
   post: {

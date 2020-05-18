@@ -62,50 +62,22 @@ export default class Templater {
     if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
-    this.templateBase();
     if (opts.templateFeedback) {
       this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed);
-      const ideaCategoryIndex = 0;
+      const postCategoryIndex = this._get<ConfigEditor.PageGroup>(['content', 'categories']).getChildPages().length - 1;
       if (opts.votingAllowed) {
-        this.supportVoting(ideaCategoryIndex, opts.votingEnableDownvote);
+        this.supportVoting(postCategoryIndex, opts.votingEnableDownvote);
       }
       if (opts.expressionAllowed) {
         if (opts.expressionsLimitEmojis) {
-          this.supportExpressingFacebookStyle(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+          this.supportExpressingFacebookStyle(postCategoryIndex, !opts.expressionsAllowMultiple);
         } else {
-          this.supportExpressingAllEmojis(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+          this.supportExpressingAllEmojis(postCategoryIndex, !opts.expressionsAllowMultiple);
         }
-        this.supportExpressingLimitEmojiPerIdea(ideaCategoryIndex, !opts.expressionsAllowMultiple);
+        this.supportExpressingLimitEmojiPerIdea(postCategoryIndex, !opts.expressionsAllowMultiple);
       }
       if (opts.fundingAllowed) {
-        this.supportFunding(ideaCategoryIndex);
-        switch (opts.fundingType) {
-          case 'currency':
-            this.creditsCurrency();
-            break;
-          case 'time':
-            this.creditsTime();
-            break;
-          case 'beer':
-            this.creditsBeer();
-            break;
-        }
-      }
-
-      const bugCategoryIndex = 1;
-      if (opts.votingAllowed) {
-        this.supportVoting(bugCategoryIndex, opts.votingEnableDownvote);
-      }
-      if (opts.expressionAllowed) {
-        if (opts.expressionsLimitEmojis) {
-          this.supportExpressingFacebookStyle(bugCategoryIndex, !opts.expressionsAllowMultiple);
-        } else {
-          this.supportExpressingAllEmojis(bugCategoryIndex, !opts.expressionsAllowMultiple);
-        }
-        this.supportExpressingLimitEmojiPerIdea(bugCategoryIndex, !opts.expressionsAllowMultiple);
-      }
-      if (opts.fundingAllowed && !opts.votingAllowed && !opts.expressionAllowed) {
-        this.supportFunding(bugCategoryIndex);
+        this.supportFunding(postCategoryIndex);
         switch (opts.fundingType) {
           case 'currency':
             this.creditsCurrency();
@@ -266,7 +238,7 @@ export default class Templater {
     this.styleWhite();
     this.creditsCurrency();
 
-    const categoryId = this.demoCategory(panels.map((panel, index) => Admin.IdeaStatusToJSON({
+    const categoryIndex = this.demoCategory(panels.map((panel, index) => Admin.IdeaStatusToJSON({
       statusId: index + '',
       name: index + '',
       disableFunding: false,
@@ -276,9 +248,9 @@ export default class Templater {
       disableComments: false,
       ...panel.status,
     })));
-    this.supportExpressingAllEmojis(categoryId);
-    this.supportFunding(categoryId);
-    this.supportVoting(categoryId);
+    this.supportExpressingAllEmojis(categoryIndex);
+    this.supportFunding(categoryIndex);
+    this.supportVoting(categoryIndex);
 
     this.demoPage({
       board: Admin.PageBoardToJSON({
@@ -342,96 +314,24 @@ export default class Templater {
     }));
   }
 
-  templateBase() {
-    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    const pageHomeId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: pageHomeId,
-      name: 'Home',
-      slug: '',
-      description: undefined,
-      panels: [],
-    }));
-
-    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [pageHomeId],
-    }));
-  }
-
   templateFeedback(withFunding: boolean, withStandaloneFunding: boolean = true) {
     // Ideas
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
-    const ideaCategoryId = randomUuid();
+    const postCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: ideaCategoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: postCategoryId, name: 'Post', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
       support: Admin.SupportToJSON({ comment: true }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
-    const ideaCategoryIndex = categories.getChildPages().length - 1;
-    const ideaStatuses = this.workflowFeatures(ideaCategoryIndex, withFunding, withStandaloneFunding);
+    const postCategoryIndex = categories.getChildPages().length - 1;
+    const postStatuses = this.workflowFeatures(postCategoryIndex, withFunding, withStandaloneFunding);
+    this.taggingIdeaBug(postCategoryIndex);
 
-    // Bugs
-    const bugCategoryId = randomUuid();
-    categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: bugCategoryId, name: 'Bug', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
-      userCreatable: true,
-      workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: true }),
-      tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
-    }));
-    const bugCategoryIndex = categories.getChildPages().length - 1;
-    const bugStatuses = this.workflowBug(bugCategoryIndex);
-    this.taggingOsPlatform(bugCategoryIndex);
-
-    // Pages
+    // Roadmap page
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    const ideaPageId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: ideaPageId,
-      name: 'Ideas',
-      slug: 'ideas',
-      title: undefined,
-      description: undefined,
-      panels: [],
-      board: undefined,
-      explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: { actionTitle: 'Suggest' },
-        display: Admin.PostDisplayToJSON({}),
-        search: Admin.IdeaSearchToJSON({
-          filterCategoryIds: [ideaCategoryId],
-        }),
-      }),
-    }));
-    const bugPageId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: bugPageId,
-      name: 'Bugs',
-      slug: 'bugs',
-      title: undefined,
-      description: undefined,
-      panels: [],
-      board: undefined,
-      explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: { actionTitle: 'Report' },
-        display: Admin.PostDisplayToJSON({}),
-        search: Admin.IdeaSearchToJSON({
-          filterCategoryIds: [bugCategoryId],
-        }),
-      }),
-    }));
-
-    // Menu
-    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [ideaPageId, bugPageId], name: 'Feedback',
-    }));
-
-    // Add to home page
+    const roadmapPageId = randomUuid();
     const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 1,
       descriptionTruncateLines: 4,
@@ -448,34 +348,14 @@ export default class Templater {
       showExpression: false,
       disableExpand: false,
     };
-    const homePagePanels = this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels']);
-    homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
-      title: 'Trending feedback', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-        ...postDisplay,
-        showDescription: true,
-        showFunding: true,
-        showExpression: true,
-        showVoting: true,
-      }), search: Admin.IdeaSearchToJSON({
-        sortBy: Admin.IdeaSearchSortByEnum.Trending,
-        filterCategoryIds: [ideaCategoryId],
-      })
-    }));
-    // homePagePanels.insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
-    //   title: 'Recent Bugs', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-    //     ...postDisplay,
-    //     showDescription: true,
-    //     showResponse: true,
-    //     showFunding: true,
-    //     showExpression: true,
-    //     showVoting: true,
-    //   }), search: Admin.IdeaSearchToJSON({
-    //     sortBy: Admin.IdeaSearchSortByEnum.New,
-    //     filterCategoryIds: [bugCategoryId],
-    //   })
-    // }));
-    this._get<ConfigEditor.Page>(['layout', 'pages', 0, 'board'])
-      .setRaw(Admin.PageBoardToJSON({
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: roadmapPageId,
+      name: 'Roadmap',
+      slug: 'roadmap',
+      title: undefined,
+      description: undefined,
+      panels: [],
+      board: Admin.PageBoardToJSON({
         title: 'Roadmap',
         panels: [
           ...(withFunding && withStandaloneFunding ? [
@@ -485,40 +365,68 @@ export default class Templater {
                 showFunding: true,
               }), search: Admin.IdeaSearchToJSON({
                 sortBy: Admin.IdeaSearchSortByEnum.New,
-                filterCategoryIds: [ideaCategoryId],
-                filterStatusIds: ideaStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+                filterCategoryIds: [postCategoryId],
+                filterStatusIds: postStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
               })
             }),
           ] : []),
           Admin.PagePanelWithHideIfEmptyToJSON({
             title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
               sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId, bugCategoryId],
-              filterStatusIds: ideaStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
+              filterCategoryIds: [postCategoryId],
+              filterStatusIds: postStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
             })
           }),
           Admin.PagePanelWithHideIfEmptyToJSON({
             title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
               sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId, bugCategoryId],
+              filterCategoryIds: [postCategoryId],
               filterStatusIds: [
-                ...ideaStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-                ...bugStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+                ...postStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
               ],
             })
           }),
           Admin.PagePanelWithHideIfEmptyToJSON({
             title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
               sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [ideaCategoryId, bugCategoryId],
+              filterCategoryIds: [postCategoryId],
               filterStatusIds: [
-                ...ideaStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
-                ...bugStatuses.filter(s => s.name.match(/Fixed/)).map(s => s.statusId),
+                ...postStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
               ],
             })
           }),
         ],
-      }));
+      }),
+      explorer: undefined,
+    }));
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [roadmapPageId],
+    }));
+
+    // Post page
+    const postPageId = randomUuid();
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: postPageId,
+      name: 'Feedback',
+      slug: 'feedback',
+      title: undefined,
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: Admin.PageExplorerToJSON({
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
+        allowCreate: { actionTitle: 'Suggest' },
+        display: Admin.PostDisplayToJSON({}),
+        search: Admin.IdeaSearchToJSON({
+          sortBy: Admin.IdeaSearchSortByEnum.Trending,
+          filterCategoryIds: [postCategoryId],
+        }),
+      }),
+    }));
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId: randomUuid(), pageIds: [postPageId],
+    }));
   }
 
   templateBlog(suppressHomePage: boolean = false) {
@@ -603,32 +511,6 @@ export default class Templater {
     const changelogCategoryIndex = categories.getChildPages().length - 1;
     this.supportExpressingAllEmojis(changelogCategoryIndex);
 
-    // Home page panel
-    if (!suppressHomePage) {
-      this._get<ConfigEditor.PageGroup>(['layout', 'pages', 0, 'panels'])
-        .insert().setRaw(Admin.PagePanelWithHideIfEmptyToJSON({
-          title: 'Recent changes', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
-            titleTruncateLines: 1,
-            descriptionTruncateLines: 2,
-            showDescription: true,
-            showResponse: false,
-            showCommentCount: false,
-            showCategoryName: false,
-            showCreated: false,
-            showAuthor: false,
-            showStatus: false,
-            showTags: false,
-            showVoting: false,
-            showFunding: false,
-            showExpression: false,
-            disableExpand: false,
-          }), search: Admin.IdeaSearchToJSON({
-            sortBy: Admin.IdeaSearchSortByEnum.New,
-            filterCategoryIds: [changelogCategoryId],
-          })
-        }));
-    }
-
     // Pages and menu
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
@@ -684,8 +566,8 @@ export default class Templater {
     const helpPageId = randomUuid();
     const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 0,
-      descriptionTruncateLines: 4,
-      showDescription: false,
+      descriptionTruncateLines: 2,
+      showDescription: true,
       showResponse: false,
       showCommentCount: false,
       showCategoryName: false,
@@ -702,8 +584,6 @@ export default class Templater {
       pageId: helpPageId,
       name: 'Help',
       slug: 'help',
-      title: 'How can we help you?',
-      description: "If you can't find help, don't hesitate to contact us at support@example.com",
       panels: [Admin.PagePanelWithHideIfEmptyToJSON({
         title: 'Account Setup', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.Top,
@@ -718,7 +598,7 @@ export default class Templater {
         })
       })],
       explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
+        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: false, enableSearchByStatus: true, enableSearchByTag: true }),
         allowCreate: undefined,
         display: Admin.PostDisplayToJSON(postDisplay),
         search: Admin.IdeaSearchToJSON({
@@ -745,7 +625,7 @@ export default class Templater {
   }
   supportVoting(categoryIndex: number, enableDownvotes: boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).setRaw(Admin.VotingToJSON({
-      enableDownvotes: enableDownvotes, showVotes: true, showVoters: true,
+      enableDownvotes,
     }));
   }
   supportExpressingAllEmojis(categoryIndex: number, limitEmojiPerIdea?: boolean) {
@@ -810,6 +690,14 @@ export default class Templater {
     this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'express', 'limitEmojiPerIdea']).set(!!limitEmojiPerIdea);
   }
 
+  taggingIdeaBug(categoryIndex: number) {
+    this.tagging(categoryIndex,
+      [Admin.TagToJSON({ tagId: randomUuid(), name: 'Idea' }),
+      Admin.TagToJSON({ tagId: randomUuid(), name: 'Bug' })],
+      Admin.TagGroupToJSON({
+        tagGroupId: randomUuid(), name: 'Type', userSettable: true, maxRequired: 1, tagIds: [],
+      }));
+  }
   taggingOsPlatform(categoryIndex: number) {
     this.tagging(categoryIndex,
       [Admin.TagToJSON({ tagId: randomUuid(), name: 'Windows' }),

@@ -30,61 +30,60 @@ class DataMock {
     const user3 = await this.mockUser('Sophie');
     const user4 = await this.mockUser('Harry');
     if (opts.templateFeedback) {
-      const ideaCategory = config.content.categories.find(c => c.name.match(/Idea/))!;
-      const bugCategory = config.content.categories.find(c => c.name.match(/Bug/))!;
+      const postCategory = config.content.categories.find(c => c.name.match(/Post/))!;
       await this.mockItem(
-        config.projectId, ideaCategory.categoryId, user1,
+        config.projectId, postCategory.categoryId, user1,
         'ERP system integration',
         'I would like to synchronize my data with our ERP system automatically.',
         undefined,
         opts.fundingAllowed ? 3500 : undefined, opts.fundingAllowed ? 6000 : undefined,
         opts.votingAllowed ? 7 : undefined,
-        opts.expressionAllowed ? this.fakeExpressions(ideaCategory, 5) : undefined,
-        (ideaCategory.workflow.statuses.find(s => s.name.match(/Funding/))
-          || ideaCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
-        undefined
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 5) : undefined,
+        (postCategory.workflow.statuses.find(s => s.name.match(/Funding/))
+          || postCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
+        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
-        config.projectId, ideaCategory.categoryId, user2,
+        config.projectId, postCategory.categoryId, user2,
         'Customize order of options',
         'I want to be able to re-order the options we have in the main settings page.',
         undefined,
         opts.fundingAllowed ? 1200 : undefined, opts.fundingAllowed ? 1000 : undefined,
         opts.votingAllowed ? 7 : undefined,
-        opts.expressionAllowed ? this.fakeExpressions(ideaCategory, 5) : undefined,
-        ideaCategory.workflow.statuses.find(s => s.name.match(/Planned/))!.statusId,
-        undefined
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 5) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/Planned/))!.statusId,
+        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
-        config.projectId, ideaCategory.categoryId, user3,
+        config.projectId, postCategory.categoryId, user3,
         'Dark mode',
         'The app burns my eyes at night and it would be great if you can make a dark mode option.',
         undefined, undefined, undefined,
         opts.votingAllowed ? 4 : undefined,
-        opts.expressionAllowed ? this.fakeExpressions(ideaCategory, 4) : undefined,
-        ideaCategory.workflow.statuses.find(s => s.name.match(/Under review/))!.statusId,
-        undefined
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 4) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/Under review/))!.statusId,
+        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
-        config.projectId, bugCategory.categoryId, user4,
+        config.projectId, postCategory.categoryId, user4,
         'Buttons too small',
         'In the settings page, all the buttons are too small, I always click the wrong option.',
         'Fixed in the next update',
         undefined, undefined,
         opts.votingAllowed ? 2 : undefined,
-        opts.expressionAllowed ? this.fakeExpressions(ideaCategory, 2) : undefined,
-        bugCategory.workflow.statuses.find(s => s.name.match(/In progress/))!.statusId,
-        [bugCategory.tagging.tags.find(s => s.name.match(/Linux/))!.tagId],
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 2) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/In progress/))!.statusId,
+        [postCategory.tagging.tags.find(s => s.name.match(/Bug/))!.tagId],
       );
       await this.mockItem(
-        config.projectId, bugCategory.categoryId, user1,
+        config.projectId, postCategory.categoryId, user1,
         'Finance page typo',
         "You accidentally spelt the word your as you're on the finance page under my finances tab",
         undefined, undefined, undefined,
         opts.votingAllowed ? 1 : undefined,
         undefined,
-        bugCategory.workflow.statuses.find(s => s.name.match(/Fixed/))!.statusId,
-        [bugCategory.tagging.tags.find(s => s.name.match(/Windows/))!.tagId],
+        postCategory.workflow.statuses.find(s => s.name.match(/Completed/))!.statusId,
+        [postCategory.tagging.tags.find(s => s.name.match(/Bug/))!.tagId],
       );
     }
     // if (opts.templateBlog) {
