@@ -1,5 +1,6 @@
 import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
@@ -30,6 +31,8 @@ const styles = (theme: Theme) => createStyles({
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
+  },
+  boardInCorner: {
     paddingLeft: theme.spacing(2),
   },
   boardPanel: {
@@ -124,15 +127,25 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           </div>
         ));
         boardCmpt = (
-          <div>
+          <div className={this.props.classes.board}>
+            {panels}
+          </div>
+        );
+        if (board.title) {
+          boardCmpt = (
             <DividerCorner title={board.title} height='90%'>
-              <div className={this.props.classes.board}>
+              <div className={classNames(this.props.classes.board, this.props.classes.boardInCorner)}>
                 {panels}
               </div>
             </DividerCorner>
-          </div>
-        );
-        // TODO
+          );
+        } else {
+          boardCmpt = (
+            <div className={this.props.classes.board}>
+              {panels}
+            </div>
+          );
+        }
       }
 
       // ### EXPLORER
@@ -144,7 +157,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
             explorer={explorer}
           />
         );
-        // TODO
       }
     }
 
