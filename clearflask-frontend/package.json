@@ -12,6 +12,7 @@
     "@types/dompurify": "2.0.1",
     "@types/emoji-mart": "2.8.4",
     "@types/jest": "24.0.11",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/marked": "0.7.2",
     "@types/node": "12.0.8",
     "@types/prismjs": "1.16.0",
@@ -30,6 +31,7 @@
     "cytoscape-dagre": "2.2.2",
     "dompurify": "2.0.8",
     "emoji-mart": "2.11.0",
+    "jsonwebtoken": "^8.5.1",
     "lorem-ipsum": "2.0.1",
     "marked": "0.8.0",
     "material-ui-color-picker": "3.2.0",
@@ -59,10 +61,10 @@
     "typescript": "3.7.5"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "env ADBLOCK=1 react-scripts start",
+    "build": "env ADBLOCK=1 react-scripts build",
+    "test": "env ADBLOCK=1 react-scripts test",
+    "eject": "env ADBLOCK=1 react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app",

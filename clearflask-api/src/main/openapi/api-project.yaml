@@ -138,10 +138,10 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
                       type: boolean
                 browserPush:
-                  x-clearflask-prop: { order: 3, name: 'Browser Notification', defaultValue: true }
+                  x-clearflask-prop: { order: 2, name: 'Browser Notification', defaultValue: true }
                   type: boolean
                 email:
-                  x-clearflask-prop: { order: 2, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
+                  x-clearflask-prop: { order: 3, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
                   type: object
                   title: EmailSignup
                   required:
@@ -151,6 +151,20 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                       type: string
                       enum: [None, Optional, Required]
+                sso:
+                  x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
+                  x-clearflask-additional-props: { propPaths: [['ssoSecretKey']] }
+                  type: object
+                  title: SsoSignup
+                  required:
+                  - redirectUrl
+                  properties:
+                    buttonTitle:
+                      x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
+                      type: string
+                    redirectUrl:
+                      x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
+                      type: string
             terms:
               x-clearflask-prop: { order: 2, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
               title: CustomTerms
@@ -556,15 +570,11 @@ components:
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/Config'
         - type: object
-          required:
           properties:
-            dummy: # Only here because this can't be empty
+            ssoSecretKey:
               x-clearflask-hide: true
+              x-clearflask-prop: { subType: 'keygen', order: 2, name: 'Secret Key', description: 'Secret Key for signing JWT tokens. Do not publicly expose.' }
               type: string
-      # TODO OAuth
-      # TODO Email/Push notifications
-      # TODO Credit income
-      # TODO Trusted public keys
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
       type: object
@@ -694,6 +704,9 @@ components:
               properties:
                 actionTitle:
                   x-clearflask-prop: { order: 1, name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add'}
+                  type: string
+                actionTitleLong:
+                  x-clearflask-prop: { order: 1, name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post'}
                   type: string
     VersionedConfig:
       type: object

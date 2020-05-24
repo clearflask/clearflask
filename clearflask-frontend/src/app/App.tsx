@@ -17,6 +17,7 @@ import PostPage from './comps/PostPage';
 import CustomPage from './CustomPage';
 import Header from './Header';
 import NotificationPage from './NotificationPage';
+import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
 import PushNotificationListener from './utils/PushNotificationListener';
@@ -70,7 +71,7 @@ class App extends Component<Props> {
         configAndBindResult = await this.server.dispatch().configGetAndUserBind({
           projectId: this.server.getProjectId(),
           configGetAndUserBind: {
-            authToken: new URL(window.location.href).searchParams.get('authToken') || undefined,
+            authToken: new URL(window.location.href).searchParams.get('token') || undefined,
             browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
               ? subscriptionResult.token : undefined,
           },
@@ -114,7 +115,6 @@ class App extends Component<Props> {
           <PushNotificationListener server={this.server} />
           <ServerErrorNotifier server={this.server} />
           <CaptchaChallenger server={this.server} />
-          {/* SSO not yet suppported <SsoLogin server={this.server} /> */}
           <div
             key={appRootId}
             id={appRootId}
@@ -129,7 +129,7 @@ class App extends Component<Props> {
               } : {}),
             }}
           >
-            <Route path='/:page?' render={props => props.match.params['page'] === 'embed' ? null : (
+            <Route path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
               <Header
                 pageSlug={props.match.params['page'] || ''}
                 server={this.server}
@@ -160,6 +160,11 @@ class App extends Component<Props> {
               <Route key='account' path='/:embed(embed)?/account' render={props => (
                 <BasePage showFooter={!props.match.params['embed']}>
                   <AccountPage server={this.server} />
+                </BasePage>
+              )} />
+              <Route key='account' path='/sso' render={props => (
+                <BasePage showFooter={!props.match.params['embed']}>
+                  <SsoSuccessPage />
                 </BasePage>
               )} />
               {!isExpanded() && (

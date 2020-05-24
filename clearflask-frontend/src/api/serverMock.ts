@@ -1,9 +1,12 @@
+import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
 import * as Client from './client';
+
+export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
@@ -120,11 +123,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       privacy: 'Here is a privacy policy.',
     });
   }
-  accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
+  accountBindAdmin(request: Admin.AccountBindAdminRequest): Promise<Admin.AccountBindAdminResponse> {
     return this.returnLater(this.loggedIn && this.account
       ? { account: this.account } : {});
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
+    console.log('DEBUG', this.account, request.accountLogin, this.accountPass);
     if (!this.account
       || request.accountLogin.email !== this.account.email
       || request.accountLogin.password !== this.accountPass) {
@@ -142,6 +146,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       plan: TrialPlan,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
+      cfJwt: jsonwebtoken.sign({
+        email: request.accountSignupAdmin.email,
+      }, SSO_SECRET_KEY),
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -324,8 +331,29 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
-  configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
+  async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
+    if (request.configGetAndUserBind.authToken) {
+      var token;
+      try {
+        token = jsonwebtoken.verify(request.configGetAndUserBind.authToken, SSO_SECRET_KEY);
+      } catch (er) {
+        console.log('Failed parsing authToken', er);
+      }
+      if (token && token['email']) {
+        const user = this.getProject(request.projectId).users.find(user => user.email === token['email']);
+        if (user) {
+          this.getProject(request.projectId).loggedInUser = user;
+        } else {
+          await this.userCreate({
+            projectId: request.projectId,
+            userCreate: {
+              email: token['email'],
+            },
+          });
+        }
+      }
+    }
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     return this.returnLater({
       config: this.getProject(request.projectId).config,
@@ -377,27 +405,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater();
-  }
-  userSsoCreateOrLogin(request: Client.UserSsoCreateOrLoginRequest): Promise<Client.UserMeWithBalance> {
-    var token;
-    try {
-      token = JSON.parse(request.userSsoCreateOrLogin.token);
-    } catch (er) {
-      console.log('Failed parsing sso path param', er);
-    }
-    if (token['userId']) {
-      const user = this.getProject(request.projectId).users.find(user => user.userId === token['userId']);
-      if (user) {
-        const balance = this.getProject(request.projectId).balances[user.userId] || 0;
-        const userMeWithBalance = Admin.UserMeWithBalanceToJSON({ ...user, balance });
-        this.getProject(request.projectId).loggedInUser = userMeWithBalance;
-        return this.returnLater(userMeWithBalance);
-      }
-    }
-    return this.userCreate({
-      projectId: request.projectId,
-      userCreate: typeof token === 'object' ? { ...token } : {},
-    });
   }
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
     const user = this.getImmutable(

@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import ErrorPage from '../app/ErrorPage';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
 
@@ -24,6 +25,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface ConnectProps {
   accountStatus?: Status;
+  cfJwt?: string;
 }
 interface State {
   isSubmitting?: boolean;
@@ -33,13 +35,25 @@ interface State {
 }
 
 class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyles<typeof styles, true>, State> {
+  readonly cfReturnUrl?: string;
 
   constructor(props) {
     super(props);
 
+    try {
+      const paramCfr = new URL(window.location.href).searchParams.get('cfr');
+      if (paramCfr && new URL(paramCfr).host.endsWith(window.location.host)) {
+        this.cfReturnUrl = paramCfr;
+      }
+    } catch (er) { }
+
     if (props.accountStatus === undefined) {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin());
+        .then(d => d.accountBindAdmin({
+          accountBind: {
+            includeCfJwt: new URL(window.location.href).searchParams.has('cfr'),
+          },
+        }));
     }
 
     this.state = {};
@@ -47,13 +61,17 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
 
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
+      if (this.props.cfJwt && this.cfReturnUrl) {
+        window.location.href = `${this.cfReturnUrl}?token=${this.props.cfJwt}`;
+        return (<ErrorPage msg='Redirecting you back...' variant='success' />);
+      }
       return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
     }
 
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='xs'>
-          <Typography component="h1" variant="h4" color="textPrimary">Log in to Dashboard</Typography>
+          <Typography component="h1" variant="h4" color="textPrimary">Log in</Typography>
           <TextField
             fullWidth
             required
@@ -111,8 +129,10 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
       accountLogin: {
         email: this.state.email || '',
         password: saltHashPassword(this.state.pass || ''),
+        includeCfJwt: new URL(window.location.href).searchParams.has('cfr'),
       }
-    })).then(() => {
+    })).then((result) => {
+      this.setState({ isSubmitting: false });
     }).catch((e) => {
       this.setState({ isSubmitting: false });
     });
@@ -122,6 +142,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
+    cfJwt: state.account.account.account?.cfJwt,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(SigninPage));

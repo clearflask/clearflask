@@ -28,6 +28,13 @@ export enum OpenApiTags {
   PropLink = 'x-clearflask-prop-link',
   /** Hide */
   Hide = 'x-clearflask-hide',
+  /**
+   * Adds an additional property located somewhere else into this object/page
+   * as if it was part of it in the first place. Useful When you want to
+   * inject a property deeply nested in an object. If the property doesn't
+   * exist, it's silently ignored.
+   */
+  AdditionalProps = 'x-clearflask-additional-props',
 }
 export interface xCfPage {
   name?: string;
@@ -83,6 +90,7 @@ export enum PropSubType {
   Id = 'id',
   Color = 'color',
   Emoji = 'emoji',
+  KeyGen = 'keygen',
 }
 export interface xCfPropLink {
   /** Path to array */
@@ -107,6 +115,10 @@ export interface xCfPropLink {
   filterIdPropName?: string;
   /** Used with filterPath: if the destination property has no values, use all values */
   filterShowAllIfNone?: boolean;
+}
+export interface xCfAdditionalProps {
+  /** Path to the property */
+  propPaths: string[][];
 }
 
 /**
@@ -577,9 +589,7 @@ export class EditorImpl implements Editor {
       }
     }
 
-    if (schema[OpenApiTags.Hide]) {
-      throw Error(`Property hidden on path ${path}`);
-    } else if (schema[OpenApiTags.Page]) {
+    if (schema[OpenApiTags.Page]) {
       return this.parsePage(path, depth, isRequired, schema);
     } else if (schema[OpenApiTags.PageGroup]) {
       return this.parsePageGroup(path, depth, isRequired, schema);
@@ -742,6 +752,24 @@ export class EditorImpl implements Editor {
     return linkPropertyOptions;
   };
 
+  parseAdditionalProps(objSchema: any): Property[] {
+    const additionalProps: Property[] = [];
+    const xAdditionalProps = objSchema[OpenApiTags.AdditionalProps] as xCfAdditionalProps;
+    if (!xAdditionalProps) {
+      return additionalProps;
+    }
+    xAdditionalProps.propPaths.forEach(path => {
+      const parentSchema = this.getSubSchema(path.slice(0, path.length - 1));
+      if (!parentSchema) return;
+      const propName = path[path.length - 1];
+      const propSchema = parentSchema.properties && parentSchema.properties[propName];
+      if (!propSchema) return;
+      const isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
+      additionalProps.push(this.parseProperty(path, isRequired, propSchema));
+    });
+    return additionalProps;
+  }
+
   parsePage(path: Path, depth: ResolveDepth, isRequired?: boolean, subSchema?: any): Page {
     var pageSchema;
     if (isRequired !== undefined && subSchema !== undefined) {
@@ -757,10 +785,6 @@ export class EditorImpl implements Editor {
       }
     }
 
-    if (pageSchema[OpenApiTags.Hide]) {
-      throw Error(`Cannot parse hidden page on path ${path}`);
-    }
-
     const xPage = pageSchema[OpenApiTags.Page] as xCfPage;
     if (!xPage) {
       throw Error(`No page found on path ${path}`);
@@ -774,6 +798,7 @@ export class EditorImpl implements Editor {
         props: [],
       };
       const objSchema = this.skipPaths(pageSchema, ['allOf']);
+      children.props = this.parseAdditionalProps(objSchema);
       const propsSchema = objSchema.properties
         || (() => { throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`) })();
       const requiredProps = objSchema.required || [];
@@ -928,10 +953,6 @@ export class EditorImpl implements Editor {
         const propName = path[path.length - 1];
         isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
       }
-    }
-
-    if (pageGroupSchema[OpenApiTags.Hide]) {
-      throw Error(`Cannot parse hidden page group on path ${path}`);
     }
 
     const xPageGroup = pageGroupSchema[OpenApiTags.PageGroup] as xCfPageGroup;
@@ -1105,10 +1126,6 @@ export class EditorImpl implements Editor {
     }
     if (propSchema[OpenApiTags.Page] || propSchema[OpenApiTags.PageGroup]) {
       throw Error(`Page or pagegroup found instead of property on path ${path}`);
-    }
-
-    if (propSchema[OpenApiTags.Hide]) {
-      throw Error(`Cannot parse hidden property on path ${path}`);
     }
 
     var property: Property;
@@ -1580,7 +1597,7 @@ export class EditorImpl implements Editor {
           const obj = this.getValue(path);
           var childProperties: Property[] | undefined;
           if (obj) {
-            childProperties = [];
+            childProperties = this.parseAdditionalProps(propSchema);
             const childPropsSchema = propSchema.properties
               || (() => { throw Error(`Cannot find 'properties' under path ${path}`) })();
             const requiredProps = propSchema.required || [];

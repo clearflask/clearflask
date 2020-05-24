@@ -123,13 +123,13 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
     return (
       <div className={this.props.classes.page}>
         <ExplorerTemplate
-          createSize={expand ? 364 : 116}
+          createSize={expand ? 250 : 116}
           createShown={expand}
           createVisible={(
             <TextField
               disabled={this.state.newUserIsSubmitting}
               className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-              label={this.props.adminsOnly ? 'Invite' : 'Create'}
+              label={this.props.adminsOnly ? 'Invite user' : 'Add user'}
               placeholder='Name'
               value={this.state.newUserName || ''}
               onChange={e => {
@@ -226,7 +226,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
           search={expand ? undefined : (
             <TextField
               className={this.props.classes.searchInput}
-              label='Search'
+              placeholder='Search'
               value={this.state.searchInput || ''}
               onChange={e => {
                 this.setState({

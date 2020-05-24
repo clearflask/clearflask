@@ -711,7 +711,6 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
         },
       };
     case Client.userCreateActionStatus.Fulfilled:
-    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
       return {
@@ -951,7 +950,6 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
             }, {}),
         },
       };
-    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1083,7 +1081,6 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
             }, {}),
         },
       };
-    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1175,7 +1172,6 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
           balance: action.payload.user.balance,
         },
       };
-    case Client.userSsoCreateOrLoginActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
       return {

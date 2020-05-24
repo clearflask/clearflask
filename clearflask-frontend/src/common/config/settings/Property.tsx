@@ -1,11 +1,13 @@
-import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
+import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
+import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
 import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';
 import EmojiPicker from '../../EmojiPicker';
 import Overlay from '../../Overlay';
+import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
 
@@ -132,7 +134,21 @@ export default class Property extends Component<Props> {
                 minWidth: Property.inputMinWidth,
                 width: this.props.width,
               },
-              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
+              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji
+                || prop.subType === ConfigEditor.PropSubType.KeyGen,
+              onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
+                if (!prop.value) prop.set(randomUuid());
+              } : undefined,
+              endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
+                <InputAdornment position='end'>
+                  <IconButton
+                    aria-label='Re-generate key'
+                    onClick={() => prop.set(randomUuid())}
+                  >
+                    <KeyRefreshIcon fontSize='small' />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
             }}
             FormHelperTextProps={{
               style: {

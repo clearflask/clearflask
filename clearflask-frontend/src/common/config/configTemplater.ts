@@ -416,7 +416,7 @@ export default class Templater {
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
         allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: { actionTitle: 'Suggest' },
+        allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
         display: Admin.PostDisplayToJSON({}),
         search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.Trending,
@@ -828,6 +828,15 @@ export default class Templater {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous']).set(enable ? true : undefined);
     if (enable) {
       this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous', 'onlyShowIfPushNotAvailable']).set(onlyShowIfPushNotAvailable);
+    }
+  }
+
+  usersOnboardingSso(enable: boolean, secretKey?: string, redirectUrl?: string, buttonTitle?: string) {
+    this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'sso']).set(enable ? true : undefined);
+    if (enable) {
+      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'redirectUrl']).set(redirectUrl);
+      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'buttonTitle']).set(buttonTitle);
+      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['ssoSecretKey']).set(secretKey);
     }
   }
 

@@ -81,7 +81,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
       <InViewObserver ref={this.inViewObserverRef}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
           <SelectionPicker
-            label='Search'
+            placeholder='Search'
             value={controls.values}
             menuIsOpen={this.state.menuIsOpen}
             inputValue={this.state.searchValue || ''}

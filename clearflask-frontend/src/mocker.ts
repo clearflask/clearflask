@@ -1,6 +1,6 @@
 import DataMock from './api/dataMock';
 import ServerAdmin from './api/serverAdmin';
-import ServerMock from './api/serverMock';
+import ServerMock, { SSO_SECRET_KEY } from './api/serverMock';
 import * as ConfigEditor from './common/config/configEditor';
 import Templater from './common/config/configTemplater';
 import { detectEnv, Environment } from './common/util/detectEnv';
@@ -12,7 +12,10 @@ export function mock(): Promise<any> {
     editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
     editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
     editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);
-    Templater.get(editor).demo();
+    const templater = Templater.get(editor);
+    templater.demo();
+
+    templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${window.location.protocol}//${window.location.host.substr(window.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
     return ServerAdmin.get().dispatchAdmin()
       .then(d => d.projectCreateAdmin({
         projectId: projectId,

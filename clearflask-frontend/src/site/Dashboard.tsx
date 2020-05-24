@@ -54,7 +54,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         binding: true,
       };
       ServerAdmin.get(props.forceMock).dispatchAdmin()
-        .then(d => d.accountBindAdmin()
+        .then(d => d.accountBindAdmin({})
           .then(result => {
             this.setState({ binding: false })
             if (result.account) d.configGetAllAdmin()

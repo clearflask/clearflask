@@ -21,7 +21,7 @@ function isBeta(): boolean {
 
 function detectEnv(): Environment {
   if (envCache === undefined) {
-    if (window.location.hostname.match('clearflask.com')) {
+    if (window.location.host.match('clearflask.com')) {
       envCache = Environment.PRODUCTION;
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       envCache = Environment.DEVELOPMENT_FRONTEND;

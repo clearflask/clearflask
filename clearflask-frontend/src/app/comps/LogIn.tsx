@@ -3,9 +3,12 @@ import { DialogProps } from '@material-ui/core/Dialog';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import withMobileDialog, { InjectedProps } from '@material-ui/core/withMobileDialog';
 import { WithWidth } from '@material-ui/core/withWidth';
+import DisabledIcon from '@material-ui/icons/Block';
 import EmailIcon from '@material-ui/icons/Email';
 /** Alternatives: NotificationsActive, Web */
 import WebPushIcon from '@material-ui/icons/NotificationsActive';
+/** Alternatives: AccountCircle, Fingerprint, HowToReg, Person, PersonAdd, OpenInNew */
+import SsoIcon from '@material-ui/icons/OpenInNew';
 /** Alternatives: PhonelinkRing, Vibration */
 import MobilePushIcon from '@material-ui/icons/PhonelinkRing';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -30,6 +33,7 @@ enum NotificationType {
   Ios = 'ios',
   Android = 'android',
   Silent = 'silent',
+  SSO = 'sso',
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -90,7 +94,7 @@ interface State {
   pass?: string;
   revealPassword?: boolean;
   isLogin?: boolean;
-  checkForgotEmailDialogOpen?: boolean;
+  awaitExternalBind?: 'recovery' | 'sso';
   isSubmitting?: boolean;
 }
 
@@ -130,6 +134,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       if (this.props.config.users.onboarding.notificationMethods.email) {
         notifOpts.add(NotificationType.Email);
       }
+      if (this.props.config.users.onboarding.notificationMethods.sso) {
+        notifOpts.add(NotificationType.SSO);
+      }
     }
 
     var dialogContent;
@@ -146,8 +153,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         </React.Fragment>
       );
     } else {
-      const noSignupOption = notifOpts.size <= 0;
-      const isLogin = this.state.isLogin || noSignupOption;
+      const signupAllowed = notifOpts.size > 0;
+      const loginAllowed = !!this.props.config && !!this.props.config.users.onboarding.notificationMethods.email;
+      const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
       const onlySingleOption = notifOpts.size === 1;
       const singleColumnLayout = this.props.fullScreen || onlySingleOption;
 
@@ -162,6 +170,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const showPasswordInput = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
       const isPasswordRequired = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
       const isSignupSubmittable = selectedNotificationType
+        && (selectedNotificationType !== NotificationType.SSO)
         && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
         && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
         && (selectedNotificationType !== NotificationType.Browser || this.state.notificationDataBrowser)
@@ -185,7 +194,23 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
               >
                 <List component="nav" className={this.props.classes.notificationList}>
-                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle || 'Sign up'}</ListSubheader>
+                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle || 'Create account'}</ListSubheader>
+                  <Collapse in={notifOpts.has(NotificationType.SSO)}>
+                    <ListItem
+                      button={!onlySingleOption as any}
+                      selected={!onlySingleOption && selectedNotificationType === NotificationType.SSO}
+                      onClick={!onlySingleOption ? this.onClickSsoNotif.bind(this) : e => this.setState({ notificationType: NotificationType.SSO })}
+                      disabled={this.state.isSubmitting}
+                    >
+                      <ListItemIcon><SsoIcon /></ListItemIcon>
+                      <ListItemText primary={this.props.config?.users.onboarding.notificationMethods.sso?.buttonTitle
+                        || this.props.config?.name
+                        || 'External'} />
+                    </ListItem>
+                    <Collapse in={onlySingleOptionRequiresAllow}>
+                      <Button className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
+                    </Collapse>
+                  </Collapse>
                   <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                     <ListItem
                       // https://github.com/mui-org/material-ui/pull/15049
@@ -235,6 +260,14 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     >
                       <ListItemIcon><SilentIcon /></ListItemIcon>
                       <ListItemText primary={onlySingleOption ? 'In-App' : 'In-App Only'} />
+                    </ListItem>
+                  </Collapse>
+                  <Collapse in={!signupAllowed && !loginAllowed}>
+                    <ListItem
+                      disabled={true}
+                    >
+                      <ListItemIcon><DisabledIcon /></ListItemIcon>
+                      <ListItemText primary={!signupAllowed && !loginAllowed ? 'Signups are disabled' : undefined} />
                     </ListItem>
                   </Collapse>
                 </List>
@@ -310,7 +343,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   </div>
                 </div>
               </div>
-              <AcceptTerms overrideTerms={this.props.config?.users.onboarding.terms?.documents} />
+              {(signupAllowed || loginAllowed) && (
+                <AcceptTerms overrideTerms={this.props.config?.users.onboarding.terms?.documents} />
+              )}
             </Collapse>
             <Collapse in={!!isLogin}>
               <div className={this.props.classes.loginFieldsContainer}>
@@ -355,82 +390,85 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             </Collapse>
           </DialogContent>
           <DialogActions>
-            {!noSignupOption && (
+            {!!loginAllowed && !!signupAllowed && (
               <Button
                 onClick={() => this.setState({ isLogin: !isLogin })}
                 disabled={this.state.isSubmitting}
               >{isLogin ? 'Or Signup' : 'Or Login'}</Button>
             )}
-            <Button
-              color='primary'
-              disabled={!isSubmittable || this.state.isSubmitting}
-              onClick={() => {
-                if (!!isLogin && !this.state.pass) {
-                  this.storageListener = (ev: StorageEvent) => {
-                    if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
-                    this.props.server.dispatch().userBind({
+            {(signupAllowed || loginAllowed) ? (
+              <Button
+                color='primary'
+                disabled={!isSubmittable || this.state.isSubmitting}
+                onClick={() => {
+                  if (!!isLogin && !this.state.pass) {
+                    this.listenForExternalBind();
+                    this.setState({ awaitExternalBind: 'recovery' });
+                    this.props.server.dispatch().forgotPassword({
                       projectId: this.props.server.getProjectId(),
+                      forgotPassword: {
+                        email: this.state.email!,
+                      },
+                    });
+                  } else if (!!isLogin && !!this.state.pass) {
+                    this.setState({ isSubmitting: true });
+                    this.props.server.dispatch().userLogin({
+                      projectId: this.props.server.getProjectId(),
+                      userLogin: {
+                        email: this.state.email!,
+                        password: saltHashPassword(this.state.pass),
+                      },
+                    }).then(() => {
+                      this.setState({ isSubmitting: false });
+                      this.props.onLoggedInAndClose();
+                    }).catch(() => {
+                      this.setState({ isSubmitting: false });
+                    });
+                  } else {
+                    this.setState({ isSubmitting: true });
+                    this.props.server.dispatch().userCreate({
+                      projectId: this.props.server.getProjectId(),
+                      userCreate: {
+                        name: this.state.displayName,
+                        email: this.state.email,
+                        password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
+                        iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
+                        androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
+                        browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
+                      },
+                    }).then(() => {
+                      this.setState({ isSubmitting: false });
+                      this.props.onLoggedInAndClose();
+                    }).catch(() => {
+                      this.setState({ isSubmitting: false });
                     });
                   }
-                  window.addEventListener('storage', this.storageListener);
-                  this.props.server.dispatch().forgotPassword({
-                    projectId: this.props.server.getProjectId(),
-                    forgotPassword: {
-                      email: this.state.email!,
-                    },
-                  }).then(() => {
-                    this.setState({ isSubmitting: false, checkForgotEmailDialogOpen: true });
-                  }).catch(() => {
-                    this.setState({ isSubmitting: false });
-                  });
-                } else if (!!isLogin && !!this.state.pass) {
-                  this.setState({ isSubmitting: true });
-                  this.props.server.dispatch().userLogin({
-                    projectId: this.props.server.getProjectId(),
-                    userLogin: {
-                      email: this.state.email!,
-                      password: saltHashPassword(this.state.pass),
-                    },
-                  }).then(() => {
-                    this.setState({ isSubmitting: false });
-                    this.props.onLoggedInAndClose();
-                  }).catch(() => {
-                    this.setState({ isSubmitting: false });
-                  });
-                } else {
-                  this.setState({ isSubmitting: true });
-                  this.props.server.dispatch().userCreate({
-                    projectId: this.props.server.getProjectId(),
-                    userCreate: {
-                      name: this.state.displayName,
-                      email: this.state.email,
-                      password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
-                      iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
-                      androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
-                      browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
-                    },
-                  }).then(() => {
-                    this.setState({ isSubmitting: false });
-                    this.props.onLoggedInAndClose();
-                  }).catch(() => {
-                    this.setState({ isSubmitting: false });
-                  });
-                }
-              }}
-            >Continue</Button>
+                }}
+              >Continue</Button>
+            ) : (
+                <Button onClick={() => { this.props.onClose() }}>Back</Button>
+              )}
           </DialogActions>
           <Dialog
-            open={!!this.state.checkForgotEmailDialogOpen}
-            onClose={() => this.setState({ checkForgotEmailDialogOpen: false })}
+            open={!!this.state.awaitExternalBind}
+            onClose={() => this.setState({ awaitExternalBind: undefined })}
             maxWidth='xs'
             {...this.props.forgotEmailDialogProps}
           >
-            <DialogTitle>Awaiting confirmation...</DialogTitle>
+            <DialogTitle>
+              {this.state.awaitExternalBind === 'recovery'
+                ? 'Awaiting confirmation...'
+                : 'Awaiting confirmation...'}
+            </DialogTitle>
             <DialogContent>
-              <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
+              {this.state.awaitExternalBind === 'recovery' ? (
+                <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
+              ) : (
+                  <DialogContentText>A popup was opened leading you to a signup page. After you complete sign up, this will automatically close.</DialogContentText>
+                )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => this.setState({ checkForgotEmailDialogOpen: false })}>Cancel</Button>
+              <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
             </DialogActions>
           </Dialog>
         </React.Fragment>
@@ -453,6 +491,28 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       >
         {dialogContent}
       </Dialog>
+    );
+  }
+
+  listenForExternalBind() {
+    if (this.storageListener) return;
+    this.storageListener = (ev: StorageEvent) => {
+      if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
+      this.props.server.dispatch().userBind({
+        projectId: this.props.server.getProjectId(),
+      });
+    }
+    window.addEventListener('storage', this.storageListener);
+  }
+
+  onClickSsoNotif() {
+    if (!this.props.config?.users.onboarding.notificationMethods.sso?.redirectUrl) return;
+    this.listenForExternalBind();
+    this.setState({ awaitExternalBind: 'sso' });
+    window.open(this.props.config.users.onboarding.notificationMethods.sso.redirectUrl
+      .replace('<return_uri>', `${window.location.protocol}//${window.location.host}/sso`),
+      `cf_${this.props.config.projectId}_sso`,
+      `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`,
     );
   }
 

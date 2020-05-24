@@ -72,6 +72,11 @@ components:
                 type: string
         extraTerms:
           type: string
+    AccountBind:
+      type: object
+      properties:
+        includeCfJwt:
+          type: boolean
     AccountLogin:
       type: object
       required:
@@ -82,6 +87,8 @@ components:
           type: string
         password:
           type: string
+        includeCfJwt:
+          type: boolean
     AccountSignupAdmin:
       type: object
       required:
@@ -107,6 +114,8 @@ components:
         name:
           type: string
         email:
+          type: string
+        cfJwt:
           type: string
     AccountUpdateAdmin:
       type: object
@@ -199,6 +208,12 @@ components:
   post:
     operationId: accountBindAdmin
     tags: [AccountAdmin]
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountBind'
     responses:
       '200':
         content:

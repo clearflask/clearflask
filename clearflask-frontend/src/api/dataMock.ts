@@ -1,5 +1,6 @@
 import { loremIpsum } from "lorem-ipsum";
 import { CreateTemplateOptions } from "../common/config/configTemplater";
+import { saltHashPassword } from "../common/util/auth";
 import * as Admin from "./admin";
 import ServerMock from "./serverMock";
 
@@ -359,7 +360,8 @@ class DataMock {
       .then(() => this.mockLoggedIn())
       .then(userMe =>
         this.mockItems(userMe)
-          .then(() => this.mockNotification(userMe)));
+          .then(() => this.mockNotification(userMe)))
+      .then(() => ServerMock.get().accountLogoutAdmin());
   }
 
   mockNotification(userMe: Admin.User): Promise<any> {
@@ -376,7 +378,7 @@ class DataMock {
       accountSignupAdmin: {
         name: 'John Doe',
         email: 'a@a.a',
-        password: 'pass',
+        password: saltHashPassword('pass'),
       }
     });
   }

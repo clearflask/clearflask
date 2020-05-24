@@ -85,7 +85,7 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
         description='asfa sfa fasd fdas fdsa fads fadsf asd fads fasdf asd fads fads fas fasdf adsf dasfas '
         initialSubPath='/embed/demo'
         template={templater => templater.demoExplorer({
-          allowCreate: { actionTitle: 'Suggest' },
+          allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
           allowSearch: undefined,
         })}
         mock={mocker => mocker.demoExplorer()}

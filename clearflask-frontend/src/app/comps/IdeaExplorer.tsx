@@ -1,4 +1,4 @@
-import { Button, FormControl, FormHelperText, InputAdornment, MenuItem, Select, TextField, Typography } from '@material-ui/core';
+import { Button, FormControl, FormHelperText, InputAdornment, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';
@@ -92,7 +92,7 @@ interface State {
   createFormHasExpanded?: boolean;
 }
 
-class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, desc?: string) => void;
@@ -125,10 +125,14 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   }
 
   render() {
-    const expand = !!this.state.createRefFocused || !!this.state.newItemTitle || !!this.state.newItemDescription;
+    const createHasSpace = isWidthUp('md', this.props.width);
+    const createActive = (!!this.state.createRefFocused && !createHasSpace)
+      || !!this.state.newItemTitle
+      || !!this.state.newItemDescription;
+    const createShown = createActive || createHasSpace;
 
     var content, topBar;
-    if (expand) {
+    if (createActive) {
       topBar = (
         <Typography variant='overline' className={this.props.classes.caption}>
           Similar:
@@ -209,8 +213,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       <TextField
         disabled={this.state.newItemIsSubmitting}
         className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        label={this.props.explorer.allowCreate.actionTitle || 'Add'}
-        placeholder='Title'
+        placeholder={createShown
+          ? (this.props.explorer.allowCreate.actionTitleLong || this.props.explorer.allowCreate.actionTitle || 'Add new post')
+          : (this.props.explorer.allowCreate.actionTitle || 'Add')}
         value={this.state.newItemTitle || ''}
         onChange={e => {
           this.updateSearchText(e.target.value, this.state.newItemDescription);
@@ -247,13 +252,13 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         }}
       />
     );
-    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate(expand);
+    const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate();
 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
-          createSize={this.props.explorer.allowCreate ? (expand ? 250 : 116) : 0}
-          createShown={expand}
+          createSize={this.props.explorer.allowCreate ? (createShown ? 250 : 116) : 0}
+          createShown={createShown}
           createVisible={createVisible}
           createCollapsible={createCollapsible}
           searchSize={this.props.explorer.allowSearch ? 100 : undefined}
@@ -264,7 +269,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     );
   }
 
-  renderCreate(expand: boolean) {
+  renderCreate() {
     if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
@@ -480,4 +485,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(Explorer)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(Explorer))));
