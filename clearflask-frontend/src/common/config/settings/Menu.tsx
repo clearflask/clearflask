@@ -15,6 +15,7 @@ export interface MenuItem {
   type: 'item';
   name: string | React.ReactNode;
   slug?: string;
+  ext?: string;
   onClick?: () => void;
   offset?: number;
 }
@@ -62,6 +63,9 @@ export default class Menu extends Component<Props> {
                 }
                 if (item.slug !== undefined) {
                   this.props.pageClicked(item.slug);
+                }
+                if (item.ext !== undefined) {
+                  window.open(item.ext, '_blank');
                 }
               }}>
                 <ListItemText style={Menu.paddingForLevel(item.offset)} primary={item.name} />

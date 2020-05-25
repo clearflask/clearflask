@@ -60,6 +60,12 @@ class App extends Component<Props> {
   }
 
   async configGetAndUserBind() {
+    const token = new URL(window.location.href).searchParams.get('token');
+    if (token) {
+      // Clear token from URL for safety
+      this.props.history.replace(this.props.location.pathname);
+    }
+
     if (this.server.getStore().getState().conf.status === undefined) {
       var subscriptionResult;
       if (WebNotification.getInstance().getStatus() === Status.Granted) {
@@ -71,7 +77,7 @@ class App extends Component<Props> {
         configAndBindResult = await this.server.dispatch().configGetAndUserBind({
           projectId: this.server.getProjectId(),
           configGetAndUserBind: {
-            authToken: new URL(window.location.href).searchParams.get('token') || undefined,
+            authToken: token || undefined,
             browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
               ? subscriptionResult.token : undefined,
           },

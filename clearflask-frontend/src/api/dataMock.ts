@@ -361,7 +361,7 @@ class DataMock {
       .then(userMe =>
         this.mockItems(userMe)
           .then(() => this.mockNotification(userMe)))
-      .then(() => ServerMock.get().accountLogoutAdmin());
+    // .then(() => ServerMock.get().accountLogoutAdmin())
   }
 
   mockNotification(userMe: Admin.User): Promise<any> {

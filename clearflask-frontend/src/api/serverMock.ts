@@ -123,7 +123,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       privacy: 'Here is a privacy policy.',
     });
   }
-  accountBindAdmin(request: Admin.AccountBindAdminRequest): Promise<Admin.AccountBindAdminResponse> {
+  accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
     return this.returnLater(this.loggedIn && this.account
       ? { account: this.account } : {});
   }

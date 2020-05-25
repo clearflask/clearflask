@@ -253,6 +253,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
               { type: 'heading', text: 'Account' } as MenuHeading,
               { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
               { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,
+              { type: 'heading', text: 'Help' } as MenuHeading,
+              { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
+              { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
+              { type: 'item', name: 'Ideas', offset: 1, onClick: () => this.openFeedback('ideas') } as MenuItem,
             ].filter(notEmpty)}
             activePath={activePath}
             activeSubPath={activeSubPath}
@@ -287,6 +291,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
       </Layout>
     );
+  }
+
+  openFeedback(page?:string) {
+    window.open(`${window.location.protocol}//feedback.${window.location.host}/${page || ''}?token=${this.props.account?.cfJwt}`, '_blank')
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

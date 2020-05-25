@@ -49,11 +49,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
 
     if (props.accountStatus === undefined) {
       ServerAdmin.get().dispatchAdmin()
-        .then(d => d.accountBindAdmin({
-          accountBind: {
-            includeCfJwt: new URL(window.location.href).searchParams.has('cfr'),
-          },
-        }));
+        .then(d => d.accountBindAdmin());
     }
 
     this.state = {};
@@ -129,7 +125,6 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
       accountLogin: {
         email: this.state.email || '',
         password: saltHashPassword(this.state.pass || ''),
-        includeCfJwt: new URL(window.location.href).searchParams.has('cfr'),
       }
     })).then((result) => {
       this.setState({ isSubmitting: false });
