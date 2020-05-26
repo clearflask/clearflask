@@ -56,6 +56,10 @@ import static com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.
 @Slf4j
 @Singleton
 public class NotificationServiceImpl extends ManagedService implements NotificationService {
+    /** If changed, also change in App.tsx */
+    public static final String AUTH_TOKEN_PARAM_NAME = "authToken";
+    /** If changed, also change in App.tsx */
+    public static final String SSO_TOKEN_PARAM_NAME = "token";
 
     public interface Config {
         @DefaultValue("true")

@@ -2,6 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,10 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
 public interface AccountStore {
+
+    default String genAccountId() {
+        return IdUtil.randomId();
+    }
 
     void createAccount(Account account);
 
@@ -75,6 +80,10 @@ public interface AccountStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "account")
     class Account {
+        /** So far only used as SSO Guid */
+        @NonNull
+        private final String accountId;
+
         @NonNull
         private final String email;
 
@@ -96,11 +105,12 @@ public interface AccountStore {
         @NonNull
         private final ImmutableSet<String> projectIds;
 
-        public AccountAdmin toAccountAdmin(PlanStore planStore) {
+        public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso) {
             return new AccountAdmin(
                     planStore.getPlan(getPlanId()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanId())),
                     getName(),
-                    getEmail());
+                    getEmail(),
+                    cfSso.generateToken(this));
         }
     }
 }

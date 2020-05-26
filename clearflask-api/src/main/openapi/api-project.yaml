@@ -747,6 +747,8 @@ components:
             type: object
             title: ConfigGetAndUserBind
             properties:
+              ssoToken:
+                type: string
               authToken:
                 type: string
               browserPushToken:

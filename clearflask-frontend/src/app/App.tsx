@@ -26,6 +26,11 @@ import ServerErrorNotifier from './utils/ServerErrorNotifier';
 /** Broadcast successful bind to other tabs */
 export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
 
+/** If changed, also change in NotificationServiceImpl.java */
+export const AUTH_TOKEN_PARAM_NAME = 'authToken';
+/** If changed, also change in NotificationServiceImpl.java */
+export const SSO_TOKEN_PARAM_NAME = 'token';
+
 interface Props {
   projectId: string;
   serverOverride?: Server;
@@ -60,8 +65,11 @@ class App extends Component<Props> {
   }
 
   async configGetAndUserBind() {
-    const token = new URL(window.location.href).searchParams.get('token');
-    if (token) {
+    // Used for links within emails
+    const authToken = new URL(window.location.href).searchParams.get(AUTH_TOKEN_PARAM_NAME);
+    // Used for SSO
+    const token = new URL(window.location.href).searchParams.get(SSO_TOKEN_PARAM_NAME);
+    if (token || authToken) {
       // Clear token from URL for safety
       this.props.history.replace(this.props.location.pathname);
     }
@@ -77,7 +85,8 @@ class App extends Component<Props> {
         configAndBindResult = await this.server.dispatch().configGetAndUserBind({
           projectId: this.server.getProjectId(),
           configGetAndUserBind: {
-            authToken: token || undefined,
+            ssoToken: token || undefined,
+            authToken: authToken || undefined,
             browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
               ? subscriptionResult.token : undefined,
           },

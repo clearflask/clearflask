@@ -31,6 +31,7 @@ import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
 import com.smotana.clearflask.core.push.provider.EmailServiceImpl;
+import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
@@ -189,6 +190,7 @@ public enum ServiceInjector {
 
                 // Other
                 install(LogExFilter.module());
+                install(ClearFlaskSso.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

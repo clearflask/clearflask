@@ -327,7 +327,7 @@
                 <groupId>com.github.alexcojocaru</groupId>
                 <artifactId>elasticsearch-maven-plugin</artifactId>
                 <configuration>
-                    <version>7.1.0</version>
+                    <version>${elastic.version}</version>
                     <clusterName>test</clusterName>
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>

@@ -35,6 +35,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
+                store.genAccountId(),
                 "my@email.com",
                 "planId1",
                 Instant.now(),
@@ -88,6 +89,7 @@ public class AccountStoreTest extends AbstractTest {
     @Test(timeout = 5_000L)
     public void testSession() throws Exception {
         Account account = new Account(
+                store.genAccountId(),
                 "my@email.com",
                 "planId1",
                 Instant.now(),

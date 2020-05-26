@@ -71,6 +71,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
                 store.genUserId(),
+                null,
                 false,
                 "john",
                 "john.doe@example.com",
@@ -138,6 +139,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user1 = new UserModel(
                 projectId,
                 store.genUserId(),
+                null,
                 false,
                 "john",
                 "john.doe@example.com",
@@ -156,6 +158,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user2 = new UserModel(
                 projectId,
                 store.genUserId(),
+                null,
                 false,
                 "matt",
                 "matt@example.com",
@@ -174,6 +177,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user3 = new UserModel(
                 projectId,
                 store.genUserId(),
+                null,
                 false,
                 "Bobby",
                 "bobby@example.com",
@@ -229,6 +233,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
                 store.genUserId(),
+                null,
                 false,
                 "john",
                 "john.doe@example.com",
@@ -263,6 +268,7 @@ public class UserStoreIT extends AbstractIT {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
                 store.genUserId(),
+                null,
                 false,
                 "john",
                 "john.doe@example.com",

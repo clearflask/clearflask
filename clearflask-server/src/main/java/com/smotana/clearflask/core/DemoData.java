@@ -10,6 +10,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.PlanStore;
@@ -68,7 +69,8 @@ public class DemoData extends ManagedService {
                 // Salt taken from client side (src/common/util/auth.ts)
                 Base64.getEncoder().encodeToString(Hashing.sha512().hashString("a" + ":salt:775DFB51571649109DEB70F423AF2B86:salt:", Charsets.UTF_8).asBytes()),
                 email);
-        AccountStore.Account account = new AccountStore.Account(
+        Account account = new Account(
+                accountStore.genAccountId(),
                 email,
                 plan.getPlanid(),
                 Instant.now(),

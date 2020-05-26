@@ -64,13 +64,16 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.*;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -99,6 +102,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
@@ -684,6 +688,7 @@ public class DynamoElasticUserStore implements UserStore {
                         "pid", projectId,
                         "uid", userId))
                 .signWith(config.tokenSignerPrivKey(), MoreConfigValueConverters.TOKEN_ALGO)
+                .compressWith(new GzipCompressionCodec())
                 .compact();
     }
 
@@ -711,13 +716,16 @@ public class DynamoElasticUserStore implements UserStore {
         String userId;
         try {
             projectId = claims.get("pid", String.class);
+            userId = claims.get("uid", String.class);
         } catch (RequiredTypeException ex) {
+            log.warn("Invalid type in token {}", token);
+            return Optional.empty();
+        }
+        if (projectId == null) {
             log.warn("Missing pid in token {}", token);
             return Optional.empty();
         }
-        try {
-            userId = claims.get("uid", String.class);
-        } catch (RequiredTypeException ex) {
+        if (userId == null) {
             log.warn("Missing uid in token {}", token);
             return Optional.empty();
         }
@@ -732,9 +740,86 @@ public class DynamoElasticUserStore implements UserStore {
         if (userOpt.get().getAuthTokenValidityStart() != null
                 && claims.getIssuedAt() != null
                 && userOpt.get().getAuthTokenValidityStart().isAfter(claims.getIssuedAt().toInstant())) {
-            log.info("Token is created prior to revocation {}, projectId {} userId {}",
+            log.debug("Token is created prior to revocation {}, projectId {} userId {}",
                     userOpt.get().getAuthTokenValidityStart(), projectId, userId);
             return Optional.empty();
+        }
+
+        return userOpt;
+    }
+
+    @Override
+    public Optional<UserModel> ssoCreateOrGet(String projectId, String secretKey, String token) {
+        if (Strings.isNullOrEmpty(token) || Strings.isNullOrEmpty(secretKey)) {
+            return Optional.empty();
+        }
+
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(new SecretKeySpec(secretKey.getBytes(Charsets.UTF_8), SignatureAlgorithm.HS256.getJcaName()))
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
+            if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-failed-parse")) {
+                log.warn("Failed to parse token {}", token, ex);
+            }
+            return Optional.empty();
+        } catch (ExpiredJwtException ex) {
+            log.trace("Token is past expiration {}", token);
+            return Optional.empty();
+        }
+
+        String guid;
+        Optional<String> emailOpt;
+        Optional<String> nameOpt;
+        try {
+            guid = claims.get("guid", String.class);
+            if (guid == null) {
+                if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-missing-guid")) {
+                    log.warn("Missing guid in token {}", token);
+                }
+                return Optional.empty();
+            }
+            emailOpt = Optional.ofNullable(claims.get("email", String.class));
+            nameOpt = Optional.ofNullable(claims.get("name", String.class));
+        } catch (RequiredTypeException ex) {
+            if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-invalid-type")) {
+                log.warn("Invalid type in token {}", token, ex);
+            }
+            return Optional.empty();
+        }
+
+        Optional<UserModel> userOpt = getUserByIdentifier(projectId, IdentifierType.SSO_GUID, guid);
+        if (userOpt.isPresent()) {
+            if (userOpt.get().getAuthTokenValidityStart() != null
+                    && claims.getIssuedAt() != null
+                    && userOpt.get().getAuthTokenValidityStart().isAfter(claims.getIssuedAt().toInstant())) {
+                log.debug("SSO Token is created prior to revocation {}, projectId {} userId {}",
+                        userOpt.get().getAuthTokenValidityStart(), projectId, userOpt.get().getUserId());
+                userOpt = Optional.empty();
+            }
+        } else {
+            userOpt = Optional.of(createUser(new UserModel(
+                    projectId,
+                    genUserId(),
+                    guid,
+                    null,
+                    nameOpt.orElse(null),
+                    emailOpt.orElse(null),
+                    null,
+                    null,
+                    null,
+                    emailOpt.isPresent(),
+                    0,
+                    null,
+                    null,
+                    null,
+                    Instant.now(),
+                    null,
+                    null,
+                    null))
+                    .getUser());
         }
 
         return userOpt;
@@ -829,6 +914,9 @@ public class DynamoElasticUserStore implements UserStore {
         }
         if (!Strings.isNullOrEmpty(user.getIosPushToken())) {
             identifiersBuilder.put(IdentifierType.IOS_PUSH, user.getIosPushToken());
+        }
+        if (!Strings.isNullOrEmpty(user.getSsoGuid())) {
+            identifiersBuilder.put(IdentifierType.SSO_GUID, user.getSsoGuid());
         }
         return identifiersBuilder.build();
     }

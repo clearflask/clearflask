@@ -51,7 +51,7 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
     public interface Config {
-        @DefaultValue(value = "www,feedback,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news", innerType = String.class)
         Set<String> reservedProjectIds();
     }
 
@@ -84,16 +84,21 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        boolean createSession = false;
 
         // Auto login using auth token
         if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getAuthToken())) {
             userOpt = userStore.verifyToken(configGetAndUserBind.getAuthToken());
             if (userOpt.isPresent()) {
-                UserStore.UserSession session = userStore.createSession(
-                        projectId,
-                        userOpt.get().getUserId(),
-                        Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-                authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+                createSession = true;
+            }
+        }
+
+        // Auto login using sso token
+        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getSsoToken())) {
+            userOpt = userStore.ssoCreateOrGet(projectId, projectOpt.get().getVersionedConfigAdmin().getConfig().getSsoSecretKey(), configGetAndUserBind.getAuthToken());
+            if (userOpt.isPresent()) {
+                createSession = true;
             }
         }
 
@@ -107,13 +112,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 if (!Strings.isNullOrEmpty(userOpt.get().getPassword()) || !Strings.isNullOrEmpty(userOpt.get().getEmail())) {
                     userOpt = Optional.empty();
                 } else {
-                    UserStore.UserSession session = userStore.createSession(
-                            projectId,
-                            userOpt.get().getUserId(),
-                            Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-                    authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+                    createSession = true;
                 }
             }
+        }
+
+        if (createSession) {
+            UserStore.UserSession session = userStore.createSession(
+                    projectId,
+                    userOpt.get().getUserId(),
+                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
+            authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
         }
 
         return new ConfigAndBindResult(

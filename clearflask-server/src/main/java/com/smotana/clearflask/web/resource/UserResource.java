@@ -21,7 +21,6 @@ import com.smotana.clearflask.api.model.UserMe;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.UserSearchAdmin;
 import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserSsoCreateOrLogin;
 import com.smotana.clearflask.api.model.UserUpdate;
 import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -34,7 +33,6 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.AuthCookieUtil;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
@@ -93,10 +91,20 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     public void forgotPassword(String projectId, ForgotPassword forgotPassword) {
         Optional<Project> projectOpt = projectStore.getProject(projectId, true);
         if (!projectOpt.isPresent()) return;
-        userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, forgotPassword.getEmail())
-                .ifPresent(user -> notificationService.onForgotPassword(
-                        projectOpt.get().getVersionedConfigAdmin().getConfig(),
-                        user));
+
+        Optional<UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, forgotPassword.getEmail());
+        if (!userOpt.isPresent()) {
+            return;
+        }
+
+        if (userOpt.get().getSsoGuid() != null) {
+            log.info("Forgot password for sso user {}", userOpt.get().getEmail());
+            return;
+        }
+
+        notificationService.onForgotPassword(
+                projectOpt.get().getVersionedConfigAdmin().getConfig(),
+                userOpt.get());
     }
 
     @PermitAll
@@ -124,6 +132,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserModel user = new UserModel(
                 projectId,
                 userId,
+                null,
                 null,
                 userCreate.getName(),
                 userCreate.getEmail(),
@@ -157,11 +166,15 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         String userId = userStore.genUserId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
+            if (userCreateAdmin.getSsoGuid() != null) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot specify both password and ssoGuid");
+            }
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreateAdmin.getPassword(), userId));
         }
         UserModel user = new UserModel(
                 projectId,
                 userId,
+                userCreateAdmin.getSsoGuid(),
                 userCreateAdmin.getIsAdmin() == Boolean.TRUE ? true : null,
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
@@ -234,6 +247,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
         UserModel user = userOpt.get();
 
+        if (user.getSsoGuid() != null) {
+            log.info("Account login for sso user {}", user.getEmail());
+            throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+        }
+
         String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
         if (Strings.isNullOrEmpty(user.getPassword())) {
             // Password-less user
@@ -269,20 +287,11 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         authCookieUtil.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
     }
 
-    @PermitAll
-    @Limit(requiredPermits = 10, challengeAfter = 100)
-    @Override
-    public UserMeWithBalance userSsoCreateOrLogin(String projectId, UserSsoCreateOrLogin userSsoCreateOrLogin) {
-        throw new NotImplementedException();
-        // TODO not yet implemented on client nor server
-//        projectStore.getConfigAdmin(projectId).orElseThrow(InternalServerErrorException::new)
-    }
-
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 1, challengeAfter = 20)
     @Override
     public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
-        // TODO Sanity check userUpdate
+        // TODO Sanity check userUpdate also pass cannot be set by sso user
         if (userUpdate.getEmail() != null) {
             UserModel user = userStore.getUser(projectId, userId).get();
             if (!Strings.isNullOrEmpty(user.getEmail())

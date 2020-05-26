@@ -134,8 +134,7 @@ export default class Property extends Component<Props> {
                 minWidth: Property.inputMinWidth,
                 width: this.props.width,
               },
-              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji
-                || prop.subType === ConfigEditor.PropSubType.KeyGen,
+              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
               onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
                 if (!prop.value) prop.set(randomUuid());
               } : undefined,

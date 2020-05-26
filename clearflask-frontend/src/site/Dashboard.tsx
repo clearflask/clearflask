@@ -6,6 +6,7 @@ import { Redirect, RouteComponentProps } from 'react-router';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import LoadingPage from '../app/LoadingPage';
 import * as ConfigEditor from '../common/config/configEditor';
 import Crumbs from '../common/config/settings/Crumbs';
@@ -293,8 +294,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
     );
   }
 
-  openFeedback(page?:string) {
-    window.open(`${window.location.protocol}//feedback.${window.location.host}/${page || ''}?token=${this.props.account?.cfJwt}`, '_blank')
+  openFeedback(page?: string) {
+    window.open(`${window.location.protocol}//feedback.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`, '_blank')
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

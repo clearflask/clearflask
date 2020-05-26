@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
+import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import ErrorPage from '../app/ErrorPage';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
@@ -58,7 +59,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
       if (this.props.cfJwt && this.cfReturnUrl) {
-        window.location.href = `${this.cfReturnUrl}?token=${this.props.cfJwt}`;
+        window.location.href = `${this.cfReturnUrl}?${SSO_TOKEN_PARAM_NAME}=${this.props.cfJwt}`;
         return (<ErrorPage msg='Redirecting you back...' variant='success' />);
       }
       return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);

@@ -15,6 +15,7 @@ public class MockModelUtil {
         return new UserModel(
                 IdUtil.randomId(),
                 IdUtil.randomId(),
+                null,
                 false,
                 IdUtil.randomId(),
                 IdUtil.randomId() + "@example.com",

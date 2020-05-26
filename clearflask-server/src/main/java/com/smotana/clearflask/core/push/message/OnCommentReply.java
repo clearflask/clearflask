@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKEN_PARAM_NAME;
 
 @Slf4j
 @Singleton
@@ -98,11 +99,11 @@ public class OnCommentReply {
         templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
         templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
 
-        link += "?authToken=" + authToken;
+        link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
         templateText = templateText.replaceAll("__BUTTON_URL__", link);
 
-        String unsubscribeLink = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account?authToken=" + authToken;
+        String unsubscribeLink = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/account?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
         templateHtml = templateHtml.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
         templateText = templateText.replaceAll("__UNSUBSCRIBE_URL__", unsubscribeLink);
 
@@ -140,7 +141,7 @@ public class OnCommentReply {
                 content,
                 idea.getProjectId(),
                 user.getUserId(),
-                link + "?authToken=" + authToken
+                link + "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken
         );
     }
 

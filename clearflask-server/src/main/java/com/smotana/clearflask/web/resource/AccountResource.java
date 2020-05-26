@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.LegalResponse;
 import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -67,6 +68,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private PasswordUtil passwordUtil;
     @Inject
     private AuthCookieUtil authCookieUtil;
+    @Inject
+    private ClearFlaskSso cfSso;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -98,7 +101,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         Account account = accountOpt.get();
 
-        return new AccountBindAdminResponse(account.toAccountAdmin(planStore));
+        return new AccountBindAdminResponse(account.toAccountAdmin(planStore, cfSso));
     }
 
     @PermitAll
@@ -124,7 +127,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
-        return account.toAccountAdmin(planStore);
+        return account.toAccountAdmin(planStore, cfSso);
     }
 
     @PermitAll
@@ -152,6 +155,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
         Account account = new Account(
+                accountStore.genAccountId(),
                 signup.getEmail(),
                 plan.getPlanid(),
                 Instant.now(),
@@ -166,7 +170,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
-        return account.toAccountAdmin(planStore);
+        return account.toAccountAdmin(planStore, cfSso);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -187,7 +191,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return (account == null
                 ? accountStore.getAccount(accountSession.getEmail()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getEmail()))
                 : account)
-                .toAccountAdmin(planStore);
+                .toAccountAdmin(planStore, cfSso);
     }
 
     @PermitAll

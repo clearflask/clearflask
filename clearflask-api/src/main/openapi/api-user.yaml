@@ -62,6 +62,8 @@ components:
           properties:
             isAdmin:
               type: boolean
+            isSso:
+              type: boolean
             email:
               type: string
             emailNotify:
@@ -110,6 +112,8 @@ components:
         - $ref: 'api-user.yaml#/components/schemas/UserCreate'
         - type: object
           properties:
+            ssoGuid:
+              type: string
             isAdmin:
               type: boolean
             balance:

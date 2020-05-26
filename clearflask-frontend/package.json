@@ -61,10 +61,10 @@
     "typescript": "3.7.5"
   },
   "scripts": {
-    "start": "env ADBLOCK=1 react-scripts start",
-    "build": "env ADBLOCK=1 react-scripts build",
-    "test": "env ADBLOCK=1 react-scripts test",
-    "eject": "env ADBLOCK=1 react-scripts eject"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app",

@@ -147,7 +147,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       cfJwt: jsonwebtoken.sign({
+        guid: request.accountSignupAdmin.email,
         email: request.accountSignupAdmin.email,
+        name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
     };
     this.accountPass = request.accountSignupAdmin.password;
@@ -333,12 +335,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
-    if (request.configGetAndUserBind.authToken) {
+    if (request.configGetAndUserBind.ssoToken) {
       var token;
       try {
-        token = jsonwebtoken.verify(request.configGetAndUserBind.authToken, SSO_SECRET_KEY);
+        token = jsonwebtoken.verify(request.configGetAndUserBind.ssoToken, SSO_SECRET_KEY);
       } catch (er) {
-        console.log('Failed parsing authToken', er);
+        console.log('Failed parsing ssoToken', er);
       }
       if (token && token['email']) {
         const user = this.getProject(request.projectId).users.find(user => user.email === token['email']);
@@ -349,6 +351,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
             projectId: request.projectId,
             userCreate: {
               email: token['email'],
+              name: token['name'],
+              ...{
+                isSso: true,
+              },
             },
           });
         }

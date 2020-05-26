@@ -123,49 +123,51 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               }}>Save</Button>
             </Grid>
           </Grid>
-          <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
-            <Grid item xs={12} sm={6}>
-              <Badge
-                color='secondary'
-                invisible={!!this.props.userMe.hasPassword || (!this.state.email && !this.props.userMe.email)}
-                variant='dot'
-              >
-                <TextField
-                  id='password'
-                  value={this.state.password === undefined
-                    ? ('')
-                    : (this.state.password)}
-                  onChange={e => this.setState({ password: e.target.value })}
-                  type={this.state.revealPassword ? 'text' : 'password'}
+          {!this.props.userMe.isSso && (
+            <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
+              <Grid item xs={12} sm={6}>
+                <Badge
+                  color='secondary'
+                  invisible={!!this.props.userMe.hasPassword || (!this.state.email && !this.props.userMe.email)}
+                  variant='dot'
+                >
+                  <TextField
+                    id='password'
+                    value={this.state.password === undefined
+                      ? ('')
+                      : (this.state.password)}
+                    onChange={e => this.setState({ password: e.target.value })}
+                    type={this.state.revealPassword ? 'text' : 'password'}
+                    disabled={!this.state.email && !this.props.userMe.email}
+                  />
+                </Badge>
+                <IconButton
+                  aria-label='Toggle password visibility'
+                  onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
                   disabled={!this.state.email && !this.props.userMe.email}
-                />
-              </Badge>
-              <IconButton
-                aria-label='Toggle password visibility'
-                onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                disabled={!this.state.email && !this.props.userMe.email}
-              >
-                {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-              </IconButton>
-              <Button aria-label="Save" color='primary' style={{
-                visibility:
-                  !this.state.password
-                    || this.state.password === this.props.userMe.name
-                    ? 'hidden' : undefined
-              }} onClick={() => {
-                if (!this.state.password
-                  || !this.props.userMe) {
-                  return;
-                }
-                this.props.server.dispatch().userUpdate({
-                  projectId: this.props.server.getProjectId(),
-                  userId: this.props.userMe.userId,
-                  userUpdate: { password: this.state.password },
-                }).then(() => this.setState({ password: undefined }));
-              }}>Save</Button>
+                >
+                  {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                </IconButton>
+                <Button aria-label="Save" color='primary' style={{
+                  visibility:
+                    !this.state.password
+                      || this.state.password === this.props.userMe.name
+                      ? 'hidden' : undefined
+                }} onClick={() => {
+                  if (!this.state.password
+                    || !this.props.userMe) {
+                    return;
+                  }
+                  this.props.server.dispatch().userUpdate({
+                    projectId: this.props.server.getProjectId(),
+                    userId: this.props.userMe.userId,
+                    userUpdate: { password: this.state.password },
+                  }).then(() => this.setState({ password: undefined }));
+                }}>Save</Button>
+              </Grid>
             </Grid>
-          </Grid>
+          )}
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Sign out of your account</Typography></Grid>
             <Grid item xs={12} sm={6}>

@@ -67,6 +67,8 @@ public interface UserStore {
 
     Optional<UserModel> verifyToken(String token);
 
+    Optional<UserModel> ssoCreateOrGet(String projectId, String secretKey, String token);
+
     default String genUserSessionId() {
         return IdUtil.randomAscId();
     }
@@ -97,7 +99,8 @@ public interface UserStore {
         EMAIL("e", false),
         IOS_PUSH("i", true),
         ANDROID_PUSH("a", true),
-        BROWSER_PUSH("b", true);
+        BROWSER_PUSH("b", true),
+        SSO_GUID("s", true);
 
         private final String type;
         private final boolean isHashed;
@@ -147,6 +150,8 @@ public interface UserStore {
         @NonNull
         private final String userId;
 
+        private final String ssoGuid;
+
         private final Boolean isAdmin;
 
         private final String name;
@@ -188,6 +193,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsAdmin(),
+                    this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
@@ -201,6 +207,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsAdmin(),
+                    this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
@@ -215,6 +222,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsAdmin(),
+                    this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
