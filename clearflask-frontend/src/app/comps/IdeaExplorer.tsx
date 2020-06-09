@@ -125,7 +125,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
   }
 
   render() {
-    const createHasSpace = isWidthUp('md', this.props.width);
+    const createHasSpace = this.props.settings.demoForceExplorerCreateHasSpace === undefined
+      ? isWidthUp('md', this.props.width)
+      : this.props.settings.demoForceExplorerCreateHasSpace;
     const createActive = (!!this.state.createRefFocused && !createHasSpace)
       || !!this.state.newItemTitle
       || !!this.state.newItemDescription;

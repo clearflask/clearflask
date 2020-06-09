@@ -1,3 +1,4 @@
+import { Container } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
@@ -19,6 +20,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
+        {this.renderDemo()}
         {this.renderCollectFeedback()}
         {this.renderPrioritization(true)}
         {this.renderEngagement()}
@@ -39,6 +41,30 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
+  renderDemo() {
+    const opts: CreateTemplateOptions = {
+      ...createTemplateOptionsDefault,
+      fundingAllowed: false,
+    };
+    return (
+      <Container maxWidth='lg'>
+        <Demo
+          type='demoOnly'
+          edgeType='outline'
+          demoFixedHeight={500}
+          template={templater => templater.demo(opts)}
+          mock={mocker => mocker.templateMock(opts)}
+          settings={{
+            demoMenuAnimate: [
+              { path: 'feedback' },
+              { path: 'roadmap' },
+            ],
+          }}
+        />
+      </Container>
+    );
+  }
+
   renderCollectFeedback(mirror?: boolean) {
     const opts: CreateTemplateOptions = {
       ...createTemplateOptionsDefault,
@@ -50,16 +76,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={collectTitle}
           description={collectDescription}
           mirror={mirror}
-          type='largeDemo'
-          edgeType='outline'
+          buttonTitle='Learn about collecting'
+          buttonLink='/collect'
+          demoFixedWidth={420}
           demoFixedHeight={500}
-          template={templater => templater.demo(opts)}
-          mock={mocker => mocker.templateMock(opts)}
+          // type='largeDemo'
+          initialSubPath='/embed/demo'
+          template={templater => templater.demoExplorer({
+            allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
+            allowSearch: undefined,
+          })}
+          mock={mocker => mocker.demoExplorer()}
           settings={{
-            demoMenuAnimate: [
-              { path: 'feedback' },
-              { path: 'roadmap' },
-            ],
+            demoForceExplorerCreateHasSpace: false,
+            demoDisableExpand: true,
+            demoBlurryShadow: true,
+            demoCreateAnimate: {
+              title: 'Add Dark Mode',
+              description: 'To reduce eye-strain, please add a dark mode option',
+            },
           }}
         />
       </React.Fragment>
@@ -147,8 +182,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         <Block
-          title='Made with customization in mind'
-          description='fasdfsdaf asf d fdsafds fasf asf asasf asf fa fasd  sad as as asfd asfd'
+          title='Make it your own with custom workflows and branding'
+          description=''
           mirror={mirror}
           buttonTitle='See templates'
           buttonLink='/customize'

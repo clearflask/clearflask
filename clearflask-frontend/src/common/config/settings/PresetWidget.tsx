@@ -69,8 +69,8 @@ class PresetWidget extends Component<Props> {
         actionTitle: 'Set', action: (templater, path) => templater.supportExpressingGithubStyle(path[2] as number)
       },
       {
-        title: 'Facebook Reactions', body: 'Enables reactions based on Facebook Messenger reactions',
-        actionTitle: 'Set', action: (templater, path) => templater.supportExpressingFacebookStyle(path[2] as number)
+        title: 'Ranged Reactions', body: 'Enables reactions on a range from smiling to disappointed',
+        actionTitle: 'Set', action: (templater, path) => templater.supportExpressingRange(path[2] as number)
       },
     ],
     'content.categories.<>.tagging': [

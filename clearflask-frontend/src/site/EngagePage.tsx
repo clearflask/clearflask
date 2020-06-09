@@ -8,8 +8,8 @@ import Demos from './landing/Demos';
 import Hero from './landing/Hero';
 import RoadmapControls from './landing/RoadmapControls';
 
-export const transparencyTitle = 'Create a community around your product roadmap';
-export const transparencyDescription = 'Inform your users of your progress at every step with updates and a transparent roadmap. Let them be involved in your decision making and make them feel valued.';
+export const transparencyTitle = 'Build a community around your product development';
+export const transparencyDescription = 'Whether you are starting out or have an existing product, keep your users up to date at every step. Let them be involved in your decision making and make them feel valued.';
 
 const styles = (theme: Theme) => createStyles({
 });

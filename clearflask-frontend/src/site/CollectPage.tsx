@@ -8,8 +8,8 @@ import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/Onbo
 import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 
-export const title = 'Collect customer feedback in one place';
-export const description = 'Capture feedback from all channels seamlessly into one funnel'
+export const title = 'Listen to customer needs';
+export const description = 'Capture feedback from all your support channels seamlessly into one funnel.'
 
 const styles = (theme: Theme) => createStyles({
 });

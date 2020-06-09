@@ -639,9 +639,6 @@ components:
         showExpression:
           x-clearflask-prop: { order: 13, name: 'Force show expression' }
           type: boolean
-        disableExpand:
-          x-clearflask-hide: true
-          type: boolean
     PagePanel:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
       type: object

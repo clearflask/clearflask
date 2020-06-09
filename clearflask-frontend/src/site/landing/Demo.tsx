@@ -27,7 +27,7 @@ interface Props {
   controls?: (project: Project) => React.ReactNode;
   demo?: (project: Project) => React.ReactNode;
   demoFixedHeight?: number;
-  demoFixedWidth?: number;
+  demoFixedWidth?: number | string;
   scale?: number;
   settings?: StateSettings;
   edgeSpacing?: boolean;

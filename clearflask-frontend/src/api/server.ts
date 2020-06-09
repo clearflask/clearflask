@@ -181,7 +181,7 @@ function reducerProjectId(projectId: string = 'unknown', action: AllActions): st
 export const cssBlurry = {
   blurry: {
     color: 'transparent',
-    textShadow: '0px 0px 12px rgba(0,0,0,0.8)',
+    textShadow: '0px 0px 6px rgba(0,0,0,0.8)',
   }
 };
 interface updateSettingsAction {
@@ -204,6 +204,7 @@ export interface StateSettings {
     update: Client.IdeaVoteUpdateExpressions;
   }>,
   demoBlurryShadow?: boolean;
+  demoForceExplorerCreateHasSpace?: boolean;
   demoCreateAnimate?: {
     title: string;
     description?: string;
@@ -215,6 +216,7 @@ export interface StateSettings {
   demoMenuAnimate?: Array<{
     path: string;
   }>;
+  demoDisableExpand?: boolean;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {

@@ -117,7 +117,7 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['logoUrl']).set(logoUrl);
   }
 
-  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'all' | 'voteAndExpress') {
+  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'expressRange' | 'all' | 'voteAndExpress') {
     this.styleWhite();
 
     const categoryIndex = this.demoCategory();
@@ -161,7 +161,6 @@ export default class Templater {
             showVoting: true,
             showFunding: true,
             showExpression: true,
-            disableExpand: true,
           }),
           search: Admin.IdeaSearchToJSON({
             limit: 1,
@@ -195,7 +194,6 @@ export default class Templater {
           showVoting: false,
           showFunding: false,
           showExpression: false,
-          disableExpand: false,
         }),
         allowCreate: undefined,
         ...(explorer || {}),
@@ -271,7 +269,6 @@ export default class Templater {
             showVoting: false,
             showFunding: false,
             showExpression: false,
-            disableExpand: true,
             ...panel.display,
           }),
           hideIfEmpty: false,
@@ -346,7 +343,6 @@ export default class Templater {
       showVoting: false,
       showFunding: false,
       showExpression: false,
-      disableExpand: false,
     };
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: roadmapPageId,
@@ -461,7 +457,6 @@ export default class Templater {
             showVoting: false,
             showFunding: false,
             showExpression: false,
-            disableExpand: false,
           }), search: Admin.IdeaSearchToJSON({
             sortBy: Admin.IdeaSearchSortByEnum.New,
             filterCategoryIds: [articleCategoryId],
@@ -578,7 +573,6 @@ export default class Templater {
       showVoting: false,
       showFunding: false,
       showExpression: false,
-      disableExpand: false,
     };
     pagesProp.insert().setRaw(Admin.PageToJSON({
       pageId: helpPageId,

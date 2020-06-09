@@ -9,8 +9,8 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 
-export const prioritizationTitle = 'Give your customers a proportionate voice to drive your product';
-export const prioritizationDescription = 'Assign each user voting power based on their value as a customer and let them prioritize the bulk of your roadmap. Your users will love knowing their voice has been heard.';
+export const prioritizationTitle = 'Give your customers a voice proportionate to their value';
+export const prioritizationDescription = 'Assign voting power based on customer value and let them prioritize your suggestion inbox. Your users will love knowing their voice has been heard.';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -21,6 +21,8 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
       <React.Fragment>
         {this.renderHero()}
         {this.renderTypesOfVoting()}
+        {this.renderCreditIntegration()}
+
         {/* {this.renderRewardCustomers()} */}
         {this.renderCredit(true)}
         {this.renderCreditUseCases()}
@@ -47,14 +49,14 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderTypesOfVoting(mirror?: boolean) {
+  renderTypesOfVoting() {
     return (
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={-200}>
+      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
         <Demo
           variant='content'
           type='column'
           title='Keep it simple with voting'
-          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('vote')}
           controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
@@ -71,7 +73,7 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
           variant='content'
           type='column'
           title='Expressions for a wider range of feedback'
-          description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
+          description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('express')}
           controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
@@ -89,7 +91,7 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
           variant='content'
           type='column'
           title='Credit system for advanced prioritization'
-          description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          description='Distribute credits to your users based on their value as a customer. Let them fine-tune prioritization on their own.'
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('fund')}
           controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
@@ -105,6 +107,39 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
           }}
         />
       </HorizontalPanels>
+    );
+  }
+
+  renderCreditIntegration() {
+    return (
+      <React.Fragment>
+        <Block
+          variant='heading'
+          // type='column'
+          title='Integrate with your credit system'
+          description='When your customer provides value to you, automatically issue credits to their account on ClearFlask.'
+        />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+          <Block
+            variant='content'
+            type='column'
+            title='Payment Provider: Stripe, Apple Store, Play Store'
+            description='When a customer completes a purchase, issue them credit.'
+          />
+          <Block
+            variant='content'
+            type='column'
+            title='Donation framework: Patreon, OpenCollective'
+            description='Allow your most valuable supporters voice their suggestion.'
+          />
+          <Block
+            variant='content'
+            type='column'
+            title='Custom credit source via API'
+            description='Connect with your custom credit source via our API'
+          />
+        </HorizontalPanels>
+      </React.Fragment>
     );
   }
 
