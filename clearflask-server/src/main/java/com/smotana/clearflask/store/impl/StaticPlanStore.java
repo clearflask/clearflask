@@ -71,6 +71,10 @@ public class StaticPlanStore implements PlanStore {
                     new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), null)
             ), null);
     private static final PlansGetResponse PLANS_GET_RESPONSE = new PlansGetResponse(AVAILABLE_PlANS.values().asList(), FEATURES_TABLE);
+    private static final ImmutableMap<String, Plan> ALL_PlANS = ImmutableMap.<String, Plan>builder()
+            .putAll(AVAILABLE_PlANS)
+            .put(TRIAL_PLAN.getPlanid(), TRIAL_PLAN)
+            .build();
 
     @Override
     public PlansGetResponse plansGet() {
@@ -80,7 +84,7 @@ public class StaticPlanStore implements PlanStore {
     @Override
     public ImmutableSet<Plan> mapIdsToPlans(ImmutableSet<String> planIds) {
         return planIds.stream()
-                .map(AVAILABLE_PlANS::get)
+                .map(ALL_PlANS::get)
                 .collect(ImmutableSet.toImmutableSet());
     }
 
@@ -91,7 +95,7 @@ public class StaticPlanStore implements PlanStore {
 
     @Override
     public Optional<Plan> getPlan(String planId) {
-        return Optional.ofNullable(AVAILABLE_PlANS.get(planId));
+        return Optional.ofNullable(ALL_PlANS.get(planId));
     }
 
     public static Module module() {

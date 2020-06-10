@@ -59,7 +59,6 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
@@ -75,11 +74,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -87,6 +83,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -116,7 +113,6 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 import static com.smotana.clearflask.util.ElasticUtil.*;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
@@ -151,24 +147,6 @@ public class DynamoElasticUserStore implements UserStore {
         SecretKey tokenSignerPrivKey();
     }
 
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"identifierHash", "type", "projectId"}, rangePrefix = "userByIdentifier")
-    public static class IdentifierUser {
-        @NonNull
-        private final String type;
-
-        @NonNull
-        private final String identifierHash;
-
-        @NonNull
-        private final String projectId;
-
-        @NonNull
-        private final String userId;
-    }
-
     private static final String USER_INDEX = "user";
 
     private final HashFunction hashFunction = Hashing.murmur3_128(-223823442);
@@ -192,14 +170,18 @@ public class DynamoElasticUserStore implements UserStore {
     private Gson gson;
 
     private TableSchema<UserModel> userSchema;
+    private IndexSchema<UserModel> userByProjectSchema;
     private TableSchema<IdentifierUser> identifierToUserIdSchema;
+    private IndexSchema<IdentifierUser> identifierByProjectIdSchema;
     private TableSchema<UserSession> sessionByIdSchema;
     private IndexSchema<UserSession> sessionByUserSchema;
 
     @Inject
     private void setup() {
         userSchema = dynamoMapper.parseTableSchema(UserModel.class);
+        userByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, UserModel.class);
         identifierToUserIdSchema = dynamoMapper.parseTableSchema(IdentifierUser.class);
+        identifierByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
         sessionByIdSchema = dynamoMapper.parseTableSchema(UserSession.class);
         sessionByUserSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, UserSession.class);
     }
@@ -895,6 +877,64 @@ public class DynamoElasticUserStore implements UserStore {
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
                     dynamoDoc.batchWriteItem(tableWriteItems);
                 });
+    }
+
+    @Override
+    public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
+        // Delete users
+        Iterables.partition(StreamSupport.stream(userByProjectSchema.index().query(new QuerySpec()
+                .withHashKey(userByProjectSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(userByProjectSchema.rangeKeyName())
+                        .beginsWith(userByProjectSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(userByProjectSchema::fromItem)
+                .filter(user -> projectId.equals(user.getProjectId()))
+                .map(UserModel::getUserId)
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(userIdsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(userSchema.tableName());
+                    userIdsBatch.stream()
+                            .map(userId -> userSchema.primaryKey(Map.of(
+                                    "userId", userId,
+                                    "projectId", projectId)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete user identifiers
+        Iterables.partition(StreamSupport.stream(identifierByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(identifierByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(identifierByProjectIdSchema.rangeKeyName())
+                        .beginsWith(identifierByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(identifierByProjectIdSchema::fromItem)
+                .filter(identifier -> projectId.equals(identifier.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(identifiersBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(identifierToUserIdSchema.tableName());
+                    identifiersBatch.stream()
+                            .map(identifier -> identifierToUserIdSchema.primaryKey(Map.of(
+                                    "identifierHash", identifier.getIdentifierHash(),
+                                    "type", identifier.getType(),
+                                    "projectId", projectId)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete user index
+        SettableFuture<AcknowledgedResponse> deleteFuture = SettableFuture.create();
+        elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
+
+        // Note: not deleting sessions, they will expire themselves eventually
+
+        return deleteFuture;
     }
 
     private String hashIdentifier(String identifier) {

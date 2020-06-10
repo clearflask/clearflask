@@ -85,7 +85,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
         @DefaultValue("clearflask")
         String tablePrefix();
 
-        @DefaultValue("1")
+        @DefaultValue("2")
         long gsiCount();
 
         @DefaultValue("0")

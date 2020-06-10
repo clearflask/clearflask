@@ -3,11 +3,14 @@ package com.smotana.clearflask.store.impl;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
@@ -19,6 +22,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -35,15 +39,11 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.ToString;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.Response;
@@ -51,8 +51,9 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
-import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 
 @Slf4j
 @Singleton
@@ -72,33 +73,6 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         Duration configCacheExpireAfterWrite();
     }
 
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "projectId", rangePrefix = "project")
-    private static class ProjectModel {
-        @NonNull
-        private final String projectId;
-
-        @NonNull
-        private final String version;
-
-        @NonNull
-        private final String configJson;
-    }
-
-    @Value
-    @Builder(toBuilder = true)
-    @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "slug", rangePrefix = "projectBySlug")
-    private static class SlugModel {
-        @NonNull
-        private final String slug;
-
-        @NonNull
-        private final String projectId;
-    }
-
     @Inject
     private Config config;
     @Inject
@@ -112,6 +86,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
+    private IndexSchema<SlugModel> slugByProjectSchema;
     private Cache<String, String> slugCache;
     private Cache<String, Optional<Project>> projectCache;
 
@@ -126,6 +101,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
 
         projectSchema = dynamoMapper.parseTableSchema(ProjectModel.class);
         slugSchema = dynamoMapper.parseTableSchema(SlugModel.class);
+        slugByProjectSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, SlugModel.class);
     }
 
     @Override
@@ -252,6 +228,38 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         slugOptPrevious.ifPresent(slugCache::invalidate);
         slugOpt.ifPresent(slugCache::invalidate);
         projectCache.invalidate(projectId);
+    }
+
+    @Override
+    public void deleteProject(String projectId) {
+        // Delete project
+        projectSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(projectSchema.primaryKey(ImmutableMap.of(
+                        "projectId", projectId))));
+        projectCache.invalidate(projectId);
+
+        // Delete Slug
+        Iterables.partition(StreamSupport.stream(slugByProjectSchema.index().query(new QuerySpec()
+                .withHashKey(slugByProjectSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(slugByProjectSchema.rangeKeyName())
+                        .beginsWith(slugByProjectSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(slugByProjectSchema::fromItem)
+                .filter(slug -> projectId.equals(slug.getProjectId()))
+                .map(SlugModel::getSlug)
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(slugsBatch -> {
+                    slugCache.invalidateAll(slugsBatch);
+                    TableWriteItems tableWriteItems = new TableWriteItems(slugSchema.tableName());
+                    slugsBatch.stream()
+                            .map(slug -> slugSchema.primaryKey(Map.of(
+                                    "slug", slug)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
     }
 
     @EqualsAndHashCode(of = {"projectId", "version"})

@@ -19,6 +19,7 @@ import lombok.NonNull;
 import lombok.Value;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -26,6 +27,9 @@ import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
 public interface CommentStore {
 
@@ -55,6 +59,8 @@ public interface CommentStore {
 
     ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId);
 
+    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+
     @Value
     class CommentAndIndexingFuture<T> {
         private final CommentModel commentModel;
@@ -64,7 +70,8 @@ public interface CommentStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, rangePrefix = "comment", rangeKeys = "commentId")
+    @DynamoTable(type = Primary, partitionKeys = {"ideaId", "projectId"}, rangePrefix = "comment", rangeKeys = "commentId")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "commentByProjectId", rangeKeys = "created")
     class CommentModel {
 
         @NonNull

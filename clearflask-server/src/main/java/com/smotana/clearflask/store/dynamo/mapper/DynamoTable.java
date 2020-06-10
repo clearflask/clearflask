@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Repeatable(DynamoTable.DynamoTables.class)
 public @interface DynamoTable {
 
-    TableType type() default TableType.Primary;
+    TableType type();
 
     /** For GSI and LSI type only, specify which index starting with 1 */
     int indexNumber() default -1;

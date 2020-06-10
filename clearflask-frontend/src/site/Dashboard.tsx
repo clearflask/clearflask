@@ -12,6 +12,7 @@ import * as ConfigEditor from '../common/config/configEditor';
 import Crumbs from '../common/config/settings/Crumbs';
 import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
+import ProjectSettings from '../common/config/settings/ProjectSettings';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
 import Message from '../common/Message';
@@ -199,6 +200,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
             pageClicked={path => this.pageClicked(activePath, path)}
           />
         );
+        if (currentPage.path.length <= 0) {
+          page = (
+            <React.Fragment>
+              {page}
+              <ProjectSettings server={activeProject.server} />
+            </React.Fragment>
+          );
+        }
         preview = (
           <DemoApp
             key={activeProject.configVersion}

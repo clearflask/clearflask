@@ -33,7 +33,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
+import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +83,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Inject
     private NotificationService notificationService;
     @Inject
-    private AuthCookieUtil authCookieUtil;
+    private AuthCookie authCookie;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -154,7 +154,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -265,7 +265,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -284,7 +284,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);
 
-        authCookieUtil.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
+        authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
     }
 
     @RolesAllowed({Role.PROJECT_USER})

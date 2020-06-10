@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -63,7 +64,7 @@ public class DynamoMapperConversionTest extends AbstractTest {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = "id", rangePrefix = "data")
+    @DynamoTable(type = Primary, partitionKeys = "id", rangePrefix = "data")
     public static class Data {
         @NonNull
         private final String id;

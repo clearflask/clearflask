@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
@@ -20,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -44,6 +46,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 
 @Slf4j
 @Singleton
@@ -75,21 +80,29 @@ public class DynamoVoteStore implements VoteStore {
 
     private TableSchema<VoteModel> voteSchemaByUser;
     private IndexSchema<VoteModel> voteSchemaByTarget;
+    private IndexSchema<VoteModel> voteSchemaByProjectId;
     private TableSchema<ExpressModel> expressSchemaByUser;
     private IndexSchema<ExpressModel> expressSchemaByTarget;
+    private IndexSchema<ExpressModel> expressSchemaByProjectId;
     private TableSchema<FundModel> fundSchemaByUser;
     private IndexSchema<FundModel> fundSchemaByTarget;
+    private IndexSchema<FundModel> fundSchemaByProjectId;
     private TableSchema<TransactionModel> transactionSchema;
+    private IndexSchema<TransactionModel> transactionByProjectIdSchema;
 
     @Inject
     private void setup() {
         voteSchemaByUser = dynamoMapper.parseTableSchema(VoteModel.class);
         voteSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, VoteModel.class);
+        voteSchemaByProjectId = dynamoMapper.parseGlobalSecondaryIndexSchema(2, VoteModel.class);
         expressSchemaByUser = dynamoMapper.parseTableSchema(ExpressModel.class);
         expressSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, ExpressModel.class);
+        expressSchemaByProjectId = dynamoMapper.parseGlobalSecondaryIndexSchema(2, ExpressModel.class);
         fundSchemaByUser = dynamoMapper.parseTableSchema(FundModel.class);
         fundSchemaByTarget = dynamoMapper.parseGlobalSecondaryIndexSchema(1, FundModel.class);
+        fundSchemaByProjectId = dynamoMapper.parseGlobalSecondaryIndexSchema(2, FundModel.class);
         transactionSchema = dynamoMapper.parseTableSchema(TransactionModel.class);
+        transactionByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, TransactionModel.class);
     }
 
     @Override
@@ -519,6 +532,101 @@ public class DynamoVoteStore implements VoteStore {
                         .map(m -> m.get(transactionSchema.rangeKeyName()))
                         .map(AttributeValue::getS)
                         .map(serverSecretCursor::encryptString));
+    }
+
+    @Override
+    public void deleteAllForProject(String projectId) {
+        // Delete votes
+        Iterables.partition(StreamSupport.stream(voteSchemaByProjectId.index().query(new QuerySpec()
+                .withHashKey(voteSchemaByProjectId.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(voteSchemaByProjectId.rangeKeyName())
+                        .beginsWith(voteSchemaByProjectId.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(voteSchemaByProjectId::fromItem)
+                .filter(vote -> projectId.equals(vote.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(votesBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(voteSchemaByUser.tableName());
+                    votesBatch.stream()
+                            .map(vote -> voteSchemaByUser.primaryKey(Map.of(
+                                    "userId", vote.getUserId(),
+                                    "projectId", projectId,
+                                    "targetId", vote.getTargetId())))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete express
+        Iterables.partition(StreamSupport.stream(expressSchemaByProjectId.index().query(new QuerySpec()
+                .withHashKey(expressSchemaByProjectId.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(expressSchemaByProjectId.rangeKeyName())
+                        .beginsWith(expressSchemaByProjectId.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(expressSchemaByProjectId::fromItem)
+                .filter(express -> projectId.equals(express.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(expressesBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(expressSchemaByUser.tableName());
+                    expressesBatch.stream()
+                            .map(express -> expressSchemaByUser.primaryKey(Map.of(
+                                    "userId", express.getUserId(),
+                                    "projectId", projectId,
+                                    "targetId", express.getTargetId())))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete fund
+        Iterables.partition(StreamSupport.stream(fundSchemaByProjectId.index().query(new QuerySpec()
+                .withHashKey(fundSchemaByProjectId.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(fundSchemaByProjectId.rangeKeyName())
+                        .beginsWith(fundSchemaByProjectId.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(fundSchemaByProjectId::fromItem)
+                .filter(fund -> projectId.equals(fund.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(fundsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(fundSchemaByUser.tableName());
+                    fundsBatch.stream()
+                            .map(fund -> fundSchemaByUser.primaryKey(Map.of(
+                                    "userId", fund.getUserId(),
+                                    "projectId", projectId,
+                                    "targetId", fund.getTargetId())))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete transactions
+        Iterables.partition(StreamSupport.stream(transactionByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(transactionByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(transactionByProjectIdSchema.rangeKeyName())
+                        .beginsWith(transactionByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(transactionByProjectIdSchema::fromItem)
+                .filter(transaction -> projectId.equals(transaction.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(transactionsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(transactionSchema.tableName());
+                    transactionsBatch.stream()
+                            .map(transaction -> transactionSchema.primaryKey(Map.of(
+                                    "userId", transaction.getUserId(),
+                                    "projectId", projectId,
+                                    "transactionId", transaction.getTransactionId())))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
     }
 
     public static Module module() {

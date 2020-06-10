@@ -21,6 +21,7 @@ import lombok.ToString;
 import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
@@ -83,6 +84,8 @@ public interface UserStore {
 
     void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt);
 
+    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+
     @Value
     class SearchUsersResponse {
         private final ImmutableList<String> userIds;
@@ -142,6 +145,7 @@ public interface UserStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "user")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "userByProject", rangeKeys = {"created"})
     class UserModel {
 
         @NonNull
@@ -236,5 +240,24 @@ public interface UserStore {
         public Balance toBalance() {
             return new Balance(this.getBalance());
         }
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = {"identifierHash", "type", "projectId"}, rangePrefix = "userByIdentifier")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "identifierByProjectId")
+    class IdentifierUser {
+        @NonNull
+        private final String type;
+
+        @NonNull
+        private final String identifierHash;
+
+        @NonNull
+        private final String projectId;
+
+        @NonNull
+        private final String userId;
     }
 }

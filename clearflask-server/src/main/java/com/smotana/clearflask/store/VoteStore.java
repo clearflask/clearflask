@@ -86,6 +86,8 @@ public interface VoteStore {
     ListResponse<TransactionModel> transactionList(String projectId, String userId, Optional<String> cursorOpt);
 
 
+    void deleteAllForProject(String projectId);
+
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
@@ -107,6 +109,7 @@ public interface VoteStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "vote", rangeKeys = "targetId")
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "voteByTarget", rangeKeys = "userId")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "voteByProjectId")
     class VoteModel {
         @NonNull
         private final String userId;
@@ -126,6 +129,7 @@ public interface VoteStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "express", rangeKeys = "targetId")
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "expressByTarget", rangeKeys = "userId")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "expressByProjectId")
     class ExpressModel {
         @NonNull
         private final String userId;
@@ -145,6 +149,7 @@ public interface VoteStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "fund", rangeKeys = {"targetId"})
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"targetId", "projectId"}, rangePrefix = "fundByTarget", rangeKeys = {"userId"})
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "fundByProjectId")
     class FundModel {
         @NonNull
         private final String userId;
@@ -162,7 +167,8 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = "transactionId")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = "transactionId")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "transactionByProjectId", rangeKeys = {"created"})
     class TransactionModel {
         @NonNull
         private final String userId;

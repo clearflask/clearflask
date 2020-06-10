@@ -12,6 +12,8 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
+
 public interface NotificationStore {
 
     default String genNotificationId() {
@@ -36,7 +38,7 @@ public interface NotificationStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"userId", "projectId"}, rangePrefix = "notification", rangeKeys = "notificationId")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "notification", rangeKeys = "notificationId")
     class NotificationModel {
 
         @NonNull

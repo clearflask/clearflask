@@ -23,12 +23,16 @@ import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
+import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
 
 
 public interface IdeaStore {
@@ -70,6 +74,8 @@ public interface IdeaStore {
 
     ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds);
 
+    ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+
     @Value
     class SearchResponse {
         private final ImmutableList<String> ideaIds;
@@ -100,7 +106,8 @@ public interface IdeaStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(partitionKeys = {"ideaId", "projectId"}, rangePrefix = "idea")
+    @DynamoTable(type = Primary, partitionKeys = {"ideaId", "projectId"}, rangePrefix = "idea")
+    @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "ideaByProjectId")
     class IdeaModel {
 
         @NonNull

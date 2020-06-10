@@ -25,7 +25,7 @@ export default class Page extends Component<Props> {
   }
 
   render() {
-    var creditPreview = this.props.page.pathStr === 'users.credits'
+    const creditPreview = this.props.page.pathStr === 'users.credits'
       && (<CreditPreview editor={this.props.editor} />);
     var workflowPreview;
     if (this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {

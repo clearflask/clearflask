@@ -62,6 +62,7 @@ import com.smotana.clearflask.web.resource.ProjectResource;
 import com.smotana.clearflask.web.resource.SupportResource;
 import com.smotana.clearflask.web.resource.UserResource;
 import com.smotana.clearflask.web.resource.VoteResource;
+import com.smotana.clearflask.web.security.AuthCookieImpl;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -191,6 +192,7 @@ public enum ServiceInjector {
                 // Other
                 install(LogExFilter.module());
                 install(ClearFlaskSso.module());
+                install(AuthCookieImpl.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

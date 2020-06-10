@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,12 +19,15 @@ import java.util.Optional;
 @Path("/v1")
 public abstract class AbstractResource {
 
+    @VisibleForTesting
     @Context
-    protected HttpServletRequest request;
+    HttpServletRequest request;
+    @VisibleForTesting
     @Context
-    protected HttpServletResponse response;
+    HttpServletResponse response;
+    @VisibleForTesting
     @Context
-    protected SecurityContext securityContext;
+    SecurityContext securityContext;
 
     protected Optional<ExtendedPrincipal> getExtendedPrincipal() {
         if (securityContext.getUserPrincipal() == null) {

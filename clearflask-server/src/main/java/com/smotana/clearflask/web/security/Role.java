@@ -1,6 +1,8 @@
 package com.smotana.clearflask.web.security;
 
 public class Role {
+    /** Applies to me */
+    public static final String MATUS = "MATUS";
     /** Applies to any ClearFlask customer; NOT ClearFlask administrator */
     public static final String ADMINISTRATOR = "ADMINISTRATOR";
     /** Applies to any registered user */

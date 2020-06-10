@@ -24,7 +24,7 @@ import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
+import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +67,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
-    private AuthCookieUtil authCookieUtil;
+    private AuthCookie authCookie;
     @Inject
     private ClearFlaskSso cfSso;
 
@@ -87,7 +87,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession,
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+            authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
         // Fetch account
@@ -96,7 +96,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             log.info("Account bind on valid session to non-existent account, revoking all sessions for email {}",
                     accountSession.getEmail());
             accountStore.revokeSessions(accountSession.getEmail());
-            authCookieUtil.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
+            authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
             return new AccountBindAdminResponse(null);
         }
         Account account = accountOpt.get();
@@ -125,7 +125,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         return account.toAccountAdmin(planStore, cfSso);
     }
@@ -144,7 +144,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         log.debug("Logout session for email {}", accountSession.getEmail());
         accountStore.revokeSession(accountSession);
 
-        authCookieUtil.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
+        authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
     }
 
     @PermitAll
@@ -168,7 +168,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account.getEmail(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookieUtil.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
         return account.toAccountAdmin(planStore, cfSso);
     }

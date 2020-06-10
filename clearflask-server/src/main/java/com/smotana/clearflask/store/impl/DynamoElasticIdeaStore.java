@@ -4,11 +4,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
@@ -17,6 +19,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -43,6 +46,7 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
@@ -52,6 +56,7 @@ import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -60,6 +65,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -84,8 +90,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 @Slf4j
@@ -124,11 +132,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private UserStore userStore;
 
     private TableSchema<IdeaModel> ideaSchema;
+    private IndexSchema<IdeaModel> ideaByProjectIdSchema;
     private ExpDecayScore expDecayScoreWeek;
 
     @Inject
     private void setup() {
         ideaSchema = dynamoMapper.parseTableSchema(IdeaModel.class);
+        ideaByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdeaModel.class);
 
         expDecayScoreWeek = new ExpDecayScore(EXP_DECAY_PERIOD_MILLIS);
     }
@@ -790,6 +800,39 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
 
         return indexingFuture;
+    }
+
+    @Override
+    public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
+        // Delete ideas
+        Iterables.partition(StreamSupport.stream(ideaByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(ideaByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(ideaByProjectIdSchema.rangeKeyName())
+                        .beginsWith(ideaByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(ideaByProjectIdSchema::fromItem)
+                .filter(idea -> projectId.equals(idea.getProjectId()))
+                .map(IdeaModel::getIdeaId)
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(ideaIdsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(ideaSchema.tableName());
+                    ideaIdsBatch.stream()
+                            .map(ideaId -> ideaSchema.primaryKey(Map.of(
+                                    "ideaId", ideaId,
+                                    "projectId", projectId)))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete idea index
+        SettableFuture<AcknowledgedResponse> deleteFuture = SettableFuture.create();
+        elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId)),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
+
+        return deleteFuture;
     }
 
     public static Module module() {

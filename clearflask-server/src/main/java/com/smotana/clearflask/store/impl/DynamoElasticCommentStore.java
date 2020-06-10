@@ -41,6 +41,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
@@ -49,6 +50,7 @@ import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -56,6 +58,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -142,11 +145,13 @@ public class DynamoElasticCommentStore implements CommentStore {
     private UserStore userStore;
 
     private TableSchema<CommentModel> commentSchema;
+    private IndexSchema<CommentModel> commentByProjectIdSchema;
     private WilsonScoreInterval wilsonScoreInterval;
 
     @Inject
     private void setup() {
         commentSchema = dynamoMapper.parseTableSchema(CommentModel.class);
+        commentByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, CommentModel.class);
 
         config.scoreWilsonConfidenceLevelObservable().subscribe(scoreWilsonConfidenceLevel -> wilsonScoreInterval =
                 new WilsonScoreInterval(scoreWilsonConfidenceLevel));
@@ -517,6 +522,39 @@ public class DynamoElasticCommentStore implements CommentStore {
                         .setQuery(QueryBuilders.termQuery("ideaId", ideaId)),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;
+    }
+
+    @Override
+    public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
+        // Delete comments
+        Iterables.partition(StreamSupport.stream(commentByProjectIdSchema.index().query(new QuerySpec()
+                .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                        "projectId", projectId)))
+                .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                        .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(commentByProjectIdSchema::fromItem)
+                .filter(comment -> projectId.equals(comment.getProjectId()))
+                .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
+                .forEach(commentsBatch -> {
+                    TableWriteItems tableWriteItems = new TableWriteItems(commentSchema.tableName());
+                    commentsBatch.stream()
+                            .map(comment -> commentSchema.primaryKey(Map.of(
+                                    "ideaId", comment.getIdeaId(),
+                                    "projectId", projectId,
+                                    "commentId", comment.getCommentId())))
+                            .forEach(tableWriteItems::addPrimaryKeyToDelete);
+                    dynamoDoc.batchWriteItem(tableWriteItems);
+                });
+
+        // Delete idea index
+        SettableFuture<AcknowledgedResponse> deleteFuture = SettableFuture.create();
+        elastic.indices().deleteAsync(new DeleteIndexRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId)),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(deleteFuture));
+
+        return deleteFuture;
     }
 
     public static Module module() {

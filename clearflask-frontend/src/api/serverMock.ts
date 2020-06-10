@@ -580,6 +580,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       config: this.getProject(request.projectId).config,
     });
   }
+  projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {
+    this.deleteProject(request.projectId);
+    return this.returnLater();
+  }
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user: Admin.UserAdmin = {
       userId: randomUuid(),

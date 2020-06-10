@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
@@ -25,12 +27,15 @@ import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.smotana.clearflask.web.security.AuthCookieUtil;
+import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -42,6 +47,9 @@ import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME;
 
@@ -70,7 +78,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private CommentStore commentStore;
     @Inject
-    private AuthCookieUtil authCookieUtil;
+    private VoteStore voteStore;
+    @Inject
+    private AuthCookie authCookie;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -122,7 +132,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                     projectId,
                     userOpt.get().getUserId(),
                     Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-            authCookieUtil.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
         }
 
         return new ConfigAndBindResult(
@@ -180,18 +190,41 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
-        // TODO sanity check, projectId alphanumeric
+        // TODO sanity check, projectId alphanumeric lowercase
         if (this.config.reservedProjectIds().contains(projectId)) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "The name " + projectId + " is a reserved keyword");
         }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccount(accountSession.getEmail()).get();
         Project project = projectStore.createProject(projectId, new VersionedConfigAdmin(configAdmin, "new"));
-        commentStore.createIndex(projectId);
-        userStore.createIndex(projectId);
-        ideaStore.createIndex(projectId);
+        ListenableFuture<CreateIndexResponse> commentIndexFuture = commentStore.createIndex(projectId);
+        ListenableFuture<CreateIndexResponse> userIndexFuture = userStore.createIndex(projectId);
+        ListenableFuture<CreateIndexResponse> ideaIndexFuture = ideaStore.createIndex(projectId);
         accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
+        try {
+            Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
+        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support");
+        }
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void projectDeleteAdmin(String projectId) {
+        try {
+            projectStore.deleteProject(projectId);
+            ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
+            ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
+            ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
+            voteStore.deleteAllForProject(projectId);
+
+            Futures.allAsList(userFuture, ideaFuture, commentFuture).get(1, TimeUnit.MINUTES);
+        } catch (Throwable th) {
+            log.error("Failed to delete project {}, potentially partially deleted", projectId, th);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support");
+        }
     }
 
     public static Module module() {

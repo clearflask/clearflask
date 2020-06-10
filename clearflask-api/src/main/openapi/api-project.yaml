@@ -814,6 +814,18 @@ components:
                   type: string
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+  delete:
+    operationId: projectDeleteAdmin
+    tags: [ProjectAdmin]
+    parameters:
+      - name: projectId
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/config:
   get:
     operationId: configGetAdmin

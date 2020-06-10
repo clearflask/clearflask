@@ -360,6 +360,15 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
           },
         },
       };
+    case Admin.projectDeleteAdminActionStatus.Fulfilled:
+      const { [action.meta.request.projectId]: removedConfig, ...configsWithoutDeleted } = state.configs.configs || {};
+      return {
+        ...state,
+        configs: {
+          ...state.configs,
+          configs: configsWithoutDeleted,
+        },
+      };
     case Admin.accountLogoutAdminActionStatus.Pending:
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:

@@ -1,9 +1,11 @@
 package com.smotana.clearflask.web.security;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.UserStore;
 import lombok.NonNull;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.container.ContainerRequestContext;
@@ -12,6 +14,7 @@ import java.security.Principal;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+@NonFinal
 @Value
 @Slf4j
 public class ExtendedSecurityContext implements SecurityContext {
@@ -26,14 +29,15 @@ public class ExtendedSecurityContext implements SecurityContext {
         private final Optional<UserStore.UserSession> userSessionOpt;
     }
 
-    private final Principal userPrincipal;
+    private final ExtendedPrincipal userPrincipal;
     @NonNull
     private final Predicate<String> userHasRolePredicate;
     @NonNull
     private final ContainerRequestContext requestContext;
     private final String authenticationScheme = "COOKIE_TOKEN_AUTH";
 
-    private ExtendedSecurityContext(Principal userPrincipal, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    @VisibleForTesting
+    protected ExtendedSecurityContext(ExtendedPrincipal userPrincipal, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         this.userPrincipal = userPrincipal;
         this.userHasRolePredicate = userHasRolePredicate;
         this.requestContext = requestContext;
