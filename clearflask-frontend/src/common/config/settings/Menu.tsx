@@ -57,7 +57,7 @@ export default class Menu extends Component<Props> {
         {this.props.items.map((item, index) => {
           if (item.type === 'item') {
             return (
-              <ListItem key={item.slug || 'empty'} selected={item.slug === this.props.activePath} button onClick={() => {
+              <ListItem key={`${index}-${item.slug || 'empty'}`} selected={item.slug === this.props.activePath} button onClick={() => {
                 if (item.onClick) {
                   item.onClick();
                 }
@@ -74,7 +74,7 @@ export default class Menu extends Component<Props> {
           } else if (item.type === 'project') {
             return (
               <MenuPage
-                key={item.page.key}
+                key={`${index}-${item.page.key}`}
                 page={item.page}
                 hasUnsavedChanges={item.hasUnsavedChanges}
                 activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
@@ -83,7 +83,7 @@ export default class Menu extends Component<Props> {
             );
           } else if (item.type === 'heading') {
             return (
-              <ListItem key={index} disabled>
+              <ListItem key={`${index}-${item.text}`} disabled>
                 <ListItemText style={Menu.paddingForLevel(item.offset)} primary={item.text} />
               </ListItem>
             );

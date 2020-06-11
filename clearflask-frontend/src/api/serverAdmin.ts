@@ -206,6 +206,10 @@ export default class ServerAdmin {
     };
     return state;
   }
+
+  removeProject(projectId: string): void {
+    delete this.projects[projectId];
+  }
 }
 
 export interface StateAccount {

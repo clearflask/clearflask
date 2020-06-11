@@ -204,7 +204,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
           page = (
             <React.Fragment>
               {page}
-              <ProjectSettings server={activeProject.server} />
+              <ProjectSettings
+                server={activeProject.server}
+                pageClicked={this.pageClicked.bind(this)}
+              />
             </React.Fragment>
           );
         }
