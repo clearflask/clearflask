@@ -7,7 +7,7 @@ import * as ConfigEditor from '../configEditor';
 
 export interface MenuHeading {
   type: 'heading';
-  text: string;
+  text: string | React.ReactNode;
   offset?: number;
 }
 

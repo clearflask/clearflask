@@ -164,7 +164,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         : (onlySingleOption ? notifOpts.values().next().value : undefined);
 
       const showEmailInput = selectedNotificationType === NotificationType.Email;
-      const showDisplayNameInput = this.props.config && this.props.config.users.onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
+      const showDisplayNameInput = this.props.config && signupAllowed && this.props.config.users.onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
       const isDisplayNameRequired = this.props.config && this.props.config.users.onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
       const showPasswordInput = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;

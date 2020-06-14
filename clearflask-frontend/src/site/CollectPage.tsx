@@ -8,7 +8,7 @@ import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/Onbo
 import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 
-export const title = 'Listen to customer needs';
+export const title = 'Understand what your customers want';
 export const description = 'Capture feedback from all your support channels seamlessly into one funnel.'
 
 const styles = (theme: Theme) => createStyles({
@@ -20,9 +20,9 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderEmbed(true)}
         {this.renderOnboarding()}
-        {this.renderOnBehalf(true)}
+        {this.renderEmbed(true)}
+        {this.renderOnBehalf()}
         {this.renderSearch(true)}
       </React.Fragment>
     );
@@ -67,6 +67,7 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
         title='Frictionless onboarding'
         description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
         initialSubPath='/embed/demo'
+        demoFixedWidth={420}
         template={templater => {
           setInitSignupMethodsTemplate(templater);
           templater.styleWhite();
@@ -117,7 +118,6 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
             allowCreate: undefined,
             allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
           }, undefined, true);
-          templater.workflow(1); // Remove statuses for Bugs as it clutters the search bar
         }}
         mock={mocker => mocker.demoExplorer()}
         settings={{

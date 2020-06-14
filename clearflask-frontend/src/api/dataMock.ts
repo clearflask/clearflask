@@ -231,6 +231,51 @@ class DataMock {
     }))));
   }
 
+  demoFeedbackType() {
+    return this.demoPage((config, user) => Promise.all([
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Allow changing the font size',
+          description: 'The default font size is not ideal for every user. I prefer larger text for better reading.',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'View daily update summary',
+          description: 'I would like to see what changed since the previous day on the home page in an easy format without having to dig it up using the search functionality.',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Dark theme option',
+          description: 'Many apps are transitioning to dark theme, can you please add this option?',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+        },
+      }),
+      ServerMock.get().ideaCreateAdmin({
+        projectId: this.projectId,
+        ideaCreateAdmin: {
+          authorUserId: user.userId,
+          title: 'Custom theme upload',
+          description: 'Branding my page with a custom made theme would increase personalization.',
+          categoryId: config.content.categories[0].categoryId,
+          tagIds: [],
+        },
+      }),
+    ]));
+  }
+
   demoExplorer() {
     return this.demoPage((config, user) => Promise.all([
       ServerMock.get().ideaCreateAdmin({

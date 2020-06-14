@@ -1,5 +1,6 @@
 import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
@@ -20,10 +21,14 @@ const styles = (theme: Theme) => createStyles({
   button: {
     alignSelf: 'flex-end',
   },
+  marker: {
+    color: theme.palette.text.hint,
+  },
 });
 
 export interface Props {
   title?: string;
+  marker?: string;
   description?: string;
   buttonTitle?: string;
   buttonLink?: string;
@@ -68,6 +73,9 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
           </div>
         )}
         <Typography variant={titleVariant} component={titleCmpt}>{this.props.title}</Typography>
+        {this.props.marker && (
+          <Typography variant='caption' className={this.props.classes.marker}>{this.props.marker}</Typography>
+        )}
         {!!this.props.scrollAnchor && (
           <ScrollAnchor {...this.props.scrollAnchor} />
         )}
@@ -77,7 +85,12 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
             className={this.props.classes.button}
             variant='text'
             onClick={() => this.props.history.push(this.props.buttonLink!, this.props.buttonState)}
-          >{this.props.buttonTitle}</Button>
+            color='primary'
+          >
+            {this.props.buttonTitle}
+            &nbsp;
+            <GoIcon />
+          </Button>
         )}
       </div>
     );

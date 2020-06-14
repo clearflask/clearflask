@@ -21,7 +21,7 @@ interface State {
 }
 
 class PrioritizationControls extends Component<Props & WithStyles<typeof styles, true>, State> {
-  state: State = { votingEnableDownvote: true };
+  state: State = { votingEnableDownvote: false };
 
   render() {
     return (

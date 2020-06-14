@@ -115,6 +115,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
           exclusive
           className={this.props.classes.toggleButtonGroup}
           onChange={(e, val) => {
+            if (!val) return;
             const displayName = val as Client.AccountFieldsDisplayNameEnum;
             this.setState({ collectDisplayName: displayName });
             this.props.templater.usersOnboardingDisplayName(displayName);

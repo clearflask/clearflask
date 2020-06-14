@@ -128,7 +128,7 @@ export default class Templater {
         this.creditsCurrencyWithoutCents();
         break;
       case 'vote':
-        this.supportVoting(categoryIndex, true);
+        this.supportVoting(categoryIndex, false);
         break;
       case 'express':
         this.supportExpressingAllEmojis(categoryIndex, true);
@@ -172,15 +172,21 @@ export default class Templater {
     });
   }
 
-  demoExplorer(explorer?: Partial<Admin.PageExplorer>, extraPageProps?: Partial<Admin.Page>, suppressDefaultCategory?: boolean) {
+  demoExplorer(
+    explorer?: Partial<Admin.PageExplorer>,
+    extraPageProps?: Partial<Admin.Page>,
+    suppressDefaultCategory?: boolean,
+    explorerPostDisplay?: Admin.PostDisplay,
+    explorerIdeaSearch?: Admin.IdeaSearch,
+  ) {
     this.styleWhite();
 
     !suppressDefaultCategory && this.demoCategory();
 
     this.demoPage({
       explorer: Admin.PageExplorerToJSON({
-        search: Admin.IdeaSearchToJSON({}),
-        display: Admin.PostDisplayToJSON({
+        search: explorerIdeaSearch || Admin.IdeaSearchToJSON({}),
+        display: explorerPostDisplay || Admin.PostDisplayToJSON({
           titleTruncateLines: 1,
           descriptionTruncateLines: 2,
           showDescription: false,
@@ -292,7 +298,7 @@ export default class Templater {
       categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
       userCreatable: true,
       workflow: Admin.WorkflowToJSON({ statuses: statuses || [] }),
-      support: Admin.SupportToJSON({ comment: true }),
+      support: Admin.SupportToJSON({ comment: true, vote: { enableDownvotes: false } }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     return categoryIndex;

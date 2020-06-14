@@ -3,16 +3,18 @@ import React, { Component } from 'react';
 import * as Client from '../api/client';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
-import FundingControlDemo from './landing/FundingControlDemo';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 
-export const prioritizationTitle = 'Give your customers a voice proportionate to their value';
-export const prioritizationDescription = 'Assign voting power based on customer value and let them prioritize your suggestion inbox. Your users will love knowing their voice has been heard.';
+export const prioritizationTitle = 'Give your valuable customers a proportionate voice';
+export const prioritizationDescription = 'Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.';
 
 const styles = (theme: Theme) => createStyles({
+  grid: {
+    margin: theme.spacing(4),
+  },
 });
 
 class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
@@ -22,12 +24,7 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
         {this.renderHero()}
         {this.renderTypesOfVoting()}
         {this.renderCreditIntegration()}
-
-        {/* {this.renderRewardCustomers()} */}
-        {this.renderCredit(true)}
-        {this.renderCreditUseCases()}
-        {this.renderVoting(true)}
-        {this.renderExpressions()}
+        {/* TODO {this.renderCreditUseCases()} */}
       </React.Fragment>
     );
   }
@@ -124,68 +121,24 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
             variant='content'
             type='column'
             title='Payment Provider: Stripe, Apple Store, Play Store'
+            marker='BETA'
             description='When a customer completes a purchase, issue them credit.'
           />
           <Block
             variant='content'
             type='column'
             title='Donation framework: Patreon, OpenCollective'
+            marker='BETA'
             description='Allow your most valuable supporters voice their suggestion.'
           />
           <Block
             variant='content'
             type='column'
-            title='Custom credit source via API'
-            description='Connect with your custom credit source via our API'
+            title='Custom source via API'
+            description='Manage credits with granular control via our API'
           />
         </HorizontalPanels>
       </React.Fragment>
-    );
-  }
-
-  renderVoting(mirror?: boolean) {
-    return (
-      <Demo
-        title='Voting ideas'
-        description='Simple upvote/downvote system with all users having equal voting power.'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('vote')}
-        mock={mocker => mocker.demoPrioritization()}
-        controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
-      />
-    );
-  }
-
-  renderCredit(mirror?: boolean) {
-    return (
-      <Demo
-        title='Crowd-funding your ideas with real or virtual currency'
-        // description='Let your users prioritize ideas by distributing credits. Assign credits to your users based on their value as a customer.'
-        description='Assign credits to your users based on their value as a customer and let them prioritize ideas by distributing those credits.'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('fund')}
-        mock={mocker => mocker.demoPrioritization()}
-        controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
-      />
-    );
-  }
-
-  renderRewardCustomers(mirror?: boolean) {
-    return (
-      <Demo
-        title='Reward valuable customers with proportionate voice'
-        description='TODO Customer purchases (product purchase, subscription); loyalty, game rank'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('fund')}
-        mock={mocker => mocker.demoPrioritization()}
-        demoFixedHeight={330}
-        demoFixedWidth={350}
-        edgeType='outline'
-        demo={project => (<FundingControlDemo server={project.server} />)}
-      />
     );
   }
 
@@ -194,23 +147,9 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
       <Block
         title='Credit use cases'
         description='TODO
-        Commercial product, SAAS, Donation-based
-         TODO Integrate with paying customers, Patreon, donation, mobile purchases, bounties, crowdfunding'
+        Showcase use cases: Commercial product, SAAS, Donation-based
+         TODO Integrate with paying customers, Patreon, donation, mobile purchases, bounties, crowdfunding, loyalty, game rank'
         mirror={mirror}
-      />
-    );
-  }
-
-  renderExpressions(mirror?: boolean) {
-    return (
-      <Demo
-        title='Expressions'
-        description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions is here to help.'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        template={templater => templater.demoPrioritization('express')}
-        mock={mocker => mocker.demoPrioritization()}
-        controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
       />
     );
   }

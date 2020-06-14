@@ -56,6 +56,7 @@ const forms: ContactForm[] = [
     submitTitle: 'Schedule a demo',
     hideFromMainPage: true,
     fields: [
+      { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
       { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
     ],
   },

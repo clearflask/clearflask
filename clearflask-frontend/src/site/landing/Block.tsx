@@ -1,4 +1,4 @@
-import { Grid } from '@material-ui/core';
+import { Grid, GridItemsAlignment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -69,10 +69,6 @@ const styles = (theme: Theme) => createStyles({
 export interface Props extends BlockContentProps {
   className?: string;
   type?: 'largeDemo' | 'hero' | 'column' | 'demoOnly';
-  title?: string;
-  description?: string;
-  buttonTitle?: string;
-  buttonLink?: string;
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   imagePath?: string;
@@ -80,6 +76,7 @@ export interface Props extends BlockContentProps {
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
   edgeSpacing?: boolean;
+  displayAlign?: GridItemsAlignment;
 }
 class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
 
@@ -171,7 +168,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           alignItems={(this.props.imagePath || isHero) ? 'center' : 'flex-end'}
           justify='center'
         >
-          <Grid alignItems='center' item xs={12} md={isLargeDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
+          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
             {display}
           </Grid>
           <Grid alignItems='center' item xs={12} sm={8} md={isLargeDemo ? 4 : 6} lg={isLargeDemo ? 3 : 5} xl={isLargeDemo ? 2 : 4} className={this.props.classes.grid}>

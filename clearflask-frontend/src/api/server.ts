@@ -208,6 +208,7 @@ export interface StateSettings {
   demoCreateAnimate?: {
     title: string;
     description?: string;
+    similarSearchTerm?: string;
   };
   demoSearchAnimate?: Array<{
     term: string;

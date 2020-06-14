@@ -28,6 +28,7 @@ interface Props {
   demo?: (project: Project) => React.ReactNode;
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
+  demoOverflowYScroll?: boolean;
   scale?: number;
   settings?: StateSettings;
   edgeSpacing?: boolean;
@@ -85,7 +86,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
               height: this.props.demoFixedHeight,
               width: this.props.demoFixedWidth,
               overflowX: 'hidden',
-              overflowY: 'scroll',
+              overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'visible',
               position: 'relative', // For containerPortal
             }}
             ref={this.containerRef}

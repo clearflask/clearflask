@@ -306,10 +306,10 @@ const styles = (theme: Theme) => createStyles({
       opacity: 1,
     },
     '34%': {
-      opacity: 0,
+      opacity: 0.1,
     },
     '67%': {
-      opacity: 0,
+      opacity: 0.1,
     },
     '100%': {
       opacity: 1,

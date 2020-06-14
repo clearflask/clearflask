@@ -116,6 +116,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       this.demoCreateAnimate(
         this.props.settings.demoCreateAnimate.title,
         this.props.settings.demoCreateAnimate.description,
+        this.props.settings.demoCreateAnimate.similarSearchTerm,
       );
     }
   }
@@ -422,12 +423,16 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     }));
   }
 
-  async demoCreateAnimate(title: string, description?: string) {
+  async demoCreateAnimate(title: string, description?: string, searchTerm?: string) {
     const animate = animateWrapper(
       () => this._isMounted,
       this.inViewObserverRef,
       () => this.props.settings,
       this.setState.bind(this));
+
+    if (searchTerm) {
+      this.updateSearchText(searchTerm);
+    }
 
     if (await animate({ sleepInMs: 1000 })) return;
 

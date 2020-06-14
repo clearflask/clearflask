@@ -18,7 +18,7 @@ export interface Project {
 export async function getProject(
   template: ((templater: Templater) => void) | undefined = undefined,
   mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>) | undefined = undefined,
-  projectId: string = randomUuid(),
+  projectId: string = `Demo${randomUuid().substring(0, 5)}`,
   settings?: StateSettings,
 ): Promise<Project> {
   await new Promise(resolve => setTimeout(resolve, 1));

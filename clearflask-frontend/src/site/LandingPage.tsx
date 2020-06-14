@@ -20,7 +20,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {this.renderDemo()}
+        {/* {this.renderDemo()} */}
         {this.renderCollectFeedback()}
         {this.renderPrioritization(true)}
         {this.renderEngagement()}
@@ -76,24 +76,24 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={collectTitle}
           description={collectDescription}
           mirror={mirror}
-          buttonTitle='Learn about collecting'
+          buttonTitle='Learn more'
           buttonLink='/collect'
-          demoFixedWidth={420}
-          demoFixedHeight={500}
-          // type='largeDemo'
+          displayAlign='flex-start'
+          demoFixedHeight={400}
           initialSubPath='/embed/demo'
           template={templater => templater.demoExplorer({
             allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
-            allowSearch: undefined,
-          })}
-          mock={mocker => mocker.demoExplorer()}
+            allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: false, enableSearchByStatus: false, enableSearchByTag: false },
+          }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
+          mock={mocker => mocker.demoFeedbackType()}
           settings={{
             demoForceExplorerCreateHasSpace: false,
             demoDisableExpand: true,
-            demoBlurryShadow: true,
+            // demoBlurryShadow: true,
             demoCreateAnimate: {
               title: 'Add Dark Mode',
               description: 'To reduce eye-strain, please add a dark mode option',
+              similarSearchTerm: 'theme',
             },
           }}
         />
@@ -108,8 +108,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={prioritizationTitle}
           description={prioritizationDescription}
           mirror={mirror}
-          buttonTitle='Learn about prioritization'
+          buttonTitle='See the credit system'
           buttonLink='/prioritize'
+          demoFixedHeight={300}
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('all')}
           mock={mocker => mocker.demoPrioritization()}
@@ -159,6 +160,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           buttonLink='/engage'
           mirror={mirror}
           initialSubPath='/embed/demo'
+          demoFixedHeight={300}
           scale={0.7}
           template={templater => templater.demoBoardPreset('development')}
           mock={mocker => mocker.demoBoard([
@@ -182,10 +184,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         <Block
-          title='Make it your own with custom workflows and branding'
-          description=''
+          title='Make it your own'
+          description='Custom workflows, prioritization and branding to fit your needs.'
           mirror={mirror}
-          buttonTitle='See templates'
+          buttonTitle='Explore options'
           buttonLink='/customize'
         />
       </React.Fragment>
