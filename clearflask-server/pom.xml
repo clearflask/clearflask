@@ -158,6 +158,11 @@
             <artifactId>libsqlite4java-osx</artifactId>
             <type>dylib</type>
         </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java-win32-x64</artifactId>
+            <type>dll</type>
+        </dependency>
 
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -305,7 +310,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <configuration>
                     <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
-                    <protocExecutable>/usr/local/bin/protoc</protocExecutable>
+                    <protocExecutable>protoc</protocExecutable>
                 </configuration>
                 <executions>
                     <execution>
@@ -438,7 +443,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <includeTypes>dylib</includeTypes>
+                            <includeTypes>dylib,dll</includeTypes>
                             <outputDirectory>${project.build.directory}/native-lib</outputDirectory>
                         </configuration>
                     </execution>

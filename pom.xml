@@ -317,6 +317,12 @@
                 <version>1.0.392</version>
                 <type>dylib</type>
             </dependency>
+            <dependency>
+                <groupId>com.almworks.sqlite4java</groupId>
+                <artifactId>sqlite4java-win32-x64</artifactId>
+                <version>1.0.392</version>
+                <type>dll</type>
+            </dependency>
 
             <dependency>
                 <groupId>javax.ws.rs</groupId>
