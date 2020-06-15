@@ -67,17 +67,17 @@ class PresetWidget extends Component<Props> {
     ],
     'content.categories.<>.tagging': [
       {
-        title: 'OS Platform', body: 'Select an OS platform',
+        title: 'OS Platform', body: 'Operating System tags for Windows, Mac and Linux',
         actionTitle: 'Add', action: (templater, path) => templater.taggingOsPlatform(path[2] as number)
       },
     ],
     'content.categories.<>.workflow': [
       {
-        title: 'Features', body: 'Typical workflow for a software feature. Under review -> Planned -> In progress -> Completed. Also includes Funding and Closed statuses.',
+        title: 'Dev feature', body: 'Typical workflow for a software feature. Also includes a Funding status.',
         actionTitle: 'Set', action: (templater, path) => templater.workflowFeatures(path[2] as number)
       },
       {
-        title: 'Bugs', body: 'Bug workflow.',
+        title: 'Dev bug', body: 'Typical workflow for a software bug.',
         actionTitle: 'Set', action: (templater, path) => templater.workflowBug(path[2] as number)
       },
     ],

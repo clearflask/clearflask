@@ -266,30 +266,30 @@ components:
         - comment
       properties:
         fund:
-          x-clearflask-prop: { order: 1, name: 'Funding', description: 'Allow users to fund content in this category' }
+          x-clearflask-prop: { order: 1, name: 'Fund', description: 'Allow users to spend their credits. May be further disallowed based on workflow state. You must also setup credit system for this project.' }
           type: boolean
         vote:
-          x-clearflask-prop: { order: 3, name: 'Enable voting' }
+          x-clearflask-prop: { order: 3, name: 'Vote', description: 'Simple and standard voting mechanism for users to quickly express feedback.' }
           title: Voting
           type: object
           required:
             - enableDownvotes
           properties:
             enableDownvotes:
-              x-clearflask-prop: { order: 1, name: 'Enable downvoting', description: '' }
+              x-clearflask-prop: { order: 1, name: 'Downvote', description: 'Also allow down-voting. Consider carefully whether this type of feedback is valuable to your content.' }
               type: boolean
         express:
-          x-clearflask-prop: { order: 4, name: 'Enable expression' }
+          x-clearflask-prop: { order: 4, name: 'Expression', description: 'When you need a wider range of emotions to express feedback, weighted emojis are here to help.' }
           title: Expressing
           type: object
           required:
           - limitEmojiPerIdea
           properties:
             limitEmojiPerIdea:
-              x-clearflask-prop: { order: 1, name: 'Limit one per Idea', description: 'If set, limit a single expression that can be added per idea', defaultValue: true }
+              x-clearflask-prop: { order: 1, name: 'Only one', description: 'If set, a user can only set a single emoji per content.', defaultValue: true }
               type: boolean
             limitEmojiSet:
-              x-clearflask-prop: { order: 2, name: 'Emoji whitelist', description: 'If enabled, limit the emojis that can be displayed. Additionally, set the weight of each emoji' }
+              x-clearflask-prop: { order: 2, name: 'Whitelist', description: 'Define a list of allowed emojis that can be displayed. Optionally specify the weight of each emoji' }
               type: array
               items:
                 x-clearflask-prop: { order: 1, name: 'Emojis' }
@@ -302,20 +302,18 @@ components:
                   - text
                 properties:
                   display:
-                    x-clearflask-prop: { order: 1, name: 'Display', subType: 'emoji' }
-                    description: TODO Must be unique, used as an ID
+                    x-clearflask-prop: { order: 1, subType: 'emoji', name: 'Display', description: 'Select an emoji from our emoji-picker to be displayed to user.' }
+                    description: Must be unique, used as an ID
                     type: string
                   text:
-                    x-clearflask-prop: { order: 2, name: 'Text' }
+                    x-clearflask-prop: { order: 2, name: 'Label', description: 'Descriptive text representation of emoji. (Ie: Snowman, Happy face) Used for accessibility.' }
                     type: string
                   weight:
-                    x-clearflask-prop: { order: 3, name: 'Weight' }
-                    minimum: -1
-                    maximum: 1
+                    x-clearflask-prop: { order: 3, name: 'Weight', description: 'Unitless weight associated with Emoji. Used for prioritization, sorting and filtering.' }
                     type: number
                     format: double
         comment:
-          x-clearflask-prop: { order: 5, name: 'Comments', description: 'Allow users to comment', defaultValue: true }
+          x-clearflask-prop: { order: 5, name: 'Comments', description: 'Allow users to post comments', defaultValue: true }
           type: boolean
     layout:
       x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and menu.' }
@@ -451,7 +449,7 @@ components:
         - tagGroups
       properties:
         tags:
-          x-clearflask-prop: { order: 1, name: 'Tags', description: 'Tags' }
+          x-clearflask-prop: { order: 1, name: 'Tags', description: 'List of all tags for this content. Consider carefully the tags you want to use: do not fragment your content into unnecessary and unpopular tags. You can always introduce additional tags later.' }
           type: array
           items:
             title: Tag
@@ -464,13 +462,13 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Name', description: 'Tag Name' }
+                x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Tag Name', description: "Keep it short since it's used in tight spaces" }
                 type: string
               color:
-                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Assign a color for displaying this tag' }
                 type: string
         tagGroups:
-          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'A set of tags you can use', tablePropertyNames:['name', 'tagIds'] }
+          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames:['name', 'tagIds'] }
           type: array
           items:
             x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
@@ -486,21 +484,21 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { order: 1, defaultValue: 'Tag Group <>', name: 'Name', description: 'Tag Group name' }
+                x-clearflask-prop: { order: 1, defaultValue: 'Tag Group <>', name: 'Group Name', description: "Keep it short since it's used in tight spaces." }
                 type: string
               minRequired:
-                x-clearflask-prop: { order: 2, name: 'Minimum required', description: 'Minimum number of tags that need to be chosen by user' }
+                x-clearflask-prop: { order: 2, name: 'Minimum required', description: 'Minimum number of tags in this group that need to be chosen by user' }
                 type: integer
                 format: int64
               maxRequired:
-                x-clearflask-prop: { order: 3, name: 'Maximum required', description: 'Maximum number of tags that can be chosen by user' }
+                x-clearflask-prop: { order: 3, name: 'Maximum required', description: 'Maximum number of tags in this group that can be chosen by user' }
                 type: integer
                 format: int64
               userSettable:
-                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Can be set by user', defaultValue: true }
+                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Tags in this group can be set by the user', defaultValue: true }
                 type: boolean
               tagIds:
-                x-clearflask-prop: { order: 5, name: 'Tags', description: 'Set of tags in this group' }
+                x-clearflask-prop: { order: 5, name: 'Tags', description: 'These tags belong in this group' }
                 x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['..', '..', 'tags'], displayPropName: 'name', colorPropName: 'color'}
                 type: array
                 items:
