@@ -165,7 +165,7 @@ export default class ServerAdmin {
       const server = new Server(projectId, undefined, this.apiOverride, versionedConfig);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
-      server.subscribeToChanges(editor, 200);
+      server.subscribeToChanges(editor, 250);
       const subscribers: (() => void)[] = [];
       editor.subscribe(() => {
         if (!hasUnsavedChanges) {

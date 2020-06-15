@@ -281,38 +281,35 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'flex-start',
   },
   pulsateFunding: {
-    opacity: 1,
+    opacity: 0.1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 0ms infinite`,
-    '&:hover': {
-      opacity: 1 + '!important',
-    },
   },
   pulsateVoting: {
-    opacity: 1,
+    opacity: 0.1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 667ms infinite`,
-    '&:hover': {
-      opacity: 1 + '!important',
-    },
   },
   pulsateExpressions: {
-    opacity: 1,
+    opacity: 0.1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 1333ms infinite`,
-    '&:hover': {
-      opacity: 1 + '!important',
-    },
+  },
+  pulsateHidden: {
+    opacity: 0.1,
+  },
+  pulsateShown: {
+    opacity: 1,
   },
   '@keyframes postVotingPulsate': {
     '0%': {
-      opacity: 1,
+      opacity: 0.1,
     },
     '34%': {
       opacity: 0.1,
     },
     '67%': {
-      opacity: 0.1,
+      opacity: 1,
     },
     '100%': {
-      opacity: 1,
+      opacity: 0.1,
     },
   },
   ...cssBlurry,
@@ -358,7 +355,8 @@ interface State {
   isSubmittingFund?: boolean;
   isSubmittingExpression?: boolean;
   editExpanded?: boolean;
-  commentExpanded?: boolean
+  commentExpanded?: boolean;
+  demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
 }
 class Post extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   /**
@@ -694,15 +692,24 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       && !this.props.idea.voteValue) return null;
 
     return (
-      <VotingControl
-        className={classNames(this.props.classes.votingControl, !!this.props.settings.demoFlashPostVotingControls && this.props.classes.pulsateVoting)}
-        vote={this.props.vote}
-        voteValue={this.props.idea.voteValue || 0}
-        isSubmittingVote={this.state.isSubmittingVote}
-        votingAllowed={votingAllowed}
-        onUpvote={() => this.upvote()}
-        onDownvote={this.props.category.support.vote.enableDownvotes ? () => this.downvote() : undefined}
-      />
+      <div
+        className={classNames(
+          this.props.classes.votingControl,
+          !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateVoting
+            : (this.state.demoFlashPostVotingControlsHovering === 'vote' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'vote'}) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+      >
+        <VotingControl
+          className={this.props.classes.votingControl}
+          vote={this.props.vote}
+          voteValue={this.props.idea.voteValue || 0}
+          isSubmittingVote={this.state.isSubmittingVote}
+          votingAllowed={votingAllowed}
+          onUpvote={() => this.upvote()}
+          onDownvote={this.props.category.support.vote.enableDownvotes ? () => this.downvote() : undefined}
+        />
+      </div>
     );
   }
 
@@ -797,12 +804,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <Typography
           variant='caption'
           className={this.props.classes.fundThisButtonLabel}
-          color={iFundedThis ? 'primary' : undefined}
+          color='primary'
         >
           {fundingAllowed
             ? <span style={{ display: 'flex', alignItems: 'center' }}>
               <AddIcon fontSize='inherit' />
-              {iFundedThis ? 'Adjust funding' : 'Fund this'}
+              {iFundedThis ? 'Adjust' : 'Fund'}
             </span>
             : 'Funding is closed'}
         </Typography>
@@ -810,7 +817,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
 
     return (
-      <div className={`${this.props.classes.funding} ${this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateFunding : ''}`}>
+      <div
+        className={classNames(
+          this.props.classes.funding,
+          !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateFunding
+            : (this.state.demoFlashPostVotingControlsHovering === 'fund' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'fund'}) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+      >
         <FundingBar
           fundingBarRef={this.fundingBarRef}
           idea={this.props.idea}
@@ -980,9 +994,19 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <div key='expression' ref={this.expressBarRef} className={this.props.settings.demoFlashPostVotingControls ? this.props.classes.pulsateExpressions : undefined} style={{
-        position: 'relative',
-      }}>
+      <div
+        key='expression'
+        ref={this.expressBarRef}
+        className={classNames(
+          this.props.classes.funding,
+          !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateExpressions
+            : (this.state.demoFlashPostVotingControlsHovering === 'express' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'express'}) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+        style={{
+          position: 'relative',
+        }}
+      >
         <div style={{ display: 'flex' }}>
           <GradientFade
             disabled={summaryItems.length < maxItems}
@@ -1131,7 +1155,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       () => this.props.settings,
       this.setState.bind(this));
 
-    if (await animate({ sleepInMs: 1000 })) return;
+    if (await animate({ sleepInMs: 500 })) return;
     for (; ;) {
       for (const change of changes) {
         if (await animate({ sleepInMs: 1000 })) return;

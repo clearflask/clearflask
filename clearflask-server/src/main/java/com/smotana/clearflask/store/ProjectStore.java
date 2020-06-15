@@ -74,5 +74,8 @@ public interface ProjectStore {
 
         @NonNull
         private final String projectId;
+
+        /** Only set during migration to phase out an old slug */
+        private final Long ttlInEpochSec;
     }
 }

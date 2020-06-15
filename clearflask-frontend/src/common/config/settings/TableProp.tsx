@@ -22,6 +22,9 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  hidden: {
+    visibility: 'hidden',
+  }
 });
 
 interface Props {
@@ -61,7 +64,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           }
           row.push(this.renderDataCell(prop));
         });
-        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, true));
+        rows.push(this.renderRow(row, `${arr.length}/${childPageIndex}`, childPageIndex, arr.length, true));
       });
     } else if (this.props.data.childType === ConfigEditor.PropertyType.Object) {
       const arrayProp: ConfigEditor.ArrayProperty = this.props.data;
@@ -77,7 +80,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
               }
               row.push(this.renderDataCell(grandchildProp));
             });
-          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length, false));
         });
     } else {
       const arrayProp: ConfigEditor.ArrayProperty = this.props.data;
@@ -88,7 +91,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
             header.push(this.renderHeaderCell(0, childProp.name, childProp.description));
           }
           const row = [this.renderDataCell(childProp)];
-          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex));
+          rows.push(this.renderRow(row, `${arr.length}/${childPropIndex}`, childPropIndex, arr.length, false));
         });
     }
 
@@ -160,7 +163,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     }
   }
 
-  renderRow(rowCells, key: string, index: number, showLink: boolean = false) {
+  renderRow(rowCells, key: string, index: number, total: number, showLink: boolean) {
     return (
       <TableRow key={key}>
         {showLink && (
@@ -177,30 +180,32 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           <div style={{
             display: 'flex',
           }}>
+            {!this.props.data.disableReordering && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+              }}>
+                <IconButton aria-label="Move up" className={(index === 0) ? this.props.classes.hidden : undefined} onClick={() => {
+                  this.props.data.moveUp(index);
+                }}>
+                  <MoveUpIcon />
+                </IconButton>
+                <IconButton aria-label="Move down" className={(index === (total - 1)) ? this.props.classes.hidden : undefined} onClick={() => {
+                  this.props.data.moveDown(index);
+                }}>
+                  <MoveDownIcon />
+                </IconButton>
+              </div>
+            )}
             <div style={{
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: !this.props.data.disableReordering ? 'column' : 'row',
             }}>
-              <IconButton aria-label="Move up" onClick={() => {
-                this.props.data.moveUp(index);
-              }}>
-                <MoveUpIcon />
-              </IconButton>
-              <IconButton aria-label="Move down" onClick={() => {
-                this.props.data.moveDown(index);
-              }}>
-                <MoveDownIcon />
-              </IconButton>
-            </div>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              <IconButton aria-label="Duplicate" onClick={() => {
+              {/* TODO Duplication needs to regenerate ids, for now remove this functionality <IconButton aria-label="Duplicate" onClick={() => {
                 this.props.data.duplicate(index);
               }}>
                 <DuplicateIcon />
-              </IconButton>
+              </IconButton> */}
               <IconButton aria-label="Delete" onClick={() => {
                 this.props.data.delete(index);
               }}>

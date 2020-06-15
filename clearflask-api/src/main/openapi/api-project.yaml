@@ -1,7 +1,7 @@
 components:
   schemas:
     Config:
-      x-clearflask-page: { name: 'Project', nameFromProp: 'name' }
+      x-clearflask-page: { name: 'Project', description: 'These are your project settings. You can preview your changes on the right hand side, but keep in mind the preview is manipulating live data. Publish when you are ready.', nameFromProp: 'name' }
       description: Config properties visible both to client app and admins.
       type: object
       required:
@@ -21,17 +21,17 @@ components:
           x-clearflask-prop: { subType: 'id' }
           type: string
         website:
-          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your website; used for linking your users back to your website. Leave blank for no link.', placeholder: 'https://' }
+          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your website; used for linking your users back to your website.', placeholder: 'https://' }
           type: string
         name:
-          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name visible on your page' }
+          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name, typically your organization name' }
           type: string
         logoUrl:
           x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url. (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
         slug:
-          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url subdomain of your project. Changes may take up to a day to propagate. (ie: "https://<slug>.clearflask.com")' }
+          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url subdomain of your project. (ie: "https://<slug>.clearflask.com") During migration, your old slug will be guaranteed to be accessible for 24hrs.' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
@@ -258,28 +258,18 @@ components:
               type: number
               format: double
     support:
-      x-clearflask-page: { order: 4, name: 'Support' }
+      x-clearflask-page: { order: 4, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
       title: Support
       type: object
       required:
+        - fund
         - comment
       properties:
         fund:
-          x-clearflask-prop: { order: 1, name: 'Enable funding' }
-          title: Funding
-          type: object
-          required:
-            - showFunds
-            - showFunders
-          properties:
-            showFunds:
-              x-clearflask-prop: { order: 1, name: 'Show funds', description: '' }
-              type: boolean
-            showFunders:
-              x-clearflask-prop: { order: 1, name: 'Show funders', description: '' }
-              type: boolean
+          x-clearflask-prop: { order: 1, name: 'Funding', description: 'Allow users to fund content in this category' }
+          type: boolean
         vote:
-          x-clearflask-prop: { order: 1, name: 'Enable voting' }
+          x-clearflask-prop: { order: 3, name: 'Enable voting' }
           title: Voting
           type: object
           required:
@@ -289,7 +279,7 @@ components:
               x-clearflask-prop: { order: 1, name: 'Enable downvoting', description: '' }
               type: boolean
         express:
-          x-clearflask-prop: { order: 1, name: 'Enable expression' }
+          x-clearflask-prop: { order: 4, name: 'Enable expression' }
           title: Expressing
           type: object
           required:
@@ -325,7 +315,7 @@ components:
                     type: number
                     format: double
         comment:
-          x-clearflask-prop: { order: 1, name: 'Enable comments', defaultValue: true }
+          x-clearflask-prop: { order: 5, name: 'Comments', description: 'Allow users to comment', defaultValue: true }
           type: boolean
     layout:
       x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and menu.' }
@@ -396,7 +386,7 @@ components:
               explorer:
                 $ref: 'api-project.yaml#/components/schemas/PageExplorer'
     workflow:
-      x-clearflask-page: { order: 5, name: 'Workflow', nameFromProp: 'name' }
+      x-clearflask-page: { order: 5, name: 'Workflow',description: 'Workflow defines the lifetime of content by defining a set of states and transitions between those states. As an example, a user submitted idea may start as "Under Review" state. A product manager may then transition the idea to "Planned" or "Declined". Each state may impose restrictions on voting, commenting and editing.', nameFromProp: 'name' }
       title: Workflow
       type: object
       required:
@@ -516,14 +506,14 @@ components:
                 items:
                   type: string
     content:
-      x-clearflask-page: { order: 10, name: 'Content', description: 'Define the user submitted and static content types and behavior.' }
+      x-clearflask-page: { order: 10, name: 'Content', description: 'Define unique content categories here such as user idea, blog entry, forum post, or knowledge article. Each category has its own defined prioritization, workflow and tagging.' }
       title: Content
       type: object
       required:
         - categories
       properties:
         categories:
-          x-clearflask-page-group: { order: 2, name: 'Types', tablePropertyNames:['name'] }
+          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames:['name', 'color', 'userCreatable'], disableReordering: true }
           type: array
           items:
             x-clearflask-page: { name: 'Category', nameFromProp: 'name', colorFromProp: 'color' }
@@ -542,13 +532,13 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Category <>', order: 1, name: 'Name', description: 'Name of the content type' }
+                x-clearflask-prop: { defaultValue: 'Category <>', order: 1, name: 'Name', description: 'Category name. Keep it short as the name is visible in tight spaces.' }
                 type: string
               color:
-                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Display color' }
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Optional display color to associate with this category' }
                 type: string
               userCreatable:
-                x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Can be created by user', defaultValue: true }
+                x-clearflask-prop: { order: 4, name: 'User creatable', description: 'Whether content under this category can be created by users', defaultValue: true }
                 type: boolean
               workflow:
                 $ref: 'api-project.yaml#/components/schemas/workflow'
@@ -556,13 +546,6 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/support'
               tagging:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
-              visibility:
-                x-clearflask-prop: { name: 'Default Visibility', description: 'Whether a post is visible publicly by other users' }
-                type: string
-                enum:
-                  - Public
-                  - PublicOrPrivate
-                  - Private
     ConfigAdmin:
       description: >-
         All Config properties available for admins.

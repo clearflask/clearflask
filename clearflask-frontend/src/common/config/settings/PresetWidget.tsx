@@ -53,19 +53,11 @@ class PresetWidget extends Component<Props> {
     ],
     'content.categories.<>.support': [
       {
-        title: 'Funding', body: 'Enables funding',
-        actionTitle: 'Set', action: (templater, path) => templater.supportFunding(path[2] as number)
-      },
-      {
-        title: 'Voting', body: 'Enables voting',
-        actionTitle: 'Set', action: (templater, path) => templater.supportVoting(path[2] as number)
-      },
-      {
-        title: 'Any Reaction', body: 'Enables any kind of reactions',
+        title: 'Any Reaction', body: 'Enables full suite of emojis. All emojis are counted with identical weight.',
         actionTitle: 'Set', action: (templater, path) => templater.supportExpressingAllEmojis(path[2] as number)
       },
       {
-        title: 'Github Reactions', body: 'Enables reactions based on Github reactions',
+        title: 'Github Reactions', body: "Use Github-like reactions ",
         actionTitle: 'Set', action: (templater, path) => templater.supportExpressingGithubStyle(path[2] as number)
       },
       {

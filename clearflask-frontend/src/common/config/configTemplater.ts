@@ -295,10 +295,11 @@ export default class Templater {
       categoryIndex = categories.getChildPages().length - 1;
     }
     demoCategory.setRaw(Admin.CategoryToJSON({
-      categoryId: categoryId, name: 'Idea', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: categoryId,
+      name: 'Idea',
       userCreatable: true,
       workflow: Admin.WorkflowToJSON({ statuses: statuses || [] }),
-      support: Admin.SupportToJSON({ comment: true, vote: { enableDownvotes: false } }),
+      support: Admin.SupportToJSON({ comment: true, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     return categoryIndex;
@@ -322,10 +323,10 @@ export default class Templater {
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const postCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: postCategoryId, name: 'Post', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: postCategoryId, name: 'Post',
       userCreatable: true,
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: true }),
+      support: Admin.SupportToJSON({ comment: true, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const postCategoryIndex = categories.getChildPages().length - 1;
@@ -436,10 +437,10 @@ export default class Templater {
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const articleCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: articleCategoryId, name: 'Article', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: articleCategoryId, name: 'Article',
       userCreatable: false,
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: false }),
+      support: Admin.SupportToJSON({ comment: false, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const articleCategoryIndex = categories.getChildPages().length - 1;
@@ -503,10 +504,10 @@ export default class Templater {
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const changelogCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: changelogCategoryId, name: 'Changelog', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: changelogCategoryId, name: 'Changelog',
       userCreatable: false,
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: false }),
+      support: Admin.SupportToJSON({ comment: false, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const changelogCategoryIndex = categories.getChildPages().length - 1;
@@ -545,10 +546,10 @@ export default class Templater {
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const helpCategoryId = randomUuid();
     categories.insert().setRaw(Admin.CategoryToJSON({
-      categoryId: helpCategoryId, name: 'Help', visibility: Admin.CategoryVisibilityEnum.PublicOrPrivate,
+      categoryId: helpCategoryId, name: 'Help',
       userCreatable: false,
       workflow: Admin.WorkflowToJSON({ statuses: [] }),
-      support: Admin.SupportToJSON({ comment: false }),
+      support: Admin.SupportToJSON({ comment: false, fund: false }),
       tagging: Admin.TaggingToJSON({ tags: [], tagGroups: [] }),
     }));
     const helpCategoryIndex = categories.getChildPages().length - 1;
@@ -619,9 +620,7 @@ export default class Templater {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'express']).set(undefined);
   }
   supportFunding(categoryIndex: number) {
-    this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).setRaw(Admin.FundingToJSON({
-      showFunds: true, showFunders: true,
-    }));
+    this._get<ConfigEditor.BooleanProperty>(['content', 'categories', categoryIndex, 'support', 'fund']).set(true);
   }
   supportVoting(categoryIndex: number, enableDownvotes: boolean = false) {
     this._get<ConfigEditor.ObjectProperty>(['content', 'categories', categoryIndex, 'support', 'vote']).setRaw(Admin.VotingToJSON({

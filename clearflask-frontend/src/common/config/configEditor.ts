@@ -50,7 +50,9 @@ export interface xCfPageGroup {
   description?: string;
   defaultValue?: true | undefined;
   /** Properties to show on main PageGroup page inside table */
-  tablePropertyNames: string[]
+  tablePropertyNames: string[];
+  /** Prevent re-ordering of items by user. */
+  disableReordering?: boolean;
 }
 export interface xCfProp {
   name?: string;
@@ -81,6 +83,8 @@ export interface xCfProp {
    * in config with a false value.
    */
   falseAsUndefined?: boolean;
+  /** Applicable to arrays only. Prevent re-ordering of items by user. */
+  disableReordering?: boolean;
 }
 export enum PropSubType {
   /**

@@ -40,7 +40,7 @@ class WorkflowPreview extends Component<Props, State> {
       if (!!this.state.error) {
         this.setState({ error: undefined });
       } else {
-        this.forceUpdate.bind(this)
+        this.forceUpdate();
       }
     });
   }
@@ -83,9 +83,15 @@ class WorkflowPreview extends Component<Props, State> {
         }
       }))
     }
+    if(nodes.length <= 0) {
+      return null;
+    }
     return (
-      <DividerCorner title='Visualization' height='100%'>
+      <DividerCorner title='Visualize states' height='100%'>
         <CytoscapeComponent
+          key={nodes.length + edges.length}
+          minZoom={1}
+          maxZoom={2}
           elements={[
             ...nodes,
             ...edges.filter(e => seenStatusIds.has(e.data.source) && seenStatusIds.has(e.data.target))

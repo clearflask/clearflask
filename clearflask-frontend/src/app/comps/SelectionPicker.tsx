@@ -176,6 +176,7 @@ const Control = (props) => {
         style: {
           marginTop: '1px',
         },
+        // TODO When placeholder is set, this never shrinks
         shrink: (((outerProps.value !== undefined && outerProps.value.length !== 0) || (outerProps.inputValue !== undefined && outerProps.inputValue !== ''))
           || outerProps.placeholder) ? true : undefined,
       }}

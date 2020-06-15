@@ -2,15 +2,20 @@ import { Breadcrumbs, Link } from '@material-ui/core';
 import React, { Component } from 'react';
 import { Project } from '../../../api/serverAdmin';
 import * as ConfigEditor from '../configEditor';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 
+const styles = (theme: Theme) => createStyles({
+  link: {
+    cursor: 'pointer',
+  }
+});
 interface Props {
   crumbs?: { name: string, slug: string }[];
   activeProject?: Project;
   activeSubPath?: ConfigEditor.Path;
   pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
 }
-
-export default class Crumbs extends Component<Props> {
+class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
   unsubscribe: { [pathStr: string]: (() => void) } = {};
 
   subscribe(item: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property) {
@@ -46,9 +51,16 @@ export default class Crumbs extends Component<Props> {
 
   createCrumb(name: string, path: string, subPath?: ConfigEditor.Path) {
     return (
-      <Link key={path} color="inherit" onClick={() => this.props.pageClicked(path, subPath)}>
+      <Link
+        key={path}
+        className={this.props.classes.link}
+        color="inherit"
+        onClick={() => this.props.pageClicked(path, subPath)}
+      >
         {name}
       </Link>
     );
   }
 }
+
+export default withStyles(styles, { withTheme: true })(Crumbs)

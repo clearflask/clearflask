@@ -41,6 +41,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -48,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.ws.rs.core.Response;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -63,8 +65,15 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         @DefaultValue("true")
         boolean enableSlugCacheRead();
 
-        @DefaultValue("P1D")
+        @DefaultValue("PT1H")
         Duration slugCacheExpireAfterWrite();
+
+        /**
+         * During slug migration, how long to keep the old slug before releasing.
+         * If changed, update documentation including in api-project.yaml.
+         */
+        @DefaultValue("P1D")
+        Duration slugExpireAfterMigration();
 
         @DefaultValue("true")
         boolean enableConfigCacheRead();
@@ -93,7 +102,7 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     @Inject
     private void setup() {
         slugCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(config.configCacheExpireAfterWrite())
+                .expireAfterWrite(config.slugCacheExpireAfterWrite())
                 .build();
         projectCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.configCacheExpireAfterWrite())
@@ -165,7 +174,8 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
     public Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
         SlugModel slugModel = new SlugModel(
                 versionedConfigAdmin.getConfig().getSlug(),
-                projectId);
+                projectId,
+                null);
         ProjectModel projectModel = new ProjectModel(
                 projectId,
                 versionedConfigAdmin.getVersion(),
@@ -200,17 +210,28 @@ public class DynamoProjectStore extends ManagedService implements ProjectStore {
         Optional<String> slugOptPrevious = Optional.ofNullable(getProject(projectId, false).get().getVersionedConfigAdmin().getConfig().getSlug());
         Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
         if (!slugOpt.equals(slugOptPrevious)) {
+            if (LogUtil.rateLimitAllowLog("projectStore-slugChange")) {
+                log.info("Project {} changing slug from {} to {}", projectId, slugOptPrevious, slugOpt);
+            }
             try {
                 slugOpt.ifPresent(slug -> slugSchema.table().putItem(new PutItemSpec()
-                        .withItem(slugSchema.toItem(new SlugModel(slug, projectId)))
+                        .withItem(slugSchema.toItem(new SlugModel(slug, projectId, null)))
                         .withConditionExpression("attribute_not_exists(#partitionKey)")
                         .withNameMap(Map.of("#partitionKey", slugSchema.partitionKeyName()))));
             } catch (ConditionalCheckFailedException ex) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
             }
-            slugOptPrevious.ifPresent(slugPrevious -> slugSchema.table().deleteItem(new DeleteItemSpec()
-                    .withPrimaryKey(slugSchema.primaryKey(Map.of(
-                            "slug", slugPrevious)))));
+            slugOptPrevious.ifPresent(slugPrevious -> slugSchema.table()
+                    .putItem(new PutItemSpec()
+                            .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
+                            .withNameMap(Map.of(
+                                    "#partitionKey", slugSchema.partitionKeyName(),
+                                    "#projectId", "projectId"))
+                            .withValueMap(Map.of(":projectId", projectId))
+                            .withItem(slugSchema.toItem(new SlugModel(
+                                    slugPrevious,
+                                    projectId,
+                                    Instant.now().plus(config.slugExpireAfterMigration()).getEpochSecond())))));
         }
         PutItemSpec putItemSpec = new PutItemSpec()
                 .withItem(projectSchema.toItem(new ProjectModel(

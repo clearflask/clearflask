@@ -121,7 +121,7 @@ export default class Property extends Component<Props> {
             value={prop.value || ''}
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}
-            placeholder={prop.placeholder + ''}
+            placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
             type={fieldType}
@@ -208,7 +208,7 @@ export default class Property extends Component<Props> {
                   label={description}
                 />
               </div>
-              <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
+              <Collapse in={prop.value}>
                 {link}
               </Collapse>
             </div>
@@ -228,6 +228,7 @@ export default class Property extends Component<Props> {
           propertySetter = (
             <div>
               {!this.props.bare && (<InputLabel error={!!prop.errorMsg}>{name}</InputLabel>)}
+              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
               <div>
                 <FormControlLabel
                   control={(
@@ -240,7 +241,6 @@ export default class Property extends Component<Props> {
                   label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
                 />
               </div>
-              {(!this.props.bare && prop.description || prop.errorMsg) && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{prop.errorMsg || prop.description}</FormHelperText>)}
             </div>
           );
           break;
@@ -323,7 +323,7 @@ export default class Property extends Component<Props> {
             <SelectionPicker
               label={prop.name}
               helperText={prop.description}
-              placeholder={prop.placeholder + ''}
+              placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
               errorMsg={prop.errorMsg}
               value={values}
               options={options}
@@ -413,9 +413,10 @@ export default class Property extends Component<Props> {
         }
         propertySetter = (
           <SelectionPicker
+            showClearWithOneValue={!prop.required}
             label={prop.name}
             helperText={prop.description}
-            placeholder={prop.placeholder + ''}
+            placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             errorMsg={prop.errorMsg}
             value={values}
             colorLookup={colorLookup}
