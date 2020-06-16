@@ -46,13 +46,8 @@ components:
       title: CreditFormatter
       type: object
       required:
-        - increment
         - formats
       properties:
-        increment:
-          x-clearflask-prop: { order: 2, name: 'Increments', description: 'Minimum increment to consider significant.', defaultValue: 1 }
-          type: integer
-          format: int64
         formats:
           x-clearflask-prop: { order: 1, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
@@ -316,7 +311,7 @@ components:
           x-clearflask-prop: { order: 5, name: 'Comments', description: 'Allow users to post comments', defaultValue: true }
           type: boolean
     layout:
-      x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and menu.' }
+      x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and top menu.' }
       title: Layout
       type: object
       required:
@@ -324,7 +319,7 @@ components:
         - menu
       properties:
         menu:
-          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize menu tabs with buttons and dropdowns.' }
+          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize the top menu wiht tabs. Each tab can be a link to single page or a dropdown with multiple pages.' }
           type: array
           items:
             title: Menu
@@ -337,7 +332,7 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               pageIds:
-                x-clearflask-prop: { order: 2, name: 'Tab Link(s)', description: 'Page(s) this tab will link to. If more than one, a dropdown will display.' }
+                x-clearflask-prop: { order: 2, name: 'Tab links', description: 'Pages this tab will link to. If more than one, a dropdown will be displayed.' }
                 x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
                 type: array
                 items:
@@ -346,10 +341,10 @@ components:
                 x-clearflask-prop: { order: 1, name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
                 type: string
         pages:
-          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'], description: 'List of all pages visible to users. After creating a page, add the page link to the menu below.'}
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames:['name', 'slug'], description: 'List of all pages. After creating a page, you may add the page to the menu below.'}
           type: array
           items:
-            x-clearflask-page: { name: 'Page', description: 'Create and customize pages.', nameFromProp: 'name' }
+            x-clearflask-page: { name: 'Page', description: 'Create and customize this page. Each page typically consists of one or more of the four components: description, panels, board and explorer.', nameFromProp: 'name' }
             title: Page
             type: object
             required:
@@ -363,7 +358,7 @@ components:
                 x-clearflask-prop: { subType: 'id' }
                 type: string
               name:
-                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page title', description: 'Page name shown on links and buttons pointing to this page', placeholder: 'Feature Requests', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
                 type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.' }
@@ -571,54 +566,51 @@ components:
       required:
         - panels
     PostDisplay:
-      x-clearflask-prop: { order: 200, name: 'Choose fields', description: 'Force certain fields to be shown or hidden from display in this panel.', defaultValue: true}
+      x-clearflask-prop: { order: 200, name: 'Customize look', description: 'Customize how this panel should look. The default look is automatically determined.', defaultValue: true}
       type: object
       title: PanelDisplay
       properties:
         titleTruncateLines:
-          x-clearflask-prop: { order: 1, name: 'Title maximum lines', placeholder: 1}
+          x-clearflask-prop: { order: 1, name: 'Title lines', description: 'Maximum number of lines to display for title otherwise an elipsis will be shown.', placeholder: 1}
           type: integer
           format: int64
+          minimum: 1
         descriptionTruncateLines:
-          x-clearflask-prop: { order: 2, name: 'Description maximum lines', placeholder: 2}
+          x-clearflask-prop: { order: 2, name: 'Description lines', description: 'Maximum number of lines to display for description otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 2}
           type: integer
           format: int64
+          minimum: 0
         responseTruncateLines:
-          x-clearflask-prop: { order: 2, name: 'Response maximum lines', placeholder: 1}
+          x-clearflask-prop: { order: 2, name: 'Response lines', description: 'Maximum number of lines to display for a response otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 1}
           type: integer
           format: int64
-        showDescription:
-          x-clearflask-prop: { order: 3, name: 'Force show description' }
-          type: boolean
-        showResponse:
-          x-clearflask-prop: { order: 4, name: 'Force show response' }
-          type: boolean
+          minimum: 0
         showCommentCount:
-          x-clearflask-prop: { order: 5, name: 'Force show comment count' }
+          x-clearflask-prop: { order: 5, name: 'Comment count', description: 'Force show/hide the comment count' }
           type: boolean
         showCategoryName:
-          x-clearflask-prop: { order: 6, name: 'Force show category name' }
+          x-clearflask-prop: { order: 6, name: 'Category', description: 'Force show/hide the category name' }
           type: boolean
         showCreated:
-          x-clearflask-prop: { order: 7, name: 'Force show created' }
+          x-clearflask-prop: { order: 7, name: 'Created', description: 'Force show/hide the created timestamp' }
           type: boolean
         showAuthor:
-          x-clearflask-prop: { order: 8, name: 'Force show author' }
+          x-clearflask-prop: { order: 8, name: 'Author', description: "Force show/hide the author's name" }
           type: boolean
         showStatus:
-          x-clearflask-prop: { order: 9, name: 'Force show status' }
+          x-clearflask-prop: { order: 9, name: 'Status', description: 'Force show/hide the status' }
           type: boolean
         showTags:
-          x-clearflask-prop: { order: 10, name: 'Force show tags' }
+          x-clearflask-prop: { order: 10, name: 'Tags', description: 'Force show/hide tags' }
           type: boolean
         showVoting:
-          x-clearflask-prop: { order: 11, name: 'Force show voting' }
+          x-clearflask-prop: { order: 11, name: 'Voting', description: 'Force show/hide voting arrows' }
           type: boolean
         showFunding:
-          x-clearflask-prop: { order: 12, name: 'Force show funding' }
+          x-clearflask-prop: { order: 12, name: 'Funding', description: 'Force show/hide the funding bar' }
           type: boolean
         showExpression:
-          x-clearflask-prop: { order: 13, name: 'Force show expression' }
+          x-clearflask-prop: { order: 13, name: 'Expressions', description: 'Force show/hide the expressions' }
           type: boolean
     PagePanel:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
@@ -628,7 +620,7 @@ components:
         - display
       properties:
         title:
-          x-clearflask-prop: { order: 1, name: 'Panel title'}
+          x-clearflask-prop: { order: 1, name: 'Panel title', description: 'Title to display above the panel'}
           type: string
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'

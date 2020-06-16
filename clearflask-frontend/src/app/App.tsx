@@ -177,7 +177,7 @@ class App extends Component<Props> {
                   <AccountPage server={this.server} />
                 </BasePage>
               )} />
-              <Route key='account' path='/sso' render={props => (
+              <Route key='sso' path='/sso' render={props => (
                 <BasePage showFooter={!props.match.params['embed']}>
                   <SsoSuccessPage />
                 </BasePage>

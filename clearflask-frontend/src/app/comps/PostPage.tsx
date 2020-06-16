@@ -5,6 +5,8 @@ import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import ErrorPage from '../ErrorPage';
 import Post from './Post';
+import setTitle from '../../common/util/titleUtil';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -25,9 +27,15 @@ interface Props extends WithStyles<typeof styles, true> {
 
 class PostPage extends Component<Props> {
   render() {
+    if(this.props.post) {
+      setTitle(truncateWithElipsis(25, this.props.post.title), true);
+    }
+
     if (this.props.postStatus === Status.REJECTED) {
+      setTitle("Failed to load");
       return (<ErrorPage msg='Oops, failed to load' />);
     } else if (this.props.postStatus === Status.FULFILLED && this.props.post === undefined) {
+      setTitle("Not found");
       return (<ErrorPage msg='Oops, not found' />);
     }
 

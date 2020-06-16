@@ -87,19 +87,17 @@ class CreditPreview extends Component<Props> {
     credits.formats.forEach(format => {
       if (format.greaterOrEqual) {
         previews.add(format.greaterOrEqual);
-        const belowEdge = format.greaterOrEqual - (credits.increment || 1);
+        const belowEdge = format.greaterOrEqual - 1;
         if (belowEdge >= 0) previews.add(belowEdge);
       }
       if (format.lessOrEqual) {
         previews.add(format.lessOrEqual);
-        previews.add(format.lessOrEqual + (credits.increment || 1));
+        previews.add(format.lessOrEqual + 1);
       }
       const rangeStart = format.greaterOrEqual || 0;
       const rangeEnd = format.lessOrEqual || rangeStart * 2;
       const rangeMid = (rangeEnd - rangeStart) / 2 + rangeStart;
-      previews.add(credits.increment
-        ? rangeMid - (rangeMid % credits.increment)
-        : rangeMid);
+      previews.add(rangeMid);
     });
 
     return [...previews].sort((a, b) => a - b);

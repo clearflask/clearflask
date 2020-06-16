@@ -151,7 +151,6 @@ export default class Templater {
           display: Admin.PostDisplayToJSON({
             titleTruncateLines: 1,
             descriptionTruncateLines: 3,
-            showDescription: true,
             showCommentCount: false,
             showCategoryName: false,
             showCreated: false,
@@ -188,9 +187,8 @@ export default class Templater {
         search: explorerIdeaSearch || Admin.IdeaSearchToJSON({}),
         display: explorerPostDisplay || Admin.PostDisplayToJSON({
           titleTruncateLines: 1,
-          descriptionTruncateLines: 2,
-          showDescription: false,
-          showResponse: false,
+          descriptionTruncateLines: 0,
+          responseTruncateLines: 0,
           showCommentCount: false,
           showCategoryName: false,
           showCreated: false,
@@ -265,7 +263,6 @@ export default class Templater {
           display: Admin.PostDisplayToJSON({
             titleTruncateLines: 1,
             descriptionTruncateLines: 0,
-            showDescription: false,
             showCommentCount: false,
             showCategoryName: false,
             showCreated: false,
@@ -338,9 +335,8 @@ export default class Templater {
     const roadmapPageId = randomUuid();
     const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 1,
-      descriptionTruncateLines: 4,
-      showDescription: false,
-      showResponse: false,
+      descriptionTruncateLines: 0,
+      responseTruncateLines: 0,
       showCommentCount: false,
       showCategoryName: false,
       showCreated: false,
@@ -453,8 +449,7 @@ export default class Templater {
           title: 'Blog', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
             titleTruncateLines: 1,
             descriptionTruncateLines: 2,
-            showDescription: true,
-            showResponse: false,
+            responseTruncateLines: 0,
             showCommentCount: false,
             showCategoryName: false,
             showCreated: false,
@@ -487,7 +482,6 @@ export default class Templater {
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
-          showDescription: true,
         }),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [articleCategoryId],
@@ -529,7 +523,6 @@ export default class Templater {
         display: Admin.PostDisplayToJSON({
           titleTruncateLines: 0,
           descriptionTruncateLines: 2,
-          showDescription: true,
         }),
         search: Admin.IdeaSearchToJSON({
           filterCategoryIds: [changelogCategoryId],
@@ -569,8 +562,7 @@ export default class Templater {
     const postDisplay: Admin.PostDisplay = {
       titleTruncateLines: 0,
       descriptionTruncateLines: 2,
-      showDescription: true,
-      showResponse: false,
+      responseTruncateLines: 0,
       showCommentCount: false,
       showCategoryName: false,
       showCreated: false,
@@ -743,7 +735,6 @@ export default class Templater {
 
   creditsCurrencyWithoutCents() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', greaterOrEqual: 100, minimumFractionDigits: 2 }),
@@ -752,7 +743,6 @@ export default class Templater {
   }
   creditsCurrency() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),
@@ -762,7 +752,6 @@ export default class Templater {
   }
   creditsTime() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: ' weeks', multiplier: 0.025, greaterOrEqual: 41, maximumFractionDigits: 1 }),
       Admin.CreditFormatterEntryToJSON({ suffix: ' week', multiplier: 0.025, greaterOrEqual: 40, lessOrEqual: 40 }),
@@ -774,7 +763,6 @@ export default class Templater {
   }
   creditsUnitless() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),
@@ -804,7 +792,6 @@ export default class Templater {
   // }
   creditsBeer() {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
-    this._get<ConfigEditor.NumberProperty>(['users', 'credits', 'increment']).set(1);
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 100000000, maximumFractionDigits: 0 }),
       Admin.CreditFormatterEntryToJSON({ suffix: 'm 🍺', multiplier: 0.000001, greaterOrEqual: 10000000, maximumFractionDigits: 1 }),

@@ -10,6 +10,7 @@ import { ReduxState, Server } from '../api/server';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -42,6 +43,8 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   state: State = {};
 
   render() {
+    setTitle('Account', true);
+
     if (!this.props.userMe) {
       return (<ErrorPage msg='You need to log in to see your account details' variant='info' />);
     }

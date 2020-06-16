@@ -153,8 +153,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
-              showDescription: true,
-              showResponse: false,
+              responseTruncateLines: 0,
               showCommentCount: false,
               showCategoryName: false,
               showCreated: false,
@@ -189,8 +188,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
-              showDescription: true,
-              showResponse: true,
+              responseTruncateLines: 2,
               showCommentCount: true,
               showCreated: true,
               showAuthor: true,

@@ -21,6 +21,8 @@ interface Props extends WithStyles<typeof styles, true> {
   expand: boolean;
   onBackButtonPress?: () => void;
   onRest?: () => void;
+  onExpand?: () => void;
+  onCollapse?: () => void;
 }
 class Expander extends Component<Props> {
   readonly contentRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -43,6 +45,10 @@ class Expander extends Component<Props> {
       if (this.props.expand) {
         this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && this.contentRef.current.offsetParent.getBoundingClientRect() || undefined;
         this.contentRect = this.contentRef.current && this.contentRef.current.getBoundingClientRect() || undefined;
+        
+        this.props.onExpand && this.props.onExpand();
+      } else {
+        this.props.onCollapse && this.props.onCollapse();
       }
     }
 

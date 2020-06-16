@@ -185,7 +185,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     var max = fundAmount + this.props.balance;
     if (!isSliding) max -= (this.state.sliderFundAmountDiff || 0);
     const value = isSliding ? fundAmount + (this.state.sliderFundAmountDiff || 0) : fundAmount;
-    const step = this.props.credits && this.props.credits.increment || undefined;
+    const step = 1;
     const target = this.state.fixedTarget || this.state.maxTarget;
     const widthPerc = (100 * (max) / target)
     const transitionClassName = (this.state.sliderCurrentIdeaId && !this.state.sliderIsSubmitting) ? this.props.classes.sliderTransitionNone : this.props.classes.sliderTransitionSmooth
@@ -318,7 +318,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
         : this.props.otherFundedIdeas.ideas[change.index + (!!this.props.idea ? -1 : 0)];
       if (!idea) continue;
 
-      const increment = (this.props.credits?.increment || 1) * (fundDiff >= 0 ? 1 : -1);
+      const increment = fundDiff >= 0 ? 1 : -1;
 
       while (this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId
         && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)

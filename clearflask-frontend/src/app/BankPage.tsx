@@ -9,6 +9,7 @@ import FundingControl from './comps/FundingControl';
 import TransactionList from './comps/TransactionList';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -37,6 +38,8 @@ interface ConnectProps {
 class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
+    setTitle('Bank', true);
+
     if (!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }

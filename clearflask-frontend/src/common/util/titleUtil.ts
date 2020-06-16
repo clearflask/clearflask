@@ -4,10 +4,10 @@ const defaultText = 'ClearFlask: Product Feedback Solution' // NOTE: If changed,
 const titleSuffix = ' | ClearFlask: Product Feedback Solution'
 const titleSuffixShort = ' | ClearFlask'
 
-function setTitle(text?: string) {
+function setTitle(text?: string, forceShort?: boolean) {
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
-    if (text.length < 15) {
+    if (text.length < 15 && !forceShort) {
       title += text + titleSuffix
     } else {
       title += text + titleSuffixShort

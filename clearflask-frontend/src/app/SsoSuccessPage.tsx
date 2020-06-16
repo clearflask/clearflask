@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
 import ErrorPage from './ErrorPage';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -16,6 +17,8 @@ interface ConnectProps {
 }
 class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
+    setTitle('Single sign-on', true);
+
     if (!this.props.userMe) {
       return (<ErrorPage msg='Failed to log in' variant='error' />);
     } else {

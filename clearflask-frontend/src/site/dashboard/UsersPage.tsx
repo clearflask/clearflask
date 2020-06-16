@@ -268,7 +268,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                             <TableCell><Typography>
                               {!!user.balance && (<CreditView
                                 val={user.balance}
-                                credits={this.props.credits || { increment: 1, formats: [] }} />)}
+                                credits={this.props.credits || { formats: [] }} />)}
                             </Typography></TableCell>
                             <TableCell><Typography>
                               {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}

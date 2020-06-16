@@ -33,6 +33,8 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
+import setTitle from '../../common/util/titleUtil';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 export type PostVariant = 'list' | 'page';
 
@@ -369,6 +371,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   _isMounted: boolean = false;
   readonly fundingControlRef = createMutableRef<any>();
   readonly inViewObserverRef = React.createRef<InViewObserver>();
+  priorToExpandDocumentTitle: string | undefined;
 
   constructor(props) {
     super(props);
@@ -423,6 +426,18 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           onRest={() => {
             if (isMoving) {
               this.setState({ currentVariant: targetVariant });
+            }
+          }}
+          onExpand={() => {
+            this.priorToExpandDocumentTitle = document.title;
+            if(this.props.idea) {
+              setTitle(truncateWithElipsis(25, this.props.idea.title), true);
+            }
+          }}
+          onCollapse={() => {
+            if(this.priorToExpandDocumentTitle) {
+              document.title = this.priorToExpandDocumentTitle;
+              this.priorToExpandDocumentTitle = undefined;
             }
           }}
         >
@@ -1078,7 +1093,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderDescription(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showDescription === false
+    if (variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines <= 0
       || !this.props.idea
       || !this.props.idea.description) return null;
     return (
@@ -1091,7 +1106,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderResponse(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showResponse === false
+    if (variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines <= 0
       || !this.props.idea
       || !this.props.idea.response) return null;
     return (

@@ -10,6 +10,7 @@ import Panel, { Direction } from './comps/Panel';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -57,6 +58,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
   render() {
     if (this.props.pageNotFound) {
+      setTitle("Page not found", true);
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
@@ -65,6 +67,8 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     var explorerCmpt;
 
     if (this.props.page) {
+      setTitle(this.props.page.name, true);
+
       // ### PANELS
       if (this.props.page.panels.length > 0) {
         panelsCmpt = (
@@ -81,7 +85,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
                     displayDefaults={{
                       titleTruncateLines: 1,
                       descriptionTruncateLines: 2,
-                      showDescription: true,
                       showCommentCount: false,
                       showCategoryName: false,
                       showCreated: false,
@@ -113,7 +116,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               displayDefaults={{
                 titleTruncateLines: 1,
                 descriptionTruncateLines: 0,
-                showDescription: false,
                 showCommentCount: false,
                 showCategoryName: false,
                 showCreated: false,

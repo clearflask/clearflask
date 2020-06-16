@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { ReduxState, Server } from '../api/server';
 import NotificationList from './comps/NotificationList';
 import ErrorPage from './ErrorPage';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -25,6 +26,8 @@ interface ConnectProps {
 class NotificationPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
+    setTitle('Notifications', true);
+
     if (!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }
