@@ -66,10 +66,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   }
 
   renderCollectFeedback(mirror?: boolean) {
-    const opts: CreateTemplateOptions = {
-      ...createTemplateOptionsDefault,
-      fundingAllowed: false,
-    };
     return (
       <React.Fragment>
         <Demo
@@ -129,21 +125,21 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           variant='content'
           title='SAAS product support and feedback'
           description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-          buttonTitle='See Demo'
+          buttonTitle='See case study and demo'
           buttonLink='/case-study#saas'
         />
         <BlockContent
           variant='content'
           title='Open-Source community-funded product'
           description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-          buttonTitle='See Demo'
+          buttonTitle='See case study and demo'
           buttonLink='/case-study#open-source'
         />
         <BlockContent
           variant='content'
           title='Mobile App monetization strategy'
           description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-          buttonTitle='See Demo'
+          buttonTitle='See case study and demo'
           buttonLink='/case-study#mobile-social-media'
         />
       </HorizontalPanels>

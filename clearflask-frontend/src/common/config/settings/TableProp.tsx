@@ -4,7 +4,6 @@ import AddIcon from '@material-ui/icons/AddRounded';
 import MoveDownIcon from '@material-ui/icons/ArrowDownward';
 import MoveUpIcon from '@material-ui/icons/ArrowUpward';
 import DeleteIcon from '@material-ui/icons/Delete';
-import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import React, { Component } from 'react';
 import * as ConfigEditor from '../configEditor';
@@ -204,6 +203,7 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
               {/* TODO Duplication needs to regenerate ids, for now remove this functionality <IconButton aria-label="Duplicate" onClick={() => {
                 this.props.data.duplicate(index);
               }}>
+                import DuplicateIcon from '@material-ui/icons/FileCopyOutlined';
                 <DuplicateIcon />
               </IconButton> */}
               <IconButton aria-label="Delete" onClick={() => {

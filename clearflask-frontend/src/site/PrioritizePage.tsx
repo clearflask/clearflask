@@ -1,8 +1,11 @@
+import { Container, Grid } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import MoneyIcon from '@material-ui/icons/Money';
 import React, { Component } from 'react';
 import * as Client from '../api/client';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
+import Feature from './landing/Feature';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
@@ -24,7 +27,8 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
         {this.renderHero()}
         {this.renderTypesOfVoting()}
         {this.renderCreditIntegration()}
-        {/* TODO {this.renderCreditUseCases()} */}
+        {this.renderHowDistributeCredits()}
+        {this.renderCreditUseCases()}
       </React.Fragment>
     );
   }
@@ -138,6 +142,33 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
             description='Manage credits with granular control via our API'
           />
         </HorizontalPanels>
+      </React.Fragment>
+    );
+  }
+
+  renderHowDistributeCredits() {
+    return (
+      <React.Fragment>
+        <Block
+          variant='heading'
+          title='How should you distribute credits?'
+          description='It is best to tie credits based on how valuable the customer is to you. Contact us for advice and to discuss which option is best for you.'
+        />
+        <Container maxWidth='md'>
+          <Grid container className={this.props.classes.grid}>
+            <Feature icon={<MoneyIcon />} title='Subscription-based' description='' />
+            <Feature icon={<MoneyIcon />} title='In-app purchases' description='' />
+            <Feature icon={<MoneyIcon />} title='Purchases' description='' />
+            <Feature icon={<MoneyIcon />} title='Coffee' description='' />
+            <Feature icon={<MoneyIcon />} title='Open-source' description='' />
+            <Feature icon={<MoneyIcon />} title='SAAS' description='Depending on the subscription level, you may issue "Dev hours" for customers to choose where you should spend your time.' />
+            <Feature icon={<MoneyIcon />} title='Mobile app' description='Assign spending power based on how much your customers spent on your app.' />
+            <Feature icon={<MoneyIcon />} title='Crowd-funding' description='You can ask users to pay for ' />
+            <Feature icon={<MoneyIcon />} title='Donations' description='Custom tags helps you organize' />
+            <Feature icon={<MoneyIcon />} title='Wiki' description='Assign credits based on seniority or amount of work they have done' />
+            <Feature icon={<MoneyIcon />} title='Game' description='In-game achievements can unlock more credits' />
+          </Grid>
+        </Container>
       </React.Fragment>
     );
   }
