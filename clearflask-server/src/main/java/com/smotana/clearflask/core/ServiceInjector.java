@@ -199,7 +199,6 @@ public enum ServiceInjector {
                         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
                         install(DefaultDynamoDbProvider.module());
                         install(DefaultElasticSearchProvider.module());
-                        install(DemoData.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;

@@ -43,9 +43,8 @@ public class ModelUtil {
                         new Workflow(null, ImmutableList.of(
                                 new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false)
                         )),
-                        new Support(null, null, null, true),
-                        new Tagging(ImmutableList.of(), ImmutableList.of()),
-                        Category.VisibilityEnum.PUBLIC))),
+                        new Support(false, null, null, true),
+                        new Tagging(ImmutableList.of(), ImmutableList.of())))),
                 new Style(
                         new Flow(true),
                         new Palette(false, null, null, null, null, null, null, null),
@@ -61,10 +60,6 @@ public class ModelUtil {
                                         null),
                                 null)),
                 null
-        ), createConfigVersion());
-    }
-
-    public static String createConfigVersion() {
-        return IdUtil.randomAscId();
+        ), IdUtil.randomAscId());
     }
 }

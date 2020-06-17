@@ -22,6 +22,10 @@ public interface ProjectStore {
         return IdUtil.randomId();
     }
 
+    default String genConfigVersion() {
+        return IdUtil.randomAscId();
+    }
+
     Optional<Project> getProjectBySlug(String slug, boolean useCache);
 
     Optional<Project> getProject(String projectId, boolean useCache);
