@@ -193,14 +193,14 @@ components:
         - animation
       properties:
         animation:
-          x-clearflask-prop: { order: 1, name: 'Animation', description: 'Control all animations across this project. Turn off for faster and sharper look.' }
+          x-clearflask-prop: { order: 1, name: 'Animation' }
           title: Flow
           type: object
           required:
             - enableTransitions
           properties:
             enableTransitions:
-              x-clearflask-prop: { order: 1, name: 'Enable animation', defaultValue: true }
+              x-clearflask-prop: { order: 1, name: 'All transitions', description: 'Control all animations across this project. Turn off for faster and sharper look.', defaultValue: true }
               type: boolean
         palette:
           x-clearflask-prop: { order: 2, name: 'Palette' }

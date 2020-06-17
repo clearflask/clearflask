@@ -2,6 +2,7 @@ import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, In
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import PaintbrushIcon from '@material-ui/icons/Palette';
+import DeleteIcon from '@material-ui/icons/CloseRounded';
 import { BaseEmoji } from 'emoji-mart';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
@@ -76,28 +77,37 @@ export default class Property extends Component<Props> {
                       shrink: shrink,
                       error: !!prop.errorMsg,
                     }}
-                    InputProps={{
-                      readOnly: true,
-                      inputProps: {
-                        autoComplete: 'off',
+                    TextFieldProps={{
+                      InputProps: {
+                        readOnly: true,
+                        inputProps: {
+                          autoComplete: 'off',
+                        },
+                        style: {
+                          minWidth: Property.inputMinWidth,
+                          width: this.props.width,
+                        },
+                        error: !!prop.errorMsg,
+                        endAdornment: (
+                          <InputAdornment position='end'>
+                            <IconButton
+                              aria-label='Clear'
+                              style={{
+                                visibility: !prop.required && prop.value ? undefined : 'hidden',
+                              }}
+                              onClick={() => prop.set(undefined)}
+                            >
+                              <DeleteIcon fontSize='small' />
+                            </IconButton>
+                            <PaintbrushIcon
+                              style={{
+                                color: prop.value + '',
+                              }}
+                              fontSize='small'
+                            />
+                          </InputAdornment>
+                        ),
                       },
-                      style: {
-                        minWidth: Property.inputMinWidth,
-                        width: this.props.width,
-                      },
-                      error: !!prop.errorMsg,
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            style={{
-                              color: prop.value + '',
-                            }}
-                            aria-label='Picked color'
-                          >
-                            <PaintbrushIcon fontSize='small' />
-                          </IconButton>
-                        </InputAdornment>
-                      ),        
                     }}
                   />
                 </div>
