@@ -156,6 +156,11 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
         />
         <Container maxWidth='md'>
           <Grid container className={this.props.classes.grid}>
+            <Feature icon={<MoneyIcon />} title='Currency' description='' />
+            <Feature icon={<MoneyIcon />} title='Points' description='' />
+            <Feature icon={<MoneyIcon />} title='Development hours' description='' />
+            <Feature icon={<MoneyIcon />} title='Coffee' description='' />
+            <Feature icon={<MoneyIcon />} title='Custom' description='' />
             <Feature icon={<MoneyIcon />} title='Subscription-based' description='' />
             <Feature icon={<MoneyIcon />} title='In-app purchases' description='' />
             <Feature icon={<MoneyIcon />} title='Purchases' description='' />

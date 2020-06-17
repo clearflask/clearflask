@@ -59,11 +59,6 @@ class AppThemeProvider extends Component<Props> {
               main: this.props.config.style.palette.primary,
             }
           } : {}),
-          ...(this.props.config.style.palette.secondary ? {
-            secondary: {
-              main: this.props.config.style.palette.secondary,
-            }
-          } : {}),
           ...(this.props.config.style.palette.text ? {
             text: {
               primary: this.props.config.style.palette.text,

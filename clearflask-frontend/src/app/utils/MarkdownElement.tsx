@@ -127,7 +127,7 @@ const styles = (theme: Theme) => createStyles({
         padding: '0 8px',
         color: theme.palette.text.hint,
         '&:hover': {
-          color: theme.palette.text.secondary,
+          color: theme.palette.text.primary, // Originally secondary color
         },
         '& svg': {
           width: '0.55em',
@@ -165,7 +165,7 @@ const styles = (theme: Theme) => createStyles({
     '& thead': {
       fontSize: 14,
       fontWeight: theme.typography.fontWeightMedium,
-      color: theme.palette.text.secondary,
+      color: theme.palette.text.primary, // Originally secondary color
     },
     '& tbody': {
       fontSize: 14,
@@ -214,7 +214,7 @@ const styles = (theme: Theme) => createStyles({
     },
     '& a, & a code': {
       // Style taken from the Link component
-      color: theme.palette.secondary.main,
+      color: theme.palette.primary.main, // Originally secondary color
       textDecoration: 'none',
       '&:hover': {
         textDecoration: 'underline',

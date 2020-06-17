@@ -2,15 +2,16 @@ import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
+import setTitle from '../common/util/titleUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
-import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -47,13 +48,12 @@ interface Props {
   server: Server;
   pageSlug: string;
 }
-
 interface ConnectProps {
   configver?: string;
+  config?: Client.Config;
   pageNotFound: boolean;
   page?: Client.Page;
 }
-
 class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
@@ -62,12 +62,22 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
-    var panelsCmpt;
-    var boardCmpt;
-    var explorerCmpt;
+    const template = (this.props.config?.style.templates?.pages || []).find(p => p.pageId === this.props.page?.pageId)?.template;
 
-    if (this.props.page) {
+    var page;
+    if (template) {
+      page = (
+        <ReactLiquid html template={template} data={{
+          config: this.props.config,
+          page: this.props.page,
+        }} />
+      );
+    } else if (this.props.page) {
       setTitle(this.props.page.name, true);
+
+      var panelsCmpt;
+      var boardCmpt;
+      var explorerCmpt;
 
       // ### PANELS
       if (this.props.page.panels.length > 0) {
@@ -160,10 +170,8 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           />
         );
       }
-    }
 
-    return (
-      <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
+      page = (
         <div className={this.props.classes.page}>
           {this.props.page && (this.props.page.title || this.props.page.description) && (
             <DividerCorner
@@ -179,6 +187,12 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           {boardCmpt}
           {explorerCmpt}
         </div>
+      );
+    }
+
+    return (
+      <Loader key={this.props.page && this.props.page.pageId} loaded={!!this.props.page}>
+        {page}
       </Loader>
     );
   }
@@ -187,6 +201,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
   var newProps: ConnectProps = {
     configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
     pageNotFound: false,
     page: undefined,
   };

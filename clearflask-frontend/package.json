@@ -45,6 +45,7 @@
     "react-ga": "2.5.7",
     "react-google-recaptcha": "2.0.1",
     "react-intersection-observer": "8.26.2",
+    "react-liquid": "2.0.1",
     "react-motion": "0.5.2",
     "react-redux": "7.2.0",
     "react-router": "5.1.2",

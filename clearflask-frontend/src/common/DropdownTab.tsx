@@ -37,7 +37,7 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.up('md')]: {
       fontSize: theme.typography.pxToRem(13),
     },
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.primary,
     // Get rid of focused background color
     '&:focus': {
       background: 'inherit'

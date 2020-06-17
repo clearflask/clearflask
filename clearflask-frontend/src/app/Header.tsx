@@ -4,6 +4,7 @@ import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import React, { Component } from 'react';
+import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
@@ -23,11 +24,17 @@ const styles = (theme: Theme) => createStyles({
     top: 0,
     height: 1,
   },
-  header: {
+  headerSpacing: {
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
-    padding: theme.spacing(1),
+    padding: theme.spacing(1, 1, 0, 1),
+  },
+  menuSpacing: {
+    width: '100%',
+    maxWidth: '1024px',
+    margin: '0px auto',
+    padding: theme.spacing(0, 1, 1, 1),
   },
   // TODO figure out how to place these AND allow scroll buttons
   // tabs: {
@@ -117,7 +124,14 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
 
   render() {
     var menu;
-    if (this.props.config && this.props.config.layout.menu.length > 0) {
+    if (this.props.config?.style.templates?.menu) {
+      menu = (
+        <ReactLiquid html template={this.props.config.style.templates.menu} data={{
+          config: this.props.config,
+          page: this.props.page,
+        }} />
+      );
+    } else if (this.props.config && this.props.config.layout.menu.length > 0) {
       var currentTabValue = this.props.page
         ? this.props.page.slug
         : false;
@@ -162,109 +176,125 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         );
       });
       menu = (
-        <Tabs
-          // centered
-          variant='standard'
-          scrollButtons='off'
-          classes={{
-            flexContainer: this.props.classes.tabsFlexContainer,
-            indicator: this.props.classes.indicator,
-          }}
-          value={currentTabValue}
-          onChange={(event, value) => this.props.pageChanged(value)}
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          {tabs}
-        </Tabs>
-      );
-    }
-
-    var name: any = this.props.config?.name && (
-      <Typography variant='h6'>
-        {this.props.config && this.props.config.name}
-      </Typography>
-    );
-    if (this.props.config && this.props.config.website) {
-      name = (
-        <Link color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
-          {name}
-        </Link>
-      );
-    }
-    var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
-      <div className={this.props.classes.logo}>
-        {this.props.config.logoUrl && (
-          <img alt='logo' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
-        )}
-        {name}
-      </div>
-    ) : undefined;
-
-    var rightSide;
-    if (this.props.config && this.props.loggedInUser) {
-      rightSide = (
-        <div className={this.props.classes.actions}>
-          <IconButton
-            aria-label='Notifications'
-            onClick={() => this.props.history.push('/notification')}
+        <div className={this.props.classes.menuSpacing}>
+          <Divider />
+          <Tabs
+            // centered
+            variant='standard'
+            scrollButtons='off'
+            classes={{
+              flexContainer: this.props.classes.tabsFlexContainer,
+              indicator: this.props.classes.indicator,
+            }}
+            value={currentTabValue}
+            onChange={(event, value) => this.props.pageChanged(value)}
+            indicatorColor="primary"
+            textColor="primary"
           >
-            <NotificationBadge server={this.props.server}>
-              <NotificationsIcon fontSize='small' />
-            </NotificationBadge>
-          </IconButton>
-          {this.props.config.users.credits && (
-            <IconButton
-              aria-label='Balance'
-              onClick={() => this.props.history.push('/transaction')}
-            >
-              <BalanceIcon fontSize='small' />
-            </IconButton>
-          )}
-          <IconButton
-            aria-label='Account'
-            onClick={() => this.props.history.push('/account')}
-          >
-            <Badge
-              color='secondary'
-              invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
-              variant='dot'
-            >
-              <AccountIcon fontSize='small' />
-            </Badge>
-          </IconButton>
+            {tabs}
+          </Tabs>
         </div>
       );
-    } else if (this.props.config && !this.props.loggedInUser) {
-      rightSide = (
-        <div className={this.props.classes.actions}>
-          <IconButton
-            aria-label='Account'
-            onClick={() => this.setState({ logInOpen: true })}
-          >
-            <AccountIcon fontSize='small' />
-          </IconButton>
-          <LogIn
-            server={this.props.server}
-            open={this.state.logInOpen}
-            onClose={() => this.setState({ logInOpen: false })}
-            onLoggedInAndClose={() => this.setState({ logInOpen: false })}
-          />
+    }
+
+    var header;
+    if (this.props.config?.style.templates?.header) {
+      header = (
+        <ReactLiquid html template={this.props.config.style.templates.header} data={{
+          config: this.props.config,
+          loggedInUser: this.props.loggedInUser,
+        }} />
+      );
+    } else {
+      var name: any = this.props.config?.name && (
+        <Typography variant='h6'>
+          {this.props.config && this.props.config.name}
+        </Typography>
+      );
+      if (this.props.config && this.props.config.website) {
+        name = (
+          <Link color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
+            {name}
+          </Link>
+        );
+      }
+      var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
+        <div className={this.props.classes.logo}>
+          {this.props.config.logoUrl && (
+            <img alt='logo' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
+          )}
+          {name}
+        </div>
+      ) : undefined;
+
+      var rightSide;
+      if (this.props.config && this.props.loggedInUser) {
+        rightSide = (
+          <div className={this.props.classes.actions}>
+            <IconButton
+              aria-label='Notifications'
+              onClick={() => this.props.history.push('/notification')}
+            >
+              <NotificationBadge server={this.props.server}>
+                <NotificationsIcon fontSize='small' />
+              </NotificationBadge>
+            </IconButton>
+            {this.props.config.users.credits && (
+              <IconButton
+                aria-label='Balance'
+                onClick={() => this.props.history.push('/transaction')}
+              >
+                <BalanceIcon fontSize='small' />
+              </IconButton>
+            )}
+            <IconButton
+              aria-label='Account'
+              onClick={() => this.props.history.push('/account')}
+            >
+              <Badge
+                color='secondary'
+                invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
+                variant='dot'
+              >
+                <AccountIcon fontSize='small' />
+              </Badge>
+            </IconButton>
+          </div>
+        );
+      } else if (this.props.config && !this.props.loggedInUser) {
+        rightSide = (
+          <div className={this.props.classes.actions}>
+            <IconButton
+              aria-label='Account'
+              onClick={() => this.setState({ logInOpen: true })}
+            >
+              <AccountIcon fontSize='small' />
+            </IconButton>
+            <LogIn
+              server={this.props.server}
+              open={this.state.logInOpen}
+              onClose={() => this.setState({ logInOpen: false })}
+              onLoggedInAndClose={() => this.setState({ logInOpen: false })}
+            />
+          </div>
+        );
+      }
+
+      header = (
+        <div className={this.props.classes.headerSpacing}>
+          <div className={this.props.classes.logoAndActions}>
+            {logo}
+            <div className={this.props.classes.grow} />
+            {rightSide}
+          </div>
         </div>
       );
     }
 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
-        <div className={this.props.classes.header}>
-          <div className={this.props.classes.logoAndActions}>
-            {logo}
-            <div className={this.props.classes.grow} />
-            {rightSide}
-          </div>
-          <Divider />
-          {menu}
-        </div>
+        {header}
+        {menu}
       </InViewObserver>
     );
   }

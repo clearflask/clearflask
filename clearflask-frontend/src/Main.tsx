@@ -22,7 +22,10 @@ const theme: Theme = createMuiTheme({
     background: {
       default: '#fff',
       paper: '#fff',
-    }
+    },
+    primary: {
+      main: '#218774',
+    },
   },
   overrides: {
     MuiAppBar: {

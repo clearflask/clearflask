@@ -1,8 +1,8 @@
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
-import KeyRefreshIcon from '@material-ui/icons/Refresh';
-import PaintbrushIcon from '@material-ui/icons/Palette';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
+import PaintbrushIcon from '@material-ui/icons/Palette';
+import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
@@ -101,7 +101,7 @@ export default class Property extends Component<Props> {
                             </IconButton>
                             <PaintbrushIcon
                               style={{
-                                color: prop.value + '',
+                                color: prop.value === undefined ? undefined : (prop.value + ''),
                               }}
                               fontSize='small'
                             />
@@ -147,6 +147,7 @@ export default class Property extends Component<Props> {
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
+            multiline={prop.subType === ConfigEditor.PropSubType.Multiline}
             type={fieldType}
             InputLabelProps={{
               shrink: shrink,

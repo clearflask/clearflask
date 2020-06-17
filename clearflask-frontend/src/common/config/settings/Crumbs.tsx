@@ -1,8 +1,8 @@
 import { Breadcrumbs, Link } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Project } from '../../../api/serverAdmin';
 import * as ConfigEditor from '../configEditor';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const styles = (theme: Theme) => createStyles({
   link: {
@@ -43,7 +43,7 @@ class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
     }
 
     return (
-      <Breadcrumbs separator="›" arial-label="Breadcrumb">
+      <Breadcrumbs separator="/" arial-label="Breadcrumb">
         {crumbs}
       </Breadcrumbs>
     );

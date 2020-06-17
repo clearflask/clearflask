@@ -210,34 +210,30 @@ components:
             - darkMode
           properties:
             darkMode:
-              x-clearflask-prop: { order: 1, name: 'Dark mode' }
+              x-clearflask-prop: { order: 1, name: 'Dark theme', description: 'A dark theme is a low-light UI that displays dark surfaces.' }
               type: boolean
             primary:
-              x-clearflask-prop: { order: 2, subType: 'color', name: 'Primary color' }
-              type: string
-              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
-            secondary:
-              x-clearflask-prop: { order: 3, subType: 'color', name: 'Secondary color' }
+              x-clearflask-prop: { order: 2, subType: 'color', name: 'Primary color', description: 'Color of primary components seeking user input or action.' }
               type: string
               pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             text:
-              x-clearflask-prop: { order: 4, subType: 'color', name: 'Text color' }
+              x-clearflask-prop: { order: 4, subType: 'color', name: 'Text color', description: 'Color of all text.' }
               type: string
               pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             background:
-              x-clearflask-prop: { order: 5, subType: 'color', name: 'Background color' }
+              x-clearflask-prop: { order: 5, subType: 'color', name: 'Background color', description: 'Color of main background excluding raised components or dialogs.' }
               type: string
               pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             backgroundPaper:
-              x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color' }
+              x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color', description: 'Background color of raised components and dialogs.' }
               type: string
               pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             expressionColor:
-              x-clearflask-prop: { order: 7, name: 'Expression color' }
+              x-clearflask-prop: { order: 8, name: 'Expression color', description: 'Color shading of expression emojis.' }
               type: string
               enum: [Color, Washed, Gray]
             funding:
-              x-clearflask-prop: { order: 8, subType: 'color', name: 'Funding progress bar color' }
+              x-clearflask-prop: { order: 7, subType: 'color', name: 'Funding color', description: 'Funding progress bar color.' }
               type: string
               pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
@@ -246,12 +242,42 @@ components:
           type: object
           properties:
             fontFamily:
-              x-clearflask-prop: { order: 1, name: 'Font Family', placeholder: '"Times New Roman", Times, serif' }
+              x-clearflask-prop: { order: 1, name: 'Font Family', description: 'Font to use for all text, identical to font-family CSS directive. Value can hold several font names seperated by comma. If the browser does not support the first font, it tries the next one.', placeholder: '"Times New Roman", Times, serif' }
               type: string
             fontSize:
-              x-clearflask-prop: { order: 2, name: 'Font Size', placeholder: '14' }
+              x-clearflask-prop: { order: 2, name: 'Font Size', description: 'Font size to use for all text, identical to font-size CSS directive.', placeholder: '14' }
               type: number
               format: double
+        templates:
+          x-clearflask-prop: { order: 3, name: 'Advanced customization', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating languge.' }
+          title: Template
+          type: object
+          required:
+          - pages
+          properties:
+            header:
+              x-clearflask-prop: { order: 1, name: 'Header', subType: 'multiline' }
+              type: string
+            menu:
+              x-clearflask-prop: { order: 2, name: 'Menu', subType: 'multiline' }
+              type: string
+            pages:
+              x-clearflask-prop: { order: 3, name: 'Pages', disableReordering: true }
+              type: array
+              items:
+                x-clearflask-prop: { name: 'Page' }
+                type: object
+                properties:
+                  pageId:
+                    x-clearflask-prop: { order: 1, name: 'Page' }
+                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
+                    type: string
+                  template:
+                    x-clearflask-prop: { order: 2, name: 'Template', subType: 'multiline' }
+                    type: string
+            footer:
+              x-clearflask-prop: { order: 4, name: 'Footer', subType: 'multiline' }
+              type: string
     support:
       x-clearflask-page: { order: 4, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
       title: Support

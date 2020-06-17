@@ -1,10 +1,14 @@
 import { Divider } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { ReactLiquid } from 'react-liquid';
+import { connect } from 'react-redux';
+import * as Client from '../api/client';
+import { ReduxState } from '../api/server';
 import PoweredBy from './PoweredBy';
 
 const styles = (theme: Theme) => createStyles({
-  footer: {
+  footerSpacing: {
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
@@ -18,19 +22,43 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
 });
-
-class Footer extends Component<WithStyles<typeof styles, true>> {
+interface ConnectProps {
+  config?: Client.Config;
+}
+class Footer extends Component<ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    return (
-      <div className={this.props.classes.footer}>
-        <Divider />
-        <div className={this.props.classes.footerItems}>
-          <div className={this.props.classes.grow} />
-          <PoweredBy />
+    var footer;
+    if (this.props.config?.style.templates?.footer) {
+      footer = (
+        <ReactLiquid html template={this.props.config.style.templates.footer} data={{
+          config: this.props.config,
+        }} />
+      );
+    } else {
+      footer = (
+        <div className={this.props.classes.footerSpacing}>
+          <Divider />
         </div>
-      </div>
+      );
+    }
+
+    return (
+      <React.Fragment>
+        {footer}
+        <div className={this.props.classes.footerSpacing}>
+          <div className={this.props.classes.footerItems}>
+            <div className={this.props.classes.grow} />
+            <PoweredBy />
+          </div>
+        </div>
+      </React.Fragment>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Footer);
+export default connect<ConnectProps, {}, {}, ReduxState>((state: ReduxState) => {
+  return {
+    configver: state.conf.ver, // force rerender on config change
+    config: state.conf.conf,
+  };
+})(withStyles(styles, { withTheme: true })(Footer));

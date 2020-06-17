@@ -25,9 +25,7 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'pointer',
     height: '19px',
     fontSize: '19px',
-    color: theme.palette.type === 'light'
-      ? theme.palette.text.secondary
-      : theme.palette.text.primary,
+    color: theme.palette.text.primary,
     marginTop: '1px',
   },
   chip: {
