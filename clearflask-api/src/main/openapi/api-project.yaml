@@ -42,7 +42,7 @@ components:
         users:
           $ref: 'api-project.yaml#/components/schemas/users'
     credits:
-      x-clearflask-page: { order: 13, name: 'Credits', description: 'Enable funding using virtual credits' }
+      x-clearflask-page: { order: 2, name: 'Credit System', description: 'Enable funding using virtual credits' }
       title: CreditFormatter
       type: object
       required:
@@ -87,7 +87,7 @@ components:
                 x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
     users:
-      x-clearflask-page: { order: 14, name: 'Users', description: 'Onboarding and authentication.' }
+      x-clearflask-page: { order: 14, name: 'Users', description: 'Configure onboarding, authentication and credit system.' }
       title: Users
       type: object
       required:
@@ -97,7 +97,7 @@ components:
         credits:
           $ref: 'api-project.yaml#/components/schemas/credits'
         onboarding:
-          x-clearflask-page: { order: 15, name: 'Onboarding', description: 'Define how users can sign up before posting' }
+          x-clearflask-page: { order: 1, name: 'Onboarding', description: 'Define the sign up flow for users. It is recommended to use Single Sign-On if possible, otherwise use the sign up methods with least amount of friction.' }
           title: Onboarding
           type: object
           required:
@@ -105,18 +105,18 @@ components:
             - notificationMethods
           properties:
             accountFields:
-              x-clearflask-prop: { order: 1, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+              x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
               title: AccountFields
               type: object
               required:
                 - displayName
               properties:
                 displayName:
-                  x-clearflask-prop: { order: 1, name: 'Display name', defaultValue: 'None' }
+                  x-clearflask-prop: { order: 1, name: 'Display name', description: 'Whether to ask for a display name during sign-up. Unless necessary, it is recommended to not ask for a display name. Users will be encouraged to fill out their display name after signing up.', defaultValue: 'None' }
                   type: string
                   enum: [None, Optional, Required]
             notificationMethods:
-              x-clearflask-prop: { order: 2, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you.' }
+              x-clearflask-prop: { order: 1, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you so it is essential to ask for a way to notify your users of updates. Anonymous sign up is also possible but not recommended.' }
               title: NotificationMethods
               type: object
               required:
@@ -133,7 +133,7 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
                       type: boolean
                 browserPush:
-                  x-clearflask-prop: { order: 2, name: 'Browser Notification', defaultValue: true }
+                  x-clearflask-prop: { order: 2, name: 'Browser Notification', description: 'Web Push is a fairly new technology allowing you to receive push messages in your browser. It introduces less friction than asking for an email. It is mainly supported on desktop browsers and Android.', defaultValue: true }
                   type: boolean
                 email:
                   x-clearflask-prop: { order: 3, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
@@ -161,7 +161,7 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
                       type: string
             terms:
-              x-clearflask-prop: { order: 2, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
+              x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
               title: CustomTerms
               type: object
               required:
@@ -184,7 +184,7 @@ components:
                         x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
                         type: string
     style:
-      x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your style.' }
+      x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your branding.' }
       title: Style
       type: object
       required:
@@ -215,23 +215,23 @@ components:
             primary:
               x-clearflask-prop: { order: 2, subType: 'color', name: 'Primary color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             secondary:
               x-clearflask-prop: { order: 3, subType: 'color', name: 'Secondary color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             text:
               x-clearflask-prop: { order: 4, subType: 'color', name: 'Text color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             background:
               x-clearflask-prop: { order: 5, subType: 'color', name: 'Background color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             backgroundPaper:
               x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
             expressionColor:
               x-clearflask-prop: { order: 7, name: 'Expression color' }
               type: string
@@ -239,7 +239,7 @@ components:
             funding:
               x-clearflask-prop: { order: 8, subType: 'color', name: 'Funding progress bar color' }
               type: string
-              pattern: '^(#([\da-f]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
         typography:
           x-clearflask-prop: { order: 3, name: 'Typography' }
           title: Typography
@@ -559,7 +559,7 @@ components:
           x-clearflask-prop: { order: 1, name: 'Board title'}
           type: string
         panels:
-          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
+          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames:['title'] }
           type: array
           items:
             $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
@@ -620,7 +620,7 @@ components:
         - display
       properties:
         title:
-          x-clearflask-prop: { order: 1, name: 'Panel title', description: 'Title to display above the panel'}
+          x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above content'}
           type: string
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
@@ -635,13 +635,13 @@ components:
             - hideIfEmpty
           properties:
             hideIfEmpty:
-              x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel search has no results, it will be hidden', defaultValue: false}
+              x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel has no results, it will be hidden', defaultValue: false}
               type: boolean
     PageExplorer:
       allOf:
         - $ref: 'api-project.yaml#/components/schemas/PagePanel'
         - type: object
-          x-clearflask-page: { order: 7, name: 'Explorer', nameFromProp: 'title', description: 'An idea explorer with user-defined search criteria as well as an option to submit own idea.' }
+          x-clearflask-page: { order: 7, name: 'Explorer', nameFromProp: 'title', description: 'A vertical content explorer with a search bar and an option to submit own content.' }
           properties:
             allowSearch:
               x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
@@ -669,7 +669,7 @@ components:
                   x-clearflask-prop: { order: 5, name: 'Tag', description: 'Enable filtering by tags if present', defaultValue: true}
                   type: boolean
             allowCreate:
-              x-clearflask-prop: { order: 2, name: 'Allow creating', defaultValue: true }
+              x-clearflask-prop: { order: 2, name: 'Create form', description: 'Determine whether to show a form for adding new content.', defaultValue: true }
               type: object
               properties:
                 actionTitle:

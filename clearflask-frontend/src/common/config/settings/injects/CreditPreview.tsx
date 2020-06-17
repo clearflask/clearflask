@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import * as Client from '../../../../api/client';
 import * as ConfigEditor from '../../configEditor';
 import CreditView from '../../CreditView';
+import DividerCorner from '../../../../app/utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
   headerCell: {
@@ -37,30 +38,31 @@ class CreditPreview extends Component<Props> {
     const dataRow: React.ReactNode[] = [];
     headerRow.push((
       <TableCell key='credit' align='right' className={this.props.classes.headerCell}>
-        Preview
+        Value
       </TableCell>
     ));
     dataRow.push((
       <TableCell key='preview' align='right' className={this.props.classes.headerCell}>
-        Value
+        Preview
       </TableCell>
     ));
     this.getEdgeCases(credits).forEach(preview => {
       headerRow.push((
         <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
-          <CreditView val={preview} credits={credits} />
+          {preview}
         </TableCell>
       ));
       dataRow.push((
         <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
-          {preview}
+          <CreditView val={preview} credits={credits} />
         </TableCell>
       ));
     });
 
     return (
+      <DividerCorner title='See how credits will be displayed' height='100%'>
       <div style={{
-        display: 'inline-block',
+        width: 'min-content',
       }}>
         <Table>
           <TableBody>
@@ -73,6 +75,7 @@ class CreditPreview extends Component<Props> {
           </TableBody>
         </Table>
       </div>
+      </DividerCorner>
     );
   }
 

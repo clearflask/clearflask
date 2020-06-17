@@ -5,39 +5,39 @@ components:
       type: object
       properties:
         sortBy:
-          x-clearflask-prop: { name: 'Sort', description: 'Display ideas by this sort order', defaultValue: 'Trending' }
+          x-clearflask-prop: { order: 2, name: 'Sort', description: 'Display ideas by this sort order', defaultValue: 'Trending' }
           type: string
           enum:
             - Trending
             - Top
             - New
         filterCategoryIds:
-          x-clearflask-prop: { name: 'Group', description: 'Display only ideas from these groups' }
+          x-clearflask-prop: { order: 1, name: 'Group', description: 'Display only ideas from these groups' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:
             type: string
         filterStatusIds:
-          x-clearflask-prop: { name: 'Status', description: 'Display only ideas having these statuses' }
+          x-clearflask-prop: { order: 3, name: 'Status', description: 'Display only ideas having these statuses' }
           x-clearflask-prop-link: { idPropName: 'statusId', linkPath: ['content', 'categories', '<$>', 'workflow', 'statuses'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
         filterTagIds:
-          x-clearflask-prop: { name: 'Tag', description: 'Display only ideas having these tags' }
+          x-clearflask-prop: { order: 4, name: 'Tag', description: 'Display only ideas having these tags' }
           x-clearflask-prop-link: { idPropName: 'tagId', linkPath: ['content', 'categories', '<$>', 'tagging', 'tags'], displayPropName: 'name', colorPropName: 'color', filterPath: ['.', 'filterCategoryIds'], filterIdPropName: 'categoryId', filterShowAllIfNone: true}
           type: array
           items:
             type: string
         searchText:
-          x-clearflask-prop: { name: 'Search query', description: 'Filter results matching this search term' }
+          x-clearflask-prop: { order: 5, name: 'Search query', description: 'Filter results matching this search term' }
           type: string
         fundedByMeAndActive:
           x-clearflask-hide: true
-          x-clearflask-prop: { name: 'Funded by me', description: 'Ideas funded by me and can be adjust' }
+          x-clearflask-prop: { order: 6, name: 'Funded by me', description: 'Ideas funded by me and can be adjust' }
           type: boolean
         limit:
-          x-clearflask-prop: { name: 'Limit', description: 'Optionally set a limit on how many results to return' }
+          x-clearflask-prop: { order: 7, name: 'Limit', description: 'Optionally set a limit on how many results to return' }
           minimum: 1
           maximum: 50
           type: integer

@@ -1,6 +1,7 @@
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
 import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
+import PaintbrushIcon from '@material-ui/icons/Palette';
 import { BaseEmoji } from 'emoji-mart';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
@@ -61,7 +62,7 @@ export default class Property extends Component<Props> {
                     placeholder='#FFF'
                     defaultValue={prop.defaultValue}
                     value={prop.value || ''}
-                    onChange={color => (prop as ConfigEditor.StringProperty).set(color)}
+                    onChange={color => (prop as ConfigEditor.StringProperty).set(color || undefined)}
                     error={!!prop.errorMsg}
                     // Hack to modify material-ui-color-picker to fix bug
                     // where a click inside the empty space inside the
@@ -76,15 +77,27 @@ export default class Property extends Component<Props> {
                       error: !!prop.errorMsg,
                     }}
                     InputProps={{
+                      readOnly: true,
                       inputProps: {
                         autoComplete: 'off',
                       },
                       style: {
-                        color: prop.value + '',
                         minWidth: Property.inputMinWidth,
                         width: this.props.width,
                       },
                       error: !!prop.errorMsg,
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            style={{
+                              color: prop.value + '',
+                            }}
+                            aria-label='Picked color'
+                          >
+                            <PaintbrushIcon fontSize='small' />
+                          </IconButton>
+                        </InputAdornment>
+                      ),        
                     }}
                   />
                 </div>

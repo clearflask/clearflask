@@ -97,7 +97,7 @@ export default class Templater {
   }
 
   styleWhite() {
-    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#FFF');
+    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set('#ffffff');
   }
 
   styleDark() {
