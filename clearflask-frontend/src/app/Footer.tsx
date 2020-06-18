@@ -1,12 +1,11 @@
 import { Divider } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
-import PoweredBy from './PoweredBy';
 import TemplateLiquid from './comps/TemplateLiquid';
+import PoweredBy from './PoweredBy';
 
 const styles = (theme: Theme) => createStyles({
   footerSpacing: {

@@ -2,17 +2,16 @@ import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
-import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import setTitle from '../common/util/titleUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';
+import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
-import TemplateLiquid from './comps/TemplateLiquid';
 
 const styles = (theme: Theme) => createStyles({
   page: {

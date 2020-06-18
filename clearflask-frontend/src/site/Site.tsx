@@ -19,6 +19,7 @@ import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
 import PricingPage from './PricingPage';
 import PrioritizePage from './PrioritizePage';
+import ProductPage from './ProductPage';
 import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
 const styles = (theme: Theme) => createStyles({
@@ -262,6 +263,10 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             <Route exact path={`/case-study`} component={props => {
               setTitle('Case Studies');
               return (<CaseStudyPage />);
+            }} />
+            <Route exact path={`/product`} component={props => {
+              setTitle('Product');
+              return (<ProductPage />);
             }} />
             <Route exact path={`/`} component={props => {
               setTitle();

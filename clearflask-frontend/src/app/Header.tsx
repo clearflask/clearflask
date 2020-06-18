@@ -4,7 +4,6 @@ import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import React, { Component } from 'react';
-import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
@@ -15,8 +14,8 @@ import InViewObserver from '../common/InViewObserver';
 import notEmpty from '../common/util/arrayUtil';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
-import NotificationBadge from './NotificationBadge';
 import TemplateLiquid from './comps/TemplateLiquid';
+import NotificationBadge from './NotificationBadge';
 
 const styles = (theme: Theme) => createStyles({
   indicator: {

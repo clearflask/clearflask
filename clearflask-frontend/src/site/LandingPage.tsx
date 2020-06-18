@@ -1,7 +1,9 @@
 import { Container } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import * as Client from '../api/client';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
+import { Device } from '../common/DeviceContainer';
 import { description as collectDescription, title as collectTitle } from './CollectPage';
 import { transparencyDescription, transparencyTitle } from './EngagePage';
 import Block from './landing/Block';
@@ -9,6 +11,11 @@ import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
+import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import OnboardingDemo from './landing/OnboardingDemo';
+import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
+import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
+import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import { prioritizationDescription, prioritizationTitle } from './PrioritizePage';
 
 const styles = (theme: Theme) => createStyles({
@@ -20,13 +27,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         {this.renderHero()}
-        {/* {this.renderDemo()} */}
         {this.renderCollectFeedback()}
-        {this.renderPrioritization(true)}
+        {this.renderPrioritization()}
         {this.renderEngagement()}
-        {this.renderCustomize(true)}
+        {this.renderCustomize()}
         {this.renderCaseStudies()}
-        {this.renderSales(true)}
+        {this.renderSales()}
       </React.Fragment>
     );
   }
@@ -65,6 +71,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
+  onboardingDemoRef: React.RefObject<any> = React.createRef();
   renderCollectFeedback(mirror?: boolean) {
     return (
       <React.Fragment>
@@ -73,7 +80,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           description={collectDescription}
           mirror={mirror}
           buttonTitle='Learn more'
-          buttonLink='/collect'
+          buttonLink='/product#collect'
           displayAlign='flex-start'
           demoFixedHeight={400}
           initialSubPath='/embed/demo'
@@ -93,6 +100,49 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           }}
         />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={0}>
+          <Demo
+            variant='content'
+            type='column'
+            title='Maximize conversion through frictionless onboarding'
+            description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
+            initialSubPath='/embed/demo'
+            // demoFixedWidth={420}
+            template={templater => {
+              setInitSignupMethodsTemplate(templater);
+              templater.styleWhite();
+            }}
+            controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+            demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
+          />
+          <Demo
+            variant='content'
+            type='column'
+            title='Powerful search reduces duplicate submissions'
+            description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
+            initialSubPath='/embed/demo'
+            scale={0.7}
+            template={templater => {
+              templater.demo();
+              templater.demoExplorer({
+                search: { limit: 4 },
+                allowCreate: undefined,
+                allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+              }, undefined, true);
+            }}
+            mock={mocker => mocker.demoExplorer()}
+            settings={{
+              demoBlurryShadow: true,
+              demoSearchAnimate: [{
+                term: 'Trending',
+                update: { sortBy: Client.IdeaSearchSortByEnum.Trending },
+              }, {
+                term: 'Dark Mode',
+                update: { searchText: 'Dark Mode' },
+              }],
+            }}
+          />
+        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -105,7 +155,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           description={prioritizationDescription}
           mirror={mirror}
           buttonTitle='See the credit system'
-          buttonLink='/prioritize'
+          buttonLink='/product#prioritize'
           demoFixedHeight={300}
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('all')}
@@ -114,6 +164,62 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             demoFlashPostVotingControls: true,
           }}
         />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
+          <Demo
+            variant='content'
+            type='column'
+            title='Keep it simple with voting'
+            description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('vote')}
+            controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+            mock={mocker => mocker.demoPrioritization()}
+            settings={{
+              demoVotingExpressionsAnimate: [
+                { type: 'vote', upvote: true },
+              ],
+            }}
+            demoFixedHeight={150}
+            containerPortal
+          />
+          <Demo
+            variant='content'
+            type='column'
+            title='Expressions for a wider range of feedback'
+            description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('express')}
+            controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
+            mock={mocker => mocker.demoPrioritization()}
+            settings={{
+              demoVotingExpressionsAnimate: [
+                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
+                { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+              ],
+            }}
+            demoFixedHeight={420}
+            containerPortal
+          />
+          <Demo
+            variant='content'
+            type='column'
+            title='Credit system for advanced prioritization'
+            description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
+            initialSubPath='/embed/demo'
+            template={templater => templater.demoPrioritization('fund')}
+            controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+            mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={450}
+            containerPortal
+            settings={{
+              demoFundingControlAnimate: [
+                { index: 0, fundDiff: 20 },
+                { index: 1, fundDiff: -30 },
+                { index: 2, fundDiff: 20 },
+              ],
+            }}
+          />
+        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -153,7 +259,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={transparencyTitle}
           description={transparencyDescription}
           buttonTitle='See how'
-          buttonLink='/engage'
+          buttonLink='/product#engage'
           mirror={mirror}
           initialSubPath='/embed/demo'
           demoFixedHeight={300}
