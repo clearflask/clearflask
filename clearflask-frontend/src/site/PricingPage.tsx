@@ -26,9 +26,6 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-const T = true;
-const F = false;
-
 interface Props {
   history: History;
 }
@@ -115,8 +112,8 @@ class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   mapFeaturesTableValues(values: string[]): (string | boolean)[] {
     return values.map(value => {
       switch (value) {
-        case 'Yes': return T;
-        case 'No': return F;
+        case 'Yes': return true;
+        case 'No': return false;
         default: return value;
       }
     });
@@ -169,7 +166,7 @@ const FeatureListItem = (props: {
       </TableCell>
       {props.planContents.map((content, index) => (
         <TableCell key={index}>
-          {content === T
+          {content === true
             ? (<CheckIcon fontSize='inherit' />)
             : content}
         </TableCell>

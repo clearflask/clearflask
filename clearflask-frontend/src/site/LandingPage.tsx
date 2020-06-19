@@ -57,8 +57,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         {this.renderCollectFeedback()}
         {this.renderPrioritization()}
         {this.renderEngagement()}
-        {this.renderCustomize()}
         {this.renderCaseStudies()}
+        {this.renderCustomize()}
         {this.renderSales()}
       </React.Fragment>
     );
@@ -99,13 +99,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   }
 
   onboardingDemoRef: React.RefObject<any> = React.createRef();
-  renderCollectFeedback(mirror?: boolean) {
+  renderCollectFeedback() {
     return (
       <React.Fragment>
         <Demo
           title={collectTitle}
           description={collectDescription}
-          mirror={mirror}
           displayAlign='flex-start'
           demoFixedHeight={400}
           initialSubPath='/embed/demo'
@@ -125,14 +124,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           }}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={120}>
+        <HorizontalPanels wrapBelow='lg' maxWidth='xl' maxContentWidth='sm' staggerHeight={120}>
           <Demo
             variant='content'
             type='column'
             title='Maximize conversion through frictionless onboarding'
             description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
             initialSubPath='/embed/demo'
-            // demoFixedWidth={420}
+            demoFixedWidth={420}
             template={templater => {
               setInitSignupMethodsTemplate(templater);
               templater.styleWhite();
@@ -177,13 +176,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderPrioritization(mirror?: boolean) {
+  renderPrioritization() {
     return (
       <React.Fragment>
         <Demo
-          title={prioritizationTitle}
-          description={prioritizationDescription}
-          mirror={mirror}
+          title='Give your valuable customers a proportionate voice'
+          description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
+          mirror
           buttonTitle='See the credit system'
           buttonLink='/product#prioritize'
           demoFixedHeight={300}
@@ -194,23 +193,25 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             demoFlashPostVotingControls: true,
           }}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
-          <Demo
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={-200}>
+        <Demo
             variant='content'
             type='column'
-            title='Keep it simple with voting'
-            description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
+            title='Credit system for advanced prioritization'
+            description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
             initialSubPath='/embed/demo'
-            template={templater => templater.demoPrioritization('vote')}
-            controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+            template={templater => templater.demoPrioritization('fund')}
+            controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={450}
+            containerPortal
             settings={{
-              demoVotingExpressionsAnimate: [
-                { type: 'vote', upvote: true },
+              demoFundingControlAnimate: [
+                { index: 0, fundDiff: 20 },
+                { index: 1, fundDiff: -30 },
+                { index: 2, fundDiff: 20 },
               ],
             }}
-            demoFixedHeight={150}
-            containerPortal
           />
           <Demo
             variant='content'
@@ -233,27 +234,26 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           <Demo
             variant='content'
             type='column'
-            title='Credit system for advanced prioritization'
-            description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
+            title='Keep it simple with voting'
+            description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
             initialSubPath='/embed/demo'
-            template={templater => templater.demoPrioritization('fund')}
-            controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+            template={templater => templater.demoPrioritization('vote')}
+            controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
-            demoFixedHeight={450}
-            containerPortal
             settings={{
-              demoFundingControlAnimate: [
-                { index: 0, fundDiff: 20 },
-                { index: 1, fundDiff: -30 },
-                { index: 2, fundDiff: 20 },
+              demoVotingExpressionsAnimate: [
+                { type: 'vote', upvote: true },
               ],
             }}
+            demoFixedHeight={150}
+            containerPortal
           />
         </HorizontalPanels>
         <Block
           // variant='content'
           title='Integrate with your credit source'
           description='When a customer completes a purchase, issue them credit.'
+          alignItems='center'
           demo={(
             <div className={this.props.classes.pointsContainer}>
               <div className={this.props.classes.point}>
@@ -328,18 +328,19 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
-  renderEngagement(mirror?: boolean) {
+  renderEngagement() {
     return (
       <React.Fragment>
         <Demo
-          title={transparencyTitle}
-          description={transparencyDescription}
-          buttonTitle='See how'
-          buttonLink='/product#engage'
-          mirror={mirror}
+          title='Build a community around your product'
+          description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
+          alignItems='center'
           initialSubPath='/embed/demo'
-          // scale={0.5}
-          template={templater => templater.demoCategory()}
+          // scale={0.7}
+          template={templater => {
+            templater.demoCategory();
+            templater.styleWhite();
+          }}
           mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
             .then(() => mocker.mockLoggedIn())}
           demo={project => (
@@ -357,59 +358,74 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             </Provider>
           )}
         />
-      {/* // TODO add example roadmaps of:
-      // - Software development workflow: Planned, In Progress, Recently completed
-      // - Crowdfunding: Gathering feedback, Funding, Funded
-      // - Custom (language courses): Gaining traction, Beta, Public
-      // - Custom (Game ideas): Semi-finals, Selected */}
-      <Demo
-        title='Show off your progress with a roadmap'
-        description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
-        mirror={mirror}
-        initialSubPath='/embed/demo'
-        scale={0.7}
-        type='largeDemo'
-        template={templater => templater.demoBoardPreset('development')}
-        mock={mocker => mocker.demoBoard([
-          { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
-          { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
-          { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
-          { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
-          { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
-          { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
-          { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
-        ])}
-        settings={{
-          demoBlurryShadow: true,
-        }}
-        controls={project => (<RoadmapControls templater={project.templater} />)}
-      />
+        {/* // TODO add example roadmaps of:
+        // - Software development workflow: Planned, In Progress, Recently completed
+        // - Crowdfunding: Gathering feedback, Funding, Funded
+        // - Custom (language courses): Gaining traction, Beta, Public
+        // - Custom (Game ideas): Semi-finals, Selected */}
+        <Demo
+          title='Show off your progress'
+          description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
+          mirror
+          initialSubPath='/embed/demo'
+          displayAlign='flex-end'
+          // scale={0.7}
+          type='largeDemo'
+          template={templater => templater.demoBoardPreset('development')}
+          mock={mocker => mocker.demoBoard([
+            { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
+            { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
+            { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
+            { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
+            { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+            { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
+            { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
+          ])}
+          settings={{
+            demoBlurryShadow: true,
+          }}
+          controls={project => (<RoadmapControls templater={project.templater} />)}
+        />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
+          <BlockContent
+            variant='content'
+            title='Activate users waiting for a particular feature'
+            description='Notifications blah blah asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          />
+          <BlockContent
+            variant='content'
+            title='Respond to suggestions to let your users know'
+            description='Suggestion Admin Reply and Status change asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          />
+          <BlockContent
+            variant='content'
+            title='Get involved in community discussions'
+            description='Threaded comments, forums blah blah ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+          />
+        </HorizontalPanels>
       </React.Fragment>
     );
   }
 
-  renderCustomize(mirror?: boolean) {
+  renderCustomize() {
     return (
       <React.Fragment>
         <Block
           title='Make it your own'
           description='Custom workflows, prioritization and branding to fit your needs.'
-          mirror={mirror}
-          buttonTitle='Explore options'
-          buttonLink='/customize'
         />
       </React.Fragment>
     );
   }
 
-  renderSales(mirror?: boolean) {
+  renderSales() {
     return (
       <Block
         title='Every customer is different'
         description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
         buttonTitle='Get in touch'
         buttonLink='/contact/sales'
-        mirror={mirror}
+        mirror
       />
     );
   }

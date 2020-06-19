@@ -104,9 +104,9 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
             value={SignupMethods.Mobile}>Mobile</ToggleButton> */}
           <ToggleButton
             disabled={this.state.device === Device.Mobile}
-            value={SignupMethods.Web}>Web Push</ToggleButton>
+            value={SignupMethods.Web}>Web</ToggleButton>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
-          <ToggleButton value={SignupMethods.Anonymous}>Anonymous</ToggleButton>
+          <ToggleButton value={SignupMethods.Anonymous}>Anon</ToggleButton>
           {/* TODO add SSO to demo <ToggleButton value={SignupMethods.SSO}>Anonymous</ToggleButton> */}
         </ToggleButtonGroup>
         <Typography variant='caption' display='block'>Display name</Typography>
@@ -123,8 +123,8 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
           }}
         >
           <ToggleButton value={Client.AccountFieldsDisplayNameEnum.None}>None</ToggleButton>
-          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Optional</ToggleButton>
-          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Required</ToggleButton>
+          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Optional}>Opt</ToggleButton>
+          <ToggleButton value={Client.AccountFieldsDisplayNameEnum.Required}>Req</ToggleButton>
         </ToggleButtonGroup>
       </div>
     );

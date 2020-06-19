@@ -77,6 +77,7 @@ export interface Props extends BlockContentProps {
   edgeType?: 'shadow' | 'outline';
   edgeSpacing?: boolean;
   displayAlign?: GridItemsAlignment;
+  alignItems?: GridItemsAlignment;
 }
 class Block extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
 
@@ -165,7 +166,8 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}
-          alignItems={(this.props.imagePath || isHero) ? 'center' : 'flex-end'}
+          alignItems={this.props.alignItems !== undefined ? this.props.alignItems
+            : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
           justify='center'
         >
           <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
