@@ -1,4 +1,4 @@
-import { FormControlLabel, Radio, RadioGroup } from '@material-ui/core';
+import { FormControlLabel, Radio, RadioGroup, FormHelperText } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import Templater from '../../common/config/configTemplater';
@@ -32,9 +32,12 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
         value={this.state.fundingType}
         onChange={this.handleChangeFundingType.bind(this)}
       >
-        <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
-        <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
-        <FormControlLabel value='beer' control={<Radio color='primary' />} label="Custom" />
+        <FormControlLabel value='currency' control={<Radio color='primary' />}
+          label={<FormHelperText component='span'>Currency</FormHelperText>} />
+        <FormControlLabel value='time' control={<Radio color='primary' />}
+          label={<FormHelperText component='span'>Development time</FormHelperText>} />
+        <FormControlLabel value='beer' control={<Radio color='primary' />}
+          label={<FormHelperText component='span'>Customize</FormHelperText>} />
       </RadioGroup>
     );
   }

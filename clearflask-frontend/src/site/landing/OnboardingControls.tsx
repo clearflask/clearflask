@@ -107,6 +107,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
             value={SignupMethods.Web}>Web Push</ToggleButton>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
           <ToggleButton value={SignupMethods.Anonymous}>Anonymous</ToggleButton>
+          {/* TODO add SSO to demo <ToggleButton value={SignupMethods.SSO}>Anonymous</ToggleButton> */}
         </ToggleButtonGroup>
         <Typography variant='caption' display='block'>Display name</Typography>
         <ToggleButtonGroup

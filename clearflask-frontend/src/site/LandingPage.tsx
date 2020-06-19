@@ -1,4 +1,4 @@
-import { Container } from '@material-ui/core';
+import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import * as Client from '../api/client';
@@ -17,8 +17,35 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import { prioritizationDescription, prioritizationTitle } from './PrioritizePage';
+import PaymentIcon from '@material-ui/icons/AccountBalance';
+/** Alternative: FreeBreakfast */
+import DonationIcon from '@material-ui/icons/FavoriteBorder';
+import ApiIcon from '@material-ui/icons/Code';
+import RoadmapControls from './landing/RoadmapControls';
+import { Provider } from 'react-redux';
+import CommentList from '../app/comps/CommentList';
+import AppThemeProvider from '../app/AppThemeProvider';
 
 const styles = (theme: Theme) => createStyles({
+  marker: {
+    color: theme.palette.text.hint,
+  },
+  pointsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  point: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    margin: theme.spacing(2),
+  },
+  pointIcon: {
+    fontSize: '2em',
+    margin: theme.spacing(0, 4, 0, 0),
+  },
 });
 
 class LandingPage extends Component<WithStyles<typeof styles, true>> {
@@ -79,8 +106,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           title={collectTitle}
           description={collectDescription}
           mirror={mirror}
-          buttonTitle='Learn more'
-          buttonLink='/product#collect'
           displayAlign='flex-start'
           demoFixedHeight={400}
           initialSubPath='/embed/demo'
@@ -100,7 +125,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             },
           }}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={0}>
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={120}>
           <Demo
             variant='content'
             type='column'
@@ -141,6 +166,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
                 update: { searchText: 'Dark Mode' },
               }],
             }}
+          />
+          <BlockContent
+            variant='content'
+            title='Capture feedback from internal teams or on-behalf of other users'
+            description='Provide your sales, support, engineering team to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
           />
         </HorizontalPanels>
       </React.Fragment>
@@ -220,6 +250,52 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             }}
           />
         </HorizontalPanels>
+        <Block
+          // variant='content'
+          title='Integrate with your credit source'
+          description='When a customer completes a purchase, issue them credit.'
+          demo={(
+            <div className={this.props.classes.pointsContainer}>
+              <div className={this.props.classes.point}>
+                <PaymentIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                <div>
+                  <Typography variant='h6'>
+                    Payment provider
+                    &nbsp;
+                    <Typography variant='caption' className={this.props.classes.marker}>BETA</Typography>
+                  </Typography>
+                  <Typography variant='body1'>
+                    Stripe, Paypal, Apple Store, Play Store
+                  </Typography>
+                </div>
+              </div>
+              <div className={this.props.classes.point}>
+                <DonationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                <div>
+                  <Typography variant='h6'>
+                    Donation Framework
+                    &nbsp;
+                    <Typography variant='caption' className={this.props.classes.marker}>BETA</Typography>
+                  </Typography>
+                  <Typography variant='body1'>
+                    Patreon, OpenCollective
+                  </Typography>
+                </div>
+              </div>
+              <div className={this.props.classes.point}>
+                <ApiIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                <div>
+                  <Typography variant='h6'>
+                    Custom source
+                  </Typography>
+                  <Typography variant='body1'>
+                    Integrate via our API
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          )}
+        />
       </React.Fragment>
     );
   }
@@ -262,22 +338,52 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           buttonLink='/product#engage'
           mirror={mirror}
           initialSubPath='/embed/demo'
-          demoFixedHeight={300}
-          scale={0.7}
-          template={templater => templater.demoBoardPreset('development')}
-          mock={mocker => mocker.demoBoard([
-            { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
-            { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
-            { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
-            { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
-            { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
-            { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
-            { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
-          ])}
-          settings={{
-            demoBlurryShadow: true,
-          }}
+          // scale={0.5}
+          template={templater => templater.demoCategory()}
+          mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
+            .then(() => mocker.mockLoggedIn())}
+          demo={project => (
+            <Provider store={project.server.getStore()}>
+              <AppThemeProvider isInsideContainer>
+              <CommentList
+                server={project.server}
+                ideaId='ideaId'
+                expectedCommentCount={1}
+                logIn={() => Promise.resolve()}
+                newCommentsAllowed
+                loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+              />
+              </AppThemeProvider>
+            </Provider>
+          )}
         />
+      {/* // TODO add example roadmaps of:
+      // - Software development workflow: Planned, In Progress, Recently completed
+      // - Crowdfunding: Gathering feedback, Funding, Funded
+      // - Custom (language courses): Gaining traction, Beta, Public
+      // - Custom (Game ideas): Semi-finals, Selected */}
+      <Demo
+        title='Show off your progress with a roadmap'
+        description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
+        mirror={mirror}
+        initialSubPath='/embed/demo'
+        scale={0.7}
+        type='largeDemo'
+        template={templater => templater.demoBoardPreset('development')}
+        mock={mocker => mocker.demoBoard([
+          { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
+          { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
+          { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
+          { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
+          { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+          { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
+          { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
+        ])}
+        settings={{
+          demoBlurryShadow: true,
+        }}
+        controls={project => (<RoadmapControls templater={project.templater} />)}
+      />
       </React.Fragment>
     );
   }
