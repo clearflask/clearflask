@@ -8,7 +8,9 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
+import RichEditor from '../../common/RichEditor';
 import debounce from '../../common/util/debounce';
+import { textToRaw } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -286,7 +288,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
     return (
       <div className={this.props.classes.createFormFields}>
-        <TextField
+        <RichEditor
           id='createDescription'
           disabled={this.state.newItemIsSubmitting}
           className={this.props.classes.createFormField}
@@ -445,14 +447,15 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         })) return;
       }
 
+      var currentDescription = '';
       if (description !== undefined) {
         if (await animate({ sleepInMs: 100 })) return;
         await new Promise(resolve => setTimeout(resolve, 100));
         for (var j = 0; j < description.length; j++) {
-          const character = description[j];
+          currentDescription += description[j];
           if (await animate({
             sleepInMs: 10 + Math.random() * 30,
-            setState: { newItemDescription: (this.state.newItemDescription || '') + character },
+            setState: { newItemDescription: textToRaw(currentDescription) },
           })) return;
         }
       }
@@ -460,10 +463,12 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       if (await animate({ sleepInMs: 500 })) return;
 
       if (description !== undefined) {
-        while (this.state.newItemDescription !== undefined && this.state.newItemDescription.length !== 0) {
+        currentDescription = description;
+        while (currentDescription.length > 0) {
+          currentDescription = currentDescription.substr(0, currentDescription.length - 1);
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: this.state.newItemDescription.substr(0, this.state.newItemDescription.length - 1) },
+            setState: { newItemDescription: textToRaw(currentDescription) },
           })) return;
         }
 

@@ -9,6 +9,7 @@ import React, { Component } from 'react';
 import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';
 import EmojiPicker from '../../EmojiPicker';
 import Overlay from '../../Overlay';
+import RichEditor from '../../RichEditor';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
@@ -137,8 +138,10 @@ export default class Property extends Component<Props> {
         } else {
           fieldType = 'number';
         }
+        const TextFieldCmpt = prop.subType === ConfigEditor.PropSubType.Rich
+          ? RichEditor : TextField;
         propertySetter = (
-          <TextField
+          <TextFieldCmpt
             id={prop.pathStr}
             label={!this.props.bare && name}
             value={prop.value || ''}

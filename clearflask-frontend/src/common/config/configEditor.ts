@@ -96,6 +96,7 @@ export enum PropSubType {
   Emoji = 'emoji',
   KeyGen = 'keygen',
   Multiline = 'multiline',
+  Rich = 'rich',
 }
 export interface xCfPropLink {
   /** Path to array */

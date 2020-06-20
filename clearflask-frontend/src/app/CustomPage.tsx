@@ -1,10 +1,10 @@
-import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
+import RichViewer from '../common/RichViewer';
 import setTitle from '../common/util/titleUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';
@@ -171,18 +171,29 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         );
       }
 
+      var top;
+      if (this.props.page.description) {
+        top = (
+          <div className={this.props.classes.spacing}>
+            <RichViewer raw={this.props.page.description} />
+          </div>
+        );
+      }
+
+      if (this.props.page.title) {
+        top = (
+          <DividerCorner
+            height='90%'
+            title={this.props.page.title}
+          >
+            {top}
+          </DividerCorner>
+        );
+      }
+
       page = (
         <div className={this.props.classes.page}>
-          {this.props.page && (this.props.page.title || this.props.page.description) && (
-            <DividerCorner
-              height='90%'
-              title={this.props.page.title}
-            >
-              {this.props.page.description !== undefined && (
-                <Typography className={this.props.classes.spacing} variant='body1' component='p'>{this.props.page.description}</Typography>
-              )}
-            </DividerCorner>
-          )}
+          {top}
           {panelsCmpt}
           {boardCmpt}
           {explorerCmpt}

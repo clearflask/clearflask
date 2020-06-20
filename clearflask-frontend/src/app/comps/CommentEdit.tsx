@@ -1,8 +1,9 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, TextField } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
+import RichEditor from '../../common/RichEditor';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const styles = (theme: Theme) => createStyles({
@@ -42,7 +43,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           <DialogContent>
             <Grid container alignItems='baseline'>
               <Grid item xs={12} className={this.props.classes.row}>
-                <TextField
+                <RichEditor
                   disabled={this.state.isSubmitting}
                   label='Content'
                   fullWidth

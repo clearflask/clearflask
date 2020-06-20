@@ -31,7 +31,6 @@ class Expander extends Component<Props> {
   parentRect: DOMRect | ClientRect | undefined;
   contentRect: DOMRect | ClientRect | undefined;
 
-
   constructor(props: Props) {
     super(props);
     this.prevExpandValue = props.expand;
@@ -45,7 +44,7 @@ class Expander extends Component<Props> {
       if (this.props.expand) {
         this.parentRect = this.contentRef.current && this.contentRef.current.offsetParent && this.contentRef.current.offsetParent.getBoundingClientRect() || undefined;
         this.contentRect = this.contentRef.current && this.contentRef.current.getBoundingClientRect() || undefined;
-        
+
         this.props.onExpand && this.props.onExpand();
       } else {
         this.props.onCollapse && this.props.onCollapse();

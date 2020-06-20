@@ -1,8 +1,9 @@
-import { Container, Grid } from '@material-ui/core';
+import { Container, Grid, Paper } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MoneyIcon from '@material-ui/icons/Money';
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import * as Client from '../api/client';
+import RichEditor from '../common/RichEditor';
 import Block from './landing/Block';
 import Demo from './landing/Demo';
 import Feature from './landing/Feature';
@@ -29,6 +30,7 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
         {this.renderCreditIntegration()}
         {this.renderHowDistributeCredits()}
         {this.renderCreditUseCases()}
+        {this.renderMarkdownDemo()}
       </React.Fragment>
     );
   }
@@ -189,6 +191,24 @@ class PrioritizePage extends Component<WithStyles<typeof styles, true>> {
       />
     );
   }
+
+  renderMarkdownDemo() {
+    return (
+      <RichEditorDemo />
+    );
+  }
 }
+
+const RichEditorDemo = () => {
+  const [text, setText] = useState<string | undefined>('test1');
+
+  return (
+    <React.Fragment>
+      test
+      <RichEditor defaultValue={text} onChange={e => setText(e.target.value)} />
+      <Paper><pre>{JSON.stringify(text)}</pre></Paper>
+    </React.Fragment>
+  );
+};
 
 export default withStyles(styles, { withTheme: true })(PrioritizePage);

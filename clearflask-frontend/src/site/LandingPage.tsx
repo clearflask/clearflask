@@ -1,11 +1,17 @@
 import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import PaymentIcon from '@material-ui/icons/AccountBalance';
+import ApiIcon from '@material-ui/icons/Code';
+/** Alternative: FreeBreakfast */
+import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import React, { Component } from 'react';
+import { Provider } from 'react-redux';
 import * as Client from '../api/client';
+import AppThemeProvider from '../app/AppThemeProvider';
+import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import { Device } from '../common/DeviceContainer';
 import { description as collectDescription, title as collectTitle } from './CollectPage';
-import { transparencyDescription, transparencyTitle } from './EngagePage';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -16,15 +22,7 @@ import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
-import { prioritizationDescription, prioritizationTitle } from './PrioritizePage';
-import PaymentIcon from '@material-ui/icons/AccountBalance';
-/** Alternative: FreeBreakfast */
-import DonationIcon from '@material-ui/icons/FavoriteBorder';
-import ApiIcon from '@material-ui/icons/Code';
 import RoadmapControls from './landing/RoadmapControls';
-import { Provider } from 'react-redux';
-import CommentList from '../app/comps/CommentList';
-import AppThemeProvider from '../app/AppThemeProvider';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -168,8 +166,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           />
           <BlockContent
             variant='content'
-            title='Capture feedback from internal teams or on-behalf of other users'
-            description='Provide your sales, support, engineering team to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
+            title='Capture feedback from internal teams or on-behalf of users'
+            description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
           />
         </HorizontalPanels>
       </React.Fragment>
@@ -194,7 +192,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           }}
         />
         <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={-200}>
-        <Demo
+          <Demo
             variant='content'
             type='column'
             title='Credit system for advanced prioritization'
@@ -251,7 +249,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
         </HorizontalPanels>
         <Block
           // variant='content'
-          title='Integrate with your credit source'
+          title='Give credits to users based on their contribution'
           description='When a customer completes a purchase, issue them credit.'
           alignItems='center'
           demo={(
@@ -346,14 +344,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           demo={project => (
             <Provider store={project.server.getStore()}>
               <AppThemeProvider isInsideContainer>
-              <CommentList
-                server={project.server}
-                ideaId='ideaId'
-                expectedCommentCount={1}
-                logIn={() => Promise.resolve()}
-                newCommentsAllowed
-                loggedInUser={project.server.getStore().getState().users.loggedIn.user}
-              />
+                <CommentList
+                  server={project.server}
+                  ideaId='ideaId'
+                  expectedCommentCount={1}
+                  logIn={() => Promise.resolve()}
+                  newCommentsAllowed
+                  loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+                />
               </AppThemeProvider>
             </Provider>
           )}

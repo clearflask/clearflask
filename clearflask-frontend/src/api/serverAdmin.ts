@@ -8,6 +8,7 @@ import * as Client from './client';
 import { Server, Status } from './server';
 import ServerMock from './serverMock';
 
+const demoUpdateDelay = 300;
 type ErrorSubscribers = ((msg: string, isUserFacing: boolean) => void)[];
 type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 
@@ -165,7 +166,7 @@ export default class ServerAdmin {
       const server = new Server(projectId, undefined, this.apiOverride, versionedConfig);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
-      server.subscribeToChanges(editor, 250);
+      server.subscribeToChanges(editor, demoUpdateDelay);
       const subscribers: (() => void)[] = [];
       editor.subscribe(() => {
         if (!hasUnsavedChanges) {

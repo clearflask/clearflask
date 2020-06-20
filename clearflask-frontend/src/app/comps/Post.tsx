@@ -13,7 +13,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import TimeAgo from 'react-timeago';
-import Truncate from 'react-truncate-markup';
+import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
 import ClosablePopover from '../../common/ClosablePopover';
@@ -21,8 +21,12 @@ import EmojiPicker from '../../common/EmojiPicker';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
+import RichViewer from '../../common/RichViewer';
+import TruncateFade from '../../common/Truncate';
 import notEmpty from '../../common/util/arrayUtil';
 import { createMutableRef } from '../../common/util/refUtil';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
+import setTitle from '../../common/util/titleUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
@@ -33,8 +37,6 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
-import setTitle from '../../common/util/titleUtil';
-import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 export type PostVariant = 'list' | 'page';
 
@@ -430,12 +432,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           }}
           onExpand={() => {
             this.priorToExpandDocumentTitle = document.title;
-            if(this.props.idea) {
+            if (this.props.idea) {
               setTitle(truncateWithElipsis(25, this.props.idea.title), true);
             }
           }}
           onCollapse={() => {
-            if(this.priorToExpandDocumentTitle) {
+            if (this.priorToExpandDocumentTitle) {
               document.title = this.priorToExpandDocumentTitle;
               this.priorToExpandDocumentTitle = undefined;
             }
@@ -712,8 +714,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           this.props.classes.votingControl,
           !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateVoting
             : (this.state.demoFlashPostVotingControlsHovering === 'vote' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
-        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'vote'}) : undefined}
-        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'vote' }) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
       >
         <VotingControl
           className={this.props.classes.votingControl}
@@ -837,8 +839,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           this.props.classes.funding,
           !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateFunding
             : (this.state.demoFlashPostVotingControlsHovering === 'fund' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
-        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'fund'}) : undefined}
-        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'fund' }) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
       >
         <FundingBar
           fundingBarRef={this.fundingBarRef}
@@ -1016,8 +1018,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
           this.props.classes.funding,
           !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateExpressions
             : (this.state.demoFlashPostVotingControlsHovering === 'express' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
-        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: 'express'}) : undefined}
-        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({demoFlashPostVotingControlsHovering: undefined}) : undefined}
+        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'express' }) : undefined}
+        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
         style={{
           position: 'relative',
         }}
@@ -1086,7 +1088,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Typography variant='subtitle1' component={'span'} className={`${this.props.classes.title} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
-          ? (<Truncate lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></Truncate>)
+          ? (<TruncateEllipsis lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
           : this.props.idea.title}
       </Typography>
     );
@@ -1099,8 +1101,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
-          ? (<Truncate lines={this.props.display.descriptionTruncateLines}><div>{this.props.idea.description}</div></Truncate>)
-          : this.props.idea.description}
+          ? (<TruncateFade variant='body1' lines={this.props.display.descriptionTruncateLines}>
+            <div><RichViewer raw={this.props.idea.description} /></div>
+          </TruncateFade>)
+          : <RichViewer raw={this.props.idea.description} />}
       </Typography>
     );
   }
@@ -1116,7 +1120,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         </Typography>
         <Typography variant='body1' component={'span'} className={`${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
-            ? (<Truncate lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></Truncate>)
+            ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}><div>{this.props.idea.response}</div></TruncateFade>)
             : this.props.idea.response}
         </Typography>
       </div>

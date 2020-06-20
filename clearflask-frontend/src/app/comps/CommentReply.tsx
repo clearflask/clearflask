@@ -1,7 +1,8 @@
-import { Button, Collapse, TextField } from '@material-ui/core';
+import { Button, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { Server } from '../../api/server';
+import RichEditor from '../../common/RichEditor';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
 
 const styles = (theme: Theme) => createStyles({
@@ -53,7 +54,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   render() {
     return (
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
-        <TextField
+        <RichEditor
           id='createComment'
           className={`${this.props.classes.addCommentField} ${!!this.state.newCommentInput
             ? this.props.classes.addCommentFieldExpanded : this.props.classes.addCommentFieldCollapsed}`}

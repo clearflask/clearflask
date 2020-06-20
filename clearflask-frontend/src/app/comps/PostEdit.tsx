@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
+import RichEditor from '../../common/RichEditor';
 import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
@@ -152,7 +153,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 />
               </Grid>
               <Grid item xs={12} className={this.props.classes.row}>
-                <TextField
+                <RichEditor
                   disabled={this.state.isSubmitting}
                   label='Description'
                   fullWidth

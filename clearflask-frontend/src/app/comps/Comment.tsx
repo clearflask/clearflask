@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
+import RichViewer from '../../common/RichViewer';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
@@ -93,11 +94,12 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 
   renderContent() {
-    return this.props.comment && !this.props.comment.author ? (
+    if (!this.props.comment?.content) return null;
+    return !this.props.comment.author ? (
       <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
     ) : (
         <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
-          {this.props.comment && this.props.comment.content}
+          <RichViewer raw={this.props.comment.content} />
         </Typography>
       );
   }

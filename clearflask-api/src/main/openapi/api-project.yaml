@@ -393,7 +393,7 @@ components:
                 x-clearflask-prop: { order: 3, name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
                 type: string
               description:
-                x-clearflask-prop: { order: 4, name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
+                x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
                 type: string
               panels:
                 x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames:['title'] }
