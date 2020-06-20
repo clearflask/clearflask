@@ -12,6 +12,7 @@ import { convertFromRaw, convertToRaw, Editor, EditorState, RichUtils } from 'dr
 import 'draft-js/dist/Draft.css';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React from 'react';
+import StyledDraftJsEditor from './StyledDraftJsEditor';
 
 const styles = (theme: Theme) => createStyles({
   textField: {
@@ -70,8 +71,7 @@ class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap
   }
 }
 
-interface PropsDraftJs extends Omit<InputProps, 'defaultValue' | 'onChange'> {
-  defaultValue?: string;
+interface PropsDraftJs extends Omit<InputProps, 'onChange'> {
   onChange?: (e) => void;
 }
 interface StateDraftJs {
@@ -85,12 +85,12 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
   constructor(props) {
     super(props);
 
-    this.value = props.defaultValue;
+    this.value = props.value || props.defaultValue;
 
     var recoveredEditorState: EditorState | undefined = undefined;
-    if (props.defaultValue !== undefined) {
+    if (this.value !== undefined) {
       try {
-        recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(props.defaultValue)));
+        recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(this.value)));
       } catch (er) {
         props.enqueueSnackbar('Some content is corrupted and could not be displayed', {
           variant: 'warning',
@@ -125,9 +125,9 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
         alignItems: 'stretch',
         width: '100%',
       }}>
-        <Editor
+        <StyledDraftJsEditor
           {...otherInputProps as any}
-          ref={this.editorRef}
+          editorRef={this.editorRef}
           editorState={this.state.editorState}
           onChange={newEditorState => {
             const currentContent = newEditorState.getCurrentContent();

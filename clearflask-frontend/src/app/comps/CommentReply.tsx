@@ -14,12 +14,7 @@ const styles = (theme: Theme) => createStyles({
   },
   addCommentField: {
     transition: theme.transitions.create('width'),
-  },
-  addCommentFieldCollapsed: {
-    width: 73,
-  },
-  addCommentFieldExpanded: {
-    width: 250,
+    width: '100%',
   },
   addCommentSubmitButton: {
   },
@@ -56,8 +51,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
         <RichEditor
           id='createComment'
-          className={`${this.props.classes.addCommentField} ${!!this.state.newCommentInput
-            ? this.props.classes.addCommentFieldExpanded : this.props.classes.addCommentFieldCollapsed}`}
+          className={this.props.classes.addCommentField}
           label='Comment'
           value={this.state.newCommentInput || ''}
           onChange={e => this.setState({ newCommentInput: e.target.value })}

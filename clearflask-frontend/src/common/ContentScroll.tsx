@@ -16,13 +16,12 @@ interface Props {
   className?: string;
   isVertical?: boolean;
   side?: Side;
-  isPaper?: boolean;
+  backgroundColor?: string;
 }
 
 const radialSize = 15;
 
-export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, isPaper: boolean = false): React.CSSProperties => {
-  const backgroundColor = isPaper ? theme.palette.background.paper : theme.palette.background.default;
+export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): React.CSSProperties => {
   var startHor;
   var startVer;
   var endHor;
@@ -86,7 +85,7 @@ class ContentScroll extends React.Component<Props & WithStyles<typeof styles, tr
     return (
       <div className={this.props.className} style={{
         ...(this.props.style || {}),
-        ...(contentScrollApplyStyles(this.props.theme, this.props.side, this.props.isVertical, this.props.isPaper)),
+        ...(contentScrollApplyStyles(this.props.theme, this.props.side, this.props.isVertical, this.props.backgroundColor)),
       }}>
         {this.props.children}
       </div>

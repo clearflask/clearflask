@@ -10,7 +10,7 @@ import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/serve
 import InViewObserver from '../../common/InViewObserver';
 import RichEditor from '../../common/RichEditor';
 import debounce from '../../common/util/debounce';
-import { textToRaw } from '../../common/util/draftJsUtil';
+import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -97,7 +97,7 @@ interface State {
 class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
-  readonly updateSearchText: (title?: string, desc?: string) => void;
+  readonly updateSearchText: (title?: string, descRaw?: string) => void;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
 
@@ -105,9 +105,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     super(props);
     this.state = {};
     this.updateSearchText = debounce(
-      (title?: string, desc?: string) => this.setState({
+      (title?: string, descRaw?: string) => this.setState({
         newItemSearchText:
-          `${title || ''} ${desc || ''}`
+          `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`
       }),
       1000);
   }
@@ -260,7 +260,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
-          createSize={this.props.explorer.allowCreate ? (createShown ? 250 : 116) : 0}
+          createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
           createVisible={createVisible}
           createCollapsible={createCollapsible}

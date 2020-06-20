@@ -1,15 +1,13 @@
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { convertFromRaw, Editor, EditorState } from 'draft-js';
+import { convertFromRaw, EditorState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React from 'react';
 import ErrorMsg from '../app/ErrorMsg';
+import StyledDraftJsEditor from './StyledDraftJsEditor';
 
-const styles = (theme: Theme) => createStyles({
-});
 interface Props {
   raw: string;
 }
-class RichViewer extends React.Component<Props & WithStyles<typeof styles, true>> {
+class RichViewer extends React.Component<Props> {
   render() {
     var recoveredEditorState: EditorState | undefined = undefined;
     try {
@@ -22,7 +20,7 @@ class RichViewer extends React.Component<Props & WithStyles<typeof styles, true>
     }
 
     return (
-      <Editor
+      <StyledDraftJsEditor
         editorState={recoveredEditorState}
         onChange={() => { }}
         readOnly
@@ -31,4 +29,4 @@ class RichViewer extends React.Component<Props & WithStyles<typeof styles, true>
   }
 }
 
-export default withStyles(styles, { withTheme: true })(RichViewer);
+export default RichViewer;
