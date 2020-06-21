@@ -247,7 +247,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("authorUserId", orNull(comment.getAuthorUserId()))
                                 .put("created", comment.getCreated().getEpochSecond())
                                 .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
-                                .put("content", orNull(comment.getContent()))
+                                .put("content", orNull(elasticUtil.draftjsToPlaintext(comment.getContent())))
                                 .put("upvotes", comment.getUpvotes())
                                 .put("downvotes", comment.getDownvotes())
                                 .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
@@ -379,7 +379,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(ImmutableMap.of(
-                                "content", comment.getContent()
+                                "content", elasticUtil.draftjsToPlaintext(comment.getContent())
                         )), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));

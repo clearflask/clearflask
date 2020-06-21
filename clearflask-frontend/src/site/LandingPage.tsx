@@ -11,7 +11,6 @@ import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import { Device } from '../common/DeviceContainer';
-import { description as collectDescription, title as collectTitle } from './CollectPage';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -101,8 +100,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         <Demo
-          title={collectTitle}
-          description={collectDescription}
+          title='Understand your customer needs'
+          description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
           displayAlign='flex-start'
           demoFixedHeight={400}
           initialSubPath='/embed/demo'

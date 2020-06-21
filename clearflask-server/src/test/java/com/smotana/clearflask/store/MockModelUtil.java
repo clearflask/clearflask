@@ -10,6 +10,8 @@ import com.smotana.clearflask.util.IdUtil;
 
 import java.time.Instant;
 
+import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
+
 public class MockModelUtil {
     public static UserModel getRandomUser() {
         return new UserModel(
@@ -41,8 +43,8 @@ public class MockModelUtil {
                 IdUtil.randomId(),
                 Instant.now(),
                 "title",
-                "description",
-                "response",
+                textToMockDraftjs("description"),
+                textToMockDraftjs("response"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),
@@ -70,7 +72,7 @@ public class MockModelUtil {
                 "John Doe",
                 Instant.now(),
                 null,
-                "This is a comment " + IdUtil.randomId(),
+                textToMockDraftjs("This is a comment " + IdUtil.randomId()),
                 0,
                 0);
     }

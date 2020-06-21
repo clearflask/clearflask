@@ -29,6 +29,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -103,7 +104,7 @@ public class CommentStoreIT extends AbstractIT {
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
-        c = c.toBuilder().content("newContent").build();
+        c = c.toBuilder().content(textToMockDraftjs("newContent")).build();
         store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContent())).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
@@ -196,7 +197,7 @@ public class CommentStoreIT extends AbstractIT {
                 IdUtil.randomId(),
                 Instant.now(),
                 null,
-                IdUtil.randomId(),
+                textToMockDraftjs(IdUtil.randomId()),
                 0,
                 0);
     }
@@ -209,8 +210,8 @@ public class CommentStoreIT extends AbstractIT {
                 IdUtil.randomId(),
                 Instant.now(),
                 "title",
-                "description",
-                "response",
+                textToMockDraftjs("description"),
+                textToMockDraftjs("response"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 ImmutableSet.of(IdUtil.randomId(), IdUtil.randomId()),

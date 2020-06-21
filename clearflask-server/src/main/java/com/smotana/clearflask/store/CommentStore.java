@@ -115,7 +115,7 @@ public interface CommentStore {
         private final Instant edited;
 
         /**
-         * If null, comment is deleted.
+         * DraftJs format. If null, comment is deleted.
          */
         private final String content;
 

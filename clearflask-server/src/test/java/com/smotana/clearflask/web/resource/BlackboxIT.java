@@ -62,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 
 @Slf4j
@@ -181,7 +182,7 @@ public class BlackboxIT extends AbstractIT {
                 .vote(VoteOption.UPVOTE)
                 .build());
         CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
-                .content("I like this")
+                .content(textToMockDraftjs("I like this"))
                 .build());
         CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
                 .vote(VoteOption.DOWNVOTE)

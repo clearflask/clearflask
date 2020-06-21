@@ -47,8 +47,9 @@ public class ModelUtil {
                         new Tagging(ImmutableList.of(), ImmutableList.of())))),
                 new Style(
                         new Flow(true),
-                        new Palette(false, null, null, null, null, null, null, null),
-                        new Typography(null, null)),
+                        new Palette(false, null, null, null, null, null, null),
+                        new Typography(null, null),
+                        null),
                 new Users(
                         null,
                         new Onboarding(

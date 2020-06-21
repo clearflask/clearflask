@@ -31,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
+import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -78,7 +79,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Optional.of(idea2), store.getIdea(projectId, idea2.getIdeaId()));
         assertEquals(ImmutableSet.of(idea2, idea), ImmutableSet.copyOf(store.getIdeas(projectId, ImmutableList.of(idea2.getIdeaId(), idea.getIdeaId())).values()));
 
-        IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description("newDescription").build();
+        IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description(textToMockDraftjs("newDescription")).build();
         store.updateIdea(projectId, idea.getIdeaId(), IdeaUpdate.builder()
                 .title(ideaUpdated.getTitle())
                 .description(ideaUpdated.getDescription())

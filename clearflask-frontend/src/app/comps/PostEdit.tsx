@@ -167,7 +167,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               {isAdminLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
-                    <TextField
+                    <RichEditor
                       disabled={this.state.isSubmitting}
                       label='Response'
                       fullWidth

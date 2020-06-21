@@ -127,8 +127,14 @@ public interface IdeaStore {
         @NonNull
         private final String title;
 
+        /**
+         * DraftJs format.
+         */
         private final String description;
 
+        /**
+         * DraftJs format.
+         */
         private final String response;
 
         @NonNull

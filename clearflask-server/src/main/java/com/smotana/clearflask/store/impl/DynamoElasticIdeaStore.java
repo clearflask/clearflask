@@ -218,8 +218,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("created", idea.getCreated().getEpochSecond())
                                 .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
-                                .put("description", orNull(idea.getDescription()))
-                                .put("response", orNull(idea.getResponse()))
+                                .put("description", orNull(elasticUtil.draftjsToPlaintext(idea.getDescription())))
+                                .put("response", orNull(elasticUtil.draftjsToPlaintext(idea.getResponse())))
                                 .put("categoryId", idea.getCategoryId())
                                 .put("statusId", orNull(idea.getStatusId()))
                                 .put("tagIds", idea.getTagIds())
@@ -421,7 +421,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
                         .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
             }
-            indexUpdates.put("description", ideaUpdateAdmin.getDescription());
+            indexUpdates.put("description", elasticUtil.draftjsToPlaintext(ideaUpdateAdmin.getDescription()));
         }
         if (ideaUpdateAdmin.getResponse() != null) {
             if (ideaUpdateAdmin.getResponse().isEmpty()) {
@@ -430,7 +430,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
                         .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
             }
-            indexUpdates.put("response", ideaUpdateAdmin.getResponse());
+            indexUpdates.put("response", elasticUtil.draftjsToPlaintext(ideaUpdateAdmin.getResponse()));
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")
