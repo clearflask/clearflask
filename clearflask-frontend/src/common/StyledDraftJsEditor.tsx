@@ -1,8 +1,22 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { Editor, EditorProps } from 'draft-js';
+import classNames from 'classnames';
+import createLinkifyPlugin from 'draft-js-linkify-plugin';
+import Editor, { PluginEditorProps as EditorProps } from 'draft-js-plugins-editor';
 import 'draft-js/dist/Draft.css';
 import React from 'react';
 import { contentScrollApplyStyles, Side } from './ContentScroll';
+
+const plugins = [
+  createLinkifyPlugin({
+    target: '_blank',
+    rel: 'noreferrer noopener ugc',
+    component: (props) => (
+      <a
+        {...props}
+      />
+    ),
+  }),
+];
 
 const contentBackgroundColor = (theme: Theme): string => theme.palette.grey[theme.palette.type === 'dark' ? 900 : 100];
 const styles = (theme: Theme) => createStyles({
@@ -16,7 +30,22 @@ const styles = (theme: Theme) => createStyles({
       padding: theme.spacing(1.5),
       '& .public-DraftStyleDefault-block': {
         whiteSpace: 'pre!important',
-      }
+      },
+    },
+    '& a': {
+      color: 'unset',
+      borderBottom: '1px dashed',
+      textDecoration: 'none',
+    },
+  },
+  editorWrapperEditable: {
+  },
+  editorWrapperReadonly: {
+    '& a': {
+      cursor: 'pointer',
+      '&:hover': {
+        borderBottomStyle: 'solid',
+      },
     },
   },
   blockQuote: {
@@ -36,10 +65,14 @@ class StyledDraftJsEditor extends React.Component<Props & EditorProps & WithStyl
   render() {
     const { editorRef, theme, classes, ...editorProps } = this.props;
     return (
-      <div className={this.props.classes.editorWrapper}>
+      <div className={classNames(
+        this.props.classes.editorWrapper,
+        this.props.readOnly ? this.props.classes.editorWrapperReadonly : this.props.classes.editorWrapperEditable,
+      )}>
         <Editor
           ref={editorRef}
           {...editorProps}
+          plugins={plugins}
           blockStyleFn={contentBlock => {
             switch (contentBlock.getType()) {
               case 'blockquote':

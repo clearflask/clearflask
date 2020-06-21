@@ -1102,9 +1102,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<TruncateFade variant='body1' lines={this.props.display.descriptionTruncateLines}>
-            <div><RichViewer raw={this.props.idea.description} /></div>
+            <div><RichViewer key={this.props.idea.description} initialRaw={this.props.idea.description} /></div>
           </TruncateFade>)
-          : <RichViewer raw={this.props.idea.description} />}
+          : <RichViewer key={this.props.idea.description} initialRaw={this.props.idea.description} />}
       </Typography>
     );
   }

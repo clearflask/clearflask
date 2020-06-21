@@ -10,8 +10,10 @@ import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
 import { convertFromRaw, convertToRaw, Editor, EditorState, RichUtils } from 'draft-js';
 import 'draft-js/dist/Draft.css';
+import { filterEditorState } from "draftjs-filters";
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React from 'react';
+import { draftjsFilterConfig, filteringEnabled } from './RichViewer';
 import StyledDraftJsEditor from './StyledDraftJsEditor';
 
 const styles = (theme: Theme) => createStyles({
@@ -77,6 +79,9 @@ interface PropsDraftJs extends Omit<InputProps, 'onChange'> {
 interface StateDraftJs {
   editorState: EditorState;
   isFocused?: boolean;
+  linkPopoverOpen?: boolean;
+  linkName?: string;
+  linkUrl?: string;
 }
 class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof styles, true> & WithSnackbarProps, StateDraftJs> implements PropsInputRef {
   readonly editorRef: React.RefObject<Editor> = React.createRef();
@@ -91,6 +96,9 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
     if (this.value !== undefined) {
       try {
         recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(this.value)));
+        if (filteringEnabled) {
+          recoveredEditorState = filterEditorState(draftjsFilterConfig, recoveredEditorState) as EditorState;
+        }
       } catch (er) {
         props.enqueueSnackbar('Some content is corrupted and could not be displayed', {
           variant: 'warning',
@@ -130,7 +138,14 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
           editorRef={this.editorRef}
           editorState={this.state.editorState}
           onChange={newEditorState => {
-            const currentContent = newEditorState.getCurrentContent();
+            var currentContent = newEditorState.getCurrentContent();
+
+            if (filteringEnabled
+              && currentContent !== this.state.editorState.getCurrentContent()
+              && newEditorState.getLastChangeType() === "insert-fragment") {
+              newEditorState = filterEditorState(draftjsFilterConfig, newEditorState) as EditorState;
+            }
+
             if (currentContent.hasText()) {
               this.value = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
             } else {
@@ -175,7 +190,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
               <QuoteIcon color={blockType === 'blockquote' ? 'primary' : undefined} fontSize='inherit' />
             </IconButton>
             <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleCode(e)}>
-              <CodeIcon color={(curStyle.contains('CODE') || blockType === 'codeblock') ? 'primary' : undefined} fontSize='inherit' />
+              <CodeIcon color={(curStyle.contains('CODE') || blockType === 'code-block') ? 'primary' : undefined} fontSize='inherit' />
             </IconButton>
             <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleBlockType(e, 'ordered-list-item')}>
               <ListOrderedIcon color={blockType === 'ordered-list-item' ? 'primary' : undefined} fontSize='inherit' />
@@ -183,9 +198,6 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
             <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleBlockType(e, 'unordered-list-item')}>
               <ListUnorderedIcon color={blockType === 'unordered-list-item' ? 'primary' : undefined} fontSize='inherit' />
             </IconButton>
-            {/* <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleCode(e, 'LINK')}>
-              <LinkIcon color={curStyle.contains('LINK') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton> */}
           </div>
         </Collapse>
       </div>
@@ -208,9 +220,8 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
     e.preventDefault();
   }
 
-  toggleLink(e, link: string | null) {
+  toggleLink(link: string | null) {
     this.setState({ editorState: RichUtils.toggleLink(this.state.editorState, this.state.editorState.getSelection(), link) });
-    e.preventDefault();
   }
 }
 

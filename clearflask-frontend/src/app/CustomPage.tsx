@@ -175,7 +175,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.description) {
         top = (
           <div className={this.props.classes.spacing}>
-            <RichViewer raw={this.props.page.description} />
+            <RichViewer key={this.props.page.description} initialRaw={this.props.page.description} />
           </div>
         );
       }

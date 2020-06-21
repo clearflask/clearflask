@@ -99,7 +99,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
     ) : (
         <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
-          <RichViewer raw={this.props.comment.content} />
+          <RichViewer key={this.props.comment.content} initialRaw={this.props.comment.content} />
         </Typography>
       );
   }
