@@ -16,6 +16,7 @@ import notEmpty from '../common/util/arrayUtil';
 import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import NotificationBadge from './NotificationBadge';
+import TemplateLiquid from './comps/TemplateLiquid';
 
 const styles = (theme: Theme) => createStyles({
   indicator: {
@@ -126,10 +127,10 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     var menu;
     if (this.props.config?.style.templates?.menu) {
       menu = (
-        <ReactLiquid html template={this.props.config.style.templates.menu} data={{
-          config: this.props.config,
-          page: this.props.page,
-        }} />
+        <TemplateLiquid
+          template={this.props.config.style.templates.menu}
+          customPageSlug={this.props.pageSlug}
+        />
       );
     } else if (this.props.config && this.props.config.layout.menu.length > 0) {
       var currentTabValue = this.props.page
@@ -200,10 +201,10 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     var header;
     if (this.props.config?.style.templates?.header) {
       header = (
-        <ReactLiquid html template={this.props.config.style.templates.header} data={{
-          config: this.props.config,
-          loggedInUser: this.props.loggedInUser,
-        }} />
+        <TemplateLiquid
+          template={this.props.config.style.templates.header}
+          customPageSlug={this.props.pageSlug}
+        />
       );
     } else {
       var name: any = this.props.config?.name && (

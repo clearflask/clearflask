@@ -12,6 +12,7 @@ import Panel, { Direction } from './comps/Panel';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
+import TemplateLiquid from './comps/TemplateLiquid';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -67,10 +68,10 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     var page;
     if (template) {
       page = (
-        <ReactLiquid html template={template} data={{
-          config: this.props.config,
-          page: this.props.page,
-        }} />
+        <TemplateLiquid
+          template={template}
+          customPageSlug={this.props.pageSlug}
+        />
       );
     } else if (this.props.page) {
       setTitle(this.props.page.name, true);

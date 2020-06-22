@@ -20,6 +20,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   showFooter?: boolean;
+  customPageSlug?: string;
 }
 
 class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
@@ -37,7 +38,7 @@ class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
           </div>
         </div>
         {!!this.props.showFooter && (
-          <Footer />
+          <Footer customPageSlug={this.props.customPageSlug} />
         )}
       </React.Fragment>
     );

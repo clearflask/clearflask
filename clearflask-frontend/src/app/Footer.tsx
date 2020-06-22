@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
 import PoweredBy from './PoweredBy';
+import TemplateLiquid from './comps/TemplateLiquid';
 
 const styles = (theme: Theme) => createStyles({
   footerSpacing: {
@@ -22,17 +23,21 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
 });
+interface Props {
+  customPageSlug?: string;
+}
 interface ConnectProps {
   config?: Client.Config;
 }
-class Footer extends Component<ConnectProps & WithStyles<typeof styles, true>> {
+class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     var footer;
     if (this.props.config?.style.templates?.footer) {
       footer = (
-        <ReactLiquid html template={this.props.config.style.templates.footer} data={{
-          config: this.props.config,
-        }} />
+        <TemplateLiquid
+          template={this.props.config.style.templates.footer}
+          customPageSlug={this.props.customPageSlug}
+        />
       );
     } else {
       footer = (
@@ -56,7 +61,7 @@ class Footer extends Component<ConnectProps & WithStyles<typeof styles, true>> {
   }
 }
 
-export default connect<ConnectProps, {}, {}, ReduxState>((state: ReduxState) => {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
   return {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
