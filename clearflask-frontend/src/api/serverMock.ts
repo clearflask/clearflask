@@ -14,10 +14,6 @@ const termsAnalytics = 'View top ideas based on return on investement considerin
 const termsVoting = 'Voting and expressions allows prioritization of value for each idea.';
 const termsCreditSystem = 'Credit System allows fine-grained prioritization of value for each idea.';
 const termsCredit = 'Spend time credits on future ClearFlask development features';
-const TrialPlan = {
-  planid: 'EF6E893B-7B39-4A59-8ADA-4101E6B7DC40', title: 'Trial',
-  perks: [],
-};
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'E5A119e3-1477-4621-A9EA-85355B34A6D4': {
     planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Startup',
@@ -152,7 +148,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
-      plan: TrialPlan,
+      plan: AvailablePlans[0],
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       cfJwt: jsonwebtoken.sign({

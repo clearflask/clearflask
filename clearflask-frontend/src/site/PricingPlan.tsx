@@ -1,9 +1,10 @@
-import { Button, Card, CardActions, CardContent, CardHeader, Typography } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CardHeader, Typography, Radio, FormControlLabel } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import React, { Component } from 'react';
 import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   cardPricing: {
@@ -24,7 +25,14 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   box: {
+    transition: theme.transitions.create('border'),
     border: '1px solid ' + theme.palette.grey[300],
+  },
+  boxSelected: {
+    borderColor: theme.palette.primary.main,
+  },
+  actions: {
+    margin: theme.spacing(0, 3, 1),
   },
 });
 
@@ -32,6 +40,7 @@ interface Props {
   plan: Admin.Plan;
   selected?: boolean;
   actionTitle?: string;
+  actionType?: 'button' | 'radio';
   actionOnClick?: () => void;
 }
 
@@ -50,12 +59,12 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     }
 
     return (
-      <Card elevation={0} className={this.props.classes.box}>
+      <Card elevation={0} className={classNames(this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
         <CardHeader
           title={(
             <React.Fragment>
               {this.props.plan.title}
-              {this.props.plan.beta && (<span className={this.props.classes.beta}>BETA</span>)}
+              {this.props.plan.beta && (<span className={this.props.classes.beta}>&nbsp;BETA</span>)}
             </React.Fragment>
           )}
           titleTypographyProps={{ align: 'center' }}
@@ -99,14 +108,27 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         </CardContent>
         {
           !!this.props.actionTitle && (
-            <CardActions>
-              <Button fullWidth color="primary"
-                variant={this.props.selected ? 'contained' : 'text'}
-                onClick={this.props.actionOnClick}
-                disabled={!this.props.actionOnClick}
-              >
-                {this.props.actionTitle}
-              </Button>
+            <CardActions className={this.props.classes.actions}>
+              {this.props.actionType === 'radio' ? (
+                <FormControlLabel
+                  label={this.props.actionTitle}
+                  control={(
+                    <Radio
+                      checked={this.props.selected}
+                      color='primary'
+                      onChange={e => this.props.actionOnClick && this.props.actionOnClick()}
+                      disabled={!this.props.actionOnClick}
+                    />
+                  )}
+                />
+              ) : (
+                <Button fullWidth color="primary"
+                  onClick={this.props.actionOnClick}
+                  disabled={!this.props.actionOnClick}
+                >
+                  {this.props.actionTitle}
+                </Button>
+              )}
             </CardActions>
           )
         }

@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, IconButton, Switch, TextField } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, IconButton, Switch, TextField, InputAdornment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -96,14 +96,20 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   fullWidth
                   value={this.state.password === undefined ? '' : this.state.password}
                   onChange={e => this.setState({ password: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                          disabled={this.state.isSubmitting}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),  
+                  }}
                 />
-                <IconButton
-                  aria-label='Toggle password visibility'
-                  onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                  disabled={this.state.isSubmitting}
-                >
-                  {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                </IconButton>
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel

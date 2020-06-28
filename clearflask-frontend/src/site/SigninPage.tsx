@@ -110,7 +110,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             )}
             <Button
               color='primary'
-              disabled={this.state.isSubmitting}
+              disabled={this.state.isSubmitting || !this.state.email || !this.state.pass}
               onClick={this.onSubmit.bind(this)}
             >Continue</Button>
           </DialogActions>

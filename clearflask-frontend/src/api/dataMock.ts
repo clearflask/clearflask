@@ -425,6 +425,7 @@ class DataMock {
         name: 'John Doe',
         email: 'a@a.a',
         password: saltHashPassword('pass'),
+        planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4',
       }
     });
   }

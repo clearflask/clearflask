@@ -30,8 +30,6 @@ import java.util.Optional;
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
-    @Inject
-    private UserResource.Config configUserResource;
     @Context
     protected HttpServletResponse response;
     @Inject
@@ -42,8 +40,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private IdeaStore ideaStore;
     @Inject
     private CommentStore commentStore;
-    @Inject
-    private PlanStore planStore;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -139,7 +135,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
                     return false;
                 }
-                accountOpt = accountStore.getAccount(accountSession.get().getEmail());
+                accountOpt = accountStore.getAccountByEmail(accountSession.get().getEmail());
                 if (!accountOpt.isPresent()) {
                     return false;
                 }

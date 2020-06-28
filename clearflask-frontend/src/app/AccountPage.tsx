@@ -1,4 +1,4 @@
-import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography } from '@material-ui/core';
+import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography, InputAdornment } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -143,15 +143,21 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     onChange={e => this.setState({ password: e.target.value })}
                     type={this.state.revealPassword ? 'text' : 'password'}
                     disabled={!this.state.email && !this.props.userMe.email}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            aria-label='Toggle password visibility'
+                            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                            disabled={!this.state.email && !this.props.userMe.email}
+                          >
+                            {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),  
+                    }}
                   />
                 </Badge>
-                <IconButton
-                  aria-label='Toggle password visibility'
-                  onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                  disabled={!this.state.email && !this.props.userMe.email}
-                >
-                  {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                </IconButton>
                 <Button aria-label="Save" color='primary' style={{
                   visibility:
                     !this.state.password

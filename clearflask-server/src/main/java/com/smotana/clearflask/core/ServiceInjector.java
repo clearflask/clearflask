@@ -21,6 +21,7 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.billing.StripeLoader;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
@@ -57,7 +58,6 @@ import com.smotana.clearflask.web.filter.LogExFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
-import com.smotana.clearflask.web.resource.PlanResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
 import com.smotana.clearflask.web.resource.SupportResource;
 import com.smotana.clearflask.web.resource.UserResource;
@@ -185,7 +185,6 @@ public enum ServiceInjector {
                 install(AccountResource.module());
                 install(IdeaResource.module());
                 install(VoteResource.module());
-                bind(PlanResource.class);
                 install(ProjectResource.module());
                 install(SupportResource.module());
 
@@ -193,6 +192,7 @@ public enum ServiceInjector {
                 install(LogExFilter.module());
                 install(ClearFlaskSso.module());
                 install(AuthCookieImpl.module());
+                install(StripeLoader.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

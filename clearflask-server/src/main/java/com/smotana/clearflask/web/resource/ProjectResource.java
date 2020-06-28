@@ -90,10 +90,19 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
-        Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt)
+        Optional<UserStore.UserSession> userSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt);
+        Optional<UserStore.UserModel> userOpt = userSessionOpt
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         boolean createSession = false;
+
+        // Token refresh
+        if (userOpt.isPresent() && userSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(userResourceConfig.sessionRenewIfExpiringIn()).getEpochSecond()) {
+            userSessionOpt = Optional.of(userStore.refreshSession(
+                    userSessionOpt.get(),
+                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond()));
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
+        }
 
         // Auto login using auth token
         if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getAuthToken())) {
@@ -156,8 +165,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public ConfigGetAllResult configGetAllAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccount(accountSession.getEmail()).orElseThrow(() -> {
-            log.error("Account not found for session with email {}", accountSession.getEmail());
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> {
+            log.error("Account not found for session with accountId {}", accountSession.getAccountId());
             return new InternalServerErrorException();
         });
         ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
@@ -191,15 +200,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric lowercase
         if (this.config.reservedProjectIds().contains(projectId)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "The name " + projectId + " is a reserved keyword");
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + projectId + "' is a reserved name");
         }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccount(accountSession.getEmail()).get();
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         Project project = projectStore.createProject(projectId, new VersionedConfigAdmin(configAdmin, "new"));
         ListenableFuture<CreateIndexResponse> commentIndexFuture = commentStore.createIndex(projectId);
         ListenableFuture<CreateIndexResponse> userIndexFuture = userStore.createIndex(projectId);
         ListenableFuture<CreateIndexResponse> ideaIndexFuture = ideaStore.createIndex(projectId);
-        accountStore.addAccountProjectId(accountSession.getEmail(), projectId);
+        accountStore.addProject(account.getAccountId(), projectId);
         try {
             Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
         } catch (InterruptedException | ExecutionException | TimeoutException ex) {
@@ -212,7 +221,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public void projectDeleteAdmin(String projectId) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         try {
+            accountStore.removeProject(accountSession.getAccountId(), projectId);
             projectStore.deleteProject(projectId);
             ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);

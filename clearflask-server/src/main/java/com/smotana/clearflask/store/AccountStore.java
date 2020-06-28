@@ -25,51 +25,51 @@ public interface AccountStore {
 
     void createAccount(Account account);
 
-    Optional<Account> getAccount(String email);
+    Optional<Account> getAccountByAccountId(String accountId);
 
-    Account addAccountPlanId(String email, String planId);
+    Optional<Account> getAccountByEmail(String email);
 
-    Account removeAccountPlanId(String email, String planId);
+    Account setPlan(String accountId, String planId, Optional<Instant> planExpiry);
 
-    Account addAccountProjectId(String email, String projectId);
+    Account addProject(String accountId, String projectId);
 
-    Account removeAccountProjectId(String email, String projectId);
+    Account removeProject(String accountId, String projectId);
 
-    Account updateAccountName(String email, String name);
+    Account updateName(String accountId, String name);
 
-    Account updateAccountPassword(String email, String password, String sessionIdToLeave);
+    Account updatePassword(String accountId, String password, String sessionIdToLeave);
 
-    Account updateAccountEmail(String emailCurrent, String emailNew);
+    Account updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
-    void deleteAccount(String email);
+    void deleteAccount(String accountId);
 
     default String genSessionId() {
         return IdUtil.randomAscId();
     }
 
-    AccountSession createSession(String email, long ttlInEpochSec);
+    AccountSession createSession(String accountId, long ttlInEpochSec);
 
     Optional<AccountSession> getSession(String sessionId);
 
     AccountSession refreshSession(AccountSession accountSession, long ttlInEpochSec);
 
-    void revokeSession(AccountSession accountSession);
+    void revokeSession(String sessionId);
 
-    void revokeSessions(String email);
+    void revokeSessions(String accountId);
 
-    void revokeSessions(String email, String sessionToLeave);
+    void revokeSessions(String accountId, String sessionToLeave);
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "sessionId", rangePrefix = "accountSessionById")
-    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "email", rangePrefix = "accountSessionByEmail")
+    @DynamoTable(type = Primary, partitionKeys = "sessionId", rangePrefix = "accountSessionBySessionId")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "accountId", rangePrefix = "accountSessionByAccountId")
     class AccountSession {
         @NonNull
         private final String sessionId;
 
         @NonNull
-        private final String email;
+        private final String accountId;
 
         @NonNull
         private final long ttlInEpochSec;
@@ -78,9 +78,20 @@ public interface AccountStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "account")
+    @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "accountIdByEmail")
+    class AccountEmail {
+        @NonNull
+        private final String email;
+
+        @NonNull
+        private final String accountId;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
     class Account {
-        /** So far only used as SSO Guid */
         @NonNull
         private final String accountId;
 
@@ -88,7 +99,12 @@ public interface AccountStore {
         private final String email;
 
         @NonNull
+        private final String stripeCusId;
+
+        @NonNull
         private final String planId;
+
+        private final Instant planExpiry;
 
         @NonNull
         private final Instant created;

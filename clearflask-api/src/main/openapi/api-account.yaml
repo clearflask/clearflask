@@ -88,12 +88,15 @@ components:
       - name
       - email
       - password
+      - planid
       properties:
         name:
           type: string
         email:
           type: string
         password:
+          type: string
+        planid:
           type: string
     AccountAdmin:
       type: object

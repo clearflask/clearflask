@@ -184,6 +184,10 @@
             <groupId>org.glassfish.hk2</groupId>
             <artifactId>guice-bridge</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>javax.xml.bind</groupId>

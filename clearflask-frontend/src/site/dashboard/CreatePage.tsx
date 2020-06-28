@@ -10,6 +10,7 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '../../common/config/configTemplater';
 import debounce from '../../common/util/debounce';
 import { Project } from '../DemoApp';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   item: {
@@ -21,10 +22,11 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.primary,
   },
   box: {
+    transition: theme.transitions.create('border'),
     border: '1px solid ' + theme.palette.grey[300],
   },
   boxSelected: {
-    border: '1px solid ' + theme.palette.primary.main,
+    borderColor: theme.palette.primary.main,
   },
   extraControls: {
     display: 'flex',
@@ -313,7 +315,7 @@ interface TemplateCardProps {
 
 const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCardProps & WithStyles<typeof styles, true>) => (
   <Grid item key='feedback' xs={12} sm={6} md={12} lg={4}>
-    <Card elevation={0} className={props.checked ? props.classes.boxSelected : props.classes.box}>
+    <Card elevation={0} className={classNames(props.classes.box, props.checked && props.classes.boxSelected)}>
       <CardHeader
         title={props.title}
         titleTypographyProps={{ align: 'center' }}

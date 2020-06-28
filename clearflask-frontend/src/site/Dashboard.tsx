@@ -25,6 +25,14 @@ import PostsPage from './dashboard/PostsPage';
 import SettingsPage from './dashboard/SettingsPage';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
+import { isProd } from '../common/util/detectEnv';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js/pure';
+
+loadStripe.setLoadParameters({ advancedFraudSignals: false })
+const stripePromise = loadStripe(isProd()
+  ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
+  : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
 
 interface Props {
   forceMock?: boolean;
@@ -221,88 +229,90 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         break;
     }
     return (
-      <Layout
-        toolbarLeft={
-          <Typography variant='h6' color="inherit" noWrap>
-            Dashboard
-          </Typography>
-        }
-        toolbarRight={
-          <IconButton
-            color="inherit"
-            aria-label="Preview changes"
-            onClick={() => ServerAdmin.get(this.props.forceMock).dispatchAdmin().then(d => d.accountLogoutAdmin())}
-          >
-            <LogoutIcon />
-          </IconButton>
-        }
-        preview={preview}
-        menu={(
-          <Menu
-            items={[
-              { type: 'item', slug: '', name: 'Home' } as MenuItem,
-              { type: 'heading', text: 'Explore' } as MenuHeading,
-              { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
-              // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
-              { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
-              { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
-              { type: 'heading', text: 'Settings' } as MenuHeading,
-              ...(projects.map(project => {
-                const menuProject: MenuProject = {
-                  type: 'project',
-                  projectId: project.server.getProjectId(),
-                  page: project.editor.getPage([]),
-                  hasUnsavedChanges: project.hasUnsavedChanges(),
-                };
-                return menuProject;
-              })),
-              {
-                type: 'item', slug: 'create', name: (
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    <AddIcon fontSize='inherit' />&nbsp;Create
-                  </span>
-                ), offset: 1
-              } as MenuItem,
-              { type: 'heading', text: 'Account' } as MenuHeading,
-              { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
-              { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,
-              { type: 'heading', text: 'Help' } as MenuHeading,
-              { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
-              { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
-              { type: 'item', name: 'Ideas', offset: 1, onClick: () => this.openFeedback('ideas') } as MenuItem,
-            ].filter(notEmpty)}
-            activePath={activePath}
+      <Elements stripe={stripePromise}>
+        <Layout
+          toolbarLeft={
+            <Typography variant='h6' color="inherit" noWrap>
+              Dashboard
+            </Typography>
+          }
+          toolbarRight={
+            <IconButton
+              color="inherit"
+              aria-label="Preview changes"
+              onClick={() => ServerAdmin.get(this.props.forceMock).dispatchAdmin().then(d => d.accountLogoutAdmin())}
+            >
+              <LogoutIcon />
+            </IconButton>
+          }
+          preview={preview}
+          menu={(
+            <Menu
+              items={[
+                { type: 'item', slug: '', name: 'Home' } as MenuItem,
+                { type: 'heading', text: 'Explore' } as MenuHeading,
+                { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
+                // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
+                { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
+                { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
+                { type: 'heading', text: 'Settings' } as MenuHeading,
+                ...(projects.map(project => {
+                  const menuProject: MenuProject = {
+                    type: 'project',
+                    projectId: project.server.getProjectId(),
+                    page: project.editor.getPage([]),
+                    hasUnsavedChanges: project.hasUnsavedChanges(),
+                  };
+                  return menuProject;
+                })),
+                {
+                  type: 'item', slug: 'create', name: (
+                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <AddIcon fontSize='inherit' />&nbsp;Create
+                    </span>
+                  ), offset: 1
+                } as MenuItem,
+                { type: 'heading', text: 'Account' } as MenuHeading,
+                { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
+                { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,
+                { type: 'heading', text: 'Help' } as MenuHeading,
+                { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
+                { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
+                { type: 'item', name: 'Ideas', offset: 1, onClick: () => this.openFeedback('ideas') } as MenuItem,
+              ].filter(notEmpty)}
+              activePath={activePath}
+              activeSubPath={activeSubPath}
+              pageClicked={this.pageClicked.bind(this)}
+            />
+          )}
+          barBottom={(activeProject && activeProject.hasUnsavedChanges()) ? (
+            <React.Fragment>
+              <Typography style={{ flexGrow: 1 }}>You have unsaved changes</Typography>
+              <Button color='primary' onClick={() => {
+                const currentProject = activeProject;
+                currentProject.server.dispatchAdmin().then(d => d.configSetAdmin({
+                  projectId: currentProject.projectId,
+                  versionLast: currentProject.configVersion,
+                  configAdmin: currentProject.editor.getConfig(),
+                })
+                  .then((versionedConfigAdmin) => {
+                    currentProject.resetUnsavedChanges(versionedConfigAdmin)
+                  }));
+              }}>Publish</Button>
+            </React.Fragment>
+          ) : undefined}
+        >
+          <Crumbs
+            crumbs={crumbs}
+            activeProject={activeProject}
             activeSubPath={activeSubPath}
             pageClicked={this.pageClicked.bind(this)}
           />
-        )}
-        barBottom={(activeProject && activeProject.hasUnsavedChanges()) ? (
-          <React.Fragment>
-            <Typography style={{ flexGrow: 1 }}>You have unsaved changes</Typography>
-            <Button color='primary' onClick={() => {
-              const currentProject = activeProject;
-              currentProject.server.dispatchAdmin().then(d => d.configSetAdmin({
-                projectId: currentProject.projectId,
-                versionLast: currentProject.configVersion,
-                configAdmin: currentProject.editor.getConfig(),
-              })
-                .then((versionedConfigAdmin) => {
-                  currentProject.resetUnsavedChanges(versionedConfigAdmin)
-                }));
-            }}>Publish</Button>
-          </React.Fragment>
-        ) : undefined}
-      >
-        <Crumbs
-          crumbs={crumbs}
-          activeProject={activeProject}
-          activeSubPath={activeSubPath}
-          pageClicked={this.pageClicked.bind(this)}
-        />
-        {page}
-        {/* TODO remove */}
-        {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
-      </Layout>
+          {page}
+          {/* TODO remove */}
+          {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
+        </Layout>
+      </Elements>
     );
   }
 

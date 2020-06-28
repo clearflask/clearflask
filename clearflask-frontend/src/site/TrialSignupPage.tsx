@@ -1,11 +1,11 @@
-import { Box, Button, Collapse, Container, DialogActions, IconButton, TextField } from '@material-ui/core';
+import { Box, Button, Collapse, Container, DialogActions, IconButton, TextField, Typography, Grid, InputAdornment } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import ErrorPage from '../app/ErrorPage';
@@ -13,7 +13,14 @@ import AcceptTerms from '../common/AcceptTerms';
 import Message from '../common/Message';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
+import notEmpty from '../common/util/arrayUtil';
+import PlanPeriodSelect from './PlanPeriodSelect';
+import Loader from '../app/utils/Loader';
+import PricingPlan from './PricingPlan';
+import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
+import { Status } from '../api/server';
 
+export const SIGNUP_PROD_ENABLED = false;
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 
 const styles = (theme: Theme) => createStyles({
@@ -35,15 +42,15 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.error.main,
   },
 });
-
 interface Props {
-  history: History;
-  location: Location;
 }
 interface ConnectProps {
+  accountStatus?: Status;
   plans?: Admin.Plan[];
 }
 interface State {
+  period?: Admin.PlanPricingPeriodEnum;
+  planid?: string;
   isSubmitting?: boolean;
   name?: string;
   email?: string;
@@ -52,11 +59,23 @@ interface State {
   revealPassword?: boolean;
 }
 
-class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      planid: props.location.state?.[PRE_SELECTED_PLAN_ID],
+    };
+  }
+
   render() {
-    if (isProd() && new URL(window.location.href).searchParams.get('please') !== 'letmein') {
+    if (this.props.accountStatus === Status.FULFILLED) {
+      return (<Redirect to={this.props.match.params[ADMIN_LOGIN_REDIRECT_TO] || '/dashboard'} />);
+    }
+
+    if (!SIGNUP_PROD_ENABLED && isProd() && new URL(window.location.href).searchParams.get('please') !== 'true') {
       return <ErrorPage variant='warning' msg={(
         <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
           Direct sign ups are currently disabled. Instead,&nbsp;
@@ -66,6 +85,17 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       )} />
     }
 
+    const allPlans = this.props.plans || [];
+    const periodsSet = new Set(allPlans
+      .map(plan => plan.pricing?.period)
+      .filter(notEmpty));
+    const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
+    const selectedPeriod = this.state.period
+      || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
+    const plans = allPlans
+      .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period)
+    const selectedPlanId = this.state.planid || plans[0]?.planid;
+
     const canSubmit = !!this.state.name
       && !!this.state.email
       && !this.state.emailIsFreeOrDisposable
@@ -74,9 +104,44 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
 
     return (
       <div className={this.props.classes.page}>
+        <Container maxWidth='md'>
+          <Typography component="h1" variant="h2" color="textPrimary">Sign up</Typography>
+          <Typography component="h2" variant="h4" color="textSecondary">Start your free 14-day trial</Typography>
+          {periods.length > 1 && (
+            <PlanPeriodSelect
+              plans={this.props.plans}
+              value={selectedPeriod}
+              onChange={period => this.setState({ period, planid: undefined })}
+            />
+          )}
+        </Container>
+        <br />
+        <br />
+        <br />
+        <Container maxWidth='md'>
+          <Loader loaded={!!this.props.plans}>
+            <Grid container spacing={5} alignItems='stretch' justify='center'>
+              {plans.map((plan, index) => (
+                <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
+                  <PricingPlan
+                    plan={plan}
+                    selected={selectedPlanId === plan.planid}
+                    actionTitle={selectedPlanId === plan.planid ? 'Selected' : 'Not selected'}
+                    actionType='radio'
+                    actionOnClick={() => this.setState({planid: plan.planid})}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Loader>
+        </Container>
+        <br />
+        <br />
+        <br />
         <Container maxWidth='xs'>
           <TextField
             className={this.props.classes.item}
+            fullWidth
             id='name'
             label='Name'
             required
@@ -85,6 +150,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           />
           <TextField
             className={this.props.classes.item}
+            fullWidth
             id='email'
             label='Work email'
             required
@@ -104,23 +170,28 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               </div>
             )} />
           </Collapse>
-          <Box display='flex' flexDirection='row' alignItems='center'>
-            <TextField
-              className={this.props.classes.item}
-              id='pass'
-              label='Password'
-              required
-              value={this.state.pass || ''}
-              onChange={e => this.setState({ pass: e.target.value })}
-              type={this.state.revealPassword ? 'text' : 'password'}
-            />
-            <IconButton
-              aria-label='Toggle password visibility'
-              onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-            >
-              {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-            </IconButton>
-          </Box>
+          <TextField
+            className={this.props.classes.item}
+            fullWidth
+            id='pass'
+            label='Password'
+            required
+            value={this.state.pass || ''}
+            onChange={e => this.setState({ pass: e.target.value })}
+            type={this.state.revealPassword ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position='end'>
+                  <IconButton
+                    aria-label='Toggle password visibility'
+                    onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                  >
+                    {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                  </IconButton>
+                </InputAdornment>
+              ),  
+            }}
+          />
           <AcceptTerms />
           <DialogActions>
             <Button
@@ -130,7 +201,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
             <Button
               color='primary'
               disabled={this.state.isSubmitting || !canSubmit}
-              onClick={this.signUp.bind(this)}
+              onClick={this.signUp.bind(this, selectedPlanId)}
             >Create account</Button>
           </DialogActions>
         </Container>
@@ -138,7 +209,7 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
     );
   }
 
-  async signUp() {
+  async signUp(selectedPlanId: string) {
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
@@ -147,13 +218,14 @@ class SignupPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           name: this.state.name!,
           email: this.state.email!,
           password: saltHashPassword(this.state.pass!),
+          planid: selectedPlanId,
         }
       });
     } catch (err) {
       this.setState({ isSubmitting: false });
       return;
     }
-    this.props.history.push('/dashboard/create');
+    this.props.history.push('/dashboard');
   }
 }
 
@@ -161,5 +233,8 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   if (state.plans.plans.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
-  return { plans: state.plans.plans.plans };
+  return {
+    accountStatus: state.account.account.status,
+    plans: state.plans.plans.plans,
+  };
 })(withStyles(styles, { withTheme: true })(SignupPage));

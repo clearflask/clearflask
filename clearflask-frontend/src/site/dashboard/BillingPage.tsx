@@ -8,6 +8,7 @@ import { Status } from '../../api/server';
 import { ReduxStateAdmin } from '../../api/serverAdmin';
 import DividerCorner from '../../app/utils/DividerCorner';
 import PricingPlan from '../PricingPlan';
+import {CardElement} from '@stripe/react-stripe-js';
 
 const styles = (theme: Theme) => createStyles({
   corner: {

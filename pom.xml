@@ -19,6 +19,7 @@
         <guava.version>26.0-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
+        <stripe.version>19.24.0</stripe.version>
         <elastic.version>7.4.0</elastic.version>
         <lucene.version>8.2.0</lucene.version>
         <ice.version>1.0.8</ice.version>
@@ -353,6 +354,11 @@
                 <groupId>org.glassfish.hk2</groupId>
                 <artifactId>guice-bridge</artifactId>
                 <version>${hk2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.stripe</groupId>
+                <artifactId>stripe-java</artifactId>
+                <version>${stripe.version}</version>
             </dependency>
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->

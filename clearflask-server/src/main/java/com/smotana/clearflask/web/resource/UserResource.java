@@ -9,32 +9,22 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ForgotPassword;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserCreateAdmin;
-import com.smotana.clearflask.api.model.UserLogin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +39,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.smotana.clearflask.web.resource.AccountResource.ACCOUNT_AUTH_COOKIE_NAME;
+
 @Slf4j
 @Singleton
 @Path("/v1")
@@ -58,7 +50,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         @DefaultValue("P300D")
         Duration sessionExpiry();
 
-        @DefaultValue("P290D")
+        @DefaultValue("P150D")
         Duration sessionRenewIfExpiringIn();
 
         @DefaultValue(value = "10", innerType = Integer.class)
@@ -111,9 +103,30 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 10)
     @Override
     public UserBindResponse userBind(String projectId) {
-        Optional<UserStore.UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
-                .map(UserStore.UserSession::getUserId)
-                .flatMap(userId -> userStore.getUser(projectId, userId));
+        Optional<UserSession> userSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt);
+        if (!userSessionOpt.isPresent()) {
+            return new UserBindResponse(null);
+        }
+        UserSession userSession = userSessionOpt.get();
+
+        // Token refresh
+        if (userSession.getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
+            userSession = userStore.refreshSession(
+                    userSession,
+                    Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, userSession.getSessionId(), userSession.getTtlInEpochSec());
+        }
+
+        // Fetch account
+        Optional<UserModel> userOpt = userStore.getUser(projectId, userSession.getUserId());
+        if (!userOpt.isPresent()) {
+            log.info("User bind on valid session to non-existent user, revoking all sessions for userId {}",
+                    userSession.getUserId());
+            userStore.revokeSessions(projectId, userSession.getUserId(), Optional.empty());
+            authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
+            return new UserBindResponse(null);
+        }
 
         return new UserBindResponse(userOpt
                 .map(UserStore.UserModel::toUserMeWithBalance)
@@ -150,7 +163,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null);
         userStore.createUser(user);
 
-        UserStore.UserSession session = userStore.createSession(
+        UserSession session = userStore.createSession(
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
@@ -261,7 +274,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
         log.debug("Successful user login for email {}", userLogin.getEmail());
 
-        UserStore.UserSession session = userStore.createSession(
+        UserSession session = userStore.createSession(
                 projectId,
                 user.getUserId(),
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
@@ -274,12 +287,12 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void userLogout(String projectId) {
-        Optional<ExtendedSecurityContext.ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
+        Optional<ExtendedPrincipal> extendedPrincipal = getExtendedPrincipal();
         if (!extendedPrincipal.isPresent() || !extendedPrincipal.get().getUserSessionOpt().isPresent()) {
             log.trace("Cannot logout user, already not logged in");
             return;
         }
-        UserStore.UserSession session = extendedPrincipal.get().getUserSessionOpt().get();
+        UserSession session = extendedPrincipal.get().getUserSessionOpt().get();
 
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);

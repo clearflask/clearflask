@@ -10,11 +10,6 @@ const plugins = [
   createLinkifyPlugin({
     target: '_blank',
     rel: 'noreferrer noopener ugc',
-    component: (props) => (
-      <a
-        {...props}
-      />
-    ),
   }),
 ];
 
