@@ -1,8 +1,7 @@
-import { Box, Button, Collapse, Container, DialogActions, IconButton, TextField, Typography, Grid, InputAdornment } from '@material-ui/core';
+import { Button, Collapse, Container, DialogActions, IconButton, TextField, Typography, Grid, InputAdornment } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
-import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';

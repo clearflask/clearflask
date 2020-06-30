@@ -108,6 +108,13 @@ components:
       properties:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
+        planExpiry:
+          type: string
+          format: date-time
+        hasPayment:
+          type: boolean
+        renewAutomatically:
+          type: boolean
         name:
           type: string
         email:
@@ -122,6 +129,12 @@ components:
         email:
           type: string
         password:
+          type: string
+        renewAutomatically:
+          type: boolean
+        paymentToken:
+          type: string
+        planid:
           type: string
 
 /support/message:

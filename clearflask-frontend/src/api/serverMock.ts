@@ -147,8 +147,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater();
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
+    const planExpiry = new Date();
+    planExpiry.setDate(planExpiry.getDate() + 1);
     const account: Admin.AccountAdmin = {
-      plan: AvailablePlans[0],
+      plan: AvailablePlans['E5A119e3-1477-4621-A9EA-85355B34A6D4'],
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       cfJwt: jsonwebtoken.sign({
@@ -156,6 +158,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
+      planExpiry,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -167,6 +170,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
     if (request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if (request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
+    if (request.accountUpdateAdmin.paymentToken !== undefined) this.account.hasPayment = request.accountUpdateAdmin.paymentToken !== '';
+    if (request.accountUpdateAdmin.renewAutomatically !== undefined) this.account.renewAutomatically = request.accountUpdateAdmin.renewAutomatically;
+    if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
     return this.returnLater(this.account);
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {

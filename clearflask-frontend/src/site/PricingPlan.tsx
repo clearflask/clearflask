@@ -37,11 +37,13 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string;
   plan: Admin.Plan;
   selected?: boolean;
   actionTitle?: string;
   actionType?: 'button' | 'radio';
   actionOnClick?: () => void;
+  hidePerks?: boolean;
 }
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
@@ -59,7 +61,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     }
 
     return (
-      <Card elevation={0} className={classNames(this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
+      <Card elevation={0} className={classNames(this.props.className, this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
         <CardHeader
           title={(
             <React.Fragment>
@@ -92,7 +94,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                 <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>{this.props.plan.comingSoon ? 'Coming soon...' : 'Talk to sales'}</Typography>
               </div>
             )}
-          {this.props.plan.perks.map(perk => (
+          {!this.props.hidePerks && this.props.plan.perks.map(perk => (
             <div key={perk.desc} style={{ display: 'flex', alignItems: 'baseline' }}>
               <CheckIcon fontSize='inherit' />
               &nbsp;
