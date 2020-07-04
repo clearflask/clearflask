@@ -70,7 +70,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
                   <PricingPlan
                     plan={plan}
                     selected={plan.planid === this.props.accountPlanId ? (!selectedPlanId || selectedPlanId === this.props.accountPlanId) : selectedPlanId === plan.planid}
-                    actionTitle={plan.planid === this.props.accountPlanId ? 'Current plan' : (selectedPlanId === plan.planid ? 'Selected' : 'Not selected')}
+                    actionTitle={plan.planid === this.props.accountPlanId ? 'Current plan' : (selectedPlanId === plan.planid ? 'Selected' : 'Select')}
                     actionType={plan.planid === this.props.accountPlanId ? undefined : 'radio'}
                     actionOnClick={plan.planid === this.props.accountPlanId ? undefined : () => this.setState({planid: plan.planid})}
                   />

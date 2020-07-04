@@ -101,6 +101,7 @@ components:
     AccountAdmin:
       type: object
       required:
+      - subscriptionStatus
       - plan
       - name
       - email
@@ -108,9 +109,18 @@ components:
       properties:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
-        planExpiry:
+        subscriptionStatus:
           type: string
-          format: date-time
+          enum:
+          - Active
+          - Inactive
+        subscriptionNote:
+          type: string
+          enum:
+          - Trialling
+          - NoPaymentMethod
+          - PaymentFailed
+          - Cancelled
         hasPayment:
           type: boolean
         renewAutomatically:
@@ -136,6 +146,52 @@ components:
           type: string
         planid:
           type: string
+    AccountBilling:
+      type: object
+      required:
+      - availablePlans
+      - billingHistory
+      properties:
+        payment:
+          type: object
+          required:
+          - last4
+          - expiryMonth
+          - expiryYear
+          properties:
+            brand:
+              type: string
+            last4:
+              type: string
+            expiryMonth:
+              type: integer
+              format: int64
+            expiryYear:
+              type: integer
+              format: int64
+        billingPeriodEnd:
+          type: string
+          format: date-time
+        availablePlans:
+          type: array
+          items:
+            $ref: 'api-account.yaml#/components/schemas/Plan'
+        billingHistory:
+          $ref: 'api-account.yaml#/components/schemas/BillingHistory'
+    BillingHistory:
+      title: BillingHistorySearchAdminResponse
+      type: object
+      required:
+      - results
+      properties:
+        cursor:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: 'api-credit.yaml#/components/schemas/Transaction'
+        
+
 
 /support/message:
   post:
@@ -269,3 +325,28 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/billing:
+  get:
+    operationId: accountBillingAdmin
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountBilling'
+/admin/account/billing/history:
+  post:
+    operationId: billingHistorySearchAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/BillingHistory'

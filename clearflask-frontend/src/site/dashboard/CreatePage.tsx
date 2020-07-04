@@ -330,7 +330,7 @@ const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCar
               onChange={props.onChange}
             />
           )}
-          label={props.checked ? 'Selected' : 'Not selected'}
+          label={props.checked ? 'Selected' : 'Select'}
         />
       </CardActions>
     </Card>

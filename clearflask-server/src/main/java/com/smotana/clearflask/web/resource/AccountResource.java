@@ -9,6 +9,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.StripeBilling;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -59,7 +60,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private Config config;
     @Inject
-    private Application.Config configApp;
+    private StripeBilling stripeBilling;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -157,37 +158,28 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Plan does not exist"));
         String stripePriceId = planStore.getStripePriceId(plan.getPlanid())
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Plan does not exist"));
+        String accountId = accountStore.genAccountId();
 
         // Create customer in Stripe
-        Customer customer;
-        try {
-            customer = Customer.create(CustomerCreateParams.builder()
-                    .setEmail(signup.getEmail())
-                    .setName(signup.getName())
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to create Stripe customer on signup", ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to contact payment processor, try again later");
-        }
+        Customer customer = stripeBilling.createCustomer(
+                accountId,
+                signup.getEmail(),
+                signup.getName());
 
         // Create customer subscription in Stripe
         Subscription subscription;
         try {
-            subscription = Subscription.create(SubscriptionCreateParams.builder()
-                    .addAddInvoiceItem(SubscriptionCreateParams.AddInvoiceItem.builder()
-                            .setPrice(stripePriceId)
-                            .build())
-                    .setCustomer(customer.getId())
-                    .setTrialPeriodDays(14L)
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to create Stripe subscription on signup", ex);
+            subscription = stripeBilling.createSubscription(
+                    customer.getId(),
+                    stripePriceId,
+                    14L);
+        } catch (Exception ex) {
             try {
                 customer.delete();
             } catch (StripeException ex2) {
                 log.error("Failed to delete Stripe customer after failing to create subscription", ex2);
             }
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to contact payment processor, try again later");
+            throw ex;
         }
 
         // Create account locally
@@ -195,9 +187,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account;
         try {
             account = new Account(
-                    accountStore.genAccountId(),
+                    accountId,
                     signup.getEmail(),
                     customer.getId(),
+                    subscription.getId(),
                     plan.getPlanid(),
                     Optional.ofNullable(subscription.getTrialEnd())
                             .map(Instant::ofEpochSecond)
@@ -226,23 +219,19 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return account.toAccountAdmin(planStore, cfSso);
     }
 
-    // TODO
     @PermitAll
     @Limit(requiredPermits = 10, challengeAfter = 3)
-//    @Override
-    public AccountAdmin accountUpdatePaymentAdmin(String paymentSource) {
+    @Override
+    public AccountAdmin accountUpdatePaymentAdmin(String paymentToken) {
+        // TODO
+
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
 
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow();
 
-        try {
-            Customer.retrieve(account.getStripeCusId()).update(CustomerUpdateParams.builder()
-                    .setSource(paymentSource)
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to update account {} payment source", account.getAccountId(), ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to contact payment processor");
-        }
+        Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
+
+        customer = stripeBilling.updatedPayment(customer, paymentToken);
 
         return null;
     }

@@ -24,6 +24,7 @@ import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.billing.StripeBillingImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
@@ -102,6 +103,8 @@ public class BlackboxIT extends AbstractIT {
                 AccountResource.module(),
                 ProjectResource.module(),
                 UserResource.module(),
+                StripeResource.module(),
+                StripeBillingImpl.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 NotificationServiceImpl.module(),

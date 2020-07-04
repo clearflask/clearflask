@@ -102,6 +102,9 @@ public interface AccountStore {
         private final String stripeCusId;
 
         @NonNull
+        private final String stripeSubId;
+
+        @NonNull
         private final String planId;
 
         private final Instant planExpiry;

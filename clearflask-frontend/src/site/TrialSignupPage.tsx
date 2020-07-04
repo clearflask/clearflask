@@ -125,7 +125,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
                   <PricingPlan
                     plan={plan}
                     selected={selectedPlanId === plan.planid}
-                    actionTitle={selectedPlanId === plan.planid ? 'Selected' : 'Not selected'}
+                    actionTitle={selectedPlanId === plan.planid ? 'Selected' : 'Select'}
                     actionType='radio'
                     actionOnClick={() => this.setState({planid: plan.planid})}
                   />

@@ -38,6 +38,7 @@ public class AccountStoreTest extends AbstractTest {
                 store.genAccountId(),
                 "my@email.com",
                 IdUtil.randomId(),
+                IdUtil.randomId(),
                 "planId1",
                 null,
                 Instant.now(),
@@ -93,6 +94,7 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 store.genAccountId(),
                 "my@email.com",
+                IdUtil.randomId(),
                 IdUtil.randomId(),
                 "planId1",
                 null,
