@@ -218,9 +218,14 @@ export interface StateAccount {
     status?: Status;
     account?: Admin.AccountAdmin;
   };
+  billing: {
+    status?: Status;
+    billing?: Admin.AccountBilling;
+  };
 }
 const stateAccountDefault = {
   account: {},
+  billing: {},
 };
 function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin.Actions): StateAccount {
   switch (action.type) {
@@ -259,6 +264,30 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
         account: {
           status: Status.FULFILLED,
           account: action.payload.account,
+        },
+      };
+    case Admin.accountBillingAdminActionStatus.Pending:
+      return {
+        ...state,
+        billing: {
+          ...state.billing,
+          status: Status.PENDING,
+        },
+      };
+    case Admin.accountBillingAdminActionStatus.Rejected:
+      return {
+        ...state,
+        billing: {
+          ...state.billing,
+          status: Status.REJECTED,
+        },
+      };
+    case Admin.accountBillingAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        billing: {
+          status: Status.FULFILLED,
+          billing: action.payload,
         },
       };
     case Admin.accountLogoutAdminActionStatus.Pending:

@@ -13,11 +13,12 @@ import CreditCard from '../../common/CreditCard';
 import AcceptTerms from '../../common/AcceptTerms';
 import ErrorMsg from '../../app/ErrorMsg';
 import ActiveIcon from '@material-ui/icons/Check';
-import PausedIcon from '@material-ui/icons/Pause';
-import NoneIcon from '@material-ui/icons/PriorityHigh';
+import WarnIcon from '@material-ui/icons/Warning';
+import ErrorIcon from '@material-ui/icons/Error';
 import classNames from 'classnames';
 import TimeAgo from 'react-timeago';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
+import Loader from '../../app/utils/Loader';
 
 const styles = (theme: Theme) => createStyles({
   plan: {
@@ -51,10 +52,14 @@ const styles = (theme: Theme) => createStyles({
 interface ConnectProps {
   accountStatus?: Status;
   account?: Admin.AccountAdmin;
+  accountBillingStatus?: Status;
+  accountBilling?: Admin.AccountBilling;
 }
 interface State {
   isSubmitting?: boolean;
   showAddPayment?: boolean;
+  showCancelSubscription?: boolean;
+  showResumePlan?: boolean;
   showPlanChange?: boolean;
 }
 class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, true>, State> {
@@ -63,80 +68,201 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     if (!this.props.account) {
       return 'Need to login to see this page';
     }
+
+    var cardBrand, cardNumber, cardExpiry, cardStateIcon;
+    if(!!this.props.accountBilling?.payment) {
+      cardBrand = this.props.accountBilling.payment.brand;
+      cardNumber = (
+        <React.Fragment>
+          <span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;</span>
+          {this.props.accountBilling.payment.last4}
+        </React.Fragment>
+      );
+      var expiryColor;
+      if(new Date().getFullYear() % 100 >= this.props.accountBilling.payment.expiryYear % 100) {
+        if(new Date().getMonth() + 1 == this.props.accountBilling.payment.expiryMonth) {
+          expiryColor = this.props.theme.palette.warning.main;
+        } else if (new Date().getMonth() + 1 > this.props.accountBilling.payment.expiryMonth) {
+          expiryColor = this.props.theme.palette.error.main;
+        }
+      }
+      cardExpiry = (
+        <span style={expiryColor && {color: expiryColor}}>
+          {this.props.accountBilling.payment.expiryMonth}
+          &nbsp;/&nbsp;
+          {this.props.accountBilling.payment.expiryYear % 100}
+        </span>
+      );
+    } else {
+      cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
+      cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
+    }    
+    switch(this.props.account.subscriptionStatus) {
+      case Admin.AccountAdminSubscriptionStatusEnum.Active:
+        cardStateIcon = ( <ActiveIcon color='primary' /> );
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
+      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
+        cardStateIcon = ( <WarnIcon style={{color: this.props.theme.palette.warning.main}} /> );
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
+      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
+      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
+        cardStateIcon = ( <ErrorIcon color='error' /> );
+        break;
+    }
+    const creditCard = (
+      <CreditCard
+        className={this.props.classes.creditCard}
+        brand={cardStateIcon}
+        numberInput={cardNumber}
+        expiryInput={cardExpiry}
+        cvcInput={(<span className={this.props.classes.blurry}>642</span>)}
+      />
+    );
+
+    var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc;
+    switch(this.props.account.subscriptionStatus) {
+      case Admin.AccountAdminSubscriptionStatusEnum.Active:
+        paymentTitle = 'Automatic renewal is active';
+        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showCancelSubscription = true;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
+        paymentTitle = 'Automatic renewal requires a payment method';
+        paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic renewal.';
+        showSetPayment = true;
+        setPaymentTitle = 'Add payment method';
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
+        paymentTitle = 'Automatic renewal is having issues with your payment method';
+        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may cancel your service if unsuccessful.';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showCancelSubscription = true;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'Resume automatic renewal to continue using our service beyond the next billing cycle.';
+        showResumePlan = true;
+        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'To continue using our service, add a payment method to enable automatic renewal.';
+        showSetPayment = true;
+        setPaymentTitle = 'Add payment method';
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'We had issues charging your payment method and we cancelled your service. Update your payment method to continue using our service.';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'Resume automatic renewal to continue using our service.';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showResumePlan = true;
+        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
+        break;
+    }
+
+    var planTitle, planDesc, showPlanChange;
+    switch(this.props.account.subscriptionStatus) {
+      case Admin.AccountAdminSubscriptionStatusEnum.Active:
+        planTitle = 'Your plan is active';
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
+        showPlanChange = true;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
+        if(this.props.accountBilling?.billingPeriodEnd) {
+          planTitle = (
+            <React.Fragment>
+              Your trial is active and will expire in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+            </React.Fragment>
+          );
+        } else {
+          planTitle = 'Your trial is active';
+        }
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
+        showPlanChange = true;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
+        planTitle = 'Your plan is active';
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before changing your plan.`;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
+        if(this.props.accountBilling?.billingPeriodEnd) {
+          planTitle = (
+            <React.Fragment>
+              Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+            </React.Fragment>
+          );
+        } else {
+          planTitle = 'Your plan is active';
+        }
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
+        planTitle = 'Your trial has expired';
+        planDesc = `You have limited access to your ${this.props.account.plan.title} plan. Please add a payment method to continue using our service.`;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
+        planTitle = 'Your plan is inactive';
+        planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
+        break;
+      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
+        planTitle = 'Your plan is inactive';
+        planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
+        break;
+    }
+
     return (
-      <React.Fragment>
+      <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
         <DividerCorner title='Payment' height='90%'>
           {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
           <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
-            <CreditCard
-              className={this.props.classes.creditCard}
-              brand={this.props.account.hasPayment ? (
-                this.props.account.renewAutomatically ?
-                ( <ActiveIcon color='primary' /> ) : ( <PausedIcon style={{color: this.props.theme.palette.warning.main}} /> )) : ( <NoneIcon color='error' /> )}
-              numberInput={(<span className={this.props.classes.blurry}>HEYT HISI SPRI VATE</span>)}
-              expiryInput={(<span className={this.props.classes.blurry}>DO / NT</span>)}
-              cvcInput={(<span className={this.props.classes.blurry}>LUK</span>)}
-            />
-            {this.props.account.hasPayment ? (
-              this.props.account.renewAutomatically ? (
-                <React.Fragment>
-                  <Typography variant='h6' component='div'>Automatic renewal is active</Typography>
-                  <Typography>You will be automatically billed at the next cycle and your plan will be renewed.</Typography>
-                  <div className={this.props.classes.sectionButtons}>
-                    <Button disabled={this.state.isSubmitting || this.state.showAddPayment} onClick={() => this.setState({showAddPayment: true})}>Update payment</Button>
-                    <Button disabled={this.state.isSubmitting} style={{ color: !this.state.isSubmitting ? this.props.theme.palette.warning.dark : undefined }} onClick={() => {
-                      this.setState({isSubmitting: true});
-                      ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                        accountUpdateAdmin: {
-                          renewAutomatically: false,
-                        },
-                      }))
-                      .then(() => this.setState({isSubmitting: false}))
-                      .catch(er => this.setState({isSubmitting: false}));
-                    }}>Pause renewal</Button>
-                  </div>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  <Typography variant='h6' component='div'>Automatic renewal is NOT active</Typography>
-                  <Typography>You will not be billed at the next cycle. Resume payments to activate automatic renewal to prevent expiration. Expired accounts have limited functionality and are pending deletion.</Typography>
-                  <div className={this.props.classes.sectionButtons}>
-                    <Button disabled={this.state.isSubmitting} style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.dark : undefined }} onClick={() => {
-                      this.setState({isSubmitting: true});
-                      ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                        accountUpdateAdmin: {
-                          paymentToken: '',
-                          renewAutomatically: false,
-                        },
-                      }))
-                      .then(() => this.setState({isSubmitting: false}))
-                      .catch(er => this.setState({isSubmitting: false}));
-                    }}>Remove payment method</Button>
-                    <Button disabled={this.state.isSubmitting} color='primary' onClick={() => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                      accountUpdateAdmin: {
-                        renewAutomatically: true,
-                      },
-                    }))}>Resume renewal</Button>
-                  </div>
-                </React.Fragment>
-              )
-            ) : (
-              <React.Fragment>
-                <Typography variant='h6' component='div'>Automatic renewal is NOT active</Typography>
-                <Typography>Add a payment method to activate automatic renewal to prevent expiration. Expired accounts have limited functionality and are pending deletion.</Typography>
-                <div className={this.props.classes.sectionButtons}>
-                  <Button disabled={this.state.isSubmitting || this.state.showAddPayment} color='primary' onClick={() => this.setState({showAddPayment: true})
-                  }>Add payment method</Button>
-                </div>
-              </React.Fragment>
-            ) }
+            {creditCard}
+            <Typography variant='h6' component='div'>{paymentTitle}</Typography>
+            <Typography>{paymentDesc}</Typography>
+            <div className={this.props.classes.sectionButtons}>
+              {showSetPayment && (
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showAddPayment}
+                  onClick={() => this.setState({showAddPayment: true})}
+                >
+                  {setPaymentTitle}
+                </Button>
+              )}
+              {showCancelSubscription && (
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showCancelSubscription}
+                  onClick={() => this.setState({showCancelSubscription: true})}
+                >
+                  Cancel payments
+                </Button>
+              )}
+              {showResumePlan && (
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showResumePlan}
+                  onClick={() => this.setState({showResumePlan: true})}
+                >
+                  Resume payments
+                </Button>
+              )}
+            </div>
           </Container>
           <Dialog
             open={!!this.state.showAddPayment}
             keepMounted
             onClose={() => this.setState({showAddPayment: undefined})}
           >
-            <DialogTitle>Activate Automatic Renewal</DialogTitle>
+            <DialogTitle>Add payment method</DialogTitle>
             <DialogContent className={this.props.classes.center}>
               <StripeCreditCard />
             </DialogContent>
@@ -145,17 +271,68 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
               <Button onClick={() => this.setState({showAddPayment: undefined})}>
                 Cancel
               </Button>
-              <Button color="primary" onClick={() => {
+              <Button color='primary' onClick={() => {
                 this.setState({isSubmitting: true});
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                   accountUpdateAdmin: {
                     paymentToken: 'TODO', // TODO add stripe token
                     renewAutomatically: true,
                   },
-                }))
+                }).then(() => d.accountBillingAdmin()))
                 .then(() => this.setState({isSubmitting: false, showAddPayment: undefined}))
                 .catch(er => this.setState({isSubmitting: false}));
-              }}>Activate</Button>
+              }}>Add</Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog
+            open={!!this.state.showCancelSubscription}
+            keepMounted
+            onClose={() => this.setState({showCancelSubscription: undefined})}
+          >
+            <DialogTitle>Stop subscription</DialogTitle>
+            <DialogContent className={this.props.classes.center}>
+              <DialogContentText>Stops automatic renewal of subscription. You will continue to </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => this.setState({showCancelSubscription: undefined})}>
+                Cancel
+              </Button>
+              <Button color='primary' onClick={() => {
+                this.setState({isSubmitting: true});
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    subscriptionActive: false,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                .then(() => this.setState({isSubmitting: false, showCancelSubscription: undefined}))
+                .catch(er => this.setState({isSubmitting: false}));
+              }}>Stop subscription</Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog
+            open={!!this.state.showResumePlan}
+            keepMounted
+            onClose={() => this.setState({showResumePlan: undefined})}
+          >
+            <DialogTitle>Resume subscription</DialogTitle>
+            <DialogContent className={this.props.classes.center}>
+            <DialogContentText>{resumePlanDesc}</DialogContentText>
+            </DialogContent>
+            <AcceptTerms />
+            <DialogActions>
+              <Button onClick={() => this.setState({showResumePlan: undefined})}>
+                Cancel
+              </Button>
+              <Button color='primary' onClick={() => {
+                this.setState({isSubmitting: true});
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    subscriptionActive: true,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                .then(() => this.setState({isSubmitting: false, showResumePlan: undefined}))
+                .catch(er => this.setState({isSubmitting: false}));
+              }}>Resume subscription</Button>
             </DialogActions>
           </Dialog>
         </DividerCorner>
@@ -165,28 +342,13 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
               selected
               className={this.props.classes.plan}
               plan={this.props.account.plan}
-              // hidePerks
             />
-            {this.props.account.planExpiry ? (
-              (this.props.account.hasPayment && this.props.account.renewAutomatically) ? (
-                <React.Fragment>
-                  <Typography variant='h6' component='div'>Your plan is active</Typography>
-                  <Typography>You have full access to your {this.props.account.plan.title} plan. At the end of the cycle, your plan will automatically renew. If you switch plans, balance will be prorated accordingly.</Typography>
-                  <div className={this.props.classes.sectionButtons}>
-                    <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({showPlanChange: true})}>Switch plan</Button>
-                  </div>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  <Typography variant='h6' component='div'>Your plan will expire in <TimeAgo date={this.props.account.planExpiry} /></Typography>
-                  <Typography>You have full access to your {this.props.account.plan.title} plan until expiration. Expired accounts have limited functionality and are pending deletion. Enable automatic renewal to change plans.</Typography>
-                </React.Fragment>
-              )
-            ) : (
-              <React.Fragment>
-                <Typography variant='h6' component='div'>Your plan is NOT active</Typography>
-                <Typography>You have limited access to functionality and your account is pending deletion. Enable automatic renewal to activate plan and be able to switch plans.</Typography>
-              </React.Fragment>
+            <Typography variant='h6' component='div'>{planTitle}</Typography>
+            <Typography>{planDesc}</Typography>
+            {showPlanChange && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({showPlanChange: true})}>Switch plan</Button>
+              </div>
             )}
           </Container>
           <BillingChangePlanDialog
@@ -198,22 +360,27 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
                 accountUpdateAdmin: {
                   planid,
                 },
-              }))
+              }).then(() => d.accountBillingAdmin()))
               .then(() => this.setState({isSubmitting: false, showPlanChange: undefined}))
               .catch(er => this.setState({isSubmitting: false}));
             }}
             isSubmitting={!!this.state.isSubmitting}
           />
         </DividerCorner>
-      </React.Fragment>
+      </Loader>
     );
   }
 }
 
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
+  if (state.account.billing.status === undefined) {
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin());
+  }
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
+    accountBillingStatus: state.account.billing.status,
+    accountBilling: state.account.billing.billing,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BillingPage));

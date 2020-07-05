@@ -133,7 +133,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ? { account: this.account } : {});
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
-    console.log('DEBUG', this.account, request.accountLogin, this.accountPass);
     if (!this.account
       || request.accountLogin.email !== this.account.email
       || request.accountLogin.password !== this.accountPass) {
@@ -147,8 +146,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater();
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
-    const planExpiry = new Date();
-    planExpiry.setDate(planExpiry.getDate() + 1);
     const account: Admin.AccountAdmin = {
       plan: AvailablePlans['E5A119e3-1477-4621-A9EA-85355B34A6D4'],
       name: request.accountSignupAdmin.name,
@@ -158,7 +155,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
-      planExpiry,
+      subscriptionStatus: Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -170,10 +167,51 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
     if (request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if (request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
-    if (request.accountUpdateAdmin.paymentToken !== undefined) this.account.hasPayment = request.accountUpdateAdmin.paymentToken !== '';
-    if (request.accountUpdateAdmin.renewAutomatically !== undefined) this.account.renewAutomatically = request.accountUpdateAdmin.renewAutomatically;
+    if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.AccountAdminSubscriptionStatusEnum.Active;
+    if (request.accountUpdateAdmin.subscriptionActive !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.subscriptionActive
+      ? Admin.AccountAdminSubscriptionStatusEnum.Active : Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal;
     if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
     return this.returnLater(this.account);
+  }
+  accountBillingAdmin(): Promise<Admin.AccountBilling> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    const billingPeriodEnd = new Date();
+    billingPeriodEnd.setDate(billingPeriodEnd.getDate() + 3);
+    const invoiceDate = new Date();
+    invoiceDate.setDate(invoiceDate.getDate() - 10);
+    return this.returnLater({
+      payment: (this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial
+        || this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.TrialExpired) ? undefined : {
+        brand: 'mastercard',
+        last4: "4242",
+        expiryMonth: 7,
+        expiryYear: 2032,
+      },
+      billingPeriodEnd,
+      availablePlans: Object.values(AvailablePlans).filter(p => p.planid !== this.account?.plan.planid),
+      billingHistory: {
+        cursor: 'one more',
+        results: [{
+          date: invoiceDate,
+          amount: '$40',
+          description: "Standard plan monthly",
+          invoiceUrl: "https://smotana.com",
+        }],
+      },
+    });
+  }
+  billingHistorySearchAdmin(request: Admin.BillingHistorySearchAdminRequest): Promise<Admin.BillingHistory> {
+    const invoiceDate = new Date();
+    invoiceDate.setDate(invoiceDate.getDate() - 24);
+    return this.returnLater({
+      cursor: undefined,
+      results: [{
+        date: invoiceDate,
+        amount: '$40',
+        description: "Standard plan monthly",
+        invoiceUrl: "https://smotana.com",
+      }],
+  });
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;

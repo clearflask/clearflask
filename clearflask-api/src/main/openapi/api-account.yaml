@@ -113,18 +113,12 @@ components:
           type: string
           enum:
           - Active
-          - Inactive
-        subscriptionNote:
-          type: string
-          enum:
-          - Trialling
-          - NoPaymentMethod
+          - ActiveTrial
+          - ActivePaymentRetry
+          - ActiveNoRenewal
+          - TrialExpired
           - PaymentFailed
           - Cancelled
-        hasPayment:
-          type: boolean
-        renewAutomatically:
-          type: boolean
         name:
           type: string
         email:
@@ -146,6 +140,8 @@ components:
           type: string
         planid:
           type: string
+        subscriptionActive:
+          type: boolean
     AccountBilling:
       type: object
       required:
@@ -189,9 +185,22 @@ components:
         results:
           type: array
           items:
-            $ref: 'api-credit.yaml#/components/schemas/Transaction'
-        
-
+            title: BillingHistoryItem
+            type: object
+            required:
+            - date
+            - amount
+            - invoiceUrl
+            properties:
+              date:
+                type: string
+                format: date-time
+              amount:
+                type: string
+              description:
+                type: string
+              invoiceUrl:
+                type: string
 
 /support/message:
   post:
@@ -336,7 +345,7 @@ components:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountBilling'
 /admin/account/billing/history:
-  post:
+  get:
     operationId: billingHistorySearchAdmin
     tags: [AccountAdmin]
     parameters:

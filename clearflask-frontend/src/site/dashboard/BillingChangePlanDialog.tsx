@@ -9,11 +9,10 @@ import notEmpty from '../../common/util/arrayUtil';
 import PlanPeriodSelect from '../PlanPeriodSelect';
 import PricingPlan from '../PricingPlan';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import Loader from '../../app/utils/Loader';
+import { Status } from '../../api/server';
 
 const styles = (theme: Theme) => createStyles({
-  content: {
-
-  },
 });
 interface Props {
   open: boolean;
@@ -23,7 +22,10 @@ interface Props {
 }
 interface ConnectProps {
   accountPlanId?: string;
+  currentPlan?: Admin.Plan;
   plans?: Admin.Plan[];
+  accountBillingStatus?: Status;
+  accountStatus?: Status;
 }
 interface State {
   period?: Admin.PlanPricingPeriodEnum;
@@ -44,6 +46,9 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
     const plans = allPlans
       .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period)
     const selectedPlanId = this.state.planid;
+    const plansWithCurrentPlan = this.props.currentPlan
+      ? [this.props.currentPlan, ...plans]
+      : plans;
 
     return (
       <Dialog
@@ -55,17 +60,17 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
         fullWidth
       >
         <DialogTitle>Switch plan</DialogTitle>
-        <div className={this.props.classes.content}>
-          {periods.length > 1 && (
-            <PlanPeriodSelect
-              plans={this.props.plans}
-              value={selectedPeriod}
-              onChange={period => this.setState({ period, planid: undefined })}
-            />
-          )}
+        {periods.length > 1 && (
+          <PlanPeriodSelect
+            plans={plansWithCurrentPlan}
+            value={selectedPeriod}
+            onChange={period => this.setState({ period, planid: undefined })}
+          />
+        )}
+        <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
           <Container maxWidth='md'>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
-              {plans.map((plan, index) => (
+              {plansWithCurrentPlan.map((plan, index) => (
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
@@ -78,7 +83,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
               ))}
             </Grid>
           </Container>
-        </div>
+        </Loader>
         <AcceptTerms />
         <DialogActions>
           <Button onClick={this.props.onClose.bind(this)}
@@ -95,8 +100,14 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   if (state.plans.plans.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
   }
+  if (state.account.billing.status === undefined) {
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin());
+  }
   return {
     accountPlanId: state.account.account.account?.plan.planid,
-    plans: state.plans.plans.plans,
+    currentPlan: state.account.account.account?.plan,
+    plans: state.account.billing.billing?.availablePlans,
+    accountStatus: state.account.account.status,
+    accountBillingStatus: state.account.billing.status,
   };
 })(withStyles(styles, { withTheme: true })(withMediaQuery(theme => theme.breakpoints.down('xs'))(BillingChangePlanDialog)));
