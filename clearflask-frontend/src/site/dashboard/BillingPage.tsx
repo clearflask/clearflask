@@ -1,5 +1,5 @@
 
-import { Grid, Typography, Button, Slide, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Container } from '@material-ui/core';
+import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Container, Table, TableBody, TableRow, TableCell, TableHead } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -11,7 +11,6 @@ import PricingPlan from '../PricingPlan';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import CreditCard from '../../common/CreditCard';
 import AcceptTerms from '../../common/AcceptTerms';
-import ErrorMsg from '../../app/ErrorMsg';
 import ActiveIcon from '@material-ui/icons/Check';
 import WarnIcon from '@material-ui/icons/Warning';
 import ErrorIcon from '@material-ui/icons/Error';
@@ -35,6 +34,12 @@ const styles = (theme: Theme) => createStyles({
   sectionContainer: {
     display: 'inline-flex',
     flexDirection: 'column',
+  },
+  sectionBillingHistory: {
+    width: 'min-content',
+  },
+  billingHistoryTable: {
+    whiteSpace: 'nowrap',
   },
   sectionButtons: {
     alignSelf: 'flex-end',
@@ -61,17 +66,18 @@ interface State {
   showCancelSubscription?: boolean;
   showResumePlan?: boolean;
   showPlanChange?: boolean;
+  billingResults?: Admin.BillingHistoryItem[];
+  billingCursor?: string;
 }
 class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, true>, State> {
-  state:State = {};
+  state: State = {};
   render() {
     if (!this.props.account) {
       return 'Need to login to see this page';
     }
 
-    var cardBrand, cardNumber, cardExpiry, cardStateIcon;
-    if(!!this.props.accountBilling?.payment) {
-      cardBrand = this.props.accountBilling.payment.brand;
+    var cardNumber, cardExpiry, cardStateIcon;
+    if (!!this.props.accountBilling?.payment) {
       cardNumber = (
         <React.Fragment>
           <span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;</span>
@@ -79,15 +85,15 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
         </React.Fragment>
       );
       var expiryColor;
-      if(new Date().getFullYear() % 100 >= this.props.accountBilling.payment.expiryYear % 100) {
-        if(new Date().getMonth() + 1 == this.props.accountBilling.payment.expiryMonth) {
+      if (new Date().getFullYear() % 100 >= this.props.accountBilling.payment.expiryYear % 100) {
+        if (new Date().getMonth() + 1 === this.props.accountBilling.payment.expiryMonth) {
           expiryColor = this.props.theme.palette.warning.main;
         } else if (new Date().getMonth() + 1 > this.props.accountBilling.payment.expiryMonth) {
           expiryColor = this.props.theme.palette.error.main;
         }
       }
       cardExpiry = (
-        <span style={expiryColor && {color: expiryColor}}>
+        <span style={expiryColor && { color: expiryColor }}>
           {this.props.accountBilling.payment.expiryMonth}
           &nbsp;/&nbsp;
           {this.props.accountBilling.payment.expiryYear % 100}
@@ -96,20 +102,20 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     } else {
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
-    }    
-    switch(this.props.account.subscriptionStatus) {
+    }
+    switch (this.props.account.subscriptionStatus) {
       case Admin.AccountAdminSubscriptionStatusEnum.Active:
-        cardStateIcon = ( <ActiveIcon color='primary' /> );
+        cardStateIcon = (<ActiveIcon color='primary' />);
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
       case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
-        cardStateIcon = ( <WarnIcon style={{color: this.props.theme.palette.warning.main}} /> );
+        cardStateIcon = (<WarnIcon style={{ color: this.props.theme.palette.warning.main }} />);
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
       case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
       case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
-        cardStateIcon = ( <ErrorIcon color='error' /> );
+        cardStateIcon = (<ErrorIcon color='error' />);
         break;
     }
     const creditCard = (
@@ -123,7 +129,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     );
 
     var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc;
-    switch(this.props.account.subscriptionStatus) {
+    switch (this.props.account.subscriptionStatus) {
       case Admin.AccountAdminSubscriptionStatusEnum.Active:
         paymentTitle = 'Automatic renewal is active';
         paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
@@ -173,14 +179,14 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     }
 
     var planTitle, planDesc, showPlanChange;
-    switch(this.props.account.subscriptionStatus) {
+    switch (this.props.account.subscriptionStatus) {
       case Admin.AccountAdminSubscriptionStatusEnum.Active:
         planTitle = 'Your plan is active';
         planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
         showPlanChange = true;
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
-        if(this.props.accountBilling?.billingPeriodEnd) {
+        if (this.props.accountBilling?.billingPeriodEnd) {
           planTitle = (
             <React.Fragment>
               Your trial is active and will expire in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
@@ -197,7 +203,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
         planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before changing your plan.`;
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
-        if(this.props.accountBilling?.billingPeriodEnd) {
+        if (this.props.accountBilling?.billingPeriodEnd) {
           planTitle = (
             <React.Fragment>
               Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
@@ -222,151 +228,212 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
         break;
     }
 
-    return (
-      <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
-        <DividerCorner title='Payment' height='90%'>
-          {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
-          <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
-            {creditCard}
-            <Typography variant='h6' component='div'>{paymentTitle}</Typography>
-            <Typography>{paymentDesc}</Typography>
-            <div className={this.props.classes.sectionButtons}>
-              {showSetPayment && (
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showAddPayment}
-                  onClick={() => this.setState({showAddPayment: true})}
-                >
-                  {setPaymentTitle}
-                </Button>
-              )}
-              {showCancelSubscription && (
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showCancelSubscription}
-                  onClick={() => this.setState({showCancelSubscription: true})}
-                >
-                  Cancel payments
-                </Button>
-              )}
-              {showResumePlan && (
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showResumePlan}
-                  onClick={() => this.setState({showResumePlan: true})}
-                >
-                  Resume payments
-                </Button>
-              )}
-            </div>
-          </Container>
-          <Dialog
-            open={!!this.state.showAddPayment}
-            keepMounted
-            onClose={() => this.setState({showAddPayment: undefined})}
-          >
-            <DialogTitle>Add payment method</DialogTitle>
-            <DialogContent className={this.props.classes.center}>
-              <StripeCreditCard />
-            </DialogContent>
-            <AcceptTerms />
-            <DialogActions>
-              <Button onClick={() => this.setState({showAddPayment: undefined})}>
-                Cancel
+    const payment = (
+      <DividerCorner title='Payment' height='90%'>
+        <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+          {creditCard}
+          <Typography variant='h6' component='div'>{paymentTitle}</Typography>
+          <Typography>{paymentDesc}</Typography>
+          <div className={this.props.classes.sectionButtons}>
+            {showSetPayment && (
+              <Button
+                disabled={this.state.isSubmitting || this.state.showAddPayment}
+                onClick={() => this.setState({ showAddPayment: true })}
+              >
+                {setPaymentTitle}
               </Button>
-              <Button color='primary' onClick={() => {
-                this.setState({isSubmitting: true});
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    paymentToken: 'TODO', // TODO add stripe token
-                    renewAutomatically: true,
-                  },
-                }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({isSubmitting: false, showAddPayment: undefined}))
-                .catch(er => this.setState({isSubmitting: false}));
-              }}>Add</Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            open={!!this.state.showCancelSubscription}
-            keepMounted
-            onClose={() => this.setState({showCancelSubscription: undefined})}
-          >
-            <DialogTitle>Stop subscription</DialogTitle>
-            <DialogContent className={this.props.classes.center}>
-              <DialogContentText>Stops automatic renewal of subscription. You will continue to </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => this.setState({showCancelSubscription: undefined})}>
-                Cancel
-              </Button>
-              <Button color='primary' onClick={() => {
-                this.setState({isSubmitting: true});
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    subscriptionActive: false,
-                  },
-                }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({isSubmitting: false, showCancelSubscription: undefined}))
-                .catch(er => this.setState({isSubmitting: false}));
-              }}>Stop subscription</Button>
-            </DialogActions>
-          </Dialog>
-          <Dialog
-            open={!!this.state.showResumePlan}
-            keepMounted
-            onClose={() => this.setState({showResumePlan: undefined})}
-          >
-            <DialogTitle>Resume subscription</DialogTitle>
-            <DialogContent className={this.props.classes.center}>
-            <DialogContentText>{resumePlanDesc}</DialogContentText>
-            </DialogContent>
-            <AcceptTerms />
-            <DialogActions>
-              <Button onClick={() => this.setState({showResumePlan: undefined})}>
-                Cancel
-              </Button>
-              <Button color='primary' onClick={() => {
-                this.setState({isSubmitting: true});
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    subscriptionActive: true,
-                  },
-                }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({isSubmitting: false, showResumePlan: undefined}))
-                .catch(er => this.setState({isSubmitting: false}));
-              }}>Resume subscription</Button>
-            </DialogActions>
-          </Dialog>
-        </DividerCorner>
-        <DividerCorner title='Plan' height='90%'>
-          <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
-            <PricingPlan
-              selected
-              className={this.props.classes.plan}
-              plan={this.props.account.plan}
-            />
-            <Typography variant='h6' component='div'>{planTitle}</Typography>
-            <Typography>{planDesc}</Typography>
-            {showPlanChange && (
-              <div className={this.props.classes.sectionButtons}>
-                <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({showPlanChange: true})}>Switch plan</Button>
-              </div>
             )}
-          </Container>
-          <BillingChangePlanDialog
-            open={!!this.state.showPlanChange}
-            onClose={() => this.setState({showPlanChange: undefined})}
-            onSubmit={planid => {
-              this.setState({isSubmitting: true});
+            {showCancelSubscription && (
+              <Button
+                disabled={this.state.isSubmitting || this.state.showCancelSubscription}
+                onClick={() => this.setState({ showCancelSubscription: true })}
+              >
+                Cancel payments
+              </Button>
+            )}
+            {showResumePlan && (
+              <Button
+                disabled={this.state.isSubmitting || this.state.showResumePlan}
+                onClick={() => this.setState({ showResumePlan: true })}
+              >
+                Resume payments
+              </Button>
+            )}
+          </div>
+        </Container>
+        <Dialog
+          open={!!this.state.showAddPayment}
+          keepMounted
+          onClose={() => this.setState({ showAddPayment: undefined })}
+        >
+          <DialogTitle>Add payment method</DialogTitle>
+          <DialogContent className={this.props.classes.center}>
+            <StripeCreditCard />
+          </DialogContent>
+          <AcceptTerms />
+          <DialogActions>
+            <Button onClick={() => this.setState({ showAddPayment: undefined })}>
+              Cancel
+            </Button>
+            <Button color='primary' onClick={() => {
+              this.setState({ isSubmitting: true });
               ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                 accountUpdateAdmin: {
-                  planid,
+                  paymentToken: 'TODO', // TODO add stripe token
+                  renewAutomatically: true,
                 },
               }).then(() => d.accountBillingAdmin()))
-              .then(() => this.setState({isSubmitting: false, showPlanChange: undefined}))
-              .catch(er => this.setState({isSubmitting: false}));
-            }}
-            isSubmitting={!!this.state.isSubmitting}
-          />
+                .then(() => this.setState({ isSubmitting: false, showAddPayment: undefined }))
+                .catch(er => this.setState({ isSubmitting: false }));
+            }}>Add</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={!!this.state.showCancelSubscription}
+          keepMounted
+          onClose={() => this.setState({ showCancelSubscription: undefined })}
+        >
+          <DialogTitle>Stop subscription</DialogTitle>
+          <DialogContent className={this.props.classes.center}>
+            <DialogContentText>Stops automatic renewal of subscription. You will continue to </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
+              Cancel
+            </Button>
+            <Button color='primary' onClick={() => {
+              this.setState({ isSubmitting: true });
+              ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                accountUpdateAdmin: {
+                  subscriptionActive: false,
+                },
+              }).then(() => d.accountBillingAdmin()))
+                .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
+                .catch(er => this.setState({ isSubmitting: false }));
+            }}>Stop subscription</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={!!this.state.showResumePlan}
+          keepMounted
+          onClose={() => this.setState({ showResumePlan: undefined })}
+        >
+          <DialogTitle>Resume subscription</DialogTitle>
+          <DialogContent className={this.props.classes.center}>
+            <DialogContentText>{resumePlanDesc}</DialogContentText>
+          </DialogContent>
+          <AcceptTerms />
+          <DialogActions>
+            <Button onClick={() => this.setState({ showResumePlan: undefined })}>
+              Cancel
+            </Button>
+            <Button color='primary' onClick={() => {
+              this.setState({ isSubmitting: true });
+              ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                accountUpdateAdmin: {
+                  subscriptionActive: true,
+                },
+              }).then(() => d.accountBillingAdmin()))
+                .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
+                .catch(er => this.setState({ isSubmitting: false }));
+            }}>Resume subscription</Button>
+          </DialogActions>
+        </Dialog>
+      </DividerCorner>
+    );
+
+    const nextBillingCursor = this.state.billingResults === undefined
+      ? this.props.accountBilling?.billingHistory.cursor
+      : this.state.billingCursor;
+    const billingItems = [
+      ...(this.props.accountBilling?.billingHistory.results || []),
+      ...(this.state.billingResults || []),
+    ];
+    const billingHistory = (
+      <div className={this.props.classes.sectionBillingHistory}>
+        <DividerCorner title='History' height={billingItems.length > 0 ? '100%' : undefined} className={this.props.classes.billingHistoryTable}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell key='date'>Date</TableCell>
+                <TableCell key='amount'>Amount</TableCell>
+                <TableCell key='desc'>Description</TableCell>
+                <TableCell key='invoiceLink'>Invoice</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {billingItems.map((billingItem, index) => (
+                <TableRow key={index}>
+                  <TableCell key='date'><Typography><TimeAgo date={billingItem.date} /></Typography></TableCell>
+                  <TableCell key='amount' align='right'><Typography>{billingItem.amount}</Typography></TableCell>
+                  <TableCell key='desc'><Typography>{billingItem.description}</Typography></TableCell>
+                  <TableCell key='invoiceLink'>
+                    <Button onClick={() => window.open(billingItem.invoiceUrl, '_blank')}>View</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </DividerCorner>
+        {nextBillingCursor && (
+          <Button
+            style={{ margin: 'auto', display: 'block' }}
+            onClick={() => ServerAdmin.get().dispatchAdmin()
+              .then(d => d.billingHistorySearchAdmin({ cursor: nextBillingCursor }))
+              .then(results => this.setState({
+                billingResults: [
+                  ...(this.state.billingResults || []),
+                  ...results.results,
+                ],
+                billingCursor: results.cursor,
+              }))}
+          >
+            Show more
+          </Button>
+        )}
+      </div>
+    );
+
+    const plan = (
+      <DividerCorner title='Plan' height='90%'>
+        <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+          <PricingPlan
+            selected
+            className={this.props.classes.plan}
+            plan={this.props.account.plan}
+          />
+          <Typography variant='h6' component='div'>{planTitle}</Typography>
+          <Typography>{planDesc}</Typography>
+          {showPlanChange && (
+            <div className={this.props.classes.sectionButtons}>
+              <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({ showPlanChange: true })}>Switch plan</Button>
+            </div>
+          )}
+        </Container>
+        <BillingChangePlanDialog
+          open={!!this.state.showPlanChange}
+          onClose={() => this.setState({ showPlanChange: undefined })}
+          onSubmit={planid => {
+            this.setState({ isSubmitting: true });
+            ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+              accountUpdateAdmin: {
+                planid,
+              },
+            }).then(() => d.accountBillingAdmin()))
+              .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
+              .catch(er => this.setState({ isSubmitting: false }));
+          }}
+          isSubmitting={!!this.state.isSubmitting}
+        />
+      </DividerCorner>
+    );
+
+    return (
+      <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
+        {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
+        {plan}
+        {payment}
+        {billingHistory}
       </Loader>
     );
   }

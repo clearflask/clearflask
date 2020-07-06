@@ -1,4 +1,4 @@
-import { Button, DialogActions, Grid, Dialog, DialogTitle, DialogContent, Container } from '@material-ui/core';
+import { Button, DialogActions, Grid, Dialog, DialogTitle, Container } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
