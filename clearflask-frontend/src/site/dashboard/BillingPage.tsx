@@ -35,6 +35,10 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-flex',
     flexDirection: 'column',
   },
+  billingContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+  },
   sectionBillingHistory: {
     width: 'min-content',
   },
@@ -153,6 +157,8 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'Resume automatic renewal to continue using our service beyond the next billing cycle.';
+        showSetPayment = true;
+        setPaymentTitle = 'Resume with new payment method';
         showResumePlan = true;
         resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
         break;
@@ -229,7 +235,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     }
 
     const payment = (
-      <DividerCorner title='Payment' height='90%'>
+      <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>
         <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
           {creditCard}
           <Typography variant='h6' component='div'>{paymentTitle}</Typography>
@@ -349,10 +355,10 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
       ...(this.props.accountBilling?.billingHistory.results || []),
       ...(this.state.billingResults || []),
     ];
-    const billingHistory = (
+    const billingHistory = billingItems.length <= 0 ? undefined : (
       <div className={this.props.classes.sectionBillingHistory}>
-        <DividerCorner title='History' height={billingItems.length > 0 ? '100%' : undefined} className={this.props.classes.billingHistoryTable}>
-          <Table size='small'>
+        <DividerCorner title='History' height='100%' className={classNames(this.props.classes.billingHistoryTable, this.props.classes.spacing)}>
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell key='date'>Date</TableCell>
@@ -395,7 +401,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
     );
 
     const plan = (
-      <DividerCorner title='Plan' height='90%'>
+      <DividerCorner title='Plan' height='90%' className={this.props.classes.spacing}>
         <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
           <PricingPlan
             selected
@@ -432,8 +438,10 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
       <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
         {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
         {plan}
-        {payment}
-        {billingHistory}
+        <div className={this.props.classes.billingContainer}>
+          {payment}
+          {billingHistory}
+        </div>
       </Loader>
     );
   }
