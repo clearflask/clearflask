@@ -2,14 +2,11 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -29,7 +26,7 @@ public interface AccountStore {
 
     Optional<Account> getAccountByEmail(String email);
 
-    Account setPlan(String accountId, String planId, Optional<Instant> planExpiry);
+    Account setPlan(String accountId, String planid);
 
     Account addProject(String accountId, String projectId);
 
@@ -40,6 +37,8 @@ public interface AccountStore {
     Account updatePassword(String accountId, String password, String sessionIdToLeave);
 
     Account updateEmail(String accountId, String emailNew, String sessionIdToLeave);
+
+    Account updateStatus(String accountId, SubscriptionStatusEnum status);
 
     void deleteAccount(String accountId);
 
@@ -99,15 +98,13 @@ public interface AccountStore {
         private final String email;
 
         @NonNull
+        private final SubscriptionStatusEnum status;
+
+        @NonNull
         private final String stripeCusId;
 
         @NonNull
-        private final String stripeSubId;
-
-        @NonNull
-        private final String planId;
-
-        private final Instant planExpiry;
+        private final String planid;
 
         @NonNull
         private final Instant created;
@@ -126,7 +123,8 @@ public interface AccountStore {
 
         public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso) {
             return new AccountAdmin(
-                    planStore.getPlan(getPlanId()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanId())),
+                    planStore.getPlan(getPlanid()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanid())),
+                    getStatus(),
                     getName(),
                     getEmail(),
                     cfSso.generateToken(this));

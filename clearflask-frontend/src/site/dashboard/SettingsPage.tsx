@@ -1,5 +1,5 @@
 
-import { Grid, Typography } from '@material-ui/core';
+import { Grid, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -18,15 +18,14 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(4),
   },
 });
-
 interface ConnectProps {
   account?: Admin.AccountAdmin;
 }
-
 interface State {
   name?: string;
+  isSubmitting?: boolean;
+  showDeleteDialog?: boolean;
 }
-
 class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
@@ -63,6 +62,40 @@ class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, tr
               accountUpdateAdmin: { password: saltHashPassword(newPassword) }
             }))}
           /></Grid>
+        </Grid>
+        <Grid container alignItems='baseline' className={this.props.classes.item}>
+          <Grid item xs={12} sm={6}><Typography>Account deletion</Typography></Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              disabled={this.state.isSubmitting}
+              style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
+              onClick={() => this.setState({ showDeleteDialog: true })}
+            >Delete</Button>
+            <Dialog
+              open={!!this.state.showDeleteDialog}
+              onClose={() => this.setState({ showDeleteDialog: false })}
+            >
+              <DialogTitle>Delete account</DialogTitle>
+              <DialogContent>
+                <DialogContentText>Are you sure you want to permanently delete your account including all projects and unsubscribe from your plan?</DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => this.setState({ showDeleteDialog: false })}>Cancel</Button>
+                <Button
+                  disabled={this.state.isSubmitting}
+                  style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
+                  onClick={() => {
+                    this.setState({ isSubmitting: true });
+                    ServerAdmin.get().dispatchAdmin().then(d => d.accountDeleteAdmin())
+                      .then(() => this.setState({
+                        isSubmitting: false,
+                        showDeleteDialog: false,
+                      }))
+                      .catch(e => this.setState({ isSubmitting: false }));
+                  }}>Delete</Button>
+              </DialogActions>
+            </Dialog>
+          </Grid>
         </Grid>
       </DividerCorner>
     );

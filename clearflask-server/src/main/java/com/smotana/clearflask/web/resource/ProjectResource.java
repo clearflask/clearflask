@@ -12,22 +12,12 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ConfigAndBindResult;
-import com.smotana.clearflask.api.model.ConfigGetAllResult;
-import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
@@ -195,7 +185,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
-    @Limit(requiredPermits = 1)
+    @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
         // TODO sanity check, projectId alphanumeric lowercase
@@ -218,7 +208,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
+    @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public void projectDeleteAdmin(String projectId) {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();

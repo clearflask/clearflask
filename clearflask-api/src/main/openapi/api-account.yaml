@@ -189,14 +189,18 @@ components:
             type: object
             required:
             - date
+            - status
             - amount
             - invoiceUrl
             properties:
               date:
                 type: string
                 format: date-time
-              amount:
+              status:
                 type: string
+              amount:
+                type: integer
+                format: int64
               description:
                 type: string
               invoiceUrl:
@@ -359,3 +363,10 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/BillingHistory'
+/admin/account/delete:
+  delete:
+    operationId: accountDeleteAdmin
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

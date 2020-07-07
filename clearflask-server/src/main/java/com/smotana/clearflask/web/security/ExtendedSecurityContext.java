@@ -46,7 +46,7 @@ public class ExtendedSecurityContext implements SecurityContext {
     public static ExtendedSecurityContext authenticated(@NonNull Optional<AccountStore.AccountSession> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         String name;
         if (accountSession.isPresent()) {
-            name = accountSession.get().getEmail();
+            name = accountSession.get().getAccountId();
         } else if (userSession.isPresent()) {
             name = userSession.get().getUserId();
         } else {

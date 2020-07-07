@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -9,6 +10,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.StripeBilling;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -18,18 +20,15 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
-import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Address;
 import com.stripe.model.Customer;
+import com.stripe.model.Source;
+import com.stripe.model.Source.Card;
 import com.stripe.model.Subscription;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerUpdateParams;
-import com.stripe.param.SubscriptionCreateParams;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
@@ -59,6 +58,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
     @Inject
     private Config config;
+    @Inject
+    private ProjectResource projectResource;
     @Inject
     private StripeBilling stripeBilling;
     @Inject
@@ -189,12 +190,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = new Account(
                     accountId,
                     signup.getEmail(),
+                    stripeBilling.getSubscriptionStatusFrom(customer, subscription),
                     customer.getId(),
-                    subscription.getId(),
                     plan.getPlanid(),
-                    Optional.ofNullable(subscription.getTrialEnd())
-                            .map(Instant::ofEpochSecond)
-                            .orElse(null),
                     Instant.now(),
                     signup.getName(),
                     passwordHashed,
@@ -219,25 +217,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return account.toAccountAdmin(planStore, cfSso);
     }
 
-    @PermitAll
-    @Limit(requiredPermits = 10, challengeAfter = 3)
-    @Override
-    public AccountAdmin accountUpdatePaymentAdmin(String paymentToken) {
-        // TODO
-
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow();
-
-        Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
-
-        customer = stripeBilling.updatedPayment(customer, paymentToken);
-
-        return null;
-    }
-
     @RolesAllowed({Role.ADMINISTRATOR})
-    @Limit(requiredPermits = 1)
+    @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountUpdateAdmin(AccountUpdateAdmin accountUpdateAdmin) {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
@@ -251,10 +232,106 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId());
         }
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPaymentToken())) {
+            stripeBilling.updatePaymentToken(account.getStripeCusId(), accountUpdateAdmin.getPaymentToken());
+        }
+        if (accountUpdateAdmin.getSubscriptionActive() != null) {
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            Subscription subscription;
+            if (accountUpdateAdmin.getSubscriptionActive()) {
+                String planPriceId = planStore.getStripePriceId(account.getPlanid()).get();
+                subscription = stripeBilling.resumeSubscription(account.getStripeCusId(), planPriceId);
+            } else {
+                subscription = stripeBilling.cancelSubscription(account.getStripeCusId());
+            }
+            Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
+            SubscriptionStatusEnum newStatus = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
+            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
+        }
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            String newPlanid = accountUpdateAdmin.getPlanid();
+            if (!planStore.availablePlansToChangeFrom(account.getPlanid()).contains(newPlanid)) {
+                log.error("Account {} not allowed to change plans from {} to {}",
+                        accountSession.getAccountId(), account.getPlanid(), newPlanid);
+                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
+            }
+            String stripePriceId = planStore.getStripePriceId(newPlanid).get();
+            stripeBilling.changePrice(account.getStripeCusId(), stripePriceId);
+            account = accountStore.setPlan(accountSession.getAccountId(), newPlanid);
+        }
         return (account == null
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
                 : account)
                 .toAccountAdmin(planStore, cfSso);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 10, challengeAfter = 1)
+    @Override
+    public void accountDeleteAdmin() {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
+        accountStore.deleteAccount(accountSession.getAccountId());
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public AccountBilling accountBillingAdmin() {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+
+        Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
+        Subscription subscription = stripeBilling.getSubscription(account.getStripeCusId());
+
+        SubscriptionStatusEnum expectedStatus = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
+        if (expectedStatus != account.getStatus()) {
+            log.warn("Status mismatch between Stripe customer {} subscription {} status {}, but is {} on account {}, updating it now",
+                    customer.getId(), subscription.getId(), expectedStatus, account.getStatus(), account.getAccountId());
+            account = accountStore.updateStatus(account.getAccountId(), expectedStatus);
+        }
+
+        ImmutableList<Plan> availableChangePlans = ImmutableList.copyOf(planStore.availablePlansToChangeFrom(account.getPlanid()));
+
+        BillingHistory billingHistory = stripeBilling.billingHistory(account.getStripeCusId(), Optional.empty());
+
+        AccountBillingPayment payment = null;
+        if (!Strings.isNullOrEmpty(customer.getDefaultSource())) {
+            try {
+                Card card = Source.retrieve(customer.getDefaultSource()).getCard();
+                payment = new AccountBillingPayment(
+                        card.getBrand(),
+                        card.getLast4(),
+                        card.getExpMonth(),
+                        card.getExpYear());
+            } catch (StripeException ex) {
+                log.error("Failed to fetch customer card source for customer id {}", customer.getId(), ex);
+                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed fetching your card information");
+            }
+        }
+
+        Instant billingPeriodEnd = Instant.ofEpochSecond(subscription.getCurrentPeriodEnd());
+
+        return new AccountBilling(
+                payment,
+                billingPeriodEnd,
+                availableChangePlans,
+                billingHistory);
+    }
+
+    @Override
+    public BillingHistory billingHistorySearchAdmin(String cursor) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        return stripeBilling.billingHistory(
+                account.getStripeCusId(),
+                Optional.ofNullable(cursor));
     }
 
     @PermitAll

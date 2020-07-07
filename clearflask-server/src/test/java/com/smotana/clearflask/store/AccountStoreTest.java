@@ -2,6 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -37,10 +38,9 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 store.genAccountId(),
                 "my@email.com",
-                IdUtil.randomId(),
+                AccountAdmin.SubscriptionStatusEnum.ACTIVETRIAL,
                 IdUtil.randomId(),
                 "planId1",
-                null,
                 Instant.now(),
                 "name",
                 "password",
@@ -82,11 +82,15 @@ public class AccountStoreTest extends AbstractTest {
         account = account.toBuilder()
                 .email("new@email.com")
                 .build();
-        store.updateEmail(account.getAccountId(), account.getEmail());
+        store.updateEmail(account.getAccountId(), account.getEmail(), "");
         assertEquals(Optional.empty(), store.getAccountByEmail(oldEmail));
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         assertEquals(Optional.empty(), store.getSession(accountSession.getSessionId()));
         assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
+
+        store.deleteAccount(account.getAccountId());
+        assertFalse(store.getAccountByAccountId(account.getAccountId()).isPresent());
+        assertFalse(store.getAccountByEmail(account.getEmail()).isPresent());
     }
 
     @Test(timeout = 5_000L)
@@ -94,10 +98,9 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 store.genAccountId(),
                 "my@email.com",
-                IdUtil.randomId(),
+                AccountAdmin.SubscriptionStatusEnum.ACTIVETRIAL,
                 IdUtil.randomId(),
                 "planId1",
-                null,
                 Instant.now(),
                 "name",
                 "password",
@@ -116,7 +119,7 @@ public class AccountStoreTest extends AbstractTest {
         assertEquals(accountSession2, store.getSession(accountSession2.getSessionId()).get());
         assertTrue(store.getSession(accountSession1.getSessionId()).isPresent());
 
-        store.revokeAccountSession(accountSession1);
+        store.revokeSession(accountSession1.getSessionId());
         assertFalse(store.getSession(accountSession1.getSessionId()).isPresent());
         assertTrue(store.getSession(accountSession2.getSessionId()).isPresent());
 

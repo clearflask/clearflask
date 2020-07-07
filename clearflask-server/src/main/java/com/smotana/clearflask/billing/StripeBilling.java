@@ -2,6 +2,8 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.inject.Singleton;
+import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
+import com.smotana.clearflask.api.model.BillingHistory;
 import com.stripe.model.Customer;
 import com.stripe.model.Event;
 import com.stripe.model.Subscription;
@@ -12,7 +14,7 @@ import java.util.Optional;
 @Singleton
 public interface StripeBilling {
 
-    Event parseEvent(HttpServletRequest request);
+    Event parseWebhookEvent(HttpServletRequest request);
 
     Customer createCustomer(String accountId, String email, String name);
 
@@ -22,7 +24,17 @@ public interface StripeBilling {
 
     Subscription createSubscription(String customerId, String stripePriceId, long trialPeriodInDays);
 
-    void updatedSubscription(Customer customer, Subscription subscription);
+    Subscription getSubscription(String customerId);
 
-    Customer updatedPayment(Customer customer, String paymentToken);
+    SubscriptionStatusEnum getSubscriptionStatusFrom(Customer customer, Subscription subscription);
+
+    void updatePaymentToken(String customerId, String paymentToken);
+
+    Subscription cancelSubscription(String customerId);
+
+    Subscription resumeSubscription(String customerId, String planPriceId);
+
+    Subscription changePrice(String customerId, String stripePriceId);
+
+    BillingHistory billingHistory(String customerId, Optional<String> cursorOpt);
 }

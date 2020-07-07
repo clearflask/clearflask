@@ -8,14 +8,8 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.api.model.FeaturesTable;
-import com.smotana.clearflask.api.model.FeaturesTableFeatures;
-import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlanPerk;
-import com.smotana.clearflask.api.model.PlanPricing;
-import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.PlanStore;
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,6 +108,14 @@ public class StaticPlanStore implements PlanStore {
             default:
                 return Optional.empty();
         }
+    }
+
+    @Override
+    public ImmutableSet<Plan> availablePlansToChangeFrom(String planId) {
+        return AVAILABLE_PlANS.values().stream()
+                .filter(plan -> plan.getPricing() != null)
+                .filter(plan -> plan.getPlanid() != planId)
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     public static Module module() {

@@ -15,4 +15,6 @@ public interface PlanStore {
     Optional<Plan> getPlan(String planId);
 
     Optional<String> getStripePriceId(String planId);
+
+    ImmutableSet<Plan> availablePlansToChangeFrom(String planId);
 }

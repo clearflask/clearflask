@@ -1,15 +1,11 @@
 package com.smotana.clearflask.web.resource;
 
-import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.StripeBilling;
-import com.stripe.exception.SignatureVerificationException;
+import com.smotana.clearflask.store.AccountStore;
 import com.stripe.model.*;
-import com.stripe.net.Webhook;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -20,7 +16,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.time.Duration;
+
+import static com.smotana.clearflask.store.AccountStore.Account;
 
 @Slf4j
 @Singleton
@@ -33,17 +30,19 @@ public class StripeResource {
     private HttpServletResponse response;
     @Inject
     private StripeBilling stripeBilling;
+    @Inject
+    private AccountStore accountStore;
 
     @POST
     @Path("/webhook/stripe")
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
     public void webhook(String payload) {
-        Event event = stripeBilling.parseEvent(request);
+        Event event = stripeBilling.parseWebhookEvent(request);
 
         // Deserialize the nested object inside the event
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-        StripeObject stripeObject = null;
+        StripeObject stripeObject;
         if (dataObjectDeserializer.getObject().isPresent()) {
             stripeObject = dataObjectDeserializer.getObject().get();
         } else {
@@ -53,14 +52,20 @@ public class StripeResource {
 
         // Handle the event
         switch (event.getType()) {
+            case "customer.subscription.trial_will_end":
+                break;
             case "customer.subscription.updated":
             case "customer.subscription.deleted":
             case "customer.subscription.pending_update_applied":
             case "customer.subscription.pending_update_expired":
-            case "customer.subscription.trial_will_end":
                 Subscription subscription = (Subscription) stripeObject;
                 Customer customer = subscription.getCustomerObject();
-                stripeBilling.updatedSubscription(customer, subscription);
+                SubscriptionStatusEnum statusNew = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
+                String accountId = stripeBilling.getCustomerAccountId(customer).get();
+                Account account = accountStore.getAccountByAccountId(accountId).get();
+                if (statusNew != account.getStatus()) {
+                    accountStore.updateStatus(accountId, statusNew);
+                }
                 break;
             default:
                 log.error("Stripe webhook unexpected event type {}", event.getType());

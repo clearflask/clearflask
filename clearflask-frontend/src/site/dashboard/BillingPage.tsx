@@ -361,7 +361,8 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell key='date'>Date</TableCell>
+                <TableCell key='due'>Due</TableCell>
+                <TableCell key='status'>Status</TableCell>
                 <TableCell key='amount'>Amount</TableCell>
                 <TableCell key='desc'>Description</TableCell>
                 <TableCell key='invoiceLink'>Invoice</TableCell>
@@ -370,7 +371,8 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
             <TableBody>
               {billingItems.map((billingItem, index) => (
                 <TableRow key={index}>
-                  <TableCell key='date'><Typography><TimeAgo date={billingItem.date} /></Typography></TableCell>
+                  <TableCell key='due'><Typography><TimeAgo date={billingItem.date} /></Typography></TableCell>
+                  <TableCell key='status' align='center'><Typography>{billingItem.status}</Typography></TableCell>
                   <TableCell key='amount' align='right'><Typography>{billingItem.amount}</Typography></TableCell>
                   <TableCell key='desc'><Typography>{billingItem.description}</Typography></TableCell>
                   <TableCell key='invoiceLink'>

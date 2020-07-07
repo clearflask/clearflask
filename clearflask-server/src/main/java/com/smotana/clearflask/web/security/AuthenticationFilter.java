@@ -5,7 +5,6 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -54,8 +53,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return ExtendedSecurityContext.notAuthenticated(requestContext);
         }
 
-        log.trace("Setting authenticated security context, email {} user id {}",
-                accountSessionOpt.map(AccountSession::getEmail),
+        log.trace("Setting authenticated security context, accountId {} userId {}",
+                accountSessionOpt.map(AccountSession::getAccountId),
                 userSessionOpt.map(UserSession::getUserId));
         return ExtendedSecurityContext.authenticated(
                 accountSessionOpt,
@@ -120,8 +119,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        log.trace("hasRole role {} accountSession {} userSession {} projectIdParam {} userIdParam {}",
-                role, accountSession.map(AccountSession::getEmail), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
+        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {} userIdParam {}",
+                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
 
         Optional<AccountStore.Account> accountOpt;
         Optional<String> pathParamIdeaIdOpt;
@@ -135,7 +134,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
                     return false;
                 }
-                accountOpt = accountStore.getAccountByEmail(accountSession.get().getEmail());
+                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
                 if (!accountOpt.isPresent()) {
                     return false;
                 }

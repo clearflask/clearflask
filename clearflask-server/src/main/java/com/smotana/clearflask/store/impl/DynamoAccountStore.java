@@ -16,6 +16,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -93,18 +94,17 @@ public class DynamoAccountStore implements AccountStore {
     }
 
     @Override
-    public Account setPlan(String accountId, String planId, Optional<Instant> planExpiry) {
+    public Account setPlan(String accountId, String planid) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
-                .withUpdateExpression("SET #planId = :planId, #planExpiry = :planExpiry")
+                .withUpdateExpression("SET #planid = :planid, #planExpiry = :planExpiry")
                 .withNameMap(new NameMap()
-                        .with("#planId", "planId")
+                        .with("#planid", "planid")
                         .with("#planExpiry", "planExpiry")
                         .with("#partitionKey", accountSchema.partitionKeyName()))
                 .withValueMap(new ValueMap()
-                        .withString(":planId", planId)
-                        .with(":planExpiry", planExpiry.orElse(null)))
+                        .withString(":planid", planid))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
     }
@@ -199,6 +199,20 @@ public class DynamoAccountStore implements AccountStore {
                 .build()));
         revokeSessions(accountId, sessionIdToLeave);
         return accountOld.toBuilder().email(emailNew).build();
+    }
+
+    @Override
+    public Account updateStatus(String accountId, AccountAdmin.SubscriptionStatusEnum status) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("SET #status = :status")
+                .withNameMap(new NameMap()
+                        .with("#status", "status")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().with(":status", accountSchema.toDynamoValue("status", status)))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
     }
 
     @Override

@@ -73,7 +73,7 @@ public class MockAuthCookie implements AuthCookie {
             Predicate<String> userHasRolePredicate = role -> false;
             if (accountSession.isPresent() || userSession.isPresent()) {
                 principal = new ExtendedPrincipal(
-                        accountSession.map(AccountSession::getEmail).orElseGet(() -> userSession.map(UserSession::getUserId).orElse(null)),
+                        accountSession.map(AccountSession::getAccountId).orElseGet(() -> userSession.map(UserSession::getUserId).orElse(null)),
                         accountSession,
                         userSession);
                 userHasRolePredicate = role -> {

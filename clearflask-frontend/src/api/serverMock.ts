@@ -162,6 +162,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.loggedIn = true;
     return this.returnLater(account);
   }
+  accountDeleteAdmin(): Promise<void> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    this.loggedIn = false;
+    Object.keys(this.db).forEach(projectId => delete this.db[projectId]);
+    this.account = undefined;
+    this.accountPass = undefined;
+    return this.returnLater();
+  }
   accountUpdateAdmin(request: Admin.AccountUpdateAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
@@ -193,7 +201,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         cursor: 'one more',
         results: [{
           date: invoiceDate,
-          amount: '$40',
+          status: 'paid',
+          amount: 40,
           description: "Standard plan monthly",
           invoiceUrl: "https://smotana.com",
         }],
@@ -207,8 +216,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       cursor: undefined,
       results: [{
         date: invoiceDate,
-        amount: '$40',
-        description: "Standard plan monthly",
+        status: 'paid',
+        amount: 300,
+        description: "Enterprise plan monthly",
         invoiceUrl: "https://smotana.com",
       }],
   });
