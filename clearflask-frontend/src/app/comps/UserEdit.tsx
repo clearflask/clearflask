@@ -8,6 +8,7 @@ import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import { saltHashPassword } from '../../common/util/auth';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -210,12 +211,12 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.props.onClose()}>Close</Button>
-            <Button
-              disabled={this.state.isSubmitting}
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => this.setState({ deleteDialogOpen: true })}
-            >Delete</Button>
-            <Button color='primary' disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
+            >Delete</SubmitButton>
+            <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
               this.setState({ isSubmitting: true });
               this.props.server.dispatchAdmin().then(d => d.userUpdateAdmin({
                 projectId: this.props.server.getProjectId(),
@@ -252,7 +253,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   this.props.onClose();
                 })
                 .catch(e => this.setState({ isSubmitting: false }))
-            }}>Save</Button>
+            }}>Save</SubmitButton>
           </DialogActions>
         </Dialog>
         <Dialog
@@ -265,8 +266,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
-            <Button
-              disabled={this.state.isSubmitting}
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
@@ -280,7 +281,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     this.props.onClose();
                   })
                   .catch(e => this.setState({ isSubmitting: false }))
-              }}>Delete</Button>
+              }}>Delete</SubmitButton>
           </DialogActions>
         </Dialog>
       </React.Fragment>

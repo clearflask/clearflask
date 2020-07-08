@@ -20,6 +20,7 @@ import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import debounce from '../../common/util/debounce';
+import SubmitButton from '../../common/SubmitButton';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
@@ -185,9 +186,10 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                   }}
                 />
               )}
-              <Button
+              <SubmitButton
+                isSubmitting={this.state.newUserIsSubmitting}
+                disabled={!enableSubmit}
                 color='primary'
-                disabled={!enableSubmit || this.state.newUserIsSubmitting}
                 onClick={e => {
                   if (!enableSubmit) return;
                   this.setState({ newUserIsSubmitting: true });
@@ -219,7 +221,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                 }}
               >
                 Submit
-              </Button>
+              </SubmitButton>
             </div>
           )}
           searchSize={searchWidth}

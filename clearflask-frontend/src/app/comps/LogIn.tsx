@@ -25,6 +25,7 @@ import MobileNotification, { Device } from '../../common/notification/mobileNoti
 import WebNotification from '../../common/notification/webNotification';
 import { saltHashPassword } from '../../common/util/auth';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
+import SubmitButton from '../../common/SubmitButton';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
@@ -391,15 +392,16 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           </DialogContent>
           <DialogActions>
             {!!loginAllowed && !!signupAllowed && (
-              <Button
+              <SubmitButton
                 onClick={() => this.setState({ isLogin: !isLogin })}
-                disabled={this.state.isSubmitting}
-              >{isLogin ? 'Or Signup' : 'Or Login'}</Button>
+                isSubmitting={this.state.isSubmitting}
+              >{isLogin ? 'Or Signup' : 'Or Login'}</SubmitButton>
             )}
             {(signupAllowed || loginAllowed) ? (
-              <Button
+              <SubmitButton
                 color='primary'
-                disabled={!isSubmittable || this.state.isSubmitting}
+                isSubmitting={this.state.isSubmitting}
+                disabled={!isSubmittable}
                 onClick={() => {
                   if (!!isLogin && !this.state.pass) {
                     this.listenForExternalBind();
@@ -444,7 +446,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     });
                   }
                 }}
-              >Continue</Button>
+              >Continue</SubmitButton>
             ) : (
                 <Button onClick={() => { this.props.onClose() }}>Back</Button>
               )}

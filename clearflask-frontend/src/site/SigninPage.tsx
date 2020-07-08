@@ -11,6 +11,7 @@ import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import ErrorPage from '../app/ErrorPage';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
+import SubmitButton from '../common/SubmitButton';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
@@ -103,16 +104,17 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
           />
           <DialogActions>
             {!isProd() && ( // TODO Enable signups
-              <Button
+              <SubmitButton
                 onClick={() => this.props.history.push('/signup')}
-                disabled={this.state.isSubmitting}
-              >Or Signup</Button>
+                isSubmitting={this.state.isSubmitting}
+              >Or Signup</SubmitButton>
             )}
-            <Button
+            <SubmitButton
               color='primary'
-              disabled={this.state.isSubmitting || !this.state.email || !this.state.pass}
+              isSubmitting={this.state.isSubmitting}
+              disabled={!this.state.email || !this.state.pass}
               onClick={this.onSubmit.bind(this)}
-            >Continue</Button>
+            >Continue</SubmitButton>
           </DialogActions>
         </Container>
       </div>

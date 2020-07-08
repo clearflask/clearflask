@@ -5,6 +5,7 @@ import { Server } from '../../../api/server';
 import ServerAdmin from '../../../api/serverAdmin';
 import * as ConfigEditor from '../../../common/config/configEditor';
 import Property from './Property';
+import SubmitButton from '../../SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -53,8 +54,8 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true>,
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
-            <Button
-              disabled={this.state.isSubmitting}
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
@@ -70,7 +71,7 @@ class ProjectSettings extends Component<Props & WithStyles<typeof styles, true>,
                     this.props.pageClicked('create');
                   })
                   .catch(e => this.setState({ isSubmitting: false }));
-              }}>Delete</Button>
+              }}>Delete</SubmitButton>
           </DialogActions>
         </Dialog>
       </div>

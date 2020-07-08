@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
+import SubmitButton from './SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   wrapper: {
@@ -49,14 +50,14 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
             ) : undefined,
           }}
         />
-        <Button
+        <SubmitButton
           aria-label="Save"
           color='primary'
           style={{
             visibility: !this.state.value || this.state.value === this.props.value
               ? 'hidden' : undefined
           }}
-          disabled={this.state.isSubmitting}
+          isSubmitting={this.state.isSubmitting}
           onClick={() => {
             this.setState({ isSubmitting: true });
             this.props.onSave(this.state.value || '')
@@ -68,9 +69,7 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
                 isSubmitting: false,
               }));
           }}
-        >
-          Save
-          </Button>
+        >Save</SubmitButton>
       </div>
     );
   }

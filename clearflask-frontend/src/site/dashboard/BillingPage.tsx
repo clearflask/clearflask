@@ -18,6 +18,7 @@ import classNames from 'classnames';
 import TimeAgo from 'react-timeago';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 import Loader from '../../app/utils/Loader';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   plan: {
@@ -242,28 +243,31 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
           <Typography>{paymentDesc}</Typography>
           <div className={this.props.classes.sectionButtons}>
             {showSetPayment && (
-              <Button
-                disabled={this.state.isSubmitting || this.state.showAddPayment}
+              <SubmitButton
+                isSubmitting={this.state.isSubmitting}
+                disabled={this.state.showAddPayment}
                 onClick={() => this.setState({ showAddPayment: true })}
               >
                 {setPaymentTitle}
-              </Button>
+              </SubmitButton>
             )}
             {showCancelSubscription && (
-              <Button
-                disabled={this.state.isSubmitting || this.state.showCancelSubscription}
+              <SubmitButton
+                isSubmitting={this.state.isSubmitting}
+                disabled={this.state.showCancelSubscription}
                 onClick={() => this.setState({ showCancelSubscription: true })}
               >
                 Cancel payments
-              </Button>
+              </SubmitButton>
             )}
             {showResumePlan && (
-              <Button
-                disabled={this.state.isSubmitting || this.state.showResumePlan}
+              <SubmitButton
+                isSubmitting={this.state.isSubmitting}
+                disabled={this.state.showResumePlan}
                 onClick={() => this.setState({ showResumePlan: true })}
               >
                 Resume payments
-              </Button>
+              </SubmitButton>
             )}
           </div>
         </Container>
@@ -281,17 +285,21 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
             <Button onClick={() => this.setState({ showAddPayment: undefined })}>
               Cancel
             </Button>
-            <Button color='primary' onClick={() => {
-              this.setState({ isSubmitting: true });
-              ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                accountUpdateAdmin: {
-                  paymentToken: 'TODO', // TODO add stripe token
-                  renewAutomatically: true,
-                },
-              }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({ isSubmitting: false, showAddPayment: undefined }))
-                .catch(er => this.setState({ isSubmitting: false }));
-            }}>Add</Button>
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
+              color='primary'
+              onClick={() => {
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    paymentToken: 'TODO', // TODO add stripe token
+                    renewAutomatically: true,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                  .then(() => this.setState({ isSubmitting: false, showAddPayment: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+            >Add</SubmitButton>
           </DialogActions>
         </Dialog>
         <Dialog
@@ -307,16 +315,20 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
             <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
               Cancel
             </Button>
-            <Button color='primary' onClick={() => {
-              this.setState({ isSubmitting: true });
-              ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                accountUpdateAdmin: {
-                  subscriptionActive: false,
-                },
-              }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
-                .catch(er => this.setState({ isSubmitting: false }));
-            }}>Stop subscription</Button>
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
+              color='primary'
+              onClick={() => {
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    subscriptionActive: false,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                  .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+            >Stop subscription</SubmitButton>
           </DialogActions>
         </Dialog>
         <Dialog
@@ -333,16 +345,20 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
             <Button onClick={() => this.setState({ showResumePlan: undefined })}>
               Cancel
             </Button>
-            <Button color='primary' onClick={() => {
-              this.setState({ isSubmitting: true });
-              ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                accountUpdateAdmin: {
-                  subscriptionActive: true,
-                },
-              }).then(() => d.accountBillingAdmin()))
-                .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
-                .catch(er => this.setState({ isSubmitting: false }));
-            }}>Resume subscription</Button>
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
+              color='primary'
+              onClick={() => {
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    subscriptionActive: true,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                  .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+            >Resume subscription</SubmitButton>
           </DialogActions>
         </Dialog>
       </DividerCorner>

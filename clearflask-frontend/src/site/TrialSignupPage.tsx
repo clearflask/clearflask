@@ -18,6 +18,7 @@ import Loader from '../app/utils/Loader';
 import PricingPlan from './PricingPlan';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 import { Status } from '../api/server';
+import SubmitButton from '../common/SubmitButton';
 
 export const SIGNUP_PROD_ENABLED = false;
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
@@ -193,15 +194,16 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
           />
           <AcceptTerms />
           <DialogActions>
-            <Button
+            <SubmitButton
               onClick={() => this.props.history.push('/dashboard')}
-              disabled={this.state.isSubmitting}
-            >Or Login</Button>
-            <Button
+              isSubmitting={this.state.isSubmitting}
+            >Or Login</SubmitButton>
+            <SubmitButton
               color='primary'
-              disabled={this.state.isSubmitting || !canSubmit}
+              isSubmitting={this.state.isSubmitting}
+              disabled={!canSubmit}
               onClick={this.signUp.bind(this, selectedPlanId)}
-            >Create account</Button>
+            >Create account</SubmitButton>
           </DialogActions>
         </Container>
       </div>

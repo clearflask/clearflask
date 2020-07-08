@@ -7,6 +7,7 @@ import ServerAdmin from '../api/serverAdmin';
 import BasePage from '../app/BasePage';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import SubmitButton from '../common/SubmitButton';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -155,8 +156,9 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                               rowsMax={field.type === 'multiline' ? 10 : undefined}
                             />
                           ))}
-                        <Button
+                        <SubmitButton
                           className={this.props.classes.field}
+                          isSubmitting={this.state.isSubmitting}
                           disabled={form.fields.some(field => field.required && !this.state[`field_${form.type}_${field.attrName}`])}
                           onClick={() => {
                             this.setState({ isSubmitting: true });
@@ -181,7 +183,7 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                           }}
                         >
                           {form.submitTitle}
-                        </Button>
+                        </SubmitButton>
                       </Box>
                     </Paper>
                   </Grid>

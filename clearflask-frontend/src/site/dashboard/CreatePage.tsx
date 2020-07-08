@@ -11,6 +11,7 @@ import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '
 import debounce from '../../common/util/debounce';
 import { Project } from '../DemoApp';
 import classNames from 'classnames';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   item: {
@@ -259,9 +260,10 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   value={this.state.infoLogo || ''}
                   onChange={e => this.setStateAndPreview({ infoLogo: e.target.value })}
                 />
-                <Button
-                  disabled={!!this.state.isSubmitting || !this.state.infoName || !this.state.infoSlug}
-                  onClick={() => this.onCreate()} color='primary'>Create</Button>
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  disabled={!this.state.infoName || !this.state.infoSlug}
+                  onClick={() => this.onCreate()} color='primary'>Create</SubmitButton>
               </Box>
             </StepContent>
           </Step>

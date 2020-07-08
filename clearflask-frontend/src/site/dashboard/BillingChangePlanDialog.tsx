@@ -11,6 +11,7 @@ import PricingPlan from '../PricingPlan';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import Loader from '../../app/utils/Loader';
 import { Status } from '../../api/server';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -88,8 +89,12 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
         <DialogActions>
           <Button onClick={this.props.onClose.bind(this)}
           >Cancel</Button>
-          <Button disabled={this.props.isSubmitting || !this.state.planid || this.state.planid === this.props.accountPlanId} color="primary" onClick={this.props.onSubmit.bind(this, this.state.planid!)}
-          >Switch</Button>
+          <SubmitButton
+            isSubmitting={this.props.isSubmitting}
+            disabled={!this.state.planid || this.state.planid === this.props.accountPlanId}
+            color="primary"
+            onClick={this.props.onSubmit.bind(this, this.state.planid!)}
+          >Switch</SubmitButton>
         </DialogActions>
       </Dialog>
     );

@@ -20,6 +20,7 @@ import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
+import SubmitButton from '../../common/SubmitButton';
 
 enum FilterType {
   Search = 'search',
@@ -349,8 +350,9 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
             </div>
           )}
         </div>
-        <Button
+        <SubmitButton
           color='primary'
+          isSubmitting={this.state.newItemIsSubmitting}
           disabled={!enableSubmit || this.state.newItemIsSubmitting}
           onClick={e => enableSubmit && this.createClickSubmit(mandatoryTagIds)}
           style={{
@@ -358,7 +360,7 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           }}
         >
           Submit
-        </Button>
+        </SubmitButton>
         <LogIn
           actionTitle='Get notified of replies'
           server={this.props.server}

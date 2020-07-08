@@ -5,6 +5,7 @@ import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import RichEditor from '../../common/RichEditor';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -63,7 +64,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => this.setState({ deleteDialogOpen: true })}
             >Delete</Button>
-            <Button color='primary' disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
+            <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit || this.state.isSubmitting} onClick={() => {
               this.setState({ isSubmitting: true });
               this.props.server.dispatch().commentUpdate({
                 projectId: this.props.server.getProjectId(),
@@ -81,7 +82,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
                   this.props.onClose();
                 })
                 .catch(e => this.setState({ isSubmitting: false }))
-            }}>Publish</Button>
+            }}>Publish</SubmitButton>
           </DialogActions>
         </Dialog>
         <CommentDelete
@@ -115,8 +116,8 @@ export const CommentDelete = withTheme((props: {
       </DialogContent>
       <DialogActions>
         <Button onClick={props.onClose}>Cancel</Button>
-        <Button
-          disabled={isSubmitting}
+        <SubmitButton
+          isSubmitting={isSubmitting}
           style={{ color: !isSubmitting ? props.theme.palette.error.main : undefined }}
           onClick={() => {
             setSubmitting(true);
@@ -136,7 +137,7 @@ export const CommentDelete = withTheme((props: {
                 props.onClose();
               })
               .catch(e => setSubmitting(false))
-          }}>Delete</Button>
+          }}>Delete</SubmitButton>
       </DialogActions>
     </Dialog>
   )

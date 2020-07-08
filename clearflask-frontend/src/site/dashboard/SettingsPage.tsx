@@ -8,6 +8,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import DividerCorner from '../../app/utils/DividerCorner';
 import UpdatableField from '../../common/UpdatableField';
 import { saltHashPassword } from '../../common/util/auth';
+import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   details: {
@@ -81,8 +82,8 @@ class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, tr
               </DialogContent>
               <DialogActions>
                 <Button onClick={() => this.setState({ showDeleteDialog: false })}>Cancel</Button>
-                <Button
-                  disabled={this.state.isSubmitting}
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
                   style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
                   onClick={() => {
                     this.setState({ isSubmitting: true });
@@ -92,7 +93,7 @@ class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, tr
                         showDeleteDialog: false,
                       }))
                       .catch(e => this.setState({ isSubmitting: false }));
-                  }}>Delete</Button>
+                  }}>Delete</SubmitButton>
               </DialogActions>
             </Dialog>
           </Grid>

@@ -293,6 +293,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Pending:
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
+    case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return stateAccountDefault;
     default:
       return state;
@@ -406,6 +407,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Pending:
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
+    case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return stateConfigsDefault;
     default:
       return state;
