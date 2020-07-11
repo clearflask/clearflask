@@ -19,7 +19,6 @@
         <guava.version>26.0-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
-        <stripe.version>19.24.0</stripe.version>
         <elastic.version>7.4.0</elastic.version>
         <lucene.version>8.2.0</lucene.version>
         <ice.version>1.0.8</ice.version>
@@ -356,9 +355,14 @@
                 <version>${hk2.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.stripe</groupId>
-                <artifactId>stripe-java</artifactId>
-                <version>${stripe.version}</version>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-client-java</artifactId>
+                <version>1.1.10</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin</groupId>
+                <artifactId>killbill-plugin-api-notification</artifactId>
+                <version>0.26.4</version>
             </dependency>
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->

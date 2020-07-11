@@ -19,6 +19,7 @@ import javax.ws.rs.ApplicationPath;
 @Slf4j
 @ApplicationPath("/")
 public class Application extends ResourceConfig {
+    public static final String RESOURCE_VERSION = "/v1";
 
     public interface Config {
         @DefaultValue("clearflask.com")

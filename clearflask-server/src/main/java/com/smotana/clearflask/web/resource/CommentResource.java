@@ -9,25 +9,15 @@ import com.google.common.collect.Maps;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
-import com.smotana.clearflask.api.model.Comment;
-import com.smotana.clearflask.api.model.CommentCreate;
-import com.smotana.clearflask.api.model.CommentSearch;
-import com.smotana.clearflask.api.model.CommentSearchResponse;
-import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.api.model.CommentWithVote;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
@@ -45,7 +35,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class CommentResource extends AbstractResource implements CommentAdminApi, CommentApi {
 
     @Inject

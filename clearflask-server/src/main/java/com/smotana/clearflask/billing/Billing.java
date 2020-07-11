@@ -5,20 +5,17 @@ import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.BillingHistory;
 import com.stripe.model.Customer;
-import com.stripe.model.Event;
 import com.stripe.model.Subscription;
+import lombok.Value;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 @Singleton
-public interface StripeBilling {
+public interface Billing {
 
-    Event parseWebhookEvent(HttpServletRequest request);
+    NewAccount createAccount(String accountId, String email, String name, String planId);
 
-    Customer createCustomer(String accountId, String email, String name);
-
-    Customer getCustomer(String customerId);
+    Customer getAccount(String accountId);
 
     Optional<String> getCustomerAccountId(Customer customer);
 
@@ -37,4 +34,10 @@ public interface StripeBilling {
     Subscription changePrice(String customerId, String stripePriceId);
 
     BillingHistory billingHistory(String customerId, Optional<String> cursorOpt);
+
+    @Value
+    class NewAccount {
+        Account account;
+        Subscription
+    }
 }

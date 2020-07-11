@@ -7,6 +7,7 @@ import com.smotana.clearflask.api.model.NotificationSearchResponse;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class NotificationResource extends AbstractResource implements NotificationApi {
 
     @Inject

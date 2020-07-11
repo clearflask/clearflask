@@ -8,34 +8,19 @@ import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.VoteApi;
-import com.smotana.clearflask.api.model.Balance;
-import com.smotana.clearflask.api.model.CommentVoteGetOwnResponse;
-import com.smotana.clearflask.api.model.CommentVoteUpdate;
-import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
-import com.smotana.clearflask.api.model.Expressing;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
-import com.smotana.clearflask.api.model.IdeaVoteUpdate;
-import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
-import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
-import com.smotana.clearflask.api.model.Transaction;
-import com.smotana.clearflask.api.model.TransactionType;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaAndExpressionsAndIndexingFuture;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaTransactionAndIndexingFuture;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.FundModel;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
@@ -55,7 +40,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class VoteResource extends AbstractResource implements VoteApi {
 
     @Inject

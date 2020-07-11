@@ -18,7 +18,7 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
-import com.smotana.clearflask.billing.StripeBillingImpl;
+import com.smotana.clearflask.billing.KillBillingImpl;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.*;
@@ -171,7 +171,7 @@ public enum ServiceInjector {
                 install(LogExFilter.module());
                 install(ClearFlaskSso.module());
                 install(AuthCookieImpl.module());
-                install(StripeBillingImpl.module());
+                install(KillBillingImpl.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

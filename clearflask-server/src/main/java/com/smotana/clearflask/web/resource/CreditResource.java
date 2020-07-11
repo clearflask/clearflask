@@ -4,16 +4,13 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.CreditAdminApi;
 import com.smotana.clearflask.api.CreditApi;
-import com.smotana.clearflask.api.model.Balance;
-import com.smotana.clearflask.api.model.TransactionSearch;
-import com.smotana.clearflask.api.model.TransactionSearchAdmin;
-import com.smotana.clearflask.api.model.TransactionSearchAdminResponse;
-import com.smotana.clearflask.api.model.TransactionSearchResponse;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.ListResponse;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.Role;
@@ -28,7 +25,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class CreditResource extends AbstractResource implements CreditApi, CreditAdminApi {
 
     @Inject

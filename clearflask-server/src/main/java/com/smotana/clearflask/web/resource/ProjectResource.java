@@ -18,6 +18,7 @@ import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
@@ -44,7 +45,7 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
     public interface Config {

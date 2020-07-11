@@ -1,10 +1,8 @@
 package com.smotana.clearflask.billing;
 
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -12,7 +10,6 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.BillingHistory;
 import com.smotana.clearflask.api.model.BillingHistoryItem;
@@ -20,64 +17,27 @@ import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.stripe.Stripe;
-import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
-import com.stripe.net.Webhook;
 import com.stripe.param.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import rx.Observable;
+import org.killbill.billing.client.RequestOptions;
+import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.model.gen.Account;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 @Slf4j
 @Singleton
-public class StripeBillingImpl extends ManagedService implements StripeBilling {
-
-    private enum StripeSubscriptionStatus {
-        INCOMPLETE("incomplete"),
-        INCOMPLETE_EXPIRED("incomplete_expired"),
-        TRIALING("trialing"),
-        ACTIVE("active"),
-        PAST_DUE("past_due"),
-        CANCELED("canceled"),
-        UNPAID("unpaid");
-        public static final ImmutableMap<String, StripeSubscriptionStatus> byString = Arrays.stream(StripeSubscriptionStatus.class.getEnumConstants())
-                .collect(ImmutableMap.toImmutableMap(StripeSubscriptionStatus::getStatusStr, e -> e));
-        private final String statusStr;
-
-        StripeSubscriptionStatus(String statusStr) {
-            this.statusStr = statusStr;
-        }
-
-        public String getStatusStr() {
-            return statusStr;
-        }
-    }
-
-    private static final String METADATA_KEY_CUSTOMER_ACCOUNT_ID = "accountId";
+public class KillBillingImpl implements Billing {
 
     public interface Config {
-        @NoDefaultValue
-        String apiKeySecret();
-
-        @NoDefaultValue
-        Observable<String> apiKeySecretObservable();
-
-        @NoDefaultValue
-        String endpointSecret();
     }
 
     @Inject
@@ -87,37 +47,19 @@ public class StripeBillingImpl extends ManagedService implements StripeBilling {
     @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
-
-    @Override
-    protected void serviceStart() throws Exception {
-        checkNotNull(Strings.emptyToNull(config.apiKeySecret()), "Stripe api key cannot be empty");
-        config.apiKeySecretObservable().subscribe(s -> Stripe.apiKey = s);
-        Stripe.apiKey = config.apiKeySecret();
-    }
-
-    @Override
-    public Event parseWebhookEvent(HttpServletRequest request) {
-        String payload = null;
-        try {
-            payload = IOUtils.toString(request.getReader());
-        } catch (IOException ex) {
-            log.error("Stripe webhook cannot read payload", ex);
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        }
-        String sigHeader = request.getHeader("Stripe-Signature");
-        try {
-            return Webhook.constructEvent(payload, sigHeader, config.endpointSecret());
-        } catch (JsonSyntaxException ex) {
-            log.error("Stripe webhook invalid payload {}", payload, ex);
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        } catch (SignatureVerificationException ex) {
-            log.error("Stripe webhook invalid signature {}", payload, ex);
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        }
-    }
+    @Inject
+    private CatalogApi kbCatalog;
+    @Inject
+    private AccountApi kbAccount;
 
     @Override
     public Customer createCustomer(String accountId, String email, String name) {
+
+        return kbAccount.createAccount(new Account()
+                .setExternalKey()
+                .setName(name)
+                .setEmail(email), RequestOptions.empty());
+
         try {
             return Customer.create(CustomerCreateParams.builder()
                     .setEmail(email)
@@ -362,9 +304,9 @@ public class StripeBillingImpl extends ManagedService implements StripeBilling {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(StripeBilling.class).to(StripeBillingImpl.class).asEagerSingleton();
+                bind(Billing.class).to(KillBillingImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(StripeBillingImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillingImpl.class);
             }
         };
     }

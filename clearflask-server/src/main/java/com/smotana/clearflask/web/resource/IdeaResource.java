@@ -10,33 +10,18 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Idea;
-import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaCreateAdmin;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearchResponse;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaWithVote;
-import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
@@ -55,7 +40,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdminApi {
 
     @Inject

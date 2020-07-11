@@ -1,13 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;
-import com.amazonaws.services.simpleemailv2.model.Body;
-import com.amazonaws.services.simpleemailv2.model.Content;
-import com.amazonaws.services.simpleemailv2.model.Destination;
-import com.amazonaws.services.simpleemailv2.model.EmailContent;
-import com.amazonaws.services.simpleemailv2.model.Message;
-import com.amazonaws.services.simpleemailv2.model.MessageTag;
-import com.amazonaws.services.simpleemailv2.model.SendEmailRequest;
+import com.amazonaws.services.simpleemailv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -38,13 +32,19 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class SupportResource extends AbstractResource implements SupportApi {
-    /** If changed, also change in ContactPage.tsx */
+    /**
+     * If changed, also change in ContactPage.tsx
+     */
     private static final String TYPE_FIELD = "type";
-    /** If changed, also change in ContactPage.tsx */
+    /**
+     * If changed, also change in ContactPage.tsx
+     */
     private static final String TYPE_IMPORTANT = "important";
-    /** If changed, also change in ContactPage.tsx */
+    /**
+     * If changed, also change in ContactPage.tsx
+     */
     private static final String CONTACT_FIELD = "contact";
 
     public interface Config {

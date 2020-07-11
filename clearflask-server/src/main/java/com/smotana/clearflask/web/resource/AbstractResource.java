@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public abstract class AbstractResource {
 
     @VisibleForTesting

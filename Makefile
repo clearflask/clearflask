@@ -45,10 +45,16 @@ dynamo-run:
 	-p 7000:8000 \
 	amazon/dynamodb-local
 
+killbill-run:
+	docker-compose \
+	-f .killbill/killbill-docker.yml \
+	up
+
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \
 	-p 8300:8300 \
 	-p 443:8443 \
+	-p 8083:8082 \
 	-v `pwd`/.nginx:/etc/nginx/conf.d \
 	nginx
 

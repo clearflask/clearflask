@@ -11,7 +11,7 @@ import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
-import com.smotana.clearflask.billing.StripeBilling;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -20,6 +20,7 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.PlanStore;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
@@ -43,7 +44,7 @@ import java.util.Optional;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class AccountResource extends AbstractResource implements AccountAdminApi, PlanApi {
 
     public interface Config {
@@ -61,7 +62,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private ProjectResource projectResource;
     @Inject
-    private StripeBilling stripeBilling;
+    private Billing billing;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -162,7 +163,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         String accountId = accountStore.genAccountId();
 
         // Create customer in Stripe
-        Customer customer = stripeBilling.createCustomer(
+        Customer customer = billing.createCustomer(
                 accountId,
                 signup.getEmail(),
                 signup.getName());
@@ -170,7 +171,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         // Create customer subscription in Stripe
         Subscription subscription;
         try {
-            subscription = stripeBilling.createSubscription(
+            subscription = billing.createSubscription(
                     customer.getId(),
                     stripePriceId,
                     14L);
@@ -190,7 +191,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = new Account(
                     accountId,
                     signup.getEmail(),
-                    stripeBilling.getSubscriptionStatusFrom(customer, subscription),
+                    billing.getSubscriptionStatusFrom(customer, subscription),
                     customer.getId(),
                     plan.getPlanid(),
                     Instant.now(),
@@ -233,7 +234,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPaymentToken())) {
-            stripeBilling.updatePaymentToken(account.getStripeCusId(), accountUpdateAdmin.getPaymentToken());
+            billing.updatePaymentToken(account.getStripeCusId(), accountUpdateAdmin.getPaymentToken());
         }
         if (accountUpdateAdmin.getSubscriptionActive() != null) {
             if (account == null) {
@@ -242,12 +243,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             Subscription subscription;
             if (accountUpdateAdmin.getSubscriptionActive()) {
                 String planPriceId = planStore.getStripePriceId(account.getPlanid()).get();
-                subscription = stripeBilling.resumeSubscription(account.getStripeCusId(), planPriceId);
+                subscription = billing.resumeSubscription(account.getStripeCusId(), planPriceId);
             } else {
-                subscription = stripeBilling.cancelSubscription(account.getStripeCusId());
+                subscription = billing.cancelSubscription(account.getStripeCusId());
             }
-            Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
-            SubscriptionStatusEnum newStatus = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
+            Customer customer = billing.getCustomer(account.getStripeCusId());
+            SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(customer, subscription);
             account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
@@ -261,7 +262,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
             String stripePriceId = planStore.getStripePriceId(newPlanid).get();
-            stripeBilling.changePrice(account.getStripeCusId(), stripePriceId);
+            billing.changePrice(account.getStripeCusId(), stripePriceId);
             account = accountStore.setPlan(accountSession.getAccountId(), newPlanid);
         }
         return (account == null
@@ -287,10 +288,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
 
-        Customer customer = stripeBilling.getCustomer(account.getStripeCusId());
-        Subscription subscription = stripeBilling.getSubscription(account.getStripeCusId());
+        Customer customer = billing.getCustomer(account.getStripeCusId());
+        Subscription subscription = billing.getSubscription(account.getStripeCusId());
 
-        SubscriptionStatusEnum expectedStatus = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
+        SubscriptionStatusEnum expectedStatus = billing.getSubscriptionStatusFrom(customer, subscription);
         if (expectedStatus != account.getStatus()) {
             log.warn("Status mismatch between Stripe customer {} subscription {} status {}, but is {} on account {}, updating it now",
                     customer.getId(), subscription.getId(), expectedStatus, account.getStatus(), account.getAccountId());
@@ -299,7 +300,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         ImmutableList<Plan> availableChangePlans = ImmutableList.copyOf(planStore.availablePlansToChangeFrom(account.getPlanid()));
 
-        BillingHistory billingHistory = stripeBilling.billingHistory(account.getStripeCusId(), Optional.empty());
+        BillingHistory billingHistory = billing.billingHistory(account.getStripeCusId(), Optional.empty());
 
         AccountBillingPayment payment = null;
         if (!Strings.isNullOrEmpty(customer.getDefaultSource())) {
@@ -329,7 +330,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     public BillingHistory billingHistorySearchAdmin(String cursor) {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-        return stripeBilling.billingHistory(
+        return billing.billingHistory(
                 account.getStripeCusId(),
                 Optional.ofNullable(cursor));
     }

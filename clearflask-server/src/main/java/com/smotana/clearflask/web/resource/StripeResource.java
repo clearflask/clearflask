@@ -3,8 +3,9 @@ package com.smotana.clearflask.web.resource;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
-import com.smotana.clearflask.billing.StripeBilling;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.web.Application;
 import com.stripe.model.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +22,7 @@ import static com.smotana.clearflask.store.AccountStore.Account;
 
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class StripeResource {
 
     @Context
@@ -29,7 +30,7 @@ public class StripeResource {
     @Context
     private HttpServletResponse response;
     @Inject
-    private StripeBilling stripeBilling;
+    private Billing billing;
     @Inject
     private AccountStore accountStore;
 
@@ -38,7 +39,7 @@ public class StripeResource {
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
     public void webhook(String payload) {
-        Event event = stripeBilling.parseWebhookEvent(request);
+        Event event = billing.parseWebhookEvent(request);
 
         // Deserialize the nested object inside the event
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
@@ -60,8 +61,8 @@ public class StripeResource {
             case "customer.subscription.pending_update_expired":
                 Subscription subscription = (Subscription) stripeObject;
                 Customer customer = subscription.getCustomerObject();
-                SubscriptionStatusEnum statusNew = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
-                String accountId = stripeBilling.getCustomerAccountId(customer).get();
+                SubscriptionStatusEnum statusNew = billing.getSubscriptionStatusFrom(customer, subscription);
+                String accountId = billing.getCustomerAccountId(customer).get();
                 Account account = accountStore.getAccountByAccountId(accountId).get();
                 if (statusNew != account.getStatus()) {
                     accountStore.updateStatus(accountId, statusNew);

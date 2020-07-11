@@ -12,7 +12,6 @@ import com.smotana.clearflask.api.UserApi;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
@@ -21,9 +20,9 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
-import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -39,11 +38,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.smotana.clearflask.web.resource.AccountResource.ACCOUNT_AUTH_COOKIE_NAME;
-
 @Slf4j
 @Singleton
-@Path("/v1")
+@Path(Application.RESOURCE_VERSION)
 public class UserResource extends AbstractResource implements UserApi, UserAdminApi {
 
     public interface Config {
