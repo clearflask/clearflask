@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonNonNull;
 import com.google.inject.AbstractModule;
@@ -8,6 +9,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
+import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -61,6 +63,11 @@ public class KillBillResource extends ManagedService {
     private AccountStore accountStore;
     @Inject
     private TenantApi kbTenant;
+
+    @Override
+    protected ImmutableSet<Class> serviceDependencies() {
+        return ImmutableSet.of(KillBillSync.class);
+    }
 
     @Override
     protected void serviceStart() throws Exception {

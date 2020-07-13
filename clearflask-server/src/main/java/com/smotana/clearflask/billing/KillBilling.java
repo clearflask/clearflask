@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 
 @Slf4j
 @Singleton
-public class KillBillingImpl implements Billing {
+public class KillBilling implements Billing {
 
     public interface Config {
     }
@@ -304,9 +304,9 @@ public class KillBillingImpl implements Billing {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Billing.class).to(KillBillingImpl.class).asEagerSingleton();
+                bind(Billing.class).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillingImpl.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class);
             }
         };
     }

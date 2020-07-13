@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="CatalogSchema.xsd">
+
+    <effectiveDate>2000-01-01T00:00:00+00:00</effectiveDate>
+    <catalogName>ClearFlask</catalogName>
+
+    <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
+
+    <currencies>
+        <currency>USD</currency>
+    </currencies>
+
+    <products>
+        <product name="Basic">
+            <category>BASE</category>
+            <available>
+                <addonProduct>CreditSystem</addonProduct>
+                <addonProduct>SingleSignOn</addonProduct>
+            </available>
+        </product>
+        <product name="Standard">
+            <category>BASE</category>
+            <included>
+                <addonProduct>CreditSystem</addonProduct>
+                <addonProduct>SingleSignOn</addonProduct>
+            </included>
+        </product>
+        <product name="Analytic">
+            <category>BASE</category>
+            <included>
+                <addonProduct>CreditSystem</addonProduct>
+                <addonProduct>SingleSignOn</addonProduct>
+            </included>
+        </product>
+        <product name="CreditSystem">
+            <category>ADD_ON</category>
+        </product>
+        <product name="SingleSignOn">
+            <category>ADD_ON</category>
+        </product>
+    </products>
+
+    <plans>
+        <plan name="basic-monthly">
+            <product>Basic</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice></fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>30.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="standard-monthly">
+            <product>Standard</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice></fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>75.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="analytic-monthly">
+            <product>Analytic</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice></fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>500.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+    </plans>
+
+    <priceLists>
+        <defaultPriceList name="DEFAULT">
+            <plans>
+                <plan>basic-monthly</plan>
+                <plan>standard-monthly</plan>
+                <plan>analytic-monthly</plan>
+            </plans>
+        </defaultPriceList>
+    </priceLists>
+
+    <rules>
+        <changePolicy>
+            <changePolicyCase>
+                <phaseType>TRIAL</phaseType>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <fromProduct>Basic</fromProduct>
+                <toProduct>Standard</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>Analytic</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <policy>END_OF_TERM</policy>
+            </changePolicyCase>
+        </changePolicy>
+        <changeAlignment>
+            <changeAlignmentCase>
+                <toProductCategory>ADD_ON</toProductCategory>
+                <alignment>START_OF_BUNDLE</alignment>
+            </changeAlignmentCase>
+            <changeAlignmentCase>
+                <alignment>START_OF_SUBSCRIPTION</alignment>
+            </changeAlignmentCase>
+        </changeAlignment>
+        <cancelPolicy>
+            <cancelPolicyCase>
+                <policy>END_OF_TERM</policy>
+            </cancelPolicyCase>
+        </cancelPolicy>
+        <createAlignment>
+            <createAlignmentCase>
+                <alignment>START_OF_BUNDLE</alignment>
+            </createAlignmentCase>
+        </createAlignment>
+        <billingAlignment>
+            <billingAlignmentCase>
+                <alignment>ACCOUNT</alignment>
+            </billingAlignmentCase>
+        </billingAlignment>
+        <priceList>
+            <priceListCase>
+                <toPriceList>DEFAULT</toPriceList>
+            </priceListCase>
+        </priceList>
+    </rules>
+
+</catalog>

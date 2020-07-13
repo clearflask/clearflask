@@ -11,7 +11,8 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.KillBillingImpl;
+import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.StaticPlanStore;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
@@ -74,7 +75,7 @@ public class BlackboxIT extends AbstractIT {
                 ProjectResource.module(),
                 UserResource.module(),
                 StripeResource.module(),
-                KillBillingImpl.module(),
+                KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 NotificationServiceImpl.module(),

@@ -46,9 +46,32 @@ dynamo-run:
 	amazon/dynamodb-local
 
 killbill-run:
-	docker-compose \
-	-f .killbill/killbill-docker.yml \
-	up
+	@$(MAKE) _killbill-run -j 10
+_killbill-run: killbill-engine-run killbill-kaui-run killbill-db-run
+
+killbill-engine-run:
+	docker run --rm --name clearflask-killbill-engine \
+	-e KILLBILL_DAO_URL=jdbc:mysql://host.docker.internal:8306/killbill \
+	-e KILLBILL_DAO_USER=root \
+	-e KILLBILL_DAO_PASSWORD=killbill \
+	-p 8082:8080 \
+	killbill/killbill:0.22.10
+
+killbill-kaui-run:
+	docker run --rm --name clearflask-killbill-kaui \
+	-e KAUI_CONFIG_DAO_URL=jdbc:mysql://host.docker.internal:8306/kaui \
+	-e KAUI_CONFIG_DAO_USER=root \
+	-e KAUI_CONFIG_DAO_PASSWORD=killbill \
+	-e KAUI_KILLBILL_URL=http://host.docker.internal:8082 \
+	-p 8081:8080 \
+	killbill/kaui:2.0.5
+
+killbill-db-run:
+	docker run --rm --name clearflask-killbill-db \
+	-e MYSQL_ROOT_PASSWORD=killbill \
+	-p 8306:3306 \
+	-v /var/lib/mysql \
+	killbill/mariadb:0.22
 
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \

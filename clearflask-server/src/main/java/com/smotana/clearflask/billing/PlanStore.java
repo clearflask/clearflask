@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store;
+package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.Plan;

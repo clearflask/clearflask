@@ -1,0 +1,733 @@
+<!-- https://docs.killbill.io/latest/catalog.xsd -->
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+    <xs:element name="catalog" type="standaloneCatalog"/>
+    <xs:element name="plans" type="defaultPlan"/>
+    <xs:complexType name="standaloneCatalog">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="effectiveDate" type="xs:dateTime"/>
+                    <xs:element name="catalogName" type="xs:string"/>
+                    <xs:element minOccurs="0" name="recurringBillingMode" type="billingMode"/>
+                    <xs:element name="currencies">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="currency" type="currency"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="units">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="unit" type="defaultUnit"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="products">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="product" type="defaultProduct"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="rules" type="defaultPlanRules"/>
+                    <xs:element name="plans">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="plan" type="defaultPlan"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="priceLists" type="defaultPriceListSet"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="validatingConfig">
+        <xs:sequence/>
+    </xs:complexType>
+    <xs:complexType name="defaultUnit">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence/>
+                <xs:attribute name="name" type="xs:ID" use="required"/>
+                <xs:attribute name="prettyName" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultProduct">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="category" type="productCategory"/>
+                    <xs:element minOccurs="0" name="included">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="addonProduct" type="xs:IDREF"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="available">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="addonProduct" type="xs:IDREF"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="limits">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="limit" type="defaultLimit"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="name" type="xs:ID" use="required"/>
+                <xs:attribute name="prettyName" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultLimit">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="unit" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="max" type="xs:double"/>
+                    <xs:element minOccurs="0" name="min" type="xs:double"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPlanRules">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="changePolicy">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="changePolicyCase"
+                                            type="defaultCaseChangePlanPolicy"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="changeAlignment">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="changeAlignmentCase"
+                                            type="defaultCaseChangePlanAlignment"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="cancelPolicy">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="cancelPolicyCase"
+                                            type="defaultCaseCancelPolicy"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="createAlignment">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="createAlignmentCase"
+                                            type="defaultCaseCreateAlignment"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="billingAlignment">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="billingAlignmentCase"
+                                            type="defaultCaseBillingAlignment"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="priceList">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="priceListCase"
+                                            type="defaultCasePriceList"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCaseChangePlanPolicy">
+        <xs:complexContent>
+            <xs:extension base="defaultCaseChange">
+                <xs:sequence>
+                    <xs:element name="policy" type="billingActionPolicy"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="defaultCaseChange">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="phaseType" type="phaseType"/>
+                    <xs:element minOccurs="0" name="fromProduct" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="fromProductCategory" type="productCategory"/>
+                    <xs:element minOccurs="0" name="fromBillingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="fromPriceList" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="toProduct" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="toProductCategory" type="productCategory"/>
+                    <xs:element minOccurs="0" name="toBillingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="toPriceList" type="xs:IDREF"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPriceList">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="plans">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="plan" type="xs:IDREF"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="name" type="xs:ID" use="required"/>
+                <xs:attribute name="prettyName" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPlan">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="effectiveDateForExistingSubscriptions" type="xs:dateTime"/>
+                    <xs:element name="product" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="recurringBillingMode" type="billingMode"/>
+                    <xs:element minOccurs="0" name="initialPhases">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="phase" type="defaultPlanPhase"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="finalPhase" type="defaultPlanPhase"/>
+                    <xs:element minOccurs="0" name="plansAllowedInBundle" type="xs:int"/>
+                </xs:sequence>
+                <xs:attribute name="name" type="xs:ID" use="required"/>
+                <xs:attribute name="prettyName" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPlanPhase">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="duration" type="defaultDuration"/>
+                    <xs:element minOccurs="0" name="fixed" type="defaultFixed"/>
+                    <xs:element minOccurs="0" name="recurring" type="defaultRecurring"/>
+                    <xs:element minOccurs="0" name="usages">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="usage" type="defaultUsage"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="prettyName" type="xs:string"/>
+                <xs:attribute name="type" type="phaseType" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultDuration">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="unit" type="timeUnit"/>
+                    <xs:element minOccurs="0" name="number" type="xs:int"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultFixed">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="fixedPrice" type="defaultInternationalPrice"/>
+                </xs:sequence>
+                <xs:attribute name="type" type="fixedType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultInternationalPrice">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="price" type="defaultPrice"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPrice">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="currency" type="currency"/>
+                    <xs:element name="value" nillable="true" type="xs:decimal"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultRecurring">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="billingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="recurringPrice" type="defaultInternationalPrice"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultUsage">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="billingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="limits">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="limit" type="defaultLimit"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="blocks">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="block" type="defaultBlock"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="tiers">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="tier" type="defaultTier"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="fixedPrice" type="defaultInternationalPrice"/>
+                    <xs:element minOccurs="0" name="recurringPrice" type="defaultInternationalPrice"/>
+                </xs:sequence>
+                <xs:attribute name="name" type="xs:ID" use="required"/>
+                <xs:attribute name="prettyName" type="xs:string"/>
+                <xs:attribute name="billingMode" type="billingMode" use="required"/>
+                <xs:attribute name="usageType" type="usageType" use="required"/>
+                <xs:attribute name="tierBlockPolicy" type="tierBlockPolicy"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultBlock">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="unit" type="xs:IDREF"/>
+                    <xs:element name="size" type="xs:double"/>
+                    <xs:element name="prices" type="defaultInternationalPrice"/>
+                    <xs:element minOccurs="0" name="minTopUpCredit" type="xs:double"/>
+                </xs:sequence>
+                <xs:attribute name="type" type="blockType"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultTier">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="limits">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="limit" type="defaultLimit"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="blocks">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element maxOccurs="unbounded" minOccurs="0" name="tieredBlock"
+                                            type="defaultTieredBlock"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="fixedPrice" type="defaultInternationalPrice"/>
+                    <xs:element minOccurs="0" name="recurringPrice" type="defaultInternationalPrice"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultTieredBlock">
+        <xs:complexContent>
+            <xs:extension base="defaultBlock">
+                <xs:sequence>
+                    <xs:element name="max" type="xs:double"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCaseChangePlanAlignment">
+        <xs:complexContent>
+            <xs:extension base="defaultCaseChange">
+                <xs:sequence>
+                    <xs:element name="alignment" type="planAlignmentChange"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCaseCancelPolicy">
+        <xs:complexContent>
+            <xs:extension base="defaultCasePhase">
+                <xs:sequence>
+                    <xs:element name="policy" type="billingActionPolicy"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="defaultCasePhase">
+        <xs:complexContent>
+            <xs:extension base="defaultCaseStandardNaming">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="phaseType" type="phaseType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="defaultCaseStandardNaming">
+        <xs:complexContent>
+            <xs:extension base="defaultCase">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="product" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="productCategory" type="productCategory"/>
+                    <xs:element minOccurs="0" name="billingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="priceList" type="xs:IDREF"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType abstract="true" name="defaultCase">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCaseCreateAlignment">
+        <xs:complexContent>
+            <xs:extension base="defaultCaseStandardNaming">
+                <xs:sequence>
+                    <xs:element name="alignment" type="planAlignmentCreate"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCaseBillingAlignment">
+        <xs:complexContent>
+            <xs:extension base="defaultCasePhase">
+                <xs:sequence>
+                    <xs:element name="alignment" type="billingAlignment"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultCasePriceList">
+        <xs:complexContent>
+            <xs:extension base="defaultCaseStandardNaming">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="fromProduct" type="xs:IDREF"/>
+                    <xs:element minOccurs="0" name="fromProductCategory" type="productCategory"/>
+                    <xs:element minOccurs="0" name="fromBillingPeriod" type="billingPeriod"/>
+                    <xs:element minOccurs="0" name="fromPriceList" type="xs:IDREF"/>
+                    <xs:element name="toPriceList" type="xs:IDREF"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="defaultPriceListSet">
+        <xs:complexContent>
+            <xs:extension base="validatingConfig">
+                <xs:sequence>
+                    <xs:element name="defaultPriceList" type="defaultPriceList"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="childPriceList" type="defaultPriceList"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:simpleType name="billingMode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="IN_ADVANCE"/>
+            <xs:enumeration value="IN_ARREAR"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="currency">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="AED"/>
+            <xs:enumeration value="AFN"/>
+            <xs:enumeration value="ALL"/>
+            <xs:enumeration value="AMD"/>
+            <xs:enumeration value="ANG"/>
+            <xs:enumeration value="AOA"/>
+            <xs:enumeration value="ARS"/>
+            <xs:enumeration value="AUD"/>
+            <xs:enumeration value="AWG"/>
+            <xs:enumeration value="AZN"/>
+            <xs:enumeration value="BAM"/>
+            <xs:enumeration value="BBD"/>
+            <xs:enumeration value="BDT"/>
+            <xs:enumeration value="BGN"/>
+            <xs:enumeration value="BHD"/>
+            <xs:enumeration value="BIF"/>
+            <xs:enumeration value="BMD"/>
+            <xs:enumeration value="BND"/>
+            <xs:enumeration value="BOB"/>
+            <xs:enumeration value="BRL"/>
+            <xs:enumeration value="BSD"/>
+            <xs:enumeration value="BTN"/>
+            <xs:enumeration value="BWP"/>
+            <xs:enumeration value="BYR"/>
+            <xs:enumeration value="BZD"/>
+            <xs:enumeration value="CAD"/>
+            <xs:enumeration value="CDF"/>
+            <xs:enumeration value="CHF"/>
+            <xs:enumeration value="CLP"/>
+            <xs:enumeration value="CNY"/>
+            <xs:enumeration value="COP"/>
+            <xs:enumeration value="CRC"/>
+            <xs:enumeration value="CUC"/>
+            <xs:enumeration value="CUP"/>
+            <xs:enumeration value="CVE"/>
+            <xs:enumeration value="CZK"/>
+            <xs:enumeration value="DJF"/>
+            <xs:enumeration value="DKK"/>
+            <xs:enumeration value="DOP"/>
+            <xs:enumeration value="DZD"/>
+            <xs:enumeration value="EGP"/>
+            <xs:enumeration value="ERN"/>
+            <xs:enumeration value="ETB"/>
+            <xs:enumeration value="EUR"/>
+            <xs:enumeration value="FJD"/>
+            <xs:enumeration value="FKP"/>
+            <xs:enumeration value="GBP"/>
+            <xs:enumeration value="GEL"/>
+            <xs:enumeration value="GGP"/>
+            <xs:enumeration value="GHS"/>
+            <xs:enumeration value="GIP"/>
+            <xs:enumeration value="GMD"/>
+            <xs:enumeration value="GNF"/>
+            <xs:enumeration value="GTQ"/>
+            <xs:enumeration value="GYD"/>
+            <xs:enumeration value="HKD"/>
+            <xs:enumeration value="HNL"/>
+            <xs:enumeration value="HRK"/>
+            <xs:enumeration value="HTG"/>
+            <xs:enumeration value="HUF"/>
+            <xs:enumeration value="IDR"/>
+            <xs:enumeration value="ILS"/>
+            <xs:enumeration value="IMP"/>
+            <xs:enumeration value="INR"/>
+            <xs:enumeration value="IQD"/>
+            <xs:enumeration value="IRR"/>
+            <xs:enumeration value="ISK"/>
+            <xs:enumeration value="JEP"/>
+            <xs:enumeration value="JMD"/>
+            <xs:enumeration value="JOD"/>
+            <xs:enumeration value="JPY"/>
+            <xs:enumeration value="KES"/>
+            <xs:enumeration value="KGS"/>
+            <xs:enumeration value="KHR"/>
+            <xs:enumeration value="KMF"/>
+            <xs:enumeration value="KPW"/>
+            <xs:enumeration value="KRW"/>
+            <xs:enumeration value="KWD"/>
+            <xs:enumeration value="KYD"/>
+            <xs:enumeration value="KZT"/>
+            <xs:enumeration value="LAK"/>
+            <xs:enumeration value="LBP"/>
+            <xs:enumeration value="LKR"/>
+            <xs:enumeration value="LRD"/>
+            <xs:enumeration value="LSL"/>
+            <xs:enumeration value="LTL"/>
+            <xs:enumeration value="LVL"/>
+            <xs:enumeration value="LYD"/>
+            <xs:enumeration value="MAD"/>
+            <xs:enumeration value="MDL"/>
+            <xs:enumeration value="MGA"/>
+            <xs:enumeration value="MKD"/>
+            <xs:enumeration value="MMK"/>
+            <xs:enumeration value="MNT"/>
+            <xs:enumeration value="MOP"/>
+            <xs:enumeration value="MRO"/>
+            <xs:enumeration value="MUR"/>
+            <xs:enumeration value="MVR"/>
+            <xs:enumeration value="MWK"/>
+            <xs:enumeration value="MXN"/>
+            <xs:enumeration value="MYR"/>
+            <xs:enumeration value="MZN"/>
+            <xs:enumeration value="NAD"/>
+            <xs:enumeration value="NGN"/>
+            <xs:enumeration value="NIO"/>
+            <xs:enumeration value="NOK"/>
+            <xs:enumeration value="NPR"/>
+            <xs:enumeration value="NZD"/>
+            <xs:enumeration value="OMR"/>
+            <xs:enumeration value="PAB"/>
+            <xs:enumeration value="PEN"/>
+            <xs:enumeration value="PGK"/>
+            <xs:enumeration value="PHP"/>
+            <xs:enumeration value="PKR"/>
+            <xs:enumeration value="PLN"/>
+            <xs:enumeration value="PYG"/>
+            <xs:enumeration value="QAR"/>
+            <xs:enumeration value="RON"/>
+            <xs:enumeration value="RSD"/>
+            <xs:enumeration value="RUB"/>
+            <xs:enumeration value="RWF"/>
+            <xs:enumeration value="SAR"/>
+            <xs:enumeration value="SBD"/>
+            <xs:enumeration value="SCR"/>
+            <xs:enumeration value="SDG"/>
+            <xs:enumeration value="SEK"/>
+            <xs:enumeration value="SGD"/>
+            <xs:enumeration value="SHP"/>
+            <xs:enumeration value="SLL"/>
+            <xs:enumeration value="SOS"/>
+            <xs:enumeration value="SPL"/>
+            <xs:enumeration value="SRD"/>
+            <xs:enumeration value="STD"/>
+            <xs:enumeration value="SVC"/>
+            <xs:enumeration value="SYP"/>
+            <xs:enumeration value="SZL"/>
+            <xs:enumeration value="THB"/>
+            <xs:enumeration value="TJS"/>
+            <xs:enumeration value="TMT"/>
+            <xs:enumeration value="TND"/>
+            <xs:enumeration value="TOP"/>
+            <xs:enumeration value="TRY"/>
+            <xs:enumeration value="TTD"/>
+            <xs:enumeration value="TVD"/>
+            <xs:enumeration value="TWD"/>
+            <xs:enumeration value="TZS"/>
+            <xs:enumeration value="UAH"/>
+            <xs:enumeration value="UGX"/>
+            <xs:enumeration value="USD"/>
+            <xs:enumeration value="UYU"/>
+            <xs:enumeration value="UZS"/>
+            <xs:enumeration value="VEF"/>
+            <xs:enumeration value="VND"/>
+            <xs:enumeration value="VUV"/>
+            <xs:enumeration value="WST"/>
+            <xs:enumeration value="XAF"/>
+            <xs:enumeration value="XCD"/>
+            <xs:enumeration value="XDR"/>
+            <xs:enumeration value="XOF"/>
+            <xs:enumeration value="XPF"/>
+            <xs:enumeration value="YER"/>
+            <xs:enumeration value="ZAR"/>
+            <xs:enumeration value="ZMW"/>
+            <xs:enumeration value="ZWD"/>
+            <xs:enumeration value="BTC"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="productCategory">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BASE"/>
+            <xs:enumeration value="ADD_ON"/>
+            <xs:enumeration value="STANDALONE"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="billingActionPolicy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="START_OF_TERM"/>
+            <xs:enumeration value="END_OF_TERM"/>
+            <xs:enumeration value="IMMEDIATE"/>
+            <xs:enumeration value="ILLEGAL"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="phaseType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="TRIAL"/>
+            <xs:enumeration value="DISCOUNT"/>
+            <xs:enumeration value="FIXEDTERM"/>
+            <xs:enumeration value="EVERGREEN"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="billingPeriod">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DAILY"/>
+            <xs:enumeration value="WEEKLY"/>
+            <xs:enumeration value="BIWEEKLY"/>
+            <xs:enumeration value="THIRTY_DAYS"/>
+            <xs:enumeration value="SIXTY_DAYS"/>
+            <xs:enumeration value="NINETY_DAYS"/>
+            <xs:enumeration value="MONTHLY"/>
+            <xs:enumeration value="BIMESTRIAL"/>
+            <xs:enumeration value="QUARTERLY"/>
+            <xs:enumeration value="TRIANNUAL"/>
+            <xs:enumeration value="BIANNUAL"/>
+            <xs:enumeration value="ANNUAL"/>
+            <xs:enumeration value="BIENNIAL"/>
+            <xs:enumeration value="NO_BILLING_PERIOD"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="timeUnit">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DAYS"/>
+            <xs:enumeration value="WEEKS"/>
+            <xs:enumeration value="MONTHS"/>
+            <xs:enumeration value="YEARS"/>
+            <xs:enumeration value="UNLIMITED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="fixedType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ONE_TIME"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="usageType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CAPACITY"/>
+            <xs:enumeration value="CONSUMABLE"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="tierBlockPolicy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ALL_TIERS"/>
+            <xs:enumeration value="TOP_TIER"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="blockType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="VANILLA"/>
+            <xs:enumeration value="TOP_UP"/>
+            <xs:enumeration value="TIERED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="planAlignmentChange">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="START_OF_BUNDLE"/>
+            <xs:enumeration value="START_OF_SUBSCRIPTION"/>
+            <xs:enumeration value="CHANGE_OF_PLAN"/>
+            <xs:enumeration value="CHANGE_OF_PRICELIST"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="planAlignmentCreate">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="START_OF_BUNDLE"/>
+            <xs:enumeration value="START_OF_SUBSCRIPTION"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="billingAlignment">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACCOUNT"/>
+            <xs:enumeration value="BUNDLE"/>
+            <xs:enumeration value="SUBSCRIPTION"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

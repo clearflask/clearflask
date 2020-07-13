@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store.impl;
+package com.smotana.clearflask.billing;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -8,27 +8,20 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.store.PlanStore;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.killbill.billing.client.KillBillClientException;
+import org.killbill.billing.client.RequestOptions;
+import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.model.PlanDetails;
 
+import javax.ws.rs.core.Response;
 import java.util.Optional;
 
 @Slf4j
 @Singleton
-public class StaticPlanStore implements PlanStore {
-
-    public interface Config {
-        @NoDefaultValue
-        String stripePriceIdForBasic();
-
-        @NoDefaultValue
-        String stripePriceIdForStandard();
-    }
-
-    @Inject
-    private Config config;
+public class KillBillPlanStore implements PlanStore {
 
     private static final String PLAN_TITLE_BASIC = "Basic";
     private static final String PLAN_TITLE_STANDARD = "Standard";
@@ -76,9 +69,25 @@ public class StaticPlanStore implements PlanStore {
             AVAILABLE_PlANS.values().asList(),
             FEATURES_TABLE);
 
+    public interface Config {
+    }
+
+    @Inject
+    private Config config;
+    @Inject
+    private CatalogApi kbCatalog;
+
     @Override
     public PlansGetResponse plansGet() {
-        return PLANS_GET_RESPONSE;
+        PlanDetails plans;
+        try {
+            plans = kbCatalog.getAvailableBasePlans(null, RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to retrieve plans from KillBill", ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans");
+        }
+        return plans.stream()
+                .map(p -> p.get)
     }
 
     @Override
@@ -122,7 +131,7 @@ public class StaticPlanStore implements PlanStore {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(PlanStore.class).to(StaticPlanStore.class).asEagerSingleton();
+                bind(PlanStore.class).to(KillBillPlanStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };
