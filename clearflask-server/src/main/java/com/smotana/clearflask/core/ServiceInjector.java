@@ -18,6 +18,7 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.StaticPlanStore;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
@@ -168,11 +169,14 @@ public enum ServiceInjector {
                 install(ProjectResource.module());
                 install(SupportResource.module());
 
+                // Billing
+                install(KillBilling.module());
+                install(KillBillSync.module());
+
                 // Other
                 install(LogExFilter.module());
                 install(ClearFlaskSso.module());
                 install(AuthCookieImpl.module());
-                install(KillBilling.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

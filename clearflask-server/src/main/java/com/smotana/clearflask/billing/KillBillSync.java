@@ -17,6 +17,7 @@ import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
 import org.joda.time.DateTime;
+import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.TenantApi;
@@ -67,7 +68,7 @@ public class KillBillSync extends ManagedService {
         @DefaultValue("true")
         boolean emailPluginSync();
 
-        @DefaultValue(value = "INVOICE_PAYMENT_FAILED,SUBSCRIPTION_CANCEL", innerType = String.class)
+        @DefaultValue(value = "INVOICE_PAYMENT_FAILED", innerType = String.class)
         List<String> emailPluginEmailEvents();
 
         @NoDefaultValue
@@ -167,7 +168,6 @@ public class KillBillSync extends ManagedService {
                     .appendln("org.killbill.billing.plugin.email-notifications.smtp.useSSL=true")
                     .appendln("org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail=true")
                     .toString();
-            kbTenantProvider
 
             List<String> values = kbTenantProvider.get().getPluginConfiguration(EMAIL_PLUGIN_NAME, RequestOptions.empty()).getValues();
             if (values.isEmpty() || !expectedConf.equals(values.get(0).trim())) {
@@ -175,8 +175,9 @@ public class KillBillSync extends ManagedService {
                 log.info("Updating Email plugin conf");
             }
 
-            // TODO create templates
-            
+            // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
+            String emailTemplateFailedPayment = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/billing-FailedPayment.html"), Charsets.UTF_8);
+            setUserKeyValueIfDifferent("killbill-email-notifications:FAILED_PAYMENT_en_US", emailTemplateFailedPayment);
         }
 
         if (config.uploadCatalogs() && !CATALOG_FILENAMES.isEmpty()) {
@@ -197,8 +198,17 @@ public class KillBillSync extends ManagedService {
                 }
             }
         }
+    }
 
-
+    void setUserKeyValueIfDifferent(String key, String value) throws KillBillClientException {
+        List<String> values = kbTenantProvider.get().getUserKeyValue(key, RequestOptions.empty()).getValues();
+        if (!values.isEmpty() && value.equals(values.get(0))) {
+            return;
+        }
+        if (!values.isEmpty()) {
+            kbTenantProvider.get().deleteUserKeyValue(key, RequestOptions.empty());
+        }
+        kbTenantProvider.get().insertUserKeyValue(key, value, RequestOptions.empty());
     }
 
     public static Module module() {

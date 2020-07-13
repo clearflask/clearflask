@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8"/>
+</head>
+<body>
+<center>
+    <div style='max-width: 300px;border: 1px solid #e0e0e0;border-radius: 4px;padding: 100px 40px;margin: 100px 10px;font-family: "Roboto", "Helvetica", "Arial", sans-serif;'>
+        <div style="font-size: 1.2em;margin: 0px 25px 50px 25px;">Your most recent payment was
+            <span style="font-weight: bold">declined</span> by your bank.
+        </div>
+        <div style="font-size: 0.9em;margin: 0px 25px 50px 25px;text-align: left">
+            <p>Here are the details of your declined payment:</p>
+            <p>
+                Invoice #: {{invoice.invoiceNumber}}<br/>
+                Payment Date: {{invoice.invoiceDate}}
+            </p>
+            {{#invoice.invoiceItems}}
+            <p>
+                {{startDate}} {{planName}} : {{formattedAmount}}
+            </p>
+            {{/invoice.invoiceItems}}
+            <p>
+                Paid: {{invoice.formattedPaidAmount}}<br/>
+                Total: {{invoice.formattedBalance}}
+            </p>
+            <p>
+                Billed To:
+                {{account.companyName}}
+                {{account.name}}
+                {{account.address1}}
+                {{account.city}}, {{account.stateOrProvince}} {{account.postalCode}}
+                {{account.country}}
+            </p>
+            <p>To ensure continued access to ClearFlask, please update your billing information within 14 days of your
+                last statement.</p>
+            <p>If you have any questions about your account, please reply to this email or contact ClearFlask</p>
+            <p>You can update your payment information by clicking the button below:</p>
+        </div>
+        <a href="https://clearflask.com/dashboard/billing"
+           style="text-decoration: none;color: inherit;display: inline-block;border: 1px solid rgba(0, 0, 0, 0.23);border-radius: 4px;padding: 8px 15px 5px 15px;text-transform: uppercase">Update
+            billing</a>
+        <div>
+            <div style="margin-top: 40px;padding-top: 15px;border-top: 1px solid #e0e0e0;display: inline-block;font-size: 0.7em;color: rgba(0, 0, 0, 0.38);line-height: 20px;">
+                <a href="https://clearflask.com/privacy" style="text-decoration: none;color: inherit;">Privacy
+                    Policy</a>
+                | <a href="https://clearflask.com/terms" style="text-decoration: none;color: inherit;">Terms of
+                Service</a>
+                <a href="https://clearflask.com"
+                   style="text-decoration: none;color: inherit;font-size: 1em;display: block;">
+                    Powered by <span style="color: rgba(0, 0, 0);">ClearFlask</span></a>
+            </div>
+        </div>
+    </div>
+</center>
+</body>
+</html>
