@@ -4,7 +4,6 @@
 
     <effectiveDate>2000-01-01T00:00:00+00:00</effectiveDate>
     <catalogName>ClearFlask</catalogName>
-
     <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
 
     <currencies>
@@ -51,7 +50,7 @@
                         <number>14</number>
                     </duration>
                     <fixed>
-                        <fixedPrice></fixedPrice>
+                        <fixedPrice>0</fixedPrice>
                     </fixed>
                 </phase>
             </initialPhases>
@@ -79,7 +78,7 @@
                         <number>14</number>
                     </duration>
                     <fixed>
-                        <fixedPrice></fixedPrice>
+                        <fixedPrice>0</fixedPrice>
                     </fixed>
                 </phase>
             </initialPhases>
@@ -107,7 +106,7 @@
                         <number>14</number>
                     </duration>
                     <fixed>
-                        <fixedPrice></fixedPrice>
+                        <fixedPrice>0</fixedPrice>
                     </fixed>
                 </phase>
             </initialPhases>

@@ -4,40 +4,58 @@ package com.smotana.clearflask.billing;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.BillingHistory;
-import com.stripe.model.Customer;
-import com.stripe.model.Subscription;
+import com.smotana.clearflask.api.model.Invoices;
 import lombok.Value;
+import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
 
 @Singleton
 public interface Billing {
 
-    NewAccount createAccount(String accountId, String email, String name, String planId);
+    AccountWithSubscription createAccountWithSubscription(String email, String name, String accountExternalKey, String subscriptionExternalKey, String planId);
 
-    Customer getAccount(String accountId);
+    Account getAccount(String accountExternalKey);
 
-    Optional<String> getCustomerAccountId(Customer customer);
+    Subscription getSubscription(String accountExternalKey);
 
-    Subscription createSubscription(String customerId, String stripePriceId, long trialPeriodInDays);
+    SubscriptionStatusEnum getSubscriptionStatusFrom(Account accountExternalKey, Subscription subscriptionExternalKey);
 
-    Subscription getSubscription(String customerId);
+    void updatePaymentToken(String accountExternalKey, Gateway type, String paymentToken);
 
-    SubscriptionStatusEnum getSubscriptionStatusFrom(Customer customer, Subscription subscription);
+    Subscription cancelSubscription(String subscriptionExternalKey);
 
-    void updatePaymentToken(String customerId, String paymentToken);
+    /**
+     * Used in all use cases:
+     * - Uncancelling subscription pending cancellation
+     * - Changing existing subscription to another subscription
+     * - Subscribing a new subscription (From a previously cancelled one)
+     */
+    Subscription enableSubscription(String accountExternalKey, String subscriptionExternalKey, String planId);
 
-    Subscription cancelSubscription(String customerId);
-
-    Subscription resumeSubscription(String customerId, String planPriceId);
-
-    Subscription changePrice(String customerId, String stripePriceId);
+    Invoices billingHistory(String customerId, Optional<String> cursorOpt);
 
     BillingHistory billingHistory(String customerId, Optional<String> cursorOpt);
 
     @Value
-    class NewAccount {
+    class AccountWithSubscription {
         Account account;
-        Subscription
+        Subscription subscription;
+    }
+
+    enum Gateway {
+        STRIPE("killbill-stripe"),
+        NOOP("__EXTERNAL_PAYMENT__");
+
+        private final String pluginName;
+
+        Gateway(String pluginName) {
+            this.pluginName = pluginName;
+        }
+
+        public String getPluginName() {
+            return pluginName;
+        }
     }
 }

@@ -245,7 +245,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 String planPriceId = planStore.getStripePriceId(account.getPlanid()).get();
                 subscription = billing.resumeSubscription(account.getStripeCusId(), planPriceId);
             } else {
-                subscription = billing.cancelSubscription(account.getStripeCusId());
+                subscription = billing.cancelSubscription(account.getStripeSubId());
             }
             Customer customer = billing.getCustomer(account.getStripeCusId());
             SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(customer, subscription);

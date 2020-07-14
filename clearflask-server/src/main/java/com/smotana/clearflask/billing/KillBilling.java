@@ -21,17 +21,21 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.*;
 import com.stripe.param.*;
 import lombok.extern.slf4j.Slf4j;
+import org.killbill.billing.catalog.api.PhaseType;
+import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.SubscriptionApi;
 import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.PaymentMethod;
+import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
+import org.killbill.billing.client.model.gen.Subscription;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 @Slf4j
 @Singleton
@@ -51,169 +55,154 @@ public class KillBilling implements Billing {
     private CatalogApi kbCatalog;
     @Inject
     private AccountApi kbAccount;
+    @Inject
+    private SubscriptionApi kbSubscription;
 
     @Override
-    public Customer createCustomer(String accountId, String email, String name) {
-
-        return kbAccount.createAccount(new Account()
-                .setExternalKey()
-                .setName(name)
-                .setEmail(email), RequestOptions.empty());
-        
-
+    public AccountWithSubscription createAccountWithSubscription(String email, String name, String accountExternalKey, String subscriptionExternalKey, String planId) {
+        Account account;
         try {
-            return Customer.create(CustomerCreateParams.builder()
-                    .setEmail(email)
+            account = kbAccount.createAccount(new Account()
+                    .setExternalKey(accountExternalKey)
                     .setName(name)
-                    .setMetadata(ImmutableMap.of(METADATA_KEY_CUSTOMER_ACCOUNT_ID, accountId))
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to create Stripe customer", ex);
+                    .setEmail(email), RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to create KillBill Account for email {} name {}", email, name, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to contact payment processor, try again later");
         }
-    }
 
-    @Override
-    public Customer getCustomer(String customerId) {
+        Subscription subscription;
         try {
-            return Customer.retrieve(customerId);
-        } catch (StripeException ex) {
-            log.error("Failed to retrieve customer by id {}", customerId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Customer not found");
+            subscription = kbSubscription.createSubscription(new Subscription()
+                            .setExternalKey(subscriptionExternalKey)
+                            .setAccountId(account.getAccountId())
+                            .setPlanName(planId),
+                    null,
+                    null,
+                    false,
+                    false,
+                    false,
+                    null,
+                    null,
+                    RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to create KillBill Subscription for accountId {} email {} name {}", account.getAccountId(), email, name, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to contact payment processor, try again later");
         }
+
+        return new AccountWithSubscription(account, subscription);
     }
 
     @Override
-    public Optional<String> getCustomerAccountId(Customer customer) {
-        return Optional.ofNullable(customer.getMetadata().getOrDefault(METADATA_KEY_CUSTOMER_ACCOUNT_ID, null));
-    }
-
-    @Override
-    public Subscription createSubscription(String customerId, String stripePriceId, long trialPeriodInDays) {
+    public Account getAccount(String accountExternalKey) {
         try {
-            return Subscription.create(SubscriptionCreateParams.builder()
-                    .addAddInvoiceItem(SubscriptionCreateParams.AddInvoiceItem.builder()
-                            .setPrice(stripePriceId)
-                            .build())
-                    .setCustomer(customerId)
-                    .setTrialPeriodDays(trialPeriodInDays)
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to create Stripe subscription on signup", ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to contact payment processor, try again later");
+            return kbAccount.getAccountByKey(accountExternalKey, RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to retrieve KillBill Account by external id {}", accountExternalKey, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account");
         }
     }
 
     @Override
-    public Subscription getSubscription(String customerId) {
-        Optional<Subscription> subscriptionOpt;
+    public Subscription getSubscription(String subscriptionExternalKey) {
         try {
-            subscriptionOpt = StreamSupport.stream(Subscription.list(SubscriptionListParams.builder()
-                    .setStatus(SubscriptionListParams.Status.ALL)
-                    .setCustomer(customerId)
-                    .build())
-                    .autoPagingIterable().spliterator(), false)
-                    .max(Comparator.comparingLong(Subscription::getCreated));
-        } catch (StripeException ex) {
-            log.error("Failed to retrieve subscriptions by customer id {}", customerId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Subscription not found");
+            return kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to retrieve KillBill Subscription by external id {}", subscriptionExternalKey, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription");
         }
-        if (!subscriptionOpt.isPresent()) {
-            log.error("Customer has no subscriptions {}", customerId);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Subscription not found");
-        }
-        return subscriptionOpt.get();
     }
 
     @Override
-    public SubscriptionStatusEnum getSubscriptionStatusFrom(Customer customer, Subscription subscription) {
-        switch (StripeSubscriptionStatus.byString.get(subscription.getStatus())) {
+    public SubscriptionStatusEnum getSubscriptionStatusFrom(Account account, Subscription subscription) {
+        // TODO All of this needs to be verified
+        switch (subscription.getState()) {
             case ACTIVE:
-                if (subscription.getCancelAtPeriodEnd() == Boolean.TRUE) {
+                if (subscription.getCancelledDate() != null) {
                     return SubscriptionStatusEnum.ACTIVENORENEWAL;
+                } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
+                    return SubscriptionStatusEnum.ACTIVETRIAL;
                 } else {
                     return SubscriptionStatusEnum.ACTIVE;
                 }
-            case TRIALING:
-                return SubscriptionStatusEnum.ACTIVETRIAL;
-            case INCOMPLETE:
-                if (customer.getSources().getData().isEmpty()) {
-                    return SubscriptionStatusEnum.TRIALEXPIRED;
-                }
-            case PAST_DUE:
-            case UNPAID:
-                return SubscriptionStatusEnum.ACTIVEPAYMENTRETRY;
-            case INCOMPLETE_EXPIRED:
-                if (customer.getSources().getData().isEmpty()) {
+            case BLOCKED:
+                if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
                     return SubscriptionStatusEnum.TRIALEXPIRED;
                 } else {
                     return SubscriptionStatusEnum.PAYMENTFAILED;
                 }
-            case CANCELED:
-                if (customer.getDelinquent() == Boolean.TRUE) {
-                    return SubscriptionStatusEnum.PAYMENTFAILED;
-                } else {
-                    return SubscriptionStatusEnum.CANCELLED;
-                }
+            case EXPIRED:
+            case PENDING:
+            case CANCELLED:
+                return SubscriptionStatusEnum.CANCELLED;
             default:
-                log.error("Unknown subscription status {} for id {} customer id {}",
-                        subscription.getStatus(), subscription.getId(), customer.getId());
+                log.error("Unsupported subscription state {} for ext id {} account ext id {}",
+                        subscription.getState(), subscription.getExternalKey(), account.getExternalKey());
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process");
         }
     }
 
     @Override
-    public void updatePaymentToken(String customerId, String paymentToken) {
-        Customer customer = getCustomer(customerId);
+    public void updatePaymentToken(String accountExternalKey, Gateway gateway, String paymentToken) {
         try {
-            customer.update(CustomerUpdateParams.builder()
-                    .setSource(paymentToken)
-                    .build());
-        } catch (StripeException ex) {
-            log.error("Failed to update customer {} source {}", customerId, paymentToken, ex);
+            Account account = kbAccount.getAccountByKey(accountExternalKey, RequestOptions.empty());
+            kbAccount.createPaymentMethod(
+                    account.getAccountId(),
+                    new PaymentMethod(
+                            null,
+                            null,
+                            account.getAccountId(),
+                            true,
+                            gateway.getPluginName(),
+                            new PaymentMethodPluginDetail(),
+                            ImmutableList.of()),
+                    true,
+                    true,
+                    null,
+                    ImmutableMap.of("token", paymentToken),
+                    RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to update KillBill payment token for account external id {}", accountExternalKey, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method");
         }
     }
 
     @Override
-    public Subscription cancelSubscription(String customerId) {
-        Subscription subscription = getSubscription(customerId);
-        switch (StripeSubscriptionStatus.byString.get(subscription.getStatus())) {
-            case ACTIVE:
-                try {
-                    return subscription.update(SubscriptionUpdateParams.builder()
-                            .setCancelAtPeriodEnd(Boolean.TRUE)
-                            .build());
-                } catch (StripeException ex) {
-                    log.error("Failed to update subscription with cancel at period end with status {} id {} customer id {}",
-                            subscription.getStatus(), subscription.getId(), customerId);
-                    throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel");
-                }
-            case TRIALING:
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Trial cannot be cancelled");
-            case INCOMPLETE:
-            case PAST_DUE:
-            case UNPAID:
-                try {
-                    return subscription.cancel();
-                } catch (StripeException e) {
-                    log.error("Failed to cancel subscription with status {} id {} customer id {}",
-                            subscription.getStatus(), subscription.getId(), customerId);
-                    throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel");
-                }
-            case INCOMPLETE_EXPIRED:
-            case CANCELED:
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Subscription already cancelled");
-            default:
-                log.error("Unknown subscription status {} for id {} customer id {}",
-                        subscription.getStatus(), subscription.getId(), customerId);
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process");
+    public Subscription cancelSubscription(String subscriptionExternalKey) {
+        try {
+            Subscription subscription = kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
+            kbSubscription.cancelSubscriptionPlan(
+                    subscription.getSubscriptionId(),
+                    null,
+                    true,
+                    15L,
+                    null,
+                    null,
+                    null,
+                    ImmutableMap.of(),
+                    RequestOptions.empty());
+            return kbSubscription.getSubscription(subscription.getSubscriptionId(), RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to cancel KillBill subscription for subscription external id {}", subscriptionExternalKey, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription");
         }
     }
 
     @Override
-    public Subscription resumeSubscription(String customerId, String planPriceId) {
+    public Subscription enableSubscription(String accountExternalKey, String subscriptionExternalKey, String planId) {
+        try {
+            Subscription subscription = kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
+
+
+        } catch (KillBillClientException ex) {
+            log.error("Failed to enable KillBill subscription for account external id {} subscription external key {}",
+                    accountExternalKey, subscriptionExternalKey, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to enable subscription");
+        }
+
+
         Subscription subscription = getSubscription(customerId);
         switch (StripeSubscriptionStatus.byString.get(subscription.getStatus())) {
             case ACTIVE:

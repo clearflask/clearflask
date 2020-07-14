@@ -116,6 +116,7 @@ components:
           - ActiveTrial
           - ActivePaymentRetry
           - ActiveNoRenewal
+          - Pending
           - TrialExpired
           - PaymentFailed
           - Cancelled
@@ -137,7 +138,15 @@ components:
         renewAutomatically:
           type: boolean
         paymentToken:
-          type: string
+          type: object
+          required:
+          - type
+          - token
+          properties:
+            type:
+              type: string
+            token:
+              type: string
         planid:
           type: string
         subscriptionActive:
@@ -147,6 +156,7 @@ components:
       required:
       - availablePlans
       - billingHistory
+      - invoices
       properties:
         payment:
           type: object
@@ -174,8 +184,10 @@ components:
             $ref: 'api-account.yaml#/components/schemas/Plan'
         billingHistory:
           $ref: 'api-account.yaml#/components/schemas/BillingHistory'
+        invoices:
+          $ref: 'api-account.yaml#/components/schemas/Invoices'
     BillingHistory:
-      title: BillingHistorySearchAdminResponse
+      title: BillingHistoryAdminResponse
       type: object
       required:
       - results
@@ -186,6 +198,31 @@ components:
           type: array
           items:
             title: BillingHistoryItem
+            type: object
+            required:
+            - date
+            - type
+            - description
+            properties:
+              date:
+                type: string
+                format: date-time
+              type:
+                type: string
+              description:
+                type: string
+    Invoices:
+      title: InvoicesSearchAdminResponse
+      type: object
+      required:
+      - results
+      properties:
+        cursor:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            title: InvoiceItem
             type: object
             required:
             - date
@@ -203,7 +240,7 @@ components:
                 format: int64
               description:
                 type: string
-              invoiceUrl:
+              invoiceId:
                 type: string
 
 /support/message:
@@ -363,6 +400,43 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/BillingHistory'
+/admin/account/billing/invoices:
+  get:
+    operationId: invoicesSearchAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/Invoices'
+/admin/account/billing/invoice/{invoiceId}:
+  get:
+    operationId: invoiceHtmlGetAdmin
+    tags: [AccountAdmin]
+    parameters:
+    - name: invoiceId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: InvoiceHtmlResponse
+              type: Object
+              required:
+              - invoiceHtml
+              properties:
+                invoiceHtml:
+                  type: string
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin
