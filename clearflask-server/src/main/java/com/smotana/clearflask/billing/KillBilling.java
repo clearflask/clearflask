@@ -1,8 +1,10 @@
 package com.smotana.clearflask.billing;
 
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -10,60 +12,60 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
-import com.smotana.clearflask.api.model.BillingHistory;
-import com.smotana.clearflask.api.model.BillingHistoryItem;
+import com.smotana.clearflask.api.model.InvoiceItem;
+import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import com.stripe.exception.StripeException;
-import com.stripe.model.*;
-import com.stripe.param.*;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
-import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.invoice.api.InvoiceStatus;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.time.Instant;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
 public class KillBilling implements Billing {
 
     public interface Config {
+        @DefaultValue("15000")
+        long callTimeoutInMillis();
     }
 
     @Inject
     private Config config;
     @Inject
-    private AccountStore accountStore;
-    @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
-    @Inject
-    private CatalogApi kbCatalog;
     @Inject
     private AccountApi kbAccount;
     @Inject
     private SubscriptionApi kbSubscription;
+    @Inject
+    private InvoiceApi kbInvoice;
 
     @Override
-    public AccountWithSubscription createAccountWithSubscription(String email, String name, String accountExternalKey, String subscriptionExternalKey, String planId) {
+    public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
         Account account;
         try {
             account = kbAccount.createAccount(new Account()
-                    .setExternalKey(accountExternalKey)
+                    .setAccountId(getAccountIdFromString(accountId))
                     .setName(name)
                     .setEmail(email), RequestOptions.empty());
         } catch (KillBillClientException ex) {
@@ -75,15 +77,15 @@ public class KillBilling implements Billing {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()
-                            .setExternalKey(subscriptionExternalKey)
+                            .setSubscriptionId(getAccountIdFromString(accountId))
                             .setAccountId(account.getAccountId())
                             .setPlanName(planId),
                     null,
                     null,
                     false,
                     false,
-                    false,
-                    null,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
                     RequestOptions.empty());
         } catch (KillBillClientException ex) {
@@ -96,21 +98,31 @@ public class KillBilling implements Billing {
     }
 
     @Override
-    public Account getAccount(String accountExternalKey) {
+    public Account getAccount(String accountId) {
         try {
-            return kbAccount.getAccountByKey(accountExternalKey, RequestOptions.empty());
+            Account account = kbAccount.getAccount(getAccountIdFromString(accountId), RequestOptions.empty());
+            if (account == null) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Account doesn't exist");
+            }
+            return account;
         } catch (KillBillClientException ex) {
-            log.error("Failed to retrieve KillBill Account by external id {}", accountExternalKey, ex);
+            log.error("Failed to retrieve KillBill Account by id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account");
         }
     }
 
     @Override
-    public Subscription getSubscription(String subscriptionExternalKey) {
+    public Subscription getSubscription(String accountId) {
         try {
-            return kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
+            Subscription subscription = kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+            if (subscription == null) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Subscription doesn't exist");
+            }
+            return subscription;
         } catch (KillBillClientException ex) {
-            log.error("Failed to retrieve KillBill Subscription by external id {}", subscriptionExternalKey, ex);
+            log.error("Failed to retrieve KillBill Subscription by account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription");
         }
     }
@@ -138,22 +150,21 @@ public class KillBilling implements Billing {
             case CANCELLED:
                 return SubscriptionStatusEnum.CANCELLED;
             default:
-                log.error("Unsupported subscription state {} for ext id {} account ext id {}",
-                        subscription.getState(), subscription.getExternalKey(), account.getExternalKey());
+                log.error("Unsupported subscription state {} for id {} account id {}",
+                        subscription.getState(), subscription.getSubscriptionId(), account.getAccountId());
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process");
         }
     }
 
     @Override
-    public void updatePaymentToken(String accountExternalKey, Gateway gateway, String paymentToken) {
+    public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
-            Account account = kbAccount.getAccountByKey(accountExternalKey, RequestOptions.empty());
             kbAccount.createPaymentMethod(
-                    account.getAccountId(),
+                    getAccountIdFromString(accountId),
                     new PaymentMethod(
                             null,
                             null,
-                            account.getAccountId(),
+                            getAccountIdFromString(accountId),
                             true,
                             gateway.getPluginName(),
                             new PaymentMethodPluginDetail(),
@@ -164,130 +175,196 @@ public class KillBilling implements Billing {
                     ImmutableMap.of("token", paymentToken),
                     RequestOptions.empty());
         } catch (KillBillClientException ex) {
-            log.error("Failed to update KillBill payment token for account external id {}", accountExternalKey, ex);
+            log.error("Failed to update KillBill payment token for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method");
         }
     }
 
     @Override
-    public Subscription cancelSubscription(String subscriptionExternalKey) {
+    public Subscription cancelSubscription(String accountId) {
         try {
-            Subscription subscription = kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
             kbSubscription.cancelSubscriptionPlan(
-                    subscription.getSubscriptionId(),
+                    getSubscriptionIdFromAccountId(accountId),
                     null,
                     true,
-                    15L,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
                     null,
                     null,
                     ImmutableMap.of(),
                     RequestOptions.empty());
-            return kbSubscription.getSubscription(subscription.getSubscriptionId(), RequestOptions.empty());
+            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
         } catch (KillBillClientException ex) {
-            log.error("Failed to cancel KillBill subscription for subscription external id {}", subscriptionExternalKey, ex);
+            log.error("Failed to cancel KillBill subscription for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription");
         }
     }
 
     @Override
-    public Subscription enableSubscription(String accountExternalKey, String subscriptionExternalKey, String planId) {
+    public Subscription undoPendingCancel(String accountId) {
         try {
-            Subscription subscription = kbSubscription.getSubscriptionByKey(subscriptionExternalKey, RequestOptions.empty());
-
-
+            kbSubscription.uncancelSubscriptionPlan(getSubscriptionIdFromAccountId(accountId), null, RequestOptions.empty());
+            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
         } catch (KillBillClientException ex) {
-            log.error("Failed to enable KillBill subscription for account external id {} subscription external key {}",
-                    accountExternalKey, subscriptionExternalKey, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to enable subscription");
-        }
-
-
-        Subscription subscription = getSubscription(customerId);
-        switch (StripeSubscriptionStatus.byString.get(subscription.getStatus())) {
-            case ACTIVE:
-            case TRIALING:
-            case INCOMPLETE:
-            case PAST_DUE:
-            case UNPAID:
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Subscription already active");
-            case INCOMPLETE_EXPIRED:
-            case CANCELED:
-                return createSubscription(customerId, planPriceId, 0L);
-            default:
-                log.error("Unknown subscription status {} for id {} customer id {}",
-                        subscription.getStatus(), subscription.getId(), customerId);
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to process");
+            log.error("Failed to unCancel KillBill subscription for account id {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to un-cancel subscription");
         }
     }
 
     @Override
-    public Subscription changePrice(String customerId, String stripePriceId) {
-        Subscription subscription = getSubscription(customerId);
-        switch (StripeSubscriptionStatus.byString.get(subscription.getStatus())) {
-            case ACTIVE:
-            case TRIALING:
-                if (subscription.getItems().getData().size() != 1) {
-                    log.error("Cannot change subscription {} price with unexpected number of items {}",
-                            subscription.getId(), subscription.getItems().getData().size());
-                    throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-                }
-                try {
-                    return subscription.update(SubscriptionUpdateParams.builder()
-                            .addItem(SubscriptionUpdateParams.Item.builder()
-                                    // Replace existing item by setting the same id
-                                    .setId(subscription.getItems().getData().get(0).getId())
-                                    .setPrice(stripePriceId)
-                                    .build())
-                            .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS)
-                            .build());
-                } catch (StripeException ex) {
-                    log.error("Failed to update subscription {} price {} for customerId {}", subscription.getId(), stripePriceId, customerId);
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
-                            "Failed to change price");
-                }
-            case INCOMPLETE:
-            case PAST_DUE:
-            case UNPAID:
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
-                        "Cannot change price on subscription not in good standing");
-            case INCOMPLETE_EXPIRED:
-            case CANCELED:
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
-                        "Cannot change price on inactive subscription");
-            default:
-                log.error("Unknown subscription status {} for id {} customer id {}",
-                        subscription.getStatus(), subscription.getId(), customerId);
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
-                        "Failed to process");
-        }
-    }
-
-    @Override
-    public BillingHistory billingHistory(String customerId, Optional<String> cursorOpt) {
-        InvoiceCollection invoiceList;
+    public Subscription changePlan(String accountId, String planId) {
         try {
-            invoiceList = Invoice.list(InvoiceListParams.builder()
-                    .setCustomer(customerId)
-                    .setStartingAfter(cursorOpt.map(serverSecretCursor::decryptString).orElse(null))
-                    .build());
-        } catch (StripeException e) {
-            log.error("Failed to search invoices for customerId {} cursorOpt {}", customerId, cursorOpt);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Failed to list invoices");
+            kbSubscription.changeSubscriptionPlan(
+                    getSubscriptionIdFromAccountId(accountId),
+                    new Subscription()
+                            .setSubscriptionId(getSubscriptionIdFromAccountId(accountId))
+                            .setAccountId(getAccountIdFromString(accountId))
+                            .setPlanName(planId),
+                    null,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                    null,
+                    null,
+                    RequestOptions.empty());
+            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to change KillBill plan account id {} planId {}", accountId, planId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan");
         }
-        return new BillingHistory(
-                (invoiceList.getHasMore() == Boolean.TRUE && !invoiceList.getData().isEmpty())
-                        ? serverSecretCursor.encryptString(invoiceList.getData().get(invoiceList.getData().size() - 1).getId())
-                        : null,
-                invoiceList.getData().stream()
-                        .map(i -> new BillingHistoryItem(
-                                Instant.ofEpochSecond(i.getDueDate()),
-                                i.getStatus(),
-                                i.getAmountDue(),
-                                i.getDescription(),
-                                i.getHostedInvoiceUrl()))
-                        .collect(ImmutableList.toImmutableList()));
+    }
+
+    @Override
+    public Subscription activateSubscription(String accountId, String planId) {
+        try {
+            Subscription oldSubscription = kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+            if (oldSubscription == null) {
+                log.error("Failed to activate non-existent KillBill Subscription for accountId {} planId {}", accountId, planId);
+                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                        "Failed to activate subscription");
+            }
+            switch (oldSubscription.getState()) {
+                default:
+                case PENDING:
+                case ACTIVE:
+                case BLOCKED:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                            "Previous subscription still active, cannot start a new subscription");
+                case EXPIRED:
+                case CANCELLED:
+                    break;
+            }
+
+            return kbSubscription.createSubscription(
+                    new Subscription()
+                            .setSubscriptionId(oldSubscription.getSubscriptionId())
+                            .setAccountId(oldSubscription.getAccountId())
+                            .setPlanName(planId),
+                    null,
+                    null,
+                    true,
+                    false,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                    null,
+                    RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to activate KillBill Subscription for accountId {} planId {}", accountId, planId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to activate subscription");
+        }
+    }
+
+    @Override
+    public Invoices getInvoices(String accountId, Optional<String> cursorOpt) {
+        LocalDate endDate = cursorOpt
+                .map(serverSecretCursor::decryptString)
+                .map(LocalDate::parse)
+                .orElseGet(LocalDate::now);
+        LocalDate startDate = endDate.minusMonths(6);
+
+        try {
+            org.killbill.billing.client.model.Invoices result = kbAccount.getInvoicesForAccount(
+                    getAccountIdFromString(accountId),
+                    startDate,
+                    endDate,
+                    true,
+                    false,
+                    true,
+                    null,
+                    RequestOptions.empty()
+            );
+            ArrayList<InvoiceItem> invoices = Lists.newArrayList();
+            do {
+                invoices.addAll(result.stream()
+                        .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
+                        .map(i -> {
+                            String status;
+                            if (i.getStatus() == InvoiceStatus.VOID) {
+                                status = "Void";
+                            } else if (i.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                                status = "Unpaid";
+                            } else {
+                                status = "Paid";
+                            }
+                            String description = i.getItems().stream()
+                                    .map(org.killbill.billing.client.model.gen.InvoiceItem::getPrettyPlanName)
+                                    .filter(p -> !Strings.isNullOrEmpty(p))
+                                    .collect(Collectors.joining(", "));
+                            if (Strings.isNullOrEmpty(description)) {
+                                description = "Unspecified";
+                            }
+                            return new InvoiceItem(
+                                    i.getInvoiceDate().toDate().toInstant(),
+                                    status,
+                                    i.getAmount().doubleValue(),
+                                    description,
+                                    i.getInvoiceId().toString());
+                        }));
+            } while ((result = result.getNext()) != null);
+            invoices.sort(Comparator.comparing(InvoiceItem::getDate).reversed());
+
+            return new Invoices(
+                    invoices.isEmpty() ? null : serverSecretCursor.encryptString(startDate.minusDays(1).toString()),
+                    invoices);
+        } catch (KillBillClientException ex) {
+            log.error("Failed to get invoices from KillBill for accountId {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to fetch invoices");
+        }
+    }
+
+    @Override
+    public String getInvoiceHtml(String accountId, String invoiceId) {
+        try {
+            Invoice invoice = kbInvoice.getInvoice(UUID.fromString(invoiceId), RequestOptions.empty());
+            if (invoice == null) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Invoice doesn't exist");
+            }
+            if (!invoice.getAccountId().toString().equals(accountId)) {
+                log.warn("Requested HTML for invoiceId {} with accountId {} but invoice has accountId {}",
+                        invoiceId, accountId, invoice.getAccountId());
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Invoice doesn't exist");
+            }
+            if (invoice.getStatus() == InvoiceStatus.DRAFT) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Invoice doesn't exist");
+            }
+            return kbInvoice.getInvoiceAsHTML(UUID.fromString(invoiceId), RequestOptions.empty());
+        } catch (KillBillClientException ex) {
+            log.error("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to fetch invoice");
+        }
+    }
+
+    private UUID getAccountIdFromString(String accountId) {
+        return UUID.fromString(accountId);
+    }
+
+    private UUID getSubscriptionIdFromAccountId(String accountId) {
+        return UUID.fromString(accountId);
     }
 
     public static Module module() {

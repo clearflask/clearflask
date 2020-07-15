@@ -3,7 +3,6 @@ package com.smotana.clearflask.billing;
 
 import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
-import com.smotana.clearflask.api.model.BillingHistory;
 import com.smotana.clearflask.api.model.Invoices;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
@@ -14,29 +13,27 @@ import java.util.Optional;
 @Singleton
 public interface Billing {
 
-    AccountWithSubscription createAccountWithSubscription(String email, String name, String accountExternalKey, String subscriptionExternalKey, String planId);
+    AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId);
 
-    Account getAccount(String accountExternalKey);
+    Account getAccount(String accountId);
 
-    Subscription getSubscription(String accountExternalKey);
+    Subscription getSubscription(String accountId);
 
-    SubscriptionStatusEnum getSubscriptionStatusFrom(Account accountExternalKey, Subscription subscriptionExternalKey);
+    SubscriptionStatusEnum getSubscriptionStatusFrom(Account accountId, Subscription subscription);
 
-    void updatePaymentToken(String accountExternalKey, Gateway type, String paymentToken);
+    void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
-    Subscription cancelSubscription(String subscriptionExternalKey);
+    Subscription cancelSubscription(String accountId);
 
-    /**
-     * Used in all use cases:
-     * - Uncancelling subscription pending cancellation
-     * - Changing existing subscription to another subscription
-     * - Subscribing a new subscription (From a previously cancelled one)
-     */
-    Subscription enableSubscription(String accountExternalKey, String subscriptionExternalKey, String planId);
+    Subscription undoPendingCancel(String accountId);
 
-    Invoices billingHistory(String customerId, Optional<String> cursorOpt);
+    Subscription changePlan(String accountId, String planId);
 
-    BillingHistory billingHistory(String customerId, Optional<String> cursorOpt);
+    Subscription activateSubscription(String accountId, String planId);
+
+    Invoices getInvoices(String accountId, Optional<String> cursorOpt);
+
+    String getInvoiceHtml(String accountId, String invoiceId);
 
     @Value
     class AccountWithSubscription {
@@ -45,17 +42,23 @@ public interface Billing {
     }
 
     enum Gateway {
-        STRIPE("killbill-stripe"),
-        NOOP("__EXTERNAL_PAYMENT__");
+        STRIPE("killbill-stripe", true),
+        NOOP("__EXTERNAL_PAYMENT__", false);
 
         private final String pluginName;
+        private final boolean allowedInProduction;
 
-        Gateway(String pluginName) {
+        Gateway(String pluginName, boolean allowedInProduction) {
             this.pluginName = pluginName;
+            this.allowedInProduction = allowedInProduction;
         }
 
         public String getPluginName() {
             return pluginName;
+        }
+
+        public boolean isAllowedInProduction() {
+            return allowedInProduction;
         }
     }
 }

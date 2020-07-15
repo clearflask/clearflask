@@ -102,9 +102,6 @@ public interface AccountStore {
         private final SubscriptionStatusEnum status;
 
         @NonNull
-        private final String stripeCusId;
-
-        @NonNull
         private final String planid;
 
         @NonNull

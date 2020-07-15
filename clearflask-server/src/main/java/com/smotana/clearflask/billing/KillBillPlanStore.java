@@ -7,7 +7,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,12 +16,13 @@ import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.PlanDetails;
 
 import javax.ws.rs.core.Response;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Singleton
 public class KillBillPlanStore implements PlanStore {
-
     private static final String PLAN_TITLE_BASIC = "Basic";
     private static final String PLAN_TITLE_STANDARD = "Standard";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
@@ -31,22 +31,22 @@ public class KillBillPlanStore implements PlanStore {
     private static final String TERMS_VOTING = "Voting and expressions allows prioritization of value for each idea.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_CREDIT = "Spend time-based credits on future ClearFlask development features";
-    private static final ImmutableMap<String, Plan> AVAILABLE_PlANS = ImmutableMap.of(
-            "E5A119e3-1477-4621-A9EA-85355B34A6D4", new Plan("E5A119e3-1477-4621-A9EA-85355B34A6D4", PLAN_TITLE_BASIC,
+    private static final ImmutableMap<String, Plan> AVAILABLE_PLANS = ImmutableMap.of(
+            "basic-monthly", new Plan("basic-monthly", PLAN_TITLE_BASIC,
                     new PlanPricing(30L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Voting and expressions", TERMS_VOTING),
                     new PlanPerk("Unlimited projects", TERMS_PROJECTS),
                     new PlanPerk("Up to 100 contributors", TERMS_ACTIVE_USERS),
                     new PlanPerk("20min feature credits", TERMS_CREDIT)),
                     null, false),
-            "9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", new Plan("9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89", PLAN_TITLE_STANDARD,
+            "standard-monthly", new Plan("standard-monthly", PLAN_TITLE_STANDARD,
                     new PlanPricing(75L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Credit System", TERMS_CREDIT_SYSTEM),
                     new PlanPerk("Single Sign-On", null),
                     new PlanPerk("Up to 1,000 contributors", TERMS_ACTIVE_USERS),
                     new PlanPerk("1hr feature credits", TERMS_CREDIT)),
                     true, false),
-            "CDBF4982-1805-4352-8A57-824AFB565973", new Plan("CDBF4982-1805-4352-8A57-824AFB565973", "Analytic",
+            "analytic-monthly", new Plan("analytic-monthly", "Analytic",
                     null, ImmutableList.of(
                     new PlanPerk("Powerful Analytics", TERMS_ANALYTICS),
                     new PlanPerk("Multi-Agent", null),
@@ -66,65 +66,35 @@ public class KillBillPlanStore implements PlanStore {
                     new FeaturesTableFeatures("Full API access", ImmutableList.of("No", "No", "Yes"), null)
             ), null);
     private static final PlansGetResponse PLANS_GET_RESPONSE = new PlansGetResponse(
-            AVAILABLE_PlANS.values().asList(),
+            AVAILABLE_PLANS.values().asList(),
             FEATURES_TABLE);
 
-    public interface Config {
-    }
-
-    @Inject
-    private Config config;
     @Inject
     private CatalogApi kbCatalog;
 
     @Override
-    public PlansGetResponse plansGet() {
+    public PlansGetResponse getPublicPlans() {
+        return PLANS_GET_RESPONSE;
+    }
+
+    @Override
+    public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
         PlanDetails plans;
         try {
-            plans = kbCatalog.getAvailableBasePlans(null, RequestOptions.empty());
+            plans = kbCatalog.getAvailableBasePlans(UUID.fromString(accountId), RequestOptions.empty());
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve plans from KillBill", ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans");
         }
         return plans.stream()
-                .map(p -> p.get)
-    }
-
-    @Override
-    public ImmutableSet<Plan> mapIdsToPlans(ImmutableSet<String> planIds) {
-        return planIds.stream()
-                .map(AVAILABLE_PlANS::get)
+                .map(p -> AVAILABLE_PLANS.get(p.getPlan()))
+                .filter(Objects::nonNull)
                 .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override
     public Optional<Plan> getPlan(String planId) {
-        return Optional.ofNullable(AVAILABLE_PlANS.get(planId));
-    }
-
-    @Override
-    public Optional<String> getStripePriceId(String planId) {
-        Optional<String> titleOpt = Optional.ofNullable(AVAILABLE_PlANS.get(planId))
-                .map(Plan::getTitle);
-        if (!titleOpt.isPresent()) {
-            return Optional.empty();
-        }
-        switch (titleOpt.get()) {
-            case PLAN_TITLE_BASIC:
-                return Optional.of(config.stripePriceIdForBasic());
-            case PLAN_TITLE_STANDARD:
-                return Optional.of(config.stripePriceIdForStandard());
-            default:
-                return Optional.empty();
-        }
-    }
-
-    @Override
-    public ImmutableSet<Plan> availablePlansToChangeFrom(String planId) {
-        return AVAILABLE_PlANS.values().stream()
-                .filter(plan -> plan.getPricing() != null)
-                .filter(plan -> plan.getPlanid() != planId)
-                .collect(ImmutableSet.toImmutableSet());
+        return Optional.ofNullable(AVAILABLE_PLANS.get(planId));
     }
 
     public static Module module() {
@@ -132,7 +102,6 @@ public class KillBillPlanStore implements PlanStore {
             @Override
             protected void configure() {
                 bind(PlanStore.class).to(KillBillPlanStore.class).asEagerSingleton();
-                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

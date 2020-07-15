@@ -8,13 +8,9 @@ import java.util.Optional;
 
 public interface PlanStore {
 
-    PlansGetResponse plansGet();
+    PlansGetResponse getPublicPlans();
 
-    ImmutableSet<Plan> mapIdsToPlans(ImmutableSet<String> planIds);
+    ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
 
     Optional<Plan> getPlan(String planId);
-
-    Optional<String> getStripePriceId(String planId);
-
-    ImmutableSet<Plan> availablePlansToChangeFrom(String planId);
 }

@@ -11,8 +11,8 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBilling;
-import com.smotana.clearflask.billing.StaticPlanStore;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
@@ -89,7 +89,7 @@ public class BlackboxIT extends AbstractIT {
                 MockEmailService.module(),
                 LocalRateLimiter.module(),
                 ResourceLegalStore.module(),
-                StaticPlanStore.module(),
+                KillBillPlanStore.module(),
                 DynamoElasticCommentStore.module(),
                 DynamoAccountStore.module(),
                 DynamoNotificationStore.module(),

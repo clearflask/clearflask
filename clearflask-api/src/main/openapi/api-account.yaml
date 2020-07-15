@@ -155,7 +155,6 @@ components:
       type: object
       required:
       - availablePlans
-      - billingHistory
       - invoices
       properties:
         payment:
@@ -182,35 +181,8 @@ components:
           type: array
           items:
             $ref: 'api-account.yaml#/components/schemas/Plan'
-        billingHistory:
-          $ref: 'api-account.yaml#/components/schemas/BillingHistory'
         invoices:
           $ref: 'api-account.yaml#/components/schemas/Invoices'
-    BillingHistory:
-      title: BillingHistoryAdminResponse
-      type: object
-      required:
-      - results
-      properties:
-        cursor:
-          $ref: 'api-client.yaml#/components/schemas/Cursor'
-        results:
-          type: array
-          items:
-            title: BillingHistoryItem
-            type: object
-            required:
-            - date
-            - type
-            - description
-            properties:
-              date:
-                type: string
-                format: date-time
-              type:
-                type: string
-              description:
-                type: string
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
@@ -236,8 +208,8 @@ components:
               status:
                 type: string
               amount:
-                type: integer
-                format: int64
+                type: number
+                format: double
               description:
                 type: string
               invoiceId:
@@ -385,21 +357,6 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountBilling'
-/admin/account/billing/history:
-  get:
-    operationId: billingHistorySearchAdmin
-    tags: [AccountAdmin]
-    parameters:
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-account.yaml#/components/schemas/BillingHistory'
 /admin/account/billing/invoices:
   get:
     operationId: invoicesSearchAdmin
