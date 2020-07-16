@@ -1,16 +1,15 @@
 package com.smotana.clearflask.billing;
 
 
-import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.Invoices;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.PaymentMethod;
 import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
 
-@Singleton
 public interface Billing {
 
     AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId);
@@ -19,7 +18,7 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
-    SubscriptionStatusEnum getSubscriptionStatusFrom(Account accountId, Subscription subscription);
+    SubscriptionStatusEnum getSubscriptionStatusFrom(Account account, Subscription subscription);
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
@@ -35,15 +34,28 @@ public interface Billing {
 
     String getInvoiceHtml(String accountId, String invoiceId);
 
+    Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
+
     @Value
     class AccountWithSubscription {
         Account account;
         Subscription subscription;
     }
 
+    @Value
+    class PaymentMethodDetails {
+        Gateway gateway;
+        PaymentMethod paymentMethod;
+        Optional<String> cardBrand;
+        Optional<String> cardLast4;
+        Optional<Long> cardExpiryYear;
+        Optional<Long> cardExpiryMonth;
+    }
+
     enum Gateway {
         STRIPE("killbill-stripe", true),
-        NOOP("__EXTERNAL_PAYMENT__", false);
+        NOOP("__EXTERNAL_PAYMENT__", false),
+        OTHER("", false);
 
         private final String pluginName;
         private final boolean allowedInProduction;

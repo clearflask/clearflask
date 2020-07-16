@@ -64,6 +64,7 @@ class Main extends Component {
     const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => { closeLoadingScreen(); return i; }));
     const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => { closeLoadingScreen(); return i; }));
     const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => { closeLoadingScreen(); return i; }));
+    const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(i => { closeLoadingScreen(); return i; }));
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -97,6 +98,12 @@ class Main extends Component {
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Dashboard {...props} />
+                      </Provider>
+                    )} />
+                  ), (
+                    <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                      <Provider store={ServerAdmin.get().getStore()}>
+                        <Invoice invoiceId={props.match.params['invoiceId']} />
                       </Provider>
                     )} />
                   ), (

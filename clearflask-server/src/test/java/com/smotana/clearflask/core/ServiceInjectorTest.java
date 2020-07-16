@@ -35,7 +35,7 @@ public class ServiceInjectorTest {
                 .collect(ImmutableSet.toImmutableSet());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testBindings() throws Exception {
         Injector injector = ServiceInjector.INSTANCE.create(env, Stage.TOOL);
 

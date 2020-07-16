@@ -9,12 +9,13 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
-import com.stripe.model.*;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
@@ -22,20 +23,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.TenantApi;
+import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.TenantKeyValue;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+import rx.Observable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-
-import static com.smotana.clearflask.store.AccountStore.Account;
 
 @Slf4j
 @Singleton
@@ -45,8 +51,16 @@ public class KillBillResource extends ManagedService {
     public static final String WEBHOOK_PATH = "/webhook/killbill";
 
     public interface Config {
-        @DefaultValue("1")
-        long warnIfWebhookCountNotEquals();
+        @DefaultValue(value = "", innerType = String.class)
+        Set<String> eventsToListenFor();
+
+        Observable<Set<String>> eventsToListenForObservable();
+
+        @DefaultValue(value = "1", innerType = Long.class)
+        Optional<Long> warnIfWebhookCountNotEquals();
+
+        @DefaultValue("true")
+        boolean logWhenEventIsUnnecessary();
     }
 
     @Context
@@ -62,7 +76,11 @@ public class KillBillResource extends ManagedService {
     @Inject
     private AccountStore accountStore;
     @Inject
+    private Billing billing;
+    @Inject
     private TenantApi kbTenant;
+
+    private ImmutableSet<ExtBusEventType> eventsToListenForCached = ImmutableSet.of();
 
     @Override
     protected ImmutableSet<Class> serviceDependencies() {
@@ -74,10 +92,16 @@ public class KillBillResource extends ManagedService {
         String webhookPath = "https://" + configApp.domain() + Application.RESOURCE_VERSION + WEBHOOK_PATH;
         log.info("Registering KillBill webhook on {}", webhookPath);
         TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, RequestOptions.empty());
-        if (config.warnIfWebhookCountNotEquals() != tenantKeyValue.getValues().size()) {
+        Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
+        if (expectedWebhookCount.isPresent() && expectedWebhookCount.get() != tenantKeyValue.getValues().size()) {
             log.warn("Expecting {} webhooks but found {}",
-                    config.warnIfWebhookCountNotEquals(), tenantKeyValue.getValues());
+                    expectedWebhookCount.get(), tenantKeyValue.getValues());
         }
+
+        config.eventsToListenForObservable().subscribe(eventsToListenFor -> {
+            updateEventsToListenFor(eventsToListenFor, false);
+        });
+        updateEventsToListenFor(config.eventsToListenFor(), true);
     }
 
     @POST
@@ -87,52 +111,58 @@ public class KillBillResource extends ManagedService {
     @Limit(requiredPermits = 1)
     public void webhook(String payload) {
         Event event = gson.fromJson(payload, Event.class);
-        switch (event.getEventType()) {
-            case SUBSCRIPTION_PHASE:
-            case SUBSCRIPTION_CHANGE:
-            case SUBSCRIPTION_CANCEL:
-            case SUBSCRIPTION_UNCANCEL:
-            case SUBSCRIPTION_BCD_CHANGE:
-                // TODO
-                Subscription subscription = (Subscription) stripeObject;
-                Customer customer = subscription.getCustomerObject();
-                SubscriptionStatusEnum statusNew = stripeBilling.getSubscriptionStatusFrom(customer, subscription);
-                String accountId = stripeBilling.getCustomerAccountId(customer).get();
-                Account account = accountStore.getAccountByAccountId(accountId).get();
-                if (statusNew != account.getStatus()) {
-                    accountStore.updateStatus(accountId, statusNew);
-                }
-                break;
-            case SUBSCRIPTION_CREATION:
-            case ACCOUNT_CREATION:
-            case ACCOUNT_CHANGE:
-            case BLOCKING_STATE:
-            case BROADCAST_SERVICE:
-            case ENTITLEMENT_CREATION:
-            case ENTITLEMENT_CANCEL:
-            case BUNDLE_PAUSE:
-            case BUNDLE_RESUME:
-            case OVERDUE_CHANGE:
-            case INVOICE_CREATION:
-            case INVOICE_ADJUSTMENT:
-            case INVOICE_NOTIFICATION:
-            case INVOICE_PAYMENT_SUCCESS:
-            case INVOICE_PAYMENT_FAILED:
-            case PAYMENT_SUCCESS:
-            case PAYMENT_FAILED:
-            case TAG_CREATION:
-            case TAG_DELETION:
-            case CUSTOM_FIELD_CREATION:
-            case CUSTOM_FIELD_DELETION:
-            case TENANT_CONFIG_CHANGE:
-            case TENANT_CONFIG_DELETION:
-                break;
-            default:
-                log.error("KillBill webhook unexpected event type {} event {}", event.getEventType(), event);
-                throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+
+        if (!eventsToListenForCached.contains(event.eventType)) {
+            if (config.logWhenEventIsUnnecessary() && LogUtil.rateLimitAllowLog("killbillresource-eventUnnecessary")) {
+                log.info("KillBill event {} was really unnecessary {}", event.getEventType(), event);
+            }
+            return;
         }
 
-        response.setStatus(200);
+        String accountId = event.getAccountId().toString();
+
+        Account kbAccount = billing.getAccount(accountId);
+        if (kbAccount == null) {
+            log.warn("Received event for non-existent KillBill account with id {}", accountId);
+            return;
+        }
+        Subscription kbSubscription = billing.getSubscription(accountId);
+        if (kbSubscription == null) {
+            log.warn("Received event for non-existent KillBill subscription, KillBill account exists, with account id {}", accountId);
+            return;
+        }
+        Optional<AccountStore.Account> accountOpt = accountStore.getAccountByAccountId(accountId);
+        if (!accountOpt.isPresent()) {
+            log.warn("Received event for non-existent account, KillBill account and subscription exist, with account id {}", accountId);
+            return;
+        }
+        SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(kbAccount, kbSubscription);
+        if (accountOpt.get().getStatus().equals(newStatus)) {
+            if (config.logWhenEventIsUnnecessary() && LogUtil.rateLimitAllowLog("killbillresource-eventUnnecessary")) {
+                log.info("KillBill event {} was unnecessary {}", event.getEventType(), event);
+            }
+            return;
+        }
+
+        log.info("KillBill event {} caused accountId {} to state change {} -> {}",
+                event.getEventType(), accountId, accountOpt.get().getStatus(), newStatus);
+        accountStore.updateStatus(accountId, newStatus);
+    }
+
+    private void updateEventsToListenFor(Set<String> eventsToListenForStr, boolean doThrow) {
+        ImmutableSet.Builder<ExtBusEventType> eventsToListenForBuilder = ImmutableSet.builderWithExpectedSize(eventsToListenForStr.size());
+        for (String eventToListenFor : eventsToListenForStr) {
+            try {
+                eventsToListenForBuilder.add(ExtBusEventType.valueOf(eventToListenFor));
+            } catch (IllegalArgumentException ex) {
+                log.error("Misconfiguration of eventsToListenForStr");
+                if (doThrow) {
+                    throw ex;
+                }
+                return;
+            }
+        }
+        eventsToListenForCached = eventsToListenForBuilder.build();
     }
 
     @Value

@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 public class UUIDGenTest {
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void getTimeUUID() {
         String uuid = UUIDGen.getTimeUUID().toString();
         for (int i = 0; i < 10_000; i++) {

@@ -225,7 +225,7 @@ public class DynamoAccountStore implements AccountStore {
                 .withPrimaryKey(accountIdByEmailSchema.primaryKey(Map.of(
                         "email", email))));
         accountSchema.table().deleteItem(new DeleteItemSpec()
-                .withPrimaryKey(accountSchema.primaryKey(Map.of("email", email))));
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId))));
         revokeSessions(accountId);
     }
 

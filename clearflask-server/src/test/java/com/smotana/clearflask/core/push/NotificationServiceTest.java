@@ -10,12 +10,7 @@ import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
-import com.smotana.clearflask.core.push.message.EmailNotificationTemplate;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
@@ -102,7 +97,7 @@ public class NotificationServiceTest extends AbstractTest {
         bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testOnStatusOrResponseChanged() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
@@ -166,7 +161,7 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(inApp.getDescription().contains("__"));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testOnCommentReply() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
@@ -230,7 +225,7 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(inApp.getDescription().contains("__"));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testOnForgotPassword() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
@@ -256,7 +251,7 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(email.getContentText().contains("__"));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testOnAdminInvite() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
@@ -282,7 +277,7 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(email.getContentText().contains("__"));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testOnEmailChanged() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);

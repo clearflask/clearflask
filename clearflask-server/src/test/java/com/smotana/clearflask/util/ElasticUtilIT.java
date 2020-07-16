@@ -76,7 +76,7 @@ public class ElasticUtilIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testSearchUsers() throws Exception {
         String indexName = elasticUtil.getIndexName("test-elastic-util", IdUtil.randomId());
         elastic.indices().create(new CreateIndexRequest(indexName).mapping(gson.toJson(ImmutableMap.of(

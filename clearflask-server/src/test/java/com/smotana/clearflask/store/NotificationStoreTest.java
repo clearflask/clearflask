@@ -52,7 +52,7 @@ public class NotificationStoreTest extends AbstractTest {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void test() throws Exception {
         String projectId = IdUtil.randomId();
         String userId = IdUtil.randomId();

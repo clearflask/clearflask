@@ -71,7 +71,7 @@ public class CommentStoreIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testCreateGet() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -89,12 +89,12 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c0), store.getComment(projectId, ideaId, c0.getCommentId()));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testSearch() throws Exception {
         // TODO
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testUpdate() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -109,7 +109,7 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testVote() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -135,7 +135,7 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testMarkAsDeleted() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -157,7 +157,7 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(comment, commentActual.get());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testDelete() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();

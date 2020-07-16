@@ -186,7 +186,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const billingPeriodEnd = new Date();
     billingPeriodEnd.setDate(billingPeriodEnd.getDate() + 3);
     const invoiceDate = new Date();
-    invoiceDate.setDate(invoiceDate.getDate() - 10);
+    invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
       payment: (this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial
         || this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.TrialExpired) ? undefined : {
@@ -197,31 +197,39 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
       billingPeriodEnd,
       availablePlans: Object.values(AvailablePlans).filter(p => p.planid !== this.account?.plan.planid),
-      billingHistory: {
+      invoices: {
         cursor: 'one more',
         results: [{
           date: invoiceDate,
           status: 'paid',
-          amount: 40,
-          description: "Standard plan monthly",
-          invoiceUrl: "https://smotana.com",
+          amount: 300,
+          description: "Enterprise plan monthly",
+          invoiceId: 'my-invoice-2019-10-05',
         }],
       },
     });
   }
-  billingHistorySearchAdmin(request: Admin.BillingHistorySearchAdminRequest): Promise<Admin.BillingHistory> {
+  invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
-      cursor: undefined,
-      results: [{
+      cursor: request.cursor ? undefined : 'cursor',
+      results: request.cursor ? [] : [{
         date: invoiceDate,
         status: 'paid',
         amount: 300,
-        description: "Enterprise plan monthly",
-        invoiceUrl: "https://smotana.com",
+        description: 'Enterprise plan monthly',
+        invoiceId: 'my-invoice-2019-10-05',
       }],
-  });
+    });
+  }
+  invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
+    if(request.invoiceId !== 'my-invoice-2019-10-05') {
+      return this.throwLater(404, 'Invoice does not exist');
+    }
+    return this.returnLater({
+      invoiceHtml: "This is an invoice <b>test</b>",
+    });
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;

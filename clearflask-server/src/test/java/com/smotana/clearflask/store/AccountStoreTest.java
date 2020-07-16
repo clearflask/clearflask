@@ -33,7 +33,7 @@ public class AccountStoreTest extends AbstractTest {
         install(DynamoMapperImpl.module());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
                 store.genAccountId(),
@@ -92,7 +92,7 @@ public class AccountStoreTest extends AbstractTest {
         assertFalse(store.getAccountByEmail(account.getEmail()).isPresent());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testSession() throws Exception {
         Account account = new Account(
                 store.genAccountId(),

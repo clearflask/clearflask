@@ -44,7 +44,7 @@ public class GsonNonNullTest extends AbstractTest {
         private final Data b;
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testFromJson() throws Exception {
         gson.fromJson("{\"a\":\"\",\"b\":0.0,\"c\":0.0,\"d\":[],\"e\":[]}", Data.class);
         gson.fromJson("", Data.class);
@@ -72,7 +72,7 @@ public class GsonNonNullTest extends AbstractTest {
         assertFromJsonThrows("{\"a\":{\"a\":\"\",\"b\":0.0,\"c\":0.0,\"d\":[]}}", Data2.class);
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testToJson() throws Exception {
         gson.toJson(new Data("", 0d, 0d, new Double[0], new double[0]));
         gson.toJson((Data) null);

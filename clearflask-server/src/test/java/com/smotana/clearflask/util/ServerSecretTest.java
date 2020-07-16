@@ -68,7 +68,7 @@ public class ServerSecretTest extends AbstractTest {
         };
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void test() throws Exception {
         log.info("KEY: {}", getRandomSharedKey());
         log.info("KEY: {}", getRandomSharedKey());

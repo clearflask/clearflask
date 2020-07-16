@@ -70,7 +70,7 @@ public class TieredWebLimiterTest extends AbstractTest {
     }
 
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testChallenger() throws Exception {
         Limit limit = createLimit(Optional.empty(), Optional.of(3));
         for (int i = 0; i < limit.challengeAfter(); i++) {
@@ -91,7 +91,7 @@ public class TieredWebLimiterTest extends AbstractTest {
         limiter.filter(createRequestContext(Optional.of("true")), limit, "127.0.0.1", "a");
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testLimiterFresh() throws Exception {
         testLimiter(minutes -> {
             if (minutes == 0) {
@@ -104,7 +104,7 @@ public class TieredWebLimiterTest extends AbstractTest {
         }, 60);
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testLimiterFullyCharged() throws Exception {
         configSet(TieredWebLimiter.Config.class, "prechargedPeriod", "P100D");
         stopwatch.addMicros(Duration.ofDays(100L).toSeconds() * 1_000_000L);

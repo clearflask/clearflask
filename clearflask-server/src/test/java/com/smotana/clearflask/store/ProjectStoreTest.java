@@ -45,7 +45,7 @@ public class ProjectStoreTest extends AbstractTest {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void test() throws Exception {
         String newProject = "newProject";
         store.createProject(newProject, ModelUtil.createEmptyConfig(newProject));

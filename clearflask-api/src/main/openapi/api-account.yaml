@@ -200,7 +200,7 @@ components:
             - date
             - status
             - amount
-            - invoiceUrl
+            - invoiceId
             properties:
               date:
                 type: string
@@ -388,7 +388,7 @@ components:
           application/json:
             schema:
               title: InvoiceHtmlResponse
-              type: Object
+              type: object
               required:
               - invoiceHtml
               properties:

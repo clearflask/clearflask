@@ -37,7 +37,7 @@ public class WilsonScoreIntervalTest {
         };
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void test() {
         Throwable expectedThrowable = null;
         Double expectedLowerBound = null;

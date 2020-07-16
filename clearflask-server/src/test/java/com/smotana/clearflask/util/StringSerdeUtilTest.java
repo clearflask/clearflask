@@ -40,7 +40,7 @@ public class StringSerdeUtilTest {
         };
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testSerde() throws Exception {
         String merged = StringSerdeUtil.mergeStrings(expected);
         String[] actual = StringSerdeUtil.unMergeString(merged);

@@ -15,11 +15,7 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.util.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -66,7 +62,7 @@ public class UserStoreIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testUser() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
@@ -133,7 +129,7 @@ public class UserStoreIT extends AbstractIT {
         assertEquals(Optional.empty(), store.getUser(userUpdatedWithToken.getProjectId(), userUpdatedWithToken.getUserId()));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testSearchUsers() throws Exception {
         String projectId = IdUtil.randomId();
         UserModel user1 = new UserModel(
@@ -228,7 +224,7 @@ public class UserStoreIT extends AbstractIT {
         }
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testUserToken() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
@@ -263,7 +259,7 @@ public class UserStoreIT extends AbstractIT {
         assertEquals(Optional.empty(), store.verifyToken(token));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testUserSession() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),

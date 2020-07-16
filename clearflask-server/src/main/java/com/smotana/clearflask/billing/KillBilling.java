@@ -9,14 +9,12 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +25,13 @@ import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
+import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -319,7 +315,8 @@ public class KillBilling implements Billing {
                                     i.getAmount().doubleValue(),
                                     description,
                                     i.getInvoiceId().toString());
-                        }));
+                        })
+                        .collect(ImmutableList.toImmutableList()));
             } while ((result = result.getNext()) != null);
             invoices.sort(Comparator.comparing(InvoiceItem::getDate).reversed());
 
@@ -359,6 +356,64 @@ public class KillBilling implements Billing {
         }
     }
 
+    @Override
+    public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
+        try {
+            PaymentMethods paymentMethods = kbAccount.getPaymentMethodsForAccount(
+                    getAccountIdFromString(accountId),
+                    true,
+                    false,
+                    null,
+                    null,
+                    RequestOptions.empty());
+            Optional<PaymentMethod> defaultPaymentMethodOpt;
+            do {
+                defaultPaymentMethodOpt = paymentMethods.stream()
+                        .filter(PaymentMethod::isDefault)
+                        .findAny();
+            } while (!defaultPaymentMethodOpt.isPresent()
+                    && !(paymentMethods = paymentMethods.getNext()).isEmpty());
+
+            return defaultPaymentMethodOpt.map(paymentMethod -> {
+                Optional<String> cardBrand = Optional.empty();
+                Optional<String> cardLast4 = Optional.empty();
+                Optional<Long> cardExpiryMonth = Optional.empty();
+                Optional<Long> cardExpiryYear = Optional.empty();
+                for (PluginProperty prop : paymentMethod.getPluginInfo().getProperties()) {
+                    switch (prop.getKey()) {
+                        case "card_last4":
+                            cardLast4 = Optional.of(prop.getValue());
+                            break;
+                        case "card_brand":
+                            cardBrand = Optional.of(prop.getValue());
+                            break;
+                        case "card_exp_month":
+                            cardExpiryMonth = Optional.of(Long.valueOf(prop.getValue()));
+                            break;
+                        case "card_exp_year":
+                            cardExpiryYear = Optional.of(Long.valueOf(prop.getValue()));
+                            break;
+                    }
+                }
+                Gateway gateway = Arrays.stream(Gateway.values())
+                        .filter(g -> g.getPluginName().equals(paymentMethod.getPluginName()))
+                        .findAny()
+                        .orElse(Gateway.OTHER);
+                return new PaymentMethodDetails(
+                        gateway,
+                        paymentMethod,
+                        cardBrand,
+                        cardLast4,
+                        cardExpiryYear,
+                        cardExpiryMonth);
+            });
+        } catch (KillBillClientException ex) {
+            log.error("Failed to get payment method details from KillBill for accountId {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to fetch payment method");
+        }
+    }
+
     private UUID getAccountIdFromString(String accountId) {
         return UUID.fromString(accountId);
     }
@@ -373,7 +428,6 @@ public class KillBilling implements Billing {
             protected void configure() {
                 bind(Billing.class).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class);
             }
         };
     }

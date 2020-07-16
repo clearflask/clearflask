@@ -40,7 +40,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
   },
-  sectionBillingHistory: {
+  sectionInvoices: {
     width: 'min-content',
   },
   billingHistoryTable: {
@@ -71,8 +71,8 @@ interface State {
   showCancelSubscription?: boolean;
   showResumePlan?: boolean;
   showPlanChange?: boolean;
-  billingResults?: Admin.BillingHistoryItem[];
-  billingCursor?: string;
+  invoices?: Admin.InvoiceItem[];
+  invoicesCursor?: string;
 }
 class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -292,7 +292,10 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                   accountUpdateAdmin: {
-                    paymentToken: 'TODO', // TODO add stripe token
+                    paymentToken: {
+                      type: 'blah',
+                      token: 'TODO' // TODO add stripe token
+                    },
                     renewAutomatically: true,
                   },
                 }).then(() => d.accountBillingAdmin()))
@@ -364,15 +367,15 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
       </DividerCorner>
     );
 
-    const nextBillingCursor = this.state.billingResults === undefined
-      ? this.props.accountBilling?.billingHistory.cursor
-      : this.state.billingCursor;
-    const billingItems = [
-      ...(this.props.accountBilling?.billingHistory.results || []),
-      ...(this.state.billingResults || []),
+    const nextInvoicesCursor = this.state.invoices === undefined
+      ? this.props.accountBilling?.invoices.cursor
+      : this.state.invoicesCursor;
+    const invoicesItems = [
+      ...(this.props.accountBilling?.invoices.results || []),
+      ...(this.state.invoices || []),
     ];
-    const billingHistory = billingItems.length <= 0 ? undefined : (
-      <div className={this.props.classes.sectionBillingHistory}>
+    const invoices = invoicesItems.length <= 0 ? undefined : (
+      <div className={this.props.classes.sectionInvoices}>
         <DividerCorner title='History' height='100%' className={classNames(this.props.classes.billingHistoryTable, this.props.classes.spacing)}>
           <Table>
             <TableHead>
@@ -385,31 +388,31 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
               </TableRow>
             </TableHead>
             <TableBody>
-              {billingItems.map((billingItem, index) => (
+              {invoicesItems.map((invoiceItem, index) => (
                 <TableRow key={index}>
-                  <TableCell key='due'><Typography><TimeAgo date={billingItem.date} /></Typography></TableCell>
-                  <TableCell key='status' align='center'><Typography>{billingItem.status}</Typography></TableCell>
-                  <TableCell key='amount' align='right'><Typography>{billingItem.amount}</Typography></TableCell>
-                  <TableCell key='desc'><Typography>{billingItem.description}</Typography></TableCell>
+                  <TableCell key='due'><Typography><TimeAgo date={invoiceItem.date} /></Typography></TableCell>
+                  <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
+                  <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
+                  <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
                   <TableCell key='invoiceLink'>
-                    <Button onClick={() => window.open(billingItem.invoiceUrl, '_blank')}>View</Button>
+                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </DividerCorner>
-        {nextBillingCursor && (
+        {nextInvoicesCursor && (
           <Button
             style={{ margin: 'auto', display: 'block' }}
             onClick={() => ServerAdmin.get().dispatchAdmin()
-              .then(d => d.billingHistorySearchAdmin({ cursor: nextBillingCursor }))
+              .then(d => d.invoicesSearchAdmin({ cursor: nextInvoicesCursor }))
               .then(results => this.setState({
-                billingResults: [
-                  ...(this.state.billingResults || []),
+                invoices: [
+                  ...(this.state.invoices || []),
                   ...results.results,
                 ],
-                billingCursor: results.cursor,
+                invoicesCursor: results.cursor,
               }))}
           >
             Show more
@@ -458,10 +461,14 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
         {plan}
         <div className={this.props.classes.billingContainer}>
           {payment}
-          {billingHistory}
+          {invoices}
         </div>
       </Loader>
     );
+  }
+
+  onInvoiceClick(invoiceId:string) {
+    window.open(`${window.location.origin}/invoice/${invoiceId}`, '_blank')
   }
 }
 

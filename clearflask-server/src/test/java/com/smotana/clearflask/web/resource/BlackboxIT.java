@@ -53,6 +53,8 @@ public class BlackboxIT extends AbstractIT {
     @Inject
     private VoteResource voteResource;
     @Inject
+    private KillBillResource killBillResource;
+    @Inject
     private MockExtendedSecurityContext mockExtendedSecurityContext;
     @Inject
     private AmazonDynamoDB dynamo;
@@ -74,7 +76,7 @@ public class BlackboxIT extends AbstractIT {
                 AccountResource.module(),
                 ProjectResource.module(),
                 UserResource.module(),
-                StripeResource.module(),
+                KillBillResource.module(),
                 KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
@@ -132,7 +134,7 @@ public class BlackboxIT extends AbstractIT {
         voteResource.securityContext = mockExtendedSecurityContext;
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void test() throws Exception {
         AccountAdmin accountAdmin = accountResource.accountSignupAdmin(new AccountSignupAdmin(
                 "smotana",

@@ -162,7 +162,7 @@ public enum ServiceInjector {
                 install(Application.module());
                 bind(HealthResource.class);
                 install(UserResource.module());
-                install(StripeResource.module());
+                install(KillBillResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());
                 install(VoteResource.module());

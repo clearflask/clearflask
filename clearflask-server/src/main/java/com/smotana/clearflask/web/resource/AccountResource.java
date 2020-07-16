@@ -1,8 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
-import com.google.common.base.Enums;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -13,6 +11,7 @@ import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -27,10 +26,6 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Customer;
-import com.stripe.model.Source;
-import com.stripe.model.Source.Card;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -42,6 +37,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 
 @Slf4j
@@ -164,7 +160,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Plan plan = planStore.getPublicPlans().getPlans().stream()
                 .filter(p -> p.getPlanid().equals(signup.getPlanid()))
                 .findAny()
-                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not found"));
+                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available"));
+        if (plan.getComingSoon()) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available");
+        }
 
         // Create customer in KillBill
         Billing.AccountWithSubscription accountWithSubscription = billing.createAccountWithSubscription(
@@ -214,11 +213,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId());
         }
         if (accountUpdateAdmin.getPaymentToken() != null) {
-            com.google.common.base.Optional<Billing.Gateway> gatewayOpt = Enums.getIfPresent(Billing.Gateway.class, accountUpdateAdmin.getPaymentToken().getType());
+            Optional<Gateway> gatewayOpt = Arrays.stream(Gateway.values())
+                    .filter(g -> g.getPluginName().equals(accountUpdateAdmin.getPaymentToken().getType()))
+                    .findAny();
+
             if (!gatewayOpt.isPresent()
                     || (env.isProduction() && !gatewayOpt.get().isAllowedInProduction())) {
-                log.error("Account update payment token fails with invalid gateway {}", accountUpdateAdmin.getPaymentToken().getType());
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway")
+                log.error("Account update payment token fails with invalid gateway type {}", accountUpdateAdmin.getPaymentToken().getType());
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
             }
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
         }
@@ -236,8 +238,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
             String newPlanid = accountUpdateAdmin.getPlanid();
-            if (planStore.getAccountChangePlanOptions(accountSession.getAccountId()).stream()
-                    .noneMatch(p -> p.getPlanid().equals(newPlanid))) {
+            Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(accountSession.getAccountId()).stream()
+                    .filter(p -> p.getPlanid().equals(newPlanid))
+                    .findAny();
+            if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon()) {
                 log.error("Account {} not allowed to change plans to {}",
                         accountSession.getAccountId(), newPlanid);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
@@ -249,6 +253,25 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
                 : account)
                 .toAccountAdmin(planStore, cfSso);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public InvoiceHtmlResponse invoiceHtmlGetAdmin(String invoiceId) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceId);
+        return new InvoiceHtmlResponse(invoiceHtml);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public Invoices invoicesSearchAdmin(String cursor) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        return billing.getInvoices(
+                accountSession.getAccountId(),
+                Optional.ofNullable(Strings.emptyToNull(cursor)));
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -267,53 +290,31 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public AccountBilling accountBillingAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
 
-        Customer customer = billing.getCustomer(account.getStripeCusId());
-        Subscription subscription = billing.getSubscription(account.getStripeCusId());
+        Subscription subscription = billing.getSubscription(accountSession.getAccountId());
+        ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
+        Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
+        Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(accountSession.getAccountId());
 
-        SubscriptionStatusEnum expectedStatus = billing.getSubscriptionStatusFrom(customer, subscription);
-        if (expectedStatus != account.getStatus()) {
-            log.warn("Status mismatch between Stripe customer {} subscription {} status {}, but is {} on account {}, updating it now",
-                    customer.getId(), subscription.getId(), expectedStatus, account.getStatus(), account.getAccountId());
-            account = accountStore.updateStatus(account.getAccountId(), expectedStatus);
-        }
-
-        ImmutableList<Plan> availableChangePlans = ImmutableList.copyOf(planStore.availablePlansToChangeFrom(account.getPlanid()));
-
-        BillingHistory billingHistory = billing.getBillingHistory(account.getStripeCusId(), Optional.empty());
-
-        AccountBillingPayment payment = null;
-        if (!Strings.isNullOrEmpty(customer.getDefaultSource())) {
-            try {
-                Card card = Source.retrieve(customer.getDefaultSource()).getCard();
-                payment = new AccountBillingPayment(
-                        card.getBrand(),
-                        card.getLast4(),
-                        card.getExpMonth(),
-                        card.getExpYear());
-            } catch (StripeException ex) {
-                log.error("Failed to fetch customer card source for customer id {}", customer.getId(), ex);
-                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed fetching your card information");
+        Optional<AccountBillingPayment> accountBillingPayment = paymentMethodDetails.flatMap(p -> {
+            if (!p.getCardLast4().isPresent()
+                    || !p.getCardExpiryMonth().isPresent()
+                    || !p.getCardExpiryYear().isPresent()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(new AccountBillingPayment(
+                        p.getCardBrand().orElse(null),
+                        p.getCardLast4().get(),
+                        p.getCardExpiryMonth().get(),
+                        p.getCardExpiryYear().get()));
             }
-        }
-
-        Instant billingPeriodEnd = Instant.ofEpochSecond(subscription.getCurrentPeriodEnd());
+        });
 
         return new AccountBilling(
-                payment,
-                billingPeriodEnd,
-                availableChangePlans,
-                billingHistory);
-    }
-
-    @Override
-    public BillingHistory billingHistorySearchAdmin(String cursor) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-        return billing.getBillingHistory(
-                account.getStripeCusId(),
-                Optional.ofNullable(cursor));
+                accountBillingPayment.orElse(null),
+                subscription.getBillingEndDate().toDate().toInstant(),
+                availablePlans.asList(),
+                invoices);
     }
 
     @PermitAll

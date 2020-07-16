@@ -10,12 +10,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.store.VoteStore.ExpressModel;
-import com.smotana.clearflask.store.VoteStore.FundModel;
-import com.smotana.clearflask.store.VoteStore.ListResponse;
-import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
-import com.smotana.clearflask.store.VoteStore.TransactionModel;
-import com.smotana.clearflask.store.VoteStore.VoteModel;
+import com.smotana.clearflask.store.VoteStore.*;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
@@ -27,11 +22,7 @@ import com.smotana.clearflask.util.ServerSecretTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
 import static org.junit.Assert.*;
@@ -64,7 +55,7 @@ public class VoteStoreTest extends AbstractTest {
         }));
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testVote() throws Exception {
         String projectId = IdUtil.randomId();
         String userId = IdUtil.randomId();
@@ -95,7 +86,7 @@ public class VoteStoreTest extends AbstractTest {
         assertEquals(ImmutableSet.of(ideaId1, ideaId2), store.voteSearch(projectId, userId, ImmutableSet.of(ideaId1, ideaId2)).keySet());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testVoteListByTarget() throws Exception {
         String projectId = IdUtil.randomId();
         String ideaId = IdUtil.randomId();
@@ -129,7 +120,7 @@ public class VoteStoreTest extends AbstractTest {
         assertFalse(result.getCursorOpt().isPresent());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testExpress() throws Exception {
         String projectId = IdUtil.randomId();
         String userId = IdUtil.randomId();
@@ -168,7 +159,7 @@ public class VoteStoreTest extends AbstractTest {
         assertEquals(ImmutableSet.of(ideaId1, ideaId2), store.expressSearch(projectId, userId, ImmutableSet.of(ideaId1, ideaId2)).keySet());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testExpressListByTarget() throws Exception {
         String projectId = IdUtil.randomId();
         String ideaId = IdUtil.randomId();
@@ -196,7 +187,7 @@ public class VoteStoreTest extends AbstractTest {
         assertTrue(expectedResults.isEmpty());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testFund() throws Exception {
         String projectId = IdUtil.randomId();
         String userId = IdUtil.randomId();
@@ -234,7 +225,7 @@ public class VoteStoreTest extends AbstractTest {
         assertEquals(ImmutableSet.of(ideaId1, ideaId2), store.fundSearch(projectId, userId, ImmutableSet.of(ideaId1, ideaId2)).keySet());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testFundListByTarget() throws Exception {
         String projectId = IdUtil.randomId();
         String ideaId = IdUtil.randomId();
@@ -262,7 +253,7 @@ public class VoteStoreTest extends AbstractTest {
         assertTrue(expectedResults.isEmpty());
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testTransaction() throws Exception {
         String projectId = IdUtil.randomId();
         String userId = IdUtil.randomId();

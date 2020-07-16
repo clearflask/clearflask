@@ -60,7 +60,7 @@ public class ExplicitNullTest extends AbstractTest {
         private final DataC myDataC;
     }
 
-    @Test(timeout = 5_000L)
+    @Test(timeout = 10_000L)
     public void testAnnotation() throws Exception {
         assertEquals("{}",
                 gson.toJson(new DataA(null, null, null)));
