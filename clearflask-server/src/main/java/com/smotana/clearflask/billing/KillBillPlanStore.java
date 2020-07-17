@@ -83,7 +83,7 @@ public class KillBillPlanStore implements PlanStore {
             plans = kbCatalog.getAvailableBasePlans(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve plans from KillBill", ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans");
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans", ex);
         }
         return plans.stream()
                 .map(p -> AVAILABLE_PLANS.get(p.getPlan()))

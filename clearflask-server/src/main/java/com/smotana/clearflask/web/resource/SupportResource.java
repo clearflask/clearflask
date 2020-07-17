@@ -88,7 +88,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
                                     .withData(generateBody(supportMessage)))))));
         } catch (Exception ex) {
             log.error("Failed to send support message {}", supportMessage, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to send, please use support@clearflask.com");
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to send, please use support@clearflask.com", ex);
         }
     }
 

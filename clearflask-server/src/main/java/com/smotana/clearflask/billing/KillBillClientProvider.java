@@ -47,9 +47,9 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
                 config.apiSecret(),
                 null,
                 null,
-                1000,
-                5000,
-                5000,
+                30000,
+                30000,
+                30000,
                 config.requireTls(),
                 config.requireTls() ? "TLSv1.2" : null);
     }

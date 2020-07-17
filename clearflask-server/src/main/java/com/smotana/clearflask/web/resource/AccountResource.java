@@ -27,6 +27,9 @@ import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.LocalDate;
+import org.killbill.billing.catalog.api.PhaseType;
+import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Subscription;
 
 import javax.annotation.security.PermitAll;
@@ -38,6 +41,7 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 
 @Slf4j
@@ -241,7 +245,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(accountSession.getAccountId()).stream()
                     .filter(p -> p.getPlanid().equals(newPlanid))
                     .findAny();
-            if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon()) {
+            if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {
                 log.error("Account {} not allowed to change plans to {}",
                         accountSession.getAccountId(), newPlanid);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
@@ -310,9 +314,27 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
         });
 
+        Instant billingPeriodEnd = null;
+        if (subscription.getPhaseType() == PhaseType.TRIAL) {
+            billingPeriodEnd = subscription.getEvents().stream()
+                    .filter(e -> !e.getPhase().endsWith("-trial"))
+                    .filter(e -> e.getEffectiveDate().isAfter(LocalDate.now()))
+                    .findAny()
+                    .map(EventSubscription::getEffectiveDate)
+                    .map(LocalDate::toDate)
+                    .map(Date::toInstant)
+                    .orElse(null);
+        }
+        if (billingPeriodEnd == null
+                && subscription.getChargedThroughDate() != null) {
+            billingPeriodEnd = subscription.getChargedThroughDate().toDate().toInstant();
+        }
+
+        log.debug("DEBUGDEBUG {}", subscription);
+
         return new AccountBilling(
                 accountBillingPayment.orElse(null),
-                subscription.getBillingEndDate().toDate().toInstant(),
+                billingPeriodEnd,
                 availablePlans.asList(),
                 invoices);
     }

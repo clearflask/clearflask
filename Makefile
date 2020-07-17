@@ -56,6 +56,7 @@ killbill-engine-run:
 	-e KILLBILL_DAO_URL=jdbc:mysql://host.docker.internal:8306/killbill \
 	-e KILLBILL_DAO_USER=root \
 	-e KILLBILL_DAO_PASSWORD=killbill \
+	-e KILLBILL_SERVER_TEST_MODE=true \
 	-p 8082:8080 \
 	killbill/killbill:0.22.10
 

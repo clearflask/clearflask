@@ -203,7 +203,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         try {
             Futures.allAsList(commentIndexFuture, userIndexFuture, ideaIndexFuture).get(1, TimeUnit.MINUTES);
         } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support");
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to create project, please contact support", ex);
         }
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }
@@ -224,7 +224,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             Futures.allAsList(userFuture, ideaFuture, commentFuture).get(1, TimeUnit.MINUTES);
         } catch (Throwable th) {
             log.error("Failed to delete project {}, potentially partially deleted", projectId, th);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support");
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);
         }
     }
 

@@ -201,7 +201,7 @@ public class ElasticUtil {
             if (LogUtil.rateLimitAllowLog("elasticUtil-jsonParseFailed")) {
                 log.warn("Failed to parse invalid DraftJs format: {}", draftjsJson, ex);
             }
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Submitted content is corrupted");
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Submitted content is corrupted", ex);
         }
         return Arrays.stream(draftjs.blocks)
                 .map(SimplifiedDraftjsFormat.SimplifiedRawDraftContentBlock::getText)

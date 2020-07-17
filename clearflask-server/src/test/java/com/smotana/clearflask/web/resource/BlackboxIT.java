@@ -11,9 +11,7 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.KillBillPlanStore;
-import com.smotana.clearflask.billing.KillBillSync;
-import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.*;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
@@ -34,6 +32,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.killbill.billing.client.KillBillHttpClient;
 
 import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
@@ -61,6 +60,8 @@ public class BlackboxIT extends AbstractIT {
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private KillBillHttpClient kbClient;
 
     @Override
     protected void configure() {
@@ -142,7 +143,7 @@ public class BlackboxIT extends AbstractIT {
         voteResource.securityContext = mockExtendedSecurityContext;
     }
 
-    @Test(timeout = 30_000L)
+    @Test(timeout = 60_000L)
     public void test() throws Exception {
         AccountAdmin accountAdmin = accountResource.accountSignupAdmin(new AccountSignupAdmin(
                 "smotana",
@@ -171,6 +172,28 @@ public class BlackboxIT extends AbstractIT {
                 .build());
         CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
                 .vote(VoteOption.DOWNVOTE)
+                .build());
+        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
+                .paymentToken(AccountUpdateAdminPaymentToken.builder()
+                        .type(Billing.Gateway.NOOP.getPluginName())
+                        .token("")
+                        .build())
+                .build());
+        kbClient.doPut("/1.0/kb/test/clock?days=16", "", KillBillUtil.roDefault());
+        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
+                .subscriptionActive(false)
+                .build());
+        kbClient.doPut("/1.0/kb/test/clock?days=2", "", KillBillUtil.roDefault());
+        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
+                .subscriptionActive(true)
+                .build());
+        kbClient.doPut("/1.0/kb/test/clock?days=36", "", KillBillUtil.roDefault());
+        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
+                .planid("standard-monthly")
                 .build());
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();
