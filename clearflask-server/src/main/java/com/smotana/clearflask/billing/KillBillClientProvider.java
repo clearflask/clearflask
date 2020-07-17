@@ -3,6 +3,7 @@ package com.smotana.clearflask.billing;
 import com.google.inject.Module;
 import com.google.inject.*;
 import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.api.gen.*;
@@ -16,7 +17,7 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
         String host();
 
         @NoDefaultValue
-        int port();
+        Integer port();
 
         @NoDefaultValue
         String user();
@@ -29,6 +30,9 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
 
         @NoDefaultValue
         String apiSecret();
+
+        @DefaultValue("true")
+        boolean requireTls();
     }
 
     @Inject
@@ -36,7 +40,7 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
 
     @Override
     public KillBillHttpClient get() {
-        return new KillBillHttpClient(String.format("https://%s:%d", config.host(), config.port()),
+        return new KillBillHttpClient(String.format("%s://%s:%d", config.requireTls() ? "https" : "http", config.host(), config.port()),
                 config.user(),
                 config.pass(),
                 config.apiKey(),
@@ -46,8 +50,8 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
                 1000,
                 5000,
                 5000,
-                true,
-                "TLSv1.2");
+                config.requireTls(),
+                config.requireTls() ? "TLSv1.2" : null);
     }
 
     public static Module module() {

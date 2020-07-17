@@ -1,12 +1,17 @@
 package com.smotana.clearflask.testutil;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -31,13 +36,28 @@ public abstract class AbstractIT extends AbstractTest {
     protected void configure() {
         super.configure();
 
+        bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
+
         install(Modules.override(
-                DefaultElasticSearchProvider.module()
+                DefaultElasticSearchProvider.module(),
+                KillBillClientProvider.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
                 install(ConfigSystem.overrideModule(DefaultElasticSearchProvider.Config.class, om -> {
-                    om.override(om.id().serviceEndpoint()).withValue("localhost:9200");
+                    om.override(om.id().serviceEndpoint()).withValue("http://localhost:9200");
+                }));
+                String apiKey = IdUtil.randomAscId();
+                String secretKey = IdUtil.randomAscId();
+                log.info("KillBill test randomized apiKey {} secretKey {}", apiKey, secretKey);
+                install(ConfigSystem.overrideModule(KillBillClientProvider.Config.class, om -> {
+                    om.override(om.id().host()).withValue("localhost");
+                    om.override(om.id().port()).withValue(8082);
+                    om.override(om.id().user()).withValue("admin");
+                    om.override(om.id().pass()).withValue("password");
+                    om.override(om.id().apiKey()).withValue(apiKey);
+                    om.override(om.id().apiSecret()).withValue(secretKey);
+                    om.override(om.id().requireTls()).withValue(false);
                 }));
             }
         }));

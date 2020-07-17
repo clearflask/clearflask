@@ -8,17 +8,16 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.PlanDetails;
 
 import javax.ws.rs.core.Response;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -81,7 +80,7 @@ public class KillBillPlanStore implements PlanStore {
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
         PlanDetails plans;
         try {
-            plans = kbCatalog.getAvailableBasePlans(UUID.fromString(accountId), RequestOptions.empty());
+            plans = kbCatalog.getAvailableBasePlans(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.warn("Failed to retrieve plans from KillBill", ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans");

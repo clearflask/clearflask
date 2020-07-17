@@ -161,7 +161,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 .filter(p -> p.getPlanid().equals(signup.getPlanid()))
                 .findAny()
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available"));
-        if (plan.getComingSoon()) {
+        if (plan.getComingSoon() == Boolean.TRUE) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available");
         }
 

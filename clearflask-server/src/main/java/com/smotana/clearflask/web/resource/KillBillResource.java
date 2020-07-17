@@ -11,6 +11,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
+import com.smotana.clearflask.billing.KillBillUtil;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -21,7 +22,6 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.ObjectType;
-import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.Subscription;
@@ -91,7 +91,7 @@ public class KillBillResource extends ManagedService {
     protected void serviceStart() throws Exception {
         String webhookPath = "https://" + configApp.domain() + Application.RESOURCE_VERSION + WEBHOOK_PATH;
         log.info("Registering KillBill webhook on {}", webhookPath);
-        TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, RequestOptions.empty());
+        TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
         Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
         if (expectedWebhookCount.isPresent() && expectedWebhookCount.get() != tenantKeyValue.getValues().size()) {
             log.warn("Expecting {} webhooks but found {}",
@@ -99,9 +99,9 @@ public class KillBillResource extends ManagedService {
         }
 
         config.eventsToListenForObservable().subscribe(eventsToListenFor -> {
-            updateEventsToListenFor(eventsToListenFor, false);
+            updateEventsToListenFor(eventsToListenFor == null ? ImmutableSet.of() : eventsToListenFor, false);
         });
-        updateEventsToListenFor(config.eventsToListenFor(), true);
+        updateEventsToListenFor(config.eventsToListenFor() == null ? ImmutableSet.of() : config.eventsToListenFor(), true);
     }
 
     @POST

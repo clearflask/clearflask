@@ -113,6 +113,8 @@ public enum ServiceInjector {
                 install(GuavaRateLimiters.module());
 
                 // Stores
+                install(DefaultDynamoDbProvider.module());
+                install(DefaultElasticSearchProvider.module());
                 install(DynamoProjectStore.module());
                 install(DynamoAccountStore.module());
                 install(DynamoElasticUserStore.module());
@@ -181,20 +183,17 @@ public enum ServiceInjector {
                 switch (env) {
                     case DEVELOPMENT_LOCAL:
                         bind(AWSCredentialsProvider.class).toInstance(new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")));
-                        install(DefaultDynamoDbProvider.module());
-                        install(DefaultElasticSearchProvider.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 getClass().getClassLoader().getResource("config-local.cfg").getPath());
                         break;
                     case PRODUCTION_AWS:
                         bind(AWSCredentialsProvider.class).to(DefaultAWSCredentialsProviderChain.class);
-                        install(DefaultDynamoDbProvider.module());
-                        install(DefaultElasticSearchProvider.module());
                         bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(
                                 "/opt/clearflask/config-prod.cfg");
                         break;
+                    case TEST:
                     default:
-                        throw new RuntimeException("Unknown environment: " + env);
+                        throw new RuntimeException("Unsupported environment: " + env);
                 }
 
             }

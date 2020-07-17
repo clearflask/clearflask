@@ -13,129 +13,14 @@
     <products>
         <product name="Basic">
             <category>BASE</category>
-            <available>
-                <addonProduct>CreditSystem</addonProduct>
-                <addonProduct>SingleSignOn</addonProduct>
-            </available>
         </product>
         <product name="Standard">
             <category>BASE</category>
-            <included>
-                <addonProduct>CreditSystem</addonProduct>
-                <addonProduct>SingleSignOn</addonProduct>
-            </included>
         </product>
         <product name="Analytic">
             <category>BASE</category>
-            <included>
-                <addonProduct>CreditSystem</addonProduct>
-                <addonProduct>SingleSignOn</addonProduct>
-            </included>
-        </product>
-        <product name="CreditSystem">
-            <category>ADD_ON</category>
-        </product>
-        <product name="SingleSignOn">
-            <category>ADD_ON</category>
         </product>
     </products>
-
-    <plans>
-        <plan name="basic-monthly">
-            <product>Basic</product>
-            <initialPhases>
-                <phase type="TRIAL">
-                    <duration>
-                        <unit>DAYS</unit>
-                        <number>14</number>
-                    </duration>
-                    <fixed>
-                        <fixedPrice>0</fixedPrice>
-                    </fixed>
-                </phase>
-            </initialPhases>
-            <finalPhase type="EVERGREEN">
-                <duration>
-                    <unit>UNLIMITED</unit>
-                </duration>
-                <recurring>
-                    <billingPeriod>MONTHLY</billingPeriod>
-                    <recurringPrice>
-                        <price>
-                            <currency>USD</currency>
-                            <value>30.00</value>
-                        </price>
-                    </recurringPrice>
-                </recurring>
-            </finalPhase>
-        </plan>
-        <plan name="standard-monthly">
-            <product>Standard</product>
-            <initialPhases>
-                <phase type="TRIAL">
-                    <duration>
-                        <unit>DAYS</unit>
-                        <number>14</number>
-                    </duration>
-                    <fixed>
-                        <fixedPrice>0</fixedPrice>
-                    </fixed>
-                </phase>
-            </initialPhases>
-            <finalPhase type="EVERGREEN">
-                <duration>
-                    <unit>UNLIMITED</unit>
-                </duration>
-                <recurring>
-                    <billingPeriod>MONTHLY</billingPeriod>
-                    <recurringPrice>
-                        <price>
-                            <currency>USD</currency>
-                            <value>75.00</value>
-                        </price>
-                    </recurringPrice>
-                </recurring>
-            </finalPhase>
-        </plan>
-        <plan name="analytic-monthly">
-            <product>Analytic</product>
-            <initialPhases>
-                <phase type="TRIAL">
-                    <duration>
-                        <unit>DAYS</unit>
-                        <number>14</number>
-                    </duration>
-                    <fixed>
-                        <fixedPrice>0</fixedPrice>
-                    </fixed>
-                </phase>
-            </initialPhases>
-            <finalPhase type="EVERGREEN">
-                <duration>
-                    <unit>UNLIMITED</unit>
-                </duration>
-                <recurring>
-                    <billingPeriod>MONTHLY</billingPeriod>
-                    <recurringPrice>
-                        <price>
-                            <currency>USD</currency>
-                            <value>500.00</value>
-                        </price>
-                    </recurringPrice>
-                </recurring>
-            </finalPhase>
-        </plan>
-    </plans>
-
-    <priceLists>
-        <defaultPriceList name="DEFAULT">
-            <plans>
-                <plan>basic-monthly</plan>
-                <plan>standard-monthly</plan>
-                <plan>analytic-monthly</plan>
-            </plans>
-        </defaultPriceList>
-    </priceLists>
 
     <rules>
         <changePolicy>
@@ -186,5 +71,117 @@
             </priceListCase>
         </priceList>
     </rules>
+
+    <plans>
+        <plan name="basic-monthly">
+            <product>Basic</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>30.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="standard-monthly">
+            <product>Standard</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>75.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="analytic-monthly">
+            <product>Analytic</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>500.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+    </plans>
+
+    <priceLists>
+        <defaultPriceList name="DEFAULT">
+            <plans>
+                <plan>basic-monthly</plan>
+                <plan>standard-monthly</plan>
+                <plan>analytic-monthly</plan>
+            </plans>
+        </defaultPriceList>
+    </priceLists>
 
 </catalog>

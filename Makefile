@@ -37,6 +37,8 @@ tomcat-run-dev:
 elastic-run:
 	docker run --rm --name clearflask-elastic \
 	-p 9200:9200 \
+	-m 4g \
+	-e "ES_JAVA_OPTS=-Xms2g -Xmx2g" \
 	-e "discovery.type=single-node" \
 	docker.elastic.co/elasticsearch/elasticsearch:7.4.2
 

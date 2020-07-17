@@ -15,13 +15,13 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
@@ -31,7 +31,10 @@ import org.killbill.billing.invoice.api.InvoiceStatus;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -61,9 +64,9 @@ public class KillBilling implements Billing {
         Account account;
         try {
             account = kbAccount.createAccount(new Account()
-                    .setAccountId(getAccountIdFromString(accountId))
+                    .setAccountId(IdUtil.parseDashlessUuid(accountId))
                     .setName(name)
-                    .setEmail(email), RequestOptions.empty());
+                    .setEmail(email), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to create KillBill Account for email {} name {}", email, name, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -73,7 +76,7 @@ public class KillBilling implements Billing {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()
-                            .setSubscriptionId(getAccountIdFromString(accountId))
+                            .setSubscriptionId(IdUtil.parseDashlessUuid(accountId))
                             .setAccountId(account.getAccountId())
                             .setPlanName(planId),
                     null,
@@ -83,7 +86,7 @@ public class KillBilling implements Billing {
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
-                    RequestOptions.empty());
+                    KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to create KillBill Subscription for accountId {} email {} name {}", account.getAccountId(), email, name, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -96,7 +99,7 @@ public class KillBilling implements Billing {
     @Override
     public Account getAccount(String accountId) {
         try {
-            Account account = kbAccount.getAccount(getAccountIdFromString(accountId), RequestOptions.empty());
+            Account account = kbAccount.getAccount(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
             if (account == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Account doesn't exist");
@@ -111,7 +114,7 @@ public class KillBilling implements Billing {
     @Override
     public Subscription getSubscription(String accountId) {
         try {
-            Subscription subscription = kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+            Subscription subscription = kbSubscription.getSubscription(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
             if (subscription == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Subscription doesn't exist");
@@ -156,11 +159,11 @@ public class KillBilling implements Billing {
     public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
             kbAccount.createPaymentMethod(
-                    getAccountIdFromString(accountId),
+                    IdUtil.parseDashlessUuid(accountId),
                     new PaymentMethod(
                             null,
                             null,
-                            getAccountIdFromString(accountId),
+                            IdUtil.parseDashlessUuid(accountId),
                             true,
                             gateway.getPluginName(),
                             new PaymentMethodPluginDetail(),
@@ -169,7 +172,7 @@ public class KillBilling implements Billing {
                     true,
                     null,
                     ImmutableMap.of("token", paymentToken),
-                    RequestOptions.empty());
+                    KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to update KillBill payment token for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method");
@@ -180,7 +183,7 @@ public class KillBilling implements Billing {
     public Subscription cancelSubscription(String accountId) {
         try {
             kbSubscription.cancelSubscriptionPlan(
-                    getSubscriptionIdFromAccountId(accountId),
+                    IdUtil.parseDashlessUuid(accountId),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
@@ -188,8 +191,8 @@ public class KillBilling implements Billing {
                     null,
                     null,
                     ImmutableMap.of(),
-                    RequestOptions.empty());
-            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+                    KillBillUtil.roDefault());
+            return kbSubscription.getSubscription(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to cancel KillBill subscription for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription");
@@ -199,8 +202,8 @@ public class KillBilling implements Billing {
     @Override
     public Subscription undoPendingCancel(String accountId) {
         try {
-            kbSubscription.uncancelSubscriptionPlan(getSubscriptionIdFromAccountId(accountId), null, RequestOptions.empty());
-            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+            kbSubscription.uncancelSubscriptionPlan(IdUtil.parseDashlessUuid(accountId), null, KillBillUtil.roDefault());
+            return kbSubscription.getSubscription(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to unCancel KillBill subscription for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to un-cancel subscription");
@@ -211,18 +214,18 @@ public class KillBilling implements Billing {
     public Subscription changePlan(String accountId, String planId) {
         try {
             kbSubscription.changeSubscriptionPlan(
-                    getSubscriptionIdFromAccountId(accountId),
+                    IdUtil.parseDashlessUuid(accountId),
                     new Subscription()
-                            .setSubscriptionId(getSubscriptionIdFromAccountId(accountId))
-                            .setAccountId(getAccountIdFromString(accountId))
+                            .setSubscriptionId(IdUtil.parseDashlessUuid(accountId))
+                            .setAccountId(IdUtil.parseDashlessUuid(accountId))
                             .setPlanName(planId),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
                     null,
-                    RequestOptions.empty());
-            return kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+                    KillBillUtil.roDefault());
+            return kbSubscription.getSubscription(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to change KillBill plan account id {} planId {}", accountId, planId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan");
@@ -232,7 +235,7 @@ public class KillBilling implements Billing {
     @Override
     public Subscription activateSubscription(String accountId, String planId) {
         try {
-            Subscription oldSubscription = kbSubscription.getSubscription(getSubscriptionIdFromAccountId(accountId), RequestOptions.empty());
+            Subscription oldSubscription = kbSubscription.getSubscription(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
             if (oldSubscription == null) {
                 log.error("Failed to activate non-existent KillBill Subscription for accountId {} planId {}", accountId, planId);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -262,7 +265,7 @@ public class KillBilling implements Billing {
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
-                    RequestOptions.empty());
+                    KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to activate KillBill Subscription for accountId {} planId {}", accountId, planId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -280,14 +283,14 @@ public class KillBilling implements Billing {
 
         try {
             org.killbill.billing.client.model.Invoices result = kbAccount.getInvoicesForAccount(
-                    getAccountIdFromString(accountId),
+                    IdUtil.parseDashlessUuid(accountId),
                     startDate,
                     endDate,
                     true,
                     false,
                     true,
                     null,
-                    RequestOptions.empty()
+                    KillBillUtil.roDefault()
             );
             ArrayList<InvoiceItem> invoices = Lists.newArrayList();
             do {
@@ -333,7 +336,7 @@ public class KillBilling implements Billing {
     @Override
     public String getInvoiceHtml(String accountId, String invoiceId) {
         try {
-            Invoice invoice = kbInvoice.getInvoice(UUID.fromString(invoiceId), RequestOptions.empty());
+            Invoice invoice = kbInvoice.getInvoice(IdUtil.parseDashlessUuid(invoiceId), KillBillUtil.roDefault());
             if (invoice == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
@@ -348,7 +351,7 @@ public class KillBilling implements Billing {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            return kbInvoice.getInvoiceAsHTML(UUID.fromString(invoiceId), RequestOptions.empty());
+            return kbInvoice.getInvoiceAsHTML(IdUtil.parseDashlessUuid(invoiceId), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -360,12 +363,12 @@ public class KillBilling implements Billing {
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
         try {
             PaymentMethods paymentMethods = kbAccount.getPaymentMethodsForAccount(
-                    getAccountIdFromString(accountId),
+                    IdUtil.parseDashlessUuid(accountId),
                     true,
                     false,
                     null,
                     null,
-                    RequestOptions.empty());
+                    KillBillUtil.roDefault());
             Optional<PaymentMethod> defaultPaymentMethodOpt;
             do {
                 defaultPaymentMethodOpt = paymentMethods.stream()
@@ -412,14 +415,6 @@ public class KillBilling implements Billing {
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch payment method");
         }
-    }
-
-    private UUID getAccountIdFromString(String accountId) {
-        return UUID.fromString(accountId);
-    }
-
-    private UUID getSubscriptionIdFromAccountId(String accountId) {
-        return UUID.fromString(accountId);
     }
 
     public static Module module() {

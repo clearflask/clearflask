@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Module;
 import com.google.inject.*;
+import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
@@ -18,10 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
 import org.joda.time.DateTime;
 import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.model.DateTimes;
+import org.killbill.billing.client.model.gen.Tenant;
 import org.w3c.dom.Document;
 import rx.Observable;
 
@@ -51,6 +52,9 @@ public class KillBillSync extends ManagedService {
         boolean enabled();
 
         Observable<Boolean> enabledObservable();
+
+        @DefaultValue("false")
+        boolean createTenant();
 
         /**
          * Config properties to apply. Example:
@@ -94,6 +98,8 @@ public class KillBillSync extends ManagedService {
     @Inject
     private Config config;
     @Inject
+    private KillBillClientProvider.Config configClient;
+    @Inject
     private Gson gson;
     @Inject
     private Provider<TenantApi> kbTenantProvider;
@@ -119,15 +125,35 @@ public class KillBillSync extends ManagedService {
             return;
         }
 
+        if (config.createTenant()) {
+            try {
+                kbTenantProvider.get().getTenantByApiKey(configClient.apiKey(), KillBillUtil.roDefault());
+                log.debug("Tenant already exists, not creating");
+            } catch (KillBillClientException ex) {
+                if (ex.getBillingException().getCauseMessage().startsWith("TenantCacheLoader cannot find value for key")) {
+                    log.info("Creating tenant for api key {}", configClient.apiKey());
+                    kbTenantProvider.get().createTenant(new Tenant()
+                                    .setExternalKey("clearflask")
+                                    .setApiKey(configClient.apiKey())
+                                    .setApiSecret(configClient.apiSecret()),
+                            false,
+                            KillBillUtil.roDefault());
+                } else {
+                    throw ex;
+                }
+            }
+        }
+
         List<String> perTenantConfig = config.perTenantConfig();
         if (!perTenantConfig.isEmpty()) {
             ImmutableMap<String, String> expectedProps = perTenantConfig.stream()
                     .collect(ImmutableMap.toImmutableMap(
                             s -> s.split("=")[0],
                             s -> s.split("=")[1]));
-            Map<String, String> actualProps = gson.fromJson(kbTenantProvider.get().getPerTenantConfiguration(RequestOptions.empty())
-                    .getValues().get(0), new TypeToken<Map<String, String>>() {
-            }.getType());
+            List<String> confValues = kbTenantProvider.get().getPerTenantConfiguration(KillBillUtil.roDefault()).getValues();
+            Map<String, String> actualProps = confValues.isEmpty() ? ImmutableMap.of() : gson.fromJson(confValues.get(0),
+                    new TypeToken<Map<String, String>>() {
+                    }.getType());
             boolean isMatch = expectedProps.entrySet().stream()
                     .allMatch(e -> e.getValue().equals(actualProps.get(e.getKey())));
             if (!isMatch) {
@@ -135,17 +161,17 @@ public class KillBillSync extends ManagedService {
                 props.putAll(actualProps);
                 props.putAll(expectedProps);
                 String propsStr = gson.toJson(props);
-                kbTenantProvider.get().uploadPerTenantConfiguration(propsStr, RequestOptions.empty());
                 log.info("Setting perTenantConfiguration {}", propsStr);
+                kbTenantProvider.get().uploadPerTenantConfiguration(propsStr, KillBillUtil.roDefault());
             }
         }
 
         String stripePluginApiKey = config.stripePluginApiKey();
         if (!Strings.isNullOrEmpty(stripePluginApiKey)) {
-            List<String> values = kbTenantProvider.get().getPluginConfiguration(STRIPE_PLUGIN_NAME, RequestOptions.empty()).getValues();
+            List<String> values = kbTenantProvider.get().getPluginConfiguration(STRIPE_PLUGIN_NAME, KillBillUtil.roDefault()).getValues();
             String expectedConf = "org.killbill.billing.plugin.stripe.apiKey=" + stripePluginApiKey.trim();
             if (values.isEmpty() || !expectedConf.equals(values.get(0).trim())) {
-                kbTenantProvider.get().uploadPluginConfiguration(STRIPE_PLUGIN_NAME, expectedConf, RequestOptions.empty());
+                kbTenantProvider.get().uploadPluginConfiguration(STRIPE_PLUGIN_NAME, expectedConf, KillBillUtil.roDefault());
                 log.info("Updating Stripe plugin API key");
             }
         }
@@ -169,10 +195,10 @@ public class KillBillSync extends ManagedService {
                     .appendln("org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail=true")
                     .toString();
 
-            List<String> values = kbTenantProvider.get().getPluginConfiguration(EMAIL_PLUGIN_NAME, RequestOptions.empty()).getValues();
+            List<String> values = kbTenantProvider.get().getPluginConfiguration(EMAIL_PLUGIN_NAME, KillBillUtil.roDefault()).getValues();
             if (values.isEmpty() || !expectedConf.equals(values.get(0).trim())) {
-                kbTenantProvider.get().uploadPluginConfiguration(EMAIL_PLUGIN_NAME, expectedConf, RequestOptions.empty());
                 log.info("Updating Email plugin conf");
+                kbTenantProvider.get().uploadPluginConfiguration(EMAIL_PLUGIN_NAME, expectedConf, KillBillUtil.roDefault());
             }
 
             // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
@@ -186,29 +212,29 @@ public class KillBillSync extends ManagedService {
             XPathExpression effectiveDateXPath = XPathFactory.newInstance()
                     .newXPath()
                     .compile("//catalog/effectiveDate/text()");
-            DateTimes catalogVersions = kbCatalogProvider.get().getCatalogVersions(null, RequestOptions.empty());
+            DateTimes catalogVersions = kbCatalogProvider.get().getCatalogVersions(null, KillBillUtil.roDefault());
             for (String fileName : CATALOG_FILENAMES) {
                 String catalogStr = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/" + fileName), Charsets.UTF_8);
                 Document doc = docBuilder.parse(new ByteArrayInputStream(catalogStr.getBytes(Charsets.UTF_8)));
                 String effectiveDateStr = effectiveDateXPath.evaluate(doc);
                 DateTime effectiveDate = new DateTime(effectiveDateStr);
                 if (!catalogVersions.contains(effectiveDate)) {
-                    kbCatalogProvider.get().uploadCatalogXml(catalogStr, RequestOptions.empty());
                     log.info("Uploading catalog file {} effectiveDate {}", fileName, effectiveDateStr);
+                    kbCatalogProvider.get().uploadCatalogXml(catalogStr, KillBillUtil.roDefault());
                 }
             }
         }
     }
 
     void setUserKeyValueIfDifferent(String key, String value) throws KillBillClientException {
-        List<String> values = kbTenantProvider.get().getUserKeyValue(key, RequestOptions.empty()).getValues();
+        List<String> values = kbTenantProvider.get().getUserKeyValue(key, KillBillUtil.roDefault()).getValues();
         if (!values.isEmpty() && value.equals(values.get(0))) {
             return;
         }
         if (!values.isEmpty()) {
-            kbTenantProvider.get().deleteUserKeyValue(key, RequestOptions.empty());
+            kbTenantProvider.get().deleteUserKeyValue(key, KillBillUtil.roDefault());
         }
-        kbTenantProvider.get().insertUserKeyValue(key, value, RequestOptions.empty());
+        kbTenantProvider.get().insertUserKeyValue(key, value, KillBillUtil.roDefault());
     }
 
     public static Module module() {
@@ -217,6 +243,7 @@ public class KillBillSync extends ManagedService {
             protected void configure() {
                 bind(KillBillSync.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillSync.class);
             }
         };
     }

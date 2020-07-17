@@ -3,11 +3,8 @@ package com.smotana.clearflask.store.elastic;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
@@ -41,6 +38,7 @@ public class DefaultElasticSearchProvider extends ManagedService implements Prov
 
     @Override
     public RestHighLevelClient get() {
+        log.info("Opening ElasticSearch client on {}", config.serviceEndpoint());
         if (restClientOpt.isPresent()) return restClientOpt.get();
         restClientOpt = Optional.of(new RestHighLevelClient(RestClient
                 .builder(HttpHost.create(config.serviceEndpoint()))));

@@ -12,6 +12,7 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.*;
@@ -77,6 +78,7 @@ public class BlackboxIT extends AbstractIT {
                 ProjectResource.module(),
                 UserResource.module(),
                 KillBillResource.module(),
+                KillBillSync.module(),
                 KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
@@ -105,6 +107,9 @@ public class BlackboxIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
+                    om.override(om.id().domain()).withValue("localhost:8080");
+                }));
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
@@ -120,6 +125,9 @@ public class BlackboxIT extends AbstractIT {
                     om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
+                install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
+                    om.override(om.id().createTenant()).withValue(true);
+                }));
             }
         }));
     }
@@ -134,14 +142,14 @@ public class BlackboxIT extends AbstractIT {
         voteResource.securityContext = mockExtendedSecurityContext;
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void test() throws Exception {
         AccountAdmin accountAdmin = accountResource.accountSignupAdmin(new AccountSignupAdmin(
                 "smotana",
                 "unittest@clearflask.com",
                 "password",
-                "E5A119e3-1477-4621-A9EA-85355B34A6D4"));
-        String projectId = "myproject";
+                "basic-monthly"));
+        String projectId = "sermyproject";
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 projectId,
                 ModelUtil.createEmptyConfig(projectId).getConfig());

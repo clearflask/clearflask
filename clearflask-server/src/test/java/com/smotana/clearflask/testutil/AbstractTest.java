@@ -2,11 +2,7 @@ package com.smotana.clearflask.testutil;
 
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Stage;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;
@@ -46,7 +42,7 @@ public abstract class AbstractTest extends AbstractModule {
                         new AbstractModule() {
                             @Override
                             protected void configure() {
-                                bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.DEVELOPMENT_LOCAL);
+                                bind(ServiceInjector.Environment.class).toInstance(ServiceInjector.Environment.TEST);
                                 install(ServiceManagerProvider.module());
                                 install(GsonProvider.module());
                                 Multibinder.newSetBinder(binder(), Service.class).addBinding().to(NoOpService.class);

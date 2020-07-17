@@ -25,4 +25,9 @@ public class IdUtil {
                 RandomStringUtils.randomAlphanumeric(5))
                 .toLowerCase();
     }
+
+    public static UUID parseDashlessUuid(String uuidStr) {
+        // From https://stackoverflow.com/questions/18986712/creating-a-uuid-from-a-string-with-no-dashes
+        return UUID.fromString(uuidStr.replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
+    }
 }
