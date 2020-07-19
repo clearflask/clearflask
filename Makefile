@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 10
-_run-dev: tomcat-run-dev nginx-run dynamo-run elastic-run
+_run-dev: killbill-run tomcat-run-dev nginx-run dynamo-run elastic-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 10

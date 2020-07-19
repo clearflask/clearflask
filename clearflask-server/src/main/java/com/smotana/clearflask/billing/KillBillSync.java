@@ -149,7 +149,9 @@ public class KillBillSync extends ManagedService {
                 kbTenantProvider.get().getTenantByApiKey(configClient.apiKey(), KillBillUtil.roDefault());
                 log.debug("Tenant already exists, not creating");
             } catch (KillBillClientException ex) {
-                if (ex.getBillingException().getCauseMessage().startsWith("TenantCacheLoader cannot find value for key")) {
+                if (ex.getBillingException() != null
+                        && ex.getBillingException().getCauseMessage() != null
+                        && ex.getBillingException().getCauseMessage().startsWith("TenantCacheLoader cannot find value for key")) {
                     log.info("Creating tenant for api key {}", configClient.apiKey());
                     kbTenantProvider.get().createTenant(new Tenant()
                                     .setExternalKey("clearflask")
