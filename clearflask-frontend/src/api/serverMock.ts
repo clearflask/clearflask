@@ -196,7 +196,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         expiryYear: 2032,
       },
       billingPeriodEnd,
-      availablePlans: Object.values(AvailablePlans).filter(p => p.planid !== this.account?.plan.planid),
+      availablePlans: Object.values(AvailablePlans),
       invoices: {
         cursor: 'one more',
         results: [{

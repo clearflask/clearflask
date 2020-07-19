@@ -8,6 +8,7 @@ import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
@@ -64,6 +65,9 @@ public class KillBillResource extends ManagedService {
 
         @DefaultValue("true")
         boolean registerWebhookOnStartup();
+
+        @NoDefaultValue
+        String overrideWebhookDomain();
     }
 
     @Context
@@ -93,7 +97,8 @@ public class KillBillResource extends ManagedService {
     @Override
     protected void serviceStart() throws Exception {
         if (config.registerWebhookOnStartup()) {
-            String webhookPath = "https://" + configApp.domain() + Application.RESOURCE_VERSION + WEBHOOK_PATH;
+            String domain = Optional.ofNullable(this.config.overrideWebhookDomain()).orElse(configApp.domain());
+            String webhookPath = "https://" + domain + Application.RESOURCE_VERSION + WEBHOOK_PATH;
             log.info("Registering KillBill webhook on {}", webhookPath);
             TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
             Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
@@ -145,17 +150,29 @@ public class KillBillResource extends ManagedService {
             log.warn("Received event for non-existent account, KillBill account and subscription exist, with account id {}", accountId);
             return;
         }
+
+        boolean changesMade = false;
+
         SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(kbAccount, kbSubscription);
-        if (accountOpt.get().getStatus().equals(newStatus)) {
+        if (!accountOpt.get().getStatus().equals(newStatus)) {
+            log.info("KillBill event {} caused accountId {} to state change {} -> {}",
+                    event.getEventType(), accountId, accountOpt.get().getStatus(), newStatus);
+            accountStore.updateStatus(accountId, newStatus);
+            changesMade = true;
+        }
+
+        if (!kbSubscription.getPlanName().equals(accountOpt.get().getPlanid())) {
+            log.info("KillBill event {} caused accountId {} plan change {} -> {}",
+                    event.getEventType(), accountId, accountOpt.get().getPlanid(), kbSubscription.getPlanName());
+            accountStore.setPlan(accountId, kbSubscription.getPlanName());
+            changesMade = true;
+        }
+
+        if (!changesMade) {
             if (config.logWhenEventIsUnnecessary() && LogUtil.rateLimitAllowLog("killbillresource-eventUnnecessary")) {
                 log.info("KillBill event {} was unnecessary {}", event.getEventType(), event);
             }
-            return;
         }
-
-        log.info("KillBill event {} caused accountId {} to state change {} -> {}",
-                event.getEventType(), accountId, accountOpt.get().getStatus(), newStatus);
-        accountStore.updateStatus(accountId, newStatus);
     }
 
     private void updateEventsToListenFor(Set<String> eventsToListenForStr, boolean doThrow) {

@@ -22,6 +22,7 @@ import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.PluginInfoApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.model.DateTimes;
@@ -99,8 +100,10 @@ public class KillBillSync extends ManagedService {
         String emailPluginSender();
 
         @DefaultValue("true")
-        boolean uploadCatalogs();
+        boolean uploadInvoiceTemplate();
 
+        @DefaultValue("true")
+        boolean uploadCatalogs();
     }
 
     @Inject
@@ -115,6 +118,8 @@ public class KillBillSync extends ManagedService {
     private Provider<CatalogApi> kbCatalogProvider;
     @Inject
     private Provider<PluginInfoApi> kbPluginInfoProvider;
+    @Inject
+    private Provider<InvoiceApi> kbInvoiceProvider;
     @Inject
     private Provider<KillBillHttpClient> kbClientProvider;
 
@@ -240,6 +245,14 @@ public class KillBillSync extends ManagedService {
             // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
             String emailTemplateFailedPayment = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/billing-FailedPayment.html"), Charsets.UTF_8);
             setUserKeyValueIfDifferent("killbill-email-notifications:FAILED_PAYMENT_en_US", emailTemplateFailedPayment);
+        }
+
+        if (config.uploadInvoiceTemplate()) {
+            String invoiceTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/invoice-template.html"), Charsets.UTF_8);
+            kbInvoiceProvider.get().uploadInvoiceTemplate(
+                    invoiceTemplateHtml,
+                    true,
+                    KillBillUtil.roDefault());
         }
 
         if (config.uploadCatalogs() && !CATALOG_FILENAMES.isEmpty()) {

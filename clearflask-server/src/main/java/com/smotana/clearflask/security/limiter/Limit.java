@@ -67,11 +67,13 @@ public @interface Limit {
     /**
      * Amount of permits required to perform this action assuming
      * you have a single permit per second to spend.
+     * Permits are shared across resources.
      */
     int requiredPermits() default -1;
 
     /**
      * Amount of challenge-free attempts to allow.
+     * Attempts are independent between resources.
      * Will be reset after a configured period of inactivity.
      */
     int challengeAfter() default -1;

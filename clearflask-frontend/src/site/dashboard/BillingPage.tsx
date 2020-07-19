@@ -1,5 +1,5 @@
 
-import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Container, Table, TableBody, TableRow, TableCell, TableHead } from '@material-ui/core';
+import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Container, Table, TableBody, TableRow, TableCell, TableHead, Collapse } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -19,6 +19,9 @@ import TimeAgo from 'react-timeago';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 import Loader from '../../app/utils/Loader';
 import SubmitButton from '../../common/SubmitButton';
+import { Stripe, StripeElements } from '@stripe/stripe-js';
+import { ElementsConsumer, CardNumberElement } from '@stripe/react-stripe-js';
+import ErrorMsg from '../../app/ErrorMsg';
 
 const styles = (theme: Theme) => createStyles({
   plan: {
@@ -59,6 +62,8 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
 });
+interface Props {
+}
 interface ConnectProps {
   accountStatus?: Status;
   account?: Admin.AccountAdmin;
@@ -68,13 +73,15 @@ interface ConnectProps {
 interface State {
   isSubmitting?: boolean;
   showAddPayment?: boolean;
+  stripePaymentFilled?: boolean;
+  stripePaymentError?: string;
   showCancelSubscription?: boolean;
   showResumePlan?: boolean;
   showPlanChange?: boolean;
   invoices?: Admin.InvoiceItem[];
   invoicesCursor?: string;
 }
-class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, true>, State> {
+class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
     if (!this.props.account) {
@@ -276,34 +283,31 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
           keepMounted
           onClose={() => this.setState({ showAddPayment: undefined })}
         >
-          <DialogTitle>Add payment method</DialogTitle>
-          <DialogContent className={this.props.classes.center}>
-            <StripeCreditCard />
-          </DialogContent>
-          <AcceptTerms />
-          <DialogActions>
-            <Button onClick={() => this.setState({ showAddPayment: undefined })}>
-              Cancel
-            </Button>
-            <SubmitButton
-              isSubmitting={this.state.isSubmitting}
-              color='primary'
-              onClick={() => {
-                this.setState({ isSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    paymentToken: {
-                      type: 'blah',
-                      token: 'TODO' // TODO add stripe token
-                    },
-                    renewAutomatically: true,
-                  },
-                }).then(() => d.accountBillingAdmin()))
-                  .then(() => this.setState({ isSubmitting: false, showAddPayment: undefined }))
-                  .catch(er => this.setState({ isSubmitting: false }));
-              }}
-            >Add</SubmitButton>
-          </DialogActions>
+          <ElementsConsumer>
+            {({elements, stripe}) => (
+              <React.Fragment>
+                <DialogTitle>Add payment method</DialogTitle>
+                <DialogContent className={this.props.classes.center}>
+                  <StripeCreditCard onFilledChanged={(isFilled) => this.setState({stripePaymentFilled: isFilled})} />
+                  <Collapse in={!!this.state.stripePaymentError}>
+                    <ErrorMsg msg={this.state.stripePaymentError} />
+                  </Collapse>
+                </DialogContent>
+                <AcceptTerms />
+                <DialogActions>
+                  <Button onClick={() => this.setState({ showAddPayment: undefined })}>
+                    Cancel
+                  </Button>
+                  <SubmitButton
+                    isSubmitting={this.state.isSubmitting}
+                    disabled={!this.state.stripePaymentFilled || !elements || !stripe}
+                    color='primary'
+                    onClick={() => this.onPaymentSubmit(elements!, stripe!)}
+                  >Add</SubmitButton>
+                </DialogActions>
+              </React.Fragment>
+            )}
+          </ElementsConsumer>
         </Dialog>
         <Dialog
           open={!!this.state.showCancelSubscription}
@@ -469,6 +473,61 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
 
   onInvoiceClick(invoiceId:string) {
     window.open(`${window.location.origin}/invoice/${invoiceId}`, '_blank')
+  }
+
+  async onPaymentSubmit(elements:StripeElements, stripe:Stripe) {
+    this.setState({ isSubmitting: true, stripePaymentError: undefined });
+
+    const cardNumberElement = elements.getElement(CardNumberElement);
+    if(cardNumberElement === null) {
+      this.setState({
+        stripePaymentError: 'Payment processor not initialized yet',
+        isSubmitting: false,
+      });
+      return;
+    }
+
+    const tokenResult = await stripe.createToken(cardNumberElement);
+    if(!tokenResult.token) {
+      this.setState({
+        stripePaymentError: tokenResult.error
+          ? `${tokenResult.error.message} (${tokenResult.error.code || tokenResult.error.decline_code || tokenResult.error.type})`
+          : 'Payment processor failed for unknown reason',
+        isSubmitting: false,
+      });
+      return;
+    }
+
+    const dispatcher = await ServerAdmin.get().dispatchAdmin();
+    try {
+      await dispatcher.accountUpdateAdmin({
+        accountUpdateAdmin: {
+          paymentToken: {
+            type: 'killbill-stripe',
+            token: tokenResult.token.id,
+          },
+          renewAutomatically: true,
+        },
+      });
+    } catch (er) {
+      this.setState({
+        isSubmitting: false,
+        stripePaymentError: 'Unknown error: ' + JSON.stringify(er)
+      });
+      return;
+    }
+
+    try {
+      await dispatcher.accountBillingAdmin();
+    } catch (er) {
+      this.setState({
+        isSubmitting: false,
+        stripePaymentError: 'Unknown error: ' + JSON.stringify(er)
+      });
+      return;
+    }
+
+    this.setState({ isSubmitting: false, showAddPayment: undefined });
   }
 }
 

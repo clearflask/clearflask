@@ -23,7 +23,6 @@ interface Props {
 }
 interface ConnectProps {
   accountPlanId?: string;
-  currentPlan?: Admin.Plan;
   plans?: Admin.Plan[];
   accountBillingStatus?: Status;
   accountStatus?: Status;
@@ -47,9 +46,6 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
     const plans = allPlans
       .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period)
     const selectedPlanId = this.state.planid;
-    const plansWithCurrentPlan = this.props.currentPlan
-      ? [this.props.currentPlan, ...plans]
-      : plans;
 
     return (
       <Dialog
@@ -63,7 +59,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
         <DialogTitle>Switch plan</DialogTitle>
         {periods.length > 1 && (
           <PlanPeriodSelect
-            plans={plansWithCurrentPlan}
+            plans={plans}
             value={selectedPeriod}
             onChange={period => this.setState({ period, planid: undefined })}
           />
@@ -71,7 +67,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
         <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
           <Container maxWidth='md'>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
-              {plansWithCurrentPlan.map((plan, index) => (
+              {plans.map((plan, index) => (
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
@@ -102,15 +98,11 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
-  if (state.plans.plans.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.plansGet());
-  }
   if (state.account.billing.status === undefined) {
     ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin());
   }
   return {
     accountPlanId: state.account.account.account?.plan.planid,
-    currentPlan: state.account.account.account?.plan,
     plans: state.account.billing.billing?.availablePlans,
     accountStatus: state.account.account.status,
     accountBillingStatus: state.account.billing.status,

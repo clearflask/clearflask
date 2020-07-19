@@ -46,7 +46,9 @@ public class TieredWebLimiter implements Limiter {
 
         Observable<Double> qpsBaseObservable();
 
-        /** Default: sqrt(10) */
+        /**
+         * Default: sqrt(10)
+         */
         @DefaultValue("3.16")
         double qpsStepUpMultiplier();
 
@@ -159,8 +161,10 @@ public class TieredWebLimiter implements Limiter {
 
         // Challenge
         if (limit.challengeAfter() >= 0) {
+            // Append request context to targe to make attempts resource independent
+            String challengeTarget = target + "-" + requestContext.getUriInfo().getPath() + "-" + requestContext.getMethod();
             Optional<String> solutionOpt = Optional.ofNullable(Strings.emptyToNull(requestContext.getHeaderString(SOLUTION_HEADER)));
-            Optional<String> newChallengeOpt = challengeLimiter.process(limit.challengeAfter(), remoteIp, target, solutionOpt);
+            Optional<String> newChallengeOpt = challengeLimiter.process(limit.challengeAfter(), remoteIp, challengeTarget, solutionOpt);
             if (newChallengeOpt.isPresent()) {
                 throw new WebApplicationException(
                         "Request challenged",
