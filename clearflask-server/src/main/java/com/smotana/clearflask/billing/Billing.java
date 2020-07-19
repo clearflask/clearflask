@@ -1,20 +1,28 @@
 package com.smotana.clearflask.billing;
 
 
+import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.Invoices;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.PaymentMethod;
+import org.killbill.billing.client.model.gen.PlanDetail;
 import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
+import java.util.UUID;
+
+import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
+import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 public interface Billing {
 
     AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId);
 
     Account getAccount(String accountId);
+
+    Account getAccountByKbId(UUID accountIdKb);
 
     Subscription getSubscription(String accountId);
 
@@ -36,6 +44,8 @@ public interface Billing {
 
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
 
+    ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
+
     @Value
     class AccountWithSubscription {
         Account account;
@@ -53,9 +63,10 @@ public interface Billing {
     }
 
     enum Gateway {
-        STRIPE("killbill-stripe", true),
-        NOOP("__EXTERNAL_PAYMENT__", false),
-        OTHER("", false);
+        STRIPE(STRIPE_PLUGIN_NAME, true),
+        TEST(PAYMENT_TEST_PLUGIN_NAME, false),
+        EXTERNAL("__EXTERNAL_PAYMENT__", false),
+        OTHER("unknown", false);
 
         private final String pluginName;
         private final boolean allowedInProduction;

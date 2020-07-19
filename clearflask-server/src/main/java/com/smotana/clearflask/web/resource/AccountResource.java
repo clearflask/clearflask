@@ -228,12 +228,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
         }
-        if (accountUpdateAdmin.getSubscriptionActive() != null) {
+        if (accountUpdateAdmin.getCancelEndOfTerm() != null) {
             Subscription subscription;
-            if (accountUpdateAdmin.getSubscriptionActive()) {
-                subscription = billing.undoPendingCancel(accountSession.getAccountId());
-            } else {
+            if (accountUpdateAdmin.getCancelEndOfTerm()) {
                 subscription = billing.cancelSubscription(accountSession.getAccountId());
+            } else {
+                subscription = billing.undoPendingCancel(accountSession.getAccountId());
             }
             SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(
                     billing.getAccount(accountSession.getAccountId()),
@@ -329,8 +329,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 && subscription.getChargedThroughDate() != null) {
             billingPeriodEnd = subscription.getChargedThroughDate().toDate().toInstant();
         }
-
-        log.debug("DEBUGDEBUG {}", subscription);
 
         return new AccountBilling(
                 accountBillingPayment.orElse(null),

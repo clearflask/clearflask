@@ -8,14 +8,8 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
-import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.model.PlanDetails;
 
-import javax.ws.rs.core.Response;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -44,7 +38,7 @@ public class KillBillPlanStore implements PlanStore {
                     new PlanPerk("Single Sign-On", null),
                     new PlanPerk("Up to 1,000 contributors", TERMS_ACTIVE_USERS),
                     new PlanPerk("1hr feature credits", TERMS_CREDIT)),
-                    true, false),
+                    null, false),
             "analytic-monthly", new Plan("analytic-monthly", "Analytic",
                     null, ImmutableList.of(
                     new PlanPerk("Powerful Analytics", TERMS_ANALYTICS),
@@ -69,7 +63,7 @@ public class KillBillPlanStore implements PlanStore {
             FEATURES_TABLE);
 
     @Inject
-    private CatalogApi kbCatalog;
+    private Billing billing;
 
     @Override
     public PlansGetResponse getPublicPlans() {
@@ -78,14 +72,7 @@ public class KillBillPlanStore implements PlanStore {
 
     @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
-        PlanDetails plans;
-        try {
-            plans = kbCatalog.getAvailableBasePlans(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
-        } catch (KillBillClientException ex) {
-            log.warn("Failed to retrieve plans from KillBill", ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch plans", ex);
-        }
-        return plans.stream()
+        return billing.getAvailablePlans(Optional.of(accountId)).stream()
                 .map(p -> AVAILABLE_PLANS.get(p.getPlan()))
                 .filter(Objects::nonNull)
                 .collect(ImmutableSet.toImmutableSet());

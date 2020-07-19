@@ -384,6 +384,7 @@
                 <artifactId>guice-bridge</artifactId>
                 <version>${hk2.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.kill-bill.billing</groupId>
                 <artifactId>killbill-client-java</artifactId>
@@ -393,6 +394,26 @@
                 <groupId>org.kill-bill.billing.plugin</groupId>
                 <artifactId>killbill-plugin-api-notification</artifactId>
                 <version>0.26.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>payment-test-plugin</artifactId>
+                <version>7.0.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>stripe-plugin</artifactId>
+                <version>7.0.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>killbill-email-notifications-plugin</artifactId>
+                <version>0.6.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>analytics-plugin</artifactId>
+                <version>7.0.8</version>
             </dependency>
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->

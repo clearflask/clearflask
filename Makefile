@@ -28,10 +28,9 @@ tomcat-run-dev:
 	docker run --rm --name clearflask-webserver \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-p 80:8080 \
-	-v `pwd`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \
-	-v `pwd`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
-	-v `pwd`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \
-	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v `pwd -P`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \
+	-v `pwd -P`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
+	-v `pwd -P`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \
 	tomcat:8.5-jdk11-openjdk-slim
 
 elastic-run:
@@ -57,6 +56,10 @@ killbill-engine-run:
 	-e KILLBILL_DAO_USER=root \
 	-e KILLBILL_DAO_PASSWORD=killbill \
 	-e KILLBILL_SERVER_TEST_MODE=true \
+	-v $(shell pwd -P)/clearflask-server/src/test/resources/logging-dev.properties:/var/lib/tomcat/conf/logging.properties \
+	-v $(shell pwd -P)/clearflask-server/src/test/resources/logback-killbill-engine.xml:/var/lib/killbill/logback.xml \
+	-v $(shell pwd -P)/clearflask-server/src/test/resources/killbill.sh:/var/lib/killbill/killbill.sh \
+	-v $(shell pwd -P)/clearflask-server/target/kb-plugins:/var/lib/killbill/bundles/autoload \
 	-p 8082:8080 \
 	killbill/killbill:0.22.10
 
@@ -73,7 +76,7 @@ killbill-db-run:
 	docker run --rm --name clearflask-killbill-db \
 	-e MYSQL_ROOT_PASSWORD=killbill \
 	-p 8306:3306 \
-	-v /var/lib/mysql \
+	-v $(shell pwd -P)/clearflask-server/target/kb-ddl/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql \
 	killbill/mariadb:0.22
 
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
@@ -81,7 +84,7 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	-p 8300:8300 \
 	-p 443:8443 \
 	-p 8083:8082 \
-	-v `pwd`/.nginx:/etc/nginx/conf.d \
+	-v $(shell pwd -P)/.nginx:/etc/nginx/conf.d \
 	nginx
 
 .nginx:

@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
@@ -18,6 +19,7 @@ import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
@@ -32,7 +34,12 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.killbill.billing.ObjectType;
+import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
+import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+
+import java.util.UUID;
 
 import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
@@ -62,6 +69,12 @@ public class BlackboxIT extends AbstractIT {
     private DynamoMapper dynamoMapper;
     @Inject
     private KillBillHttpClient kbClient;
+    @Inject
+    private AccountStore accountStore;
+    @Inject
+    private Billing billing;
+    @Inject
+    private Gson gson;
 
     @Override
     protected void configure() {
@@ -129,6 +142,9 @@ public class BlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
                     om.override(om.id().createTenant()).withValue(true);
                 }));
+                install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
+                    om.override(om.id().registerWebhookOnStartup()).withValue(false);
+                }));
             }
         }));
     }
@@ -150,6 +166,7 @@ public class BlackboxIT extends AbstractIT {
                 "unittest@clearflask.com",
                 "password",
                 "basic-monthly"));
+        String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
         String projectId = "sermyproject";
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 projectId,
@@ -173,31 +190,39 @@ public class BlackboxIT extends AbstractIT {
         CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
                 .vote(VoteOption.DOWNVOTE)
                 .build());
-        log.info("accountBilling {}", accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .paymentToken(AccountUpdateAdminPaymentToken.builder()
-                        .type(Billing.Gateway.NOOP.getPluginName())
-                        .token("")
+                        .type(Billing.Gateway.TEST.getPluginName())
+                        .token("token")
                         .build())
                 .build());
-        kbClient.doPut("/1.0/kb/test/clock?days=16", "", KillBillUtil.roDefault());
-        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        sleepAndRefreshStatus(accountId, 16L);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .subscriptionActive(false)
+                .cancelEndOfTerm(true)
                 .build());
-        kbClient.doPut("/1.0/kb/test/clock?days=2", "", KillBillUtil.roDefault());
-        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        sleepAndRefreshStatus(accountId, 2L);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .subscriptionActive(true)
+                .cancelEndOfTerm(false)
                 .build());
-        kbClient.doPut("/1.0/kb/test/clock?days=36", "", KillBillUtil.roDefault());
-        log.info("accountBilling {}", accountResource.accountBillingAdmin());
+        sleepAndRefreshStatus(accountId, 36L);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .planid("standard-monthly")
                 .build());
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();
         dumpDynamoTable();
+    }
+
+    private void sleepAndRefreshStatus(String accountId, long sleepInDays) throws KillBillClientException {
+        kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
+        UUID accountIdKb = billing.getAccount(accountId).getAccountId();
+        killBillResource.webhook(gson.toJson(new KillBillResource.Event(
+                ExtBusEventType.SUBSCRIPTION_CHANGE,
+                ObjectType.ACCOUNT,
+                accountIdKb,
+                accountIdKb,
+                null)));
+        log.info("Slept for {} days, account state {}", sleepInDays, accountStore.getAccountByAccountId(accountId).get().getStatus());
     }
 
     void dumpDynamoTable() {

@@ -18,6 +18,7 @@ import com.kik.config.ice.internal.ConfigDescriptorHolder;
 import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
+import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
@@ -172,6 +173,7 @@ public enum ServiceInjector {
                 install(SupportResource.module());
 
                 // Billing
+                install(KillBillClientProvider.module());
                 install(KillBilling.module());
                 install(KillBillSync.module());
 

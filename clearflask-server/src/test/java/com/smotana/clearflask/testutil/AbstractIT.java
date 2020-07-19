@@ -48,7 +48,7 @@ public abstract class AbstractIT extends AbstractTest {
                     om.override(om.id().serviceEndpoint()).withValue("http://localhost:9200");
                 }));
                 String apiKey = IdUtil.randomAscId();
-                String secretKey = IdUtil.randomAscId();
+                String secretKey = IdUtil.randomId();
                 log.info("KillBill test randomized apiKey {} secretKey {}", apiKey, secretKey);
                 install(ConfigSystem.overrideModule(KillBillClientProvider.Config.class, om -> {
                     om.override(om.id().host()).withValue("localhost");

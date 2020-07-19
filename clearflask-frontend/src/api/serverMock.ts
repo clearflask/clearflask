@@ -176,8 +176,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if (request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
     if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.AccountAdminSubscriptionStatusEnum.Active;
-    if (request.accountUpdateAdmin.subscriptionActive !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.subscriptionActive
-      ? Admin.AccountAdminSubscriptionStatusEnum.Active : Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal;
+    if (request.accountUpdateAdmin.cancelEndOfTerm !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.cancelEndOfTerm
+      ? Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal : Admin.AccountAdminSubscriptionStatusEnum.Active;
     if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
     return this.returnLater(this.account);
   }

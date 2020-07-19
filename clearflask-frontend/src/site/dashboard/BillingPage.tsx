@@ -325,7 +325,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                   accountUpdateAdmin: {
-                    subscriptionActive: false,
+                    cancelEndOfTerm: true,
                   },
                 }).then(() => d.accountBillingAdmin()))
                   .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
@@ -355,7 +355,7 @@ class BillingPage extends Component<ConnectProps & WithStyles<typeof styles, tru
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                   accountUpdateAdmin: {
-                    subscriptionActive: true,
+                    cancelEndOfTerm: false,
                   },
                 }).then(() => d.accountBillingAdmin()))
                   .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))

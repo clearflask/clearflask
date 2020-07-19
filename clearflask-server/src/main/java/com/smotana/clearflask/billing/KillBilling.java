@@ -4,6 +4,7 @@ package com.smotana.clearflask.billing;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -15,28 +16,30 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.LocalDate;
+import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
 import org.killbill.billing.client.model.PaymentMethods;
+import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
+import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 @Slf4j
 @Singleton
@@ -58,15 +61,18 @@ public class KillBilling implements Billing {
     private SubscriptionApi kbSubscription;
     @Inject
     private InvoiceApi kbInvoice;
+    @Inject
+    private CatalogApi kbCatalog;
 
     @Override
     public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
         Account account;
         try {
             account = kbAccount.createAccount(new Account()
-                    .setAccountId(IdUtil.parseDashlessUuid(accountId))
+                    .setExternalKey(accountId)
                     .setName(name)
-                    .setEmail(email), KillBillUtil.roDefault());
+                    .setEmail(email)
+                    .setCurrency(Currency.USD), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to create KillBill Account for email {} name {}", email, name, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -83,8 +89,8 @@ public class KillBilling implements Billing {
                     null,
                     false,
                     false,
-                    false, // callCompletion causes timeout since there is no payment to be made
-                    null,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
                     KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
@@ -99,14 +105,31 @@ public class KillBilling implements Billing {
     @Override
     public Account getAccount(String accountId) {
         try {
-            Account account = kbAccount.getAccount(IdUtil.parseDashlessUuid(accountId), KillBillUtil.roDefault());
+            Account account = kbAccount.getAccountByKey(accountId, KillBillUtil.roDefault());
             if (account == null) {
+                log.warn("Account doesn't exist by account id {}", accountId);
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Account doesn't exist");
             }
             return account;
         } catch (KillBillClientException ex) {
             log.error("Failed to retrieve KillBill Account by id {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
+        }
+    }
+
+    @Override
+    public Account getAccountByKbId(UUID accountIdKb) {
+        try {
+            Account account = kbAccount.getAccount(accountIdKb, KillBillUtil.roDefault());
+            if (account == null) {
+                log.warn("Account doesn't exist by account kb id {}", accountIdKb);
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                        "Account doesn't exist");
+            }
+            return account;
+        } catch (KillBillClientException ex) {
+            log.error("Failed to retrieve KillBill Account by kb id {}", accountIdKb, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Account", ex);
         }
     }
@@ -158,12 +181,13 @@ public class KillBilling implements Billing {
     @Override
     public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
+            UUID accountIdKb = getAccount(accountId).getAccountId();
             kbAccount.createPaymentMethod(
-                    IdUtil.parseDashlessUuid(accountId),
+                    accountIdKb,
                     new PaymentMethod(
                             null,
                             null,
-                            IdUtil.parseDashlessUuid(accountId),
+                            accountIdKb,
                             true,
                             gateway.getPluginName(),
                             new PaymentMethodPluginDetail(),
@@ -216,11 +240,12 @@ public class KillBilling implements Billing {
     @Override
     public Subscription changePlan(String accountId, String planId) {
         try {
+            UUID accountIdKb = getAccount(accountId).getAccountId();
             kbSubscription.changeSubscriptionPlan(
                     getSubscription(accountId).getSubscriptionId(),
                     new Subscription()
-                            .setSubscriptionId(IdUtil.parseDashlessUuid(accountId))
-                            .setAccountId(IdUtil.parseDashlessUuid(accountId))
+                            .setExternalKey(accountId)
+                            .setAccountId(accountIdKb)
                             .setPlanName(planId),
                     null,
                     true,
@@ -280,8 +305,9 @@ public class KillBilling implements Billing {
         LocalDate startDate = endDate.minusMonths(6);
 
         try {
+            UUID accountIdKb = getAccount(accountId).getAccountId();
             org.killbill.billing.client.model.Invoices result = kbAccount.getInvoicesForAccount(
-                    IdUtil.parseDashlessUuid(accountId),
+                    accountIdKb,
                     startDate,
                     endDate,
                     false, // "We don't support fetching migration invoices and specifying a start date" -kb
@@ -334,14 +360,16 @@ public class KillBilling implements Billing {
     @Override
     public String getInvoiceHtml(String accountId, String invoiceId) {
         try {
-            Invoice invoice = kbInvoice.getInvoice(IdUtil.parseDashlessUuid(invoiceId), KillBillUtil.roDefault());
+            UUID invoiceIdUuid = UUID.fromString(invoiceId);
+            Invoice invoice = kbInvoice.getInvoice(invoiceIdUuid, KillBillUtil.roDefault());
             if (invoice == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            if (!invoice.getAccountId().toString().equals(accountId)) {
-                log.warn("Requested HTML for invoiceId {} with accountId {} but invoice has accountId {}",
-                        invoiceId, accountId, invoice.getAccountId());
+            UUID accountIdKb = getAccount(accountId).getAccountId();
+            if (!invoice.getAccountId().equals(accountIdKb)) {
+                log.warn("Requested HTML for invoice id {} with account ext id {} id {} belonging to different account id {}",
+                        invoiceId, accountId, accountIdKb, invoice.getAccountId());
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
@@ -349,7 +377,7 @@ public class KillBilling implements Billing {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            return kbInvoice.getInvoiceAsHTML(IdUtil.parseDashlessUuid(invoiceId), KillBillUtil.roDefault());
+            return kbInvoice.getInvoiceAsHTML(invoiceIdUuid, KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
             log.error("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
@@ -360,8 +388,9 @@ public class KillBilling implements Billing {
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
         try {
+            UUID accountIdKb = getAccount(accountId).getAccountId();
             PaymentMethods paymentMethods = kbAccount.getPaymentMethodsForAccount(
-                    IdUtil.parseDashlessUuid(accountId),
+                    accountIdKb,
                     true,
                     false,
                     null,
@@ -380,22 +409,31 @@ public class KillBilling implements Billing {
                 Optional<String> cardLast4 = Optional.empty();
                 Optional<Long> cardExpiryMonth = Optional.empty();
                 Optional<Long> cardExpiryYear = Optional.empty();
-                for (PluginProperty prop : paymentMethod.getPluginInfo().getProperties()) {
-                    switch (prop.getKey()) {
-                        case "card_last4":
-                            cardLast4 = Optional.of(prop.getValue());
-                            break;
-                        case "card_brand":
-                            cardBrand = Optional.of(prop.getValue());
-                            break;
-                        case "card_exp_month":
-                            cardExpiryMonth = Optional.of(Long.valueOf(prop.getValue()));
-                            break;
-                        case "card_exp_year":
-                            cardExpiryYear = Optional.of(Long.valueOf(prop.getValue()));
-                            break;
+                if (STRIPE_PLUGIN_NAME.equals(paymentMethod.getPluginName())
+                        && paymentMethod.getPluginInfo() != null && paymentMethod.getPluginInfo().getProperties() != null) {
+                    for (PluginProperty prop : paymentMethod.getPluginInfo().getProperties()) {
+                        switch (prop.getKey()) {
+                            case "card_last4":
+                                cardLast4 = Optional.of(prop.getValue());
+                                break;
+                            case "card_brand":
+                                cardBrand = Optional.of(prop.getValue());
+                                break;
+                            case "card_exp_month":
+                                cardExpiryMonth = Optional.of(Long.valueOf(prop.getValue()));
+                                break;
+                            case "card_exp_year":
+                                cardExpiryYear = Optional.of(Long.valueOf(prop.getValue()));
+                                break;
+                        }
                     }
+                } else if (PAYMENT_TEST_PLUGIN_NAME.equals(paymentMethod.getPluginName())) {
+                    cardLast4 = Optional.of("????");
+                    cardBrand = Optional.of("???????");
+                    cardExpiryMonth = Optional.of(1L);
+                    cardExpiryYear = Optional.of(2099L);
                 }
+
                 Gateway gateway = Arrays.stream(Gateway.values())
                         .filter(g -> g.getPluginName().equals(paymentMethod.getPluginName()))
                         .findAny()
@@ -412,6 +450,20 @@ public class KillBilling implements Billing {
             log.error("Failed to get payment method details from KillBill for accountId {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch payment method", ex);
+        }
+    }
+
+    @Override
+    public ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId) {
+        try {
+            Optional<UUID> accountIdKb = accountId.map(this::getAccount).map(Account::getAccountId);
+            PlanDetails planDetails = kbCatalog.getAvailableBasePlans(accountIdKb.orElse(null), KillBillUtil.roDefault());
+            return planDetails == null || planDetails.isEmpty()
+                    ? ImmutableSet.of() : ImmutableSet.copyOf(planDetails);
+        } catch (KillBillClientException ex) {
+            log.error("Failed to get available base plans for account id {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to contact payment processor", ex);
         }
     }
 

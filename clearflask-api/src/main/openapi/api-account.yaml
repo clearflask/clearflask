@@ -149,7 +149,7 @@ components:
               type: string
         planid:
           type: string
-        subscriptionActive:
+        cancelEndOfTerm:
           type: boolean
     AccountBilling:
       type: object

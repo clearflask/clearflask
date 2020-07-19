@@ -17,6 +17,7 @@
 package com.smotana.clearflask.web;
 
 import com.smotana.clearflask.api.model.ErrorResponse;
+import com.smotana.clearflask.util.IdUtil;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -29,7 +30,7 @@ public class ErrorWithMessageException extends WebApplicationException {
     /**
      * Construct a new web exception.
      *
-     * @param status HTTP status code.
+     * @param status            HTTP status code.
      * @param userFacingMessage the detailed message shown to user
      */
     public ErrorWithMessageException(Response.Status status, String userFacingMessage) {
@@ -39,12 +40,12 @@ public class ErrorWithMessageException extends WebApplicationException {
     /**
      * Construct a new web exception.
      *
-     * @param status HTTP status code.
+     * @param status            HTTP status code.
      * @param userFacingMessage the detailed message shown to user
-     * @param cause the underlying cause of the exception.
+     * @param cause             the underlying cause of the exception.
      */
     public ErrorWithMessageException(Response.Status status, String userFacingMessage, final Throwable cause) {
-        super(userFacingMessage, cause, Response.status(status)
+        super(userFacingMessage + " #" + IdUtil.randomId(4), cause, Response.status(status)
                 .entity(new ErrorResponse(userFacingMessage))
                 .build());
     }

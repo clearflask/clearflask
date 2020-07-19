@@ -51,7 +51,7 @@ public class KillBillResource extends ManagedService {
     public static final String WEBHOOK_PATH = "/webhook/killbill";
 
     public interface Config {
-        @DefaultValue(value = "", innerType = String.class)
+        @DefaultValue(value = "ACCOUNT_CHANGE,SUBSCRIPTION_CREATION,SUBSCRIPTION_PHASE,SUBSCRIPTION_CHANGE,SUBSCRIPTION_CANCEL,SUBSCRIPTION_UNCANCEL,SUBSCRIPTION_BCD_CHANGE,PAYMENT_SUCCESS,PAYMENT_FAILED", innerType = String.class)
         Set<String> eventsToListenFor();
 
         Observable<Set<String>> eventsToListenForObservable();
@@ -61,6 +61,9 @@ public class KillBillResource extends ManagedService {
 
         @DefaultValue("true")
         boolean logWhenEventIsUnnecessary();
+
+        @DefaultValue("true")
+        boolean registerWebhookOnStartup();
     }
 
     @Context
@@ -89,13 +92,20 @@ public class KillBillResource extends ManagedService {
 
     @Override
     protected void serviceStart() throws Exception {
-        String webhookPath = "https://" + configApp.domain() + Application.RESOURCE_VERSION + WEBHOOK_PATH;
-        log.info("Registering KillBill webhook on {}", webhookPath);
-        TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
-        Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
-        if (expectedWebhookCount.isPresent() && expectedWebhookCount.get() != tenantKeyValue.getValues().size()) {
-            log.warn("Expecting {} webhooks but found {}",
-                    expectedWebhookCount.get(), tenantKeyValue.getValues());
+        if (config.registerWebhookOnStartup()) {
+            String webhookPath = "https://" + configApp.domain() + Application.RESOURCE_VERSION + WEBHOOK_PATH;
+            log.info("Registering KillBill webhook on {}", webhookPath);
+            TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
+            Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
+            if (expectedWebhookCount.isPresent()) {
+                long actualWebhookCount = tenantKeyValue == null || tenantKeyValue.getValues() == null || tenantKeyValue.getValues().isEmpty()
+                        ? 0 : tenantKeyValue.getValues().size();
+                if (expectedWebhookCount.get() != actualWebhookCount) {
+                    log.warn("Expecting {} webhooks but found {}, webhooks {}",
+                            expectedWebhookCount.get(), actualWebhookCount,
+                            tenantKeyValue != null ? tenantKeyValue.getValues() : null);
+                }
+            }
         }
 
         config.eventsToListenForObservable().subscribe(eventsToListenFor -> {
@@ -119,16 +129,15 @@ public class KillBillResource extends ManagedService {
             return;
         }
 
-        String accountId = event.getAccountId().toString();
-
-        Account kbAccount = billing.getAccount(accountId);
+        Account kbAccount = billing.getAccountByKbId(event.getAccountId());
         if (kbAccount == null) {
-            log.warn("Received event for non-existent KillBill account with id {}", accountId);
+            log.warn("Received event for non-existent KillBill account with kb id {}", event.getAccountId());
             return;
         }
+        String accountId = kbAccount.getExternalKey();
         Subscription kbSubscription = billing.getSubscription(accountId);
         if (kbSubscription == null) {
-            log.warn("Received event for non-existent KillBill subscription, KillBill account exists, with account id {}", accountId);
+            log.warn("Received event for non-existent KillBill subscription, KillBill account exists, with account id {} kb id {}", accountId, kbAccount.getAccountId());
             return;
         }
         Optional<AccountStore.Account> accountOpt = accountStore.getAccountByAccountId(accountId);
@@ -167,7 +176,7 @@ public class KillBillResource extends ManagedService {
 
     @Value
     @AllArgsConstructor
-    private static class Event {
+    public static class Event {
         @NonNull
         @GsonNonNull
         private final ExtBusEventType eventType;
