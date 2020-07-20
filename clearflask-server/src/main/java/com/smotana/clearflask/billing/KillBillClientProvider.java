@@ -5,10 +5,11 @@ import com.google.inject.*;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.api.gen.*;
 
-
+@Slf4j
 @Singleton
 public class KillBillClientProvider implements Provider<KillBillHttpClient> {
     public static final String STRIPE_PLUGIN_NAME = "killbill-stripe";
@@ -43,7 +44,10 @@ public class KillBillClientProvider implements Provider<KillBillHttpClient> {
 
     @Override
     public KillBillHttpClient get() {
-        return new KillBillHttpClient(String.format("%s://%s:%d", config.requireTls() ? "https" : "http", config.host(), config.port()),
+        String serviceEndpoint = String.format("%s://%s:%d", config.requireTls() ? "https" : "http", config.host(), config.port());
+        log.info("Opening KillBill client on {}", serviceEndpoint);
+        return new KillBillHttpClient(
+                serviceEndpoint,
                 config.user(),
                 config.pass(),
                 config.apiKey(),

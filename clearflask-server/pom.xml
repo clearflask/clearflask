@@ -406,6 +406,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${skipTests}</skip>
+                    <autoRemove>true</autoRemove>
                     <startParallel>true</startParallel>
                     <images>
                         <image>
@@ -597,7 +598,8 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
                                     </outputDirectory>
-                                    <includes>org/killbill/billing/plugin/analytics/ddl.sql</includes>
+                                    <includes>org/killbill/billing/plugin/analytics/ddl.sql,system/**,reports/**
+                                    </includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

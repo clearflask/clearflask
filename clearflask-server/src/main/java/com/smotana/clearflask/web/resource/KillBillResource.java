@@ -68,6 +68,9 @@ public class KillBillResource extends ManagedService {
 
         @NoDefaultValue
         String overrideWebhookDomain();
+
+        @DefaultValue("true")
+        boolean useHttps();
     }
 
     @Context
@@ -98,7 +101,8 @@ public class KillBillResource extends ManagedService {
     protected void serviceStart() throws Exception {
         if (config.registerWebhookOnStartup()) {
             String domain = Optional.ofNullable(this.config.overrideWebhookDomain()).orElse(configApp.domain());
-            String webhookPath = "https://" + domain + Application.RESOURCE_VERSION + WEBHOOK_PATH;
+            String protocol = config.useHttps() ? "https://" : "http://";
+            String webhookPath = protocol + domain + Application.RESOURCE_VERSION + WEBHOOK_PATH;
             log.info("Registering KillBill webhook on {}", webhookPath);
             TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
             Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();

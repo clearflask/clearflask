@@ -188,6 +188,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
+      subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial
         || this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.TrialExpired) ? undefined : {
         brand: 'mastercard',

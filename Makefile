@@ -79,6 +79,16 @@ killbill-db-run:
 	-v $(shell pwd -P)/clearflask-server/target/kb-ddl/plugins.sql:/docker-entrypoint-initdb.d/050-plugins.sql \
 	killbill/mariadb:0.22
 
+killbill-db-add-days-10:
+	curl -v \
+         -u admin:password \
+         -H "X-Killbill-ApiKey: bob" \
+         -H 'X-Killbill-ApiSecret: lazar' \
+         -H "Content-Type: application/json" \
+         -H 'X-Killbill-CreatedBy: admin' \
+         -X PUT \
+         "http://127.0.0.1:8082/1.0/kb/test/clock?days=10"
+
 nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	docker run --rm --name clearflask-webserver-ssl-reverse-proxy \
 	-p 8300:8300 \

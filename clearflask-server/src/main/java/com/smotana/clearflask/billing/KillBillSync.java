@@ -29,6 +29,8 @@ import org.killbill.billing.client.model.DateTimes;
 import org.killbill.billing.client.model.PluginInfos;
 import org.killbill.billing.client.model.gen.Tenant;
 import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.plugin.analytics.json.ReportConfigurationJson;
+import org.killbill.billing.plugin.analytics.reports.configuration.ReportsConfigurationModelDao.ReportType;
 import org.w3c.dom.Document;
 import rx.Observable;
 
@@ -54,6 +56,34 @@ public class KillBillSync extends ManagedService {
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
     private static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
+            .build();
+    /**
+     * Source: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
+     */
+    private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
+            // Dashboard views
+            .add(new ReportConfigurationJson(null, "accounts_summary", "Account summary", ReportType.COUNTERS, "v_report_accounts_summary", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "active_by_product_term_monthly", "Active subscriptions", ReportType.TIMELINE, "v_report_active_by_product_term_monthly", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "cancellations_count_daily", "Cancellations", ReportType.TIMELINE, "v_report_cancellations_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "chargebacks_daily", "Chargebacks", ReportType.TIMELINE, "v_report_chargebacks_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "conversions_daily", "Conversions", ReportType.TIMELINE, "v_report_conversions_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "invoice_adjustments_daily", "Invoice adjustments", ReportType.TIMELINE, "v_report_invoice_adjustments_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "invoice_item_adjustments_daily", "Invoice item adjustments", ReportType.TIMELINE, "v_report_invoice_item_adjustments_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "invoice_item_credits_daily", "Invoice credits", ReportType.TIMELINE, "v_report_invoice_item_credits_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "invoices_balance_daily", "Invoice balance", ReportType.TIMELINE, "v_report_invoices_balance_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "invoices_daily", "Invoices", ReportType.TIMELINE, "v_report_invoices_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "mrr_daily", "MRR", ReportType.TIMELINE, "v_report_mrr_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "new_accounts_daily", "New accounts", ReportType.TIMELINE, "v_report_new_accounts_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "overdue_states_count_daily", "Overdue states", ReportType.TIMELINE, "v_report_overdue_states_count_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "payments_total_daily", "Payment ($ amount)", ReportType.TIMELINE, "v_report_payments_total_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "refunds_total_daily", "Refunds", ReportType.TIMELINE, "v_report_refunds_total_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "trial_starts_count_daily", "Trials", ReportType.TIMELINE, "v_report_trial_starts_count_daily", null, null, null, null))
+            // System views
+            .add(new ReportConfigurationJson(null, "system_report_control_tag_no_test", "Control tags", ReportType.COUNTERS, "v_system_report_control_tag_no_test", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name", "Notification queues", ReportType.TIMELINE, "v_system_report_notifications_per_queue_name", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name_late", "Late notifications", ReportType.COUNTERS, "v_system_report_notifications_per_queue_name_late", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_payments", "Payments status", ReportType.COUNTERS, "v_system_report_payments", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_payments_per_day", "Payments", ReportType.TIMELINE, "v_system_report_payments_per_day", null, null, null, null))
             .build();
 
     public interface Config {
@@ -99,6 +129,9 @@ public class KillBillSync extends ManagedService {
         @DefaultValue("billing@clearflask.com")
         String emailPluginSender();
 
+        @DefaultValue("false")
+        boolean uploadAnalyticsReports();
+
         @DefaultValue("true")
         boolean uploadInvoiceTemplate();
 
@@ -123,14 +156,13 @@ public class KillBillSync extends ManagedService {
     @Inject
     private Provider<KillBillHttpClient> kbClientProvider;
 
-    private AtomicBoolean synced = new AtomicBoolean(false);
+    private final AtomicBoolean synced = new AtomicBoolean(false);
 
     @Override
-
     protected void serviceStart() throws Exception {
         sync();
         config.enabledObservable().subscribe(enabled -> {
-            if (enabled) {
+            if (enabled && this.isRunning()) {
                 try {
                     sync();
                 } catch (Exception ex) {
@@ -145,9 +177,11 @@ public class KillBillSync extends ManagedService {
             return;
         }
 
-        if (!synced.getAndSet(true)) {
+        if (synced.getAndSet(true)) {
             return;
         }
+
+        log.info("Performing KillBill sync");
 
         if (config.createTenant()) {
             try {
@@ -245,6 +279,15 @@ public class KillBillSync extends ManagedService {
             // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
             String emailTemplateFailedPayment = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/billing-FailedPayment.html"), Charsets.UTF_8);
             setUserKeyValueIfDifferent("killbill-email-notifications:FAILED_PAYMENT_en_US", emailTemplateFailedPayment);
+        }
+
+        if (config.uploadAnalyticsReports()) {
+            for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
+                log.info("Uploading analytics plugin report {}", report);
+                kbClientProvider.get().doPost("/plugins/killbill-analytics/reports", report, KillBillUtil.roBuilder()
+                        .withHeader("Content-Type", "application/json")
+                        .build());
+            }
         }
 
         if (config.uploadInvoiceTemplate()) {

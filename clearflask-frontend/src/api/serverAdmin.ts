@@ -285,6 +285,13 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountBillingAdminActionStatus.Fulfilled:
       return {
         ...state,
+        account: !state.account.account ? state.account : {
+          ...state.account,
+          account: {
+            ...state.account.account,
+            subscriptionStatus: action.payload.subscriptionStatus,
+          },
+        },
         billing: {
           status: Status.FULFILLED,
           billing: action.payload,

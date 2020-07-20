@@ -115,18 +115,115 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
+    var cardState:'active'|'warn'|'error' = 'active';
+    var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
       case Admin.AccountAdminSubscriptionStatusEnum.Active:
-        cardStateIcon = (<ActiveIcon color='primary' />);
+        paymentTitle = 'Automatic renewal is active';
+        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
+        cardState = 'active';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showCancelSubscription = true;
+        planTitle = 'Your plan is active';
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
+        showPlanChange = true;
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
+        if(this.props.accountBilling?.payment) {
+          paymentTitle = 'Automatic renewal is active';
+          paymentDesc = 'Your first payment will be automatically billed at the end of the trial period.';
+          cardState = 'active';
+          showSetPayment = true;
+          setPaymentTitle = 'Update payment method';
+          showCancelSubscription = true;
+          planTitle = 'Your plan is active';
+          planDesc = `You have full access to your ${this.props.account.plan.title}. If you switch plans now, your first payment will reflect your new plan.`;
+          showPlanChange = true;
+        } else {
+          paymentTitle = 'Automatic renewal requires a payment method';
+          paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic renewal.';
+          cardState = 'warn';
+          showSetPayment = true;
+          setPaymentTitle = 'Add payment method';
+          if (this.props.accountBilling?.billingPeriodEnd) {
+            planTitle = (
+              <React.Fragment>
+                Your plan is active until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+              </React.Fragment>
+            );
+          } else {
+            planTitle = 'Your plan is active until your trial expires';
+          }
+          planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
+          showPlanChange = true;
+        }
+        break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
+        paymentTitle = 'Automatic renewal is having issues with your payment method';
+        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may cancel your service if unsuccessful.';
+        cardState = 'error';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showCancelSubscription = true;
+        planTitle = 'Your plan is active';
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before you can change your plan.`;
+        break;
       case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
-        cardStateIcon = (<WarnIcon style={{ color: this.props.theme.palette.warning.main }} />);
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'Resume automatic renewal to continue using our service beyond the next billing cycle.';
+        cardState = 'warn';
+        showSetPayment = true;
+        setPaymentTitle = 'Resume with new payment method';
+        showResumePlan = true;
+        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
+        if (this.props.accountBilling?.billingPeriodEnd) {
+          planTitle = (
+            <React.Fragment>
+              Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+            </React.Fragment>
+          );
+        } else {
+          planTitle = 'Your plan is active until the end of the billing cycle';
+        }
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
         break;
       case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'Your trial has expired. To continue using our service, add a payment method to enable automatic renewal.';
+        cardState = 'error';
+        showSetPayment = true;
+        setPaymentTitle = 'Add payment method';
+        planTitle = 'Your plan trial has expired';
+        planDesc = `To continue your access to your ${this.props.account.plan.title} plan, please add a payment method.`;
+        break;
       case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'We had issues charging your payment method and we cancelled your service. Update your payment method to continue using our service.';
+        cardState = 'error';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        planTitle = 'Your plan is inactive';
+        planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
+        break;
       case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
+        paymentTitle = 'Automatic renewal is inactive';
+        paymentDesc = 'Resume automatic renewal to continue using our service.';
+        cardState = 'error';
+        showSetPayment = true;
+        setPaymentTitle = 'Update payment method';
+        showResumePlan = true;
+        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
+        planTitle = 'Your plan is cancelled';
+        planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
+        break;
+    }
+    switch (cardState) {
+      case 'active':
+        cardStateIcon = (<ActiveIcon color='primary' />);
+      case 'warn':
+        cardStateIcon = (<WarnIcon style={{ color: this.props.theme.palette.warning.main }} />);
+      case 'error':
         cardStateIcon = (<ErrorIcon color='error' />);
         break;
     }
@@ -139,108 +236,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         cvcInput={(<span className={this.props.classes.blurry}>642</span>)}
       />
     );
-
-    var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc;
-    switch (this.props.account.subscriptionStatus) {
-      case Admin.AccountAdminSubscriptionStatusEnum.Active:
-        paymentTitle = 'Automatic renewal is active';
-        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        showCancelSubscription = true;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
-        paymentTitle = 'Automatic renewal requires a payment method';
-        paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic renewal.';
-        showSetPayment = true;
-        setPaymentTitle = 'Add payment method';
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
-        paymentTitle = 'Automatic renewal is having issues with your payment method';
-        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may cancel your service if unsuccessful.';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        showCancelSubscription = true;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
-        paymentTitle = 'Automatic renewal is inactive';
-        paymentDesc = 'Resume automatic renewal to continue using our service beyond the next billing cycle.';
-        showSetPayment = true;
-        setPaymentTitle = 'Resume with new payment method';
-        showResumePlan = true;
-        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service at the next billing cycle.';
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
-        paymentTitle = 'Automatic renewal is inactive';
-        paymentDesc = 'To continue using our service, add a payment method to enable automatic renewal.';
-        showSetPayment = true;
-        setPaymentTitle = 'Add payment method';
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
-        paymentTitle = 'Automatic renewal is inactive';
-        paymentDesc = 'We had issues charging your payment method and we cancelled your service. Update your payment method to continue using our service.';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
-        paymentTitle = 'Automatic renewal is inactive';
-        paymentDesc = 'Resume automatic renewal to continue using our service.';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        showResumePlan = true;
-        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
-        break;
-    }
-
-    var planTitle, planDesc, showPlanChange;
-    switch (this.props.account.subscriptionStatus) {
-      case Admin.AccountAdminSubscriptionStatusEnum.Active:
-        planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
-        showPlanChange = true;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
-        if (this.props.accountBilling?.billingPeriodEnd) {
-          planTitle = (
-            <React.Fragment>
-              Your trial is active and will expire in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
-            </React.Fragment>
-          );
-        } else {
-          planTitle = 'Your trial is active';
-        }
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
-        showPlanChange = true;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
-        planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before changing your plan.`;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
-        if (this.props.accountBilling?.billingPeriodEnd) {
-          planTitle = (
-            <React.Fragment>
-              Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
-            </React.Fragment>
-          );
-        } else {
-          planTitle = 'Your plan is active';
-        }
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
-        planTitle = 'Your trial has expired';
-        planDesc = `You have limited access to your ${this.props.account.plan.title} plan. Please add a payment method to continue using our service.`;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
-        planTitle = 'Your plan is inactive';
-        planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
-        break;
-      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
-        planTitle = 'Your plan is inactive';
-        planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
-        break;
-    }
 
     const payment = (
       <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>

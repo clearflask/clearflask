@@ -294,8 +294,16 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Override
     public AccountBilling accountBillingAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
+        SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(kbAccount, subscription);
+        if (!account.getStatus().equals(newStatus)) {
+            log.warn("Account id {} status was found different in dynamo {} vs killbill {}, updating now",
+                    accountSession.getAccountId(), account.getStatus(), newStatus);
+            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
+        }
+
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
         Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
         Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(accountSession.getAccountId());

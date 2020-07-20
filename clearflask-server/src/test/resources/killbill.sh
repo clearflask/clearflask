@@ -4,6 +4,7 @@ set -ex
 
 $KPM_INSTALL_CMD
 
+# Install plugins
 for PLUGIN_FILE_PATH in /var/lib/killbill/bundles/autoload/*; do
   if [[ ${PLUGIN_FILE_PATH} =~ .*/(([^/]+)-([0-9\.]+)\.jar) ]]; then
     PLUGIN_NAME=${BASH_REMATCH[2]}

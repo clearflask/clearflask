@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.UriInfo;
 import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Optional;
@@ -166,10 +167,20 @@ public class TieredWebLimiterTest extends AbstractTest {
     }
 
     private ContainerRequestContext createRequestContext(Optional<String> solutionOpt) {
+        UriInfo uriInfo = Mockito.mock(UriInfo.class);
+        Mockito.when(uriInfo
+                .getPath())
+                .thenReturn("/path/to/resource");
         ContainerRequestContext contextMock = Mockito.mock(ContainerRequestContext.class);
         Mockito.when(contextMock
                 .getHeaderString(TieredWebLimiter.SOLUTION_HEADER))
                 .thenReturn(solutionOpt.orElse(null));
+        Mockito.when(contextMock
+                .getUriInfo())
+                .thenReturn(uriInfo);
+        Mockito.when(contextMock
+                .getMethod())
+                .thenReturn("GET");
         return contextMock;
     }
 }

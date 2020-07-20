@@ -141,6 +141,7 @@ public class BlackboxIT extends AbstractIT {
                 }));
                 install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
                     om.override(om.id().createTenant()).withValue(true);
+                    om.override(om.id().uploadAnalyticsReports()).withValue(true);
                 }));
                 install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
                     om.override(om.id().registerWebhookOnStartup()).withValue(false);
@@ -159,7 +160,7 @@ public class BlackboxIT extends AbstractIT {
         voteResource.securityContext = mockExtendedSecurityContext;
     }
 
-    @Test(timeout = 60_000L)
+    @Test(timeout = 300_000L)
     public void test() throws Exception {
         AccountAdmin accountAdmin = accountResource.accountSignupAdmin(new AccountSignupAdmin(
                 "smotana",
@@ -197,14 +198,17 @@ public class BlackboxIT extends AbstractIT {
                         .build())
                 .build());
         sleepAndRefreshStatus(accountId, 16L);
+        log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)
                 .build());
         sleepAndRefreshStatus(accountId, 2L);
+        log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(false)
                 .build());
         sleepAndRefreshStatus(accountId, 36L);
+        log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .planid("standard-monthly")
                 .build());
