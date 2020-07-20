@@ -5,13 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.Idea;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -67,7 +61,9 @@ public interface IdeaStore {
 
     IdeaTransactionAndIndexingFuture fundIdea(String projectId, String ideaId, String userId, long fundDiff, String transactionType, String summary);
 
-    /** Increments total comment count. If incrementChildCount is true, also increments immediate child count too. */
+    /**
+     * Increments total comment count. If incrementChildCount is true, also increments immediate child count too.
+     */
     IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount);
 
     ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId);
@@ -78,29 +74,29 @@ public interface IdeaStore {
 
     @Value
     class SearchResponse {
-        private final ImmutableList<String> ideaIds;
-        private final Optional<String> cursorOpt;
+        ImmutableList<String> ideaIds;
+        Optional<String> cursorOpt;
     }
 
     @Value
     class IdeaAndIndexingFuture {
-        private final IdeaModel idea;
-        private final ListenableFuture<UpdateResponse> indexingFuture;
+        IdeaModel idea;
+        ListenableFuture<UpdateResponse> indexingFuture;
     }
 
     @Value
     class IdeaAndExpressionsAndIndexingFuture {
-        private final ImmutableSet<String> expressions;
-        private final IdeaModel idea;
-        private final ListenableFuture<UpdateResponse> indexingFuture;
+        ImmutableSet<String> expressions;
+        IdeaModel idea;
+        ListenableFuture<UpdateResponse> indexingFuture;
     }
 
     @Value
     class IdeaTransactionAndIndexingFuture {
-        private final long ideaFundAmount;
-        private final IdeaModel idea;
-        private final TransactionModel transaction;
-        private final ListenableFuture<UpdateResponse> indexingFuture;
+        long ideaFundAmount;
+        IdeaModel idea;
+        TransactionModel transaction;
+        ListenableFuture<UpdateResponse> indexingFuture;
     }
 
     @Value
@@ -111,62 +107,64 @@ public interface IdeaStore {
     class IdeaModel {
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String ideaId;
+        String ideaId;
 
         @NonNull
-        private final String authorUserId;
+        String authorUserId;
 
-        private final String authorName;
-
-        @NonNull
-        private final Instant created;
+        String authorName;
 
         @NonNull
-        private final String title;
+        Instant created;
+
+        @NonNull
+        String title;
 
         /**
          * DraftJs format.
          */
-        private final String description;
+        String description;
 
         /**
          * DraftJs format.
          */
-        private final String response;
+        String response;
 
         @NonNull
-        private final String categoryId;
+        String categoryId;
 
-        private final String statusId;
-
-        @NonNull
-        private final ImmutableSet<String> tagIds;
+        String statusId;
 
         @NonNull
-        private final long commentCount;
+        ImmutableSet<String> tagIds;
 
         @NonNull
-        private final long childCommentCount;
+        long commentCount;
 
-        private final Long funded;
+        @NonNull
+        long childCommentCount;
 
-        private final Long fundGoal;
+        Long funded;
 
-        private final Long fundersCount;
+        Long fundGoal;
 
-        private final Long voteValue;
+        Long fundersCount;
 
-        private final Long votersCount;
+        Long voteValue;
 
-        private final Double expressionsValue;
+        Long votersCount;
 
-        /** Expression counts; map of expression display to count. */
-        private final ImmutableMap<String, Long> expressions;
+        Double expressionsValue;
 
-        private final Double trendScore;
+        /**
+         * Expression counts; map of expression display to count.
+         */
+        ImmutableMap<String, Long> expressions;
+
+        Double trendScore;
 
         public Idea toIdea() {
             return new Idea(

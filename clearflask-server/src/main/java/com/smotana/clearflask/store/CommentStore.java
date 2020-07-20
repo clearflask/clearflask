@@ -5,11 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.Comment;
-import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.api.model.CommentWithVote;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
@@ -63,8 +59,8 @@ public interface CommentStore {
 
     @Value
     class CommentAndIndexingFuture<T> {
-        private final CommentModel commentModel;
-        private final ListenableFuture<T> indexingFuture;
+        CommentModel commentModel;
+        ListenableFuture<T> indexingFuture;
     }
 
     @Value
@@ -75,55 +71,57 @@ public interface CommentStore {
     class CommentModel {
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String ideaId;
+        String ideaId;
 
         @NonNull
-        private final String commentId;
+        String commentId;
 
         /**
          * Comment tree path to get to this comment excluding self.
          */
         @NonNull
-        private final ImmutableList<String> parentCommentIds;
+        ImmutableList<String> parentCommentIds;
 
-        /** Must be equal to parentCommentIds.size() */
+        /**
+         * Must be equal to parentCommentIds.size()
+         */
         @NonNull
-        private final int level;
+        int level;
 
         @NonNull
-        private final long childCommentCount;
+        long childCommentCount;
 
         /**
          * Author of the comment. If null, comment is deleted.
          */
-        private final String authorUserId;
+        String authorUserId;
 
         /**
          * Author of the comment. If null, comment is deleted.
          */
-        private final String authorName;
+        String authorName;
 
         @NonNull
-        private final Instant created;
+        Instant created;
 
         /**
          * If set, comment was last edited at this time.
          */
-        private final Instant edited;
+        Instant edited;
 
         /**
          * DraftJs format. If null, comment is deleted.
          */
-        private final String content;
+        String content;
 
         @NonNull
-        private final int upvotes;
+        int upvotes;
 
         @NonNull
-        private final int downvotes;
+        int downvotes;
 
         public Comment toComment() {
             return new Comment(

@@ -31,8 +31,8 @@ public interface NotificationStore {
 
     @Value
     class NotificationListResponse {
-        private final ImmutableList<NotificationModel> notifications;
-        private final Optional<String> cursorOpt;
+        ImmutableList<NotificationModel> notifications;
+        Optional<String> cursorOpt;
     }
 
     @Value
@@ -42,27 +42,27 @@ public interface NotificationStore {
     class NotificationModel {
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String userId;
+        String userId;
 
         @NonNull
-        private final String notificationId;
+        String notificationId;
 
         @NonNull
-        private final String relatedIdeaId;
+        String relatedIdeaId;
 
-        private final String relatedCommentId;
-
-        @NonNull
-        private final Instant created;
+        String relatedCommentId;
 
         @NonNull
-        private final long ttlInEpochSec;
+        Instant created;
 
         @NonNull
-        private final String description;
+        long ttlInEpochSec;
+
+        @NonNull
+        String description;
 
         public Notification toNotification() {
             return new Notification(

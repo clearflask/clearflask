@@ -92,16 +92,16 @@ public interface VoteStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     class TransactionAndFundPrevious {
-        private final TransactionModel transaction;
-        private final long fundAmountPrevious;
+        TransactionModel transaction;
+        long fundAmountPrevious;
     }
 
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
     class ListResponse<T> {
-        private final ImmutableList<T> items;
-        private final Optional<String> cursorOpt;
+        ImmutableList<T> items;
+        Optional<String> cursorOpt;
     }
 
     @Value
@@ -112,16 +112,16 @@ public interface VoteStore {
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "voteByProjectId")
     class VoteModel {
         @NonNull
-        private final String userId;
+        String userId;
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String targetId;
+        String targetId;
 
         @NonNull
-        private final int vote; // Vote enum
+        int vote; // Vote enum
     }
 
     @Value
@@ -132,16 +132,16 @@ public interface VoteStore {
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "expressByProjectId")
     class ExpressModel {
         @NonNull
-        private final String userId;
+        String userId;
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String targetId;
+        String targetId;
 
         @NonNull
-        private final ImmutableSet<String> expressions;
+        ImmutableSet<String> expressions;
     }
 
     @Value
@@ -152,16 +152,16 @@ public interface VoteStore {
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "fundByProjectId")
     class FundModel {
         @NonNull
-        private final String userId;
+        String userId;
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String targetId;
+        String targetId;
 
         @NonNull
-        private final long fundAmount;
+        long fundAmount;
     }
 
     @Value
@@ -171,34 +171,34 @@ public interface VoteStore {
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "transactionByProjectId", rangeKeys = {"created"})
     class TransactionModel {
         @NonNull
-        private final String userId;
+        String userId;
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
         @NonNull
-        private final String transactionId;
+        String transactionId;
 
         @NonNull
-        private final Instant created;
+        Instant created;
 
         @NonNull
-        private final long amount;
+        long amount;
 
         @NonNull
-        private final String transactionType;
+        String transactionType;
 
         /**
          * Optional resource ID involved in this transaction. Resource type depends on the transactionType. Ex, for Vote
          * type, this resource id is of the voted Idea. For Adjustment type, resource id is user id of the admin that
          * initiated the adjustment.
          */
-        private final String targetId;
+        String targetId;
 
-        private final String summary;
+        String summary;
 
         @NonNull
-        private final long ttlInEpochSec;
+        long ttlInEpochSec;
 
         public Transaction toTransaction() {
             return new Transaction(

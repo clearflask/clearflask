@@ -66,13 +66,13 @@ public interface AccountStore {
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "accountId", rangePrefix = "accountSessionByAccountId")
     class AccountSession {
         @NonNull
-        private final String sessionId;
+        String sessionId;
 
         @NonNull
-        private final String accountId;
+        String accountId;
 
         @NonNull
-        private final long ttlInEpochSec;
+        long ttlInEpochSec;
     }
 
     @Value

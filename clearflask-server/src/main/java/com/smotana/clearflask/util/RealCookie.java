@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @Value
-public final class RealCookie {
+public class RealCookie {
 
     public enum SameSite {
         NONE,
@@ -28,26 +28,26 @@ public final class RealCookie {
     }
 
     @NonNull
-    private final String name;
+    String name;
     @NonNull
-    private final String value;
+    String value;
     @NonNull
-    private final String path;
+    String path;
     @NonNull
-    private final long version;
-    private final String domain;
+    long version;
+    String domain;
 
-    private final boolean httpOnly;
-    private final boolean secure;
-    private final SameSite sameSite;
+    boolean httpOnly;
+    boolean secure;
+    SameSite sameSite;
 
-    private final Long maxAge;
-    private final Long ttlInEpochSec;
+    Long maxAge;
+    Long ttlInEpochSec;
 
-    private final String comment;
+    String comment;
 
     @NonNull
-    private final ImmutableMap<String, String> additionalProperties;
+    ImmutableMap<String, String> additionalProperties;
 
     @Builder
     public RealCookie(
