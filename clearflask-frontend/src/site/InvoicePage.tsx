@@ -1,14 +1,6 @@
-import { Box, Button, CardActions, CardHeader, Checkbox, Container, FormControlLabel, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import { History } from 'history';
 import React, { Component } from 'react';
-import { match, Route } from 'react-router';
 import ServerAdmin from '../api/serverAdmin';
-import BasePage from '../app/BasePage';
-import Message from '../common/Message';
-import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import SubmitButton from '../common/SubmitButton';
-import Loading from '../app/utils/Loading';
 import Loader from '../app/utils/Loader';
 
 const styles = (theme: Theme) => createStyles({

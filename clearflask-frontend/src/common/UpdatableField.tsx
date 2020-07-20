@@ -1,4 +1,4 @@
-import { Button, IconButton, TextField, InputAdornment } from '@material-ui/core';
+import { IconButton, TextField, InputAdornment } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';

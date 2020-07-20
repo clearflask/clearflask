@@ -1,6 +1,5 @@
-import { IconButton, ModalManager, Popover, PopoverProps, Button, ButtonProps, CircularProgress } from '@material-ui/core';
+import { Button, ButtonProps, CircularProgress } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import CloseIcon from '@material-ui/icons/Close';
 import React, { Component } from 'react';
 import classNames from 'classnames';
 

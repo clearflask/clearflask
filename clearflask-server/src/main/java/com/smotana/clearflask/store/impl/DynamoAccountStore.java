@@ -16,7 +16,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -201,7 +201,7 @@ public class DynamoAccountStore implements AccountStore {
     }
 
     @Override
-    public Account updateStatus(String accountId, AccountAdmin.SubscriptionStatusEnum status) {
+    public Account updateStatus(String accountId, SubscriptionStatus status) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")

@@ -13,9 +13,9 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -150,27 +150,27 @@ public class KillBilling implements Billing {
     }
 
     @Override
-    public SubscriptionStatusEnum getSubscriptionStatusFrom(Account account, Subscription subscription) {
+    public SubscriptionStatus getSubscriptionStatusFrom(Account account, Subscription subscription) {
         // TODO All of this needs to be verified
         switch (subscription.getState()) {
             case ACTIVE:
                 if (subscription.getCancelledDate() != null) {
-                    return SubscriptionStatusEnum.ACTIVENORENEWAL;
+                    return SubscriptionStatus.ACTIVENORENEWAL;
                 } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
-                    return SubscriptionStatusEnum.ACTIVETRIAL;
+                    return SubscriptionStatus.ACTIVETRIAL;
                 } else {
-                    return SubscriptionStatusEnum.ACTIVE;
+                    return SubscriptionStatus.ACTIVE;
                 }
             case BLOCKED:
                 if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
-                    return SubscriptionStatusEnum.TRIALEXPIRED;
+                    return SubscriptionStatus.TRIALEXPIRED;
                 } else {
-                    return SubscriptionStatusEnum.PAYMENTFAILED;
+                    return SubscriptionStatus.PAYMENTFAILED;
                 }
             case EXPIRED:
             case PENDING:
             case CANCELLED:
-                return SubscriptionStatusEnum.CANCELLED;
+                return SubscriptionStatus.CANCELLED;
             default:
                 log.error("Unsupported subscription state {} for id {} account id {}",
                         subscription.getState(), subscription.getSubscriptionId(), account.getAccountId());

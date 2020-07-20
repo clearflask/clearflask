@@ -2,7 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
@@ -38,7 +38,7 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 store.genAccountId(),
                 "my@email.com",
-                AccountAdmin.SubscriptionStatusEnum.ACTIVETRIAL,
+                SubscriptionStatus.ACTIVETRIAL,
                 "planId1",
                 Instant.now(),
                 "name",
@@ -97,7 +97,7 @@ public class AccountStoreTest extends AbstractTest {
         Account account = new Account(
                 store.genAccountId(),
                 "my@email.com",
-                AccountAdmin.SubscriptionStatusEnum.ACTIVETRIAL,
+                SubscriptionStatus.ACTIVETRIAL,
                 "planId1",
                 Instant.now(),
                 "name",

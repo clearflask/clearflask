@@ -2,7 +2,7 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AccountAdmin;
-import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -39,7 +39,7 @@ public interface AccountStore {
 
     Account updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
-    Account updateStatus(String accountId, SubscriptionStatusEnum status);
+    Account updateStatus(String accountId, SubscriptionStatus status);
 
     void deleteAccount(String accountId);
 
@@ -99,7 +99,7 @@ public interface AccountStore {
         private final String email;
 
         @NonNull
-        private final SubscriptionStatusEnum status;
+        private final SubscriptionStatus status;
 
         @NonNull
         private final String planid;

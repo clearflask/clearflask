@@ -9,7 +9,6 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
@@ -175,7 +174,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getEmail(),
                 signup.getName(),
                 plan.getPlanid());
-        SubscriptionStatusEnum status = billing.getSubscriptionStatusFrom(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
+        SubscriptionStatus status = billing.getSubscriptionStatusFrom(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
@@ -235,7 +234,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             } else {
                 subscription = billing.undoPendingCancel(accountSession.getAccountId());
             }
-            SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(
+            SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(
                     billing.getAccount(accountSession.getAccountId()),
                     subscription);
             account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
@@ -297,7 +296,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
-        SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(kbAccount, subscription);
+        SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(kbAccount, subscription);
         if (!account.getStatus().equals(newStatus)) {
             log.warn("Account id {} status was found different in dynamo {} vs killbill {}, updating now",
                     accountSession.getAccountId(), account.getStatus(), newStatus);
@@ -339,6 +338,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         return new AccountBilling(
+                newStatus,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
                 availablePlans.asList(),

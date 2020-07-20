@@ -37,10 +37,6 @@ const styles = (theme: Theme) => createStyles({
   },
   sectionContainer: {
     display: 'inline-flex',
-    flexDirection: 'column',
-  },
-  billingContainer: {
-    display: 'flex',
     flexWrap: 'wrap',
   },
   sectionInvoices: {
@@ -118,7 +114,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     var cardState:'active'|'warn'|'error' = 'active';
     var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
-      case Admin.AccountAdminSubscriptionStatusEnum.Active:
+      case Admin.SubscriptionStatus.Active:
         paymentTitle = 'Automatic renewal is active';
         paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
         cardState = 'active';
@@ -129,7 +125,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
         showPlanChange = true;
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial:
+      case Admin.SubscriptionStatus.ActiveTrial:
         if(this.props.accountBilling?.payment) {
           paymentTitle = 'Automatic renewal is active';
           paymentDesc = 'Your first payment will be automatically billed at the end of the trial period.';
@@ -159,7 +155,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           showPlanChange = true;
         }
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActivePaymentRetry:
+      case Admin.SubscriptionStatus.ActivePaymentRetry:
         paymentTitle = 'Automatic renewal is having issues with your payment method';
         paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may cancel your service if unsuccessful.';
         cardState = 'error';
@@ -169,7 +165,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan is active';
         planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before you can change your plan.`;
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal:
+      case Admin.SubscriptionStatus.ActiveNoRenewal:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'Resume automatic renewal to continue using our service beyond the next billing cycle.';
         cardState = 'warn';
@@ -188,7 +184,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         }
         planDesc = `You have full access to your ${this.props.account.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.TrialExpired:
+      case Admin.SubscriptionStatus.TrialExpired:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'Your trial has expired. To continue using our service, add a payment method to enable automatic renewal.';
         cardState = 'error';
@@ -197,7 +193,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan trial has expired';
         planDesc = `To continue your access to your ${this.props.account.plan.title} plan, please add a payment method.`;
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.PaymentFailed:
+      case Admin.SubscriptionStatus.PaymentFailed:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'We had issues charging your payment method and we cancelled your service. Update your payment method to continue using our service.';
         cardState = 'error';
@@ -206,7 +202,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan is inactive';
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
         break;
-      case Admin.AccountAdminSubscriptionStatusEnum.Cancelled:
+      case Admin.SubscriptionStatus.Cancelled:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'Resume automatic renewal to continue using our service.';
         cardState = 'error';
@@ -221,8 +217,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     switch (cardState) {
       case 'active':
         cardStateIcon = (<ActiveIcon color='primary' />);
+        break;
       case 'warn':
         cardStateIcon = (<WarnIcon style={{ color: this.props.theme.palette.warning.main }} />);
+        break;
       case 'error':
         cardStateIcon = (<ErrorIcon color='error' />);
         break;
@@ -241,36 +239,38 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>
         <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
           {creditCard}
-          <Typography variant='h6' component='div'>{paymentTitle}</Typography>
-          <Typography>{paymentDesc}</Typography>
-          <div className={this.props.classes.sectionButtons}>
-            {showSetPayment && (
-              <SubmitButton
-                isSubmitting={this.state.isSubmitting}
-                disabled={this.state.showAddPayment}
-                onClick={() => this.setState({ showAddPayment: true })}
-              >
-                {setPaymentTitle}
-              </SubmitButton>
-            )}
-            {showCancelSubscription && (
-              <SubmitButton
-                isSubmitting={this.state.isSubmitting}
-                disabled={this.state.showCancelSubscription}
-                onClick={() => this.setState({ showCancelSubscription: true })}
-              >
-                Cancel payments
-              </SubmitButton>
-            )}
-            {showResumePlan && (
-              <SubmitButton
-                isSubmitting={this.state.isSubmitting}
-                disabled={this.state.showResumePlan}
-                onClick={() => this.setState({ showResumePlan: true })}
-              >
-                Resume payments
-              </SubmitButton>
-            )}
+          <div>
+            <Typography variant='h6' component='div'>{paymentTitle}</Typography>
+            <Typography>{paymentDesc}</Typography>
+            <div className={this.props.classes.sectionButtons}>
+              {showSetPayment && (
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  disabled={this.state.showAddPayment}
+                  onClick={() => this.setState({ showAddPayment: true })}
+                >
+                  {setPaymentTitle}
+                </SubmitButton>
+              )}
+              {showCancelSubscription && (
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  disabled={this.state.showCancelSubscription}
+                  onClick={() => this.setState({ showCancelSubscription: true })}
+                >
+                  Cancel payments
+                </SubmitButton>
+              )}
+              {showResumePlan && (
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  disabled={this.state.showResumePlan}
+                  onClick={() => this.setState({ showResumePlan: true })}
+                >
+                  Resume payments
+                </SubmitButton>
+              )}
+            </div>
           </div>
         </Container>
         <Dialog
@@ -458,10 +458,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
         {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
         {plan}
-        <div className={this.props.classes.billingContainer}>
-          {payment}
-          {invoices}
-        </div>
+        {payment}
+        {invoices}
       </Loader>
     );
   }

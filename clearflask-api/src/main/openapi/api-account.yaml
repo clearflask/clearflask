@@ -110,22 +110,24 @@ components:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
         subscriptionStatus:
-          type: string
-          enum:
-          - Active
-          - ActiveTrial
-          - ActivePaymentRetry
-          - ActiveNoRenewal
-          - Pending
-          - TrialExpired
-          - PaymentFailed
-          - Cancelled
+          $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
         name:
           type: string
         email:
           type: string
         cfJwt:
           type: string
+    SubscriptionStatus:
+      type: string
+      enum:
+      - Active
+      - ActiveTrial
+      - ActivePaymentRetry
+      - ActiveNoRenewal
+      - Pending
+      - TrialExpired
+      - PaymentFailed
+      - Cancelled
     AccountUpdateAdmin:
       type: object
       properties:
@@ -154,9 +156,12 @@ components:
     AccountBilling:
       type: object
       required:
+      - subscriptionStatus
       - availablePlans
       - invoices
       properties:
+        subscriptionStatus:
+          $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
         payment:
           type: object
           required:

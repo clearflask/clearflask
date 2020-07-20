@@ -2,8 +2,8 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.common.collect.ImmutableSet;
-import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
 import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.Value;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.PaymentMethod;
@@ -26,7 +26,7 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
-    SubscriptionStatusEnum getSubscriptionStatusFrom(Account account, Subscription subscription);
+    SubscriptionStatus getSubscriptionStatusFrom(Account account, Subscription subscription);
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 

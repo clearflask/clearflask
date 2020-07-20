@@ -9,7 +9,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.api.model.AccountAdmin.SubscriptionStatusEnum;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
@@ -157,7 +157,7 @@ public class KillBillResource extends ManagedService {
 
         boolean changesMade = false;
 
-        SubscriptionStatusEnum newStatus = billing.getSubscriptionStatusFrom(kbAccount, kbSubscription);
+        SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(kbAccount, kbSubscription);
         if (!accountOpt.get().getStatus().equals(newStatus)) {
             log.info("KillBill event {} caused accountId {} to state change {} -> {}",
                     event.getEventType(), accountId, accountOpt.get().getStatus(), newStatus);

@@ -1,4 +1,4 @@
-import { Button, FormControl, FormHelperText, InputAdornment, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
+import { FormControl, FormHelperText, InputAdornment, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';

@@ -155,7 +155,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         email: request.accountSignupAdmin.email,
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
-      subscriptionStatus: Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial,
+      subscriptionStatus: Admin.SubscriptionStatus.ActiveTrial,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -175,9 +175,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
     if (request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if (request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
-    if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.AccountAdminSubscriptionStatusEnum.Active;
+    if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
     if (request.accountUpdateAdmin.cancelEndOfTerm !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.cancelEndOfTerm
-      ? Admin.AccountAdminSubscriptionStatusEnum.ActiveNoRenewal : Admin.AccountAdminSubscriptionStatusEnum.Active;
+      ? Admin.SubscriptionStatus.ActiveNoRenewal : Admin.SubscriptionStatus.Active;
     if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
     return this.returnLater(this.account);
   }
@@ -189,8 +189,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
       subscriptionStatus: this.account.subscriptionStatus,
-      payment: (this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.ActiveTrial
-        || this.account.subscriptionStatus === Admin.AccountAdminSubscriptionStatusEnum.TrialExpired) ? undefined : {
+      payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
+        || this.account.subscriptionStatus === Admin.SubscriptionStatus.TrialExpired) ? undefined : {
         brand: 'mastercard',
         last4: "4242",
         expiryMonth: 7,
