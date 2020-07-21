@@ -102,7 +102,7 @@ public class KillBillResource extends ManagedService {
         if (config.registerWebhookOnStartup()) {
             String domain = Optional.ofNullable(this.config.overrideWebhookDomain()).orElse(configApp.domain());
             String protocol = config.useHttps() ? "https://" : "http://";
-            String webhookPath = protocol + domain + Application.RESOURCE_VERSION + WEBHOOK_PATH;
+            String webhookPath = protocol + domain + "/api" + Application.RESOURCE_VERSION + WEBHOOK_PATH;
             log.info("Registering KillBill webhook on {}", webhookPath);
             TenantKeyValue tenantKeyValue = kbTenant.registerPushNotificationCallback(webhookPath, KillBillUtil.roDefault());
             Optional<Long> expectedWebhookCount = config.warnIfWebhookCountNotEquals();
@@ -159,8 +159,8 @@ public class KillBillResource extends ManagedService {
 
         SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(kbAccount, kbSubscription);
         if (!accountOpt.get().getStatus().equals(newStatus)) {
-            log.info("KillBill event {} caused accountId {} to state change {} -> {}",
-                    event.getEventType(), accountId, accountOpt.get().getStatus(), newStatus);
+            log.info("Account id {} status change {} -> {}, reason: KillBill event {}",
+                    accountId, accountOpt.get().getStatus(), newStatus, event.getEventType());
             accountStore.updateStatus(accountId, newStatus);
             changesMade = true;
         }

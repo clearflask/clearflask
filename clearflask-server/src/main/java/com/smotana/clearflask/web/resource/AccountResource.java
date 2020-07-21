@@ -228,6 +228,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
         }
         if (accountUpdateAdmin.getCancelEndOfTerm() != null) {
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
             Subscription subscription;
             if (accountUpdateAdmin.getCancelEndOfTerm()) {
                 subscription = billing.cancelSubscription(accountSession.getAccountId());
@@ -237,6 +240,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(
                     billing.getAccount(accountSession.getAccountId()),
                     subscription);
+            log.info("Account id {} status change {} -> {}, reason: user requested {}",
+                    accountSession.getAccountId(), account.getStatus(), newStatus, accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel");
             account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
@@ -298,7 +303,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
         SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(kbAccount, subscription);
         if (!account.getStatus().equals(newStatus)) {
-            log.warn("Account id {} status was found different in dynamo {} vs killbill {}, updating now",
+            log.warn("Account id {} status change {} -> {}, reason: Status was found mismatched",
                     accountSession.getAccountId(), account.getStatus(), newStatus);
             account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
         }

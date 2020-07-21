@@ -5,7 +5,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -19,10 +18,11 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
+import org.killbill.billing.client.KillBillHttpClient;
+import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
@@ -34,7 +34,9 @@ import org.killbill.billing.invoice.api.InvoiceStatus;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -63,6 +65,8 @@ public class KillBilling implements Billing {
     private InvoiceApi kbInvoice;
     @Inject
     private CatalogApi kbCatalog;
+    @Inject
+    private KillBillHttpClient kbClient;
 
     @Override
     public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
@@ -298,57 +302,56 @@ public class KillBilling implements Billing {
 
     @Override
     public Invoices getInvoices(String accountId, Optional<String> cursorOpt) {
-        LocalDate endDate = cursorOpt
-                .map(serverSecretCursor::decryptString)
-                .map(LocalDate::parse)
-                .orElseGet(LocalDate::now);
-        LocalDate startDate = endDate.minusMonths(6);
-
         try {
-            UUID accountIdKb = getAccount(accountId).getAccountId();
-            org.killbill.billing.client.model.Invoices result = kbAccount.getInvoicesForAccount(
-                    accountIdKb,
-                    startDate,
-                    endDate,
-                    false, // "We don't support fetching migration invoices and specifying a start date" -kb
-                    false,
-                    true,
-                    null,
-                    KillBillUtil.roDefault()
-            );
-            ArrayList<InvoiceItem> invoices = Lists.newArrayList();
-            do {
-                invoices.addAll(result.stream()
-                        .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
-                        .map(i -> {
-                            String status;
-                            if (i.getStatus() == InvoiceStatus.VOID) {
-                                status = "Void";
-                            } else if (i.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-                                status = "Unpaid";
-                            } else {
-                                status = "Paid";
-                            }
-                            String description = i.getItems().stream()
-                                    .map(org.killbill.billing.client.model.gen.InvoiceItem::getPrettyPlanName)
-                                    .filter(p -> !Strings.isNullOrEmpty(p))
-                                    .collect(Collectors.joining(", "));
-                            if (Strings.isNullOrEmpty(description)) {
-                                description = "Unspecified";
-                            }
-                            return new InvoiceItem(
-                                    i.getInvoiceDate().toDate().toInstant(),
-                                    status,
-                                    i.getAmount().doubleValue(),
-                                    description,
-                                    i.getInvoiceId().toString());
-                        })
-                        .collect(ImmutableList.toImmutableList()));
-            } while ((result = result.getNext()) != null);
-            invoices.sort(Comparator.comparing(InvoiceItem::getDate).reversed());
+            Optional<String> nextPaginationUrlOpt = cursorOpt
+                    .map(serverSecretCursor::decryptString);
+
+            org.killbill.billing.client.model.Invoices result;
+            if (!nextPaginationUrlOpt.isPresent()) {
+                UUID accountIdKb = getAccount(accountId).getAccountId();
+                result = kbAccount.getInvoicesForAccount(
+                        accountIdKb,
+                        null,
+                        null,
+                        false, // "We don't support fetching migration invoices and specifying a start date" -kb
+                        false,
+                        true,
+                        null,
+                        KillBillUtil.roDefault());
+            } else {
+                result = kbClient.doGet(nextPaginationUrlOpt.get(), org.killbill.billing.client.model.Invoices.class, RequestOptions.empty());
+            }
+
+            ImmutableList<InvoiceItem> invoices = result.stream()
+                    .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
+                    .map(i -> {
+                        String status;
+                        if (i.getStatus() == InvoiceStatus.VOID) {
+                            status = "Void";
+                        } else if (i.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                            status = "Unpaid";
+                        } else {
+                            status = "Paid";
+                        }
+                        String description = i.getItems().stream()
+                                .map(org.killbill.billing.client.model.gen.InvoiceItem::getPrettyPlanName)
+                                .filter(p -> !Strings.isNullOrEmpty(p))
+                                .collect(Collectors.joining(", "));
+                        if (Strings.isNullOrEmpty(description)) {
+                            description = "Unspecified";
+                        }
+                        return new InvoiceItem(
+                                i.getInvoiceDate().toDate().toInstant(),
+                                status,
+                                i.getAmount().doubleValue(),
+                                description,
+                                i.getInvoiceId().toString());
+                    })
+                    .collect(ImmutableList.toImmutableList());
 
             return new Invoices(
-                    invoices.isEmpty() ? null : serverSecretCursor.encryptString(startDate.minusDays(1).toString()),
+                    Strings.isNullOrEmpty(result.getPaginationNextPageUri())
+                            ? null : serverSecretCursor.encryptString(result.getPaginationNextPageUri()),
                     invoices);
         } catch (KillBillClientException ex) {
             log.error("Failed to get invoices from KillBill for accountId {}", accountId, ex);
