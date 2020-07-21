@@ -138,6 +138,11 @@ public class KillBillResource extends ManagedService {
             return;
         }
 
+        if (event.getAccountId() == null) {
+            log.warn("Received KillBill event with no account id {}", event);
+            return;
+        }
+
         Account kbAccount = billing.getAccountByKbId(event.getAccountId());
         if (kbAccount == null) {
             log.warn("Received event for non-existent KillBill account with kb id {}", event.getAccountId());
@@ -200,21 +205,15 @@ public class KillBillResource extends ManagedService {
     public static class Event {
         @NonNull
         @GsonNonNull
-        private final ExtBusEventType eventType;
+        ExtBusEventType eventType;
 
-        @NonNull
-        @GsonNonNull
-        private final ObjectType objectType;
+        ObjectType objectType;
 
-        @NonNull
-        @GsonNonNull
-        private final UUID objectId;
+        UUID objectId;
 
-        @NonNull
-        @GsonNonNull
-        private final UUID accountId;
+        UUID accountId;
 
-        private final String metaData;
+        String metaData;
     }
 
     public static Module module() {

@@ -49,7 +49,7 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui", innerType = String.class)
         Set<String> reservedProjectIds();
     }
 

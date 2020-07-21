@@ -466,7 +466,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               {this.state.awaitExternalBind === 'recovery' ? (
                 <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
               ) : (
-                  <DialogContentText>A popup was opened leading you to a signup page. After you complete sign up, this will automatically close.</DialogContentText>
+                  <DialogContentText>A popup was opened leading you to a signup page. After you complete sign up, this dialog will automatically close.</DialogContentText>
                 )}
             </DialogContent>
             <DialogActions>

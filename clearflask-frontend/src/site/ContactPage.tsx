@@ -8,6 +8,7 @@ import BasePage from '../app/BasePage';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import SubmitButton from '../common/SubmitButton';
+import classNames from 'classnames';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -19,6 +20,8 @@ const CONTACT = 'contact';
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(6),
+    display: 'flex',
+    justifyContent: 'center',
   },
   field: {
     margin: theme.spacing(2),
@@ -111,15 +114,15 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
     return (
       <MuiAnimatedSwitch>
         <Route exact key='success' path={`${prefixMatch}/success`} render={props => (
-          <BasePage>
+          <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Box display='flex' justifyContent='center'>
               <Message variant='success' message='Your message has been sent!' />
             </Box>
-          </BasePage>
+          </div>
         )} />
         {forms.map(form => (
           <Route exact key={form.type} path={`${prefixMatch}/${form.type}`} render={props => (
-            <div className={this.props.classes.page}>
+            <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
               <Container maxWidth='md'>
                 <Grid container spacing={10} alignItems='stretch'>
                   <Grid item xs={12} md={6} lg={7}>
@@ -193,7 +196,7 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
           )} />
         ))}
         <Route key='default' path={prefixMatch} render={props => (
-          <div className={this.props.classes.page}>
+          <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Container maxWidth='md'>
               <Grid container spacing={5} alignItems='stretch' alignContent='stretch'>
                 <Grid item xs={12}>

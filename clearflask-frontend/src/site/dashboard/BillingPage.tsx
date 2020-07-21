@@ -26,18 +26,38 @@ import ErrorMsg from '../../app/ErrorMsg';
 const styles = (theme: Theme) => createStyles({
   plan: {
     margin: theme.spacing(2, 6, 2),
+  },
+  planContainer: {
     alignSelf: 'flex-start',
+    width: 350,
   },
   spacing: {
     margin: theme.spacing(2),
   },
   creditCard: {
     margin: theme.spacing(2, 6, 2),
+  },
+  creditCardContainer: {
     alignSelf: 'flex-start',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: 350,
+  },
+  actionContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: 400,
+    width: '100%',
   },
   sectionContainer: {
-    display: 'inline-flex',
-    flexWrap: 'wrap',
+    display: 'flex',
+    [theme.breakpoints.up('md')]: {
+      alignItems: 'center',
+    },
+    [theme.breakpoints.down('sm')]: {
+      flexDirection: 'column',
+    },
   },
   sectionInvoices: {
     width: 'min-content',
@@ -237,9 +257,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     const payment = (
       <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>
-        <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
-          {creditCard}
-          <div>
+        <div className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+          <div className={this.props.classes.creditCardContainer}>
+            {creditCard}
+          </div>
+          <div className={this.props.classes.actionContainer}>
             <Typography variant='h6' component='div'>{paymentTitle}</Typography>
             <Typography>{paymentDesc}</Typography>
             <div className={this.props.classes.sectionButtons}>
@@ -272,7 +294,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               )}
             </div>
           </div>
-        </Container>
+        </div>
         <Dialog
           open={!!this.state.showAddPayment}
           keepMounted
@@ -375,7 +397,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     ];
     const invoices = invoicesItems.length <= 0 ? undefined : (
       <div className={this.props.classes.sectionInvoices}>
-        <DividerCorner title='History' height='100%' className={classNames(this.props.classes.billingHistoryTable, this.props.classes.spacing)}>
+        <DividerCorner title='Invoices' height='100%' className={classNames(this.props.classes.billingHistoryTable, this.props.classes.spacing)}>
           <Table>
             <TableHead>
               <TableRow>
@@ -422,20 +444,24 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     const plan = (
       <DividerCorner title='Plan' height='90%' className={this.props.classes.spacing}>
-        <Container maxWidth='sm' className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
-          <PricingPlan
-            selected
-            className={this.props.classes.plan}
-            plan={this.props.account.plan}
-          />
-          <Typography variant='h6' component='div'>{planTitle}</Typography>
-          <Typography>{planDesc}</Typography>
-          {showPlanChange && (
-            <div className={this.props.classes.sectionButtons}>
-              <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({ showPlanChange: true })}>Switch plan</Button>
-            </div>
-          )}
-        </Container>
+        <div className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
+          <div className={this.props.classes.planContainer}>
+            <PricingPlan
+              selected
+              className={this.props.classes.plan}
+              plan={this.props.account.plan}
+            />
+          </div>
+          <div className={this.props.classes.actionContainer}>
+            <Typography variant='h6' component='div'>{planTitle}</Typography>
+            <Typography>{planDesc}</Typography>
+            {showPlanChange && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({ showPlanChange: true })}>Switch plan</Button>
+              </div>
+            )}
+          </div>
+        </div>
         <BillingChangePlanDialog
           open={!!this.state.showPlanChange}
           onClose={() => this.setState({ showPlanChange: undefined })}
@@ -456,7 +482,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     return (
       <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
-        {/* NOTE: Our terms refer to this page for renewal date info, cancellation instructions  */}
         {plan}
         {payment}
         {invoices}
