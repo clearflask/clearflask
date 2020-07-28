@@ -18,6 +18,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.killbill.billing.client.KillBillHttpClient;
 
 import java.net.ConnectException;
 
@@ -31,6 +32,8 @@ public abstract class AbstractIT extends AbstractTest {
 
     @Inject
     protected RestHighLevelClient elastic;
+    @Inject
+    protected KillBillHttpClient kbClient;
 
     @Override
     protected void configure() {
@@ -70,7 +73,7 @@ public abstract class AbstractIT extends AbstractTest {
                     .indices("_all"), RequestOptions.DEFAULT);
         } catch (ConnectException ex) {
             if ("Connection refused".equals(ex.getMessage())) {
-                log.error("Failed to connect to local ElasticSearch", ex);
+                log.warn("Failed to connect to local ElasticSearch", ex);
                 fail("Failed to connect to local ElasticSearch instance for Integration Testing, did you forget to start it?");
             } else {
                 throw ex;

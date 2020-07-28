@@ -8,12 +8,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import java.io.IOException;
 
 @Slf4j
@@ -37,7 +32,7 @@ public class LogExFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Throwable ex) {
             if (ex.getMessage() == null || !ex.getMessage().matches(config.ignoreMessageRegex())) {
-                log.error("Uncaught exception", ex);
+                log.warn("Uncaught exception", ex);
             }
             throw ex;
         }

@@ -6,7 +6,7 @@ import Loader from '../app/utils/Loader';
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
-  invoiceId: string;
+  invoiceNumber: string;
 }
 interface State {
   invoiceHtml?: string;
@@ -18,7 +18,7 @@ class InvoicePage extends Component<Props & WithStyles<typeof styles, true>, Sta
     super(props);
 
     ServerAdmin.get().dispatchAdmin().then(d => d.invoiceHtmlGetAdmin({
-      invoiceId: props.invoiceId,
+      invoiceNumber: props.invoiceNumber,
     })).then(r => this.setState({
       invoiceHtml: r.invoiceHtml,
     })).catch(e => this.setState({

@@ -35,7 +35,7 @@ public abstract class AbstractResource {
             return Optional.empty();
         }
         if (!(securityContext.getUserPrincipal() instanceof ExtendedPrincipal)) {
-            log.error("Request with no ExtendedPrincipal");
+            log.warn("Request with no ExtendedPrincipal");
             throw new WebApplicationException(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
         }
         return Optional.of((ExtendedPrincipal) securityContext.getUserPrincipal());

@@ -56,6 +56,8 @@ killbill-engine-run:
 	-e KILLBILL_DAO_USER=root \
 	-e KILLBILL_DAO_PASSWORD=killbill \
 	-e KILLBILL_SERVER_TEST_MODE=true \
+	-e KILLBILL_NOTIFICATIONQ_ANALYTICS_TABLE_NAME=analytics_notifications \
+	-e KILLBILL_NOTIFICATIONQ_ANALYTICS_HISTORY_TABLE_NAME=analytics_notifications_history \
 	-v $(shell pwd -P)/clearflask-server/src/test/resources/logging-dev.properties:/var/lib/tomcat/conf/logging.properties \
 	-v $(shell pwd -P)/clearflask-server/src/test/resources/logback-killbill-engine.xml:/var/lib/killbill/logback.xml \
 	-v $(shell pwd -P)/clearflask-server/src/test/resources/killbill.sh:/var/lib/killbill/killbill.sh \

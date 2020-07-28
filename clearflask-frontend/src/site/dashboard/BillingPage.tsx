@@ -1,5 +1,5 @@
 
-import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Container, Table, TableBody, TableRow, TableCell, TableHead, Collapse } from '@material-ui/core';
+import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Table, TableBody, TableRow, TableCell, TableHead, Collapse, Box } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -22,6 +22,7 @@ import SubmitButton from '../../common/SubmitButton';
 import { Stripe, StripeElements } from '@stripe/stripe-js';
 import { ElementsConsumer, CardNumberElement } from '@stripe/react-stripe-js';
 import ErrorMsg from '../../app/ErrorMsg';
+import { withRouter, RouteComponentProps } from 'react-router';
 
 const styles = (theme: Theme) => createStyles({
   plan: {
@@ -97,7 +98,7 @@ interface State {
   invoices?: Admin.InvoiceItem[];
   invoicesCursor?: string;
 }
-class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = {};
   render() {
     if (!this.props.account) {
@@ -132,7 +133,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
     var cardState:'active'|'warn'|'error' = 'active';
-    var paymentTitle, paymentDesc, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
         paymentTitle = 'Automatic renewal is active';
@@ -154,7 +155,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           setPaymentTitle = 'Update payment method';
           showCancelSubscription = true;
           planTitle = 'Your plan is active';
-          planDesc = `You have full access to your ${this.props.account.plan.title}. If you switch plans now, your first payment will reflect your new plan.`;
+          planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, your first payment will reflect your new plan.`;
           showPlanChange = true;
         } else {
           paymentTitle = 'Automatic renewal requires a payment method';
@@ -213,12 +214,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan trial has expired';
         planDesc = `To continue your access to your ${this.props.account.plan.title} plan, please add a payment method.`;
         break;
-      case Admin.SubscriptionStatus.PaymentFailed:
-        paymentTitle = 'Automatic renewal is inactive';
-        paymentDesc = 'We had issues charging your payment method and we cancelled your service. Update your payment method to continue using our service.';
+      case Admin.SubscriptionStatus.Blocked:
+        paymentTitle = 'Payments are blocked';
+        paymentDesc = 'Contact support to reinstate your account.';
+        showContactSupport = true;
         cardState = 'error';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
         planTitle = 'Your plan is inactive';
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
         break;
@@ -255,16 +255,48 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       />
     );
 
+    const hasPayable = (this.props.accountBilling?.accountPayable || 0) > 0;
+    const hasReceivable = (this.props.accountBilling?.accountReceivable || 0) > 0;
     const payment = (
       <DividerCorner title='Payment' height='90%' className={this.props.classes.spacing}>
         <div className={classNames(this.props.classes.sectionContainer, this.props.classes.spacing)}>
           <div className={this.props.classes.creditCardContainer}>
             {creditCard}
+            <Box display='grid' gridTemplateAreas='"payTtl payAmt" "rcvTtl rcvAmt"' alignItems='center' gridGap='10px 10px'>
+              {hasPayable && (
+                <React.Fragment>
+                  <Box gridArea='payTtl'><Typography component='div'>Credits:</Typography></Box>
+                  <Box gridArea='payAmt' display='flex'>
+                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component='h2' variant='h4' color={hasPayable ? 'primary' : undefined}>
+                      {this.props.accountBilling?.accountPayable || 0}
+                    </Typography>
+                  </Box>
+                </React.Fragment>
+              )}
+              {(hasReceivable || !hasPayable) && (
+                <React.Fragment>
+                  <Box gridArea='rcvTtl'><Typography component='div'>Overdue:</Typography></Box>
+                  <Box gridArea='rcvAmt' display='flex'>
+                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component='h2' variant='h4' color={hasReceivable ? 'error' : undefined}>
+                      {this.props.accountBilling?.accountReceivable || 0}
+                    </Typography>
+                  </Box>
+              </React.Fragment>
+              )}
+            </Box>
           </div>
           <div className={this.props.classes.actionContainer}>
             <Typography variant='h6' component='div'>{paymentTitle}</Typography>
             <Typography>{paymentDesc}</Typography>
             <div className={this.props.classes.sectionButtons}>
+              {showContactSupport && (
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showAddPayment}
+                  onClick={() => this.props.history.push('/contact/support')}
+                >Contact support</Button>
+              )}
               {showSetPayment && (
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
@@ -416,7 +448,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
                   <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
                   <TableCell key='invoiceLink'>
-                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
+                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceNumber)}>View</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -489,8 +521,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
   }
 
-  onInvoiceClick(invoiceId:string) {
-    window.open(`${window.location.origin}/invoice/${invoiceId}`, '_blank')
+  onInvoiceClick(invoiceNumber:number) {
+    window.open(`${window.location.origin}/invoice/${invoiceNumber}`, '_blank')
   }
 
   async onPaymentSubmit(elements:StripeElements, stripe:Stripe) {
@@ -560,4 +592,4 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     accountBilling: state.account.billing.billing,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BillingPage));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(BillingPage)));

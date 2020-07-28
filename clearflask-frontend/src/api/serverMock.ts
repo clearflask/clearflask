@@ -205,9 +205,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           status: 'paid',
           amount: 300,
           description: "Enterprise plan monthly",
-          invoiceId: 'my-invoice-2019-10-05',
+          invoiceNumber: 1,
         }],
       },
+      accountReceivable: 75,
+      accountPayable: 0,
     });
   }
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
@@ -220,17 +222,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         status: 'paid',
         amount: 300,
         description: 'Enterprise plan monthly',
-        invoiceId: 'my-invoice-2019-10-05',
+        invoiceNumber: 1,
       }],
     });
   }
   invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
-    if(request.invoiceId !== 'my-invoice-2019-10-05') {
-      return this.throwLater(404, 'Invoice does not exist');
+    if(request.invoiceNumber === 1) {
+      return this.returnLater({
+        invoiceHtml: "This is an invoice <b>test</b>",
+      });
     }
-    return this.returnLater({
-      invoiceHtml: "This is an invoice <b>test</b>",
-    });
+    return this.throwLater(404, 'Invoice does not exist');
   }
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;

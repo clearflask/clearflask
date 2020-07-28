@@ -26,7 +26,7 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
-    SubscriptionStatus getSubscriptionStatusFrom(Account account, Subscription subscription);
+    SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription);
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
@@ -40,7 +40,7 @@ public interface Billing {
 
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
-    String getInvoiceHtml(String accountId, String invoiceId);
+    String getInvoiceHtml(String accountId, long invoiceNumber);
 
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
 

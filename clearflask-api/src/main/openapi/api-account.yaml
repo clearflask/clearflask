@@ -126,7 +126,7 @@ components:
       - ActiveNoRenewal
       - Pending
       - TrialExpired
-      - PaymentFailed
+      - Blocked
       - Cancelled
     AccountUpdateAdmin:
       type: object
@@ -159,6 +159,8 @@ components:
       - subscriptionStatus
       - availablePlans
       - invoices
+      - accountReceivable
+      - accountPayable
       properties:
         subscriptionStatus:
           $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
@@ -188,6 +190,12 @@ components:
             $ref: 'api-account.yaml#/components/schemas/Plan'
         invoices:
           $ref: 'api-account.yaml#/components/schemas/Invoices'
+        accountReceivable:
+          type: integer
+          format: int64
+        accountPayable:
+          type: integer
+          format: int64
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
@@ -205,7 +213,7 @@ components:
             - date
             - status
             - amount
-            - invoiceId
+            - invoiceNumber
             properties:
               date:
                 type: string
@@ -217,8 +225,9 @@ components:
                 format: double
               description:
                 type: string
-              invoiceId:
-                type: string
+              invoiceNumber:
+                type: integer
+                format: int64
 
 /support/message:
   post:
@@ -377,16 +386,17 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/Invoices'
-/admin/account/billing/invoice/{invoiceId}:
+/admin/account/billing/invoice/{invoiceNumber}:
   get:
     operationId: invoiceHtmlGetAdmin
     tags: [AccountAdmin]
     parameters:
-    - name: invoiceId
+    - name: invoiceNumber
       in: path
       required: true
       schema:
-        type: string
+        type: integer
+        format: int64
     responses:
       '200':
         content:

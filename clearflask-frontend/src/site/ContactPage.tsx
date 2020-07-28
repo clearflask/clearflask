@@ -3,12 +3,12 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { History } from 'history';
 import React, { Component } from 'react';
 import { match, Route } from 'react-router';
-import ServerAdmin from '../api/serverAdmin';
-import BasePage from '../app/BasePage';
+import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import SubmitButton from '../common/SubmitButton';
 import classNames from 'classnames';
+import { connect } from 'react-redux';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -46,6 +46,7 @@ interface ContactForm {
     attrName: string;
     title?: string;
     helperText?: string;
+    fillWithAccountEmail?: boolean;
     placeholder?: string;
     type?: 'text' | 'multiline' | 'checkbox';
     required?: boolean;
@@ -61,7 +62,7 @@ const forms: ContactForm[] = [
     hideFromMainPage: true,
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
-      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
+      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
   {
@@ -71,7 +72,7 @@ const forms: ContactForm[] = [
     submitTitle: 'Contact',
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
-      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true },
+      { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
   {
@@ -81,7 +82,7 @@ const forms: ContactForm[] = [
     subtitle: 'Need help? Found an issue?',
     fields: [
       { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
-      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
+      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
       { attrName: IMPORTANT, type: 'checkbox', title: 'Requires immediate attention' },
     ],
   },
@@ -92,7 +93,7 @@ const forms: ContactForm[] = [
     submitTitle: 'Contact us',
     fields: [
       { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
-      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true },
+      { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
     ],
   },
 ];
@@ -101,13 +102,14 @@ interface Props {
   history: History;
   match: match;
 }
-
+interface ConnectProps {
+  accountEmail?: string;
+}
 interface State {
   isSubmitting?: boolean;
   // Also includes dynamic fields not covered by this interface
 }
-
-class ContactPage extends Component<Props & WithStyles<typeof styles, true>, State> {
+class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
     const prefixMatch = this.props.match.url.replace(/\/$/, '');
@@ -152,7 +154,7 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                               label={field.title}
                               placeholder={field.placeholder}
                               helperText={field.helperText}
-                              value={this.state[`field_${form.type}_${field.attrName}`] || ''}
+                              value={this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || ''}
                               onChange={e => this.setState({ [`field_${form.type}_${field.attrName}`]: e.target.value })}
                               required={field.required}
                               multiline={field.type === 'multiline'}
@@ -162,11 +164,13 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
                         <SubmitButton
                           className={this.props.classes.field}
                           isSubmitting={this.state.isSubmitting}
-                          disabled={form.fields.some(field => field.required && !this.state[`field_${form.type}_${field.attrName}`])}
+                          disabled={form.fields.some(field => field.required
+                              && !this.state[`field_${form.type}_${field.attrName}`]
+                              && (!field.fillWithAccountEmail || !this.props.accountEmail))}
                           onClick={() => {
                             this.setState({ isSubmitting: true });
                             const content = {};
-                            form.fields.forEach(field => content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`]);
+                            form.fields.forEach(field => content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || '');
                             ServerAdmin.get().dispatchAdmin().then(d => d.supportMessage({
                               supportMessage: {
                                 content: {
@@ -227,4 +231,9 @@ class ContactPage extends Component<Props & WithStyles<typeof styles, true>, Sta
   }
 }
 
-export default withStyles(styles, { withTheme: true })(ContactPage);
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
+  const connectProps: ConnectProps = {
+    accountEmail: state.account.account.account?.email,
+  };
+  return connectProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(ContactPage));

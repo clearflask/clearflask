@@ -18,22 +18,21 @@ import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
 import org.joda.time.DateTime;
+import org.killbill.billing.catalog.api.TimeUnit;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.PluginInfoApi;
-import org.killbill.billing.client.api.gen.TenantApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.DateTimes;
 import org.killbill.billing.client.model.PluginInfos;
-import org.killbill.billing.client.model.gen.Tenant;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.overdue.api.OverdueCancellationPolicy;
 import org.killbill.billing.plugin.analytics.json.ReportConfigurationJson;
 import org.killbill.billing.plugin.analytics.reports.configuration.ReportsConfigurationModelDao.ReportType;
 import org.w3c.dom.Document;
 import rx.Observable;
 
+import javax.ws.rs.core.MediaType;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathExpression;
@@ -52,11 +51,35 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 @Slf4j
 @Singleton
 public class KillBillSync extends ManagedService {
+    public static final String OVERDUE_CANCELLED_STATE_NAME = "CANCELLED";
+    public static final String OVERDUE_UNPAID_STATE_NAME = "UNPAID";
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"" +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
     private static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
             .build();
+    private static final Overdue OVERDUE = new Overdue()
+            .setInitialReevaluationInterval(1)
+            .addOverdueStatesItem(new OverdueStateConfig()
+                    .setName(OVERDUE_CANCELLED_STATE_NAME)
+                    .setCondition(new OverdueCondition()
+                            .setTimeSinceEarliestUnpaidInvoiceEqualsOrExceeds(new Duration()
+                                    .setUnit(TimeUnit.DAYS)
+                                    .setNumber(21)))
+                    .setIsBlockChanges(true)
+                    .setIsClearState(false)
+                    .setIsDisableEntitlement(false)
+                    .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.END_OF_TERM))
+            .addOverdueStatesItem(new OverdueStateConfig()
+                    .setName(OVERDUE_UNPAID_STATE_NAME)
+                    .setCondition(new OverdueCondition()
+                            .setTimeSinceEarliestUnpaidInvoiceEqualsOrExceeds(new Duration()
+                                    .setUnit(TimeUnit.DAYS)
+                                    .setNumber(1)))
+                    .setIsBlockChanges(false)
+                    .setIsClearState(false)
+                    .setIsDisableEntitlement(false)
+                    .setAutoReevaluationIntervalDays(20));
     /**
      * Source: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
      */
@@ -136,6 +159,9 @@ public class KillBillSync extends ManagedService {
         boolean uploadInvoiceTemplate();
 
         @DefaultValue("true")
+        boolean uploadOverdue();
+
+        @DefaultValue("true")
         boolean uploadCatalogs();
     }
 
@@ -153,6 +179,8 @@ public class KillBillSync extends ManagedService {
     private Provider<PluginInfoApi> kbPluginInfoProvider;
     @Inject
     private Provider<InvoiceApi> kbInvoiceProvider;
+    @Inject
+    private Provider<OverdueApi> kbOverdueProvider;
     @Inject
     private Provider<KillBillHttpClient> kbClientProvider;
 
@@ -285,7 +313,7 @@ public class KillBillSync extends ManagedService {
             for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
                 log.info("Uploading analytics plugin report {}", report);
                 kbClientProvider.get().doPost("/plugins/killbill-analytics/reports", report, KillBillUtil.roBuilder()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
             }
         }
@@ -296,6 +324,16 @@ public class KillBillSync extends ManagedService {
                     invoiceTemplateHtml,
                     true,
                     KillBillUtil.roDefault());
+        }
+
+        if (config.uploadOverdue()) {
+            Overdue overdueCurrent = kbOverdueProvider.get().getOverdueConfigJson(KillBillUtil.roDefault());
+            if (!OVERDUE.equals(overdueCurrent)) {
+                log.info("Uploading overdue file since server has differences");
+                // TODO change to debug
+                log.info("Server: {} expected {}", overdueCurrent, OVERDUE);
+                kbOverdueProvider.get().uploadOverdueConfigJson(OVERDUE, KillBillUtil.roDefault());
+            }
         }
 
         if (config.uploadCatalogs() && !CATALOG_FILENAMES.isEmpty()) {
@@ -318,7 +356,7 @@ public class KillBillSync extends ManagedService {
         }
     }
 
-    void setUserKeyValueIfDifferent(String key, String value) throws KillBillClientException {
+    private void setUserKeyValueIfDifferent(String key, String value) throws KillBillClientException {
         TenantKeyValue userKeyValue = kbTenantProvider.get().getUserKeyValue(key, KillBillUtil.roDefault());
         Optional<String> currentValueOpt = Optional.ofNullable(userKeyValue != null && userKeyValue.getValues() != null && !userKeyValue.getValues().isEmpty()
                 ? userKeyValue.getValues().get(0) : null);

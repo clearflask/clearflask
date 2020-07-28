@@ -36,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import java.util.UUID;
@@ -67,8 +66,6 @@ public class BlackboxIT extends AbstractIT {
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoMapper dynamoMapper;
-    @Inject
-    private KillBillHttpClient kbClient;
     @Inject
     private AccountStore accountStore;
     @Inject

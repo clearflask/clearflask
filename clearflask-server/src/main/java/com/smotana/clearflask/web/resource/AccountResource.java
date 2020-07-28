@@ -26,7 +26,9 @@ import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
+import org.joda.time.base.AbstractInstant;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Subscription;
@@ -40,7 +42,6 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Optional;
 
 @Slf4j
@@ -174,7 +175,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getEmail(),
                 signup.getName(),
                 plan.getPlanid());
-        SubscriptionStatus status = billing.getSubscriptionStatusFrom(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
+        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
@@ -222,7 +223,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
             if (!gatewayOpt.isPresent()
                     || (env.isProduction() && !gatewayOpt.get().isAllowedInProduction())) {
-                log.error("Account update payment token fails with invalid gateway type {}", accountUpdateAdmin.getPaymentToken().getType());
+                log.warn("Account update payment token fails with invalid gateway type {}", accountUpdateAdmin.getPaymentToken().getType());
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
             }
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
@@ -237,7 +238,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             } else {
                 subscription = billing.undoPendingCancel(accountSession.getAccountId());
             }
-            SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(
+            SubscriptionStatus newStatus = billing.getEntitlementStatus(
                     billing.getAccount(accountSession.getAccountId()),
                     subscription);
             log.info("Account id {} status change {} -> {}, reason: user requested {}",
@@ -250,7 +251,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     .filter(p -> p.getPlanid().equals(newPlanid))
                     .findAny();
             if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {
-                log.error("Account {} not allowed to change plans to {}",
+                log.warn("Account {} not allowed to change plans to {}",
                         accountSession.getAccountId(), newPlanid);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
@@ -266,9 +267,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
-    public InvoiceHtmlResponse invoiceHtmlGetAdmin(String invoiceId) {
+    public InvoiceHtmlResponse invoiceHtmlGetAdmin(Long invoiceNumber) {
+        if (invoiceNumber == null) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
+        }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceId);
+        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceNumber);
         return new InvoiceHtmlResponse(invoiceHtml);
     }
 
@@ -288,9 +292,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     public void accountDeleteAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
-        billing.cancelSubscription(account.getAccountId());
         account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
         accountStore.deleteAccount(accountSession.getAccountId());
+        billing.cancelSubscription(account.getAccountId());
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -301,7 +305,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
-        SubscriptionStatus newStatus = billing.getSubscriptionStatusFrom(kbAccount, subscription);
+        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, subscription);
         if (!account.getStatus().equals(newStatus)) {
             log.warn("Account id {} status change {} -> {}, reason: Status was found mismatched",
                     accountSession.getAccountId(), account.getStatus(), newStatus);
@@ -330,24 +334,35 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (subscription.getPhaseType() == PhaseType.TRIAL) {
             billingPeriodEnd = subscription.getEvents().stream()
                     .filter(e -> !e.getPhase().endsWith("-trial"))
-                    .filter(e -> e.getEffectiveDate().isAfter(LocalDate.now()))
+                    .filter(e -> e.getEffectiveDate().isAfter(LocalDate.now(DateTimeZone.UTC)))
                     .findAny()
                     .map(EventSubscription::getEffectiveDate)
-                    .map(LocalDate::toDate)
-                    .map(Date::toInstant)
+                    .map(d -> d.toDateTimeAtStartOfDay(DateTimeZone.UTC))
+                    .map(AbstractInstant::toInstant)
+                    .map(org.joda.time.Instant::getMillis)
+                    .map(Instant::ofEpochMilli)
                     .orElse(null);
         }
         if (billingPeriodEnd == null
                 && subscription.getChargedThroughDate() != null) {
-            billingPeriodEnd = subscription.getChargedThroughDate().toDate().toInstant();
+            // TODO double check this is the correct time, should it not be at end of day instead?
+            billingPeriodEnd = Instant.ofEpochMilli(subscription.getChargedThroughDate()
+                    .toDateTimeAtStartOfDay(DateTimeZone.UTC)
+                    .toInstant()
+                    .getMillis());
         }
+
+        long accountReceivable = kbAccount.getAccountBalance() == null ? 0L : kbAccount.getAccountBalance().longValueExact();
+        long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValueExact();
 
         return new AccountBilling(
                 newStatus,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
                 availablePlans.asList(),
-                invoices);
+                invoices,
+                accountReceivable,
+                accountPayable);
     }
 
     @PermitAll

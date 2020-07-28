@@ -101,9 +101,9 @@ class Main extends Component {
                       </Provider>
                     )} />
                   ), (
-                    <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                    <Route key='invoice' path="/invoice/:invoiceNumber" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
-                        <Invoice invoiceId={props.match.params['invoiceId']} />
+                        <Invoice invoiceNumber={props.match.params['invoiceNumber']} />
                       </Provider>
                     )} />
                   ), (

@@ -157,14 +157,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public ConfigGetAllResult configGetAllAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> {
-            log.error("Account not found for session with accountId {}", accountSession.getAccountId());
+            log.warn("Account not found for session with accountId {}", accountSession.getAccountId());
             return new InternalServerErrorException();
         });
         ImmutableSet<Project> projects = account.getProjectIds().isEmpty()
                 ? ImmutableSet.of()
                 : projectStore.getProjects(account.getProjectIds(), false);
         if (account.getProjectIds().size() != projects.size()) {
-            log.error("ProjectIds on account not found in project table, email {} missing projects {}",
+            log.warn("ProjectIds on account not found in project table, email {} missing projects {}",
                     account.getEmail(), Sets.difference(account.getProjectIds(), projects.stream()
                             .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
@@ -223,7 +223,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
             Futures.allAsList(userFuture, ideaFuture, commentFuture).get(1, TimeUnit.MINUTES);
         } catch (Throwable th) {
-            log.error("Failed to delete project {}, potentially partially deleted", projectId, th);
+            log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);
         }
     }
