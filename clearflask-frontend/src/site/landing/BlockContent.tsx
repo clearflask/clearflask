@@ -4,6 +4,7 @@ import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -15,8 +16,9 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   icon: {
-    position: 'absolute',
-    transform: 'translate(-100%, -100%)',
+    marginBottom: theme.spacing(2),
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   button: {
     alignSelf: 'flex-end',
@@ -27,13 +29,16 @@ const styles = (theme: Theme) => createStyles({
 });
 
 export interface Props {
+  className?: string;
   title?: string;
   marker?: string;
   description?: string;
   buttonTitle?: string;
+  buttonOnClick?: () => void;
   buttonLink?: string;
   buttonState?: any;
   variant?: 'hero' | 'heading' | 'content';
+  titleCmpt?: string;
   icon?: React.ReactNode;
   scrollAnchor?: ScrollAnchorProps;
 }
@@ -48,25 +53,25 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
       case 'hero':
         titleVariant = 'h3';
         bodyVariant = 'h5';
-        titleCmpt = 'h1';
+        titleCmpt = this.props.titleCmpt || 'h1';
         bodyCmpt = 'div';
         break;
       case 'heading':
         titleVariant = 'h4';
         bodyVariant = 'body1';
-        titleCmpt = 'h2';
+        titleCmpt = this.props.titleCmpt || 'h2';
         bodyCmpt = 'div';
         break;
       default:
       case 'content':
         titleVariant = 'h5';
         bodyVariant = 'body1';
-        titleCmpt = 'h3';
+        titleCmpt = this.props.titleCmpt || 'h3';
         bodyCmpt = 'div';
         break;
     }
     return (
-      <div className={this.props.classes.container}>
+      <div className={classNames(this.props.classes.container, this.props.className)}>
         {this.props.icon && (
           <div className={this.props.classes.icon}>
             {this.props.icon}
@@ -80,11 +85,14 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
           <ScrollAnchor {...this.props.scrollAnchor} />
         )}
         <Typography variant={bodyVariant} component={bodyCmpt} className={this.props.classes.description}>{this.props.description}</Typography>
-        {this.props.buttonLink && (
+        {this.props.buttonTitle && (
           <Button
             className={this.props.classes.button}
             variant='text'
-            onClick={() => this.props.history.push(this.props.buttonLink!, this.props.buttonState)}
+            onClick={() => {
+              this.props.buttonOnClick && this.props.buttonOnClick();
+              this.props.buttonLink && this.props.history.push(this.props.buttonLink, this.props.buttonState);
+            }}
             color='primary'
           >
             {this.props.buttonTitle}

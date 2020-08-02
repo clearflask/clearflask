@@ -1,4 +1,4 @@
-import { Container, Typography } from '@material-ui/core';
+import { Container, Typography, Box, CircularProgress } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import ApiIcon from '@material-ui/icons/Code';
@@ -10,18 +10,20 @@ import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
-import { Device } from '../common/DeviceContainer';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
+import ScrollAnchor, { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
+import classNames from 'classnames';
+import CollectIcon from '@material-ui/icons/RecordVoiceOverRounded';
+import PrioritizeIcon from '@material-ui/icons/FormatListNumbered';
+import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -43,14 +45,80 @@ const styles = (theme: Theme) => createStyles({
     fontSize: '2em',
     margin: theme.spacing(0, 4, 0, 0),
   },
+  overlapContainer: {
+    position: 'relative',
+  },
+  textCircleContainer: {
+    margin: 'auto',
+    width: 900,
+    maxWidth: '100%',
+    height: 900,
+    maxHeight: 900,
+    position: 'relative',
+    zIndex: 2,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  textCircleItemContainer: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  textCircleItemThreeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  textCircleItem: {
+    width: 400,
+    height: 300,
+    maxWidth: 280,
+    margin: theme.spacing(0, 3),
+  },
+  textCircleItemOne: {
+    alignSelf: 'flex-end',
+    justifyContent: 'end',
+  },
+  textCircleItemTwo: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+  },
+  textCircleItemThree: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  circleContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+  circle: {
+    display: 'inline-block',
+    boxSizing: 'border-box',
+    width: 700,
+    height: 700,
+    maxWidth: 700,
+    maxHeight: 700,
+    margin: 100,
+    borderRadius: '50%',
+    borderStyle: 'solid',
+    borderWidth: 100,
+    borderColor: theme.palette.primary.main,
+    opacity: 0.05,
+  },
 });
-
-class LandingPage extends Component<WithStyles<typeof styles, true>> {
+interface State {
+  scrollTo?: string;
+}
+class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
+  state:State = {};
 
   render() {
     return (
       <React.Fragment>
         {this.renderHero()}
+        {this.renderLoop()}
         {this.renderCollectFeedback()}
         {this.renderPrioritization()}
         {this.renderEngagement()}
@@ -95,10 +163,62 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
     );
   }
 
+  renderLoop() {
+    return (
+      <div className={this.props.classes.overlapContainer}>
+        <div className={this.props.classes.textCircleContainer}>
+          <div className={this.props.classes.textCircleItemContainer}>
+            <BlockContent
+              className={classNames(this.props.classes.textCircleItemOne, this.props.classes.textCircleItem)}
+              icon={(<CollectIcon fontSize='large' />)}
+              variant='content'
+              titleCmpt='div'
+              title='Collect and understand your customer needs'
+              buttonTitle='See'
+              buttonOnClick={() => this.setState({scrollTo: 'collect'})}
+            />
+          </div>
+          <div className={this.props.classes.textCircleItemContainer}>
+            <BlockContent
+              className={classNames(this.props.classes.textCircleItemTwo, this.props.classes.textCircleItem)}
+              icon={(<PrioritizeIcon fontSize='large' />)}
+              variant='content'
+              titleCmpt='div'
+              title='Prioritized feedback based on user vote and value as a customer'
+              buttonTitle='See'
+              buttonOnClick={() => this.setState({scrollTo: 'prioritize'})}
+            />
+          </div>
+          <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
+            <div />
+            <BlockContent
+              className={classNames(this.props.classes.textCircleItemThree, this.props.classes.textCircleItem)}
+              icon={(<RoadmapIcon fontSize='large' style={{transform: 'rotate(180deg)'}} />)}
+              variant='content'
+              titleCmpt='div'
+              title='Product roadmap and updates engages your users'
+              buttonTitle='See'
+              buttonOnClick={() => this.setState({scrollTo: 'engage'})}
+            />
+          </div>
+        </div>
+        <div
+          className={this.props.classes.circleContainer}
+          style={{zIndex: 1}}
+        >
+          <span className={this.props.classes.circle} />
+        </div>
+      </div>
+    );
+  }
+
   onboardingDemoRef: React.RefObject<any> = React.createRef();
   renderCollectFeedback() {
     return (
       <React.Fragment>
+        {this.state.scrollTo === 'collect' && (
+          <ScrollAnchor scrollOnMount positionVertical='start' />
+        )}
         <Demo
           title='Understand your customer needs'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
@@ -122,10 +242,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
           }}
         />
         <HorizontalPanels wrapBelow='lg' maxWidth='xl' maxContentWidth='sm' staggerHeight={120}>
-          <Demo
+          {/* Collect feedback right from your website or app */}
+          {/* Prioritize based on customer value */}
+          {/* Keep your users updated */}
+          {/* Explore */}
+          {/* <Demo
             variant='content'
             type='column'
-            title='Maximize conversion through frictionless onboarding'
+            title='Single Sign-On to for existing users or use our frictionless signup'
             description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
             initialSubPath='/embed/demo'
             demoFixedWidth={420}
@@ -135,7 +259,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
             }}
             controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
             demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-          />
+          /> */}
           <Demo
             variant='content'
             type='column'
@@ -176,12 +300,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderPrioritization() {
     return (
       <React.Fragment>
+        {this.state.scrollTo === 'prioritize' && (
+          <ScrollAnchor scrollOnMount positionVertical='start' />
+        )}
         <Demo
           title='Give your valuable customers a proportionate voice'
           description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
           mirror
-          buttonTitle='See the credit system'
-          buttonLink='/product#prioritize'
           demoFixedHeight={300}
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('all')}
@@ -328,6 +453,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>> {
   renderEngagement() {
     return (
       <React.Fragment>
+        {this.state.scrollTo === 'engage' && (
+          <ScrollAnchor scrollOnMount positionVertical='start' />
+        )}
         <Demo
           title='Build a community around your product'
           description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'

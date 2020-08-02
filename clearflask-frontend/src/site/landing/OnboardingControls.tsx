@@ -11,6 +11,7 @@ enum SignupMethods {
   // Mobile = 'mobile',
   Web = 'web',
   Anonymous = 'anonymous',
+  Sso = 'sso',
 }
 
 const initialSignupMethods = [SignupMethods.Email, SignupMethods.Web];
@@ -20,6 +21,7 @@ const setSignupMethodsTemplate = (templater: Templater, signupMethods: SignupMet
   // templater.usersOnboardingMobilePush(signupMethods.includes(SignupMethods.Mobile));
   templater.usersOnboardingBrowserPush(signupMethods.includes(SignupMethods.Web));
   templater.usersOnboardingAnonymous(signupMethods.includes(SignupMethods.Anonymous), !signupMethods.includes(SignupMethods.Anonymous));
+  templater.usersOnboardingSso(signupMethods.includes(SignupMethods.Sso), 'secret', '#', 'MyApp');
 }
 
 export const setInitSignupMethodsTemplate = (templater: Templater) => {
@@ -45,6 +47,7 @@ interface State {
   // allowMobilePush: boolean;
   allowDesktopPush: boolean;
   allowAnonymous: boolean;
+  allowSso: boolean;
   collectDisplayName: Client.AccountFieldsDisplayNameEnum;
 }
 
@@ -56,6 +59,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
     // allowMobilePush: true,
     allowDesktopPush: true,
     allowAnonymous: true,
+    allowSso: false,
     collectDisplayName: Client.AccountFieldsDisplayNameEnum.None,
   };
 
@@ -107,7 +111,7 @@ class OnboardingControls extends Component<Props & WithStyles<typeof styles, tru
             value={SignupMethods.Web}>Web</ToggleButton>
           <ToggleButton value={SignupMethods.Email}>Email</ToggleButton>
           <ToggleButton value={SignupMethods.Anonymous}>Anon</ToggleButton>
-          {/* TODO add SSO to demo <ToggleButton value={SignupMethods.SSO}>Anonymous</ToggleButton> */}
+          <ToggleButton value={SignupMethods.Sso}>SSO</ToggleButton>
         </ToggleButtonGroup>
         <Typography variant='caption' display='block'>Display name</Typography>
         <ToggleButtonGroup

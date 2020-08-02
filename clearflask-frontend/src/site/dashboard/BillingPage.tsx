@@ -228,8 +228,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         cardState = 'error';
         showSetPayment = true;
         setPaymentTitle = 'Update payment method';
-        showResumePlan = true;
-        resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
+        if (this.props.accountBilling?.payment) {
+          showResumePlan = true;
+          resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
+        }
         planTitle = 'Your plan is cancelled';
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
         break;

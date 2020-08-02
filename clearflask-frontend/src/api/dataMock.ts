@@ -628,9 +628,7 @@ class DataMock {
           {
             content: 'It would be great if you could choose between various themes', author: 'Daisy', voteValue: 12, children: [
               {
-                content: 'They wont have time do all of that', author: 'John', voteValue: -3, children: [
-                  { content: 'Lets see what they say', author: 'John', voteValue: 3 }
-                ]
+                content: 'They wont have time do all of that', author: 'John', voteValue: -3,
               }
             ]
           },

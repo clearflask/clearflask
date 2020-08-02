@@ -8,6 +8,8 @@ export interface Props {
   scrollOnMount?: boolean;
   scrollOnStateName?: string;
   scrollOnAnchorTag?: string;
+  positionVertical?: ScrollLogicalPosition;
+  positionHorizontal?: ScrollLogicalPosition;
 }
 class ScrollAnchor extends Component<Props & RouteComponentProps> {
   readonly scrollToRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -22,8 +24,8 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
     // TODO polyfill or go back to window.scrollTo
     this.scrollToRef.current.scrollIntoView({
       behavior: 'smooth',
-      block: 'center',
-      inline: 'nearest',
+      block: this.props.positionVertical || 'center',
+      inline: this.props.positionHorizontal || 'nearest',
     });
   }
 
