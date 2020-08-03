@@ -32,7 +32,7 @@ export interface Props {
   className?: string;
   title?: string;
   marker?: string;
-  description?: string;
+  description?: string | React.ReactNode;
   buttonTitle?: string;
   buttonOnClick?: () => void;
   buttonLink?: string;

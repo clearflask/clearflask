@@ -50,10 +50,17 @@ const styles = (theme: Theme) => createStyles({
   },
   textCircleContainer: {
     margin: 'auto',
-    width: 900,
     maxWidth: '100%',
-    height: 900,
-    maxHeight: 900,
+    [theme.breakpoints.up('lg')]: {
+      width: 1500,
+      height: 1200,
+      maxHeight: 1200,
+    },
+    [theme.breakpoints.down('md')]: {
+      width: 900,
+      height: 900,
+      maxHeight: 900,
+    },
     position: 'relative',
     zIndex: 2,
     display: 'flex',
@@ -78,6 +85,10 @@ const styles = (theme: Theme) => createStyles({
   textCircleItemOne: {
     alignSelf: 'flex-end',
     justifyContent: 'end',
+    [theme.breakpoints.up('lg')]: {
+      paddingRight: 150,
+      boxSizing: 'content-box',
+    },
   },
   textCircleItemTwo: {
     alignSelf: 'flex-start',
@@ -105,7 +116,12 @@ const styles = (theme: Theme) => createStyles({
     borderStyle: 'solid',
     borderWidth: 100,
     borderColor: theme.palette.primary.main,
-    opacity: 0.05,
+    [theme.breakpoints.up('lg')]: {
+      opacity: 0.1,
+    },
+    [theme.breakpoints.down('md')]: {
+      opacity: 0.03,
+    },
   },
 });
 interface State {
@@ -173,8 +189,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               icon={(<CollectIcon fontSize='large' />)}
               variant='content'
               titleCmpt='div'
-              title='Collect and understand your customer needs'
-              buttonTitle='See'
+              title='Collect and understand feedback'
+              buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'collect'})}
             />
           </div>
@@ -184,8 +200,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               icon={(<PrioritizeIcon fontSize='large' />)}
               variant='content'
               titleCmpt='div'
-              title='Prioritized feedback based on user vote and value as a customer'
-              buttonTitle='See'
+              title='A proportionate voice'
+              description='With user voting and customer segmentation'
+              buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'prioritize'})}
             />
           </div>
@@ -196,8 +213,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               icon={(<RoadmapIcon fontSize='large' style={{transform: 'rotate(180deg)'}} />)}
               variant='content'
               titleCmpt='div'
-              title='Product roadmap and updates engages your users'
-              buttonTitle='See'
+              title='Product roadmap and updates'
+              buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'engage'})}
             />
           </div>
@@ -387,7 +404,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                     <Typography variant='caption' className={this.props.classes.marker}>BETA</Typography>
                   </Typography>
                   <Typography variant='body1'>
-                    Stripe, Paypal, Apple Store, Play Store
+                    Stripe, Apple Store, Play Store
                   </Typography>
                 </div>
               </div>
