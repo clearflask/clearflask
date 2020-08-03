@@ -24,6 +24,12 @@ import classNames from 'classnames';
 import CollectIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import PrioritizeIcon from '@material-ui/icons/FormatListNumbered';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
+import NotificationIcon from '@material-ui/icons/Notifications';
+import AnalyticsIcon from '@material-ui/icons/ShowChart';
+import VoteIcon from '@material-ui/icons/ThumbsUpDown';
+import EmojiIcon from '@material-ui/icons/Mood';
+import SegmentIcon from '@material-ui/icons/FilterList';
+import WidgetIcon from '@material-ui/icons/Widgets';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -78,7 +84,6 @@ const styles = (theme: Theme) => createStyles({
   },
   textCircleItem: {
     width: 400,
-    height: 300,
     maxWidth: 280,
     margin: theme.spacing(0, 3),
   },
@@ -96,7 +101,7 @@ const styles = (theme: Theme) => createStyles({
   },
   textCircleItemThree: {
     alignSelf: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   circleContainer: {
     position: 'absolute',
@@ -186,10 +191,22 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <div className={this.props.classes.textCircleItemContainer}>
             <BlockContent
               className={classNames(this.props.classes.textCircleItemOne, this.props.classes.textCircleItem)}
-              icon={(<CollectIcon fontSize='large' />)}
               variant='content'
               titleCmpt='div'
-              title='Collect and understand feedback'
+              title='Collect feedback'
+              description={(
+                <div className={this.props.classes.pointsContainer}>
+                  <div>Collect all feedback channels into unified place. Influence your product decisions based on data.</div>
+                  <div className={this.props.classes.point}>
+                    <WidgetIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <div>Embed in your site or app</div>
+                  </div>
+                  <div className={this.props.classes.point}>
+                    <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <div>Customer segmentation and Analytics</div>
+                  </div>
+                </div>
+              )}
               buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'collect'})}
             />
@@ -197,23 +214,46 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <div className={this.props.classes.textCircleItemContainer}>
             <BlockContent
               className={classNames(this.props.classes.textCircleItemTwo, this.props.classes.textCircleItem)}
-              icon={(<PrioritizeIcon fontSize='large' />)}
               variant='content'
               titleCmpt='div'
               title='A proportionate voice'
-              description='With user voting and customer segmentation'
+              description={(
+                <div className={this.props.classes.pointsContainer}>
+                  <div>Prioritize feedback based on customer's voice with our options that fit your needs:</div>
+                  <div className={this.props.classes.point}>
+                    <VoteIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <div>Voting</div>
+                  </div>
+                  <div className={this.props.classes.point}>
+                    <PaymentIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <div>Credit System</div>
+                  </div>
+                </div>
+              )}
               buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'prioritize'})}
             />
           </div>
           <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
-            <div />
+            <div style={{width: '10%'}} />
             <BlockContent
               className={classNames(this.props.classes.textCircleItemThree, this.props.classes.textCircleItem)}
-              icon={(<RoadmapIcon fontSize='large' style={{transform: 'rotate(180deg)'}} />)}
               variant='content'
               titleCmpt='div'
-              title='Product roadmap and updates'
+              title='Engage your customers'
+              description={(
+                <div className={this.props.classes.pointsContainer}>
+                  <div>Build a community around your product development</div>
+                  <div className={this.props.classes.point}>
+                    <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIcon} style={{transform: 'rotate(180deg)'}} />
+                    <div>Show off your Product Roadmap</div>
+                  </div>
+                  <div className={this.props.classes.point}>
+                    <NotificationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <div>Notify users waiting for a feature</div>
+                  </div>
+                </div>
+              )}
               buttonTitle='Learn more'
               buttonOnClick={() => this.setState({scrollTo: 'engage'})}
             />
