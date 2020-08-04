@@ -1,11 +1,12 @@
 import React from 'react';
 import Loading, { Props as LoadingProps } from '../app/utils/Loading';
+import ErrorMsg from '../app/ErrorMsg';
 
 interface Props<T> extends LoadingProps {
   promise: Promise<T>,
   render: (val: T) => React.ReactNode,
   renderError?: (err) => React.ReactNode,
-  loading?: React.ReactNode,
+  renderLoading?: () => React.ReactNode,
 }
 
 interface State<T> {
@@ -32,7 +33,7 @@ class Promised<T> extends React.Component<Props<T>, State<T>> {
 
   render() {
     return this.state.result === undefined
-      ? (this.props.loading || (<Loading {...this.props} />))
+      ? (this.props.renderLoading ? this.props.renderLoading() : (<Loading {...this.props} />))
       : (this.state.result
         ? this.renderVal(this.state.val!)
         : this.renderError(this.state.error));
@@ -45,7 +46,7 @@ class Promised<T> extends React.Component<Props<T>, State<T>> {
   renderError(error: any) {
     return this.props.renderError
       ? this.props.renderError(this.state.error)
-      : null;
+      : (<ErrorMsg msg='Failed to load' />);
   }
 }
 

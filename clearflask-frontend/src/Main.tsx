@@ -65,6 +65,7 @@ class Main extends Component {
     const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => { closeLoadingScreen(); return i; }));
     const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => { closeLoadingScreen(); return i; }));
     const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(i => { closeLoadingScreen(); return i; }));
+    const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(i => { closeLoadingScreen(); return i; }));
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -90,11 +91,18 @@ class Main extends Component {
               )}
               <Suspense fallback={<Loading />}>
                 <Switch>
-                  {subdomain ? (
-                    <Route path="/" render={props => (
+                  {subdomain ? ([(
+                    <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                      <PostStatus
+                        projectId={subdomain}
+                        postId={props.match.params['postId'] || ''}
+                      />
+                    )} />
+                   ), (
+                    <Route key='app' path="/" render={props => (
                       <App projectId={subdomain} {...props} />
                     )} />
-                  ) : ([(
+                  )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Dashboard {...props} />

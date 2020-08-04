@@ -589,7 +589,7 @@ class DataMock {
     return expressions;
   }
 
-  async mockFakeIdeaWithComments(ideaId: string = 'captcha-to-reduce-spam'): Promise<Admin.IdeaWithVote> {
+  async mockFakeIdeaWithComments(ideaId: string = 'captcha-to-reduce-spam', overrides: (config: Admin.ConfigAdmin) => Partial<Admin.Idea> = c => ({})): Promise<Admin.IdeaWithVote> {
     const idea = await this.demoPage((config, user) => ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
       ideaCreateAdmin: {
@@ -612,6 +612,7 @@ class DataMock {
             '❤️': 1,
           },
         },
+        ...overrides(config),
       },
     }));
 

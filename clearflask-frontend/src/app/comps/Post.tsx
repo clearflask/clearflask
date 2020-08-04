@@ -655,7 +655,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!status) return null;
 
     return (
-      <Button key='status' variant="text" className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
+      <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
         onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
         <Typography variant='caption' style={{ color: status.color }}>
           {status.name}

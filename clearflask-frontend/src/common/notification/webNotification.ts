@@ -62,7 +62,7 @@ export default class WebNotification {
   }
 
   async getPermission(): Promise<WebNotificationSubscription | WebNotificationError> {
-    this.swRegistration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_URL);
+    this.swRegistration = await navigator.serviceWorker?.getRegistration(SERVICE_WORKER_URL);
     const pushSubscription = await this.swRegistration?.pushManager.getSubscription();
     if (pushSubscription === null) {
       return {

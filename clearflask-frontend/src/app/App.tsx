@@ -193,7 +193,7 @@ class App extends Component<Props> {
                 )} />
               )}
               {!isExpanded() && (
-                <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => props.match.params['prefix'] === 'embed' ? null : (
+                <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => (props.match.params['prefix'] === 'embed' || props.match.params['prefix'] === 'embed-status') ? null : (
                   <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
                 )} />
               )}

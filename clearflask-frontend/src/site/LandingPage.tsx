@@ -30,6 +30,7 @@ import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import EmojiIcon from '@material-ui/icons/Mood';
 import SegmentIcon from '@material-ui/icons/FilterList';
 import WidgetIcon from '@material-ui/icons/Widgets';
+import PostStatusIframe from '../app/PostStatusIframe';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -203,7 +204,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                   <div className={this.props.classes.point}>
                     <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Customer segmentation and Analytics</div>
+                    <div>
+                      <div>Customer segmentation and Analytics</div>
+                      <PostStatusIframe postId='customer-segmentation-and-analytics' />
+                    </div>
                   </div>
                 </div>
               )}
