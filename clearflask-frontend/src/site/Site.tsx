@@ -105,19 +105,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
   render() {
-    const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
-      {
-        type: 'dropdown', title: 'Product', items: [
-          { val: '/collect', name: 'Collect' },
-          { val: '/prioritize', name: 'Prioritize' },
-          { val: '/case-study', name: 'Case Studies' },
-          { val: '/engage', name: 'Engage' },
-          { val: '/customize', name: 'Customize' },
-          { val: '/demo', name: 'Demo' },
-        ],
-      },
-      { type: 'button', path: '/pricing', title: 'Pricing' },
-    ];
+    const menuItemsLeft: Array<MenuButton | MenuDropdown> = [];
     const menuItemsRight: Array<MenuButton | MenuDropdown> = [
       { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
       { type: 'button', path: '/dashboard', title: 'Log in' },

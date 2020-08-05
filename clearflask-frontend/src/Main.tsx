@@ -20,7 +20,7 @@ const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',
     background: {
-      default: '#fff',
+      default: 'rgba(0,0,0,0)',
       paper: '#fff',
     },
     primary: {
@@ -94,6 +94,7 @@ class Main extends Component {
                   {subdomain ? ([(
                     <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
                       <PostStatus
+                        {...props}
                         projectId={subdomain}
                         postId={props.match.params['postId'] || ''}
                       />

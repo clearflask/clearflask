@@ -12,6 +12,7 @@ import HelpPopper from '../common/HelpPopper';
 import notEmpty from '../common/util/arrayUtil';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
+import { RouteComponentProps, withRouter } from 'react-router';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -27,7 +28,6 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
-  history: History;
 }
 interface ConnectProps {
   plans?: Admin.Plan[];
@@ -36,7 +36,7 @@ interface ConnectProps {
 interface State {
   period?: Admin.PlanPricingPeriodEnum;
 }
-class PricingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
     const allPlans = this.props.plans || [];
@@ -182,4 +182,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     plans: state.plans.plans.plans,
     featuresTable: state.plans.plans.featuresTable,
   };
-})(withStyles(styles, { withTheme: true })(PricingPage));
+})(withStyles(styles, { withTheme: true })(withRouter(PricingPage)));

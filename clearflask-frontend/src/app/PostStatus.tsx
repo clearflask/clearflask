@@ -4,12 +4,35 @@ import { Server } from '../api/server';
 import { detectEnv, Environment } from '../common/util/detectEnv';
 import * as Client from '../api/client';
 import Promised from '../common/Promised';
-import { Typography, Button } from '@material-ui/core';
 import WebNotification from '../common/notification/webNotification';
 import OpenIcon from '@material-ui/icons/OpenInNew';
+import QueryString from 'query-string';
+import { RouteComponentProps } from 'react-router';
+
+export class PostStatusConfigDef {
+  fontSize?: number | string;
+  fontFamily?: string;
+  color?: string;
+  backgroundColor?: string;
+  fontWeight?: number;
+  alignItems?: string;
+  justifyContent?: string;
+  textTransform?: string;
+}
+export interface PostStatusConfig extends PostStatusConfigDef{};
 
 const styles = (theme: Theme) => createStyles({
-  buttonTitle: {
+  linkContainer: {
+    flexGrow: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  link: {
+    color: 'inherit',
+    outline: 0,
+    textDecoration: 'inherit',
     display: 'flex',
     alignItems: 'center',
   },
@@ -20,7 +43,7 @@ interface Props {
 }
 interface State {
 }
-class PostStatus extends Component<Props & WithStyles<typeof styles, true>, State> {
+class PostStatus extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state:State = {};
   dataPromise: Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]>;
 
@@ -64,6 +87,9 @@ class PostStatus extends Component<Props & WithStyles<typeof styles, true>, Stat
   }
 
   render() {
+    const queryParams = QueryString.parse(this.props.location.search);
+    const statusConfig = queryParams as PostStatusConfig;
+
     return (
       <Promised
         promise={this.dataPromise}
@@ -81,20 +107,33 @@ class PostStatus extends Component<Props & WithStyles<typeof styles, true>, Stat
             return null;
           };
 
+          const src = `${window.location.origin}/post/${post.ideaId}`;
+
           return (
-            <Button
-              variant='text'
-              onClick={e => window.open(`${window.location.origin}/post/${post.ideaId}`, '_blank')}
-            >
-              <div
-                className={this.props.classes.buttonTitle}
-                style={{ color: status.color }}
+            <div
+              className={this.props.classes.linkContainer}
+              style={{
+                color: statusConfig.color || status.color,
+                fontSize: statusConfig.fontSize,
+                fontFamily: statusConfig.fontFamily,
+                backgroundColor: statusConfig.backgroundColor,
+                fontWeight: statusConfig.fontWeight,
+                alignItems: statusConfig.alignItems,
+                justifyContent: statusConfig.justifyContent,
+                textTransform: statusConfig.textTransform as any,
+              }}
+           >
+              <a
+                href={src}
+                target='_blank'
+                rel='noopener nofollow'
+                className={this.props.classes.link}
               >
                 {status.name}
                 &nbsp;
                 <OpenIcon fontSize='inherit' />
-              </div>
-            </Button>
+              </a>
+            </div>
           );
         }}
         renderError={err => {

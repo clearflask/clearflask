@@ -45,6 +45,7 @@
     "notistack": "0.8.6",
     "prismjs": "1.19.0",
     "push.js": "1.0.9",
+    "query-string": "6.13.1",
     "rc-trigger": "2.6.2",
     "react": "16.8.6",
     "react-cytoscapejs": "1.2.1",

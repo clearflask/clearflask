@@ -31,6 +31,7 @@ import EmojiIcon from '@material-ui/icons/Mood';
 import SegmentIcon from '@material-ui/icons/FilterList';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import PostStatusIframe from '../app/PostStatusIframe';
+import PricingPage from './PricingPage';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -146,6 +147,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         {this.renderEngagement()}
         {this.renderCaseStudies()}
         {this.renderCustomize()}
+        {this.renderPricing()}
         {this.renderSales()}
       </React.Fragment>
     );
@@ -200,14 +202,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   <div>Collect all feedback channels into unified place. Influence your product decisions based on data.</div>
                   <div className={this.props.classes.point}>
                     <WidgetIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Embed in your site or app</div>
+                    <div>Embed in your product</div>
                   </div>
                   <div className={this.props.classes.point}>
                     <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>
-                      <div>Customer segmentation and Analytics</div>
-                      <PostStatusIframe postId='customer-segmentation-and-analytics' />
-                    </div>
+                    <div>Customer segmentation and Analytics</div>
                   </div>
                 </div>
               )}
@@ -254,7 +253,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                   <div className={this.props.classes.point}>
                     <NotificationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Notify users waiting for a feature</div>
+                    <div>Notify users waiting for a particular feature</div>
                   </div>
                 </div>
               )}
@@ -353,6 +352,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             title='Capture feedback from internal teams or on-behalf of users'
             description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
           />
+          <BlockContent
+            variant='content'
+            title='Integrate with your product'
+            description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
+          />
         </HorizontalPanels>
       </React.Fragment>
     );
@@ -445,7 +449,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   <Typography variant='h6'>
                     Payment provider
                     &nbsp;
-                    <Typography variant='caption' className={this.props.classes.marker}>BETA</Typography>
+                    <PostStatusIframe
+                      postId='customer-segmentation-and-analytics'
+                      height={14}
+                      config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+                    />
                   </Typography>
                   <Typography variant='body1'>
                     Stripe, Apple Store, Play Store
@@ -458,7 +466,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   <Typography variant='h6'>
                     Donation Framework
                     &nbsp;
-                    <Typography variant='caption' className={this.props.classes.marker}>BETA</Typography>
+                    <PostStatusIframe
+                      postId='donation-framework'
+                      height={14}
+                      config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+                    />
                   </Typography>
                   <Typography variant='body1'>
                     Patreon, OpenCollective
@@ -613,6 +625,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         buttonLink='/contact/sales'
         mirror
       />
+    );
+  }
+  renderPricing() {
+    return (
+      <PricingPage />
     );
   }
 }
