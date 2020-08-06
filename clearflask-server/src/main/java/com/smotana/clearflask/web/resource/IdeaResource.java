@@ -92,7 +92,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
@@ -139,7 +139,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaGetAdmin(String projectId, String ideaId) {
@@ -180,7 +180,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                                 .collect(ImmutableList.toImmutableList())));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
@@ -208,7 +208,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdate).getIdea().toIdea();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
@@ -236,7 +236,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {
@@ -244,7 +244,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteBulkAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin) {

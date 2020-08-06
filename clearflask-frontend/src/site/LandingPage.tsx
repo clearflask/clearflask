@@ -21,14 +21,10 @@ import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting
 import RoadmapControls from './landing/RoadmapControls';
 import ScrollAnchor, { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import classNames from 'classnames';
-import CollectIcon from '@material-ui/icons/RecordVoiceOverRounded';
-import PrioritizeIcon from '@material-ui/icons/FormatListNumbered';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import NotificationIcon from '@material-ui/icons/Notifications';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
-import EmojiIcon from '@material-ui/icons/Mood';
-import SegmentIcon from '@material-ui/icons/FilterList';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import PostStatusIframe from '../app/PostStatusIframe';
 import PricingPage from './PricingPage';
@@ -156,8 +152,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderHero() {
     return (
       <Hero
-        title='Product Feedback Solution for transparent organizations'
-        description='An idea brainstorming tool with cost/benefit prioritization of user feedback to drive your product forward.'
+        title='Involve your customers in your product development'
+        description='Product Feedback Solution for transparent organizations'
         imagePath='/img/landing/hero.svg'
       />
     );
@@ -219,10 +215,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               className={classNames(this.props.classes.textCircleItemTwo, this.props.classes.textCircleItem)}
               variant='content'
               titleCmpt='div'
-              title='A proportionate voice'
+              title='Give a proportionate voice'
               description={(
                 <div className={this.props.classes.pointsContainer}>
-                  <div>Prioritize feedback based on customer's voice with our options that fit your needs:</div>
+                  <div>Prioritize your roadmap based on customer's value</div>
                   <div className={this.props.classes.point}>
                     <VoteIcon fontSize='inherit' className={this.props.classes.pointIcon} />
                     <div>Voting</div>

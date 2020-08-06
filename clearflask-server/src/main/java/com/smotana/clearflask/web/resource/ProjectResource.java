@@ -173,7 +173,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .collect(ImmutableList.toImmutableList()));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, ConfigAdmin configAdmin, String versionLast) {
@@ -185,7 +185,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return versionedConfigAdmin;
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
@@ -208,7 +208,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public void projectDeleteAdmin(String projectId) {

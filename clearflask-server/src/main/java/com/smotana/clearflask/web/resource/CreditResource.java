@@ -33,7 +33,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Inject
     private UserStore userStore;
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public TransactionSearchAdminResponse transactionSearchAdmin(String projectId, TransactionSearchAdmin transactionSearchAdmin, String cursor) {

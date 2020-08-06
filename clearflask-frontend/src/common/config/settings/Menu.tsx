@@ -18,6 +18,7 @@ export interface MenuItem {
   ext?: string;
   onClick?: () => void;
   offset?: number;
+  hasNotification?: boolean;
 }
 
 export interface MenuProject {
@@ -68,7 +69,18 @@ export default class Menu extends Component<Props> {
                   window.open(item.ext, '_blank');
                 }
               }}>
-                <ListItemText style={Menu.paddingForLevel(item.offset)} primary={item.name} />
+                <ListItemText style={Menu.paddingForLevel(item.offset)} primary={(
+                  <React.Fragment>
+                    <span>{item.name}</span>
+                    <Badge
+                      color='primary'
+                      variant='dot'
+                      invisible={!item.hasNotification}
+                    >
+                      &nbsp;&nbsp;
+                    </Badge>
+                  </React.Fragment>
+                )} />
               </ListItem>
             );
           } else if (item.type === 'project') {
@@ -138,7 +150,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
               <Badge
                 variant='dot'
                 invisible={!this.props.hasUnsavedChanges}
-                classes={{ dot: this.props.classes.badgeDot }}
+                color='primary'
               >
                 &nbsp;&nbsp;
               </Badge>

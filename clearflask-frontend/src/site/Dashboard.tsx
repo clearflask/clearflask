@@ -28,6 +28,7 @@ import DemoApp, { getProject, Project } from './DemoApp';
 import { isProd } from '../common/util/detectEnv';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
+import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -228,8 +229,28 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         );
         break;
     }
+
+    var billingHasNotification: boolean = false;
+    switch (this.props.account?.subscriptionStatus) {
+      case AdminClient.SubscriptionStatus.ActiveTrial:
+      case AdminClient.SubscriptionStatus.ActivePaymentRetry:
+      case AdminClient.SubscriptionStatus.ActiveNoRenewal:
+      case AdminClient.SubscriptionStatus.TrialExpired:
+      case AdminClient.SubscriptionStatus.Blocked:
+      case AdminClient.SubscriptionStatus.Cancelled:
+        billingHasNotification = true;
+        break;
+      default:
+      case AdminClient.SubscriptionStatus.Pending:
+      case AdminClient.SubscriptionStatus.Active:
+        break;
+    }
+
     return (
       <Elements stripe={stripePromise}>
+        {this.props.account && (
+          <SubscriptionStatusNotifier account={this.props.account} />
+        )}
         <Layout
           toolbarLeft={
             <Typography variant='h6' color="inherit" noWrap>
@@ -274,7 +295,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 } as MenuItem,
                 { type: 'heading', text: 'Account' } as MenuHeading,
                 { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
-                { type: 'item', slug: 'billing', name: 'Billing', offset: 1 } as MenuItem,
+                { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
                 { type: 'heading', text: 'Help' } as MenuHeading,
                 { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
                 { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,

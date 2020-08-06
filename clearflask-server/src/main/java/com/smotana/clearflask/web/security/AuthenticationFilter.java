@@ -1,6 +1,9 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.CommentStore;
@@ -28,6 +31,11 @@ import java.util.Optional;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
+    private static final ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.ACTIVENORENEWAL,
+            SubscriptionStatus.ACTIVEPAYMENTRETRY,
+            SubscriptionStatus.ACTIVETRIAL);
 
     @Context
     protected HttpServletResponse response;
@@ -126,10 +134,31 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<String> pathParamIdeaIdOpt;
         Optional<String> pathParamCommentIdOpt;
         switch (role) {
+            case Role.ADMINISTRATOR_ACTIVE:
+                if (!accountSession.isPresent()) {
+                    return false;
+                }
+                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
+                if (!SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                    return false;
+                }
+                return true;
             case Role.ADMINISTRATOR:
                 return accountSession.isPresent();
             case Role.USER:
                 return userSession.isPresent();
+            case Role.PROJECT_OWNER_ACTIVE:
+                if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
+                    return false;
+                }
+                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
+                if (!accountOpt.isPresent()) {
+                    return false;
+                }
+                if (!SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                    return false;
+                }
+                return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
             case Role.PROJECT_OWNER:
                 if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
                     return false;

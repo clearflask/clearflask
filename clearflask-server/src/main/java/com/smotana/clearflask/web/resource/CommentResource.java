@@ -135,7 +135,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .getCommentModel().toComment();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public Comment commentDeleteAdmin(String projectId, String ideaId, String commentId) {

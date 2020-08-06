@@ -78,8 +78,8 @@ public class MockAuthCookie implements AuthCookie {
                         userSession);
                 userHasRolePredicate = role -> {
                     switch (role) {
-                        case Role.ADMINISTRATOR:
-                        case Role.PROJECT_OWNER:
+                        case Role.ADMINISTRATOR_ACTIVE:
+                        case Role.PROJECT_OWNER_ACTIVE:
                             return accountSession.isPresent();
                         case Role.USER:
                         case Role.PROJECT_USER:

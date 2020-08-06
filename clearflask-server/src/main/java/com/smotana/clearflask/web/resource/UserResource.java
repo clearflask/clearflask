@@ -169,7 +169,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserMeWithBalance();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
@@ -215,14 +215,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
@@ -314,7 +314,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserMe();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
@@ -339,7 +339,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUserAdmin();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {

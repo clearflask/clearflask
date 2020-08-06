@@ -222,6 +222,40 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan is inactive';
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
         break;
+      case Admin.SubscriptionStatus.Pending:
+        paymentTitle = 'Automatic renewal will commence soon';
+        if (this.props.accountBilling?.billingPeriodEnd) {
+          paymentDesc = (
+            <React.Fragment>
+              Automatic renewal is scheduled to be enabled in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+            </React.Fragment>
+          );
+        } else {
+          paymentDesc = 'Automatic renewal is scheduled to be enabled in the future';
+        }
+        showSetPayment = true;
+        if(this.props.accountBilling?.payment) {
+          cardState = 'active';
+          setPaymentTitle = 'Update payment method';
+        } else {
+          cardState = 'error';
+          setPaymentTitle = 'Add payment method';
+        }
+        if (this.props.accountBilling?.payment) {
+          showResumePlan = true;
+          resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
+        }
+        planTitle = 'Your plan is scheduled to be active';
+        if (this.props.accountBilling?.billingPeriodEnd) {
+          planDesc = (
+            <React.Fragment>
+              You have limited access to your ${this.props.account.plan.title} plan until your plan starts in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+            </React.Fragment>
+          );
+        } else {
+          planDesc = `You have limited access to your ${this.props.account.plan.title} plan until your plan starts.`;
+        }
+        break;
       case Admin.SubscriptionStatus.Cancelled:
         paymentTitle = 'Automatic renewal is inactive';
         paymentDesc = 'Resume automatic renewal to continue using our service.';
