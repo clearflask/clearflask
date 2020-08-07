@@ -14,6 +14,7 @@ export interface MenuHeading {
 export interface MenuItem {
   type: 'item';
   name: string | React.ReactNode;
+  disabled?: boolean;
   slug?: string;
   ext?: string;
   onClick?: () => void;
@@ -23,9 +24,11 @@ export interface MenuItem {
 
 export interface MenuProject {
   type: 'project';
+  name?: string | React.ReactNode;
   projectId: string;
   page: ConfigEditor.Page;
   hasUnsavedChanges?: boolean;
+  offset?: number;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -58,7 +61,7 @@ export default class Menu extends Component<Props> {
         {this.props.items.map((item, index) => {
           if (item.type === 'item') {
             return (
-              <ListItem key={`${index}-${item.slug || 'empty'}`} selected={item.slug === this.props.activePath} button onClick={() => {
+              <ListItem key={`${index}-${item.slug || 'empty'}`} disabled={item.disabled} selected={item.slug === this.props.activePath} button onClick={() => {
                 if (item.onClick) {
                   item.onClick();
                 }
@@ -87,6 +90,8 @@ export default class Menu extends Component<Props> {
             return (
               <MenuPage
                 key={`${index}-${item.page.key}`}
+                overrideName={item.name}
+                offset={item.offset}
                 page={item.page}
                 hasUnsavedChanges={item.hasUnsavedChanges}
                 activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
@@ -116,8 +121,10 @@ export default class Menu extends Component<Props> {
 interface PropsPage {
   key: string;
   page: ConfigEditor.Page;
+  overrideName?: string | React.ReactNode | undefined;
   activePath?: ConfigEditor.Path;
   pageClicked: (path: ConfigEditor.Path) => void;
+  offset?: number;
   hasUnsavedChanges?: boolean;
 }
 
@@ -134,7 +141,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
 
   render() {
     const expanded = this.isExpanded(this.props.page.path);
-    const padding = Menu.paddingForLevel(1, this.props.page.path);
+    const padding = Menu.paddingForLevel(this.props.offset || 0, this.props.page.path);
     const color = this.props.page.getColor();
     const { classes, ...menuProps } = this.props;
     return (
@@ -145,15 +152,16 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
           <ListItemText style={padding} primary={(
             <React.Fragment>
               <span style={{ color }}>
-                {this.props.page.getDynamicName()}
+                {this.props.overrideName !== undefined ? this.props.overrideName : this.props.page.getDynamicName()}
               </span>
-              <Badge
-                variant='dot'
-                invisible={!this.props.hasUnsavedChanges}
-                color='primary'
-              >
-                &nbsp;&nbsp;
-              </Badge>
+              {this.props.hasUnsavedChanges && (
+                <Badge
+                  variant='dot'
+                  color='primary'
+                >
+                  &nbsp;&nbsp;
+                </Badge>
+              )}
             </React.Fragment>
           )} />
         </ListItem>
@@ -162,7 +170,7 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
             .map(child => {
               switch (child.type) {
                 case ConfigEditor.PageType:
-                  return (<MenuPage {...menuProps} hasUnsavedChanges={false} key={child.key} page={child} />);
+                  return (<MenuPage {...menuProps} overrideName={undefined} hasUnsavedChanges={false} key={child.key} page={child} />);
                 case ConfigEditor.PageGroupType:
                   return (<MenuPageGroup {...menuProps} key={child.key} pageGroup={child} />);
                 default:

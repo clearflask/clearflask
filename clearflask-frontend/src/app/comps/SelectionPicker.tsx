@@ -132,11 +132,12 @@ const NoOptionsMessage = (props) => {
 }
 
 const Input = (props) => {
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <div style={{
       minWidth: '20px',
     }}>
-      <components.Input {...props} />
+      <components.Input {...props} isDisabled={outerProps.disabled} />
     </div>
   );
 }

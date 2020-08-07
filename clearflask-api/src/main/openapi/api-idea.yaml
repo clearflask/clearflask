@@ -12,7 +12,7 @@ components:
             - Top
             - New
         filterCategoryIds:
-          x-clearflask-prop: { order: 1, name: 'Group', description: 'Display only ideas from these groups' }
+          x-clearflask-prop: { order: 1, name: 'Content', description: 'Display only posts from these categories' }
           x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: ['content', 'categories'], displayPropName: 'name', colorPropName: 'color'}
           type: array
           items:

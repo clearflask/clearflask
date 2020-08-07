@@ -66,34 +66,26 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           title={(
             <React.Fragment>
               {this.props.plan.title}
-              {this.props.plan.beta && (<span className={this.props.classes.beta}>&nbsp;BETA</span>)}
+              {this.props.plan.beta && (<span className={this.props.classes.beta}>&nbsp;EARLY ACCESS</span>)}
             </React.Fragment>
           )}
           titleTypographyProps={{ align: 'center' }}
         />
         <CardContent>
-          {!this.props.plan.comingSoon ? (
-            <React.Fragment>
-              <div className={this.props.classes.cardPricing}>
-                {!!this.props.plan.pricing ? (
-                  <React.Fragment>
-                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='h2' variant='h4'>{this.props.plan.pricing?.price || 'Custom'}</Typography>
-                    <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
-                  </React.Fragment>
-                ) : (
-                    <Typography component='h2' variant='h4' color='textSecondary'>Contact us</Typography>
-                  )}
-              </div>
-              <div className={this.props.classes.cardPricing}>
-                <Typography component='h3'>{billed}</Typography>
-              </div>
-            </React.Fragment>
-          ) : (
-              <div className={this.props.classes.cardPricing}>
-                <Typography component="h2" variant="h4" className={this.props.classes.comingSoon}>{this.props.plan.comingSoon ? 'Coming soon...' : 'Talk to sales'}</Typography>
-              </div>
-            )}
+          <div className={this.props.classes.cardPricing}>
+            {!!this.props.plan.pricing ? (
+              <React.Fragment>
+                <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                <Typography component='h2' variant='h4'>{this.props.plan.pricing?.price || 'Custom'}</Typography>
+                <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
+              </React.Fragment>
+            ) : (
+                <Typography component='h2' variant='h4' style={{color: this.props.theme.palette.text.hint}}>Contact</Typography>
+              )}
+          </div>
+          <div className={this.props.classes.cardPricing}>
+            <Typography component='h3'>{billed}</Typography>
+          </div>
           {!this.props.hidePerks && this.props.plan.perks.map(perk => (
             <div key={perk.desc} style={{ display: 'flex', alignItems: 'baseline' }}>
               <CheckIcon fontSize='inherit' />

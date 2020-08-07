@@ -4,6 +4,7 @@ import * as Client from '../../../../api/client';
 import * as ConfigEditor from '../../configEditor';
 import CreditView from '../../CreditView';
 import DividerCorner from '../../../../app/utils/DividerCorner';
+import randomUuid from '../../../util/uuid';
 
 const styles = (theme: Theme) => createStyles({
   headerCell: {
@@ -53,7 +54,7 @@ class CreditPreview extends Component<Props> {
         </TableCell>
       ));
       dataRow.push((
-        <TableCell key={preview} align='center' className={this.props.classes.dataCell}>
+        <TableCell key={Math.random()} align='center' className={this.props.classes.dataCell}>
           <CreditView val={preview} credits={credits} />
         </TableCell>
       ));

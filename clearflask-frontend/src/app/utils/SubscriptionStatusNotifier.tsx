@@ -1,11 +1,15 @@
 import { useSnackbar, VariantType } from 'notistack';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
 import * as Admin from '../../api/admin';
 
+var wasShown = false;
 const SubscriptionStatusNotifier = (props: {
   account:Admin.AccountAdmin
 }) => {
   const { enqueueSnackbar } = useSnackbar();
+
+  if (wasShown) return null;
+  wasShown = true;
+
   var variant: VariantType = 'info';
   var content: string | undefined;
   switch (props.account.subscriptionStatus) {

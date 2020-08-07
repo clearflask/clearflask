@@ -13,6 +13,8 @@ import notEmpty from '../common/util/arrayUtil';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
+import { isProd } from '../common/util/detectEnv';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -71,9 +73,9 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
                   <PricingPlan
                     plan={plan}
-                    actionTitle={plan.comingSoon ? undefined : (plan.pricing && !plan.beta ? 'Get started' : 'Talk to sales')}
-                    actionOnClick={plan.comingSoon ? undefined : () => plan.pricing && !plan.beta
-                      ? this.props.history.push('/contact/demo')
+                    actionTitle={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+                    actionOnClick={() => plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())
+                      ? this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })
                       : this.props.history.push('/contact/demo')
                     }
                   />

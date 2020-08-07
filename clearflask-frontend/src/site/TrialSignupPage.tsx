@@ -20,6 +20,7 @@ import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 import { Status } from '../api/server';
 import SubmitButton from '../common/SubmitButton';
 
+/** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = false;
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 

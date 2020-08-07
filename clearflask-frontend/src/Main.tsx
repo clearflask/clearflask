@@ -71,7 +71,6 @@ class Main extends Component {
       <MuiThemeProvider theme={theme}>
         <MuiSnackbarProvider>
           <CssBaseline />
-          <EnvironmentNotifier />
           <ServerErrorNotifier server={ServerAdmin.get()} />
           <CaptchaChallenger server={ServerAdmin.get()} />
           <div style={{
@@ -89,6 +88,9 @@ class Main extends Component {
                   return null;
                 }} />
               )}
+              <Route render={({ location }) => location.pathname.startsWith('/embed-status') ? null : (
+                <EnvironmentNotifier key='env-notifier' />
+              )} />
               <Suspense fallback={<Loading />}>
                 <Switch>
                   {subdomain ? ([(

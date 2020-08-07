@@ -19,31 +19,34 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Startup',
     pricing: { price: 30, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
+      { desc: 'Up to 200 contributors', terms: termsActiveUsers },
       { desc: 'Voting and expressions', terms: termsVoting },
       { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Up to 100 contributors', terms: termsActiveUsers },
       { desc: 'Feature credits', terms: termsCredit },
     ],
+    beta: true,
   },
   '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
     planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Standard',
-    pricing: { price: 75, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { price: 200, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
+      { desc: 'Unlimited contributors', terms: termsActiveUsers },
       { desc: 'Credit System', terms: termsCreditSystem },
       { desc: 'Single Sign-On' },
-      { desc: 'Up to 1,000 contributors', terms: termsActiveUsers },
       { desc: 'Feature credits', terms: termsCredit },
     ],
+    beta: true,
   },
   'CDBF4982-1805-4352-8A57-824AFB565973': {
     planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
+      { desc: 'Unlimited contributors', terms: termsActiveUsers },
       { desc: 'Powerful Analytics', terms: termsAnalytics },
       { desc: 'Multi-agent' },
       { desc: 'Full API access' },
-      { desc: 'Unlimited contributors', terms: termsActiveUsers },
     ],
     beta: true,
+    comingSoon: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable = {

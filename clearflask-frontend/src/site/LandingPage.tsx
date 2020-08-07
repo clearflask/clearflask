@@ -249,7 +249,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                   <div className={this.props.classes.point}>
                     <NotificationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Notify users waiting for a particular feature</div>
+                    <div>Let your customer know their requested feature is ready</div>
                   </div>
                 </div>
               )}

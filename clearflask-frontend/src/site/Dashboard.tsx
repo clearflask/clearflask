@@ -1,7 +1,7 @@
 import { Button, IconButton, Typography } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { connect, Provider } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
@@ -29,12 +29,28 @@ import { isProd } from '../common/util/detectEnv';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
+import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import ErrorPage from '../app/ErrorPage';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
   ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
   : 'pk_test_M1ANiFgYLBV2UyeVB10w1Ons');
 
+const styles = (theme: Theme) => createStyles({
+  toolbarLeft: {
+    display: 'flex',
+    alignItems: 'baseline'
+  },
+  projectPicker: {
+    marginLeft: theme.spacing(2),
+  },
+  selectProjectLabel: {
+    fontStyle: 'italic',
+  },
+});
+ 
 interface Props {
   forceMock?: boolean;
 }
@@ -48,9 +64,10 @@ interface ConnectProps {
 interface State {
   currentPagePath: ConfigEditor.Path;
   binding?: boolean;
+  selectedProjectLabel?: Label;
 }
 
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, State> {
+class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
@@ -95,6 +112,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
       return (<LoadingPage />);
     }
+    const activePath = this.props.match.params['path'] || '';
+    const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
     const projects = this.props.configs.map(c => ServerAdmin.get(this.props.forceMock).getProject(c));
     projects.forEach(project => {
       if (!this.unsubscribes[project.projectId]) {
@@ -104,9 +123,37 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
       }
     });
 
-    const activePath = this.props.match.params['path'] || '';
-    const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
-    const activeProject = projects.find(p => p.projectId === activePath);
+    const noProjectLabel = {label: (
+      <span className={this.props.classes.selectProjectLabel}>
+        Select project
+      </span>
+    ), value: '__NONE__'};
+    const createLabel = {label: (
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <AddIcon fontSize='inherit' />&nbsp;Create
+      </span>
+    ), value: '__CREATE__'};
+    const projectOptions = [
+      ...(projects.length > 0
+        ? projects.map(p => ({ label: p.editor.getConfig().name, value: p.projectId }))
+        : [noProjectLabel]),
+      createLabel,
+    ];
+    var selectedLabel: Label | undefined;
+    var activeProjectId: string | undefined;
+    if (activePath === 'create') {
+      selectedLabel = createLabel;
+    } else if (this.state.selectedProjectLabel && projectOptions.some(o => o.value === this.state.selectedProjectLabel?.value)) {
+      selectedLabel = this.state.selectedProjectLabel;
+      activeProjectId = this.state.selectedProjectLabel.value;
+    } else if (projects.length > 0) {
+      selectedLabel = {label: projects[0].editor.getConfig().name, value: projects[0].projectId };
+      activeProjectId = projects[0].projectId;
+    } else {
+      selectedLabel = noProjectLabel;
+    }
+    const activeProject = projects.find(p => p.projectId === activeProjectId);
+
     var page;
     var preview;
     var crumbs: { name: string, slug: string }[] | undefined;
@@ -118,9 +165,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         break;
       case 'posts':
         setTitle('Posts - Dashboard');
-        page = (<ExplorerPage render={server => (
-          <PostsPage server={server} />
-        )} />);
+        page = activeProject ? (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <PostsPage server={activeProject.server} />
+          </Provider>
+        ) : (
+          <ErrorPage msg='Select a project' />
+        );
         crumbs = [{ name: 'Posts', slug: activePath }];
         break;
       // case 'comments':
@@ -131,13 +182,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
       case 'users':
       case 'moderators':
         setTitle('Users - Dashboard');
-        page = (<ExplorerPage render={server => (
-          <UsersPage key={activePath} server={server} adminsOnly={activePath === 'moderators'} />
-        )} />);
+        page = activeProject ? (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <UsersPage key={activePath} server={activeProject.server} adminsOnly={activePath === 'moderators'} />
+          </Provider>
+        ) : (
+          <ErrorPage msg='Select a project' />
+        );
         crumbs = [{ name: 'Users', slug: activePath }];
         break;
       case 'billing':
-        setTitle('Billing - ');
+        setTitle('Billing - Dashboard');
         page = (<BillingPage />);
         crumbs = [{ name: 'Billing', slug: activePath }];
         break;
@@ -253,9 +308,30 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
         )}
         <Layout
           toolbarLeft={
-            <Typography variant='h6' color="inherit" noWrap>
-              Dashboard
-            </Typography>
+            <div className={this.props.classes.toolbarLeft}>
+              <Typography variant='h6' color="inherit" noWrap>
+                Dashboard
+              </Typography>
+              <SelectionPicker
+                className={this.props.classes.projectPicker}
+                value={[selectedLabel]}
+                disabled={activePath === 'create'}
+                overrideComponents={{DropdownIndicator: null}}
+                options={projectOptions}
+                inputMinWidth='75px'
+                isMulti={false}
+                bare={false}
+                onValueChange={(labels, action) => {
+                  if (labels.length === 1) {
+                    if(labels[0].value === '__CREATE__') {
+                      this.pageClicked('create');
+                    } else {
+                      this.setState({ selectedProjectLabel: labels[0] });
+                    }
+                  }
+                }}
+              />
+            </div>
           }
           toolbarRight={
             <IconButton
@@ -276,30 +352,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps, St
                 // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
                 { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
                 { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
-                { type: 'heading', text: 'Settings' } as MenuHeading,
-                ...(projects.map(project => {
-                  const menuProject: MenuProject = {
-                    type: 'project',
-                    projectId: project.server.getProjectId(),
-                    page: project.editor.getPage([]),
-                    hasUnsavedChanges: project.hasUnsavedChanges(),
-                  };
-                  return menuProject;
-                })),
-                {
-                  type: 'item', slug: 'create', name: (
-                    <span style={{ display: 'flex', alignItems: 'center' }}>
-                      <AddIcon fontSize='inherit' />&nbsp;Create
-                    </span>
-                  ), offset: 1
-                } as MenuItem,
+                activeProject ? {
+                  type: 'project',
+                  name: 'Settings',
+                  projectId: activeProject.server.getProjectId(),
+                  page: activeProject.editor.getPage([]),
+                  hasUnsavedChanges: activeProject.hasUnsavedChanges()
+                } as MenuProject
+                : { type: 'heading', text: 'Settings' } as MenuHeading,
                 { type: 'heading', text: 'Account' } as MenuHeading,
                 { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
                 { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
                 { type: 'heading', text: 'Help' } as MenuHeading,
                 { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
                 { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
-                { type: 'item', name: 'Ideas', offset: 1, onClick: () => this.openFeedback('ideas') } as MenuItem,
+                { type: 'item', name: 'Feedback', offset: 1, onClick: () => this.openFeedback('feedback') } as MenuItem,
               ].filter(notEmpty)}
               activePath={activePath}
               activeSubPath={activeSubPath}
@@ -355,4 +422,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
   };
   return connectProps;
-}, null, null, { forwardRef: true })(Dashboard);
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Dashboard));
