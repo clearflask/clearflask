@@ -1,0 +1,207 @@
+import { Button, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import FilterIcon from '@material-ui/icons/SearchRounded';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import * as Admin from '../../api/admin';
+import * as Client from '../../api/client';
+import { ReduxState, Server } from '../../api/server';
+import Comment from '../../app/comps/Comment';
+import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
+import LogIn from '../../app/comps/LogIn';
+import Loader from '../../app/utils/Loader';
+import debounce from '../../common/util/debounce';
+
+const searchWidth = 100;
+const styles = (theme: Theme) => createStyles({
+  page: {
+    maxWidth: 1024,
+  },
+  searchInput: {
+    margin: theme.spacing(1),
+    width: searchWidth,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
+  },
+  addIcon: {
+    cursor: 'text',
+    height: '24px',
+    fontSize: '24px',
+    color: theme.palette.text.hint,
+  },
+  nothing: {
+    margin: theme.spacing(4),
+    color: theme.palette.text.hint,
+  },
+  createFormFields: {
+    display: 'flex',
+    flexDirection: 'column',
+    // (Un)comment these to align with corner
+    marginTop: theme.spacing(1),
+    marginRight: theme.spacing(2),
+  },
+  createFormField: {
+    margin: theme.spacing(1),
+    width: 'auto',
+    flexGrow: 1,
+  },
+  createField: {
+    minWidth: 100,
+    // (Un)comment these to align with corner
+    marginBottom: -1,
+    marginRight: theme.spacing(3),
+  },
+  resultContainer: {
+    margin: theme.spacing(2),
+  },
+  userProperties: {
+    margin: theme.spacing(2),
+  },
+  key: {
+    margin: theme.spacing(1),
+  },
+  value: {
+    margin: theme.spacing(1),
+  },
+  created: {
+    whiteSpace: 'nowrap',
+  },
+  searchIcon: {
+    color: theme.palette.text.hint,
+  },
+});
+
+interface Props {
+  server: Server;
+}
+interface ConnectProps {
+  loggedInUser?: Client.User;
+}
+interface State {
+  searchInput?: string;
+  searchText?: string;
+  searchResult?: Admin.CommentWithVote[];
+  searchCursor?: string;
+  logInOpen?: boolean;
+}
+class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+  readonly updateSearchText: (text?: string) => void;
+  readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  onLoggedIn?: () => void;
+
+  constructor(props) {
+    super(props);
+    this.state = {};
+    this.updateSearchText = debounce(this.search.bind(this), 500);
+    this.search();
+  }
+
+  render() {
+    return (
+      <div className={this.props.classes.page}>
+        <ExplorerTemplate
+          searchSize={searchWidth}
+          search={(
+            <TextField
+              className={this.props.classes.searchInput}
+              placeholder='Search'
+              value={this.state.searchInput || ''}
+              onChange={e => {
+                this.setState({
+                  searchInput: e.target.value,
+                  searchText: e.target.value,
+                });
+                this.updateSearchText(e.target.value);
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <FilterIcon color='inherit' className={this.props.classes.searchIcon} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
+          content={(
+            <div className={this.props.classes.resultContainer}>
+              {this.state.searchResult && this.state.searchResult.length > 0
+                ? (
+                  <React.Fragment>
+                    {this.state.searchResult.map((comment, index) => (
+                      <Comment
+                        key={comment.commentId}
+                        server={this.props.server}
+                        comment={comment}
+                        loggedInUser={this.props.loggedInUser}
+                        replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
+                        onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
+                        logIn={() => {
+                          if (this.props.loggedInUser) {
+                            return Promise.resolve();
+                          } else {
+                            return new Promise<void>(resolve => {
+                              this.onLoggedIn = resolve
+                              this.setState({ logInOpen: true });
+                            });
+                          }
+                        }}
+                      />
+                    ))}
+                    {!!this.state.searchCursor && (
+                      <Button
+                        style={{ margin: 'auto', display: 'block' }}
+                        onClick={() => this.search(this.state.searchText, this.state.searchCursor)}
+                      >
+                        Show more
+                      </Button>
+                    )}
+                  </React.Fragment>
+                ) : (
+                  <div className={this.props.classes.nothing}>
+                    <Loader loaded={this.state.searchResult !== undefined}>
+                      <Typography variant='overline'>No comments found</Typography>
+                    </Loader>
+                  </div>
+                )}
+            </div>
+          )}
+        />
+        <LogIn
+          actionTitle='Get notified of replies'
+          server={this.props.server}
+          open={this.state.logInOpen}
+          onClose={() => this.setState({ logInOpen: false })}
+          onLoggedInAndClose={() => {
+            this.setState({ logInOpen: false });
+            this.onLoggedIn && this.onLoggedIn();
+            this.onLoggedIn = undefined;
+          }}
+        />
+      </div>
+    );
+  }
+
+  search(text?: string, cursor?: string) {
+    this.props.server.dispatchAdmin()
+      .then(d => d.commentSearchAdmin({
+        projectId: this.props.server.getProjectId(),
+        cursor: cursor,
+        commentSearchAdmin: {
+          searchText: text,
+        },
+      }))
+      .then(result => this.setState({
+        searchResult: cursor
+          ? [...(this.state.searchResult || []), ...result.results]
+          : result.results,
+        searchCursor: result.cursor,
+      }));
+  }
+}
+
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  const connectProps: ConnectProps = {
+    loggedInUser: state.users.loggedIn.user,
+  };
+  return connectProps;
+})(withStyles(styles, { withTheme: true })(CommentsPage));

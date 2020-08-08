@@ -1,10 +1,9 @@
 import { createStyles, Table, TableBody, TableCell, TableRow, Theme, withStyles, WithStyles } from '@material-ui/core';
 import React, { Component } from 'react';
 import * as Client from '../../../../api/client';
+import DividerCorner from '../../../../app/utils/DividerCorner';
 import * as ConfigEditor from '../../configEditor';
 import CreditView from '../../CreditView';
-import DividerCorner from '../../../../app/utils/DividerCorner';
-import randomUuid from '../../../util/uuid';
 
 const styles = (theme: Theme) => createStyles({
   headerCell: {
@@ -62,20 +61,20 @@ class CreditPreview extends Component<Props> {
 
     return (
       <DividerCorner title='See how credits will be displayed' height='100%'>
-      <div style={{
-        width: 'min-content',
-      }}>
-        <Table>
-          <TableBody>
-            <TableRow key='header'>
-              {headerRow}
-            </TableRow>
-            <TableRow key='data'>
-              {dataRow}
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+        <div style={{
+          width: 'min-content',
+        }}>
+          <Table>
+            <TableBody>
+              <TableRow key='header'>
+                {headerRow}
+              </TableRow>
+              <TableRow key='data'>
+                {dataRow}
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       </DividerCorner>
     );
   }

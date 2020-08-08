@@ -1,6 +1,7 @@
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, FormHelperText, Grid, Link, Radio, RadioGroup, Step, StepContent, StepLabel, Stepper, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Admin from '../../api/admin';
 import DataMock from '../../api/dataMock';
@@ -8,10 +9,9 @@ import ServerAdmin from '../../api/serverAdmin';
 import ServerMock from '../../api/serverMock';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '../../common/config/configTemplater';
+import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
 import { Project } from '../DemoApp';
-import classNames from 'classnames';
-import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   item: {
@@ -38,7 +38,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   previewProject: Project;
-  pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
+  projectCreated: (projectId: string) => void;
 }
 
 interface State extends CreateTemplateOptions {
@@ -300,7 +300,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       }))
       .then(newProject => {
         this.setState({ isSubmitting: false });
-        this.props.pageClicked(newProject.projectId)
+        this.props.projectCreated(newProject.projectId)
       })
       .catch(e => {
         this.setState({ isSubmitting: false });

@@ -9,6 +9,7 @@ import FilterIcon from '@material-ui/icons/SearchRounded';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import BrowserIcon from '@material-ui/icons/Web';
+import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import TimeAgo from 'react-timeago';
@@ -19,8 +20,8 @@ import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
-import debounce from '../../common/util/debounce';
 import SubmitButton from '../../common/SubmitButton';
+import debounce from '../../common/util/debounce';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
@@ -83,13 +84,10 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
-  adminsOnly?: boolean;
 }
-
 interface ConnectProps {
   credits?: Client.Credits;
 }
-
 interface State {
   createRefFocused?: boolean;
   editExpandedForUserId?: string;
@@ -104,8 +102,8 @@ interface State {
   searchText?: string;
   searchResult?: Admin.UserAdmin[];
   searchCursor?: string;
+  adminsOnly?: boolean;
 }
-
 class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -123,6 +121,18 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
 
     return (
       <div className={this.props.classes.page}>
+        <ToggleButtonGroup
+          {...{ size: 'small' }}
+          value={this.state.adminsOnly ? 'moderators' : 'users'}
+          exclusive
+          onChange={(e, val) => {
+            if (val === 'users') this.setState({ adminsOnly: false });
+            if (val === 'moderators') this.setState({ adminsOnly: true });
+          }}
+        >
+          <ToggleButton value={'users'}>Users</ToggleButton>
+          <ToggleButton value={'moderators'}>Moderators</ToggleButton>
+        </ToggleButtonGroup>
         <ExplorerTemplate
           createSize={expand ? 250 : 116}
           createShown={expand}
@@ -130,7 +140,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
             <TextField
               disabled={this.state.newUserIsSubmitting}
               className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-              label={this.props.adminsOnly ? 'Invite user' : 'Add user'}
+              label={this.state.adminsOnly ? 'Invite' : 'Add'}
               placeholder='Name'
               value={this.state.newUserName || ''}
               onChange={e => {
@@ -164,7 +174,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                   this.updateSearchText(this.state.newUserName, e.target.value);
                 }}
               />
-              {!this.props.adminsOnly && (
+              {!this.state.adminsOnly && (
                 <TextField
                   disabled={this.state.newUserIsSubmitting}
                   className={this.props.classes.createFormField}
@@ -200,7 +210,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                       email: this.state.newUserEmail,
                       password: this.state.newUserPassword,
                       balance: this.state.newUserBalance,
-                      isAdmin: this.props.adminsOnly,
+                      isAdmin: this.state.adminsOnly,
                     },
                   })).then(user => this.setState({
                     createRefFocused: false,
@@ -339,7 +349,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
         userSearchAdmin: {
-          isAdmin: !!this.props.adminsOnly,
+          isAdmin: !!this.state.adminsOnly,
           searchText: `${name || ''} ${email || ''}`.trim(),
         },
       }))

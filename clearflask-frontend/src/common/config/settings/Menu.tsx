@@ -25,6 +25,7 @@ export interface MenuItem {
 export interface MenuProject {
   type: 'project';
   name?: string | React.ReactNode;
+  slug: string;
   projectId: string;
   page: ConfigEditor.Page;
   hasUnsavedChanges?: boolean;
@@ -94,8 +95,8 @@ export default class Menu extends Component<Props> {
                 offset={item.offset}
                 page={item.page}
                 hasUnsavedChanges={item.hasUnsavedChanges}
-                activePath={item.projectId === this.props.activePath ? this.props.activeSubPath : undefined}
-                pageClicked={path => this.props.pageClicked(item.projectId, path)}
+                activePath={item.slug === this.props.activePath ? this.props.activeSubPath : undefined}
+                pageClicked={path => this.props.pageClicked(item.slug, path)}
               />
             );
           } else if (item.type === 'heading') {
@@ -241,7 +242,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
           <div className={this.props.classes.childrenContainer}>
             <div className={this.props.classes.childrenPadder} style={padding} />
             {childPages.map(childPage =>
-              <MenuPage {...menuProps} key={childPage.key} page={childPage} />
+              <MenuPage {...menuProps} key={childPage.key} offset={1} page={childPage} />
             )}
           </div>
         </div>

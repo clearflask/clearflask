@@ -39,7 +39,6 @@ components:
         searchText:
           type: string
           description: Search by name and email.
-      required:
     User:
       type: object
       required:

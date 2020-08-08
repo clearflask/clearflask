@@ -1,15 +1,23 @@
-import { Container, Typography, Box, CircularProgress } from '@material-ui/core';
+import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import ApiIcon from '@material-ui/icons/Code';
+import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
+import NotificationIcon from '@material-ui/icons/Notifications';
+import AnalyticsIcon from '@material-ui/icons/ShowChart';
+import VoteIcon from '@material-ui/icons/ThumbsUpDown';
+import WidgetIcon from '@material-ui/icons/Widgets';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
+import PostStatusIframe from '../app/PostStatusIframe';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
+import ScrollAnchor from '../common/util/ScrollAnchor';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -19,14 +27,6 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
-import ScrollAnchor, { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
-import classNames from 'classnames';
-import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
-import NotificationIcon from '@material-ui/icons/Notifications';
-import AnalyticsIcon from '@material-ui/icons/ShowChart';
-import VoteIcon from '@material-ui/icons/ThumbsUpDown';
-import WidgetIcon from '@material-ui/icons/Widgets';
-import PostStatusIframe from '../app/PostStatusIframe';
 import PricingPage from './PricingPage';
 
 const styles = (theme: Theme) => createStyles({
@@ -131,7 +131,7 @@ interface State {
   scrollTo?: string;
 }
 class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
-  state:State = {};
+  state: State = {};
 
   render() {
     return (
@@ -207,7 +207,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 </div>
               )}
               buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({scrollTo: 'collect'})}
+              buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
             />
           </div>
           <div className={this.props.classes.textCircleItemContainer}>
@@ -230,11 +230,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 </div>
               )}
               buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({scrollTo: 'prioritize'})}
+              buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
             />
           </div>
           <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
-            <div style={{width: '10%'}} />
+            <div style={{ width: '10%' }} />
             <BlockContent
               className={classNames(this.props.classes.textCircleItemThree, this.props.classes.textCircleItem)}
               variant='content'
@@ -244,7 +244,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 <div className={this.props.classes.pointsContainer}>
                   <div>Build a community around your product development</div>
                   <div className={this.props.classes.point}>
-                    <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIcon} style={{transform: 'rotate(180deg)'}} />
+                    <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIcon} style={{ transform: 'rotate(180deg)' }} />
                     <div>Show off your Product Roadmap</div>
                   </div>
                   <div className={this.props.classes.point}>
@@ -254,13 +254,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 </div>
               )}
               buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({scrollTo: 'engage'})}
+              buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
             />
           </div>
         </div>
         <div
           className={this.props.classes.circleContainer}
-          style={{zIndex: 1}}
+          style={{ zIndex: 1 }}
         >
           <span className={this.props.classes.circle} />
         </div>

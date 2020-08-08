@@ -1,8 +1,8 @@
-import { createStyles, Theme, withStyles, makeStyles } from '@material-ui/core/styles';
-import { SnackbarProvider, useSnackbar, WithSnackbarProps } from 'notistack';
-import React from 'react';
-import { Button, IconButton } from '@material-ui/core';
+import { IconButton } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import DismissIcon from '@material-ui/icons/CloseRounded';
+import { SnackbarProvider } from 'notistack';
+import React from 'react';
 
 const muiSnackbarStyles = makeStyles({
   dismissButton: {
@@ -25,7 +25,7 @@ const MuiSnackbarProvider = (props: any) => {
       action={key => (
         <IconButton
           className={classes.dismissButton}
-          onClick={() => notistackRef.current?.closeSnackbar(key) }
+          onClick={() => notistackRef.current?.closeSnackbar(key)}
         >
           <DismissIcon fontSize='inherit' />
         </IconButton>

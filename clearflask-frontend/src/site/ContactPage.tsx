@@ -1,14 +1,14 @@
 import { Box, Button, CardActions, CardHeader, Checkbox, Container, FormControlLabel, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import { History } from 'history';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { match, Route } from 'react-router';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import SubmitButton from '../common/SubmitButton';
-import classNames from 'classnames';
-import { connect } from 'react-redux';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -165,8 +165,8 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           className={this.props.classes.field}
                           isSubmitting={this.state.isSubmitting}
                           disabled={form.fields.some(field => field.required
-                              && !this.state[`field_${form.type}_${field.attrName}`]
-                              && (!field.fillWithAccountEmail || !this.props.accountEmail))}
+                            && !this.state[`field_${form.type}_${field.attrName}`]
+                            && (!field.fillWithAccountEmail || !this.props.accountEmail))}
                           onClick={() => {
                             this.setState({ isSubmitting: true });
                             const content = {};
@@ -181,7 +181,7 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             }))
                               .then(() => {
                                 this.setState({ isSubmitting: false });
-                                this.props.history.push(`/contact/success`);
+                                this.props.history.push(`${prefixMatch}/success`);
                               })
                               .catch(() => this.setState({ isSubmitting: false }));
                           }}
@@ -215,7 +215,7 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     />
                     <CardActions style={{ justifyContent: 'flex-end' }}>
                       <Button
-                        onClick={() => this.props.history.push(`/contact/${form.type}`)}
+                        onClick={() => this.props.history.push(`${prefixMatch}/${form.type}`)}
                       >
                         {form.submitTitle}
                       </Button>

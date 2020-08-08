@@ -1,37 +1,36 @@
-import { Button, IconButton, Typography } from '@material-ui/core';
-import AddIcon from '@material-ui/icons/Add';
+import { Button, Fade, IconButton, Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js/pure';
 import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
-import { Redirect, RouteComponentProps } from 'react-router';
+import { Redirect, Route, RouteComponentProps } from 'react-router';
 import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
+import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
+import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
+import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
 import * as ConfigEditor from '../common/config/configEditor';
 import Crumbs from '../common/config/settings/Crumbs';
-import Menu, { MenuHeading, MenuItem, MenuProject } from '../common/config/settings/Menu';
+import Menu, { MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import ProjectSettings from '../common/config/settings/ProjectSettings';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
-import Message from '../common/Message';
 import notEmpty from '../common/util/arrayUtil';
+import { isProd } from '../common/util/detectEnv';
 import setTitle from '../common/util/titleUtil';
+import ContactPage from './ContactPage';
 import BillingPage from './dashboard/BillingPage';
+import CommentsPage from './dashboard/CommentsPage';
 import CreatePage from './dashboard/CreatePage';
-import ExplorerPage from './dashboard/ExplorerPage';
 import PostsPage from './dashboard/PostsPage';
 import SettingsPage from './dashboard/SettingsPage';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
-import { isProd } from '../common/util/detectEnv';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js/pure';
-import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
-import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import ErrorPage from '../app/ErrorPage';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -50,7 +49,7 @@ const styles = (theme: Theme) => createStyles({
     fontStyle: 'italic',
   },
 });
- 
+
 interface Props {
   forceMock?: boolean;
 }
@@ -64,7 +63,7 @@ interface ConnectProps {
 interface State {
   currentPagePath: ConfigEditor.Path;
   binding?: boolean;
-  selectedProjectLabel?: Label;
+  selectedProjectId?: string;
 }
 
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
@@ -123,33 +122,30 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       }
     });
 
-    const noProjectLabel = {label: (
-      <span className={this.props.classes.selectProjectLabel}>
-        Select project
-      </span>
-    ), value: '__NONE__'};
-    const createLabel = {label: (
-      <span style={{ display: 'flex', alignItems: 'center' }}>
-        <AddIcon fontSize='inherit' />&nbsp;Create
-      </span>
-    ), value: '__CREATE__'};
+    const noProjectLabel = {
+      label: (
+        <span className={this.props.classes.selectProjectLabel}>
+          Select project
+        </span>
+      ), value: '__NONE__'
+    };
+    const createLabel = {
+      label: '+ Create', value: '__CREATE__'
+    };
     const projectOptions = [
       ...(projects.length > 0
         ? projects.map(p => ({ label: p.editor.getConfig().name, value: p.projectId }))
         : [noProjectLabel]),
       createLabel,
     ];
-    var selectedLabel: Label | undefined;
-    var activeProjectId: string | undefined;
+    var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
+    var activeProjectId: string | undefined = selectedLabel?.value;
     if (activePath === 'create') {
       selectedLabel = createLabel;
-    } else if (this.state.selectedProjectLabel && projectOptions.some(o => o.value === this.state.selectedProjectLabel?.value)) {
-      selectedLabel = this.state.selectedProjectLabel;
-      activeProjectId = this.state.selectedProjectLabel.value;
-    } else if (projects.length > 0) {
-      selectedLabel = {label: projects[0].editor.getConfig().name, value: projects[0].projectId };
+    } else if (!selectedLabel && projects.length > 0) {
+      selectedLabel = { label: projects[0].editor.getConfig().name, value: projects[0].projectId };
       activeProjectId = projects[0].projectId;
-    } else {
+    } else if (!selectedLabel) {
       selectedLabel = noProjectLabel;
     }
     const activeProject = projects.find(p => p.projectId === activeProjectId);
@@ -157,37 +153,58 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var page;
     var preview;
     var crumbs: { name: string, slug: string }[] | undefined;
+    var showProjectSelect: boolean = false;
+    var showCreateProjectWarning: boolean = false;
     switch (activePath) {
       case '':
-        setTitle('Dashboard');
+        setTitle('Home - Dashboard');
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
         page = (<div>This is home</div>);
         crumbs = [{ name: 'Home', slug: activePath }];
         break;
       case 'posts':
         setTitle('Posts - Dashboard');
-        page = activeProject ? (
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
             <PostsPage server={activeProject.server} />
           </Provider>
-        ) : (
-          <ErrorPage msg='Select a project' />
         );
         crumbs = [{ name: 'Posts', slug: activePath }];
         break;
-      // case 'comments':
-      //   setTitle('Comments');
-      //   page = (<div>This is comments</div>);
-      //   crumbs = [{name: 'Comments', slug: activePath}];
-      //   break;
-      case 'users':
-      case 'moderators':
-        setTitle('Users - Dashboard');
-        page = activeProject ? (
+      case 'comments':
+        setTitle('Comments');
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <UsersPage key={activePath} server={activeProject.server} adminsOnly={activePath === 'moderators'} />
+            <CommentsPage key={activePath} server={activeProject.server} />
           </Provider>
-        ) : (
-          <ErrorPage msg='Select a project' />
+        );
+        crumbs = [{ name: 'Comments', slug: activePath }];
+        break;
+      case 'users':
+        setTitle('Users - Dashboard');
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <UsersPage key={activePath} server={activeProject.server} />
+          </Provider>
         );
         crumbs = [{ name: 'Users', slug: activePath }];
         break;
@@ -199,6 +216,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'account':
         setTitle('Account - Dashboard');
         page = (<SettingsPage />);
+        crumbs = [{ name: 'Settings', slug: activePath }];
+        break;
+      case 'help':
+        setTitle('Support - Dashboard');
+        page = (
+          <Route path={`/dashboard/help`} render={props => (
+            <ContactPage {...props} />
+          )} />
+        );
         crumbs = [{ name: 'Settings', slug: activePath }];
         break;
       case 'create':
@@ -213,7 +239,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         page = this.createProject && (
           <CreatePage
             previewProject={this.createProject}
-            pageClicked={(path, subPath) => this.pageClicked(path, subPath)}
+            projectCreated={(projectId) => {
+              this.setState({ selectedProjectId: projectId });
+              this.pageClicked('settings');
+            }}
           />
         );
         crumbs = [{ name: 'Create', slug: activePath }];
@@ -224,26 +253,19 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           />
         );
         break;
-      default:
-        if (activeProject === undefined) {
-          setTitle('Page not found');
-          page = (
-            <Message innerStyle={{ margin: '40px auto' }}
-              message='Oops, cannot find project'
-              variant='error'
-            />
-          );
+      case 'settings':
+        showProjectSelect = true;
+        if (!activeProject) {
+          setTitle('Settings - Dashboard');
+          showCreateProjectWarning = true;
           break;
         }
         try {
           var currentPage = activeProject.editor.getPage(activeSubPath);
         } catch (ex) {
-          setTitle('Page not found');
+          setTitle('Settings - Dashboard');
           page = (
-            <Message innerStyle={{ margin: '40px auto' }}
-              message='Oops, page failed to load'
-              variant='error'
-            />
+            <ErrorPage msg='Oops, page failed to load' />
           );
           break;
         }
@@ -283,6 +305,18 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           />
         );
         break;
+      default:
+        setTitle('Page not found');
+        crumbs = [];
+        page = (
+          <ErrorPage msg='Oops, cannot find project' />
+        );
+        break;
+    }
+    if (showCreateProjectWarning) {
+      page = (
+        <ErrorPage msg='Oops, you have to create a project first' />
+      );
     }
 
     var billingHasNotification: boolean = false;
@@ -312,25 +346,28 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <Typography variant='h6' color="inherit" noWrap>
                 Dashboard
               </Typography>
-              <SelectionPicker
-                className={this.props.classes.projectPicker}
-                value={[selectedLabel]}
-                disabled={activePath === 'create'}
-                overrideComponents={{DropdownIndicator: null}}
-                options={projectOptions}
-                inputMinWidth='75px'
-                isMulti={false}
-                bare={false}
-                onValueChange={(labels, action) => {
-                  if (labels.length === 1) {
-                    if(labels[0].value === '__CREATE__') {
-                      this.pageClicked('create');
-                    } else {
-                      this.setState({ selectedProjectLabel: labels[0] });
-                    }
-                  }
-                }}
-              />
+              <Fade in={showProjectSelect}>
+                <div>
+                  <SelectionPicker
+                    className={this.props.classes.projectPicker}
+                    value={[selectedLabel]}
+                    overrideComponents={{ DropdownIndicator: null }}
+                    options={projectOptions}
+                    inputMinWidth='75px'
+                    isMulti={false}
+                    bare={false}
+                    onValueChange={(labels, action) => {
+                      if (labels.length === 1) {
+                        if (labels[0].value === '__CREATE__') {
+                          this.pageClicked('create');
+                        } else {
+                          this.setState({ selectedProjectId: labels[0].value });
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </Fade>
             </div>
           }
           toolbarRight={
@@ -347,23 +384,21 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             <Menu
               items={[
                 { type: 'item', slug: '', name: 'Home' } as MenuItem,
-                { type: 'heading', text: 'Explore' } as MenuHeading,
                 { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
-                // { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
+                { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
                 { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
-                { type: 'item', slug: 'moderators', name: 'Moderators', offset: 1 } as MenuItem,
                 activeProject ? {
                   type: 'project',
                   name: 'Settings',
+                  slug: 'settings',
                   projectId: activeProject.server.getProjectId(),
                   page: activeProject.editor.getPage([]),
                   hasUnsavedChanges: activeProject.hasUnsavedChanges()
                 } as MenuProject
-                : { type: 'heading', text: 'Settings' } as MenuHeading,
-                { type: 'heading', text: 'Account' } as MenuHeading,
-                { type: 'item', slug: 'account', name: 'Settings', offset: 1 } as MenuItem,
+                  : { type: 'item', slug: 'settings', name: 'Settings' } as MenuItem,
+                { type: 'item', slug: 'account', name: 'Account' } as MenuItem,
                 { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
-                { type: 'heading', text: 'Help' } as MenuHeading,
+                { type: 'item', slug: 'help', name: 'Help' } as MenuItem,
                 { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
                 { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
                 { type: 'item', name: 'Feedback', offset: 1, onClick: () => this.openFeedback('feedback') } as MenuItem,
@@ -392,6 +427,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         >
           <Crumbs
             crumbs={crumbs}
+            activeProjectSlug='settings'
+            activeProjectSlugName='Settings'
             activeProject={activeProject}
             activeSubPath={activeSubPath}
             pageClicked={this.pageClicked.bind(this)}

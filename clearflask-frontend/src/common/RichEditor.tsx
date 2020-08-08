@@ -1,4 +1,4 @@
-import { Collapse, IconButton, InputProps, StandardTextFieldProps, TextField } from '@material-ui/core';
+import { Collapse, InputProps, StandardTextFieldProps, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CodeIcon from "@material-ui/icons/Code";
 import BoldIcon from "@material-ui/icons/FormatBold";
@@ -8,6 +8,7 @@ import ListOrderedIcon from "@material-ui/icons/FormatListNumbered";
 import QuoteIcon from "@material-ui/icons/FormatQuote";
 import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
+import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import { convertFromRaw, convertToRaw, Editor, EditorState, RichUtils } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { filterEditorState } from "draftjs-filters";
@@ -29,6 +30,13 @@ const styles = (theme: Theme) => createStyles({
     '& .public-DraftEditorPlaceholder-hasFocus': {
       opacity: 1,
     },
+  },
+  toggleButton: {
+    height: 'initial',
+    padding: theme.spacing(0.5),
+  },
+  toggleButtonGroup: {
+    margin: theme.spacing(1, 0.5, 0.5),
   },
 });
 class RichEditor extends React.Component<StandardTextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
@@ -174,33 +182,36 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
         />
         <Collapse in={this.state.isFocused || this.state.editorState.getCurrentContent().hasText()}>
           <div>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleInlineStyle(e, 'BOLD')}>
-              <BoldIcon color={curStyle.contains('BOLD') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleInlineStyle(e, 'ITALIC')}>
-              <ItalicIcon color={curStyle.contains('ITALIC') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleInlineStyle(e, 'STRIKETHROUGH')}>
-              <StrikethroughIcon color={curStyle.contains('STRIKETHROUGH') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleInlineStyle(e, 'UNDERLINE')}>
-              <UnderlineIcon color={curStyle.contains('UNDERLINE') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleBlockType(e, 'blockquote')}>
-              <QuoteIcon color={blockType === 'blockquote' ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleCode(e)}>
-              <CodeIcon color={(curStyle.contains('CODE') || blockType === 'code-block') ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleBlockType(e, 'ordered-list-item')}>
-              <ListOrderedIcon color={blockType === 'ordered-list-item' ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
-            <IconButton size='small' onMouseDown={e => e.preventDefault()} onClick={e => this.toggleBlockType(e, 'unordered-list-item')}>
-              <ListUnorderedIcon color={blockType === 'unordered-list-item' ? 'primary' : undefined} fontSize='inherit' />
-            </IconButton>
+            <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
+              {this.renderToggleButton(BoldIcon, curStyle.contains('BOLD'), e => this.toggleInlineStyle(e, 'BOLD'))}
+              {this.renderToggleButton(ItalicIcon, curStyle.contains('ITALIC'), e => this.toggleInlineStyle(e, 'ITALIC'))}
+              {this.renderToggleButton(StrikethroughIcon, curStyle.contains('STRIKETHROUGH'), e => this.toggleInlineStyle(e, 'STRIKETHROUGH'))}
+              {this.renderToggleButton(UnderlineIcon, curStyle.contains('UNDERLINE'), e => this.toggleInlineStyle(e, 'UNDERLINE'))}
+            </ToggleButtonGroup>
+            <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
+              {this.renderToggleButton(QuoteIcon, blockType === 'blockquote', e => this.toggleBlockType(e, 'blockquote'))}
+              {this.renderToggleButton(CodeIcon, curStyle.contains('CODE') || blockType === 'code-block', e => this.toggleCode(e))}
+              {this.renderToggleButton(ListOrderedIcon, blockType === 'ordered-list-item', e => this.toggleBlockType(e, 'ordered-list-item'))}
+              {this.renderToggleButton(ListUnorderedIcon, blockType === 'unordered-list-item', e => this.toggleBlockType(e, 'unordered-list-item'))}
+            </ToggleButtonGroup>
           </div>
         </Collapse>
       </div>
+    );
+  }
+
+  renderToggleButton(IconCmpt, checked: boolean, toggle: (event) => void) {
+    return (
+      <ToggleButton
+        className={this.props.classes.toggleButton}
+        value='check'
+        selected={checked}
+        onMouseDown={e => e.preventDefault()}
+        onChange={e => toggle(e)}
+        onClick={e => toggle(e)}
+      >
+        <IconCmpt fontSize='inherit' />
+      </ToggleButton>
     );
   }
 

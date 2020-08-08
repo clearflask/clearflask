@@ -11,6 +11,8 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   crumbs?: { name: string, slug: string }[];
+  activeProjectSlug?: string;
+  activeProjectSlugName?: string;
   activeProject?: Project;
   activeSubPath?: ConfigEditor.Path;
   pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
@@ -31,14 +33,16 @@ class Crumbs extends Component<Props & WithStyles<typeof styles, true>> {
     const crumbs: React.ReactNode[] = [];
     if (this.props.crumbs) {
       this.props.crumbs.map(crumb => this.createCrumb(crumb.name, crumb.slug));
-    } else if (this.props.activeProject) {
+    } else if (this.props.activeProject && this.props.activeProjectSlug) {
       const subpath = this.props.activeSubPath || [];
       for (let i = 0; i <= subpath.length; i++) {
         const currSubPath = subpath.slice(0, i);
         const item = this.props.activeProject.editor.get(currSubPath);
         if (item.type !== ConfigEditor.PageType) continue;
         this.subscribe(item);
-        crumbs.push(this.createCrumb(item.getDynamicName(), this.props.activeProject.editor.getConfig().projectId, item.path));
+        const name = (i === 0 && this.props.activeProjectSlugName)
+          ? this.props.activeProjectSlugName : item.getDynamicName();
+        crumbs.push(this.createCrumb(name, this.props.activeProjectSlug, item.path));
       }
     }
 

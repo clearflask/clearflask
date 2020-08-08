@@ -1,13 +1,13 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
-import { Server } from '../api/server';
-import { detectEnv, Environment } from '../common/util/detectEnv';
-import * as Client from '../api/client';
-import Promised from '../common/Promised';
-import WebNotification from '../common/notification/webNotification';
 import OpenIcon from '@material-ui/icons/OpenInNew';
 import QueryString from 'query-string';
+import React, { Component } from 'react';
 import { RouteComponentProps } from 'react-router';
+import * as Client from '../api/client';
+import { Server } from '../api/server';
+import WebNotification from '../common/notification/webNotification';
+import Promised from '../common/Promised';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 
 export class PostStatusConfigDef {
   fontSize?: number | string;
@@ -19,7 +19,7 @@ export class PostStatusConfigDef {
   justifyContent?: string;
   textTransform?: string;
 }
-export interface PostStatusConfig extends PostStatusConfigDef{};
+export interface PostStatusConfig extends PostStatusConfigDef { };
 
 const styles = (theme: Theme) => createStyles({
   linkContainer: {
@@ -44,7 +44,7 @@ interface Props {
 interface State {
 }
 class PostStatus extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
-  state:State = {};
+  state: State = {};
   dataPromise: Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]>;
 
   constructor(props) {
@@ -54,7 +54,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   }
 
   async fetchData(props: Props): Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]> {
-    var server:Server | undefined;
+    var server: Server | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       const DemoApp = await import('../site/DemoApp'/* webpackChunkName: "demoApp" */);
       const project = await DemoApp.getProject(
@@ -72,7 +72,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       projectId: props.projectId,
       configGetAndUserBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-        ? subscriptionResult.token : undefined,
+          ? subscriptionResult.token : undefined,
       },
     }));
 
@@ -122,7 +122,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
                 justifyContent: statusConfig.justifyContent,
                 textTransform: statusConfig.textTransform as any,
               }}
-           >
+            >
               <a
                 href={src}
                 target='_blank'

@@ -16,7 +16,6 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column' as 'column',
     flexGrow: 1,
-    height: '100vh',
   },
   barBottomPaper: {
     display: 'flex',

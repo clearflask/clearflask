@@ -1,6 +1,6 @@
 components:
   schemas:
-    CommentSearch:
+    CommentList:
       type: object
       properties:
         parentCommentId:
@@ -66,6 +66,11 @@ components:
       properties:
         content:
           type: string
+    CommentSearchAdmin:
+      type: object
+      properties:
+        searchText:
+          type: string
 
 /project/{projectId}/idea/{ideaId}/commentsearch:
   post:
@@ -87,13 +92,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentSearch'
+            $ref: 'api-comment.yaml#/components/schemas/CommentList'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: CommentSearchResponse
+              title: CommentListResponse
               type: object
               required:
               - results
@@ -191,6 +196,42 @@ components:
               $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/commentSearch:
+  post:
+    operationId: commentSearchAdmin
+    tags: [CommentAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentSearchAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CommentSearchResponse
+              type: object
+              required:
+                - results
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
   delete:
     operationId: commentDeleteAdmin

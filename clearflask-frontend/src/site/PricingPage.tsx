@@ -2,19 +2,18 @@ import { Box, Container, Grid, Table, TableBody, TableCell, TableHead, TableRow,
 import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
-import { History } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import notEmpty from '../common/util/arrayUtil';
+import { isProd } from '../common/util/detectEnv';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
-import { RouteComponentProps, withRouter } from 'react-router';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
-import { isProd } from '../common/util/detectEnv';
 
 const styles = (theme: Theme) => createStyles({
   page: {

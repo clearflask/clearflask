@@ -480,7 +480,7 @@ class DataMock {
         authorUserId: user.userId,
         title: title,
         description: textToRaw(description),
-        response: response,
+        response: response === undefined ? undefined : textToRaw(response),
         categoryId: categoryId,
         tagIds: tagIds || [],
         statusId: statusId,
@@ -539,10 +539,10 @@ class DataMock {
           units: 'paragraphs',
           count: Math.round(Math.random() * 3 + 1),
         })),
-        response: Math.random() < 0.3 ? undefined : loremIpsum({
+        response: Math.random() < 0.3 ? undefined : textToRaw(loremIpsum({
           units: 'words',
           count: Math.round(Math.random() * 10 + 3),
-        }),
+        })),
         categoryId: category.categoryId,
         tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
           .filter(t => Math.random() < 0.3)
@@ -596,7 +596,7 @@ class DataMock {
         authorUserId: user.userId,
         title: 'Add Dark Mode',
         description: textToRaw('To reduce eye-strain, please add a dark mode option'),
-        response: 'Added to our backlog, thanks!',
+        response: textToRaw('Added to our backlog, thanks!'),
         categoryId: config.content.categories[0].categoryId,
         statusId: config.content.categories[0].workflow.entryStatus,
         tagIds: [],

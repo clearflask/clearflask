@@ -44,6 +44,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
       { desc: 'Powerful Analytics', terms: termsAnalytics },
       { desc: 'Multi-agent' },
       { desc: 'Full API access' },
+      { desc: 'Uptime SLA' },
     ],
     beta: true,
     comingSoon: true,
@@ -56,8 +57,8 @@ const FeaturesTable: Admin.FeaturesTable = {
     { feature: 'Contributors', values: ['100', '1,000', 'No limit'], terms: termsActiveUsers },
     { feature: 'Layout and Style customization', values: ['Yes', 'Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
     { feature: 'Voting and expressions', values: ['Yes', 'Yes', 'Yes'], terms: termsVoting },
-    { feature: 'Credit System', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem  },
-    { feature: 'Single Sign-On', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem  },
+    { feature: 'Credit System', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem },
+    { feature: 'Single Sign-On', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem },
     { feature: 'Powerful Analytics', values: ['No', 'No', 'Yes'], terms: termsAnalytics },
     { feature: 'Full API access', values: ['No', 'No', 'Yes'] },
   ],
@@ -194,11 +195,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.TrialExpired) ? undefined : {
-        brand: 'mastercard',
-        last4: "4242",
-        expiryMonth: 7,
-        expiryYear: 2032,
-      },
+          brand: 'mastercard',
+          last4: "4242",
+          expiryMonth: 7,
+          expiryYear: 2032,
+        },
       billingPeriodEnd,
       availablePlans: Object.values(AvailablePlans),
       invoices: {
@@ -230,7 +231,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
-    if(request.invoiceNumber === 1) {
+    if (request.invoiceNumber === 1) {
       return this.returnLater({
         invoiceHtml: "This is an invoice <b>test</b>",
       });
@@ -284,17 +285,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentDelete(request: Client.CommentDeleteRequest): Promise<Client.CommentWithVote> {
     return this.commentDeleteAdmin(request);
   }
-  commentList(request: Client.CommentListRequest): Promise<Client.CommentSearchResponse> {
+  commentList(request: Client.CommentListRequest): Promise<Client.CommentListResponse> {
     const minCommentIdToExclude: string | '' = [
-      ...(request.commentSearch.excludeChildrenCommentIds || []),
-      ...(request.commentSearch.parentCommentId ? [request.commentSearch.parentCommentId] : []),
+      ...(request.commentList.excludeChildrenCommentIds || []),
+      ...(request.commentList.parentCommentId ? [request.commentList.parentCommentId] : []),
     ].reduce((l, r) => l > r ? l : r, '');
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     const data = this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.ideaId === request.ideaId)
-      .filter(comment => !request.commentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.commentSearch.parentCommentId)))
-      .filter(comment => !request.commentSearch.excludeChildrenCommentIds ||
-        !request.commentSearch.excludeChildrenCommentIds.some(ec =>
+      .filter(comment => !request.commentList.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.commentList.parentCommentId)))
+      .filter(comment => !request.commentList.excludeChildrenCommentIds ||
+        !request.commentList.excludeChildrenCommentIds.some(ec =>
           ec === comment.commentId
           || comment.parentIdPath.some(pc => ec === pc)))
       .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude)
@@ -317,6 +318,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.content = request.commentUpdate.content;
     comment.edited = new Date();
     return this.returnLater(comment);
+  }
+  commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchResponse> {
+    return this.returnLater(this.filterCursor(this.getProject(request.projectId).comments
+      .filter(comment => !request.commentSearchAdmin.searchText
+        || comment.author?.name && comment.author.name.indexOf(request.commentSearchAdmin.searchText) >= 0
+        || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0), this.DEFAULT_LIMIT, request.cursor));
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;

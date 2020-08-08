@@ -517,8 +517,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
             status: Status.PENDING
           }
         },
@@ -528,8 +528,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
             status: Status.REJECTED
           }
         },
@@ -556,8 +556,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentSearch.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
             status: Status.FULFILLED
           }
         },
