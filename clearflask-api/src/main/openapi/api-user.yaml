@@ -65,6 +65,8 @@ components:
               type: boolean
             email:
               type: string
+            emailVerified:
+              type: boolean
             emailNotify:
               type: boolean
             iosPush:
@@ -97,6 +99,8 @@ components:
         name:
           type: string
         email:
+          type: string
+        emailVerification:
           type: string
         password:
           type: string
@@ -266,7 +270,13 @@ components:
         content:
           application/json:
             schema:
-              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+              title: UserCreateResponse
+              type: object
+              properties:
+                requiresEmailVerification:
+                  type: boolean
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/user/{userId}:
   get:
     operationId: userGet

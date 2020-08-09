@@ -52,8 +52,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
-          <Typography component="h1" variant="h2" color="textPrimary">Plans</Typography>
-          <Typography component="h2" variant="h4" color="textSecondary">Flat-rate predictable pricing</Typography>
+          <Typography component="h1" variant="h2" color="textPrimary">Pricing</Typography>
+          <Typography component="h2" variant="h4" color="textSecondary">Try out all the features during your trial</Typography>
           {periods.length > 1 && (
             <PlanPeriodSelect
               plans={this.props.plans}

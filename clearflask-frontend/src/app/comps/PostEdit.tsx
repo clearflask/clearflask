@@ -5,11 +5,11 @@ import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import RichEditor from '../../common/RichEditor';
+import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
-import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   row: {

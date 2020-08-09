@@ -30,6 +30,8 @@ export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
 export const AUTH_TOKEN_PARAM_NAME = 'authToken';
 /** If changed, also change in NotificationServiceImpl.java */
 export const SSO_TOKEN_PARAM_NAME = 'token';
+/** If changed, also change it wherever it is in Java */
+export const EMAIL_VERIFY_TOKEN_PARAM_NAME = 'token';
 
 interface Props {
   projectId: string;

@@ -23,9 +23,10 @@ import AcceptTerms from '../../common/AcceptTerms';
 import Hr from '../../common/Hr';
 import MobileNotification, { Device } from '../../common/notification/mobileNotification';
 import WebNotification from '../../common/notification/webNotification';
+import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
-import SubmitButton from '../../common/SubmitButton';
+import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
@@ -97,6 +98,8 @@ interface State {
   isLogin?: boolean;
   awaitExternalBind?: 'recovery' | 'sso';
   isSubmitting?: boolean;
+  emailVerifyDialog?: boolean;
+  emailVerification?: (number | undefined)[];
 }
 
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
@@ -165,6 +168,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         : (onlySingleOption ? notifOpts.values().next().value : undefined);
 
       const showEmailInput = selectedNotificationType === NotificationType.Email;
+      const emailValid = this.isEmailValid(this.state.email);
+      const emailAllowedDomain = this.isAllowedDomain(this.state.email);
       const showDisplayNameInput = this.props.config && signupAllowed && this.props.config.users.onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
       const isDisplayNameRequired = this.props.config && this.props.config.users.onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
@@ -176,9 +181,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         && (selectedNotificationType !== NotificationType.Ios || this.state.notificationDataIos)
         && (selectedNotificationType !== NotificationType.Browser || this.state.notificationDataBrowser)
         && (!isDisplayNameRequired || this.state.displayName)
-        && (selectedNotificationType !== NotificationType.Email || this.state.email)
+        && (selectedNotificationType !== NotificationType.Email || (emailValid && emailAllowedDomain))
         && (!isPasswordRequired || this.state.pass);
-      const isLoginSubmittable = !!this.state.email;
+      const isLoginSubmittable = emailValid;
       const isSubmittable = isLogin ? isLoginSubmittable : isSignupSubmittable;
 
       const onlySingleOptionRequiresAllow = onlySingleOption &&
@@ -305,7 +310,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           onChange={e => this.setState({ email: e.target.value })}
                           label='Email'
                           type='email'
-                          helperText={(<span className={this.props.classes.noWrap}>Where to send you updates</span>)}
+                          error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
+                          helperText={(<span className={this.props.classes.noWrap}>{
+                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Email domain must be one of ${this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains?.join(', ') || 'allowed domains'}`}</span>)}
                           margin='normal'
                           style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
@@ -359,6 +366,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     onChange={e => this.setState({ email: e.target.value })}
                     label='Email'
                     type='email'
+                    error={!!this.state.email && !emailValid}
                     helperText={(<span className={this.props.classes.noWrap}>Email you used to sign up</span>)}
                     margin='normal'
                     style={{ marginTop: '0px' }}
@@ -438,9 +446,16 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
                         browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,
                       },
-                    }).then(() => {
-                      this.setState({ isSubmitting: false });
-                      this.props.onLoggedInAndClose();
+                    }).then(userCreateResponse => {
+                      if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
+                        this.setState({
+                          isSubmitting: false,
+                          emailVerifyDialog: true,
+                        });
+                      } else {
+                        this.setState({ isSubmitting: false });
+                        this.props.onLoggedInAndClose();
+                      }
                     }).catch(() => {
                       this.setState({ isSubmitting: false });
                     });
@@ -457,11 +472,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             maxWidth='xs'
             {...this.props.forgotEmailDialogProps}
           >
-            <DialogTitle>
-              {this.state.awaitExternalBind === 'recovery'
-                ? 'Awaiting confirmation...'
-                : 'Awaiting confirmation...'}
-            </DialogTitle>
+            <DialogTitle>Awaiting confirmation...</DialogTitle>
             <DialogContent>
               {this.state.awaitExternalBind === 'recovery' ? (
                 <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
@@ -471,6 +482,56 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ awaitExternalBind: undefined })}>Cancel</Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog
+            open={!!this.state.emailVerifyDialog}
+            onClose={() => this.setState({ emailVerifyDialog: undefined })}
+            maxWidth='xs'
+          >
+            <DialogTitle>Awaiting email verification...</DialogTitle>
+            <DialogContent>
+              <DialogContentText>We sent a verification email to <span className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the email here:</DialogContentText>
+              <DigitsInput
+                digits={6}
+                value={this.state.emailVerification}
+                disabled={this.state.isSubmitting}
+                onChange={(val, isComplete) => {
+                  if (isComplete) {
+                    this.setState({
+                      emailVerification: val,
+                      isSubmitting: true,
+                    }, () => setTimeout(() => {
+                      this.props.server.dispatch().userCreate({
+                        projectId: this.props.server.getProjectId(),
+                        userCreate: {
+                          name: this.state.displayName,
+                          email: this.state.email!,
+                          emailVerification: val.join(),
+                          password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
+                        },
+                      }).then(userCreateResponse => {
+                        if (userCreateResponse.requiresEmailVerification || !userCreateResponse.user) {
+                          this.setState({ isSubmitting: false });
+                        } else {
+                          this.setState({
+                            isSubmitting: false,
+                            emailVerifyDialog: undefined,
+                          });
+                          this.props.onLoggedInAndClose();
+                        }
+                      }).catch(() => {
+                        this.setState({ isSubmitting: false });
+                      });
+                    }, 1));
+                  } else {
+                    this.setState({ emailVerification: val });
+                  }
+                }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => this.setState({ emailVerifyDialog: undefined })}>Cancel</Button>
             </DialogActions>
           </Dialog>
         </React.Fragment>
@@ -494,6 +555,22 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         {dialogContent}
       </Dialog>
     );
+  }
+
+  isEmailValid(email?: string): boolean {
+    if (!email) return false;
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0 || atIndex + 1 >= email.length) return false;
+    return true;
+  }
+
+  isAllowedDomain(email?: string) {
+    if (!email) return false;
+    if (this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains) {
+      return this.props.config.users.onboarding.notificationMethods.email.allowedDomains
+        .some(allowedDomain => email.trim().endsWith(`@${allowedDomain}`));
+    }
+    return true;
   }
 
   listenForExternalBind() {

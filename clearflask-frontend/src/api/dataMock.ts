@@ -439,11 +439,12 @@ class DataMock {
         password: 'password',
         iosPushToken: 'fake-ios-push-token',
         // browserPushToken: 'fake-browser-push-token',
+        ...{ emailVerification: 'token' },
       }
-    }).then(userMe => {
+    }).then(userResponse => {
       ServerMock.get().userUpdateAdmin({
         projectId: this.projectId,
-        userId: userMe.userId,
+        userId: userResponse.user!.userId,
         userUpdateAdmin: {
           transactionCreate: {
             amount: bankBalance,
@@ -451,7 +452,7 @@ class DataMock {
           }
         },
       });
-      return userMe;
+      return userResponse.user!;
     });
   }
 

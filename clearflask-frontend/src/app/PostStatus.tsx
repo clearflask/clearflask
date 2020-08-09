@@ -125,7 +125,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             >
               <a
                 href={src}
-                target='_blank'
+                target='_blank' // eslint-disable-line react/jsx-no-target-blank
                 rel='noopener nofollow'
                 className={this.props.classes.link}
               >

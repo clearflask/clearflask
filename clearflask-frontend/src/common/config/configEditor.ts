@@ -1098,9 +1098,9 @@ export class EditorImpl implements Editor {
           const rawValue = this.getValue(path);
           const count = rawValue === undefined ? 0 : rawValue.length;
           if (pageGroup.minItems !== undefined && count < pageGroup.minItems) {
-            pageGroup.errorMsg = `Must have at least ${pageGroup.minItems} entries`;
+            pageGroup.errorMsg = `Must have at least ${pageGroup.minItems} ${pageGroup.minItems <= 1 ? 'entry' : 'entries'}`;
           } else if (pageGroup.maxItems !== undefined && count > pageGroup.maxItems) {
-            pageGroup.errorMsg = `Must have at most ${pageGroup.maxItems} entries`;
+            pageGroup.errorMsg = `Must have at most ${pageGroup.maxItems} ${pageGroup.maxItems <= 1 ? 'entry' : 'entries'}`;
           }
           pageGroup.errorMsg = undefined;
         } else {
@@ -1432,9 +1432,9 @@ export class EditorImpl implements Editor {
                 const linkMultiProperty = property as LinkMultiProperty;
                 const count = val ? val.size : 0;
                 if (linkMultiProperty.minItems !== undefined && count < linkMultiProperty.minItems) {
-                  property.errorMsg = `Must have at least ${linkMultiProperty.minItems} entries`;
+                  property.errorMsg = `Must have at least ${linkMultiProperty.minItems} ${linkMultiProperty.minItems <= 1 ? 'entry' : 'entries'}`;
                 } else if (linkMultiProperty.maxItems !== undefined && count > linkMultiProperty.maxItems) {
-                  property.errorMsg = `Must have at most ${linkMultiProperty.maxItems} entries`;
+                  property.errorMsg = `Must have at most ${linkMultiProperty.maxItems} ${linkMultiProperty.maxItems <= 1 ? 'entry' : 'entries'}`;
                 } else {
                   property.errorMsg = undefined;
                   // Since link validation requires another property,
@@ -1586,9 +1586,9 @@ export class EditorImpl implements Editor {
               const arrayProperty = property as ArrayProperty;
               const count = arrayProperty.childProperties ? arrayProperty.childProperties.length : 0;
               if (arrayProperty.minItems !== undefined && count < arrayProperty.minItems) {
-                property.errorMsg = `Must have at least ${arrayProperty.minItems} entries`;
+                property.errorMsg = `Must have at least ${arrayProperty.minItems} ${arrayProperty.minItems <= 1 ? 'entry' : 'entries'}`;
               } else if (arrayProperty.maxItems !== undefined && count > arrayProperty.maxItems) {
-                property.errorMsg = `Must have at most ${arrayProperty.maxItems} entries`;
+                property.errorMsg = `Must have at most ${arrayProperty.maxItems} ${arrayProperty.maxItems <= 1 ? 'entry' : 'entries'}`;
               } else if (arrayProperty.uniqueItems !== undefined && (new Set(this.getValue(path))).size !== (arrayProperty.childProperties || []).length) {
                 property.errorMsg = `Must have unique entries`;
               } else {

@@ -716,17 +716,20 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
+      const user = action.type === Client.userCreateActionStatus.Fulfilled
+        ? action.payload.user : action.payload;
+      if (user === undefined) return state;
       return {
         ...state,
         byId: {
           ...state.byId,
-          [action.payload.userId]: {
-            user: action.payload,
+          [user.userId]: {
+            user,
             status: Status.FULFILLED,
           }
         },
         loggedIn: {
-          user: action.payload,
+          user,
           status: Status.FULFILLED,
         },
       };
@@ -1177,11 +1180,14 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
       };
     case Client.userLoginActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
+      const balance = action.type === Client.userCreateActionStatus.Fulfilled
+        ? action.payload.user?.balance : action.payload.balance;
+      if (balance === undefined) return state;
       return {
         ...state,
         myBalance: {
           status: Status.FULFILLED,
-          balance: action.payload.balance,
+          balance,
         },
       };
     case Client.userDeleteActionStatus.Fulfilled:

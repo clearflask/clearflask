@@ -101,9 +101,14 @@ components:
           title: Onboarding
           type: object
           required:
+            - visibility
             - accountFields
             - notificationMethods
           properties:
+            visibility:
+              x-clearflask-prop: { order: 0, name: 'Visibility', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+              type: string
+              enum: [Private, Public]
             accountFields:
               x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
               title: AccountFields
@@ -141,11 +146,24 @@ components:
                   title: EmailSignup
                   required:
                     - password
+                    - verification
                   properties:
                     password:
                       x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                       type: string
                       enum: [None, Optional, Required]
+                    verification:
+                      x-clearflask-prop: { order: 1, name: 'Verification', defaultValue: 'None', description: 'Choose whether users must be required to verify their email before letting them inside. If not required, no initial email will be sent.' }
+                      type: string
+                      enum: [None, Required]
+                    allowedDomains:
+                      x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify an allow list of domains that must match before giving access to content. Email must be verified prior to access.' }
+                      type: array
+                      items:
+                        type: string
+                      uniqueItems: true
+                      minItems: 1
+                      maxItems: 10
                 sso:
                   x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
                   x-clearflask-additional-props: { propPaths: [['ssoSecretKey']] }

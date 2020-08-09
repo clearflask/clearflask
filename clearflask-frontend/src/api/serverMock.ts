@@ -11,17 +11,17 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
 const termsAnalytics = 'View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.';
-const termsVoting = 'Voting and expressions allows prioritization of value for each idea.';
+const termsVoting = 'Voting and expressions allows users to prioritize each post.';
 const termsCreditSystem = 'Credit System allows fine-grained prioritization of value for each idea.';
 const termsCredit = 'Spend time credits on future ClearFlask development features';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'E5A119e3-1477-4621-A9EA-85355B34A6D4': {
-    planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Startup',
-    pricing: { price: 30, period: Admin.PlanPricingPeriodEnum.Monthly },
+    planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Interior',
+    pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Up to 200 contributors', terms: termsActiveUsers },
+      { desc: 'Unlimited private projects', terms: termsProjects },
       { desc: 'Voting and expressions', terms: termsVoting },
-      { desc: 'Unlimited projects', terms: termsProjects },
       { desc: 'Feature credits', terms: termsCredit },
     ],
     beta: true,
@@ -31,6 +31,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     pricing: { price: 200, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited contributors', terms: termsActiveUsers },
+      { desc: 'Public and private projects', terms: termsProjects },
       { desc: 'Credit System', terms: termsCreditSystem },
       { desc: 'Single Sign-On' },
       { desc: 'Feature credits', terms: termsCredit },
@@ -40,18 +41,17 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'CDBF4982-1805-4352-8A57-824AFB565973': {
     planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
     perks: [
-      { desc: 'Unlimited contributors', terms: termsActiveUsers },
       { desc: 'Powerful Analytics', terms: termsAnalytics },
       { desc: 'Multi-agent' },
       { desc: 'Full API access' },
-      { desc: 'Uptime SLA' },
+      { desc: 'SLA' },
     ],
     beta: true,
     comingSoon: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable = {
-  plans: ['Startup', 'Standard', 'Analytic'],
+  plans: ['Interior', 'Standard', 'Analytic'],
   features: [
     { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'], terms: termsProjects },
     { feature: 'Contributors', values: ['100', '1,000', 'No limit'], terms: termsActiveUsers },
@@ -449,13 +449,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       } : undefined,
     });
   }
-  userCreate(request: Client.UserCreateRequest): Promise<Client.UserMeWithBalance> {
+  userCreate(request: Client.UserCreateRequest): Promise<Client.UserCreateResponse> {
+    if ((this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.verification === Client.EmailSignupVerificationEnum.Required
+      || this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.allowedDomains !== undefined)
+      && request.userCreate.email
+      && !request.userCreate.emailVerification) {
+      return this.returnLater({ requiresEmailVerification: true });
+    }
     return this.userCreateAdmin({
       projectId: request.projectId,
-      userCreateAdmin: request.userCreate,
+      userCreateAdmin: {
+        ...{ emailVerified: request.userCreate.emailVerification },
+        ...request.userCreate,
+      },
     }).then(user => {
       this.getProject(request.projectId).loggedInUser = user;
-      return user;
+      return {
+        requiresEmailVerification: false,
+        user,
+      };
     });
   }
   userDelete(request: Client.UserDeleteRequest): Promise<void> {
