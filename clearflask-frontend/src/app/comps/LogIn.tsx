@@ -312,7 +312,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           type='email'
                           error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
                           helperText={(<span className={this.props.classes.noWrap}>{
-                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Email domain must be one of ${this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains?.join(', ') || 'allowed domains'}`}</span>)}
+                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
                           margin='normal'
                           style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
