@@ -160,6 +160,7 @@ components:
                       x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify an allow list of domains that must match before giving access to content. Email must be verified prior to access.' }
                       type: array
                       items:
+                        x-clearflask-prop: { order: 1, name: 'Domain', placeholder: 'example.com' }
                         type: string
                       uniqueItems: true
                       minItems: 1
