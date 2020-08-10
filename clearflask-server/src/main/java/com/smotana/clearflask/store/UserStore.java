@@ -152,6 +152,8 @@ public interface UserStore {
 
         String email;
 
+        Boolean emailVerified;
+
         /**
          * Used for account recovery purposes
          */
@@ -193,6 +195,7 @@ public interface UserStore {
                     this.getIsAdmin(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
+                    this.getEmailVerified(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
@@ -207,6 +210,7 @@ public interface UserStore {
                     this.getIsAdmin(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
+                    this.getEmailVerified(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
@@ -222,6 +226,7 @@ public interface UserStore {
                     this.getIsAdmin(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
+                    this.getEmailVerified(),
                     this.isEmailNotify(),
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),

@@ -1,26 +1,14 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
+import com.google.common.base.Strings;
+import com.google.common.collect.*;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -33,6 +21,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.IdeaStore;
@@ -46,6 +35,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +61,8 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.index.search.MatchQuery;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import rx.Observable;
@@ -78,16 +70,12 @@ import rx.Observable;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
@@ -96,7 +84,9 @@ import static com.smotana.clearflask.util.ExplicitNull.orNull;
 public class DynamoElasticCommentStore implements CommentStore {
 
     public interface Config {
-        /** Intended for tests. Force immediate index refresh after write request. */
+        /**
+         * Intended for tests. Force immediate index refresh after write request.
+         */
         @DefaultValue("false")
         boolean elasticForceRefresh();
 
@@ -136,6 +126,9 @@ public class DynamoElasticCommentStore implements CommentStore {
     @Inject
     private ElasticUtil elasticUtil;
     @Inject
+    @Named("cursor")
+    private ServerSecret serverSecretCursor;
+    @Inject
     private Gson gson;
     @Inject
     private IdeaStore ideaStore;
@@ -173,6 +166,10 @@ public class DynamoElasticCommentStore implements CommentStore {
                         .put("childCommentCount", ImmutableMap.of(
                                 "type", "integer"))
                         .put("authorUserId", ImmutableMap.of(
+                                "type", "keyword"))
+                        .put("authorName", ImmutableMap.of(
+                                "type", "keyword"))
+                        .put("authorEmail", ImmutableMap.of(
                                 "type", "keyword"))
                         .put("created", ImmutableMap.of(
                                 "type", "date",
@@ -245,6 +242,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("level", comment.getLevel())
                                 .put("childCommentCount", comment.getChildCommentCount())
                                 .put("authorUserId", orNull(comment.getAuthorUserId()))
+                                .put("authorName", orNull(comment.getAuthorName()))
+                                .put("authorEmail", orNull(comment.getAuthorEmail()))
                                 .put("created", comment.getCreated().getEpochSecond())
                                 .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
                                 .put("content", orNull(elasticUtil.draftjsToPlaintext(comment.getContent())))
@@ -294,7 +293,110 @@ public class DynamoElasticCommentStore implements CommentStore {
     }
 
     @Override
-    public ImmutableSet<CommentModel> searchComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds) {
+    public SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        Optional<SortOrder> sortOrderOpt;
+        if (commentSearchAdmin.getSortBy() != null) {
+            switch (commentSearchAdmin.getSortOrder()) {
+                case ASC:
+                    sortOrderOpt = Optional.of(SortOrder.ASC);
+                    break;
+                case DESC:
+                    sortOrderOpt = Optional.of(SortOrder.DESC);
+                    break;
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                            "Sort order '" + commentSearchAdmin.getSortOrder() + "' not supported");
+            }
+        } else {
+            sortOrderOpt = Optional.empty();
+        }
+
+        ImmutableList<String> sortFields;
+        if (commentSearchAdmin.getSortBy() != null) {
+            switch (commentSearchAdmin.getSortBy()) {
+                case CREATED:
+                    sortFields = ImmutableList.of("created");
+                    break;
+                case EDITED:
+                    sortFields = ImmutableList.of("edited");
+                    break;
+                case TOP:
+                    sortFields = ImmutableList.of("score");
+                    break;
+                default:
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
+                            "Sorting by '" + commentSearchAdmin.getSortBy() + "' not supported");
+            }
+        } else {
+            sortFields = ImmutableList.of();
+        }
+
+        int pageSize = Math.min(pageSizeOpt.orElse(10), DYNAMO_READ_BATCH_MAX_SIZE);
+        if (Strings.isNullOrEmpty(commentSearchAdmin.getSearchText())
+                && sortFields.isEmpty()) {
+            // If no search term, do a simple dynamo query
+            Page<Item, QueryOutcome> page = commentByProjectIdSchema.index().query(new QuerySpec()
+                    .withHashKey(commentByProjectIdSchema.partitionKey(Map.of(
+                            "projectId", projectId)))
+                    .withRangeKeyCondition(new RangeKeyCondition(commentByProjectIdSchema.rangeKeyName())
+                            .beginsWith(commentByProjectIdSchema.rangeValuePartial(Map.of())))
+                    .withMaxPageSize(pageSize)
+                    .withScanIndexForward(SortOrder.DESC.equals(sortOrderOpt.orElse(SortOrder.DESC)))
+                    .withExclusiveStartKey(cursorOpt
+                            .map(serverSecretCursor::decryptString)
+                            .map(commentByProjectIdSchema::toExclusiveStartKey)
+                            .orElse(null)))
+                    .firstPage();
+
+            return new SearchCommentsResponse(
+                    page.getLowLevelResult()
+                            .getItems()
+                            .stream()
+                            .map(item -> commentByProjectIdSchema.fromItem(item))
+                            .collect(ImmutableList.toImmutableList()),
+                    Optional.ofNullable(page.getLowLevelResult()
+                            .getQueryResult()
+                            .getLastEvaluatedKey())
+                            .map(commentByProjectIdSchema::serializeLastEvaluatedKey)
+                            .map(serverSecretCursor::encryptString));
+        } else {
+            // For complex searches, fallback to elasticsearch
+            BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+            queryBuilder.must(QueryBuilders.multiMatchQuery(commentSearchAdmin.getSearchText(), "content", "authorName", "authorEmail")
+                    .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+            log.trace("Comment search query: {}", queryBuilder);
+            ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
+                    new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
+                            .source(new SearchSourceBuilder()
+                                    .fetchSource(false)
+                                    .query(queryBuilder)),
+                    cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, Optional.of(pageSize), configSearch, ImmutableSet.of("ideaId"));
+
+            SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
+            if (hits.length == 0) {
+                return new SearchCommentsResponse(ImmutableList.of(), Optional.empty());
+            }
+
+            ImmutableList<CommentModel> comments = dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
+                    .withPrimaryKeys(Arrays.stream(hits)
+                            .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
+                                    "projectId", projectId,
+                                    "ideaId", hit.getSourceAsMap().get("ideaId"),
+                                    "commentId", hit.getId())))
+                            .toArray(PrimaryKey[]::new)))
+                    .getTableItems()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .map(i -> commentSchema.fromItem(i))
+                    .collect(ImmutableList.toImmutableList());
+
+            return new SearchCommentsResponse(comments, searchResponseWithCursor.getCursorOpt());
+        }
+    }
+
+    @Override
+    public ImmutableSet<CommentModel> listComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds) {
         boolean isInitial = !parentCommentIdOpt.isPresent() && excludeChildrenCommentIds.isEmpty();
         int fetchMax = isInitial
                 ? config.searchInitialFetchMax()
@@ -457,6 +559,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                         "commentId", commentId)))
                 .withReturnValues(ReturnValue.ALL_NEW)
                 .addAttributeUpdate(new AttributeUpdate("authorUserId").delete())
+                .addAttributeUpdate(new AttributeUpdate("authorName").delete())
+                .addAttributeUpdate(new AttributeUpdate("authorEmail").delete())
                 .addAttributeUpdate(new AttributeUpdate("content").delete())
                 .addAttributeUpdate(new AttributeUpdate("edited")
                         .put(commentSchema.toDynamoValue("edited", Instant.now()))))
@@ -464,6 +568,8 @@ public class DynamoElasticCommentStore implements CommentStore {
 
         HashMap<String, Object> updates = Maps.newHashMap();
         updates.put("authorUserId", null);
+        updates.put("authorName", null);
+        updates.put("authorEmail", null);
         updates.put("content", null);
         updates.put("edited", comment.getEdited().getEpochSecond());
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();

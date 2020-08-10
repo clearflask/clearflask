@@ -81,7 +81,7 @@ public class NotificationServiceTest extends AbstractTest {
 
         install(Application.module());
         install(NotificationServiceImpl.module());
-        install(EmailNotificationTemplate.module());
+        install(EmailTemplates.module());
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
         install(OnForgotPassword.module());

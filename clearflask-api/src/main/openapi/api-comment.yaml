@@ -71,6 +71,17 @@ components:
       properties:
         searchText:
           type: string
+        sortBy:
+          type: string
+          enum:
+            - Created
+            - Edited
+            - Top
+        sortOrder:
+          type: string
+          enum:
+            - Asc
+            - Desc
 
 /project/{projectId}/idea/{ideaId}/commentsearch:
   post:

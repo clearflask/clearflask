@@ -2,6 +2,7 @@ package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -136,7 +137,7 @@ public class ElasticUtilIT extends AbstractIT {
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(new SearchRequest(indexName)
                         .source(new SearchSourceBuilder()
                                 .query(QueryBuilders.matchAllQuery())),
-                Optional.empty(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch);
+                Optional.empty(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch, ImmutableSet.of());
         log.info("Pagination cursor for {}: {}", paginationType.name(), searchResponseWithCursor.getCursorOpt());
         log.info("Search results: {}", (Object) searchResponseWithCursor.getSearchResponse().getHits().getHits());
         assertEquals(2, searchResponseWithCursor.getSearchResponse().getHits().getHits().length);
@@ -145,7 +146,7 @@ public class ElasticUtilIT extends AbstractIT {
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor2 = elasticUtil.searchWithCursor(new SearchRequest(indexName)
                         .source(new SearchSourceBuilder()
                                 .query(QueryBuilders.matchAllQuery())),
-                searchResponseWithCursor.getCursorOpt(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch);
+                searchResponseWithCursor.getCursorOpt(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch, ImmutableSet.of());
         log.info("Search results: {}", (Object) searchResponseWithCursor2.getSearchResponse().getHits().getHits());
         assertEquals(2, searchResponseWithCursor2.getSearchResponse().getHits().getHits().length);
         assertTrue(searchResponseWithCursor2.getCursorOpt().isPresent());
@@ -153,7 +154,7 @@ public class ElasticUtilIT extends AbstractIT {
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor3 = elasticUtil.searchWithCursor(new SearchRequest(indexName)
                         .source(new SearchSourceBuilder()
                                 .query(QueryBuilders.matchAllQuery())),
-                searchResponseWithCursor2.getCursorOpt(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch);
+                searchResponseWithCursor2.getCursorOpt(), sortFields, Optional.empty(), useAccurateCursor, Optional.of(2), configSearch, ImmutableSet.of());
         log.info("Search results: {}", (Object) searchResponseWithCursor3.getSearchResponse().getHits().getHits());
         assertEquals(1, searchResponseWithCursor3.getSearchResponse().getHits().getHits().length);
         assertFalse(searchResponseWithCursor3.getCursorOpt().isPresent());

@@ -11,14 +11,18 @@ import java.io.IOException;
 
 @Slf4j
 @Singleton
-public class EmailNotificationTemplate {
+public class EmailTemplates {
 
     private final String notificationTemplateHtml;
     private final String notificationTemplateText;
+    private final String verificationTemplateHtml;
+    private final String verificationTemplateText;
 
-    public EmailNotificationTemplate() throws IOException {
+    public EmailTemplates() throws IOException {
         this.notificationTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notification.html"), Charsets.UTF_8);
         this.notificationTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notification.txt"), Charsets.UTF_8);
+        this.verificationTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailVerify.html"), Charsets.UTF_8);
+        this.verificationTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailVerify.txt"), Charsets.UTF_8);
     }
 
     public String getNotificationTemplateHtml() {
@@ -29,6 +33,14 @@ public class EmailNotificationTemplate {
         return notificationTemplateText;
     }
 
+    public String getVerificationTemplateHtml() {
+        return verificationTemplateHtml;
+    }
+
+    public String getVerificationTemplateText() {
+        return verificationTemplateText;
+    }
+
     public String sanitize(String input) {
         return input.replaceAll("[^A-Za-z0-9 ]+", "");
     }
@@ -37,7 +49,7 @@ public class EmailNotificationTemplate {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(EmailNotificationTemplate.class).asEagerSingleton();
+                bind(EmailTemplates.class).asEagerSingleton();
             }
         };
     }

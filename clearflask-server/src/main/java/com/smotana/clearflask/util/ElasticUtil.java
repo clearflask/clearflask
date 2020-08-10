@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
@@ -101,7 +102,8 @@ public class ElasticUtil {
             Optional<SortOrder> sortOrderOpt,
             boolean useAccurateCursor,
             Optional<Integer> sizeOpt,
-            ConfigSearch configSearch) {
+            ConfigSearch configSearch,
+            ImmutableSet<String> sourceIncludes) {
         checkArgument(searchRequest.source() != null);
 
         Optional<String> cursorDecryptedOpt = cursorOpt.map(serverSecretCursor::decryptString);
@@ -131,6 +133,13 @@ public class ElasticUtil {
 
                 // Set page paginationSize
                 searchRequest.source().size(paginationSize);
+
+                // Set source includes
+                if (sourceIncludes.isEmpty()) {
+                    searchRequest.source().fetchSource(false);
+                } else {
+                    searchRequest.source().fetchSource(sourceIncludes.toArray(new String[]{}), null);
+                }
 
                 // Set cursor
                 switch (paginationType) {

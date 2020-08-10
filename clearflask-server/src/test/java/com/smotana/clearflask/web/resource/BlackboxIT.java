@@ -94,7 +94,7 @@ public class BlackboxIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 NotificationServiceImpl.module(),
-                EmailNotificationTemplate.module(),
+                EmailTemplates.module(),
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
                 OnForgotPassword.module(),
@@ -172,7 +172,8 @@ public class BlackboxIT extends AbstractIT {
         UserMeWithBalance user1 = userResource.userCreate(projectId, UserCreate.builder()
                 .name("john")
                 .email("john@example.com")
-                .build());
+                .build())
+                .getUser();
         IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
                 .authorUserId(user1.getUserId())
                 .title("Add dark mode")

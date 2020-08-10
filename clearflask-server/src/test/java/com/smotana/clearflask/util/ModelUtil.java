@@ -1,25 +1,7 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableList;
-import com.smotana.clearflask.api.model.AccountFields;
-import com.smotana.clearflask.api.model.AnonymousSignup;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Content;
-import com.smotana.clearflask.api.model.EmailSignup;
-import com.smotana.clearflask.api.model.Flow;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.Layout;
-import com.smotana.clearflask.api.model.NotificationMethods;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.Palette;
-import com.smotana.clearflask.api.model.Style;
-import com.smotana.clearflask.api.model.Support;
-import com.smotana.clearflask.api.model.Tagging;
-import com.smotana.clearflask.api.model.Typography;
-import com.smotana.clearflask.api.model.Users;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
-import com.smotana.clearflask.api.model.Workflow;
+import com.smotana.clearflask.api.model.*;
 
 public class ModelUtil {
 
@@ -53,11 +35,15 @@ public class ModelUtil {
                 new Users(
                         null,
                         new Onboarding(
+                                Onboarding.VisibilityEnum.PUBLIC,
                                 new AccountFields(AccountFields.DisplayNameEnum.NONE),
                                 new NotificationMethods(
                                         new AnonymousSignup(false),
                                         true,
-                                        new EmailSignup(EmailSignup.PasswordEnum.NONE),
+                                        new EmailSignup(
+                                                EmailSignup.PasswordEnum.NONE,
+                                                EmailSignup.VerificationEnum.NONE,
+                                                null),
                                         null),
                                 null)),
                 null

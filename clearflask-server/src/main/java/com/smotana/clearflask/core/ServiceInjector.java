@@ -119,6 +119,7 @@ public enum ServiceInjector {
                 install(DynamoProjectStore.module());
                 install(DynamoAccountStore.module());
                 install(DynamoElasticUserStore.module());
+                install(DynamoTokenVerifyStore.module());
                 install(DynamoElasticIdeaStore.module());
                 install(DynamoNotificationStore.module());
                 install(DynamoElasticCommentStore.module());
@@ -132,7 +133,7 @@ public enum ServiceInjector {
                 // Notification
                 install(NotificationServiceImpl.module());
                 install(AmazonSimpleEmailServiceProvider.module());
-                install(EmailNotificationTemplate.module());
+                install(EmailTemplates.module());
                 install(EmailServiceImpl.module());
                 install(BrowserPushServiceImpl.module());
                 install(OnCommentReply.module());

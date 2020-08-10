@@ -16,12 +16,8 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
@@ -56,9 +52,13 @@ import static com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.
 @Slf4j
 @Singleton
 public class NotificationServiceImpl extends ManagedService implements NotificationService {
-    /** If changed, also change in App.tsx */
+    /**
+     * If changed, also change in App.tsx
+     */
     public static final String AUTH_TOKEN_PARAM_NAME = "authToken";
-    /** If changed, also change in App.tsx */
+    /**
+     * If changed, also change in App.tsx
+     */
     public static final String SSO_TOKEN_PARAM_NAME = "token";
 
     public interface Config {
@@ -96,6 +96,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnAdminInvite onAdminInvite;
     @Inject
     private OnEmailChanged onEmailChanged;
+    @Inject
+    private EmailVerify emailVerify;
 
     private ListeningExecutorService executor;
 
@@ -331,6 +333,21 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(onEmailChanged.email(configAdmin, user, oldEmail, link, authToken));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onEmailVerify(ConfigAdmin configAdmin, String email, String token) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            try {
+                emailService.send(emailVerify.email(configAdmin, email, token));
+            } catch (Exception ex) {
+                log.warn("Failed to send email verification", ex);
             }
         });
     }

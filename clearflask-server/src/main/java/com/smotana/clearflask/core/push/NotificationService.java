@@ -18,4 +18,6 @@ public interface NotificationService {
     void onAdminInvite(ConfigAdmin configAdmin, UserModel user);
 
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);
+
+    void onEmailVerify(ConfigAdmin configAdmin, String email, String token);
 }

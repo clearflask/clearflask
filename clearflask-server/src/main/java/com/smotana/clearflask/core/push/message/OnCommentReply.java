@@ -52,7 +52,7 @@ public class OnCommentReply {
     @Inject
     private Application.Config configApp;
     @Inject
-    private EmailNotificationTemplate emailNotificationTemplate;
+    private EmailTemplates emailTemplates;
 
     public Email email(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, ConfigAdmin configAdmin, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
@@ -63,13 +63,13 @@ public class OnCommentReply {
         subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
         content = content.replaceAll("__reply_type__", userAuthorType.getReplyString());
 
-        String templateHtml = emailNotificationTemplate.getNotificationTemplateHtml();
-        String templateText = emailNotificationTemplate.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationTemplateHtml();
+        String templateText = emailTemplates.getNotificationTemplateText();
 
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 50);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
         templateHtml = templateHtml.replaceAll("__title__",
                 "<span style=\"font-weight: bold\">" +
                         title +
@@ -78,14 +78,14 @@ public class OnCommentReply {
         title = StringUtils.abbreviate(title, 20);
         subject = subject.replaceAll("__title__", title);
 
-        String reply = StringUtils.abbreviate(emailNotificationTemplate.sanitize(comment.getContent()), 50);
+        String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
         templateHtml = templateHtml.replaceAll("__reply__",
                 "<span style=\"font-weight: bold\">" +
                         reply +
                         "</span>");
         templateText = templateText.replaceAll("__reply__", reply);
 
-        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
+        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
@@ -124,16 +124,16 @@ public class OnCommentReply {
 
         subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
 
-        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
+        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
         subject = subject.replaceAll("__sender__", senderName);
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 20);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
-        String content = StringUtils.abbreviate(emailNotificationTemplate.sanitize(comment.getContent()), 50);
+        String content = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
@@ -152,13 +152,13 @@ public class OnCommentReply {
 
         subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
 
-        String senderName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
+        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
         if (senderName.isEmpty()) {
             senderName = "Someone";
         }
         subject = subject.replaceAll("__sender__", senderName);
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 20);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
         return subject;

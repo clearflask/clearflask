@@ -2,10 +2,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
@@ -27,6 +24,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -77,6 +75,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 0,
                 user.getUserId(),
                 user.getName(),
+                user.getEmail(),
                 Instant.now(),
                 null,
                 create.getContent(),
@@ -96,27 +95,11 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public CommentSearchResponse commentList(String projectId, String ideaId, CommentSearch commentSearch) {
-        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
-                .map(UserStore.UserSession::getUserId)
-                .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableSet<CommentModel> comments = commentStore.searchComments(projectId, ideaId,
-                Optional.ofNullable(Strings.emptyToNull(commentSearch.getParentCommentId())),
-                commentSearch.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(commentSearch.getExcludeChildrenCommentIds()));
-        ImmutableMap<String, VoteOption> voteResults = userOpt.map(UserModel::getVoteBloom)
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> comments.stream()
-                        .map(CommentModel::getCommentId)
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(commentIds -> voteStore.voteSearch(projectId, userOpt.get().getUserId(), commentIds))
-                .map(m -> Maps.transformValues(m, v -> VoteValue.fromValue(v.getVote()).toVoteOption()))
-                .map(ImmutableMap::copyOf)
-                .orElse(ImmutableMap.of());
-        return new CommentSearchResponse(
-                comments.stream()
-                        .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId())))
-                        .collect(ImmutableList.toImmutableList()));
+    public CommentListResponse commentList(String projectId, String ideaId, CommentList commentList) {
+        ImmutableSet<CommentModel> comments = commentStore.listComments(projectId, ideaId,
+                Optional.ofNullable(Strings.emptyToNull(commentList.getParentCommentId())),
+                commentList.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(commentList.getExcludeChildrenCommentIds()));
+        return new CommentListResponse(toCommentWithVotes(projectId, comments));
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})
@@ -141,5 +124,39 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public Comment commentDeleteAdmin(String projectId, String ideaId, String commentId) {
         return commentStore.markAsDeletedComment(projectId, ideaId, commentId)
                 .getCommentModel().toComment();
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 1)
+    @Override
+    public CommentSearchResponse commentSearchAdmin(String projectId, @Valid CommentSearchAdmin commentSearchAdmin, String cursor) {
+        CommentStore.SearchCommentsResponse response = commentStore.searchComments(
+                projectId,
+                commentSearchAdmin,
+                false,
+                Optional.ofNullable(Strings.emptyToNull(cursor)),
+                Optional.empty());
+        return new CommentSearchResponse(
+                response.getCursorOpt().orElse(null),
+                toCommentWithVotes(projectId, response.getComments()));
+    }
+
+    private ImmutableList<CommentWithVote> toCommentWithVotes(String projectId, ImmutableCollection<CommentModel> comments) {
+        Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+        ImmutableMap<String, VoteOption> voteResults = userOpt.map(UserModel::getVoteBloom)
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .map(bloomFilter -> comments.stream()
+                        .map(CommentModel::getCommentId)
+                        .filter(bloomFilter::mightContain)
+                        .collect(ImmutableSet.toImmutableSet()))
+                .map(commentIds -> voteStore.voteSearch(projectId, userOpt.get().getUserId(), commentIds))
+                .map(m -> Maps.transformValues(m, v -> VoteValue.fromValue(v.getVote()).toVoteOption()))
+                .map(ImmutableMap::copyOf)
+                .orElse(ImmutableMap.of());
+        return comments.stream()
+                .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId())))
+                .collect(ImmutableList.toImmutableList());
     }
 }

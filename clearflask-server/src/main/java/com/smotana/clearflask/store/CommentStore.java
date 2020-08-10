@@ -43,7 +43,9 @@ public interface CommentStore {
 
     ImmutableMap<String, CommentModel> getComments(String projectId, String ideaId, ImmutableCollection<String> commentIds);
 
-    ImmutableSet<CommentModel> searchComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds);
+    SearchCommentsResponse searchComments(String projectId, CommentSearchAdmin commentSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
+
+    ImmutableSet<CommentModel> listComments(String projectId, String ideaId, Optional<String> parentCommentIdOpt, ImmutableSet<String> excludeChildrenCommentIds);
 
     CommentAndIndexingFuture<UpdateResponse> updateComment(String projectId, String ideaId, String commentId, Instant updated, CommentUpdate commentUpdate);
 
@@ -61,6 +63,12 @@ public interface CommentStore {
     class CommentAndIndexingFuture<T> {
         CommentModel commentModel;
         ListenableFuture<T> indexingFuture;
+    }
+
+    @Value
+    class SearchCommentsResponse {
+        ImmutableList<CommentModel> comments;
+        Optional<String> cursorOpt;
     }
 
     @Value
@@ -100,9 +108,14 @@ public interface CommentStore {
         String authorUserId;
 
         /**
-         * Author of the comment. If null, comment is deleted.
+         * Author name of the comment. If null, comment is deleted.
          */
         String authorName;
+
+        /**
+         * Author email of the comment. If null, comment is deleted or author doesn't have an email.
+         */
+        String authorEmail;
 
         @NonNull
         Instant created;

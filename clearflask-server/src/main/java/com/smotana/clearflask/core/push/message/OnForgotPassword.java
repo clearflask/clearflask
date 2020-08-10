@@ -36,7 +36,7 @@ public class OnForgotPassword {
     @Inject
     private UserStore userStore;
     @Inject
-    private EmailNotificationTemplate emailNotificationTemplate;
+    private EmailTemplates emailTemplates;
 
     public Email email(ConfigAdmin configAdmin, UserModel user, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
@@ -44,8 +44,8 @@ public class OnForgotPassword {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String templateHtml = emailNotificationTemplate.getNotificationTemplateHtml();
-        String templateText = emailNotificationTemplate.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationTemplateHtml();
+        String templateText = emailTemplates.getNotificationTemplateText();
 
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);

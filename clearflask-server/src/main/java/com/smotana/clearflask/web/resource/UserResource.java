@@ -14,6 +14,7 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.TokenVerifyStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -35,8 +36,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Singleton
@@ -67,6 +70,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private VoteStore voteStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private TokenVerifyStore tokenVerifyStore;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -133,7 +138,53 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @PermitAll
     @Limit(requiredPermits = 100)
     @Override
-    public UserMeWithBalance userCreate(String projectId, UserCreate userCreate) {
+    public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
+        Optional<Project> project = projectStore.getProject(projectId, true);
+        Optional<EmailSignup> emailSignupOpt = project
+                .map(Project::getVersionedConfigAdmin)
+                .map(VersionedConfigAdmin::getConfig)
+                .map(ConfigAdmin::getUsers)
+                .map(Users::getOnboarding)
+                .map(Onboarding::getNotificationMethods)
+                .map(NotificationMethods::getEmail);
+
+        boolean emailVerificationRequired = false;
+
+        if (EmailSignup.VerificationEnum.REQUIRED.equals(emailSignupOpt
+                .map(EmailSignup::getVerification).orElse(null))) {
+            emailVerificationRequired = true;
+        }
+        Optional<List<String>> allowedDomainsOpt = emailSignupOpt.map(EmailSignup::getAllowedDomains);
+        if (allowedDomainsOpt.isPresent() && !Strings.isNullOrEmpty(userCreate.getEmail())) {
+            String domain = userCreate.getEmail().substring(userCreate.getEmail().indexOf("@") + 1);
+            if (!allowedDomainsOpt.get().contains(domain)) {
+                throw new ErrorWithMessageException(
+                        Response.Status.BAD_REQUEST,
+                        "Allowed domains are " + allowedDomainsOpt.get().stream().collect(Collectors.joining(", ")));
+            }
+            emailVerificationRequired = true;
+        }
+
+        boolean emailVerified = false;
+        if (emailVerificationRequired && !Strings.isNullOrEmpty(userCreate.getEmail())) {
+            if (Strings.isNullOrEmpty(userCreate.getEmailVerification())) {
+                TokenVerifyStore.Token token = tokenVerifyStore.createToken(userCreate.getEmail());
+                notificationService.onEmailVerify(
+                        project.get().getVersionedConfigAdmin().getConfig(),
+                        userCreate.getEmail(),
+                        token.getToken());
+                return new UserCreateResponse(true, null);
+            } else {
+                emailVerified = tokenVerifyStore.useToken(userCreate.getEmailVerification(), userCreate.getEmail());
+                if (!emailVerified) {
+                    throw new ErrorWithMessageException(
+                            Response.Status.BAD_REQUEST,
+                            "Invalid code");
+                }
+            }
+        }
+
+        // Now we're ready to create the user
         String userId = userStore.genUserId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
@@ -146,6 +197,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 userCreate.getName(),
                 userCreate.getEmail(),
+                emailVerified ? true : null,
                 null,
                 passwordHashed.orElse(null),
                 null,
@@ -166,7 +218,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
-        return user.toUserMeWithBalance();
+        return new UserCreateResponse(null, user.toUserMeWithBalance());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -188,6 +240,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getIsAdmin() == Boolean.TRUE ? true : null,
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
+                null,
                 null,
                 passwordHashed.orElse(null),
                 null,

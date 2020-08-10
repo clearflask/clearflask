@@ -67,7 +67,7 @@ public class OnStatusOrResponseChange {
     @Inject
     private Application.Config configApp;
     @Inject
-    private EmailNotificationTemplate emailNotificationTemplate;
+    private EmailTemplates emailTemplates;
 
     public Email email(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse, String authToken) {
         checkArgument(changedStatus.isPresent() || changedResponse.isPresent());
@@ -92,13 +92,13 @@ public class OnStatusOrResponseChange {
 
         content = content.replaceAll("__subscription_action__", subscriptionAction.getActionString());
 
-        String templateHtml = emailNotificationTemplate.getNotificationTemplateHtml();
-        String templateText = emailNotificationTemplate.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationTemplateHtml();
+        String templateText = emailTemplates.getNotificationTemplateText();
 
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 50);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
         templateHtml = templateHtml.replaceAll("__title__",
                 "<span style=\"font-weight: bold\">" +
                         title +
@@ -108,7 +108,7 @@ public class OnStatusOrResponseChange {
         subject = subject.replaceAll("__title__", title);
 
         if (changedStatus.isPresent()) {
-            String statusName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(changedStatus.get().getName()), 50);
+            String statusName = StringUtils.abbreviate(emailTemplates.sanitize(changedStatus.get().getName()), 50);
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
@@ -122,7 +122,7 @@ public class OnStatusOrResponseChange {
         }
 
         if (changedResponse.isPresent()) {
-            String response = StringUtils.abbreviate(emailNotificationTemplate.sanitize(changedResponse.get()), 50);
+            String response = StringUtils.abbreviate(emailTemplates.sanitize(changedResponse.get()), 50);
             templateHtml = templateHtml.replaceAll("__response__",
                     "<span style=\"font-weight: bold\">" +
                             response +
@@ -166,19 +166,19 @@ public class OnStatusOrResponseChange {
 
         String content = "";
         if (changedResponse.isPresent()) {
-            String response = StringUtils.abbreviate(emailNotificationTemplate.sanitize(changedResponse.get()), 65);
+            String response = StringUtils.abbreviate(emailTemplates.sanitize(changedResponse.get()), 65);
             content = content.replaceAll("__response__", response);
         }
 
         if (changedStatus.isPresent()) {
-            String statusName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(changedStatus.get().getName()), 15);
+            String statusName = StringUtils.abbreviate(emailTemplates.sanitize(changedStatus.get().getName()), 15);
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
             subject = subject.replaceAll("__status__", statusName);
         }
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 50);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
         content = content.replaceAll("__title__", title);
         title = StringUtils.abbreviate(title, 20);
         subject = subject.replaceAll("__title__", title);
@@ -207,14 +207,14 @@ public class OnStatusOrResponseChange {
         }
 
         if (changedStatus.isPresent()) {
-            String statusName = StringUtils.abbreviate(emailNotificationTemplate.sanitize(changedStatus.get().getName()), 15);
+            String statusName = StringUtils.abbreviate(emailTemplates.sanitize(changedStatus.get().getName()), 15);
             if (statusName.isEmpty()) {
                 statusName = "unknown";
             }
             subject = subject.replaceAll("__status__", statusName);
         }
 
-        String title = StringUtils.abbreviate(emailNotificationTemplate.sanitize(idea.getTitle()), 20);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
         return subject;

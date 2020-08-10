@@ -195,6 +195,7 @@ public class CommentStoreIT extends AbstractIT {
                 0,
                 IdUtil.randomId(),
                 IdUtil.randomId(),
+                IdUtil.randomId(),
                 Instant.now(),
                 null,
                 textToMockDraftjs(IdUtil.randomId()),

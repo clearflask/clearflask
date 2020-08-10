@@ -36,7 +36,7 @@ public class OnEmailChanged {
     @Inject
     private UserStore userStore;
     @Inject
-    private EmailNotificationTemplate emailNotificationTemplate;
+    private EmailTemplates emailTemplates;
 
     public Email email(ConfigAdmin configAdmin, UserModel user, String oldEmail, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(oldEmail));
@@ -44,12 +44,12 @@ public class OnEmailChanged {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String projectName = emailNotificationTemplate.sanitize(configAdmin.getName());
+        String projectName = emailTemplates.sanitize(configAdmin.getName());
         subject = subject.replaceAll("__project_name__", projectName);
         content = content.replaceAll("__project_name__", projectName);
 
-        String templateHtml = emailNotificationTemplate.getNotificationTemplateHtml();
-        String templateText = emailNotificationTemplate.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationTemplateHtml();
+        String templateText = emailTemplates.getNotificationTemplateText();
 
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
