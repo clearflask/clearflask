@@ -101,6 +101,7 @@ export default class Templater {
   }
 
   styleDark() {
+    this._get<ConfigEditor.StringProperty>(['style', 'palette', 'background']).set(undefined);
     this._get<ConfigEditor.BooleanProperty>(['style', 'palette', 'darkMode']).set(true);
   }
 

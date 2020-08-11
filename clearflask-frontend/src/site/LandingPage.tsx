@@ -36,6 +36,8 @@ import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
 import Header from '../app/Header';
 import { MemoryRouter, Route } from 'react-router';
 import HeaderDemo from './landing/HeaderDemo';
+import RichEditor from '../common/RichEditor';
+import RichEditorDemo from './landing/RichEditorDemo';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -284,6 +286,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <ScrollAnchor scrollOnMount positionVertical='start' />
         )}
         <Demo
+          variant='hero'
           title='Understand your customer needs'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
           displayAlign='flex-start'
@@ -373,6 +376,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <ScrollAnchor scrollOnMount positionVertical='start' />
         )}
         <Demo
+          variant='hero'
           title='Give your valuable customers a proportionate voice'
           description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
           mirror
@@ -614,12 +618,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       <React.Fragment>
       <Block
         title='Make it your own'
-        variant='heading'
+        variant='hero'
         description='Custom workflows, prioritization and branding to fit your needs.'
       />
-        {this.renderCustomizeContent()}
-        {this.renderCustomizeLayout()}
-        {this.renderCustomizeOther()}
+        <HorizontalPanels wrapBelow='xl' maxContentWidth='sm' maxWidth='xl'>
+          {this.renderCustomizeContent()}
+          {this.renderCustomizeLayout()}
+          {this.renderCustomizeOther()}
+        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -628,10 +634,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
     return (
       <React.Fragment>
         <Block
+          type='column'
+          variant='heading'
           title='Content Types'
-          description='Define specific behavior for your custom content type such as an idea, blog entry, forum post, knowledge article.'
+          description='Define behavior for each custom content type to match your operations. Content can be an idea, blog entry, forum post, knowledge article.'
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
           <Demo
             variant='content'
             type='column'
@@ -662,7 +669,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             title='Tags'
             description='Define tagging rules for easier grouping, filtering, and searching.'
           />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -672,9 +678,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       <React.Fragment>
         <Block
           title='Menu and Pages'
+          type='column'
+          variant='heading'
           description='Customize each page and define the navigation menu.'
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
           <Demo
             variant='content'
             type='column'
@@ -693,17 +700,22 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               </Provider>
             )}
           />
-          <BlockContent
+          <Block
             variant='content'
+            type='column'
             title='Template'
             description='Write your own pages with markdown or customize it with HTML templates'
+            demo={(
+              <RichEditorDemo
+                valueInit='{"blocks":[{"key":"2rp40","text":"Create nice awesome content!","type":"unstyled","depth":0,"inlineStyleRanges":[{"offset":7,"length":4,"style":"STRIKETHROUGH"},{"offset":20,"length":7,"style":"UNDERLINE"}],"entityRanges":[],"data":{}}],"entityMap":{}}'
+              />
+            )}
           />
           <BlockContent
             variant='content'
             title='Layout'
             description='Choose how to display your content with component layouts'
           />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -711,9 +723,22 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCustomizeOther() {
     return (
       <React.Fragment>
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
           <Demo
-            variant='content'
+            variant='heading'
+            type='column'
+            title='Style'
+            description='Match your product branding, feel and look.'
+            initialSubPath='/embed/demo'
+            template={templater => {
+              templater.demoPrioritization('vote');
+              templater.styleDark();
+            }}
+            mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={150}
+            containerPortal
+          />
+          <Demo
+            variant='heading'
             type='column'
             title='Onboarding'
             description='Choose the sign-up flow for users with the least amount of friction.'
@@ -727,7 +752,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
           />
           <Demo
-            variant='content'
+            variant='heading'
             type='column'
             title='Credit System'
             description='Customizable display settings to fit any currency.'
@@ -739,12 +764,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               <CreditPreview editor={project.editor} />
             )}
           />
-          <BlockContent
-            variant='content'
-            title='Style'
-            description=''
-          />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }

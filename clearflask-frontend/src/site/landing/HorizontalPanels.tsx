@@ -24,7 +24,8 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
-  wrapBelow: Breakpoint;
+  alwaysWrap?: boolean;
+  wrapBelow?: Breakpoint;
   maxContentWidth?: Breakpoint;
   maxWidth?: Breakpoint;
   staggerHeight?: number;
@@ -32,7 +33,7 @@ interface Props {
 class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true> & WithWidthProps> {
 
   render() {
-    const isHorizontal = !this.props.width || isWidthUp(this.props.wrapBelow, this.props.width);
+    const isHorizontal = this.props.alwaysWrap ? false : (!this.props.width || !this.props.wrapBelow || isWidthUp(this.props.wrapBelow, this.props.width));
     const contentsSize = React.Children.count(this.props.children);
 
     const staggerHeight = Math.abs(this.props.staggerHeight || 0);
