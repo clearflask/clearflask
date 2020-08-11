@@ -32,7 +32,7 @@ export default class Page extends Component<Props> {
       const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'));
       workflowPreview = (
         <Suspense fallback={<Loading />}>
-          <WorkflowPreviewLazyCmpt editor={this.props.editor} page={this.props.page} />
+          <WorkflowPreviewLazyCmpt editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />
         </Suspense>
       );
     }

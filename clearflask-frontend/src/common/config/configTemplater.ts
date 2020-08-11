@@ -842,6 +842,36 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'accountFields', 'displayName']).set(requirement);
   }
 
+  liquidTemplateHeader(template: string) {
+    this._get<ConfigEditor.ObjectProperty>(['style', 'templates']).set(true);
+    this._get<ConfigEditor.StringProperty>(['style', 'templates', 'header']).set(template);
+  }
+
+  createPage(name: string): string {
+    const pageId = randomUuid();
+    const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
+    pagesProp.insert().setRaw(Admin.PageToJSON({
+      pageId: pageId,
+      name: name,
+      slug: stringToSlug(name),
+      title: undefined,
+      description: undefined,
+      panels: [],
+      board: undefined,
+      explorer: undefined,
+    }));
+    return pageId;
+  }
+
+  createMenu(pageIds: string[], name?: string): string {
+    const menuId = randomUuid();
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+      menuId, pageIds: [...pageIds], name,
+    }));
+    return menuId;
+  }
+
   _get<T extends ConfigEditor.Setting<any, any>>(path: ConfigEditor.Path): T {
     return this.editor.get(path) as any as T;
   }

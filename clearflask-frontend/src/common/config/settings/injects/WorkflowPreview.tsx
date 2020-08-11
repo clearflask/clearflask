@@ -14,8 +14,12 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
-  page: ConfigEditor.Page;
+  categoryIndex: number;
   editor: ConfigEditor.Editor;
+  isVertical?: boolean;
+  hideCorner?: boolean;
+  width?: number | string;
+  height?: number | string;
 }
 
 interface State {
@@ -59,13 +63,13 @@ class WorkflowPreview extends Component<Props, State> {
     const seenStatusIds: Set<string> = new Set();
     var nodes: any[] = [];
     var edges: any[] = [];
-    const entryStatusId = (this.props.editor.get([...this.props.page.path, 'entryStatus']) as ConfigEditor.StringProperty).value;
-    const statusCount = (this.props.editor.get([...this.props.page.path, 'statuses']) as ConfigEditor.PageGroup).getChildPages().length;
+    const entryStatusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty).value;
+    const statusCount = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses']) as ConfigEditor.PageGroup).getChildPages().length;
     for (var i = 0; i < statusCount; i++) {
-      const name = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'name']) as ConfigEditor.StringProperty).value;
-      const statusId = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value!;
-      const color = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
-      const nextStatusIds = (this.props.editor.get([...this.props.page.path, 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
+      const name = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'name']) as ConfigEditor.StringProperty).value;
+      const statusId = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'statusId']) as ConfigEditor.StringProperty).value!;
+      const color = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'color']) as ConfigEditor.StringProperty).value;
+      const nextStatusIds = (this.props.editor.get(['content', 'categories', this.props.categoryIndex, 'workflow', 'statuses', i, 'nextStatusIds']) as ConfigEditor.LinkMultiProperty).value;
       const isStart = statusId === entryStatusId;
       seenStatusIds.add(statusId);
       nodes.push({
@@ -86,56 +90,65 @@ class WorkflowPreview extends Component<Props, State> {
     if(nodes.length <= 0) {
       return null;
     }
-    return (
-      <DividerCorner title='Visualize states' height='100%'>
-        <CytoscapeComponent
-          key={nodes.length + edges.length}
-          minZoom={1}
-          maxZoom={2}
-          elements={[
-            ...nodes,
-            ...edges.filter(e => seenStatusIds.has(e.data.source) && seenStatusIds.has(e.data.target))
-          ]}
-          style={{
-            width: '100%',
-            'min-width': '250px',
-            height: '250px',
-          }}
-          layout={{
-            name: 'dagre',
-            spacingFactor: 1,
-            rankDir: 'LR',
-            ranker: 'longest-path',
-          }}
-          stylesheet={[{
-            selector: 'node',
-            style: {
-              'label': 'data(label)',
-              'font-size': 12,
-              'background-color': 'white',
-              'color': 'data(color)',
-              'shape': 'data(type)',
-              'border-width': 2,
-              'border-color': '#eee',
-              'content': 'data(label)',
-              'width': '100',
-              'height': '30',
-              'text-valign': 'center',
-              'text-halign': 'center',
-            }
-          }, {
-            selector: 'edge',
-            style: {
-              'width': 2,
-              'line-color': '#eee',
-              'target-arrow-color': '#eee',
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'unbundled-bezier',
-            }
-          }]}
-        />
-      </DividerCorner>
+
+    var content = (
+      <CytoscapeComponent
+        key={nodes.length + edges.length}
+        minZoom={1}
+        maxZoom={2}
+        elements={[
+          ...nodes,
+          ...edges.filter(e => seenStatusIds.has(e.data.source) && seenStatusIds.has(e.data.target))
+        ]}
+        style={{
+          'min-width': '250px',
+          width: this.props.width || '100%',
+          height: this.props.height || '250px',
+        }}
+        layout={{
+          name: 'dagre',
+          spacingFactor: 1,
+          rankDir: this.props.isVertical ? 'TB' : 'LR',
+          ranker: 'longest-path',
+        }}
+        stylesheet={[{
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'font-size': 12,
+            'background-color': 'white',
+            'color': 'data(color)',
+            'shape': 'data(type)',
+            'border-width': 2,
+            'border-color': '#eee',
+            'content': 'data(label)',
+            'width': '100',
+            'height': '30',
+            'text-valign': 'center',
+            'text-halign': 'center',
+          }
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 2,
+            'line-color': '#eee',
+            'target-arrow-color': '#eee',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'unbundled-bezier',
+          }
+        }]}
+      />
     );
+      
+    if(!this.props.hideCorner) {
+      content = (
+        <DividerCorner title='Visualize states' height='100%'>
+          {content}
+        </DividerCorner>
+      );
+    }
+
+    return content;
   }
 }
 

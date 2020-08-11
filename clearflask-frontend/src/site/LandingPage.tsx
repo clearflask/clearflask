@@ -10,7 +10,7 @@ import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
@@ -28,6 +28,14 @@ import PrioritizationControlsExpressions from './landing/PrioritizationControlsE
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
 import PricingPage from './PricingPage';
+import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import OnboardingDemo from './landing/OnboardingDemo';
+import CreditPreview from '../common/config/settings/injects/CreditPreview';
+import { Device } from '../common/DeviceContainer';
+import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
+import Header from '../app/Header';
+import { MemoryRouter, Route } from 'react-router';
+import HeaderDemo from './landing/HeaderDemo';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -141,7 +149,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         {this.renderCollectFeedback()}
         {this.renderPrioritization()}
         {this.renderEngagement()}
-        {this.renderCaseStudies()}
+        {/* {this.renderCaseStudies()} */}
         {this.renderCustomize()}
         {this.renderPricing()}
         {this.renderSales()}
@@ -604,10 +612,139 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCustomize() {
     return (
       <React.Fragment>
+      <Block
+        title='Make it your own'
+        variant='heading'
+        description='Custom workflows, prioritization and branding to fit your needs.'
+      />
+        {this.renderCustomizeContent()}
+        {this.renderCustomizeLayout()}
+        {this.renderCustomizeOther()}
+      </React.Fragment>
+    );
+  }
+
+  renderCustomizeContent() {
+    return (
+      <React.Fragment>
         <Block
-          title='Make it your own'
-          description='Custom workflows, prioritization and branding to fit your needs.'
+          title='Content Types'
+          description='Define specific behavior for your custom content type such as an idea, blog entry, forum post, knowledge article.'
         />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
+          <Demo
+            variant='content'
+            type='column'
+            title='Workflow'
+            description='Define a workflow detailing the transition between custom statuses'
+            template={templater => {
+              templater.demoCategory();
+              templater.workflowFeatures(0);
+              templater.styleWhite();
+            }}
+            demo={project => (
+              <WorkflowPreview
+                editor={project.editor}
+                categoryIndex={0}
+                isVertical
+                hideCorner
+                height={400}
+              />
+            )}
+          />
+          <BlockContent
+            variant='content'
+            title='Feedback'
+            description='Allow custom interaction with Funding, Voting, Expressing and Commenting'
+          />
+          <BlockContent
+            variant='content'
+            title='Tags'
+            description='Define tagging rules for easier grouping, filtering, and searching.'
+          />
+        </HorizontalPanels>
+      </React.Fragment>
+    );
+  }
+
+  renderCustomizeLayout() {
+    return (
+      <React.Fragment>
+        <Block
+          title='Menu and Pages'
+          description='Customize each page and define the navigation menu.'
+        />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
+          <Demo
+            variant='content'
+            type='column'
+            title='Menu buttons'
+            description='Customize the order and look of navigation menu'
+            template={templater => {
+              templater.liquidTemplateHeader(' ');
+              templater.createMenu([templater.createPage('Home')]);
+              templater.createMenu([templater.createPage('Idea'), templater.createPage('Bug')], 'Feedback');
+              templater.createMenu([templater.createPage('Roadmap')]);
+              templater.styleWhite();
+            }}
+            demo={project => (
+              <Provider store={project.server.getStore()}>
+                <HeaderDemo project={project} />
+              </Provider>
+            )}
+          />
+          <BlockContent
+            variant='content'
+            title='Template'
+            description='Write your own pages with markdown or customize it with HTML templates'
+          />
+          <BlockContent
+            variant='content'
+            title='Layout'
+            description='Choose how to display your content with component layouts'
+          />
+        </HorizontalPanels>
+      </React.Fragment>
+    );
+  }
+
+  renderCustomizeOther() {
+    return (
+      <React.Fragment>
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={25}>
+          <Demo
+            variant='content'
+            type='column'
+            title='Onboarding'
+            description='Choose the sign-up flow for users with the least amount of friction.'
+            initialSubPath='/embed/demo'
+            demoFixedWidth={420}
+            template={templater => {
+              setInitSignupMethodsTemplate(templater);
+              templater.styleWhite();
+            }}
+            controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+            demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
+          />
+          <Demo
+            variant='content'
+            type='column'
+            title='Credit System'
+            description='Customizable display settings to fit any currency.'
+            template={templater => {
+              templater.creditsCurrencyWithoutCents();
+              templater.styleWhite();
+            }}
+            demo={project => (
+              <CreditPreview editor={project.editor} />
+            )}
+          />
+          <BlockContent
+            variant='content'
+            title='Style'
+            description=''
+          />
+        </HorizontalPanels>
       </React.Fragment>
     );
   }

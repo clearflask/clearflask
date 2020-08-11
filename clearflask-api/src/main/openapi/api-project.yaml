@@ -81,10 +81,10 @@ components:
                 type: integer
                 format: int64
               prefix:
-                x-clearflask-prop: { order: 1, name: 'Prefix', description: 'Text to prepend before the value' }
+                x-clearflask-prop: { order: 8, name: 'Prefix', description: 'Text to prepend before the value' }
                 type: string
               suffix:
-                x-clearflask-prop: { order: 2, name: 'Suffix', description: 'Text to append after the value' }
+                x-clearflask-prop: { order: 9, name: 'Suffix', description: 'Text to append after the value' }
                 type: string
     users:
       x-clearflask-page: { order: 14, name: 'Users', description: 'Configure onboarding, authentication and credit system.' }
