@@ -21,6 +21,12 @@ public class Role {
     public static final String USER = "USER";
 
     /**
+     * Applies to entity that is anonymous but accessing a project resource.
+     * If the project has private visibility, access will not be allowed.
+     * Should typically be combined with PROJECT_USER role.
+     */
+    public static final String PROJECT_ANON = "PROJECT_ANON";
+    /**
      * Applies to entity that is registered to the project specified in path parameter
      */
     public static final String PROJECT_USER = "PROJECT_USER";

@@ -70,7 +70,7 @@ const styles = (theme: Theme) => createStyles({
 export interface Props {
   server: Server;
   open?: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   onLoggedInAndClose: () => void;
   actionTitle?: string;
   overrideWebNotification?: WebNotification;
@@ -151,7 +151,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser.name || this.props.loggedInUser.email || 'Anonymous'}</span></DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
+            {!!this.props.onClose && (
+              <Button onClick={this.props.onClose.bind(this)}>Cancel</Button>
+            )}
             <Button color='primary' onClick={this.props.onLoggedInAndClose.bind(this)}>Continue</Button>
           </DialogActions>
         </React.Fragment>
@@ -462,9 +464,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   }
                 }}
               >Continue</SubmitButton>
-            ) : (
-                <Button onClick={() => { this.props.onClose() }}>Back</Button>
-              )}
+            ) : ( !!this.props.onClose ? (
+                <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
+            ) : null)}
           </DialogActions>
           <Dialog
             open={!!this.state.awaitExternalBind}

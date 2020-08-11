@@ -3,12 +3,10 @@ package com.smotana.clearflask.web.security;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
@@ -47,6 +45,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private IdeaStore ideaStore;
     @Inject
     private CommentStore commentStore;
+    @Inject
+    private ProjectStore projectStore;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -168,6 +168,23 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     return false;
                 }
                 return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
+            case Role.PROJECT_ANON:
+                if (!pathParamProjectIdOpt.isPresent()) {
+                    log.warn("Possible misconfiguration, role {} requested, but no projectId path param found in {}",
+                            role, requestContext.getUriInfo().getRequestUri());
+                    return false;
+                }
+                Optional<ProjectStore.Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
+                if (!projectOpt.isPresent()) {
+                    return false;
+                }
+                Onboarding.VisibilityEnum visibility = projectOpt.get()
+                        .getVersionedConfigAdmin()
+                        .getConfig()
+                        .getUsers()
+                        .getOnboarding()
+                        .getVisibility();
+                return Onboarding.VisibilityEnum.PUBLIC.equals(visibility);
             case Role.PROJECT_USER:
                 return userSession.isPresent() && pathParamProjectIdOpt.isPresent();
             case Role.IDEA_OWNER:

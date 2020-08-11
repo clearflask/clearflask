@@ -803,6 +803,10 @@ export default class Templater {
     ]);
   }
 
+  privateProject() {
+    this._get<ConfigEditor.EnumProperty>(['users', 'onboarding', 'visibility']).set('Private');
+  }
+
   usersOnboardingEmail(enable: boolean, passwordRequirement: Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'email']).set(enable ? true : undefined);
     if (enable) {

@@ -22,6 +22,7 @@ import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
+import PrivateProjectLogin from './utils/PrivateProjectLogin';
 
 /** Broadcast successful bind to other tabs */
 export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
@@ -102,6 +103,7 @@ class App extends Component<Props> {
       }
 
       if (configAndBindResult.user !== undefined) {
+        // Broadcast to other tabs of successful bind
         localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
         localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
       }
@@ -146,60 +148,63 @@ class App extends Component<Props> {
               } : {}),
             }}
           >
-            <Route path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
-              <Header
-                pageSlug={props.match.params['page'] || ''}
-                server={this.server}
-                pageChanged={this.pageChanged.bind(this)}
-              />
-            )} />
-            <AnimatedPageSwitch
-              render={(pageSlug: string) => (
-                <Route key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
-                  <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
-                    <CustomPage
-                      pageSlug={pageSlug}
-                      server={this.server}
-                    />
-                  </BasePage>
-                )} />
-              )} >
-              <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
-                <BasePage showFooter={!props.match.params['embed']}>
-                  <BankPage server={this.server} />
-                </BasePage>
+            <PrivateProjectLogin server={this.server}>
+              <Route key='header' path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
+                <Header
+                  pageSlug={props.match.params['page'] || ''}
+                  server={this.server}
+                  pageChanged={this.pageChanged.bind(this)}
+                />
               )} />
-              <Route key='notification' path='/:embed(embed)?/notification' render={props => (
-                <BasePage showFooter={!props.match.params['embed']}>
-                  <NotificationPage server={this.server} />
-                </BasePage>
-              )} />
-              <Route key='account' path='/:embed(embed)?/account' render={props => (
-                <BasePage showFooter={!props.match.params['embed']}>
-                  <AccountPage server={this.server} />
-                </BasePage>
-              )} />
-              <Route key='sso' path='/sso' render={props => (
-                <BasePage showFooter={!props.match.params['embed']}>
-                  <SsoSuccessPage />
-                </BasePage>
-              )} />
-              {!isExpanded() && (
-                <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
+              <AnimatedPageSwitch
+                key='app-switch'
+                render={(pageSlug: string) => (
+                  <Route key={pageSlug} path={`/:embed(embed)?/${pageSlug}`} render={props => (
+                    <BasePage showFooter={!props.match.params['embed']} customPageSlug={pageSlug}>
+                      <CustomPage
+                        pageSlug={pageSlug}
+                        server={this.server}
+                      />
+                    </BasePage>
+                  )} />
+                )} >
+                <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
-                    <PostPage
-                      postId={props.match.params['postId'] || ''}
-                      server={this.server}
-                    />
+                    <BankPage server={this.server} />
                   </BasePage>
                 )} />
-              )}
-              {!isExpanded() && (
-                <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => (props.match.params['prefix'] === 'embed' || props.match.params['prefix'] === 'embed-status') ? null : (
-                  <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
+                <Route key='notification' path='/:embed(embed)?/notification' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
+                    <NotificationPage server={this.server} />
+                  </BasePage>
                 )} />
-              )}
-            </AnimatedPageSwitch>
+                <Route key='account' path='/:embed(embed)?/account' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
+                    <AccountPage server={this.server} />
+                  </BasePage>
+                )} />
+                <Route key='sso' path='/sso' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
+                    <SsoSuccessPage />
+                  </BasePage>
+                )} />
+                {!isExpanded() && (
+                  <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
+                    <BasePage showFooter={!props.match.params['embed']}>
+                      <PostPage
+                        postId={props.match.params['postId'] || ''}
+                        server={this.server}
+                      />
+                    </BasePage>
+                  )} />
+                )}
+                {!isExpanded() && (
+                  <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => (props.match.params['prefix'] === 'embed' || props.match.params['prefix'] === 'embed-status') ? null : (
+                    <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
+                  )} />
+                )}
+              </AnimatedPageSwitch>
+            </PrivateProjectLogin>
           </div>
         </AppThemeProvider>
       </Provider>

@@ -172,7 +172,7 @@ function reducerProjectId(projectId: string = 'unknown', action: AllActions): st
     case Admin.configGetAdminActionStatus.Fulfilled:
       return (action as any).payload.config.projectId || projectId;
     case Client.configGetAndUserBindActionStatus.Fulfilled:
-      return action.payload.config.config.projectId || projectId;
+      return action.payload.config?.config.projectId || projectId;
     default:
       return projectId;
   }
@@ -235,6 +235,7 @@ function reducerSettings(state: StateSettings = stateSettingsDefault, action: Al
 export interface StateConf {
   status?: Status;
   conf?: Client.Config;
+  onboardBefore?: Client.Onboarding;
   ver?: string;
 }
 function reducerConf(state: StateConf = {}, action: AllActions): StateConf {
@@ -250,8 +251,9 @@ function reducerConf(state: StateConf = {}, action: AllActions): StateConf {
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return {
         status: Status.FULFILLED,
-        conf: action.payload.config.config,
-        ver: action.payload.config.version,
+        conf: action.payload.config?.config,
+        onboardBefore: action.payload.onboardBefore,
+        ver: action.payload.config?.version,
       };
     case Client.configGetAndUserBindActionStatus.Rejected:
       return { status: Status.REJECTED };

@@ -20,7 +20,6 @@ import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -92,7 +91,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         return commentModel.toCommentWithVote(VoteOption.UPVOTE);
     }
 
-    @PermitAll
+    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
     @Limit(requiredPermits = 10)
     @Override
     public CommentListResponse commentList(String projectId, String ideaId, CommentList commentList) {

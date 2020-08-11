@@ -141,6 +141,7 @@ public enum ServiceInjector {
                 install(OnForgotPassword.module());
                 install(OnAdminInvite.module());
                 install(OnEmailChanged.module());
+                install(EmailVerify.module());
 
                 // Security
                 install(TieredWebLimiter.module());

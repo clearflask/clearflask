@@ -97,111 +97,113 @@ components:
         credits:
           $ref: 'api-project.yaml#/components/schemas/credits'
         onboarding:
-          x-clearflask-page: { order: 1, name: 'Onboarding', description: 'Define the sign up flow for users. It is recommended to use Single Sign-On if possible, otherwise use the sign up methods with least amount of friction.' }
-          title: Onboarding
+          $ref: 'api-project.yaml#/components/schemas/onboarding'
+    onboarding:
+      x-clearflask-page: { order: 1, name: 'Onboarding', description: 'Define the sign up flow for users. It is recommended to use Single Sign-On if possible, otherwise use the sign up methods with least amount of friction.' }
+      title: Onboarding
+      type: object
+      required:
+        - visibility
+        - accountFields
+        - notificationMethods
+      properties:
+        visibility:
+          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+          type: string
+          enum: [Private, Public]
+        accountFields:
+          x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+          title: AccountFields
           type: object
           required:
-            - visibility
-            - accountFields
-            - notificationMethods
+            - displayName
           properties:
-            visibility:
-              x-clearflask-prop: { order: 0, name: 'Visibility', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+            displayName:
+              x-clearflask-prop: { order: 1, name: 'Display name', description: 'Whether to ask for a display name during sign-up. Unless necessary, it is recommended to not ask for a display name. Users will be encouraged to fill out their display name after signing up.', defaultValue: 'None' }
               type: string
-              enum: [Private, Public]
-            accountFields:
-              x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
-              title: AccountFields
+              enum: [None, Optional, Required]
+        notificationMethods:
+          x-clearflask-prop: { order: 1, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you so it is essential to ask for a way to notify your users of updates. Anonymous sign up is also possible but not recommended.' }
+          title: NotificationMethods
+          type: object
+          required:
+            - browserPush
+          properties:
+            anonymous:
+              x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: false, description: 'Allow users to sign up with no contact. Not recommended in most cases as it invites feedback from users that do not care about the outcome.' }
               type: object
+              title: AnonymousSignup
               required:
-                - displayName
+                - onlyShowIfPushNotAvailable
               properties:
-                displayName:
-                  x-clearflask-prop: { order: 1, name: 'Display name', description: 'Whether to ask for a display name during sign-up. Unless necessary, it is recommended to not ask for a display name. Users will be encouraged to fill out their display name after signing up.', defaultValue: 'None' }
+                onlyShowIfPushNotAvailable:
+                  x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
+                  type: boolean
+            browserPush:
+              x-clearflask-prop: { order: 2, name: 'Browser Notification', description: 'Web Push is a fairly new technology allowing you to receive push messages in your browser. It introduces less friction than asking for an email. It is mainly supported on desktop browsers and Android.', defaultValue: true }
+              type: boolean
+            email:
+              x-clearflask-prop: { order: 3, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
+              type: object
+              title: EmailSignup
+              required:
+                - password
+                - verification
+              properties:
+                password:
+                  x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                   type: string
                   enum: [None, Optional, Required]
-            notificationMethods:
-              x-clearflask-prop: { order: 1, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you so it is essential to ask for a way to notify your users of updates. Anonymous sign up is also possible but not recommended.' }
-              title: NotificationMethods
-              type: object
-              required:
-                - browserPush
-              properties:
-                anonymous:
-                  x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: false, description: 'Allow users to sign up with no contact. Not recommended in most cases as it invites feedback from users that do not care about the outcome.' }
-                  type: object
-                  title: AnonymousSignup
-                  required:
-                    - onlyShowIfPushNotAvailable
-                  properties:
-                    onlyShowIfPushNotAvailable:
-                      x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
-                      type: boolean
-                browserPush:
-                  x-clearflask-prop: { order: 2, name: 'Browser Notification', description: 'Web Push is a fairly new technology allowing you to receive push messages in your browser. It introduces less friction than asking for an email. It is mainly supported on desktop browsers and Android.', defaultValue: true }
-                  type: boolean
-                email:
-                  x-clearflask-prop: { order: 3, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
-                  type: object
-                  title: EmailSignup
-                  required:
-                    - password
-                    - verification
-                  properties:
-                    password:
-                      x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
-                      type: string
-                      enum: [None, Optional, Required]
-                    verification:
-                      x-clearflask-prop: { order: 1, name: 'Verification', defaultValue: 'None', description: 'Choose whether users must be required to verify their email before letting them inside. If not required, no initial email will be sent.' }
-                      type: string
-                      enum: [None, Required]
-                    allowedDomains:
-                      x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify an allow list of domains that must match before giving access to content. Email must be verified prior to access.' }
-                      type: array
-                      items:
-                        x-clearflask-prop: { order: 1, name: 'Domain', placeholder: 'example.com' }
-                        type: string
-                      uniqueItems: true
-                      minItems: 1
-                      maxItems: 10
-                sso:
-                  x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
-                  x-clearflask-additional-props: { propPaths: [['ssoSecretKey']] }
-                  type: object
-                  title: SsoSignup
-                  required:
-                  - redirectUrl
-                  properties:
-                    buttonTitle:
-                      x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
-                      type: string
-                    redirectUrl:
-                      x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
-                      type: string
-            terms:
-              x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
-              title: CustomTerms
-              type: object
-              required:
-                - documents
-              properties:
-                documents:
-                  x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents to show during sign-up. Leave blank to show no terms.' }
+                verification:
+                  x-clearflask-prop: { order: 1, name: 'Verification', defaultValue: 'None', description: 'Choose whether users must be required to verify their email before letting them inside. If not required, no initial email will be sent.' }
+                  type: string
+                  enum: [None, Required]
+                allowedDomains:
+                  x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify an allow list of domains that must match before giving access to content. Email must be verified prior to access.' }
                   type: array
                   items:
-                    x-clearflask-prop: { name: 'Object', description: 'Document' }
-                    type: object
-                    properties:
-                      shortName:
-                        x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
-                        type: string
-                      name:
-                        x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
-                        type: string
-                      link:
-                        x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
-                        type: string
+                    x-clearflask-prop: { order: 1, name: 'Domain', placeholder: 'example.com' }
+                    type: string
+                  uniqueItems: true
+                  minItems: 1
+                  maxItems: 10
+            sso:
+              x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
+              x-clearflask-additional-props: { propPaths: [['ssoSecretKey']] }
+              type: object
+              title: SsoSignup
+              required:
+              - redirectUrl
+              properties:
+                buttonTitle:
+                  x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
+                  type: string
+                redirectUrl:
+                  x-clearflask-prop: { order: 1, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
+                  type: string
+        terms:
+          x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
+          title: CustomTerms
+          type: object
+          required:
+            - documents
+          properties:
+            documents:
+              x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents to show during sign-up. Leave blank to show no terms.' }
+              type: array
+              items:
+                x-clearflask-prop: { name: 'Object', description: 'Document' }
+                type: object
+                properties:
+                  shortName:
+                    x-clearflask-prop: { order: 1, name: 'name', description: 'Name of document.', placeholder: 'Terms of Service' }
+                    type: string
+                  name:
+                    x-clearflask-prop: { order: 2, name: 'name', description: 'Short name.', placeholder: 'Terms' }
+                    type: string
+                  link:
+                    x-clearflask-prop: { order: 3, name: 'link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
+                    type: string
     style:
       x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your branding.' }
       title: Style
@@ -775,11 +777,11 @@ components:
             schema:
               title: ConfigAndBindResult
               type: object
-              required:
-              - config
               properties:
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore: # For private projects, you have to first onboard before receiving config
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:

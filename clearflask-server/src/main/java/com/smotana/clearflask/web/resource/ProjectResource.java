@@ -26,11 +26,13 @@ import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.glassfish.jersey.server.internal.LocalizationMessages;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -72,6 +74,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private AuthCookie authCookie;
 
+    /**
+     * Instead of @PermitAll, this should be Role.PROJECT_ANON, Role.PROJECT_USER;
+     * but bind doesn't happen prior to auth. The PROJCET_ANON check is done inside instead.
+     */
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
@@ -132,6 +138,16 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                     userOpt.get().getUserId(),
                     Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
             authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        }
+
+        // Enforce Role.PROJECT_ANON here
+        if (!userOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()
+                .getConfig()
+                .getUsers()
+                .getOnboarding()
+                .getVisibility())) {
+            // Matches RolesAllowedDynamicFeature
+            throw new ForbiddenException(LocalizationMessages.USER_NOT_AUTHORIZED());
         }
 
         return new ConfigAndBindResult(

@@ -83,6 +83,10 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
 
     const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
 
+    if(!configAndUserBind.config) {
+      throw new Error('Permission denied');
+    }
+
     return [configAndUserBind.config, configAndUserBind.user, post];
   }
 

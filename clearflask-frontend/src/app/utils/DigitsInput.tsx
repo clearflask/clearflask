@@ -50,6 +50,22 @@ class DigitsInput extends Component<Props> {
             var newDigit;
             if (e.target.value === undefined || e.target.value === '') {
               newDigit = undefined;
+            } else if (e.target.value.length === 2) {
+              // In case there are two letters, pick the different one,
+              // or at least one that is a number
+              const digit1 = parseInt(e.target.value[0]);
+              const digit2 = parseInt(e.target.value[1]);
+              if(isNaN(digit1) && isNaN(digit2)) {
+                newDigit = undefined;
+              } else if (isNaN(digit1)) {
+                newDigit = digit2;
+              } else if (isNaN(digit2)) {
+                newDigit = digit1;
+              } else if (digit1 === this.props.value?.[textFieldId]) {
+                newDigit = digit2;
+              } else {
+                newDigit = digit1;
+              }
             } else {
               newDigit = parseInt(e.target.value);
               if (isNaN(newDigit)) {

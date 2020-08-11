@@ -47,7 +47,7 @@ public class DynamoTokenVerifyStoreTest extends AbstractTest {
 
         configSet(DynamoTokenVerifyStore.Config.class, "tokenSize", "20");
         Token token2 = store.createToken(targetId);
-        assertEquals(targetId, token.getTargetId());
-        assertEquals(20, token.getToken().length());
+        assertEquals(targetId, token2.getTargetId());
+        assertEquals(20, token2.getToken().length());
     }
 }

@@ -27,7 +27,6 @@ import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -125,7 +124,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
-    @PermitAll
+    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaGet(String projectId, String ideaId) {
@@ -148,7 +147,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
-    @PermitAll
+    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaWithVoteSearchResponse ideaSearch(String projectId, IdeaSearch ideaSearch, String cursor) {
