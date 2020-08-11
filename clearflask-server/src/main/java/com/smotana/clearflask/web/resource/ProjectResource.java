@@ -12,12 +12,23 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.ConfigAndBindResult;
+import com.smotana.clearflask.api.model.ConfigGetAllResult;
+import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
+import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -26,13 +37,11 @@ import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.glassfish.jersey.server.internal.LocalizationMessages;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -51,7 +60,7 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill", innerType = String.class)
         Set<String> reservedProjectIds();
     }
 
@@ -74,10 +83,6 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private AuthCookie authCookie;
 
-    /**
-     * Instead of @PermitAll, this should be Role.PROJECT_ANON, Role.PROJECT_USER;
-     * but bind doesn't happen prior to auth. The PROJCET_ANON check is done inside instead.
-     */
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
@@ -140,18 +145,21 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
         }
 
-        // Enforce Role.PROJECT_ANON here
         if (!userOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()
                 .getConfig()
                 .getUsers()
                 .getOnboarding()
                 .getVisibility())) {
-            // Matches RolesAllowedDynamicFeature
-            throw new ForbiddenException(LocalizationMessages.USER_NOT_AUTHORIZED());
+            // For private boards, force user to login first, also hide the full config until login
+            return new ConfigAndBindResult(
+                    null,
+                    projectOpt.get().getVersionedConfig().getConfig().getUsers().getOnboarding(),
+                    null);
         }
 
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
+                null,
                 userOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
     }
 

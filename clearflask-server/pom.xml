@@ -443,6 +443,9 @@
                                 <volumes>
                                     <bind>
                                         <volume>
+                                            ${project.basedir}/src/test/resources/killbill-setenv2.sh:/var/lib/tomcat/bin/setenv2.sh
+                                        </volume>
+                                        <volume>
                                             ${project.basedir}/src/test/resources/logging-dev.properties:/var/lib/tomcat/conf/logging.properties
                                         </volume>
                                         <volume>

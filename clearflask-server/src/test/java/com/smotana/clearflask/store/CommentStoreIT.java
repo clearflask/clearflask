@@ -151,6 +151,8 @@ public class CommentStoreIT extends AbstractIT {
         assertNotNull(commentActual.get().getEdited());
         comment = comment.toBuilder()
                 .authorUserId(null)
+                .authorName(null)
+                .authorEmail(null)
                 .content(null)
                 .edited(commentActual.get().getEdited())
                 .build();
