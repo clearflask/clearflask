@@ -619,7 +619,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       <Block
         title='Make it your own'
         variant='hero'
-        description='Custom workflows, prioritization and branding to fit your needs.'
+        description='Customize pages, menu and content to fit your needs.'
       />
         <HorizontalPanels wrapBelow='xl' maxContentWidth='sm' maxWidth='xl'>
           {this.renderCustomizeContent()}
@@ -750,19 +750,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             }}
             controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
             demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-          />
-          <Demo
-            variant='heading'
-            type='column'
-            title='Credit System'
-            description='Customizable display settings to fit any currency.'
-            template={templater => {
-              templater.creditsCurrencyWithoutCents();
-              templater.styleWhite();
-            }}
-            demo={project => (
-              <CreditPreview editor={project.editor} />
-            )}
           />
       </React.Fragment>
     );
