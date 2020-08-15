@@ -45,6 +45,8 @@ paths:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1usersearch'
   /project/{projectId}/admin/user:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user'
+  /project/{projectId}/admin/login/user/{userId}:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1login~1user~1{userId}'
   /project/{projectId}/admin/user/{userId}:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user~1{userId}'
   /project/{projectId}/admin/commentSearch:

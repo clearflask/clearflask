@@ -425,6 +425,27 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/login/user/{userId}:
+  post:
+    operationId: userLoginAdmin
+    tags: [UserAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/admin/user/{userId}:
   get:
     operationId: userGetAdmin

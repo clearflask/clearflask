@@ -717,6 +717,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
       };
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLoginActionStatus.Fulfilled:
+    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userUpdateActionStatus.Fulfilled:
       const user = action.type === Client.userCreateActionStatus.Fulfilled
         ? action.payload.user : action.payload;
@@ -1181,6 +1182,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         },
       };
     case Client.userLoginActionStatus.Fulfilled:
+    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
       const balance = action.type === Client.userCreateActionStatus.Fulfilled
         ? action.payload.user?.balance : action.payload.balance;

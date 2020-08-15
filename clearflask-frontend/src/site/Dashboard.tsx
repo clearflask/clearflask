@@ -31,6 +31,9 @@ import PostsPage from './dashboard/PostsPage';
 import SettingsPage from './dashboard/SettingsPage';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
+import ConfigView from '../common/config/settings/ConfigView';
+import DividerCorner from '../app/utils/DividerCorner';
+import AsUser from '../common/AsUser';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -46,7 +49,10 @@ const styles = (theme: Theme) => createStyles({
     marginLeft: theme.spacing(2),
   },
   selectProjectLabel: {
-    fontStyle: 'italic',
+    color: theme.palette.text.hint,
+  },
+  projectUserSelectors: {
+    display: 'flex',
   },
 });
 
@@ -64,6 +70,7 @@ interface State {
   currentPagePath: ConfigEditor.Path;
   binding?: boolean;
   selectedProjectId?: string;
+  titleClicked?: number
 }
 
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
@@ -343,17 +350,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         <Layout
           toolbarLeft={
             <div className={this.props.classes.toolbarLeft}>
-              <Typography variant='h6' color="inherit" noWrap>
+              <Typography
+                variant='h6'
+                color="inherit"
+                noWrap
+                onClick={() => this.setState({titleClicked: (this.state.titleClicked || 0) + 1})}
+              >
                 Dashboard
               </Typography>
               <Fade in={showProjectSelect}>
-                <div>
+                <div className={this.props.classes.projectUserSelectors}>
                   <SelectionPicker
                     className={this.props.classes.projectPicker}
                     value={[selectedLabel]}
                     overrideComponents={{ DropdownIndicator: null }}
                     options={projectOptions}
-                    inputMinWidth='75px'
+                    inputMinWidth='100px'
                     isMulti={false}
                     bare={false}
                     onValueChange={(labels, action) => {
@@ -366,6 +378,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                       }
                     }}
                   />
+                  {activeProject && (
+                    <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                      <AsUser key={activeProject.projectId} server={activeProject?.server} />
+                    </Provider>
+                  )}
                 </div>
               </Fade>
             </div>
@@ -434,8 +451,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             pageClicked={this.pageClicked.bind(this)}
           />
           {page}
-          {/* TODO remove */}
-          {/* {activeProject && (<ConfigView editor={activeProject.editor} />)} */}
+          {activeProject && (this.state.titleClicked || 0) >= 5 && (
+            <DividerCorner title='Configuration dump'>
+              <ConfigView editor={activeProject.editor} />
+            </DividerCorner>
+          )}
         </Layout>
       </Elements>
     );

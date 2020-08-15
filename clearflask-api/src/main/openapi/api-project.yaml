@@ -110,7 +110,7 @@ components:
         visibility:
           x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
           type: string
-          enum: [Private, Public]
+          enum: [Public, Private]
         accountFields:
           x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
           title: AccountFields

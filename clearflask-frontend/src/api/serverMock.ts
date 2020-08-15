@@ -498,6 +498,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!user) return this.throwLater(404, 'Incorrect email or password');
     if (!request.userLogin.password) this.throwLater(403, '');
     if (user['password'] !== request.userLogin.password) this.throwLater(403, 'Incorrect email or password');
+    this.getProject(request.projectId).loggedInUser = user;
+    return this.returnLater(user);
+  }
+  userLoginAdmin(request: Admin.UserLoginAdminRequest): Promise<Client.UserMeWithBalance> {
+    const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
+    if (!user) return this.throwLater(404, 'User not found');
+    this.getProject(request.projectId).loggedInUser = user;
     return this.returnLater(user);
   }
   userLogout(request: Client.UserLogoutRequest): Promise<void> {

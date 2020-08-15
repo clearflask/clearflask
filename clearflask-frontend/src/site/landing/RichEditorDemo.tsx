@@ -9,10 +9,7 @@ const RichEditorDemo = (props: {valueInit?: string}) => {
   return (
     <RichEditor
       value={value || ''}
-      onChange={e => {
-        setValue(e.target.value)
-        console.log('DEBUGDEBUG', e.target.value);
-      }}
+      onChange={e => setValue(e.target.value)}
       fullWidth
       multiline
       rows={1}

@@ -8,6 +8,7 @@ import Promised from '../../common/Promised';
 import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
+import FakeBrowser from '../../common/FakeBrowser';
 
 const styles = (theme: Theme) => createStyles({
   edgeSpacing: {
@@ -28,6 +29,8 @@ interface Props {
   demo?: (project: Project) => React.ReactNode;
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
+  demoWrap?: 'browser',
+  demoWrapPadding?: number | string,
   demoOverflowYScroll?: boolean;
   scale?: number;
   settings?: StateSettings;
@@ -94,6 +97,13 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
             {demo}
           </div>
         );
+        if(this.props.demoWrap === 'browser') {
+          demo = (
+            <FakeBrowser contentPadding={this.props.demoWrapPadding}>
+              {demo}
+            </FakeBrowser>
+          );
+        }
         const { classes, ...blockProps } = this.props;
         return (
           <Block

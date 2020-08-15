@@ -30,13 +30,9 @@ import RoadmapControls from './landing/RoadmapControls';
 import PricingPage from './PricingPage';
 import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
 import OnboardingDemo from './landing/OnboardingDemo';
-import CreditPreview from '../common/config/settings/injects/CreditPreview';
 import { Device } from '../common/DeviceContainer';
 import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
-import Header from '../app/Header';
-import { MemoryRouter, Route } from 'react-router';
 import HeaderDemo from './landing/HeaderDemo';
-import RichEditor from '../common/RichEditor';
 import RichEditorDemo from './landing/RichEditorDemo';
 
 const styles = (theme: Theme) => createStyles({
@@ -290,6 +286,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Understand your customer needs'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
           displayAlign='flex-start'
+          demoWrap='browser'
+          demoWrapPadding={40}
           demoFixedHeight={400}
           initialSubPath='/embed/demo'
           template={templater => templater.demoExplorer({
@@ -577,6 +575,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           displayAlign='flex-end'
           // scale={0.7}
           type='largeDemo'
+          demoWrap='browser'
+          demoWrapPadding={40}
           template={templater => templater.demoBoardPreset('development')}
           mock={mocker => mocker.demoBoard([
             { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
@@ -685,8 +685,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <Demo
             variant='content'
             type='column'
-            title='Menu buttons'
-            description='Customize the order and look of navigation menu'
+            title='Navigation'
+            description='Customize the navigation menu'
             template={templater => {
               templater.liquidTemplateHeader(' ');
               templater.createMenu([templater.createPage('Home')]);
