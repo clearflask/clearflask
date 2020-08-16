@@ -34,6 +34,17 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
+  imageForm: {
+    padding: theme.spacing(4),
+    width: '100%',
+    maxWidth: 600,
+  },
+  image: {
+    padding: theme.spacing(8),
+    width: '100%',
+    margin: 'auto',
+    maxHeight: '50vh',
+  },
 });
 
 interface ContactForm {
@@ -42,6 +53,7 @@ interface ContactForm {
   subtitle: string;
   submitTitle: string;
   hideFromMainPage?: boolean;
+  imagePath?: string;
   fields: {
     attrName: string;
     title?: string;
@@ -59,6 +71,7 @@ const forms: ContactForm[] = [
     title: 'Product walkthrough',
     subtitle: 'Our experts will work with you to find the right solution',
     submitTitle: 'Schedule a demo',
+    imagePath: '/img/support/tour.svg',
     hideFromMainPage: true,
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
@@ -70,6 +83,7 @@ const forms: ContactForm[] = [
     title: 'Talk to sales',
     subtitle: 'Our experts will work with you to find the right solution',
     submitTitle: 'Contact',
+    imagePath: '/img/support/sales.svg',
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
       { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
@@ -80,6 +94,7 @@ const forms: ContactForm[] = [
     title: 'Customer support',
     submitTitle: 'Get support',
     subtitle: 'Need help? Found an issue?',
+    imagePath: '/img/support/support.svg',
     fields: [
       { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
       { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
@@ -91,6 +106,7 @@ const forms: ContactForm[] = [
     title: 'Other inquiry',
     subtitle: 'Have a question for our team?',
     submitTitle: 'Contact us',
+    imagePath: '/img/support/question.svg',
     fields: [
       { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
       { attrName: CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
@@ -126,10 +142,17 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Route exact key={form.type} path={`${prefixMatch}/${form.type}`} render={props => (
             <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
               <Container maxWidth='md'>
-                <Grid container spacing={10} alignItems='stretch'>
+                <Grid container spacing={10} alignItems='center'>
                   <Grid item xs={12} md={6} lg={7}>
                     <Typography component="h1" variant="h3" color="textPrimary">{form.title}</Typography>
                     <Typography component="h2" variant="h5" color="textSecondary">{form.subtitle}</Typography>
+                    {form.imagePath && (
+                      <img
+                        alt=''
+                        className={this.props.classes.imageForm}
+                        src={form.imagePath}
+                      />
+                    )}
                   </Grid>
                   <Grid item xs={12} sm={8} md={6} lg={5}>
                     <Paper variant='outlined'>
@@ -203,7 +226,12 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Container maxWidth='md'>
               <Grid container spacing={5} alignItems='stretch' alignContent='stretch'>
-                <Grid item xs={12}>
+                <Grid item xs={12} alignItems='stretch'>
+                  <img
+                    alt=''
+                    className={this.props.classes.image}
+                    src='/img/support/main.svg'
+                  />
                   <Typography component="h1" variant="h2" color="textPrimary">How can we help?</Typography>
                 </Grid>
                 {forms.filter(form => !form.hideFromMainPage).map(form => (

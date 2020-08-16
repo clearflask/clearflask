@@ -19,12 +19,27 @@ const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(6),
   },
+  header: {
+    display: 'flex',
+    [theme.breakpoints.down('sm')]: {
+      flexWrap: 'wrap-reverse',
+    },
+    alignItems: 'flex-end',
+  },
   box: {
     border: '1px solid ' + theme.palette.grey[300],
     borderBottom: 'none',
   },
   billingSelect: {
     margin: theme.spacing(3),
+  },
+  image: {
+    padding: theme.spacing(0, 8),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2),
+      maxWidth: 300,
+    },
+    width: '100%',
   },
 });
 
@@ -52,8 +67,19 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
-          <Typography component="h1" variant="h2" color="textPrimary">Pricing</Typography>
-          <Typography component="h2" variant="h4" color="textSecondary">Try out all the features during your trial</Typography>
+          <div className={this.props.classes.header}>
+            <div>
+              <Typography component="h1" variant="h2" color="textPrimary">Pricing</Typography>
+              <Typography component="h2" variant="h4" color="textSecondary">Try out all the features during your trial</Typography>
+            </div>
+            <Container maxWidth='md'>
+              <img
+                alt=''
+                className={this.props.classes.image}
+                src='/img/landing/pricing.svg'
+              />
+            </Container>
+          </div>
           {periods.length > 1 && (
             <PlanPeriodSelect
               plans={this.props.plans}

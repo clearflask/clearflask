@@ -6,34 +6,35 @@ import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import NotificationIcon from '@material-ui/icons/Notifications';
+import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
-import React, { Component, useState } from 'react';
+import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
+import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
+import { Device } from '../common/DeviceContainer';
 import ScrollAnchor from '../common/util/ScrollAnchor';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
+import HeaderDemo from './landing/HeaderDemo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
+import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
+import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
+import RichEditorDemo from './landing/RichEditorDemo';
 import RoadmapControls from './landing/RoadmapControls';
 import PricingPage from './PricingPage';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
-import { Device } from '../common/DeviceContainer';
-import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
-import HeaderDemo from './landing/HeaderDemo';
-import RichEditorDemo from './landing/RichEditorDemo';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -92,15 +93,15 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(0, 3),
   },
   textCircleItemOne: {
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
     justifyContent: 'end',
     [theme.breakpoints.up('lg')]: {
-      paddingRight: 150,
+      paddingLeft: 150,
       boxSizing: 'content-box',
     },
   },
   textCircleItemTwo: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
     justifyContent: 'center',
   },
   textCircleItemThree: {
@@ -124,7 +125,7 @@ const styles = (theme: Theme) => createStyles({
     borderRadius: '50%',
     borderStyle: 'solid',
     borderWidth: 100,
-    borderColor: theme.palette.primary.main,
+    borderColor: theme.palette.text.primary,
     [theme.breakpoints.up('lg')]: {
       opacity: 0.1,
     },
@@ -158,9 +159,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderHero() {
     return (
       <Hero
-        title='Involve your customers in your product development'
+        title='Involve your customer in your product development'
         description='Product Feedback Solution for transparent organizations'
         imagePath='/img/landing/hero.svg'
+        mirror
       />
     );
   }
@@ -201,10 +203,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               title='Collect feedback'
               description={(
                 <div className={this.props.classes.pointsContainer}>
-                  <div>Collect all feedback channels into unified place. Influence your product decisions based on data.</div>
+                  <div>Ask your customer to influence your product decisions.</div>
                   <div className={this.props.classes.point}>
                     <WidgetIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Embed in your product</div>
+                    <div>Seamless integration with your product</div>
                   </div>
                   <div className={this.props.classes.point}>
                     <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIcon} />
@@ -227,7 +229,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   <div>Prioritize your roadmap based on customer's value</div>
                   <div className={this.props.classes.point}>
                     <VoteIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Voting</div>
+                    <div>User vote</div>
                   </div>
                   <div className={this.props.classes.point}>
                     <PaymentIcon fontSize='inherit' className={this.props.classes.pointIcon} />
@@ -240,12 +242,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             />
           </div>
           <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
-            <div style={{ width: '10%' }} />
             <BlockContent
               className={classNames(this.props.classes.textCircleItemThree, this.props.classes.textCircleItem)}
               variant='content'
               titleCmpt='div'
-              title='Engage your customers'
+              title='Engage your customer'
               description={(
                 <div className={this.props.classes.pointsContainer}>
                   <div>Build a community around your product development</div>
@@ -255,13 +256,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                   <div className={this.props.classes.point}>
                     <NotificationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
-                    <div>Let your customer know their requested feature is ready</div>
+                    <div>Directly respond to customer feedback</div>
                   </div>
                 </div>
               )}
               buttonTitle='Learn more'
               buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
             />
+            <div style={{ width: '10%' }} />
           </div>
         </div>
         <div
@@ -282,13 +284,17 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <ScrollAnchor scrollOnMount positionVertical='start' />
         )}
         <Demo
-          variant='hero'
+          variant='heading-main'
           title='Understand your customer needs'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
+          alignItems='flex-start'
+          imagePath='/img/landing/listen.svg'
+          imageLocation='above'
           displayAlign='flex-start'
           demoWrap='browser'
           demoWrapPadding={40}
-          demoFixedHeight={400}
+          demoFixedHeight={350}
+          demoFixedWidth={600}
           initialSubPath='/embed/demo'
           template={templater => templater.demoExplorer({
             allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
@@ -325,13 +331,34 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
             demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
           /> */}
-          <Demo
+          <BlockContent
+            variant='content'
+            title='Capture feedback publicly, internally, or on-behalf'
+            description='Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels.'
+            icon={(<VisibilityIcon />)}
+          />
+          <BlockContent
+            variant='content'
+            title='Customer segmentation and Analytics'
+            description={(
+              <React.Fragment>
+                Analyze your data with search, segment and filter to summarize feedback from target customers.
+                &nbsp;
+                <PostStatusIframe
+                  postId='powerful-analytics'
+                  height={14}
+                  config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+                />
+              </React.Fragment>
+            )}
+            icon={(<AnalyticsIcon />)}
+          />
+          {/* <Demo
             variant='content'
             type='column'
-            title='Powerful search reduces duplicate submissions'
-            description='Search engine powered by ElasticSearch ensures users do not create duplicate feedback.'
-            initialSubPath='/embed/demo'
-            scale={0.7}
+            title='Powerful analytics'
+            description={('Powered by ElasticSearch, perform user segmentations and gives you the answer you are looking for.')}
+            icon={(<AnalyticsIcon />)}
             template={templater => {
               templater.demo();
               templater.demoExplorer({
@@ -351,16 +378,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 update: { searchText: 'Dark Mode' },
               }],
             }}
-          />
-          <BlockContent
-            variant='content'
-            title='Capture feedback from internal teams or on-behalf of users'
-            description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
-          />
+          /> */}
           <BlockContent
             variant='content'
             title='Integrate with your product'
             description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
+            icon={(<WidgetIcon />)}
           />
         </HorizontalPanels>
       </React.Fragment>
@@ -374,11 +397,15 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <ScrollAnchor scrollOnMount positionVertical='start' />
         )}
         <Demo
-          variant='hero'
+          variant='heading-main'
           title='Give your valuable customers a proportionate voice'
           description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
           mirror
-          demoFixedHeight={300}
+          alignItems='center'
+          demoWrap='browser'
+          demoWrapPadding='40px 40px 40px 20px'
+          imagePath='/img/landing/value.svg'
+          imageLocation='above'
           initialSubPath='/embed/demo'
           template={templater => templater.demoPrioritization('all')}
           mock={mocker => mocker.demoPrioritization()}
@@ -538,8 +565,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <Demo
           title='Build a community around your product'
           description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
+          variant='heading-main'
           alignItems='center'
           initialSubPath='/embed/demo'
+          imagePath='/img/landing/community.svg'
+          imageLocation='above'
           // scale={0.7}
           template={templater => {
             templater.demoCategory();
@@ -568,10 +598,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         // - Custom (language courses): Gaining traction, Beta, Public
         // - Custom (Game ideas): Semi-finals, Selected */}
         <Demo
-          title='Show off your progress'
+          title='Show off your progress with a product roadmap'
           description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
           mirror
           initialSubPath='/embed/demo'
+          alignItems='center'
           displayAlign='flex-end'
           // scale={0.7}
           type='largeDemo'
@@ -616,11 +647,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCustomize() {
     return (
       <React.Fragment>
-      <Block
-        title='Make it your own'
-        variant='hero'
-        description='Customize pages, menu and content to fit your needs.'
-      />
+        <Block
+          title='Make it your own'
+          imagePath='/img/landing/customize.svg'
+          variant='heading-main'
+          description='Customize pages, menu and content to fit your needs.'
+        />
         <HorizontalPanels wrapBelow='xl' maxContentWidth='sm' maxWidth='xl'>
           {this.renderCustomizeContent()}
           {this.renderCustomizeLayout()}
@@ -639,36 +671,36 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Content Types'
           description='Define behavior for each custom content type to match your operations. Content can be an idea, blog entry, forum post, knowledge article.'
         />
-          <Demo
-            variant='content'
-            type='column'
-            title='Workflow'
-            description='Define a workflow detailing the transition between custom statuses'
-            template={templater => {
-              templater.demoCategory();
-              templater.workflowFeatures(0);
-              templater.styleWhite();
-            }}
-            demo={project => (
-              <WorkflowPreview
-                editor={project.editor}
-                categoryIndex={0}
-                isVertical
-                hideCorner
-                height={400}
-              />
-            )}
-          />
-          <BlockContent
-            variant='content'
-            title='Feedback'
-            description='Allow custom interaction with Funding, Voting, Expressing and Commenting'
-          />
-          <BlockContent
-            variant='content'
-            title='Tags'
-            description='Define tagging rules for easier grouping, filtering, and searching.'
-          />
+        <Demo
+          variant='content'
+          type='column'
+          title='Workflow'
+          description='Define a workflow detailing the transition between custom statuses'
+          template={templater => {
+            templater.demoCategory();
+            templater.workflowFeatures(0);
+            templater.styleWhite();
+          }}
+          demo={project => (
+            <WorkflowPreview
+              editor={project.editor}
+              categoryIndex={0}
+              isVertical
+              hideCorner
+              height={400}
+            />
+          )}
+        />
+        <BlockContent
+          variant='content'
+          title='Feedback'
+          description='Allow custom interaction with Funding, Voting, Expressing and Commenting'
+        />
+        <BlockContent
+          variant='content'
+          title='Tags'
+          description='Define tagging rules for easier grouping, filtering, and searching.'
+        />
       </React.Fragment>
     );
   }
@@ -682,40 +714,40 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           variant='heading'
           description='Customize each page and define the navigation menu.'
         />
-          <Demo
-            variant='content'
-            type='column'
-            title='Navigation'
-            description='Customize the navigation menu'
-            template={templater => {
-              templater.liquidTemplateHeader(' ');
-              templater.createMenu([templater.createPage('Home')]);
-              templater.createMenu([templater.createPage('Idea'), templater.createPage('Bug')], 'Feedback');
-              templater.createMenu([templater.createPage('Roadmap')]);
-              templater.styleWhite();
-            }}
-            demo={project => (
-              <Provider store={project.server.getStore()}>
-                <HeaderDemo project={project} />
-              </Provider>
-            )}
-          />
-          <Block
-            variant='content'
-            type='column'
-            title='Template'
-            description='Write your own pages with markdown or customize it with HTML templates'
-            demo={(
-              <RichEditorDemo
-                valueInit='{"blocks":[{"key":"2rp40","text":"Create nice awesome content!","type":"unstyled","depth":0,"inlineStyleRanges":[{"offset":7,"length":4,"style":"STRIKETHROUGH"},{"offset":20,"length":7,"style":"UNDERLINE"}],"entityRanges":[],"data":{}}],"entityMap":{}}'
-              />
-            )}
-          />
-          <BlockContent
-            variant='content'
-            title='Layout'
-            description='Choose how to display your content with component layouts'
-          />
+        <Demo
+          variant='content'
+          type='column'
+          title='Navigation'
+          description='Customize the navigation menu'
+          template={templater => {
+            templater.liquidTemplateHeader(' ');
+            templater.createMenu([templater.createPage('Home')]);
+            templater.createMenu([templater.createPage('Idea'), templater.createPage('Bug')], 'Feedback');
+            templater.createMenu([templater.createPage('Roadmap')]);
+            templater.styleWhite();
+          }}
+          demo={project => (
+            <Provider store={project.server.getStore()}>
+              <HeaderDemo project={project} />
+            </Provider>
+          )}
+        />
+        <Block
+          variant='content'
+          type='column'
+          title='Template'
+          description='Write your own pages with markdown or customize it with HTML templates'
+          demo={(
+            <RichEditorDemo
+              valueInit='{"blocks":[{"key":"2rp40","text":"Create nice awesome content!","type":"unstyled","depth":0,"inlineStyleRanges":[{"offset":7,"length":4,"style":"STRIKETHROUGH"},{"offset":20,"length":7,"style":"UNDERLINE"}],"entityRanges":[],"data":{}}],"entityMap":{}}'
+            />
+          )}
+        />
+        <BlockContent
+          variant='content'
+          title='Layout'
+          description='Choose how to display your content with component layouts'
+        />
       </React.Fragment>
     );
   }
@@ -723,34 +755,34 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCustomizeOther() {
     return (
       <React.Fragment>
-          <Demo
-            variant='heading'
-            type='column'
-            title='Style'
-            description='Match your product branding, feel and look.'
-            initialSubPath='/embed/demo'
-            template={templater => {
-              templater.demoPrioritization('vote');
-              templater.styleDark();
-            }}
-            mock={mocker => mocker.demoPrioritization()}
-            demoFixedHeight={150}
-            containerPortal
-          />
-          <Demo
-            variant='heading'
-            type='column'
-            title='Onboarding'
-            description='Choose the sign-up flow for users with the least amount of friction.'
-            initialSubPath='/embed/demo'
-            demoFixedWidth={420}
-            template={templater => {
-              setInitSignupMethodsTemplate(templater);
-              templater.styleWhite();
-            }}
-            controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
-            demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-          />
+        <Demo
+          variant='heading'
+          type='column'
+          title='Style'
+          description='Match your product branding, feel and look.'
+          initialSubPath='/embed/demo'
+          template={templater => {
+            templater.demoPrioritization('vote');
+            templater.styleDark();
+          }}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={150}
+          containerPortal
+        />
+        <Demo
+          variant='heading'
+          type='column'
+          title='Onboarding'
+          description='Choose the sign-up flow for users with the least amount of friction.'
+          initialSubPath='/embed/demo'
+          demoFixedWidth={420}
+          template={templater => {
+            setInitSignupMethodsTemplate(templater);
+            templater.styleWhite();
+          }}
+          controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+          demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
+        />
       </React.Fragment>
     );
   }
@@ -762,6 +794,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
         buttonTitle='Get in touch'
         buttonLink='/contact/sales'
+        imagePath='/img/support/sales.svg'
         mirror
       />
     );

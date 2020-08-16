@@ -86,6 +86,7 @@ interface PropsDraftJs extends Omit<InputProps, 'onChange'> {
 }
 interface StateDraftJs {
   editorState: EditorState;
+  value?: string;
   isFocused?: boolean;
   linkPopoverOpen?: boolean;
   linkName?: string;
@@ -93,17 +94,16 @@ interface StateDraftJs {
 }
 class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof styles, true> & WithSnackbarProps, StateDraftJs> implements PropsInputRef {
   readonly editorRef: React.RefObject<Editor> = React.createRef();
-  value?: string;
 
   constructor(props) {
     super(props);
 
-    this.value = props.value || props.defaultValue;
+    const value = props.value || props.defaultValue;
 
     var recoveredEditorState: EditorState | undefined = undefined;
-    if (this.value !== undefined) {
+    if (value !== undefined) {
       try {
-        recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(this.value)));
+        recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(value)));
         if (filteringEnabled) {
           recoveredEditorState = filterEditorState(draftjsFilterConfig, recoveredEditorState) as EditorState;
         }
@@ -118,6 +118,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
 
     this.state = {
       editorState: recoveredEditorState || EditorState.createEmpty(),
+      value,
     };
   }
 
@@ -127,6 +128,26 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
 
   blur(): void {
     this.editorRef.current?.blur();
+  }
+
+  static getDerivedStateFromProps(props: (PropsDraftJs & WithStyles<typeof styles, true> & WithSnackbarProps), state: StateDraftJs) {
+    var stateValue;
+    if (state.editorState.getCurrentContent().hasText()) {
+      stateValue = JSON.stringify(convertToRaw(state.editorState.getCurrentContent()));
+    } else {
+      stateValue = undefined;
+    }
+    var propsValue = props.value || props.defaultValue;
+    if (propsValue === stateValue) {
+      return null;
+    }
+
+    return {
+      editorState: propsValue === undefined
+        ? EditorState.createEmpty()
+        : EditorState.createWithContent(convertFromRaw(JSON.parse(propsValue as string))),
+      value: propsValue,
+    };
   }
 
   render() {
@@ -154,13 +175,20 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
               newEditorState = filterEditorState(draftjsFilterConfig, newEditorState) as EditorState;
             }
 
+            const prevValue = this.state.value;
+            var newValue: string | undefined;
             if (currentContent.hasText()) {
-              this.value = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
+              newValue = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
             } else {
-              this.value = undefined;
+              newValue = undefined;
             }
-            this.setState({ editorState: newEditorState });
-            onChange && onChange({ target: { value: this.value } });
+            this.setState({
+              editorState: newEditorState,
+              value: newValue,
+            });
+            if (prevValue !== newValue) {
+              onChange && onChange({ target: { value: newValue } });
+            }
           }}
           onFocus={e => {
             otherInputProps.onFocus && otherInputProps.onFocus(e as any);

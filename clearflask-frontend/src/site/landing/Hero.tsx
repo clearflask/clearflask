@@ -17,7 +17,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   image: {
-    padding: theme.spacing(4),
+    padding: theme.spacing(8),
     width: '100%',
   },
 });
@@ -26,13 +26,19 @@ interface Props {
   title?: string;
   description?: string;
   imagePath?: string;
+  mirror?: boolean;
 }
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (
       <div className={this.props.classes.hero}>
-        <Grid container justify='center' wrap='wrap-reverse' alignItems='center'>
+        <Grid container
+          justify='center'
+          wrap='wrap-reverse'
+          alignItems='center'
+          direction={!!this.props.mirror ? 'row-reverse' : undefined}
+        >
           {this.props.imagePath && (
             <Grid item xs={12} md={6}>
               <img

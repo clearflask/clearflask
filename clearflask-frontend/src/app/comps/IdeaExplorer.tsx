@@ -9,6 +9,7 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
 import RichEditor from '../../common/RichEditor';
+import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
 import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -20,7 +21,6 @@ import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
-import SubmitButton from '../../common/SubmitButton';
 
 enum FilterType {
   Search = 'search',
@@ -432,14 +432,14 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       () => this.props.settings,
       this.setState.bind(this));
 
-    if (searchTerm) {
-      this.updateSearchText(searchTerm);
-    }
-
     if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
       if (await animate({ sleepInMs: 1500 })) return;
+
+      if (searchTerm) {
+        if (await animate({ setState: { newItemSearchText: searchTerm } })) return;
+      }
 
       for (var i = 0; i < title.length; i++) {
         const character = title[i];
@@ -449,15 +449,12 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
         })) return;
       }
 
-      var currentDescription = '';
       if (description !== undefined) {
-        if (await animate({ sleepInMs: 100 })) return;
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (await animate({ sleepInMs: 200 })) return;
         for (var j = 0; j < description.length; j++) {
-          currentDescription += description[j];
           if (await animate({
             sleepInMs: 10 + Math.random() * 30,
-            setState: { newItemDescription: textToRaw(currentDescription) },
+            setState: { newItemDescription: textToRaw(description.substr(0, j + 1)) },
           })) return;
         }
       }
@@ -465,12 +462,10 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       if (await animate({ sleepInMs: 500 })) return;
 
       if (description !== undefined) {
-        currentDescription = description;
-        while (currentDescription.length > 0) {
-          currentDescription = currentDescription.substr(0, currentDescription.length - 1);
+        for (var j = 0; j < description.length; j++) {
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: textToRaw(currentDescription) },
+            setState: { newItemDescription: textToRaw(description.substr(0, description.length - j - 1)) },
           })) return;
         }
 

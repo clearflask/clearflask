@@ -35,6 +35,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(4),
   },
   image: {
+    padding: theme.spacing(8),
     width: '100%',
   },
   columnOnly: {
@@ -72,6 +73,7 @@ export interface Props extends BlockContentProps {
   controls?: React.ReactNode;
   demo?: React.ReactNode;
   imagePath?: string;
+  imageLocation?: 'demo' | 'above';
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
@@ -84,6 +86,14 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
   render() {
     const isHero = this.props.type === 'hero';
 
+    var image = this.props.imagePath && (
+      <img
+        alt=''
+        className={this.props.classes.image}
+        src={this.props.imagePath}
+      />
+    );
+
     var demo = this.props.demo;
     if (demo && this.props.edgeType) {
       demo = (
@@ -94,13 +104,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     }
     const display = (
       <React.Fragment>
-        {this.props.imagePath && (
-          <img
-            alt=''
-            className={this.props.classes.image}
-            src={this.props.imagePath}
-          />
-        )}
+        {!!image && (!this.props.imageLocation || this.props.imageLocation === 'demo') && image}
         {demo}
         {this.props.controls && (
           <DividerCorner
@@ -153,6 +157,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
           className={`${this.props.classes.columnOnly} ${this.props.className || ''}`}
         >
           <div className={this.props.classes.columnContent}>
+            {!!image && this.props.imageLocation === 'above' && image}
             {content}
           </div>
           {display}
@@ -174,6 +179,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             {display}
           </Grid>
           <Grid alignItems='center' item xs={12} sm={8} md={isLargeDemo ? 4 : 6} lg={isLargeDemo ? 3 : 5} xl={isLargeDemo ? 2 : 4} className={this.props.classes.grid}>
+            {!!image && this.props.imageLocation === 'above' && image}
             {content}
           </Grid>
         </Grid>
