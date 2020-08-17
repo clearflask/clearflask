@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
@@ -74,6 +75,7 @@ export interface Props extends BlockContentProps {
   demo?: React.ReactNode;
   imagePath?: string;
   imageLocation?: 'demo' | 'above';
+  imageStyle?: CSSProperties;
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
@@ -91,6 +93,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
         alt=''
         className={this.props.classes.image}
         src={this.props.imagePath}
+        style={this.props.imageStyle}
       />
     );
 
@@ -175,13 +178,18 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             : ((this.props.imagePath || isHero) ? 'center' : 'flex-end')}
           justify='center'
         >
-          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 8 : 6} className={classNames(this.props.classes.grid)}>
+          <Grid alignItems={this.props.displayAlign || 'center'} item xs={12} md={isLargeDemo ? 12 : 6} className={classNames(this.props.classes.grid)}>
             {display}
           </Grid>
-          <Grid alignItems='center' item xs={12} sm={8} md={isLargeDemo ? 4 : 6} lg={isLargeDemo ? 3 : 5} xl={isLargeDemo ? 2 : 4} className={this.props.classes.grid}>
-            {!!image && this.props.imageLocation === 'above' && image}
+          <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+            {!!image && !isLargeDemo && this.props.imageLocation === 'above' && image}
             {content}
           </Grid>
+          {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
+          <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+            {image}
+          </Grid>
+          )}
         </Grid>
       );
     }

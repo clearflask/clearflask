@@ -69,8 +69,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
         <Container maxWidth='md'>
           <div className={this.props.classes.header}>
             <div>
-              <Typography component="h1" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="h2" variant="h4" color="textSecondary">Try out all the features during your trial</Typography>
+              <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
+              <Typography component="div" variant="h4" color="textSecondary">Try out all the features during your trial</Typography>
             </div>
             <Container maxWidth='md'>
               <img

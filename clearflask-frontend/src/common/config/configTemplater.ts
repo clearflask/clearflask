@@ -218,14 +218,14 @@ export default class Templater {
         break;
       case 'funding':
         this.demoBoard('Crowd-funding', [
-          { title: 'Gathering interest', display: { showVoting: true } },
+          { title: 'Gathering interest' },
           { title: 'Raising funds', display: { showFunding: true } },
-          { title: 'Funded', display: { showFunding: true } },
+          { title: 'Funded', display: { showFunding: true }, status: { disableFunding: true } },
         ]);
         break;
       case 'design':
         this.demoBoard('Design process', [
-          { title: 'Ideas', display: { showExpression: true } },
+          { title: 'Ideas' },
           { title: 'Concept', display: { showExpression: true } },
           { title: 'Approved' },
         ]);

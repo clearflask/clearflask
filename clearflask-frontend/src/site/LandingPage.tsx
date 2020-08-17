@@ -8,6 +8,8 @@ import DonationIcon from '@material-ui/icons/FavoriteBorder';
 import NotificationIcon from '@material-ui/icons/Notifications';
 import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
+import RespondIcon from '@material-ui/icons/ReplyAll';
+import CommunityIcon from '@material-ui/icons/People';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
@@ -62,16 +64,9 @@ const styles = (theme: Theme) => createStyles({
   textCircleContainer: {
     margin: 'auto',
     maxWidth: '100%',
-    [theme.breakpoints.up('lg')]: {
-      width: 1500,
-      height: 1200,
-      maxHeight: 1200,
-    },
-    [theme.breakpoints.down('md')]: {
-      width: 900,
-      height: 900,
-      maxHeight: 900,
-    },
+    width: 900,
+    height: 900,
+    maxHeight: 900,
     position: 'relative',
     zIndex: 2,
     display: 'flex',
@@ -95,10 +90,6 @@ const styles = (theme: Theme) => createStyles({
   textCircleItemOne: {
     alignSelf: 'flex-start',
     justifyContent: 'end',
-    [theme.breakpoints.up('lg')]: {
-      paddingLeft: 150,
-      boxSizing: 'content-box',
-    },
   },
   textCircleItemTwo: {
     alignSelf: 'flex-end',
@@ -126,12 +117,7 @@ const styles = (theme: Theme) => createStyles({
     borderStyle: 'solid',
     borderWidth: 100,
     borderColor: theme.palette.text.primary,
-    [theme.breakpoints.up('lg')]: {
-      opacity: 0.1,
-    },
-    [theme.breakpoints.down('md')]: {
-      opacity: 0.03,
-    },
+    opacity: 0.03,
   },
 });
 interface State {
@@ -312,7 +298,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             },
           }}
         />
-        <HorizontalPanels wrapBelow='lg' maxWidth='xl' maxContentWidth='sm' staggerHeight={120}>
+        <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
           {/* Collect feedback right from your website or app */}
           {/* Prioritize based on customer value */}
           {/* Keep your users updated */}
@@ -426,6 +412,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             demoFixedHeight={450}
             containerPortal
             settings={{
+              demoBlurryShadow: true,
               demoFundingControlAnimate: [
                 { index: 0, fundDiff: 20 },
                 { index: 1, fundDiff: -30 },
@@ -443,6 +430,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
             settings={{
+              demoBlurryShadow: true,
               demoVotingExpressionsAnimate: [
                 { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
                 { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
@@ -461,6 +449,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
             settings={{
+              demoBlurryShadow: true,
               demoVotingExpressionsAnimate: [
                 { type: 'vote', upvote: true },
               ],
@@ -473,7 +462,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           // variant='content'
           title='Give credits to users based on their contribution'
           description='When a customer completes a purchase, issue them credit.'
-          alignItems='center'
+          alignItems='flex-end'
           demo={(
             <div className={this.props.classes.pointsContainer}>
               <div className={this.props.classes.point}>
@@ -575,6 +564,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             templater.demoCategory();
             templater.styleWhite();
           }}
+          settings={{
+            demoBlurryShadow: true,
+          }}
           mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
             .then(() => mocker.mockLoggedIn())}
           demo={project => (
@@ -592,6 +584,26 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             </Provider>
           )}
         />
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
+          <BlockContent
+            variant='content'
+            title='Activate users waiting for a particular feature'
+            description='Notifications blah blah asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            icon={(<NotificationIcon />)}
+          />
+          <BlockContent
+            variant='content'
+            title='Respond to suggestions to let your users know'
+            description='Suggestion Admin Reply and Status change asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            icon={(<RespondIcon />)}
+          />
+          <BlockContent
+            variant='content'
+            title='Get involved in community discussions'
+            description='Threaded comments, forums blah blah ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            icon={(<CommunityIcon />)}
+          />
+        </HorizontalPanels>
         {/* // TODO add example roadmaps of:
         // - Software development workflow: Planned, In Progress, Recently completed
         // - Crowdfunding: Gathering feedback, Funding, Funded
@@ -602,19 +614,20 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
           mirror
           initialSubPath='/embed/demo'
-          alignItems='center'
-          displayAlign='flex-end'
-          // scale={0.7}
+          alignItems='flex-start'
+          imagePath='/img/landing/roadmap.svg'
+          imageLocation='above'
+          imageStyle={{maxWidth: 500, padding: 0,}}
           type='largeDemo'
           demoWrap='browser'
           demoWrapPadding={40}
           template={templater => templater.demoBoardPreset('development')}
           mock={mocker => mocker.demoBoard([
-            { status: '0', extra: { voteValue: 14, expressions: { '❤️': 4, '🚀': 1 } } },
-            { status: '0', extra: { voteValue: 7, expressions: { '👍': 1, '😕': 2 } } },
-            { status: '0', extra: { voteValue: 2, expressions: { '👍': 1 } } },
-            { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '😍': 2 } } },
-            { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👀': 1 } } },
+            { status: '0', extra: { voteValue: 14 } },
+            { status: '0', extra: { voteValue: 7 } },
+            { status: '0', extra: { voteValue: 2 } },
+            { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '👍': 7, '❤️': 4 } } },
+            { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👍': 1 } } },
             { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
             { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
           ])}
@@ -623,23 +636,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           }}
           controls={project => (<RoadmapControls templater={project.templater} />)}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
-          <BlockContent
-            variant='content'
-            title='Activate users waiting for a particular feature'
-            description='Notifications blah blah asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-          />
-          <BlockContent
-            variant='content'
-            title='Respond to suggestions to let your users know'
-            description='Suggestion Admin Reply and Status change asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-          />
-          <BlockContent
-            variant='content'
-            title='Get involved in community discussions'
-            description='Threaded comments, forums blah blah ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-          />
-        </HorizontalPanels>
       </React.Fragment>
     );
   }
@@ -651,7 +647,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Make it your own'
           imagePath='/img/landing/customize.svg'
           variant='heading-main'
-          description='Customize pages, menu and content to fit your needs.'
+          description='Our product is based on customizability to fit your specific needs. We are happy to meet your needs if a specific use case is not yet covered.'
         />
         <HorizontalPanels wrapBelow='xl' maxContentWidth='sm' maxWidth='xl'>
           {this.renderCustomizeContent()}
