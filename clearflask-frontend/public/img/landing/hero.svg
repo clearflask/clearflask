@@ -1,1 +1,588 @@
-<svg id="effd0595-b14c-4c7e-b56f-e463e9379f7d" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="930" height="788" viewBox="0 0 930 788"><title>process</title><circle cx="748.16555" cy="49.47737" r="14.75556" fill="#f1f1f1"/><circle cx="661.16555" cy="620.47737" r="14.75556" fill="#f1f1f1"/><circle cx="294.16555" cy="191.47737" r="14.75556" fill="#f1f1f1"/><ellipse cx="157" cy="765" rx="157" ry="23" fill="#f1f1f1"/><path d="M374.93615,654.976,414.351,642.62838a144.4615,144.4615,0,0,0-14.72211-46.99462l-39.41484,12.34757A88.61133,88.61133,0,0,1,374.93615,654.976Z" transform="translate(-135 -56)" fill="#6c63ff"/><circle cx="145.20015" cy="266.35278" r="36.79985" fill="#2f2e41"/><polygon points="105.5 727.5 98.5 757.5 115.5 757.5 122.5 723.5 105.5 727.5" fill="#9f616a"/><polygon points="187.5 727.5 187.5 755.5 204.5 757.5 204.5 727.5 187.5 727.5" fill="#9f616a"/><path d="M235.5,465.5s2,43,4,46,20,46,20,46l9-28s-14-23-12-36,.74-28.99711.74-28.99711Z" transform="translate(-135 -56)" fill="#9f616a"/><circle cx="157.5" cy="277.5" r="28" fill="#9f616a"/><path d="M269.5,336.5s1,40-6,46,40,1,40,1-10-28-2-34S269.5,336.5,269.5,336.5Z" transform="translate(-135 -56)" fill="#9f616a"/><path d="M306.5,381.5s-6-11-14-10-34,3-35,5-4,9-6,11-17,5-18,17,36,85,36,85-5,17-4,21-5,16-4,21-15,35-7,74v63s-27,109-19,117,35,3,40,0,26-154,26-154l10-51,1,112s-2,94,5,97,34,4,36-2c1.55984-4.67951,9.2024-129.18869,12.49082-183.76643a203.90452,203.90452,0,0,0-4.40285-56.17549C357.42589,528.6804,351.3835,506.5015,344.5,497.5c-13-17-21-71-21-71l17-31s-10-10-16-10S306.5,381.5,306.5,381.5Z" transform="translate(-135 -56)" fill="#2f2e41"/><path d="M239.5,397.5l-5.27357,3.58937S230.5,465.5,233.5,469.5s23.85728,2.04776,25.42864-1.47612S239.5,397.5,239.5,397.5Z" transform="translate(-135 -56)" fill="#2f2e41"/><path d="M321.5,457.5s1,42,7,54,28,62,28,62-1.277,55.0315,9.86148,41.51575S370.5,569.5,370.5,569.5l-19-74s-10-33-9-43S321.5,457.5,321.5,457.5Z" transform="translate(-135 -56)" fill="#9f616a"/><path d="M339.5,795.29921s1-.79921,4,2.20079,11,7,10,18-7,13-7,13v-3h-3v5s-5,16-28,6c0,0-1-8,0-13s1-29,4-28,11,2,13,6S340.5,804.09843,339.5,795.29921Z" transform="translate(-135 -56)" fill="#2f2e41"/><path d="M236.5,796.29921s-1-.79921-4,2.20079-11,7-10,18,7,13,7,13v-3h3v5s5,16,28,6c0,0,1-8,0-13s-1-29-4-28-11,2-13,6S235.5,805.09843,236.5,796.29921Z" transform="translate(-135 -56)" fill="#2f2e41"/><path d="M326.5,392.5l14,3s0,22,4,31,11,30,8,31-31,15-33,7S312.5,392.5,326.5,392.5Z" transform="translate(-135 -56)" fill="#2f2e41"/><circle cx="105.33366" cy="217.89966" r="36.79985" fill="#2f2e41"/><path d="M208.59183,304.3723a36.80186,36.80186,0,0,0,56.82871-19.323A36.80188,36.80188,0,1,1,193.634,269.958,36.7883,36.7883,0,0,0,208.59183,304.3723Z" transform="translate(-135 -56)" fill="#2f2e41"/><circle cx="135.38687" cy="272.48608" r="26.98656" fill="#2f2e41"/><ellipse cx="158.0801" cy="262.36611" rx="23.9199" ry="18.70659" fill="#2f2e41"/><ellipse cx="164.46023" cy="281.53469" rx="4.53977" ry="8.03191" fill="#a0616a"/><rect x="468.23543" y="145.3883" width="534" height="429" transform="matrix(0.95775, 0.2876, -0.2876, 0.95775, -0.4351, -252.24625)" fill="#f1f1f1"/><line x1="611.1651" y1="141.89293" x2="732.30548" y2="190.85793" fill="none" stroke="#3f3d56" stroke-miterlimit="10" stroke-width="2"/><polygon points="614.244 151.96 616.058 151.113 611.876 142.182 621.09 138.664 620.374 136.795 609.153 141.082 614.244 151.96" fill="#3f3d56"/><polygon points="723.096 195.958 722.38 194.089 731.593 190.572 727.412 181.64 729.226 180.793 734.316 191.673 723.096 195.958" fill="#3f3d56"/><circle cx="671.73528" cy="166.37543" r="11" fill="#3f3d56"/><line x1="601.93365" y1="481.35077" x2="713.53687" y2="413.40012" fill="none" stroke="#3f3d56" stroke-miterlimit="10" stroke-width="2"/><polygon points="611.848 484.891 612.251 482.93 602.59 480.953 605.268 471.461 603.341 470.919 600.082 482.48 611.848 484.891" fill="#3f3d56"/><polygon points="712.13 423.833 710.203 423.291 712.882 413.801 703.22 411.822 703.624 409.862 715.391 412.274 712.13 423.833" fill="#3f3d56"/><circle cx="657.73528" cy="447.37543" r="11" fill="#3f3d56"/><line x1="461.71552" y1="266.04443" x2="461.75507" y2="396.70642" fill="none" stroke="#3f3d56" stroke-miterlimit="10" stroke-width="2"/><polygon points="453.538 272.674 455.003 274.038 461.714 266.812 468.431 274.034 469.895 272.669 461.713 263.875 453.538 272.674" fill="#3f3d56"/><polygon points="453.573 390.082 455.038 388.717 461.753 395.939 468.466 388.713 469.931 390.077 461.754 398.875 453.573 390.082" fill="#3f3d56"/><circle cx="461.73528" cy="331.37543" r="11" fill="#3f3d56"/><rect x="369" width="182" height="226" fill="#3f3d56"/><path d="M583.6211,140.13446H542.31744a144.46152,144.46152,0,0,1,0-49.24667H583.6211A88.6115,88.6115,0,0,0,583.6211,140.13446Z" transform="translate(-135 -56)" fill="#ff6584"/><path d="M606.3789,165.11221h41.30366a144.46152,144.46152,0,0,0,0-49.24667H606.3789A88.6115,88.6115,0,0,1,606.3789,165.11221Z" transform="translate(-135 -56)" fill="#6c63ff"/><path d="M567.3789,247.11221h41.30366a144.46152,144.46152,0,0,0,0-49.24667H567.3789A88.6115,88.6115,0,0,1,567.3789,247.11221Z" transform="translate(-135 -56)" fill="#6c63ff"/><rect x="748" y="215" width="182" height="226" fill="#3f3d56"/><rect x="774" y="263" width="130" height="6" fill="#6c63ff"/><rect x="774" y="284" width="130" height="6" fill="#6c63ff"/><rect x="774" y="305" width="130" height="6" fill="#6c63ff"/><rect x="774" y="326" width="130" height="6" fill="#6c63ff"/><rect x="774" y="347" width="130" height="6" fill="#6c63ff"/><rect x="805" y="369" width="68" height="24" fill="#6c63ff"/><rect x="385" y="447" width="182" height="226" fill="#3f3d56"/><rect x="411.29654" y="572.80611" width="130" height="6" fill="#6c63ff"/><rect x="411.29654" y="593.80611" width="130" height="6" fill="#6c63ff"/><rect x="411.29654" y="614.80611" width="130" height="6" fill="#6c63ff"/><rect x="411.29654" y="635.80611" width="130" height="6" fill="#6c63ff"/><path d="M586.1211,583.44057H544.81744a144.46158,144.46158,0,0,1,0-49.24668H586.1211A88.61154,88.61154,0,0,0,586.1211,583.44057Z" transform="translate(-135 -56)" fill="#6c63ff" opacity="0.3"/><rect x="468.29654" y="482.80611" width="76" height="5" fill="#6c63ff" opacity="0.3"/><rect x="468.29654" y="500.80611" width="76" height="5" fill="#6c63ff" opacity="0.3"/><rect x="468.29654" y="518.80611" width="76" height="5" fill="#6c63ff" opacity="0.3"/><rect x="468.29654" y="536.80611" width="76" height="5" fill="#6c63ff" opacity="0.3"/></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0rc1 (09960d6, 2020-04-09)"
+   sodipodi:docname="hero.svg"
+   version="1.1"
+   viewBox="0 0 930 788"
+   height="788"
+   width="930"
+   data-name="Layer 1"
+   id="effd0595-b14c-4c7e-b56f-e463e9379f7d">
+  <metadata
+     id="metadata561">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs559">
+    <filter
+       id="filter5833"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5831"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5837"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5835"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5841"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5839"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5845"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5843"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5849"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5847"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5853"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5851"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5857"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5855"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5861"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5859"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5865"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5863"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5869"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5867"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5873"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5871"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5877"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5875"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5881"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5879"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5885"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5883"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5889"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5887"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5893"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5891"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5897"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5895"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5901"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5899"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+    <filter
+       id="filter5905"
+       inkscape:label="Invert"
+       style="color-interpolation-filters:sRGB;">
+      <feColorMatrix
+         id="feColorMatrix5903"
+         result="color2"
+         values="0 0 -1 0 1 0 -1 0 0 1 -1 0 0 0 1 -0.21 -0.72 -0.07 2 0 " />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     inkscape:current-layer="effd0595-b14c-4c7e-b56f-e463e9379f7d"
+     inkscape:window-maximized="0"
+     inkscape:window-y="23"
+     inkscape:window-x="0"
+     inkscape:cy="394"
+     inkscape:cx="465"
+     inkscape:zoom="0.93274112"
+     showgrid="false"
+     id="namedview557"
+     inkscape:window-height="954"
+     inkscape:window-width="1680"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff" />
+  <title
+     id="title442">process</title>
+  <circle
+     id="circle444"
+     fill="#f1f1f1"
+     r="14.75556"
+     cy="49.47737"
+     cx="748.16555" />
+  <circle
+     id="circle446"
+     fill="#f1f1f1"
+     r="14.75556"
+     cy="620.47737"
+     cx="661.16555" />
+  <circle
+     id="circle448"
+     fill="#f1f1f1"
+     r="14.75556"
+     cy="191.47737"
+     cx="294.16555" />
+  <ellipse
+     id="ellipse450"
+     fill="#f1f1f1"
+     ry="23"
+     rx="157"
+     cy="765"
+     cx="157" />
+  <path
+     style="filter:url(#filter5849)"
+     id="path452"
+     fill="#6c63ff"
+     transform="translate(-135 -56)"
+     d="M374.93615,654.976,414.351,642.62838a144.4615,144.4615,0,0,0-14.72211-46.99462l-39.41484,12.34757A88.61133,88.61133,0,0,1,374.93615,654.976Z" />
+  <circle
+     id="circle454"
+     fill="#2f2e41"
+     r="36.79985"
+     cy="266.35278"
+     cx="145.20015" />
+  <polygon
+     id="polygon456"
+     fill="#9f616a"
+     points="105.5 727.5 98.5 757.5 115.5 757.5 122.5 723.5 105.5 727.5" />
+  <polygon
+     id="polygon458"
+     fill="#9f616a"
+     points="187.5 727.5 187.5 755.5 204.5 757.5 204.5 727.5 187.5 727.5" />
+  <path
+     id="path460"
+     fill="#9f616a"
+     transform="translate(-135 -56)"
+     d="M235.5,465.5s2,43,4,46,20,46,20,46l9-28s-14-23-12-36,.74-28.99711.74-28.99711Z" />
+  <circle
+     id="circle462"
+     fill="#9f616a"
+     r="28"
+     cy="277.5"
+     cx="157.5" />
+  <path
+     id="path464"
+     fill="#9f616a"
+     transform="translate(-135 -56)"
+     d="M269.5,336.5s1,40-6,46,40,1,40,1-10-28-2-34S269.5,336.5,269.5,336.5Z" />
+  <path
+     id="path466"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M306.5,381.5s-6-11-14-10-34,3-35,5-4,9-6,11-17,5-18,17,36,85,36,85-5,17-4,21-5,16-4,21-15,35-7,74v63s-27,109-19,117,35,3,40,0,26-154,26-154l10-51,1,112s-2,94,5,97,34,4,36-2c1.55984-4.67951,9.2024-129.18869,12.49082-183.76643a203.90452,203.90452,0,0,0-4.40285-56.17549C357.42589,528.6804,351.3835,506.5015,344.5,497.5c-13-17-21-71-21-71l17-31s-10-10-16-10S306.5,381.5,306.5,381.5Z" />
+  <path
+     id="path468"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M239.5,397.5l-5.27357,3.58937S230.5,465.5,233.5,469.5s23.85728,2.04776,25.42864-1.47612S239.5,397.5,239.5,397.5Z" />
+  <path
+     id="path470"
+     fill="#9f616a"
+     transform="translate(-135 -56)"
+     d="M321.5,457.5s1,42,7,54,28,62,28,62-1.277,55.0315,9.86148,41.51575S370.5,569.5,370.5,569.5l-19-74s-10-33-9-43S321.5,457.5,321.5,457.5Z" />
+  <path
+     id="path472"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M339.5,795.29921s1-.79921,4,2.20079,11,7,10,18-7,13-7,13v-3h-3v5s-5,16-28,6c0,0-1-8,0-13s1-29,4-28,11,2,13,6S340.5,804.09843,339.5,795.29921Z" />
+  <path
+     id="path474"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M236.5,796.29921s-1-.79921-4,2.20079-11,7-10,18,7,13,7,13v-3h3v5s5,16,28,6c0,0,1-8,0-13s-1-29-4-28-11,2-13,6S235.5,805.09843,236.5,796.29921Z" />
+  <path
+     id="path476"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M326.5,392.5l14,3s0,22,4,31,11,30,8,31-31,15-33,7S312.5,392.5,326.5,392.5Z" />
+  <circle
+     id="circle478"
+     fill="#2f2e41"
+     r="36.79985"
+     cy="217.89966"
+     cx="105.33366" />
+  <path
+     id="path480"
+     fill="#2f2e41"
+     transform="translate(-135 -56)"
+     d="M208.59183,304.3723a36.80186,36.80186,0,0,0,56.82871-19.323A36.80188,36.80188,0,1,1,193.634,269.958,36.7883,36.7883,0,0,0,208.59183,304.3723Z" />
+  <circle
+     id="circle482"
+     fill="#2f2e41"
+     r="26.98656"
+     cy="272.48608"
+     cx="135.38687" />
+  <ellipse
+     id="ellipse484"
+     fill="#2f2e41"
+     ry="18.70659"
+     rx="23.9199"
+     cy="262.36611"
+     cx="158.0801" />
+  <ellipse
+     id="ellipse486"
+     fill="#a0616a"
+     ry="8.03191"
+     rx="4.53977"
+     cy="281.53469"
+     cx="164.46023" />
+  <rect
+     id="rect488"
+     fill="#f1f1f1"
+     transform="matrix(0.95775, 0.2876, -0.2876, 0.95775, -0.4351, -252.24625)"
+     height="429"
+     width="534"
+     y="145.3883"
+     x="468.23543" />
+  <line
+     id="line490"
+     stroke-width="2"
+     stroke-miterlimit="10"
+     stroke="#3f3d56"
+     fill="none"
+     y2="190.85793"
+     x2="732.30548"
+     y1="141.89293"
+     x1="611.1651" />
+  <polygon
+     id="polygon492"
+     fill="#3f3d56"
+     points="614.244 151.96 616.058 151.113 611.876 142.182 621.09 138.664 620.374 136.795 609.153 141.082 614.244 151.96" />
+  <polygon
+     id="polygon494"
+     fill="#3f3d56"
+     points="723.096 195.958 722.38 194.089 731.593 190.572 727.412 181.64 729.226 180.793 734.316 191.673 723.096 195.958" />
+  <circle
+     id="circle496"
+     fill="#3f3d56"
+     r="11"
+     cy="166.37543"
+     cx="671.73528" />
+  <line
+     id="line498"
+     stroke-width="2"
+     stroke-miterlimit="10"
+     stroke="#3f3d56"
+     fill="none"
+     y2="413.40012"
+     x2="713.53687"
+     y1="481.35077"
+     x1="601.93365" />
+  <polygon
+     id="polygon500"
+     fill="#3f3d56"
+     points="611.848 484.891 612.251 482.93 602.59 480.953 605.268 471.461 603.341 470.919 600.082 482.48 611.848 484.891" />
+  <polygon
+     id="polygon502"
+     fill="#3f3d56"
+     points="712.13 423.833 710.203 423.291 712.882 413.801 703.22 411.822 703.624 409.862 715.391 412.274 712.13 423.833" />
+  <circle
+     id="circle504"
+     fill="#3f3d56"
+     r="11"
+     cy="447.37543"
+     cx="657.73528" />
+  <line
+     id="line506"
+     stroke-width="2"
+     stroke-miterlimit="10"
+     stroke="#3f3d56"
+     fill="none"
+     y2="396.70642"
+     x2="461.75507"
+     y1="266.04443"
+     x1="461.71552" />
+  <polygon
+     id="polygon508"
+     fill="#3f3d56"
+     points="453.538 272.674 455.003 274.038 461.714 266.812 468.431 274.034 469.895 272.669 461.713 263.875 453.538 272.674" />
+  <polygon
+     id="polygon510"
+     fill="#3f3d56"
+     points="453.573 390.082 455.038 388.717 461.753 395.939 468.466 388.713 469.931 390.077 461.754 398.875 453.573 390.082" />
+  <circle
+     id="circle512"
+     fill="#3f3d56"
+     r="11"
+     cy="331.37543"
+     cx="461.73528" />
+  <rect
+     id="rect514"
+     fill="#3f3d56"
+     height="226"
+     width="182"
+     x="369" />
+  <path
+     style="filter:url(#filter5905)"
+     id="path516"
+     fill="#ff6584"
+     transform="translate(-135 -56)"
+     d="M583.6211,140.13446H542.31744a144.46152,144.46152,0,0,1,0-49.24667H583.6211A88.6115,88.6115,0,0,0,583.6211,140.13446Z" />
+  <path
+     style="filter:url(#filter5901)"
+     id="path518"
+     fill="#6c63ff"
+     transform="translate(-135 -56)"
+     d="M606.3789,165.11221h41.30366a144.46152,144.46152,0,0,0,0-49.24667H606.3789A88.6115,88.6115,0,0,1,606.3789,165.11221Z" />
+  <path
+     style="filter:url(#filter5897)"
+     id="path520"
+     fill="#6c63ff"
+     transform="translate(-135 -56)"
+     d="M567.3789,247.11221h41.30366a144.46152,144.46152,0,0,0,0-49.24667H567.3789A88.6115,88.6115,0,0,1,567.3789,247.11221Z" />
+  <rect
+     id="rect522"
+     fill="#3f3d56"
+     height="226"
+     width="182"
+     y="215"
+     x="748" />
+  <rect
+     style="filter:url(#filter5873)"
+     id="rect524"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="263"
+     x="774" />
+  <rect
+     style="filter:url(#filter5869)"
+     id="rect526"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="284"
+     x="774" />
+  <rect
+     style="filter:url(#filter5865)"
+     id="rect528"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="305"
+     x="774" />
+  <rect
+     style="filter:url(#filter5861)"
+     id="rect530"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="326"
+     x="774" />
+  <rect
+     style="filter:url(#filter5857)"
+     id="rect532"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="347"
+     x="774" />
+  <rect
+     style="filter:url(#filter5853)"
+     id="rect534"
+     fill="#6c63ff"
+     height="24"
+     width="68"
+     y="369"
+     x="805" />
+  <rect
+     id="rect536"
+     fill="#3f3d56"
+     height="226"
+     width="182"
+     y="447"
+     x="385" />
+  <rect
+     style="filter:url(#filter5833)"
+     id="rect538"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="572.80611"
+     x="411.29654" />
+  <rect
+     style="filter:url(#filter5837)"
+     id="rect540"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="593.80611"
+     x="411.29654" />
+  <rect
+     style="filter:url(#filter5841)"
+     id="rect542"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="614.80611"
+     x="411.29654" />
+  <rect
+     style="filter:url(#filter5845)"
+     id="rect544"
+     fill="#6c63ff"
+     height="6"
+     width="130"
+     y="635.80611"
+     x="411.29654" />
+  <path
+     style="filter:url(#filter5893)"
+     id="path546"
+     opacity="0.3"
+     fill="#6c63ff"
+     transform="translate(-135 -56)"
+     d="M586.1211,583.44057H544.81744a144.46158,144.46158,0,0,1,0-49.24668H586.1211A88.61154,88.61154,0,0,0,586.1211,583.44057Z" />
+  <rect
+     style="filter:url(#filter5889)"
+     id="rect548"
+     opacity="0.3"
+     fill="#6c63ff"
+     height="5"
+     width="76"
+     y="482.80611"
+     x="468.29654" />
+  <rect
+     style="filter:url(#filter5885)"
+     id="rect550"
+     opacity="0.3"
+     fill="#6c63ff"
+     height="5"
+     width="76"
+     y="500.80611"
+     x="468.29654" />
+  <rect
+     style="filter:url(#filter5881)"
+     id="rect552"
+     opacity="0.3"
+     fill="#6c63ff"
+     height="5"
+     width="76"
+     y="518.80611"
+     x="468.29654" />
+  <rect
+     style="filter:url(#filter5877)"
+     id="rect554"
+     opacity="0.3"
+     fill="#6c63ff"
+     height="5"
+     width="76"
+     y="536.80611"
+     x="468.29654" />
+</svg>
