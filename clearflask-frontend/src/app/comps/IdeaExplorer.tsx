@@ -462,10 +462,10 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
       if (await animate({ sleepInMs: 500 })) return;
 
       if (description !== undefined) {
-        for (var j = 0; j < description.length; j++) {
+        for (var k = 0; k < description.length; k++) {
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: textToRaw(description.substr(0, description.length - j - 1)) },
+            setState: { newItemDescription: textToRaw(description.substr(0, description.length - k - 1)) },
           })) return;
         }
 

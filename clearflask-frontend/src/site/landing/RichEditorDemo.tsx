@@ -1,7 +1,5 @@
-import React, { Component, useState } from 'react';
-import { Project } from '../DemoApp';
+import React, { useState } from 'react';
 import RichEditor from '../../common/RichEditor';
-import { StandardTextFieldProps } from '@material-ui/core';
 
 
 const RichEditorDemo = (props: {valueInit?: string}) => {

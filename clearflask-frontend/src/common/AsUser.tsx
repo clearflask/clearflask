@@ -1,7 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
-import classNames from 'classnames';
-import { Fade } from '@material-ui/core';
 import { ReduxState, Status } from '../api/server';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
