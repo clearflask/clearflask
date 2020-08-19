@@ -40,10 +40,10 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: 600,
   },
   image: {
-    padding: theme.spacing(8),
+    padding: theme.spacing(0, 0, 8, 0),
     width: '100%',
     margin: 'auto',
-    maxHeight: '50vh',
+    maxHeight: '40vh',
   },
 });
 

@@ -1,6 +1,11 @@
-import { Container, Typography } from '@material-ui/core';
+import { Container, Typography, Button } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
+import FeedbackIcon from '@material-ui/icons/Feedback';
+import BlogIcon from '@material-ui/icons/Description';
+import QuestionIcon from '@material-ui/icons/QuestionAnswer';
+import KnowledgeIcon from '@material-ui/icons/Help';
+import MoreIcon from '@material-ui/icons/MoreHoriz';
 import ApiIcon from '@material-ui/icons/Code';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
@@ -47,6 +52,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'flex-start',
     width: '100%',
+    color: theme.palette.text.hint,
   },
   point: {
     display: 'flex',
@@ -54,9 +60,20 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
     margin: theme.spacing(2),
   },
+  pointSmall: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    margin: theme.spacing(1),
+    fontSize: '1em',
+  },
   pointIcon: {
     fontSize: '2em',
     margin: theme.spacing(0, 4, 0, 0),
+  },
+  pointIconSmall: {
+    fontSize: '1.5em',
+    margin: theme.spacing(0, 3, 0, 0),
   },
   overlapContainer: {
     position: 'relative',
@@ -118,6 +135,12 @@ const styles = (theme: Theme) => createStyles({
     borderWidth: 100,
     borderColor: theme.palette.text.primary,
     opacity: 0.03,
+  },
+  tagButton: {
+    padding: `3px ${theme.spacing(0.5)}px`,
+    whiteSpace: 'nowrap',
+    minWidth: 'unset',
+    textTransform: 'unset',
   },
 });
 interface State {
@@ -191,11 +214,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 <div className={this.props.classes.pointsContainer}>
                   <div>Ask your customer to influence your product decisions.</div>
                   <div className={this.props.classes.point}>
-                    <WidgetIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <WidgetIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
                     <div>Seamless integration with your product</div>
                   </div>
                   <div className={this.props.classes.point}>
-                    <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <AnalyticsIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
                     <div>Customer segmentation and Analytics</div>
                   </div>
                 </div>
@@ -214,11 +237,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 <div className={this.props.classes.pointsContainer}>
                   <div>Prioritize your roadmap based on customer's value</div>
                   <div className={this.props.classes.point}>
-                    <VoteIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <VoteIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
                     <div>User vote</div>
                   </div>
                   <div className={this.props.classes.point}>
-                    <PaymentIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <PaymentIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
                     <div>Credit System</div>
                   </div>
                 </div>
@@ -237,11 +260,11 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                 <div className={this.props.classes.pointsContainer}>
                   <div>Build a community around your product development</div>
                   <div className={this.props.classes.point}>
-                    <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIcon} style={{ transform: 'rotate(180deg)' }} />
+                    <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIconSmall} style={{ transform: 'rotate(180deg)' }} />
                     <div>Show off your Product Roadmap</div>
                   </div>
                   <div className={this.props.classes.point}>
-                    <NotificationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
+                    <NotificationIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
                     <div>Directly respond to customer feedback</div>
                   </div>
                 </div>
@@ -298,7 +321,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             },
           }}
         />
-        <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
+        <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={240}>
           {/* Collect feedback right from your website or app */}
           {/* Prioritize based on customer value */}
           {/* Keep your users updated */}
@@ -468,7 +491,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               <div className={this.props.classes.point}>
                 <PaymentIcon fontSize='inherit' className={this.props.classes.pointIcon} />
                 <div>
-                  <Typography variant='h6'>
+                  <Typography variant='h6' component='div'>
                     Payment provider
                     &nbsp;
                     <PostStatusIframe
@@ -477,7 +500,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />
                   </Typography>
-                  <Typography variant='body1'>
+                  <Typography variant='body1' component='div'>
                     Stripe, Apple Store, Play Store
                   </Typography>
                 </div>
@@ -485,7 +508,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               <div className={this.props.classes.point}>
                 <DonationIcon fontSize='inherit' className={this.props.classes.pointIcon} />
                 <div>
-                  <Typography variant='h6'>
+                  <Typography variant='h6' component='div'>
                     Donation Framework
                     &nbsp;
                     <PostStatusIframe
@@ -494,7 +517,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />
                   </Typography>
-                  <Typography variant='body1'>
+                  <Typography variant='body1' component='div'>
                     Patreon, OpenCollective
                   </Typography>
                 </div>
@@ -502,10 +525,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               <div className={this.props.classes.point}>
                 <ApiIcon fontSize='inherit' className={this.props.classes.pointIcon} />
                 <div>
-                  <Typography variant='h6'>
+                  <Typography variant='h6' component='div'>
                     Custom source
                   </Typography>
-                  <Typography variant='body1'>
+                  <Typography variant='body1' component='div'>
                     Integrate via our API
                   </Typography>
                 </div>
@@ -584,7 +607,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             </Provider>
           )}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={120}>
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={240}>
           <BlockContent
             variant='content'
             title='Activate users waiting for a particular feature'
@@ -649,7 +672,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           variant='heading-main'
           description='Our product is based on customizability to fit your specific needs. We are happy to meet your needs if a specific use case is not yet covered.'
         />
-        <HorizontalPanels wrapBelow='xl' maxContentWidth='sm' maxWidth='xl'>
+        <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
           {this.renderCustomizeContent()}
           {this.renderCustomizeLayout()}
           {this.renderCustomizeOther()}
@@ -660,21 +683,46 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
 
   renderCustomizeContent() {
     return (
-      <React.Fragment>
+      <Container maxWidth='xs'>
         <Block
           type='column'
           variant='heading'
-          title='Content Types'
-          description='Define behavior for each custom content type to match your operations. Content can be an idea, blog entry, forum post, knowledge article.'
+          title='Define Custom content'
+          description='Define behavior for each custom content type to match your operations. Each content has its own properties.'
+        />
+        <div className={this.props.classes.pointsContainer}>
+          <div className={this.props.classes.pointSmall}>
+            <FeedbackIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
+            <div>User feedback</div>
+          </div>
+          <div className={this.props.classes.pointSmall}>
+            <BlogIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
+            <div>Blog entry</div>
+          </div>
+          <div className={this.props.classes.pointSmall}>
+            <QuestionIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
+            <div>Question &amp; Answer</div>
+          </div>
+          <div className={this.props.classes.pointSmall}>
+            <KnowledgeIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
+            <div>Knowledge base article</div>
+          </div>
+          <div className={this.props.classes.pointSmall}>
+            <MoreIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
+          </div>
+        </div>
+        <BlockContent
+          variant='content'
+          title='Tags'
+          description='Define tagging rules for easier grouping, filtering, and searching.'
         />
         <Demo
           variant='content'
           type='column'
-          title='Workflow'
-          description='Define a workflow detailing the transition between custom statuses'
+          title='Product Workflow'
+          description='Customize states and transitions to match your product workflow.'
           template={templater => {
-            templater.demoCategory();
-            templater.workflowFeatures(0);
+            templater.workflowFeatures(templater.demoCategory());
             templater.styleWhite();
           }}
           demo={project => (
@@ -687,64 +735,31 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             />
           )}
         />
-        <BlockContent
-          variant='content'
-          title='Feedback'
-          description='Allow custom interaction with Funding, Voting, Expressing and Commenting'
-        />
-        <BlockContent
-          variant='content'
-          title='Tags'
-          description='Define tagging rules for easier grouping, filtering, and searching.'
-        />
-      </React.Fragment>
+      </Container>
     );
   }
 
   renderCustomizeLayout() {
     return (
-      <React.Fragment>
-        <Block
-          title='Menu and Pages'
+      <Container maxWidth='xs'>
+        <Demo
           type='column'
           variant='heading'
-          description='Customize each page and define the navigation menu.'
-        />
-        <Demo
-          variant='content'
-          type='column'
-          title='Navigation'
-          description='Customize the navigation menu'
+          title='Style pages using template engine'
+          description='Create pages and menu to fit the content your product needs. Use our page editor or inject your own HTML using Liquid templates.'
+          initialSubPath='/embed/demo'
+          demoWrap='browser-dark'
+          demoPreventInteraction
           template={templater => {
-            templater.liquidTemplateHeader(' ');
-            templater.createMenu([templater.createPage('Home')]);
-            templater.createMenu([templater.createPage('Idea'), templater.createPage('Bug')], 'Feedback');
-            templater.createMenu([templater.createPage('Roadmap')]);
-            templater.styleWhite();
+            templater.demoPrioritization('none');
+            templater.styleDark();
           }}
-          demo={project => (
-            <Provider store={project.server.getStore()}>
-              <HeaderDemo project={project} />
-            </Provider>
-          )}
+          mock={mocker => mocker.demoPrioritization()}
+          demoFixedHeight={130}
+          demoFixedWidth={250}
+          containerPortal
         />
-        <Block
-          variant='content'
-          type='column'
-          title='Template'
-          description='Write your own pages with markdown or customize it with HTML templates'
-          demo={(
-            <RichEditorDemo
-              valueInit='{"blocks":[{"key":"2rp40","text":"Create nice awesome content!","type":"unstyled","depth":0,"inlineStyleRanges":[{"offset":7,"length":4,"style":"STRIKETHROUGH"},{"offset":20,"length":7,"style":"UNDERLINE"}],"entityRanges":[],"data":{}}],"entityMap":{}}'
-            />
-          )}
-        />
-        <BlockContent
-          variant='content'
-          title='Layout'
-          description='Choose how to display your content with component layouts'
-        />
-      </React.Fragment>
+      </Container>
     );
   }
 
@@ -754,22 +769,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <Demo
           variant='heading'
           type='column'
-          title='Style'
-          description='Match your product branding, feel and look.'
-          initialSubPath='/embed/demo'
-          template={templater => {
-            templater.demoPrioritization('vote');
-            templater.styleDark();
-          }}
-          mock={mocker => mocker.demoPrioritization()}
-          demoFixedHeight={150}
-          containerPortal
-        />
-        <Demo
-          variant='heading'
-          type='column'
-          title='Onboarding'
-          description='Choose the sign-up flow for users with the least amount of friction.'
+          title='Choose sign-up options'
+          description='Introduce least amount of friction by choosing the right sign-up options for your product.'
           initialSubPath='/embed/demo'
           demoFixedWidth={420}
           template={templater => {

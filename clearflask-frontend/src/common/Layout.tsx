@@ -63,7 +63,6 @@ const styles = (theme: Theme) => createStyles({
   },
   toolbar: theme.mixins.toolbar,
   content: {
-    overflow: 'scroll',
     flexGrow: 1,
     padding: theme.spacing(3),
   },

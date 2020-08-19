@@ -29,9 +29,10 @@ interface Props {
   demo?: (project: Project) => React.ReactNode;
   demoFixedHeight?: number;
   demoFixedWidth?: number | string;
-  demoWrap?: 'browser',
+  demoWrap?: 'browser' | 'browser-dark',
   demoWrapPadding?: number | string,
   demoOverflowYScroll?: boolean;
+  demoPreventInteraction?: boolean
   scale?: number;
   settings?: StateSettings;
   edgeSpacing?: boolean;
@@ -57,63 +58,73 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
   }
 
   render() {
+    const { classes, ...blockProps } = this.props;
+    
     return (
-      <Promised promise={this.projectPromise} render={project => {
-        var demo = this.props.demo
-          ? this.props.demo(project)
-          : (
-            <DemoApp
-              server={project.server}
-              intialSubPath={this.props.initialSubPath}
-              settings={this.settings}
-            />
-          );
-        if (this.props.edgeSpacing) {
-          demo = (
-            <div className={this.props.classes.edgeSpacing}>
-              {demo}
-            </div>
-          );
-        }
-        if (this.props.scale !== undefined) {
-          demo = (
-            <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
-              {demo}
-            </Scale>
-          );
-        }
-        demo = (
-          <div
-            onClickCapture={(e) => this.onClickCapture(e, project)}
-            style={{
-              height: this.props.demoFixedHeight,
-              width: this.props.demoFixedWidth,
-              overflowX: 'hidden',
-              overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'visible',
-              position: 'relative', // For containerPortal
-            }}
-            ref={this.containerRef}
-          >
-            {demo}
-          </div>
-        );
-        if(this.props.demoWrap === 'browser') {
-          demo = (
-            <FakeBrowser contentPadding={this.props.demoWrapPadding}>
-              {demo}
-            </FakeBrowser>
-          );
-        }
-        const { classes, ...blockProps } = this.props;
-        return (
-          <Block
-            {...blockProps}
-            edgeSpacing={undefined}
-            controls={this.props.controls && this.props.controls(project)}
-            demo={demo}
-          />
-        );
-      }} />
+      <Block
+        {...blockProps}
+        edgeSpacing={undefined}
+        controls={this.props.controls && (
+          <Promised promise={this.projectPromise} render={project => this.props.controls && this.props.controls(project)} />
+        )}
+        demo={(
+          <Promised promise={this.projectPromise} render={project => {
+            var demo = this.props.demo
+              ? this.props.demo(project)
+              : (
+                <DemoApp
+                  server={project.server}
+                  intialSubPath={this.props.initialSubPath}
+                  settings={this.settings}
+                />
+              );
+            if (this.props.edgeSpacing) {
+              demo = (
+                <div className={this.props.classes.edgeSpacing}>
+                  {demo}
+                </div>
+              );
+            }
+            if (this.props.scale !== undefined) {
+              demo = (
+                <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
+                  {demo}
+                </Scale>
+              );
+            }
+            demo = (
+              <div
+                onClickCapture={this.props.demoPreventInteraction ? undefined : (e) => this.onClickCapture(e, project)}
+                style={{
+                  height: this.props.demoFixedHeight,
+                  width: this.props.demoFixedWidth,
+                  overflowX: 'hidden',
+                  overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'visible',
+                  position: 'relative', // For containerPortal
+                  pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
+                }}
+                ref={this.containerRef}
+              >
+                {demo}
+              </div>
+            );
+            if(this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
+              const isDark = this.props.demoWrap === 'browser-dark';
+              demo = (
+                <FakeBrowser
+                  darkMode={isDark}
+                  contentPadding={this.props.demoWrapPadding}
+                  fixedWidth={this.props.demoFixedWidth}
+                  fixedHeight={this.props.demoFixedHeight}
+                >
+                  {demo}
+                </FakeBrowser>
+              );
+            }
+            return demo;
+          }} />
+        )}
+      />
     );
   }
 

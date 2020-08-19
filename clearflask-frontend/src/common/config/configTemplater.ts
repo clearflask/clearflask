@@ -118,7 +118,7 @@ export default class Templater {
     this._get<ConfigEditor.StringProperty>(['logoUrl']).set(logoUrl);
   }
 
-  demoPrioritization(type: 'fund' | 'vote' | 'express' | 'expressRange' | 'all' | 'voteAndExpress') {
+  demoPrioritization(type: 'none' | 'fund' | 'vote' | 'express' | 'expressRange' | 'all' | 'voteAndExpress') {
     this.styleWhite();
 
     const categoryIndex = this.demoCategory();
@@ -143,6 +143,9 @@ export default class Templater {
         this.creditsCurrencyWithoutCents();
         this.supportVoting(categoryIndex, true);
         this.supportExpressingAllEmojis(categoryIndex, true);
+        break;
+      case 'none':
+      default:
         break;
     }
 
@@ -707,24 +710,28 @@ export default class Templater {
     }));
   }
 
+  readonly workflowColorNeutral = '#3B67AE';
+  readonly workflowColorProgress = '#AE9031';
+  readonly workflowColorComplete = '#46AE3B';
+  readonly workflowColorFail = '#B44A4B';
   workflowFeatures(categoryIndex: number, withFunding: boolean = true, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
-    const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
-    const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
-    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
-    const planned = Admin.IdeaStatusToJSON({ name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: 'blue', statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const completed = Admin.IdeaStatusToJSON({ name: 'Completed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [closed.statusId, completed.statusId], color: this.workflowColorProgress, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const planned = Admin.IdeaStatusToJSON({ name: 'Planned', nextStatusIds: [closed.statusId, inProgress.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     var funding;
     if (withFunding && withStandaloneFunding) {
-      funding = Admin.IdeaStatusToJSON({ name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: 'green', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+      funding = Admin.IdeaStatusToJSON({ name: 'Funding', nextStatusIds: [closed.statusId, planned.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
     }
-    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...((withFunding && withStandaloneFunding) ? [funding.statusId] : []), closed.statusId, planned.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [...((withFunding && withStandaloneFunding) ? [funding.statusId] : []), closed.statusId, planned.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: withFunding && !withStandaloneFunding, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [closed, completed, inProgress, planned, underReview, ...((withFunding && withStandaloneFunding) ? [funding] : [])]);
   }
   workflowBug(categoryIndex: number): Admin.IdeaStatus[] {
-    const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
-    const wontFix = Admin.IdeaStatusToJSON({ name: 'Won\'t fix', nextStatusIds: [], color: 'darkred', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
-    const fixed = Admin.IdeaStatusToJSON({ name: 'Fixed', nextStatusIds: [], color: 'darkgreen', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
-    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: 'darkblue', statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
-    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: 'lightblue', statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const notReproducible = Admin.IdeaStatusToJSON({ name: 'Not reproducible', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const wontFix = Admin.IdeaStatusToJSON({ name: 'Won\'t fix', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
+    const fixed = Admin.IdeaStatusToJSON({ name: 'Fixed', nextStatusIds: [], color: this.workflowColorComplete, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const inProgress = Admin.IdeaStatusToJSON({ name: 'In progress', nextStatusIds: [wontFix.statusId, notReproducible.statusId, fixed.statusId], color: this.workflowColorProgress, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: true });
+    const underReview = Admin.IdeaStatusToJSON({ name: 'Under review', nextStatusIds: [inProgress.statusId, wontFix.statusId, notReproducible.statusId], color: this.workflowColorNeutral, statusId: randomUuid(), disableFunding: false, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });
     return this.workflow(categoryIndex, underReview.statusId, [notReproducible, wontFix, fixed, inProgress, underReview]);
   }
   workflow(categoryIndex: number, entryStatusId: string | undefined = undefined, statuses: Admin.IdeaStatus[] = []): Admin.IdeaStatus[] {

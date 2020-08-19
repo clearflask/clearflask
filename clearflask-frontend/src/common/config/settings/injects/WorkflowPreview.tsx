@@ -77,7 +77,9 @@ class WorkflowPreview extends Component<Props, State> {
           id: statusId,
           label: name,
           color: color,
-          type: isStart ? 'circle' : 'round-rectangle',
+          type: 'round-rectangle',
+          width: 100,
+          height: 30,
         }
       });
       nextStatusIds && nextStatusIds.forEach(nextStatusId => edges.push({
@@ -85,7 +87,27 @@ class WorkflowPreview extends Component<Props, State> {
           source: statusId,
           target: nextStatusId,
         }
-      }))
+      }));
+      if (isStart) {
+        const startId = 'start';
+        seenStatusIds.add(startId);
+        nodes.push({
+          data: {
+            id: startId,
+            label: '',
+            color: 'eee',
+            type: 'circle',
+            width: 25,
+            height: 25,
+          }
+        });
+        edges.push({
+          data: {
+            source: startId,
+            target: statusId,
+          }
+        });
+      }
     }
     if(nodes.length <= 0) {
       return null;
@@ -115,15 +137,13 @@ class WorkflowPreview extends Component<Props, State> {
           selector: 'node',
           style: {
             'label': 'data(label)',
-            'font-size': 12,
-            'background-color': 'white',
+            'font-size': 10,
+            'background-color': '#eee',
             'color': 'data(color)',
             'shape': 'data(type)',
-            'border-width': 2,
-            'border-color': '#eee',
             'content': 'data(label)',
-            'width': '100',
-            'height': '30',
+            'width': 'data(width)',
+            'height': 'data(height)',
             'text-valign': 'center',
             'text-halign': 'center',
           }
@@ -131,8 +151,8 @@ class WorkflowPreview extends Component<Props, State> {
           selector: 'edge',
           style: {
             'width': 2,
-            'line-color': '#eee',
-            'target-arrow-color': '#eee',
+            'line-color': '#e0e0e0',
+            'target-arrow-color': '#e0e0e0',
             'target-arrow-shape': 'triangle',
             'curve-style': 'unbundled-bezier',
           }
