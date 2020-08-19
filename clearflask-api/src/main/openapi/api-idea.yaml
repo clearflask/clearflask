@@ -69,6 +69,8 @@ components:
           type: string
         authorName:
           type: string
+        authorIsMod:
+          type: boolean
         created:
           type: string
           format: date-time
@@ -77,6 +79,10 @@ components:
         description:
           type: string
         response:
+          type: string
+        responseAuthorUserId:
+          type: string
+        responseAuthorName:
           type: string
         categoryId:
           type: string

@@ -97,11 +97,11 @@ export class Server {
     return this.store;
   }
 
-  isAdminLoggedIn(): boolean {
+  isModLoggedIn(): boolean {
     const state = this.store.getState();
     return state.users.loggedIn.status === Status.FULFILLED
       && !!state.users.loggedIn.user
-      && !!state.users.loggedIn.user.isAdmin;
+      && !!state.users.loggedIn.user.isMod;
   }
 
   dispatch(): Client.Dispatcher {
@@ -653,23 +653,6 @@ const stateUsersDefault = {
 };
 function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions): StateUsers {
   switch (action.type) {
-    case Client.userGetActionStatus.Pending:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          [action.meta.request.userId]: { status: Status.PENDING }
-        }
-      };
-    case Client.userGetActionStatus.Rejected:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          [action.meta.request.userId]: { status: Status.REJECTED }
-        }
-      };
-    case Client.userGetActionStatus.Fulfilled:
     case Admin.userUpdateAdminActionStatus.Fulfilled:
       return {
         ...state,
@@ -679,23 +662,6 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
             user: action.payload,
             status: Status.FULFILLED,
           }
-        }
-      };
-    case Client.commentListActionStatus.Fulfilled:
-      return {
-        ...state,
-        byId: {
-          ...state.byId,
-          ...action.payload.results.reduce(
-            (usersById, comment) => {
-              if (comment.author) {
-                usersById[comment.author.userId] = {
-                  user: comment.author,
-                  status: Status.FULFILLED,
-                };
-              }
-              return usersById;
-            }, {}),
         }
       };
     case Client.userBindActionStatus.Fulfilled:

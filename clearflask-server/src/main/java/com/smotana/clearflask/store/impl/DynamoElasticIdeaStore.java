@@ -132,6 +132,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 "properties", ImmutableMap.builder()
                         .put("authorUserId", ImmutableMap.of(
                                 "type", "keyword"))
+                        .put("authorName", ImmutableMap.of(
+                                "type", "keyword"))
+                        .put("authorIsMod", ImmutableMap.of(
+                                "type", "boolean"))
                         .put("created", ImmutableMap.of(
                                 "type", "date",
                                 "format", "epoch_second"))
@@ -147,6 +151,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .put("response", ImmutableMap.of(
                                 "type", "text",
                                 "index_prefixes", ImmutableMap.of()))
+                        .put("responseAuthorUserId", ImmutableMap.of(
+                                "type", "keyword"))
+                        .put("responseAuthorName", ImmutableMap.of(
+                                "type", "keyword"))
                         .put("categoryId", ImmutableMap.of(
                                 "type", "keyword"))
                         .put("statusId", ImmutableMap.of(
@@ -196,11 +204,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         .id(idea.getIdeaId())
                         .source(gson.toJson(ImmutableMap.builder()
                                 .put("authorUserId", idea.getAuthorUserId())
+                                .put("authorName", orNull(idea.getAuthorName()))
+                                .put("authorIsMod", orNull(idea.getAuthorIsMod()))
                                 .put("created", idea.getCreated().getEpochSecond())
                                 .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
                                 .put("description", orNull(elasticUtil.draftjsToPlaintext(idea.getDescription())))
                                 .put("response", orNull(elasticUtil.draftjsToPlaintext(idea.getResponse())))
+                                .put("responseAuthorUserId", orNull(idea.getResponseAuthorUserId()))
+                                .put("responseAuthorName", orNull(idea.getResponseAuthorName()))
                                 .put("categoryId", idea.getCategoryId())
                                 .put("statusId", orNull(idea.getStatusId()))
                                 .put("tagIds", idea.getTagIds())
@@ -372,13 +384,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Override
     public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
-                ideaUpdate.getTitle(),
-                ideaUpdate.getDescription(),
-                null,
-                null,
-                null,
-                null,
-                null));
+                        ideaUpdate.getTitle(),
+                        ideaUpdate.getDescription(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null),
+                Optional.empty());
     }
 
     @Override

@@ -42,7 +42,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
   state: State = {};
 
   render() {
-    const isAdminLoggedIn = this.props.server.isAdminLoggedIn();
+    const isModLoggedIn = this.props.server.isModLoggedIn();
     const fundGoalHasError = this.state.fundGoal !== undefined && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
     const canSubmit = (
       this.state.tagIdsHasError !== true
@@ -61,7 +61,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     const nextStatusValues: Label[] = [];
     const nextStatusOptions: Label[] = [];
     const nextStatusColorLookup: ColorLookup = {};
-    if (isAdminLoggedIn) {
+    if (isModLoggedIn) {
       const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
       const nextStatusIds: Set<string> | undefined = new Set(status?.nextStatusIds);
       if (nextStatusIds && nextStatusIds.size > 0) {
@@ -91,7 +91,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <DialogTitle>Edit post</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
-              {isAdminLoggedIn && (
+              {isModLoggedIn && (
                 <React.Fragment>
                   {(nextStatusOptions && nextStatusOptions.length > 0) && (
                     <Grid item xs={12} className={this.props.classes.row}>
@@ -165,7 +165,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   rowsMax={15}
                 />
               </Grid>
-              {isAdminLoggedIn && (
+              {isModLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
                     <RichEditor
@@ -208,7 +208,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             >Delete</SubmitButton>
             <SubmitButton color='primary' isSubmitting={this.state.isSubmitting} disabled={!canSubmit} onClick={() => {
               this.setState({ isSubmitting: true });
-              (isAdminLoggedIn
+              (isModLoggedIn
                 ? this.props.server.dispatchAdmin().then(d => d.ideaUpdateAdmin({
                   projectId: this.props.server.getProjectId(),
                   ideaId: this.props.idea.ideaId,
@@ -262,7 +262,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
-                (isAdminLoggedIn
+                (isModLoggedIn
                   ? this.props.server.dispatchAdmin().then(d => d.ideaDeleteAdmin({
                     projectId: this.props.server.getProjectId(),
                     ideaId: this.props.idea.ideaId,

@@ -24,14 +24,16 @@ components:
           type: string
         parentCommentId:
           type: string
-        author:
-          $ref: 'api-user.yaml#/components/schemas/User'
         childCommentCount:
           type: integer
           format: int64
         authorUserId:
           description: Author of the comment. If null, comment is deleted
           type: string
+        authorName:
+          type: string
+        authorIsMod:
+          type: boolean
         created:
           type: string
           format: date-time

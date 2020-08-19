@@ -212,7 +212,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
-        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin).getIdea();
+        Optional<UserModel> userOpt = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
+                .map(UserSession::getUserId)
+                .flatMap(userId -> userStore.getUser(projectId, userId));
+        IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, userOpt).getIdea();
         if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
             boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
             boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());

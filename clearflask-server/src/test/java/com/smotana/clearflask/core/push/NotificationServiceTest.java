@@ -258,7 +258,7 @@ public class NotificationServiceTest extends AbstractTest {
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
         UserModel user = MockModelUtil.getRandomUser().toBuilder()
                 .projectId(projectId)
-                .isAdmin(true)
+                .isMod(true)
                 .userId(IdUtil.randomId())
                 .email("user@email.com")
                 .emailNotify(true)
@@ -284,7 +284,7 @@ public class NotificationServiceTest extends AbstractTest {
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
         UserModel user = MockModelUtil.getRandomUser().toBuilder()
                 .projectId(projectId)
-                .isAdmin(true)
+                .isMod(true)
                 .userId(IdUtil.randomId())
                 .email("user@email.com")
                 .emailNotify(true)

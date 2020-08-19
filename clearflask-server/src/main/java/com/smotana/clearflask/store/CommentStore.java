@@ -112,10 +112,7 @@ public interface CommentStore {
          */
         String authorName;
 
-        /**
-         * Author email of the comment. If null, comment is deleted or author doesn't have an email.
-         */
-        String authorEmail;
+        String authorIsMod;
 
         @NonNull
         Instant created;

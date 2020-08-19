@@ -49,7 +49,7 @@ public interface IdeaStore {
 
     IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
-    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<> responseAuthor);
 
     IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
 
@@ -117,6 +117,8 @@ public interface IdeaStore {
 
         String authorName;
 
+        String authorIsMod;
+
         @NonNull
         Instant created;
 
@@ -132,6 +134,10 @@ public interface IdeaStore {
          * DraftJs format.
          */
         String response;
+
+        String responseAuthorUserId;
+
+        String responseAuthorName;
 
         @NonNull
         String categoryId;

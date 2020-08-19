@@ -257,8 +257,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const comment: CommentWithAuthorWithParentPath = {
       ideaId: request.ideaId,
       commentId: '' + (this.nextCommentId++),
-      author: loggedInUser,
       authorUserId: loggedInUser.userId,
+      authorName: loggedInUser.name,
+      authorIsMod: loggedInUser.isMod,
       created: new Date(),
       parentIdPath: parentIdPath,
       childCommentCount: 0,
@@ -322,7 +323,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).comments
       .filter(comment => !request.commentSearchAdmin.searchText
-        || comment.author?.name && comment.author.name.indexOf(request.commentSearchAdmin.searchText) >= 0
+        || comment.authorName && comment.authorName.indexOf(request.commentSearchAdmin.searchText) >= 0
         || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0), this.DEFAULT_LIMIT, request.cursor));
   }
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
@@ -480,10 +481,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater();
   }
-  userGet(request: Client.UserGetRequest): Promise<Client.User> {
-    const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
-    return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
-  }
   userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     return this.returnLater({
@@ -594,7 +591,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       comment => comment.commentId === request.commentId);
     comment.content = undefined;
     comment.authorUserId = undefined;
-    comment.author = undefined;
+    comment.authorName = undefined;
+    comment.authorIsMod = undefined;
     comment.edited = new Date();
     return this.returnLater(comment);
   }
@@ -610,6 +608,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       commentCount: 0,
       childCommentCount: 0,
       authorName: author.name,
+      authorIsMod: author.isMod,
       voteValue: 1,
       ...(request.ideaCreateAdmin),
     };
@@ -648,7 +647,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       idea => idea.ideaId === request.ideaId);
     if (request.ideaUpdateAdmin.title !== undefined) idea.title = request.ideaUpdateAdmin.title;
     if (request.ideaUpdateAdmin.description !== undefined) idea.description = request.ideaUpdateAdmin.description;
-    if (request.ideaUpdateAdmin.response !== undefined) idea.response = request.ideaUpdateAdmin.response;
+    if (request.ideaUpdateAdmin.response !== undefined) {
+      idea.response = request.ideaUpdateAdmin.response;
+      const user = this.getProject(request.projectId).loggedInUser;
+      if (user) {
+        idea.responseAuthorName = user.name;
+        idea.responseAuthorUserId = user.userId;
+      }
+    }
     if (request.ideaUpdateAdmin.statusId !== undefined) idea.statusId = request.ideaUpdateAdmin.statusId;
     if (request.ideaUpdateAdmin.tagIds !== undefined) idea.tagIds = request.ideaUpdateAdmin.tagIds;
     if (request.ideaUpdateAdmin.fundGoal !== undefined) idea.fundGoal = request.ideaUpdateAdmin.fundGoal;
@@ -688,7 +694,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       userId: randomUuid(),
       created: new Date(),
       balance: 0,
-      isAdmin: request.userCreateAdmin.isAdmin,
+      isMod: request.userCreateAdmin.isMod,
       emailNotify: !!request.userCreateAdmin.email,
       iosPush: !!request.userCreateAdmin.iosPushToken,
       androidPush: !!request.userCreateAdmin.androidPushToken,
@@ -710,11 +716,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     throw new Error("Method not implemented.");
   }
   userGetAdmin(request: Admin.UserGetAdminRequest): Promise<Admin.UserAdmin> {
-    throw new Error("Method not implemented.");
+    const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
+    return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
   }
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
-      .filter(user => request.userSearchAdmin.isAdmin === undefined || request.userSearchAdmin.isAdmin === user.isAdmin)
+      .filter(user => request.userSearchAdmin.isMod === undefined || request.userSearchAdmin.isMod === user.isMod)
       .filter(user => !request.userSearchAdmin.searchText
         || user.name && user.name.indexOf(request.userSearchAdmin.searchText) >= 0
         || user.email && user.email.indexOf(request.userSearchAdmin.searchText) >= 0)

@@ -26,7 +26,6 @@ const styles = (theme: Theme) => createStyles({
   },
   barBottom: {
     flex: '1 0',
-    overflowX: 'scroll' as 'scroll',
   },
   drawer: {
     [theme.breakpoints.up('sm')]: {

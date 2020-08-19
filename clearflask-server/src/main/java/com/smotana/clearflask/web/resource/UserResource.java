@@ -237,7 +237,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 projectId,
                 userId,
                 userCreateAdmin.getSsoGuid(),
-                userCreateAdmin.getIsAdmin() == Boolean.TRUE ? true : null,
+                userCreateAdmin.getIsMod() == Boolean.TRUE ? true : null,
                 userCreateAdmin.getName(),
                 userCreateAdmin.getEmail(),
                 null,
@@ -254,7 +254,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 null,
                 null);
         userStore.createUser(user);
-        if (user.getIsAdmin()) {
+        if (user.getIsMod()) {
             ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
             notificationService.onAdminInvite(configAdmin, user);
         }

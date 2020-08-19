@@ -183,7 +183,7 @@ public class DynamoElasticUserStore implements UserStore {
                                         "max_chars", 4)))
                         .put("balance", ImmutableMap.of(
                                 "type", "double"))
-                        .put("isAdmin", ImmutableMap.of(
+                        .put("isMod", ImmutableMap.of(
                                 "type", "boolean"))
                         .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
@@ -227,7 +227,7 @@ public class DynamoElasticUserStore implements UserStore {
                                 "name", orNull(user.getName()),
                                 "email", orNull(user.getEmail()),
                                 "balance", orNull(user.getBalance()),
-                                "isAdmin", user.getIsAdmin() != null && user.getIsAdmin()
+                                "isMod", user.getIsMod() != null && user.getIsMod()
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
@@ -312,8 +312,8 @@ public class DynamoElasticUserStore implements UserStore {
         }
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        if (userSearchAdmin.getIsAdmin() != null) {
-            queryBuilder.must(QueryBuilders.termQuery("isAdmin", userSearchAdmin.getIsAdmin().booleanValue()));
+        if (userSearchAdmin.getIsMod() != null) {
+            queryBuilder.must(QueryBuilders.termQuery("isMod", userSearchAdmin.getIsMod().booleanValue()));
         }
         queryBuilder.must(QueryBuilders.multiMatchQuery(userSearchAdmin.getSearchText(), "name", "email")
                 .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));

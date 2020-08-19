@@ -425,7 +425,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               pageClicked={this.pageClicked.bind(this)}
             />
           )}
-          barBottom={(activeProject && activeProject.hasUnsavedChanges()) ? (
+          barBottom={(activePath === 'settings' && activeProject && activeProject.hasUnsavedChanges()) ? (
             <React.Fragment>
               <Typography style={{ flexGrow: 1 }}>You have unsaved changes</Typography>
               <Button color='primary' onClick={() => {

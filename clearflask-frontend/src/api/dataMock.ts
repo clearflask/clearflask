@@ -439,7 +439,10 @@ class DataMock {
         password: 'password',
         iosPushToken: 'fake-ios-push-token',
         // browserPushToken: 'fake-browser-push-token',
-        ...{ emailVerification: 'token' },
+        ...{
+          emailVerification: 'token',
+          isMod: true,
+        },
       }
     }).then(userResponse => {
       ServerMock.get().userUpdateAdmin({

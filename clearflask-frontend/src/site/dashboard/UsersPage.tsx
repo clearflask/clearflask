@@ -102,7 +102,7 @@ interface State {
   searchText?: string;
   searchResult?: Admin.UserAdmin[];
   searchCursor?: string;
-  adminsOnly?: boolean;
+  modsOnly?: boolean;
 }
 class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
@@ -123,11 +123,11 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
       <div className={this.props.classes.page}>
         <ToggleButtonGroup
           {...{ size: 'small' }}
-          value={this.state.adminsOnly ? 'moderators' : 'users'}
+          value={this.state.modsOnly ? 'moderators' : 'users'}
           exclusive
           onChange={(e, val) => {
-            if (val === 'users') this.setState({ adminsOnly: false });
-            if (val === 'moderators') this.setState({ adminsOnly: true });
+            if (val === 'users') this.setState({ modsOnly: false });
+            if (val === 'moderators') this.setState({ modsOnly: true });
           }}
         >
           <ToggleButton value={'users'}>Users</ToggleButton>
@@ -140,7 +140,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
             <TextField
               disabled={this.state.newUserIsSubmitting}
               className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-              label={this.state.adminsOnly ? 'Invite' : 'Add'}
+              label={this.state.modsOnly ? 'Invite' : 'Add'}
               placeholder='Name'
               value={this.state.newUserName || ''}
               onChange={e => {
@@ -174,7 +174,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                   this.updateSearchText(this.state.newUserName, e.target.value);
                 }}
               />
-              {!this.state.adminsOnly && (
+              {!this.state.modsOnly && (
                 <TextField
                   disabled={this.state.newUserIsSubmitting}
                   className={this.props.classes.createFormField}
@@ -210,7 +210,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                       email: this.state.newUserEmail,
                       password: this.state.newUserPassword,
                       balance: this.state.newUserBalance,
-                      isAdmin: this.state.adminsOnly,
+                      isMod: this.state.modsOnly,
                     },
                   })).then(user => this.setState({
                     createRefFocused: false,
@@ -349,7 +349,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
         userSearchAdmin: {
-          isAdmin: !!this.state.adminsOnly,
+          isMod: !!this.state.modsOnly,
           searchText: `${name || ''} ${email || ''}`.trim(),
         },
       }))

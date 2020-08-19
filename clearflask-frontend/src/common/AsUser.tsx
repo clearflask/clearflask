@@ -98,7 +98,7 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
 
   userToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
     var label: string | React.ReactNode = user.name || user.email || user.userId;
-    if (user.isAdmin) {
+    if (user.isMod) {
       label = (
         <span key={user.userId} className={this.props.classes.adminLabel}>
           <AdminIcon fontSize='inherit' />

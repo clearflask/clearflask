@@ -3,6 +3,7 @@ import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
+import ModeratorIcon from '@material-ui/icons/SupervisorAccount';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
@@ -37,6 +38,7 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
+import ModStar from '../../common/ModStar';
 
 export type PostVariant = 'list' | 'page';
 
@@ -526,7 +528,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
-        {this.props.idea.authorName}
+        <ModStar name={this.props.idea.authorName} isMod={this.props.idea.authorIsMod} />
       </Typography>
     );
   }
@@ -621,7 +623,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.category
       || !this.props.credits
-      || (!this.props.server.isAdminLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
+      || (!this.props.server.isModLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
 
     return (
       <React.Fragment key='edit'>
@@ -1116,7 +1118,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div className={this.props.classes.responseContainer}>
         <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
-          Reply:&nbsp;&nbsp;
+          {this.props.idea.responseAuthorName ? (
+              <React.Fragment>
+                Reply from&nbsp;
+                <ModStar name={this.props.idea.responseAuthorName} isMod />
+                :&nbsp;&nbsp;
+              </React.Fragment>
+            ) : (
+              <React.Fragment>Reply:&nbsp;&nbsp;</React.Fragment>
+          )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0

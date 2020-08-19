@@ -9,6 +9,8 @@ import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
+import ModeratorIcon from '@material-ui/icons/SupervisorAccount';
+import ModStar from '../../common/ModStar';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
@@ -95,7 +97,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderContent() {
     if (!this.props.comment?.content) return null;
-    return !this.props.comment.author ? (
+    return !this.props.comment.authorUserId ? (
       <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
     ) : (
         <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
@@ -174,8 +176,8 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderAdminDelete() {
     if (!this.props.comment
-      || !this.props.comment.author
-      || !this.props.server.isAdminLoggedIn()
+      || !this.props.comment.authorUserId
+      || !this.props.server.isModLoggedIn()
       // Only show admin delete if the regular edit is not shown as it already contains a delete
       || (this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 
@@ -201,7 +203,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderEdit() {
     if (!this.props.comment
-      || !this.props.comment.author
+      || !this.props.comment.authorUserId
       || !(this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 
     return (
@@ -229,7 +231,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
     return (
       <Typography key='edited' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
-        {!this.props.comment.author ? 'deleted' : 'edited'}
+        {!this.props.comment.authorUserId ? 'deleted' : 'edited'}
         &nbsp;
         <TimeAgo date={this.props.comment.edited} />
       </Typography>
@@ -238,12 +240,12 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderAuthor() {
     if (!this.props.comment
-      || !this.props.comment.author
-      || !this.props.comment.author.name) return null;
+      || !this.props.comment.authorUserId
+      || !this.props.comment.authorName) return null;
 
     return (
       <Typography key='author' className={this.props.classes.barItem} variant='caption'>
-        {this.props.comment.author.name}
+        <ModStar name={this.props.comment.authorName} isMod={this.props.comment.authorIsMod} />
       </Typography>
     );
   }

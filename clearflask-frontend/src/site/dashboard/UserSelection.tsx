@@ -90,6 +90,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           this.setState({ selectedUserLabel: labels[0] })
           this.props.onChange && this.props.onChange(labels[0]);
         }}
+        formatCreateLabel={this.props.allowCreate ? inputValue => `Create user '${inputValue}'` : undefined}
         onValueCreate={this.props.allowCreate ? name => {
           this.props.server.dispatchAdmin()
             .then(d => d.userCreateAdmin({

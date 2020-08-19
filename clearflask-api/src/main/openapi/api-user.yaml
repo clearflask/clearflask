@@ -20,7 +20,7 @@ components:
     UserSearchAdmin:
       type: object
       properties:
-        isAdmin:
+        isMod:
           type: boolean
         sortBy:
           type: string
@@ -59,7 +59,7 @@ components:
             - emailNotify
             - hasPassword
           properties:
-            isAdmin:
+            isMod:
               type: boolean
             isSso:
               type: boolean
@@ -117,7 +117,7 @@ components:
           properties:
             ssoGuid:
               type: string
-            isAdmin:
+            isMod:
               type: boolean
             balance:
               type: integer
@@ -278,28 +278,6 @@ components:
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/user/{userId}:
-  get:
-    operationId: userGet
-    tags: [User]
-    parameters:
-      - name: projectId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-user.yaml#/components/schemas/User'
-      '404':
-        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: userUpdate
     tags: [User]

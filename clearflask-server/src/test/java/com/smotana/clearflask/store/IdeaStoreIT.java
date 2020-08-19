@@ -70,6 +70,7 @@ public class IdeaStoreIT extends AbstractIT {
     @Test(timeout = 10_000L)
     public void test() throws Exception {
         String projectId = IdUtil.randomId();
+        UserStore.UserModel moderator = MockModelUtil.getRandomUser().toBuilder().isMod(true).build();
         store.createIndex(projectId).get();
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
         IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId).build();
@@ -88,12 +89,16 @@ public class IdeaStoreIT extends AbstractIT {
 
         IdeaModel idea2Updated = idea2.toBuilder()
                 .title("newTitle")
+                .response(textToMockDraftjs("newDescription"))
+                .responseAuthorName(moderator.getName())
+                .responseAuthorUserId(moderator.getUserId())
                 .fundGoal(10L)
                 .build();
         store.updateIdea(projectId, idea2.getIdeaId(), IdeaUpdateAdmin.builder()
                 .title(idea2Updated.getTitle())
+                .response(textToMockDraftjs("newDescription"))
                 .fundGoal(idea2Updated.getFundGoal())
-                .build()).getIndexingFuture().get();
+                .build(), Optional.of(moderator)).getIndexingFuture().get();
         assertEquals(Optional.of(idea2Updated), store.getIdea(projectId, idea2Updated.getIdeaId()));
 
         store.deleteIdea(projectId, ideaUpdated.getIdeaId()).get();

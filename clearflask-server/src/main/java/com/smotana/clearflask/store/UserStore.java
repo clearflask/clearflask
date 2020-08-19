@@ -146,7 +146,7 @@ public interface UserStore {
 
         String ssoGuid;
 
-        Boolean isAdmin;
+        Boolean isMod;
 
         String name;
 
@@ -192,7 +192,7 @@ public interface UserStore {
             return new UserMe(
                     this.getUserId(),
                     this.getName(),
-                    this.getIsAdmin(),
+                    this.getIsMod(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),
@@ -207,7 +207,7 @@ public interface UserStore {
             return new UserMeWithBalance(
                     this.getUserId(),
                     this.getName(),
-                    this.getIsAdmin(),
+                    this.getIsMod(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),
@@ -223,7 +223,7 @@ public interface UserStore {
             return new UserAdmin(
                     this.getUserId(),
                     this.getName(),
-                    this.getIsAdmin(),
+                    this.getIsMod(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),

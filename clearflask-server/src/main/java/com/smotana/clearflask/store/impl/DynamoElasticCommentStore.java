@@ -169,8 +169,8 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 "type", "keyword"))
                         .put("authorName", ImmutableMap.of(
                                 "type", "keyword"))
-                        .put("authorEmail", ImmutableMap.of(
-                                "type", "keyword"))
+                        .put("authorIsMod", ImmutableMap.of(
+                                "type", "boolean"))
                         .put("created", ImmutableMap.of(
                                 "type", "date",
                                 "format", "epoch_second"))
@@ -243,7 +243,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("childCommentCount", comment.getChildCommentCount())
                                 .put("authorUserId", orNull(comment.getAuthorUserId()))
                                 .put("authorName", orNull(comment.getAuthorName()))
-                                .put("authorEmail", orNull(comment.getAuthorEmail()))
+                                .put("authorIsMod", orNull(comment.getAuthorIsMod()))
                                 .put("created", comment.getCreated().getEpochSecond())
                                 .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
                                 .put("content", orNull(elasticUtil.draftjsToPlaintext(comment.getContent())))
@@ -362,7 +362,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         } else {
             // For complex searches, fallback to elasticsearch
             BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-            queryBuilder.must(QueryBuilders.multiMatchQuery(commentSearchAdmin.getSearchText(), "content", "authorName", "authorEmail")
+            queryBuilder.must(QueryBuilders.multiMatchQuery(commentSearchAdmin.getSearchText(), "content", "authorName")
                     .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
             log.trace("Comment search query: {}", queryBuilder);
             ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
@@ -560,7 +560,6 @@ public class DynamoElasticCommentStore implements CommentStore {
                 .withReturnValues(ReturnValue.ALL_NEW)
                 .addAttributeUpdate(new AttributeUpdate("authorUserId").delete())
                 .addAttributeUpdate(new AttributeUpdate("authorName").delete())
-                .addAttributeUpdate(new AttributeUpdate("authorEmail").delete())
                 .addAttributeUpdate(new AttributeUpdate("content").delete())
                 .addAttributeUpdate(new AttributeUpdate("edited")
                         .put(commentSchema.toDynamoValue("edited", Instant.now()))))
@@ -569,7 +568,6 @@ public class DynamoElasticCommentStore implements CommentStore {
         HashMap<String, Object> updates = Maps.newHashMap();
         updates.put("authorUserId", null);
         updates.put("authorName", null);
-        updates.put("authorEmail", null);
         updates.put("content", null);
         updates.put("edited", comment.getEdited().getEpochSecond());
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
