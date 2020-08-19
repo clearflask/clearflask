@@ -712,7 +712,7 @@ export default class Templater {
 
   readonly workflowColorNeutral = '#3B67AE';
   readonly workflowColorProgress = '#AE9031';
-  readonly workflowColorComplete = '#46AE3B';
+  readonly workflowColorComplete = '#3A8E31';
   readonly workflowColorFail = '#B44A4B';
   workflowFeatures(categoryIndex: number, withFunding: boolean = true, withStandaloneFunding: boolean = true): Admin.IdeaStatus[] {
     const closed = Admin.IdeaStatusToJSON({ name: 'Closed', nextStatusIds: [], color: this.workflowColorFail, statusId: randomUuid(), disableFunding: true, disableExpressions: false, disableVoting: false, disableComments: false, disableIdeaEdits: false });

@@ -669,13 +669,17 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <Block
           title='Make it your own'
           imagePath='/img/landing/customize.svg'
+          mirror
+          imageStyle={{ paddingBottom: 0, maxWidth: 700 }}
           variant='heading-main'
           description='Our product is based on customizability to fit your specific needs. We are happy to meet your needs if a specific use case is not yet covered.'
+          alignItems='flex-start'
         />
         <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
           {this.renderCustomizeContent()}
+          {this.renderCustomizeWorkflow()}
           {this.renderCustomizeLayout()}
-          {this.renderCustomizeOther()}
+          {/* {this.renderCustomizeOther()} */}
         </HorizontalPanels>
       </React.Fragment>
     );
@@ -688,7 +692,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           type='column'
           variant='heading'
           title='Define Custom content'
-          description='Define behavior for each custom content type to match your operations. Each content has its own properties.'
+          description='Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators.'
         />
         <div className={this.props.classes.pointsContainer}>
           <div className={this.props.classes.pointSmall}>
@@ -705,33 +709,36 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           </div>
           <div className={this.props.classes.pointSmall}>
             <KnowledgeIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
-            <div>Knowledge base article</div>
+            <div>Knowledge Base article</div>
           </div>
           <div className={this.props.classes.pointSmall}>
             <MoreIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
           </div>
         </div>
-        <BlockContent
-          variant='content'
-          title='Tags'
-          description='Define tagging rules for easier grouping, filtering, and searching.'
-        />
+      </Container>
+    );
+  }
+
+  renderCustomizeWorkflow() {
+    return (
+      <Container maxWidth='xs'>
         <Demo
-          variant='content'
           type='column'
-          title='Product Workflow'
-          description='Customize states and transitions to match your product workflow.'
+          variant='heading'
+          title='Match your product Workflow'
+          description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can have different behavior and accessibility by users and moderators.'
           template={templater => {
             templater.workflowFeatures(templater.demoCategory());
             templater.styleWhite();
           }}
+          demoFixedHeight={500}
           demo={project => (
             <WorkflowPreview
               editor={project.editor}
               categoryIndex={0}
               isVertical
               hideCorner
-              height={400}
+              height='100%'
             />
           )}
         />
@@ -745,8 +752,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <Demo
           type='column'
           variant='heading'
-          title='Style pages using template engine'
-          description='Create pages and menu to fit the content your product needs. Use our page editor or inject your own HTML using Liquid templates.'
+          title='Edit each page to your liking'
+          description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid templates.'
           initialSubPath='/embed/demo'
           demoWrap='browser-dark'
           demoPreventInteraction
@@ -757,6 +764,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           mock={mocker => mocker.demoPrioritization()}
           demoFixedHeight={130}
           demoFixedWidth={250}
+          demoOverflowYScroll
           containerPortal
         />
       </Container>

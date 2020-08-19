@@ -9,6 +9,7 @@ import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 import FakeBrowser from '../../common/FakeBrowser';
+import Loading from '../../app/utils/Loading';
 
 const styles = (theme: Theme) => createStyles({
   edgeSpacing: {
@@ -68,7 +69,14 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
           <Promised promise={this.projectPromise} render={project => this.props.controls && this.props.controls(project)} />
         )}
         demo={(
-          <Promised promise={this.projectPromise} render={project => {
+          <Promised promise={this.projectPromise} renderLoading={() => (
+            <div key='loading' style={{
+              width: this.props.demoFixedWidth,
+              height: this.props.demoFixedHeight,
+            }}>
+              <Loading {...this.props} />
+            </div>
+          )} render={project => {
             var demo = this.props.demo
               ? this.props.demo(project)
               : (

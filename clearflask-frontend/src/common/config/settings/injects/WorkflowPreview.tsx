@@ -78,8 +78,8 @@ class WorkflowPreview extends Component<Props, State> {
           label: name,
           color: color,
           type: 'round-rectangle',
-          width: 100,
-          height: 30,
+          width: 'label',
+          height: 'label',
         }
       });
       nextStatusIds && nextStatusIds.forEach(nextStatusId => edges.push({
@@ -97,8 +97,8 @@ class WorkflowPreview extends Component<Props, State> {
             label: '',
             color: 'eee',
             type: 'circle',
-            width: 25,
-            height: 25,
+            width: '1px',
+            height: '1px',
           }
         });
         edges.push({
@@ -138,12 +138,17 @@ class WorkflowPreview extends Component<Props, State> {
           style: {
             'label': 'data(label)',
             'font-size': 10,
-            'background-color': '#eee',
+            'background-color': 'white',
+            'border-width': '1px',
+            'border-color': 'data(color)',
             'color': 'data(color)',
             'shape': 'data(type)',
             'content': 'data(label)',
             'width': 'data(width)',
             'height': 'data(height)',
+            'min-width': '10px',
+            'min-height': '10px',
+            'padding': '10px',
             'text-valign': 'center',
             'text-halign': 'center',
           }
@@ -152,7 +157,7 @@ class WorkflowPreview extends Component<Props, State> {
           style: {
             'width': 2,
             'line-color': '#e0e0e0',
-            'target-arrow-color': '#e0e0e0',
+            'target-arrow-color': '#bbb',
             'target-arrow-shape': 'triangle',
             'curve-style': 'unbundled-bezier',
           }
