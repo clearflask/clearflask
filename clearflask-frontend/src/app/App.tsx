@@ -16,13 +16,12 @@ import { isExpanded } from './comps/Post';
 import PostPage from './comps/PostPage';
 import CustomPage from './CustomPage';
 import Header from './Header';
-import NotificationPage from './NotificationPage';
 import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
+import PrivateProjectLogin from './utils/PrivateProjectLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
-import PrivateProjectLogin from './utils/PrivateProjectLogin';
 
 /** Broadcast successful bind to other tabs */
 export const BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY = 'bind-success';
@@ -168,14 +167,14 @@ class App extends Component<Props> {
                     </BasePage>
                   )} />
                 )} >
+                <Route key='user' path='/:embed(embed)?/user/:userId/:userName?' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
+                    {/* <UserPage server={this.server} userId={props.match.params.userId} /> */}
+                  </BasePage>
+                )} />
                 <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
                     <BankPage server={this.server} />
-                  </BasePage>
-                )} />
-                <Route key='notification' path='/:embed(embed)?/notification' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
-                    <NotificationPage server={this.server} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (

@@ -4,13 +4,12 @@ import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
+import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
-import ModeratorIcon from '@material-ui/icons/SupervisorAccount';
-import ModStar from '../../common/ModStar';
 
 const styles = (theme: Theme) => createStyles({
   comment: {

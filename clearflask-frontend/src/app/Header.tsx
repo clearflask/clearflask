@@ -16,6 +16,7 @@ import { animateWrapper } from '../site/landing/animateUtil';
 import LogIn from './comps/LogIn';
 import TemplateLiquid from './comps/TemplateLiquid';
 import NotificationBadge from './NotificationBadge';
+import NotificationPopup from './NotificationPopup';
 
 const styles = (theme: Theme) => createStyles({
   indicator: {
@@ -105,6 +106,7 @@ interface ConnectProps {
 }
 interface State {
   logInOpen?: boolean;
+  notificationAnchorEl?: HTMLElement;
 }
 class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = {};
@@ -233,10 +235,15 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           <div className={this.props.classes.actions}>
             <IconButton
               aria-label='Notifications'
-              onClick={() => this.props.history.push('/notification')}
+              onClick={e => this.setState({ notificationAnchorEl: !!this.state.notificationAnchorEl ? undefined : e.currentTarget })}
             >
               <NotificationBadge server={this.props.server}>
                 <NotificationsIcon fontSize='small' />
+                <NotificationPopup
+                  server={this.props.server}
+                  anchorEl={this.state.notificationAnchorEl}
+                  onClose={() => this.setState({ notificationAnchorEl: undefined })}
+                />
               </NotificationBadge>
             </IconButton>
             {this.props.config.users.credits && (

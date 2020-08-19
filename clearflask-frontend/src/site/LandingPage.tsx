@@ -1,20 +1,20 @@
-import { Container, Typography, Button } from '@material-ui/core';
+import { Container, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
-import FeedbackIcon from '@material-ui/icons/Feedback';
-import BlogIcon from '@material-ui/icons/Description';
-import QuestionIcon from '@material-ui/icons/QuestionAnswer';
-import KnowledgeIcon from '@material-ui/icons/Help';
-import MoreIcon from '@material-ui/icons/MoreHoriz';
 import ApiIcon from '@material-ui/icons/Code';
+import BlogIcon from '@material-ui/icons/Description';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 /** Alternative: FreeBreakfast */
 import DonationIcon from '@material-ui/icons/FavoriteBorder';
+import FeedbackIcon from '@material-ui/icons/Feedback';
+import KnowledgeIcon from '@material-ui/icons/Help';
+import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationIcon from '@material-ui/icons/Notifications';
-import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
-import AnalyticsIcon from '@material-ui/icons/ShowChart';
-import RespondIcon from '@material-ui/icons/ReplyAll';
 import CommunityIcon from '@material-ui/icons/People';
+import QuestionIcon from '@material-ui/icons/QuestionAnswer';
+import VisibilityIcon from '@material-ui/icons/RecordVoiceOver';
+import RespondIcon from '@material-ui/icons/ReplyAll';
+import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
@@ -31,7 +31,6 @@ import ScrollAnchor from '../common/util/ScrollAnchor';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
-import HeaderDemo from './landing/HeaderDemo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
@@ -39,7 +38,6 @@ import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
-import RichEditorDemo from './landing/RichEditorDemo';
 import RoadmapControls from './landing/RoadmapControls';
 import PricingPage from './PricingPage';
 
@@ -640,7 +638,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           alignItems='flex-start'
           imagePath='/img/landing/roadmap.svg'
           imageLocation='above'
-          imageStyle={{maxWidth: 500, padding: 0,}}
+          imageStyle={{ maxWidth: 500, padding: 0, }}
           type='largeDemo'
           demoWrap='browser'
           demoWrapPadding={40}

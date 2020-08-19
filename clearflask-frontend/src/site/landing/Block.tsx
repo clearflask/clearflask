@@ -1,11 +1,11 @@
 import { Grid, GridItemsAlignment } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
-import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
@@ -186,9 +186,9 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
             {content}
           </Grid>
           {!!image && isLargeDemo && this.props.imageLocation === 'above' && (
-          <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
-            {image}
-          </Grid>
+            <Grid alignItems='center' item xs={12} sm={8} md={6} lg={5} xl={4} className={this.props.classes.grid}>
+              {image}
+            </Grid>
           )}
         </Grid>
       );

@@ -3,7 +3,6 @@ import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
-import ModeratorIcon from '@material-ui/icons/SupervisorAccount';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
@@ -22,6 +21,7 @@ import EmojiPicker from '../../common/EmojiPicker';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
+import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import notEmpty from '../../common/util/arrayUtil';
@@ -38,7 +38,6 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
-import ModStar from '../../common/ModStar';
 
 export type PostVariant = 'list' | 'page';
 
@@ -1119,20 +1118,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <div className={this.props.classes.responseContainer}>
         <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
           {this.props.idea.responseAuthorName ? (
-              <React.Fragment>
-                Reply from&nbsp;
-                <ModStar name={this.props.idea.responseAuthorName} isMod />
+            <React.Fragment>
+              Reply from&nbsp;
+              <ModStar name={this.props.idea.responseAuthorName} isMod />
                 :&nbsp;&nbsp;
-              </React.Fragment>
-            ) : (
+            </React.Fragment>
+          ) : (
               <React.Fragment>Reply:&nbsp;&nbsp;</React.Fragment>
-          )}
+            )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}>
               <div><RichViewer key={this.props.idea.response} initialRaw={this.props.idea.response} /></div>
-              </TruncateFade>)
+            </TruncateFade>)
             : <RichViewer key={this.props.idea.response} initialRaw={this.props.idea.response} />}
         </Typography>
       </div>

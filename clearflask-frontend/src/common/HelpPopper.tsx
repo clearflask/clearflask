@@ -26,7 +26,6 @@ interface State {
 }
 class HelpPopper extends Component<Props, State> {
   state: State = {};
-  readonly arrowRef: React.RefObject<HTMLSpanElement> = React.createRef();
 
   render() {
     return (

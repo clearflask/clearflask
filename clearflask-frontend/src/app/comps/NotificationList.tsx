@@ -8,7 +8,6 @@ import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
 import ErrorMsg from '../ErrorMsg';
-import DividerCorner from '../utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
   table: {
@@ -40,29 +39,27 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
     const hasNotifications = this.props.notifications && this.props.notifications.length > 0;
     return (
       <div className={this.props.className}>
-        <DividerCorner title='Notifications' height={hasNotifications ? '100%' : undefined}>
-          <div className={this.props.classes.table}>
-            <Table size='small'>
-              <TableBody>
-                {!hasNotifications ? (
-                  <Typography
-                    className={this.props.classes.noNotificationsLabel}
-                    variant='overline'
-                  >No notifications</Typography>
-                ) : this.props.notifications!.map(notification => (
-                  <TableRow
-                    key={notification.notificationId}
-                    hover
-                    onClick={() => this.clickNotification(notification)}
-                  >
-                    <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
-                    <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </DividerCorner>
+        <div className={this.props.classes.table}>
+          <Table size='medium'>
+            <TableBody>
+              {!hasNotifications ? (
+                <Typography
+                  className={this.props.classes.noNotificationsLabel}
+                  variant='overline'
+                >No notifications</Typography>
+              ) : this.props.notifications!.map(notification => (
+                <TableRow
+                  key={notification.notificationId}
+                  hover
+                  onClick={() => this.clickNotification(notification)}
+                >
+                  <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
+                  <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
         {hasNotifications && (
           <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.clearAll()}>
             Clear all
