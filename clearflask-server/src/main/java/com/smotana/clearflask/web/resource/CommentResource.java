@@ -74,7 +74,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 0,
                 user.getUserId(),
                 user.getName(),
-                user.getEmail(),
+                user.getIsMod(),
                 Instant.now(),
                 null,
                 create.getContent(),

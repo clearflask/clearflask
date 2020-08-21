@@ -1,12 +1,13 @@
 import { Grid, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { vh } from '../../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
   hero: {
     width: '100vw',
-    minHeight: '90vh',
-    padding: '20vh 10vw',
+    minHeight: vh(90),
+    padding: `${vh(20)}px 10vw`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',

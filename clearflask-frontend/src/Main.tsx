@@ -15,12 +15,13 @@ import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import setTitle from './common/util/titleUtil';
+import { vh } from './common/util/vhUtil';
 
 const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',
     background: {
-      default: 'rgba(0,0,0,0)',
+      default: '#fff',
       paper: '#fff',
     },
     primary: {
@@ -74,7 +75,7 @@ class Main extends Component {
           <ServerErrorNotifier server={ServerAdmin.get()} />
           <CaptchaChallenger server={ServerAdmin.get()} />
           <div style={{
-            minHeight: '100vh',
+            minHeight: vh(100),
             display: 'flex',
             flexDirection: 'column',
             background: theme.palette.background.default,

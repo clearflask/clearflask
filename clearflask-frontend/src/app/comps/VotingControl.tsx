@@ -35,6 +35,7 @@ const styles = (theme: Theme) => createStyles({
   },
   hidden: {
     visibility: 'hidden',
+    height: 1,
   },
 });
 

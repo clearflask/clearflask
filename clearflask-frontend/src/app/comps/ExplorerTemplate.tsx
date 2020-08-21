@@ -62,7 +62,7 @@ interface Props {
   createVisible?: React.ReactNode;
   createCollapsible?: React.ReactNode;
   search?: React.ReactNode;
-  content?: React.ReactNode;
+  content: React.ReactNode;
 }
 
 interface State {

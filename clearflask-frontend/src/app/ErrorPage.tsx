@@ -1,6 +1,7 @@
 import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
 import Message from '../common/Message';
+import { vh } from '../common/util/vhUtil';
 
 interface Props {
   msg?: string | React.ReactNode;
@@ -23,7 +24,7 @@ export default class ErrorPage extends Component<Props> {
         justifyContent='center'
         alignItems='center'
         width='100%'
-        height='100vh'
+        height={vh(100)}
       >
         <Message innerStyle={this.styles.message}
           message={this.props.msg}

@@ -1,6 +1,7 @@
 import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
 import Loading from './utils/Loading';
+import { vh } from '../common/util/vhUtil';
 
 export default class LoadingPage extends Component {
   render() {
@@ -10,7 +11,7 @@ export default class LoadingPage extends Component {
         justifyContent='center'
         alignItems='center'
         width='100%'
-        height='100vh'
+        height={vh(100)}
       >
         <Loading />
       </Box>

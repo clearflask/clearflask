@@ -12,6 +12,7 @@ import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
+import { vh } from '../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -119,7 +120,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           <div key={panelIndex} className={this.props.classes.boardPanel}>
             <Panel
               key={getSearchKey(panel.search)}
-              maxHeight='80vh'
+              maxHeight={vh(80)}
               direction={Direction.Vertical}
               panel={panel}
               server={this.props.server}

@@ -34,6 +34,7 @@ import DemoApp, { getProject, Project } from './DemoApp';
 import ConfigView from '../common/config/settings/ConfigView';
 import DividerCorner from '../app/utils/DividerCorner';
 import AsUser from '../common/AsUser';
+import IdeaExplorerAdmin from '../app/comps/IdeaExplorerAdmin';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -170,7 +171,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
-        page = (<div>This is home</div>);
+        page = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <IdeaExplorerAdmin server={activeProject.server} />
+          </Provider>
+        );
         crumbs = [{ name: 'Home', slug: activePath }];
         break;
       case 'posts':
@@ -196,7 +201,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <CommentsPage key={activePath} server={activeProject.server} />
+            <CommentsPage server={activeProject.server} />
           </Provider>
         );
         crumbs = [{ name: 'Comments', slug: activePath }];
@@ -210,7 +215,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <UsersPage key={activePath} server={activeProject.server} />
+            <UsersPage server={activeProject.server} />
           </Provider>
         );
         crumbs = [{ name: 'Users', slug: activePath }];

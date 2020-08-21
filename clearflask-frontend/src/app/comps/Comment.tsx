@@ -46,6 +46,9 @@ const styles = (theme: Theme) => createStyles({
   edited: {
     fontStyle: 'italic',
   },
+  unknownUser: {
+    fontStyle: 'italic',
+  },
   editButton: {
     padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
@@ -95,22 +98,23 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 
   renderContent() {
-    if (!this.props.comment?.content) return null;
-    return !this.props.comment.authorUserId ? (
+    if (!this.props.comment) return null;
+    return this.props.comment.authorUserId === undefined ? (
       <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
     ) : (
         <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
-          <RichViewer key={this.props.comment.content} initialRaw={this.props.comment.content} />
+          <RichViewer key={this.props.comment.content || 'empty'} initialRaw={this.props.comment.content || ''} />
         </Typography>
       );
   }
 
   renderVotingControl() {
+    if (!this.props.comment) return null;
     return (
       <VotingControl
-        vote={this.props.comment?.vote}
-        hidden={!this.props.comment?.content}
-        voteValue={this.props.comment?.voteValue || 0}
+        vote={this.props.comment.vote}
+        hidden={!this.props.comment.content}
+        voteValue={this.props.comment.voteValue || 0}
         isSubmittingVote={this.state.isSubmittingVote}
         votingAllowed={!!this.props.comment}
         onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
@@ -238,10 +242,15 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 
   renderAuthor() {
-    if (!this.props.comment
-      || !this.props.comment.authorUserId
-      || !this.props.comment.authorName) return null;
-
+    if (!this.props.comment) return null;
+    if (!this.props.comment.authorUserId || !this.props.comment.authorName) {
+      return (
+        <Typography key='author' className={`${this.props.classes.barItem} ${this.props.classes.unknownUser}`} variant='caption'>
+          Unknown
+        </Typography>
+      );
+    }
+  
     return (
       <Typography key='author' className={this.props.classes.barItem} variant='caption'>
         <ModStar name={this.props.comment.authorName} isMod={this.props.comment.authorIsMod} />

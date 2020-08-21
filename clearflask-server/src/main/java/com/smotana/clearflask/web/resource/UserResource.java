@@ -291,14 +291,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         } while (!searchResponse.getCursorOpt().isPresent());
     }
 
-    @RolesAllowed({Role.PROJECT_USER, Role.PROJECT_OWNER})
-    @Limit(requiredPermits = 1)
-    @Override
-    public User userGet(String projectId, String userId) {
-        UserModel user = userStore.getUser(projectId, userId).get();
-        return new User(user.getUserId(), user.getName());
-    }
-
     @PermitAll
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
@@ -323,6 +315,26 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             throw new ErrorWithMessageException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
         }
         log.debug("Successful user login for email {}", userLogin.getEmail());
+
+        UserSession session = userStore.createSession(
+                projectId,
+                user.getUserId(),
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+
+        return user.toUserMeWithBalance();
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 1)
+    @Override
+    public UserMeWithBalance userLoginAdmin(String projectId, String userId) {
+        Optional<UserModel> userOpt = userStore.getUser(projectId, userId);
+        if (!userOpt.isPresent()) {
+            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "User does not exist");
+        }
+        UserModel user = userOpt.get();
+        log.debug("Successful user login by admin for userId {}", userId);
 
         UserSession session = userStore.createSession(
                 projectId,

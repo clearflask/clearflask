@@ -112,7 +112,7 @@ public interface CommentStore {
          */
         String authorName;
 
-        String authorIsMod;
+        Boolean authorIsMod;
 
         @NonNull
         Instant created;
@@ -138,9 +138,10 @@ public interface CommentStore {
                     getIdeaId(),
                     getCommentId(),
                     getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
-                    new User(getAuthorUserId(), getAuthorName()),
                     getChildCommentCount(),
                     getAuthorUserId(),
+                    getAuthorName(),
+                    getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
                     getContent(),
@@ -152,9 +153,10 @@ public interface CommentStore {
                     getIdeaId(),
                     getCommentId(),
                     getParentCommentIds().isEmpty() ? null : getParentCommentIds().get(getParentCommentIds().size() - 1),
-                    new User(getAuthorUserId(), getAuthorName()),
                     getChildCommentCount(),
                     getAuthorUserId(),
+                    getAuthorName(),
+                    getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
                     getContent(),

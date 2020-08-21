@@ -26,6 +26,7 @@ import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -395,7 +396,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     }
 
     @Override
-    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
+    public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor) {
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
@@ -420,9 +421,24 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (ideaUpdateAdmin.getResponse() != null) {
             if (ideaUpdateAdmin.getResponse().isEmpty()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response").delete());
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId").delete());
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName").delete());
+                indexUpdates.put("responseAuthorUserId", "");
+                indexUpdates.put("responseAuthorName", "");
             } else {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("response")
                         .put(ideaSchema.toDynamoValue("response", ideaUpdateAdmin.getResponse())));
+                if (responseAuthor.isPresent()) {
+                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorUserId")
+                            .put(ideaSchema.toDynamoValue("responseAuthorUserId", responseAuthor.get().getUserId())));
+                    updateItemSpec.addAttributeUpdate(new AttributeUpdate("responseAuthorName")
+                            .put(ideaSchema.toDynamoValue("responseAuthorName", responseAuthor.get().getName())));
+                    indexUpdates.put("responseAuthorUserId", responseAuthor.get().getUserId());
+                    indexUpdates.put("responseAuthorName", responseAuthor.get().getName());
+                } else {
+                    indexUpdates.put("responseAuthorUserId", "");
+                    indexUpdates.put("responseAuthorName", "");
+                }
             }
             indexUpdates.put("response", elasticUtil.draftjsToPlaintext(ideaUpdateAdmin.getResponse()));
         }

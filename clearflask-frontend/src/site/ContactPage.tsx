@@ -9,6 +9,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import SubmitButton from '../common/SubmitButton';
+import { vh } from '../common/util/vhUtil';
 
 // If changed, also change in SupportResource.java
 const TYPE = 'type';
@@ -43,7 +44,7 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(0, 0, 8, 0),
     width: '100%',
     margin: 'auto',
-    maxHeight: '40vh',
+    maxHeight: vh(40),
   },
 });
 

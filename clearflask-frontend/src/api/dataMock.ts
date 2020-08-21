@@ -441,7 +441,7 @@ class DataMock {
         // browserPushToken: 'fake-browser-push-token',
         ...{
           emailVerification: 'token',
-          isMod: true,
+          isMod: false,
         },
       }
     }).then(userResponse => {

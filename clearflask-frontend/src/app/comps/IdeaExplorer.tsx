@@ -95,7 +95,7 @@ interface State {
   createFormHasExpanded?: boolean;
 }
 
-class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
+class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
@@ -144,13 +144,14 @@ class Explorer extends Component<Props & ConnectProps & WithStyles<typeof styles
           Similar:
         </Typography>
       );
+      const searchOverride = this.state.newItemSearchText ? { searchText: this.state.newItemSearchText } : undefined;
       content = (
         <div className={this.props.classes.content}>
           <Panel
-            key={getSearchKey(this.props.explorer.search)}
+            key={getSearchKey({ ...searchOverride, ...this.props.explorer.search })}
             direction={Direction.Vertical}
             panel={this.props.explorer}
-            searchOverride={{ searchText: this.state.newItemSearchText }}
+            searchOverride={searchOverride}
             forceDisablePostExpand={this.props.forceDisablePostExpand}
             server={this.props.server}
             displayDefaults={{
@@ -492,4 +493,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(Explorer))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))));

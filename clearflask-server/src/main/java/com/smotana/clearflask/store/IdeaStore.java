@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
@@ -49,7 +50,7 @@ public interface IdeaStore {
 
     IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate);
 
-    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<> responseAuthor);
+    IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin, Optional<UserModel> responseAuthor);
 
     IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote);
 
@@ -117,7 +118,7 @@ public interface IdeaStore {
 
         String authorName;
 
-        String authorIsMod;
+        Boolean authorIsMod;
 
         @NonNull
         Instant created;
@@ -177,10 +178,13 @@ public interface IdeaStore {
                     getIdeaId(),
                     getAuthorUserId(),
                     getAuthorName(),
+                    getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
                     getDescription(),
                     getResponse(),
+                    getResponseAuthorUserId(),
+                    getResponseAuthorName(),
                     getCategoryId(),
                     getStatusId(),
                     getTagIds().asList(),
@@ -199,10 +203,13 @@ public interface IdeaStore {
                     getIdeaId(),
                     getAuthorUserId(),
                     getAuthorName(),
+                    getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
                     getDescription(),
                     getResponse(),
+                    getResponseAuthorUserId(),
+                    getResponseAuthorName(),
                     getCategoryId(),
                     getStatusId(),
                     getTagIds().asList(),

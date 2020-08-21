@@ -726,10 +726,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Match your product Workflow'
           description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can have different behavior and accessibility by users and moderators.'
           template={templater => {
-            templater.workflowFeatures(templater.demoCategory());
+            templater.workflowFeatures(templater.demoCategory(), false, false);
             templater.styleWhite();
           }}
-          demoFixedHeight={500}
+          demoFixedHeight={400}
           demo={project => (
             <WorkflowPreview
               editor={project.editor}
@@ -750,8 +750,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <Demo
           type='column'
           variant='heading'
-          title='Edit each page to your liking'
-          description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid templates.'
+          title='Customize each page'
+          description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid template engine.'
           initialSubPath='/embed/demo'
           demoWrap='browser-dark'
           demoPreventInteraction

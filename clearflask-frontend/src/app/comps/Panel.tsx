@@ -24,7 +24,6 @@ interface SearchResult {
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    // padding: theme.spacing(1, 0, 0, 1),
     display: 'flex',
   },
   nothing: {
@@ -46,7 +45,7 @@ interface Props {
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
   direction: Direction
-  maxHeight?: string,
+  maxHeight?: string | number,
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;

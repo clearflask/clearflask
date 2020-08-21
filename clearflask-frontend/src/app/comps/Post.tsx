@@ -76,13 +76,18 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 'o',
   },
   votingControl: {
-    margin: theme.spacing(0, 1, 0, 2),
+    margin: theme.spacing(0, 0, 0, 1),
   },
   titleAndDescriptionCardFocusHighlight: {
     background: 'transparent',
   },
   title: {
     lineHeight: 'unset',
+  },
+  titlePage: {
+    fontSize: '1.2rem',
+  },
+  titleList: {
   },
   titleAndDescription: {
     margin: theme.spacing(0.5),
@@ -108,10 +113,19 @@ const styles = (theme: Theme) => createStyles({
   },
   responseContainer: {
     paddingLeft: theme.spacing(3),
+    display: 'flex',
+    flexDirection: 'column',
   },
   responsePrefixText: {
     fontSize: '0.8rem',
-    color: theme.palette.grey[500],
+  },
+  response: {
+  },
+  responsePage: {
+    whiteSpace: 'pre-wrap',
+  },
+  responseList: {
+    color: theme.palette.text.hint,
   },
   editButton: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -463,9 +477,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 >
                   {this.renderTitle(isMoving ? 'page' : variant)}
                   {this.renderDescription(isMoving ? 'page' : variant)}
+                  {this.renderResponse(isMoving ? 'page' : variant)}
                 </CardActionArea>
                 {this.renderBottomBar(isMoving ? 'page' : variant)}
-                {this.renderResponse(isMoving ? 'page' : variant)}
               </div>
               <div className={this.props.classes.postComments}>
                 {this.renderComments(isMoving ? 'page' : variant)}
@@ -1087,7 +1101,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!this.props.idea
       || !this.props.idea.title) return null;
     return (
-      <Typography variant='subtitle1' component={'span'} className={`${this.props.classes.title} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+      <Typography variant='subtitle1' component={'span'} className={`${this.props.classes.title} ${variant === 'page' ? this.props.classes.titlePage : this.props.classes.titleList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
           ? (<TruncateEllipsis lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
           : this.props.idea.title}
@@ -1116,18 +1130,18 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       || !this.props.idea.response) return null;
     return (
       <div className={this.props.classes.responseContainer}>
-        <Typography variant='body1' component={'span'} className={this.props.classes.responsePrefixText}>
+        <Typography variant='caption' component={'span'} className={this.props.classes.responsePrefixText}>
           {this.props.idea.responseAuthorName ? (
             <React.Fragment>
-              Reply from&nbsp;
               <ModStar name={this.props.idea.responseAuthorName} isMod />
-                :&nbsp;&nbsp;
+              &nbsp;
+              reply:&nbsp;&nbsp;
             </React.Fragment>
           ) : (
               <React.Fragment>Reply:&nbsp;&nbsp;</React.Fragment>
             )}
         </Typography>
-        <Typography variant='body1' component={'span'} className={`${variant === 'page' ? this.props.classes.pre : ''} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
+        <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}>
               <div><RichViewer key={this.props.idea.response} initialRaw={this.props.idea.response} /></div>

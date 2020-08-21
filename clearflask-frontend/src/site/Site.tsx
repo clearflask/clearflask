@@ -22,6 +22,7 @@ import PrioritizePage from './PrioritizePage';
 import ProductPage from './ProductPage';
 import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
+import { vh } from '../common/util/vhUtil';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -36,7 +37,7 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
   },
   page: {
-    minHeight: '100vh',
+    minHeight: vh(100),
     PaddingBottom: theme.spacing(6),
   },
   appBarSpacer: theme.mixins.toolbar,

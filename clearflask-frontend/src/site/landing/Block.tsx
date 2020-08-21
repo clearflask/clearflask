@@ -6,22 +6,23 @@ import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
 import BlockContent, { Props as BlockContentProps } from './BlockContent';
+import { vh } from '../../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
     [theme.breakpoints.up('md')]: {
-      padding: '20vh 10vw',
+      padding: `${vh(20)}px 10vw`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: '10vh 1vw',
+      padding: `${vh(10)}px 1vw`,
     },
   },
   spacing: {
     [theme.breakpoints.up('md')]: {
-      padding: '10vh 10vw 10vh',
+      padding: `${vh(10)}px 10vw ${vh(10)}px`,
     },
     [theme.breakpoints.down('sm')]: {
-      padding: '10vh 1vw 10vh',
+      padding: `${vh(10)}px 1vw ${vh(10)}px`,
     },
   },
   grid: {
