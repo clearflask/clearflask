@@ -54,11 +54,9 @@ class AppThemeProvider extends Component<Props> {
         explorerExpandTimeout: 500,
         palette: {
           type: this.props.config.style.palette.darkMode ? 'dark' : 'light',
-          ...(this.props.config.style.palette.primary ? {
-            primary: {
-              main: this.props.config.style.palette.primary,
-            }
-          } : {}),
+          primary: {
+            main: this.props.config.style.palette.primary || '#218774',
+          },
           ...(this.props.config.style.palette.text ? {
             text: {
               primary: this.props.config.style.palette.text,

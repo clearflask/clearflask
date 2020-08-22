@@ -3,10 +3,10 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
+import setTitle from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
 import Post from './Post';
-import setTitle from '../../common/util/titleUtil';
-import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -14,8 +14,6 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
   },
 });
-
-export type IdeaCardVariant = 'title' | 'full';
 
 interface Props extends WithStyles<typeof styles, true> {
   server: Server;
@@ -27,7 +25,7 @@ interface Props extends WithStyles<typeof styles, true> {
 
 class PostPage extends Component<Props> {
   render() {
-    if(this.props.post) {
+    if (this.props.post) {
       setTitle(truncateWithElipsis(25, this.props.post.title), true);
     }
 

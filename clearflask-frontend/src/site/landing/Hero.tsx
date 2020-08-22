@@ -6,7 +6,7 @@ import { vh } from '../../common/util/vhUtil';
 const styles = (theme: Theme) => createStyles({
   hero: {
     width: '100vw',
-    minHeight: vh(90),
+    minHeight: vh(60),
     padding: `${vh(20)}px 10vw`,
     display: 'flex',
     flexDirection: 'column',
@@ -18,8 +18,13 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   image: {
-    padding: theme.spacing(8),
     width: '100%',
+    [theme.breakpoints.up('md')]: {
+      padding: theme.spacing(8),
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(8, 2),
+    },
   },
 });
 

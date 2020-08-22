@@ -60,7 +60,7 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   showClearWithOneValue?: boolean;
   bare?: boolean;
   width?: string
-  inputMinWidth?: string;
+  inputMinWidth?: string | number;
   overrideComponents?: Partial<SelectComponents<Label>>;
   formatCreateLabel?: (input: string) => string;
   onInputChange?: (newValue: string, actionMeta: InputActionMeta) => void;
@@ -161,7 +161,8 @@ const Control = (props) => {
             display: 'flex',
             minWidth: outerProps.inputMinWidth,
             width: outerProps.width,
-            paddingBottom: '0px',
+            paddingBottom: 3,
+            paddingTop: 0,
             height: 'unset',
           },
           inputRef: props.innerRef,

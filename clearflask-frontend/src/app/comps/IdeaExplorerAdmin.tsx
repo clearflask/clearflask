@@ -1,28 +1,14 @@
-import { FormControl, FormHelperText, InputAdornment, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidth, Switch, FormControlLabel } from '@material-ui/core';
+import { FormControlLabel, Switch, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
-import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
-import InViewObserver from '../../common/InViewObserver';
-import RichEditor from '../../common/RichEditor';
-import SubmitButton from '../../common/SubmitButton';
-import debounce from '../../common/util/debounce';
-import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
-import { preserveEmbed } from '../../common/util/historyUtil';
-import UserSelection from '../../site/dashboard/UserSelection';
-import { animateWrapper } from '../../site/landing/animateUtil';
-import ExplorerTemplate from './ExplorerTemplate';
-import LogIn from './LogIn';
+import { getSearchKey, ReduxState, Server } from '../../api/server';
+import { vh } from '../../common/util/vhUtil';
+import DividerCorner from '../utils/DividerCorner';
 import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
-import { Label } from './SelectionPicker';
-import TagSelect from './TagSelect';
-import DividerCorner from '../utils/DividerCorner';
-import { vh } from '../../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -34,7 +20,7 @@ const styles = (theme: Theme) => createStyles({
     flexWrap: 'wrap',
   },
   boardPanel: {
-    flex: '0 1 100px',
+    flex: '1 1 100px',
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
   },
@@ -85,19 +71,19 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
       showFunding: true,
       showExpression: true,
     } : {
-      titleTruncateLines: 1,
-      descriptionTruncateLines: 0,
-      responseTruncateLines: 0,
-      showCommentCount: false,
-      showCategoryName: false,
-      showCreated: false,
-      showAuthor: false,
-      showStatus: false,
-      showTags: false,
-      showVoting: false,
-      showFunding: false,
-      showExpression: false,
-    };
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 0,
+        responseTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showFunding: false,
+        showExpression: false,
+      };
     return (
       <div className={this.props.classes.container}>
         <div className={this.props.classes.controls}>
@@ -107,6 +93,7 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
             innerRef={this.panelSearchRef}
             server={this.props.server}
             search={this.state.search}
+            minWidth={200}
             onSearchChanged={search => this.setState({ search: search })}
             explorer={{
               search: {},
@@ -128,18 +115,24 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
           />
         </div>
         <div className={this.props.classes.board}>
-          {this.renderPanel('Trending', {search: {
-            ...this.state.search,
-            sortBy: Client.IdeaSearchSortByEnum.Trending,
-          }, display})}
-          {this.renderPanel('New', {search: {
-            ...this.state.search,
-            sortBy: Client.IdeaSearchSortByEnum.New,
-          }, display})}
-          {this.renderPanel('Top', {search: {
-            ...this.state.search,
-            sortBy: Client.IdeaSearchSortByEnum.Top,
-          }, display})}
+          {this.renderPanel('Trending', {
+            search: {
+              ...this.state.search,
+              sortBy: Client.IdeaSearchSortByEnum.Trending,
+            }, display
+          })}
+          {this.renderPanel('New', {
+            search: {
+              ...this.state.search,
+              sortBy: Client.IdeaSearchSortByEnum.New,
+            }, display
+          })}
+          {this.renderPanel('Top', {
+            search: {
+              ...this.state.search,
+              sortBy: Client.IdeaSearchSortByEnum.Top,
+            }, display
+          })}
         </div>
       </div>
     );

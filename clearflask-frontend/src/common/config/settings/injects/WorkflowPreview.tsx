@@ -109,7 +109,7 @@ class WorkflowPreview extends Component<Props, State> {
         });
       }
     }
-    if(nodes.length <= 0) {
+    if (nodes.length <= 0) {
       return null;
     }
 
@@ -164,8 +164,8 @@ class WorkflowPreview extends Component<Props, State> {
         }]}
       />
     );
-      
-    if(!this.props.hideCorner) {
+
+    if (!this.props.hideCorner) {
       content = (
         <DividerCorner title='Visualize states' height='100%'>
           {content}

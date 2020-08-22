@@ -309,7 +309,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
           mock={mocker => mocker.demoFeedbackType()}
           settings={{
-            demoForceExplorerCreateHasSpace: false,
             demoDisableExpand: true,
             // demoBlurryShadow: true,
             demoCreateAnimate: {
@@ -730,6 +729,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             templater.styleWhite();
           }}
           demoFixedHeight={400}
+          demoPreventInteraction
           demo={project => (
             <WorkflowPreview
               editor={project.editor}

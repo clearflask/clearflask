@@ -1,4 +1,4 @@
-import { Button, Fade, IconButton, Typography } from '@material-ui/core';
+import { Button, Fade, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -9,11 +9,18 @@ import * as AdminClient from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
+import IdeaExplorer from '../app/comps/IdeaExplorer';
+import IdeaExplorerAdmin from '../app/comps/IdeaExplorerAdmin';
+import PostPage from '../app/comps/PostPage';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
+import UserPage from '../app/comps/UserPage';
 import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
+import DividerCorner from '../app/utils/DividerCorner';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
+import AsUser from '../common/AsUser';
 import * as ConfigEditor from '../common/config/configEditor';
+import ConfigView from '../common/config/settings/ConfigView';
 import Crumbs from '../common/config/settings/Crumbs';
 import Menu, { MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
@@ -27,14 +34,9 @@ import ContactPage from './ContactPage';
 import BillingPage from './dashboard/BillingPage';
 import CommentsPage from './dashboard/CommentsPage';
 import CreatePage from './dashboard/CreatePage';
-import PostsPage from './dashboard/PostsPage';
 import SettingsPage from './dashboard/SettingsPage';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
-import ConfigView from '../common/config/settings/ConfigView';
-import DividerCorner from '../app/utils/DividerCorner';
-import AsUser from '../common/AsUser';
-import IdeaExplorerAdmin from '../app/comps/IdeaExplorerAdmin';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -66,15 +68,17 @@ interface ConnectProps {
   configsStatus?: Status;
   configs?: AdminClient.VersionedConfigAdmin[];
 }
-
 interface State {
   currentPagePath: ConfigEditor.Path;
   binding?: boolean;
   selectedProjectId?: string;
   titleClicked?: number
+  quickView?: {
+    type: 'user' | 'post';
+    id: string;
+  }
 }
-
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
+class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
@@ -187,10 +191,48 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <PostsPage server={activeProject.server} />
+            <IdeaExplorer
+              server={activeProject.server}
+              forceDisablePostExpand
+              onClickPost={postId => this.pageClicked('post', [postId])}
+              explorer={{
+                allowSearch: { enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+                allowCreate: {},
+                search: {},
+                display: {},
+              }}
+            />
           </Provider>
         );
-        crumbs = [{ name: 'Posts', slug: activePath }];
+        crumbs = [{ name: 'Post', slug: activePath }];
+        break;
+      case 'post':
+        // Page title set by PostPage
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <PostPage server={activeProject.server} postId={activeSubPath && activeSubPath[0] as string || ''} />
+          </Provider>
+        );
+        crumbs = [{ name: 'Posts', slug: 'posts' }];
+        break;
+      case 'user':
+        // Page title set by UserPage
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <UserPage server={activeProject.server} userId={activeSubPath && activeSubPath[0] as string || ''} />
+          </Provider>
+        );
+        crumbs = [{ name: 'Users', slug: 'users' }];
         break;
       case 'comments':
         setTitle('Comments');
@@ -201,7 +243,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <CommentsPage server={activeProject.server} />
+            <CommentsPage
+              server={activeProject.server}
+              onCommentClick={(postId, commentId) => this.pageClicked('post', [postId])}
+            />
           </Provider>
         );
         crumbs = [{ name: 'Comments', slug: activePath }];
@@ -215,7 +260,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <UsersPage server={activeProject.server} />
+            <UsersPage
+              server={activeProject.server}
+              onUserClick={userId => this.pageClicked('user', [userId])}
+            />
           </Provider>
         );
         crumbs = [{ name: 'Users', slug: activePath }];
@@ -331,6 +379,26 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       );
     }
 
+    const quickViewEnabled = this.isQuickViewEnabled();
+    if (quickViewEnabled && activeProject) {
+      switch (this.state.quickView?.type) {
+        case 'post':
+          preview = (
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <PostPage server={activeProject.server} postId={this.state.quickView.id} />
+            </Provider>
+          );
+          break;
+        case 'user':
+          preview = (
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <UserPage server={activeProject.server} userId={activeSubPath && activeSubPath[0] as string || ''} />
+            </Provider>
+          );
+          break;
+      }
+    }
+
     var billingHasNotification: boolean = false;
     switch (this.props.account?.subscriptionStatus) {
       case AdminClient.SubscriptionStatus.ActiveTrial:
@@ -359,7 +427,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 variant='h6'
                 color="inherit"
                 noWrap
-                onClick={() => this.setState({titleClicked: (this.state.titleClicked || 0) + 1})}
+                onClick={() => this.setState({ titleClicked: (this.state.titleClicked || 0) + 1 })}
               >
                 Dashboard
               </Typography>
@@ -471,7 +539,24 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
-    this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
+    const quickViewEnabled = this.isQuickViewEnabled();
+    if (quickViewEnabled && (path === 'post' || path === 'user') && subPath[0]) {
+      this.setState({
+        quickView: {
+          type: path,
+          id: subPath[0] + '',
+        }
+      });
+    } else {
+      if (this.state.quickView) {
+        this.setState({ quickView: undefined });
+      }
+      this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
+    }
+  }
+
+  isQuickViewEnabled() {
+    return this.props.width && isWidthUp('md', this.props.width, true);
   }
 }
 
@@ -484,4 +569,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(Dashboard));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth()(Dashboard)));

@@ -204,7 +204,6 @@ export interface StateSettings {
     update: Client.IdeaVoteUpdateExpressions;
   }>,
   demoBlurryShadow?: boolean;
-  demoForceExplorerCreateHasSpace?: boolean;
   demoCreateAnimate?: {
     title: string;
     description?: string;

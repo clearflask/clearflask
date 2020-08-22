@@ -3,13 +3,13 @@ import React, { Component } from 'react';
 import * as Admin from "../../api/admin";
 import DataMock from '../../api/dataMock';
 import { StateSettings } from '../../api/server';
+import Loading from '../../app/utils/Loading';
 import Templater from '../../common/config/configTemplater';
+import FakeBrowser from '../../common/FakeBrowser';
 import Promised from '../../common/Promised';
 import Scale from '../../common/Scale';
 import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
-import FakeBrowser from '../../common/FakeBrowser';
-import Loading from '../../app/utils/Loading';
 
 const styles = (theme: Theme) => createStyles({
   edgeSpacing: {
@@ -60,7 +60,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
 
   render() {
     const { classes, ...blockProps } = this.props;
-    
+
     return (
       <Block
         {...blockProps}
@@ -107,7 +107,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
                   height: this.props.demoFixedHeight,
                   width: this.props.demoFixedWidth,
                   overflowX: 'hidden',
-                  overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'visible',
+                  overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'hidden',
                   position: 'relative', // For containerPortal
                   pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
                 }}
@@ -116,7 +116,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
                 {demo}
               </div>
             );
-            if(this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
+            if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
               const isDark = this.props.demoWrap === 'browser-dark';
               demo = (
                 <FakeBrowser

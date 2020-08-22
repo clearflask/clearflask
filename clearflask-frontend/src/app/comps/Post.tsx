@@ -1,4 +1,4 @@
-import { Button, CardActionArea, Chip, Collapse, Fade, Typography } from '@material-ui/core';
+import { Button, Chip, Collapse, Fade, Typography } from '@material-ui/core';
 import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
@@ -78,9 +78,6 @@ const styles = (theme: Theme) => createStyles({
   votingControl: {
     margin: theme.spacing(0, 0, 0, 1),
   },
-  titleAndDescriptionCardFocusHighlight: {
-    background: 'transparent',
-  },
   title: {
     lineHeight: 'unset',
   },
@@ -95,9 +92,12 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'flex-start',
     textTransform: 'none',
+  },
+  expandable: {
     '&:hover $title': {
       textDecoration: 'underline',
     },
+    cursor: 'pointer',
   },
   description: {
     marginTop: theme.spacing(1),
@@ -349,6 +349,7 @@ interface Props {
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
+  onClickPost?: (postId: string) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -434,6 +435,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const targetVariant = forceExpand ? 'page' : this.props.variant;
     const variant = this.state.currentVariant;
     const isMoving = variant !== targetVariant;
+    const expandable = !!this.props.expandable && variant !== 'page' && !this.props.settings.demoDisableExpand;
 
     return (
       <Loader className={this.props.classes.outer} loaded={!!this.props.idea}>
@@ -467,18 +469,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 {this.renderFunding(isMoving ? 'page' : variant)}
               </div>
               <div className={this.props.classes.postContent}>
-                <CardActionArea
-                  className={this.props.classes.titleAndDescription}
-                  disabled={!this.props.expandable || variant === 'page' || this.props.settings.demoDisableExpand}
-                  onClick={this.onExpand.bind(this)}
-                  classes={{
-                    focusHighlight: this.props.classes.titleAndDescriptionCardFocusHighlight,
-                  }}
+                <div
+                  className={classNames(this.props.classes.titleAndDescription, (targetVariant === 'list' && expandable) ? this.props.classes.expandable : undefined)}
+                  onClick={expandable ? this.onExpand.bind(this) : undefined}
                 >
                   {this.renderTitle(isMoving ? 'page' : variant)}
                   {this.renderDescription(isMoving ? 'page' : variant)}
                   {this.renderResponse(isMoving ? 'page' : variant)}
-                </CardActionArea>
+                </div>
                 {this.renderBottomBar(isMoving ? 'page' : variant)}
               </div>
               <div className={this.props.classes.postComments}>
@@ -1154,12 +1152,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   onExpand() {
     if (!this.props.expandable || !this.props.idea) return;
-    if (this.props.forceDisablePostExpand || this.props.theme.disableTransitions) {
-      this.props.history.push(`${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`);
-    } else {
+    if (!this.props.forceDisablePostExpand && !this.props.theme.disableTransitions) {
       this.expandedPath = `${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;
-      this.props.history.push(this.expandedPath);
+    }
+    if (this.props.onClickPost) {
+      this.props.onClickPost(this.props.idea.ideaId);
+    } else {
+      this.props.history.push(`${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`);
     }
   }
 

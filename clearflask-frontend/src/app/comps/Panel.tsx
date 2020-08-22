@@ -49,6 +49,7 @@ interface Props {
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
+  onClickPost?: (postId: string) => void;
   forceDisablePostExpand?: boolean;
 }
 
@@ -102,6 +103,7 @@ class Panel extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               onClickTag={this.props.onClickTag}
               onClickCategory={this.props.onClickCategory}
               onClickStatus={this.props.onClickStatus}
+              onClickPost={this.props.onClickPost}
               display={display}
               variant='list'
             />

@@ -5,8 +5,8 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../../app/utils/DividerCorner';
-import BlockContent, { Props as BlockContentProps } from './BlockContent';
 import { vh } from '../../common/util/vhUtil';
+import BlockContent, { Props as BlockContentProps } from './BlockContent';
 
 const styles = (theme: Theme) => createStyles({
   heroSpacing: {
@@ -39,6 +39,12 @@ const styles = (theme: Theme) => createStyles({
   image: {
     padding: theme.spacing(8),
     width: '100%',
+    [theme.breakpoints.up('md')]: {
+      padding: theme.spacing(8),
+    },
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(8, 2),
+    },
   },
   columnOnly: {
     display: 'flex',

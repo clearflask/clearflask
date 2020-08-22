@@ -73,6 +73,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  onCommentClick: (postId: string, commentId: string) => void;
 }
 interface ConnectProps {
   loggedInUser?: Client.User;
@@ -131,10 +132,9 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                       <Comment
                         key={comment.commentId}
                         server={this.props.server}
+                        onCommentClick={!!this.props.onCommentClick ? () => this.props.onCommentClick(comment.ideaId, comment.commentId) : undefined}
                         comment={comment}
                         loggedInUser={this.props.loggedInUser}
-                        replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
-                        onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
                         logIn={() => {
                           if (this.props.loggedInUser) {
                             return Promise.resolve();

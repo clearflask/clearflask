@@ -1,5 +1,6 @@
 import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
@@ -31,6 +32,12 @@ const styles = (theme: Theme) => createStyles({
   },
   footer: {
     gridArea: 'f',
+  },
+  clickable: {
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+    cursor: 'pointer',
   },
   barItem: {
     whiteSpace: 'nowrap',
@@ -74,7 +81,8 @@ interface Props {
   isBlurry?: boolean;
   loggedInUser?: Client.User;
   replyOpen?: boolean;
-  onReplyClicked: () => void;
+  onCommentClick?: () => void;
+  onReplyClicked?: () => void;
   logIn: () => Promise<void>;
 }
 interface State {
@@ -90,7 +98,12 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   render() {
     return (
       <div className={this.props.classes.comment}>
-        <div className={this.props.classes.content}>{this.renderContent()}</div>
+        <div
+          className={classNames(this.props.classes.content, !!this.props.onCommentClick && this.props.classes.clickable)}
+          onClick={!!this.props.onCommentClick ? this.props.onCommentClick.bind(this) : undefined}
+        >
+          {this.renderContent()}
+        </div>
         <div className={this.props.classes.votingControl}>{this.renderVotingControl()}</div>
         <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
       </div>
@@ -167,11 +180,12 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 
   renderReply() {
-    if (this.props.replyOpen) return null;
+    if (this.props.replyOpen
+      || !this.props.onReplyClicked) return null;
 
     return (
       <Button key='reply' variant='text' className={this.props.classes.editButton}
-        onClick={e => this.props.onReplyClicked()}>
+        onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}>
         <Typography variant='caption'>Reply</Typography>
       </Button>
     );
@@ -250,7 +264,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
         </Typography>
       );
     }
-  
+
     return (
       <Typography key='author' className={this.props.classes.barItem} variant='caption'>
         <ModStar name={this.props.comment.authorName} isMod={this.props.comment.authorIsMod} />
@@ -266,6 +280,10 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
         <TimeAgo date={this.props.comment.created} />
       </Typography>
     );
+  }
+
+  contentClick() {
+
   }
 }
 

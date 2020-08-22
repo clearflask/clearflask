@@ -4,6 +4,7 @@ import AddIcon from '@material-ui/icons/Add';
 import AndroidIcon from '@material-ui/icons/Android';
 import IosIcon from '@material-ui/icons/Apple';
 import EmailIcon from '@material-ui/icons/Email';
+import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationsOffIcon from '@material-ui/icons/NotificationsOff';
 import FilterIcon from '@material-ui/icons/SearchRounded';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -12,7 +13,6 @@ import BrowserIcon from '@material-ui/icons/Web';
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -74,9 +74,6 @@ const styles = (theme: Theme) => createStyles({
   value: {
     margin: theme.spacing(1),
   },
-  created: {
-    whiteSpace: 'nowrap',
-  },
   searchIcon: {
     color: theme.palette.text.hint,
   },
@@ -84,9 +81,11 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  onUserClick: (userId: string) => void;
 }
 interface ConnectProps {
   credits?: Client.Credits;
+  showBalance?: boolean;
 }
 interface State {
   createRefFocused?: boolean;
@@ -264,24 +263,34 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                     <Table size='small' className={this.props.classes.userProperties}>
                       <TableHead>
                         <TableRow>
+                          <TableCell key='view'></TableCell>
                           <TableCell key='name'>Name</TableCell>
                           <TableCell key='email'>Email</TableCell>
-                          <TableCell key='balance'>Account balance</TableCell>
+                          {this.props.showBalance && (
+                            <TableCell key='balance'>Balance</TableCell>
+                          )}
                           <TableCell key='notifications'>Notifications</TableCell>
-                          <TableCell key='created'>Created</TableCell>
                           <TableCell key='edit'></TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {this.state.searchResult.map((user, index) => (
                           <TableRow key={index}>
+                            <TableCell>
+                              <IconButton key='view'
+                                onClick={e => this.props.onUserClick(user.userId)}>
+                                <MoreIcon />
+                              </IconButton>
+                            </TableCell>
                             <TableCell><Typography>{user.name}</Typography></TableCell>
                             <TableCell><Typography>{user.email}</Typography></TableCell>
-                            <TableCell><Typography>
-                              {!!user.balance && (<CreditView
-                                val={user.balance}
-                                credits={this.props.credits || { formats: [] }} />)}
-                            </Typography></TableCell>
+                            {this.props.showBalance && (
+                              <TableCell><Typography>
+                                {!!user.balance && (<CreditView
+                                  val={user.balance}
+                                  credits={this.props.credits || { formats: [] }} />)}
+                              </Typography></TableCell>
+                            )}
                             <TableCell><Typography>
                               {!user.emailNotify && !user.browserPush && !user.iosPush && !user.androidPush && (<NotificationsOffIcon fontSize='inherit' />)}
                               {user.emailNotify && (<EmailIcon fontSize='inherit' />)}
@@ -289,7 +298,6 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                               {user.iosPush && (<IosIcon fontSize='inherit' />)}
                               {user.androidPush && (<AndroidIcon fontSize='inherit' />)}
                             </Typography></TableCell>
-                            <TableCell><Typography className={this.props.classes.created}><TimeAgo date={user.created} /></Typography></TableCell>
                             <TableCell>
                               <Button key='edit' variant='text'
                                 onClick={e => this.setState({ editExpandedForUserId: user.userId })}>
@@ -365,6 +373,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
   const connectProps: ConnectProps = {
     credits: state.conf.conf?.users.credits,
+    showBalance: !!state.conf.conf?.users.credits,
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(UsersPage));

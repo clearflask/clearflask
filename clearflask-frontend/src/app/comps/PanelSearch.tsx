@@ -44,6 +44,7 @@ interface Props {
   search?: Partial<Client.IdeaSearch>;
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
+  minWidth?: string | number;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -89,7 +90,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             options={controls.options}
             colorLookup={controls.colorLookup}
             isMulti={true}
-            inputMinWidth='100px'
+            inputMinWidth={this.props.minWidth || '100px'}
             onValueChange={this.onValueChange.bind(this)}
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             formatCreateLabel={inputValue => `Search '${inputValue}'`}

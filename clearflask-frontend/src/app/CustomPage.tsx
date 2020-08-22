@@ -6,13 +6,13 @@ import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
 import setTitle from '../common/util/titleUtil';
+import { vh } from '../common/util/vhUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import Panel, { Direction } from './comps/Panel';
 import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 import Loader from './utils/Loader';
-import { vh } from '../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -39,7 +39,7 @@ const styles = (theme: Theme) => createStyles({
     paddingLeft: theme.spacing(2),
   },
   boardPanel: {
-    flex: '0 1 100px',
+    flex: '1 1 100px',
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
   },

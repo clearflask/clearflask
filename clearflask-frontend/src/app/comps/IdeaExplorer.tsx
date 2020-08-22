@@ -1,4 +1,4 @@
-import { FormControl, FormHelperText, InputAdornment, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
+import { FormControl, FormHelperText, InputAdornment, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import React, { Component } from 'react';
@@ -71,15 +71,14 @@ interface Props {
   server: Server;
   explorer: Client.PageExplorer;
   forceDisablePostExpand?: boolean;
+  onClickPost?: (postId: string) => void;
 }
-
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
   settings: StateSettings;
 }
-
 interface State {
   createRefFocused?: boolean;
   newItemTitle?: string;
@@ -94,7 +93,6 @@ interface State {
   logInOpen?: boolean;
   createFormHasExpanded?: boolean;
 }
-
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -129,16 +127,12 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   render() {
-    const createHasSpace = this.props.settings.demoForceExplorerCreateHasSpace === undefined
-      ? isWidthUp('md', this.props.width)
-      : this.props.settings.demoForceExplorerCreateHasSpace;
-    const createActive = (!!this.state.createRefFocused && !createHasSpace)
+    const createShown = (!!this.state.createRefFocused)
       || !!this.state.newItemTitle
       || !!this.state.newItemDescription;
-    const createShown = createActive || createHasSpace;
 
     var content, topBar;
-    if (createActive) {
+    if (createShown) {
       topBar = (
         <Typography variant='overline' className={this.props.classes.caption}>
           Similar:
@@ -152,8 +146,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             direction={Direction.Vertical}
             panel={this.props.explorer}
             searchOverride={searchOverride}
-            forceDisablePostExpand={this.props.forceDisablePostExpand}
+            forceDisablePostExpand={true}
             server={this.props.server}
+            onClickPost={this.props.onClickPost}
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
@@ -188,6 +183,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             server={this.props.server}
             direction={Direction.Vertical}
             forceDisablePostExpand={this.props.forceDisablePostExpand}
+            onClickPost={this.props.onClickPost}
             panel={this.props.explorer}
             displayDefaults={{
               titleTruncateLines: 1,
@@ -420,7 +416,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });
-      this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location));
+      if (this.props.onClickPost) {
+        this.props.onClickPost(idea.ideaId);
+      } else {
+        this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location));
+      }
     }).catch(e => this.setState({
       newItemIsSubmitting: false,
     }));
