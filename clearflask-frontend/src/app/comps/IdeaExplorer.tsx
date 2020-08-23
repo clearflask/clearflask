@@ -47,13 +47,13 @@ const styles = (theme: Theme) => createStyles({
   },
   caption: {
     margin: theme.spacing(1),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   addIcon: {
     cursor: 'text',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   panelSearch: {
     // (Un)comment these to align with corner

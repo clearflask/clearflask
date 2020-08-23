@@ -48,7 +48,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
   commentDeleted: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   edited: {
     fontStyle: 'italic',
@@ -60,7 +60,7 @@ const styles = (theme: Theme) => createStyles({
     padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
     minWidth: 'unset',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   grow: {
     flexGrow: 1,
@@ -70,7 +70,7 @@ const styles = (theme: Theme) => createStyles({
   },
   editIconButton: {
     padding: '0px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   ...cssBlurry,
 });

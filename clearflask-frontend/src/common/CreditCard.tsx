@@ -1,7 +1,7 @@
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React from 'react';
-import classNames from 'classnames';
 import { Fade } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
+import React from 'react';
 
 const styles = (theme: Theme) => createStyles({
   creditCard: {
@@ -37,12 +37,12 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 'b',
     alignSelf: 'center',
     fontSize: '0.8em',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
     // width: 20,
   },
   chip: {
     width: 27,
-    height: 20,    
+    height: 20,
     gridArea: 'h',
     border: '1px solid ' + theme.palette.grey[300],
     borderRadius: 5,

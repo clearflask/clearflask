@@ -52,7 +52,7 @@ const styles = (theme: Theme) => createStyles({
     marginLeft: theme.spacing(2),
   },
   selectProjectLabel: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   projectUserSelectors: {
     display: 'flex',

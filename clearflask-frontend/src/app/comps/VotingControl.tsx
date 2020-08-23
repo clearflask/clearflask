@@ -14,7 +14,7 @@ const styles = (theme: Theme) => createStyles({
   voteIconButton: {
     fontSize: '2em',
     padding: '0px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   voteIconButtonUp: {
     borderRadius: '80% 80% 50% 50%',

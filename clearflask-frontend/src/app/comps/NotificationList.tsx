@@ -16,7 +16,7 @@ const styles = (theme: Theme) => createStyles({
   },
   noNotificationsLabel: {
     margin: theme.spacing(3),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
 });
 

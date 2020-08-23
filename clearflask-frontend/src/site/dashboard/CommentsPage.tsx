@@ -27,11 +27,11 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'text',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   nothing: {
     margin: theme.spacing(4),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   createFormFields: {
     display: 'flex',
@@ -67,7 +67,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
   },
   searchIcon: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
 });
 

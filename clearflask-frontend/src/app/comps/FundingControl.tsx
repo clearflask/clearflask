@@ -46,7 +46,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.primary,
   },
   msg: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
 });
 

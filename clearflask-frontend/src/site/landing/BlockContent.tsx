@@ -13,7 +13,7 @@ const styles = (theme: Theme) => createStyles({
   },
   description: {
     marginTop: theme.spacing(2),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   icon: {
     marginBottom: theme.spacing(2),
@@ -24,7 +24,7 @@ const styles = (theme: Theme) => createStyles({
     alignSelf: 'flex-end',
   },
   marker: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
 });
 

@@ -8,14 +8,14 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(2),
   },
   description: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   icon: {
     position: 'absolute',
     transform: 'translate(-100%, -100%)',
   },
   beta: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
 });
 

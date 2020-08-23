@@ -11,8 +11,7 @@ const styles = (theme: Theme) => createStyles({
   footerSpacing: {
     width: '100%',
     maxWidth: '1024px',
-    margin: '0px auto',
-    padding: theme.spacing(1),
+    margin: `0px auto ${theme.spacing(1)}px auto`,
   },
   grow: {
     flexGrow: 1,
@@ -20,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
   footerItems: {
     display: 'flex',
     alignItems: 'center',
+    margin: theme.spacing(0, 1, 1, 1),
   },
 });
 interface Props {

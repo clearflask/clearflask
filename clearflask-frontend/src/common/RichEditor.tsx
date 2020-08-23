@@ -25,7 +25,7 @@ const styles = (theme: Theme) => createStyles({
     },
     '& .public-DraftEditorPlaceholder-root': {
       opacity: 0,
-      color: theme.palette.text.hint,
+      color: theme.palette.text.secondary,
     },
     '& .public-DraftEditorPlaceholder-hasFocus': {
       opacity: 1,
@@ -41,6 +41,7 @@ const styles = (theme: Theme) => createStyles({
 });
 class RichEditor extends React.Component<StandardTextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
   render() {
+    var shrink = (this.props.value !== undefined && this.props.value !== '') ? true : undefined;
     return (
       <TextField
         className={this.props.classes.textField}
@@ -55,6 +56,9 @@ class RichEditor extends React.Component<StandardTextFieldProps & WithStyles<typ
             closeSnackbar: this.props.closeSnackbar,
             ...this.props.InputProps?.inputProps || {},
           },
+        }}
+        InputLabelProps={{
+          shrink,
         }}
       />
     );
@@ -180,7 +184,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
             if (currentContent.hasText()) {
               newValue = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
             } else {
-              newValue = undefined;
+              newValue = '';
             }
             this.setState({
               editorState: newEditorState,

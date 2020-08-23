@@ -167,7 +167,7 @@ class App extends Component<Props> {
                     </BasePage>
                   )} />
                 )} >
-                <Route key='user' path='/:embed(embed)?/user/:userId/:userName?' render={props => (
+                <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
                     {/* <UserPage server={this.server} userId={props.match.params.userId} /> */}
                   </BasePage>

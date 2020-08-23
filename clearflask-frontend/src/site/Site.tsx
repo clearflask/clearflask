@@ -9,6 +9,7 @@ import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import Promised from '../common/Promised';
 import setTitle from '../common/util/titleUtil';
+import { vh } from '../common/util/vhUtil';
 import CaseStudyPage from './CaseStudyPage';
 import CollectPage from './CollectPage';
 import ContactPage from './ContactPage';
@@ -22,7 +23,6 @@ import PrioritizePage from './PrioritizePage';
 import ProductPage from './ProductPage';
 import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
-import { vh } from '../common/util/vhUtil';
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -50,7 +50,7 @@ const styles = (theme: Theme) => createStyles({
   bottomItem: {
     display: 'block',
     padding: theme.spacing(0.5),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
     textDecoration: 'none',
   },
   bottomLogo: {
@@ -62,7 +62,7 @@ const styles = (theme: Theme) => createStyles({
   bottomHeader: {
     padding: theme.spacing(0.5),
     paddingBottom: theme.spacing(1),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
     fontWeight: 'bold',
   },
   logoButton: {

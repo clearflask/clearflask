@@ -15,7 +15,7 @@ const styles = (theme: Theme) => createStyles({
   },
   heroDescription: {
     marginTop: theme.spacing(2),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   image: {
     width: '100%',

@@ -41,6 +41,13 @@ import VotingControl from './VotingControl';
 
 export type PostVariant = 'list' | 'page';
 
+/**
+ * Before enabling:
+ * 1/ fix the back button
+ * 2/ fix the page's footer overlaps the expanded post page
+ * 3/ fix the choppy animation
+ */
+export const ENABLE_EXPANSION = false;
 export const isExpanded = (): boolean => !!Post.expandedPath;
 
 const styles = (theme: Theme) => createStyles({
@@ -106,7 +113,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'pre-wrap',
   },
   descriptionList: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   pre: {
     whiteSpace: 'pre-wrap',
@@ -125,13 +132,13 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'pre-wrap',
   },
   responseList: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   editButton: {
     padding: `3px ${theme.spacing(0.5)}px`,
     whiteSpace: 'nowrap',
     minWidth: 'unset',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   button: {
     padding: `3px ${theme.spacing(0.5)}px`,
@@ -155,12 +162,12 @@ const styles = (theme: Theme) => createStyles({
   },
   editIconButton: {
     padding: '0px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   voteIconButton: {
     fontSize: '2em',
     padding: '0px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   voteIconButtonUp: {
     borderRadius: '80% 80% 50% 50%',
@@ -238,7 +245,7 @@ const styles = (theme: Theme) => createStyles({
     lineHeight: 'unset',
     display: 'flex',
     alignItems: 'center',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   moreMainIcon: {
     position: 'relative',
@@ -287,11 +294,11 @@ const styles = (theme: Theme) => createStyles({
     width: 400,
   },
   addCommentButton: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   nothing: {
     margin: theme.spacing(4),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   funding: {
     margin: theme.spacing(1, 1.5, 0, 1.5),
@@ -1152,7 +1159,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   onExpand() {
     if (!this.props.expandable || !this.props.idea) return;
-    if (!this.props.forceDisablePostExpand && !this.props.theme.disableTransitions) {
+    if (ENABLE_EXPANSION && !this.props.forceDisablePostExpand && !this.props.theme.disableTransitions) {
       this.expandedPath = `${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`;
       Post.expandedPath = this.expandedPath;
     }

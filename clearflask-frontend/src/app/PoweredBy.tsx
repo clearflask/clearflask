@@ -4,12 +4,11 @@ import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    margin: theme.spacing(1),
     display: 'flex',
     fontSize: '0.9em',
   },
   poweredBy: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   name: {
     color: theme.palette.text.primary,

@@ -17,10 +17,10 @@ const styles = (theme: Theme) => createStyles({
       filter: theme.expressionGrayscale ? (`grayscale(${theme.expressionGrayscale}%)!important`) : undefined,
     },
     '& .emoji-mart-anchor-icon svg': {
-      fill: theme.palette.text.hint + '!important',
+      fill: theme.palette.text.secondary + '!important',
     },
     '& .emoji-mart-search input::placeholder': {
-      color: theme.palette.text.hint + '!important',
+      color: theme.palette.text.secondary + '!important',
     },
     '& .emoji-mart-search input': {
       background: 'inherit!important',

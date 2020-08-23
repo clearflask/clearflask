@@ -16,7 +16,7 @@ const styles = (theme: Theme) => createStyles({
   },
   fundingGoal: {
     fontSize: '0.8em',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   fundingBarColorPrimary: {
     zIndex: 0,

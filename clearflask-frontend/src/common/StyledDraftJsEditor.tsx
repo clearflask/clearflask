@@ -46,7 +46,7 @@ const styles = (theme: Theme) => createStyles({
   blockQuote: {
     paddingLeft: theme.spacing(1),
     margin: theme.spacing(0, 0, 0, 0.5),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
     borderLeft: '5px solid ' + contentBackgroundColor(theme),
   },
   codeblock: {

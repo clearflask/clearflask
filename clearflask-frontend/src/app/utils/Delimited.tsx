@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 const styles = (theme: Theme) => createStyles({
   separator: {
     '&:before': {
-      color: theme.palette.text.hint,
+      color: theme.palette.text.secondary,
       content: '"·"',
     },
     margin: theme.spacing(0.5),

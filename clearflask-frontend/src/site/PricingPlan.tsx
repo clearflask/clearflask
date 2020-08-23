@@ -1,10 +1,10 @@
-import { Button, Card, CardActions, CardContent, CardHeader, Typography, Radio, FormControlLabel } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
-import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   cardPricing: {
@@ -14,15 +14,15 @@ const styles = (theme: Theme) => createStyles({
     marginBottom: theme.spacing(2),
   },
   comingSoon: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   cardBeta: {
     margin: theme.spacing(2),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   beta: {
     fontSize: '0.5em',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   box: {
     transition: theme.transitions.create('border'),
@@ -80,7 +80,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                 <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
               </React.Fragment>
             ) : (
-                <Typography component='h2' variant='h4' style={{color: this.props.theme.palette.text.hint}}>Contact</Typography>
+                <Typography component='h2' variant='h4' style={{ color: this.props.theme.palette.text.secondary }}>Contact</Typography>
               )}
           </div>
           <div className={this.props.classes.cardPricing}>
@@ -116,13 +116,13 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   )}
                 />
               ) : (
-                <Button fullWidth color="primary"
-                  onClick={this.props.actionOnClick}
-                  disabled={!this.props.actionOnClick}
-                >
-                  {this.props.actionTitle}
-                </Button>
-              )}
+                  <Button fullWidth color="primary"
+                    onClick={this.props.actionOnClick}
+                    disabled={!this.props.actionOnClick}
+                  >
+                    {this.props.actionTitle}
+                  </Button>
+                )}
             </CardActions>
           )
         }

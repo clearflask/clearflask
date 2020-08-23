@@ -19,7 +19,7 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
     whiteSpace: 'pre-wrap',
     fontSize: '0.7em',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   legalLink: {
     color: 'unset',

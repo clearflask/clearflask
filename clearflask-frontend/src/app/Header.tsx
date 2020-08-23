@@ -91,6 +91,9 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'flex-end',
     padding: theme.spacing(1, 2, 0, 2),
   },
+  menuDivider: {
+    marginBottom: -1,
+  },
 });
 
 interface Props {
@@ -179,7 +182,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       });
       menu = (
         <div className={this.props.classes.menuSpacing}>
-          <Divider />
+          <Divider className={this.props.classes.menuDivider} />
           <Tabs
             // centered
             variant='standard'
@@ -330,7 +333,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   if (state.conf.status === Status.FULFILLED && state.conf.conf) {
     const pages = state.conf.conf.layout.pages;
     page = pages.find(p => p.slug === ownProps.pageSlug);
-    if (!page && pages.length > 0) {
+    if (!page && ownProps.pageSlug === '' && pages.length > 0) {
       page = pages[0];
     }
   }

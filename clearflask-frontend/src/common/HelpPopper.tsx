@@ -9,7 +9,7 @@ const styles = (theme: Theme) => createStyles({
     padding: '0px',
     borderRadius: '100px',
     minWidth: 'unset',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   content: {
     padding: theme.spacing(2),

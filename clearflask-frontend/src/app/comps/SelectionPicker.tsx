@@ -19,7 +19,7 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'pointer',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   deleteIcon: {
     cursor: 'pointer',
@@ -225,7 +225,7 @@ const Placeholder = (props) => {
       position: 'absolute',
       left: 2,
       fontSize: 16,
-      color: outerProps.theme.palette.text.hint,
+      color: outerProps.theme.palette.text.secondary,
     }}>
       {props.children}
     </Typography>

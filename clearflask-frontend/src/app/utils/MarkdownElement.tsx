@@ -125,7 +125,7 @@ const styles = (theme: Theme) => createStyles({
         display: 'inline-block',
         opacity: 1,
         padding: '0 8px',
-        color: theme.palette.text.hint,
+        color: theme.palette.text.secondary,
         '&:hover': {
           color: theme.palette.text.primary, // Originally secondary color
         },
@@ -159,7 +159,7 @@ const styles = (theme: Theme) => createStyles({
       '& .prop-default': {
         fontSize: 13,
         fontFamily: 'Consolas, "Liberation Mono", Menlo, monospace',
-        borderBottom: `1px dotted ${theme.palette.text.hint}`,
+        borderBottom: `1px dotted ${theme.palette.text.secondary}`,
       },
     },
     '& thead': {
@@ -207,7 +207,7 @@ const styles = (theme: Theme) => createStyles({
       fontWeight: theme.typography.fontWeightMedium,
     },
     '& blockquote': {
-      borderLeft: `5px solid ${theme.palette.text.hint}`,
+      borderLeft: `5px solid ${theme.palette.text.secondary}`,
       backgroundColor: theme.palette.background.paper,
       padding: '4px 24px',
       margin: '24px 0',

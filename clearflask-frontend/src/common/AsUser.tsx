@@ -1,22 +1,21 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React from 'react';
-import { ReduxState, Status } from '../api/server';
-import { connect } from 'react-redux';
-import * as Client from '../api/client';
-import * as Admin from '../api/admin';
-import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
-import { InputActionMeta } from 'react-select/lib/types';
-import debounce from './util/debounce';
-import { Server } from '../api/server';
-import notEmpty from './util/arrayUtil';
 import AdminIcon from '@material-ui/icons/SupervisorAccount';
+import React from 'react';
+import { connect } from 'react-redux';
+import { InputActionMeta } from 'react-select/lib/types';
+import * as Admin from '../api/admin';
+import * as Client from '../api/client';
+import { ReduxState, Server, Status } from '../api/server';
+import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
+import notEmpty from './util/arrayUtil';
+import debounce from './util/debounce';
 
 const styles = (theme: Theme) => createStyles({
   picker: {
     marginLeft: theme.spacing(2),
   },
   noUserLabel: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   adminLabel: {
     display: 'flex',
@@ -59,7 +58,7 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
       ? this.userToLabel(this.props.loggedInUser) : noUserLabel;
     var selectedUserInResults = false;
     var options = (this.state.searchResult || []).map(u => {
-      if(u.userId === selectedUserLabel?.value) {
+      if (u.userId === selectedUserLabel?.value) {
         selectedUserInResults = true;
         return null;
       }
@@ -80,7 +79,7 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
         inputMinWidth='100px'
         isMulti={false}
         bare={false}
-        onInputChange={ (newValue: string, actionMeta: InputActionMeta) => {
+        onInputChange={(newValue: string, actionMeta: InputActionMeta) => {
           this.searchUser(newValue);
         }}
         onValueChange={(labels, action) => {

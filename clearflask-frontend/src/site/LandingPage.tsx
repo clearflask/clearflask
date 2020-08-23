@@ -43,14 +43,16 @@ import PricingPage from './PricingPage';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   pointsContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     width: '100%',
-    color: theme.palette.text.hint,
+  },
+  pointsContainerMinor: {
+    color: theme.palette.text.secondary,
   },
   point: {
     display: 'flex',
@@ -209,7 +211,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               titleCmpt='div'
               title='Collect feedback'
               description={(
-                <div className={this.props.classes.pointsContainer}>
+                <div className={classNames(this.props.classes.pointsContainer, this.props.classes.pointsContainerMinor)}>
                   <div>Ask your customer to influence your product decisions.</div>
                   <div className={this.props.classes.point}>
                     <WidgetIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
@@ -232,7 +234,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               titleCmpt='div'
               title='Give a proportionate voice'
               description={(
-                <div className={this.props.classes.pointsContainer}>
+                <div className={classNames(this.props.classes.pointsContainer, this.props.classes.pointsContainerMinor)}>
                   <div>Prioritize your roadmap based on customer's value</div>
                   <div className={this.props.classes.point}>
                     <VoteIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
@@ -255,7 +257,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
               titleCmpt='div'
               title='Engage your customer'
               description={(
-                <div className={this.props.classes.pointsContainer}>
+                <div className={classNames(this.props.classes.pointsContainer, this.props.classes.pointsContainerMinor)}>
                   <div>Build a community around your product development</div>
                   <div className={this.props.classes.point}>
                     <RoadmapIcon fontSize='inherit' className={this.props.classes.pointIconSmall} style={{ transform: 'rotate(180deg)' }} />
@@ -497,7 +499,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />
                   </Typography>
-                  <Typography variant='body1' component='div'>
+                  <Typography variant='body1' component='div' color='textSecondary'>
                     Stripe, Apple Store, Play Store
                   </Typography>
                 </div>
@@ -514,7 +516,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />
                   </Typography>
-                  <Typography variant='body1' component='div'>
+                  <Typography variant='body1' component='div' color='textSecondary'>
                     Patreon, OpenCollective
                   </Typography>
                 </div>
@@ -525,7 +527,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   <Typography variant='h6' component='div'>
                     Custom source
                   </Typography>
-                  <Typography variant='body1' component='div'>
+                  <Typography variant='body1' component='div' color='textSecondary'>
                     Integrate via our API
                   </Typography>
                 </div>
@@ -691,7 +693,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Define Custom content'
           description='Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators.'
         />
-        <div className={this.props.classes.pointsContainer}>
+        <div className={classNames(this.props.classes.pointsContainer, this.props.classes.pointsContainerMinor)}>
           <div className={this.props.classes.pointSmall}>
             <FeedbackIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
             <div>User feedback</div>

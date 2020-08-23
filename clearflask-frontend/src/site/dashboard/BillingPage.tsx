@@ -1,28 +1,28 @@
 
-import { Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Table, TableBody, TableRow, TableCell, TableHead, Collapse, Box } from '@material-ui/core';
+import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import ActiveIcon from '@material-ui/icons/Check';
+import ErrorIcon from '@material-ui/icons/Error';
+import WarnIcon from '@material-ui/icons/Warning';
+import { CardNumberElement, ElementsConsumer } from '@stripe/react-stripe-js';
+import { Stripe, StripeElements } from '@stripe/stripe-js';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router';
+import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
-import DividerCorner from '../../app/utils/DividerCorner';
-import PricingPlan from '../PricingPlan';
-import StripeCreditCard from '../../common/StripeCreditCard';
-import CreditCard from '../../common/CreditCard';
-import AcceptTerms from '../../common/AcceptTerms';
-import ActiveIcon from '@material-ui/icons/Check';
-import WarnIcon from '@material-ui/icons/Warning';
-import ErrorIcon from '@material-ui/icons/Error';
-import classNames from 'classnames';
-import TimeAgo from 'react-timeago';
-import BillingChangePlanDialog from './BillingChangePlanDialog';
-import Loader from '../../app/utils/Loader';
-import SubmitButton from '../../common/SubmitButton';
-import { Stripe, StripeElements } from '@stripe/stripe-js';
-import { ElementsConsumer, CardNumberElement } from '@stripe/react-stripe-js';
 import ErrorMsg from '../../app/ErrorMsg';
-import { withRouter, RouteComponentProps } from 'react-router';
+import DividerCorner from '../../app/utils/DividerCorner';
+import Loader from '../../app/utils/Loader';
+import AcceptTerms from '../../common/AcceptTerms';
+import CreditCard from '../../common/CreditCard';
+import StripeCreditCard from '../../common/StripeCreditCard';
+import SubmitButton from '../../common/SubmitButton';
+import PricingPlan from '../PricingPlan';
+import BillingChangePlanDialog from './BillingChangePlanDialog';
 
 const styles = (theme: Theme) => createStyles({
   plan: {
@@ -132,7 +132,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
-    var cardState:'active'|'warn'|'error' = 'active';
+    var cardState: 'active' | 'warn' | 'error' = 'active';
     var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
@@ -147,7 +147,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         showPlanChange = true;
         break;
       case Admin.SubscriptionStatus.ActiveTrial:
-        if(this.props.accountBilling?.payment) {
+        if (this.props.accountBilling?.payment) {
           paymentTitle = 'Automatic renewal is active';
           paymentDesc = 'Your first payment will be automatically billed at the end of the trial period.';
           cardState = 'active';
@@ -234,7 +234,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           paymentDesc = 'Automatic renewal is scheduled to be enabled in the future';
         }
         showSetPayment = true;
-        if(this.props.accountBilling?.payment) {
+        if (this.props.accountBilling?.payment) {
           cardState = 'active';
           setPaymentTitle = 'Update payment method';
         } else {
@@ -319,7 +319,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       {this.props.accountBilling?.accountReceivable || 0}
                     </Typography>
                   </Box>
-              </React.Fragment>
+                </React.Fragment>
               )}
             </Box>
           </div>
@@ -369,11 +369,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           onClose={() => this.setState({ showAddPayment: undefined })}
         >
           <ElementsConsumer>
-            {({elements, stripe}) => (
+            {({ elements, stripe }) => (
               <React.Fragment>
                 <DialogTitle>Add payment method</DialogTitle>
                 <DialogContent className={this.props.classes.center}>
-                  <StripeCreditCard onFilledChanged={(isFilled) => this.setState({stripePaymentFilled: isFilled})} />
+                  <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
                   <Collapse in={!!this.state.stripePaymentError}>
                     <ErrorMsg msg={this.state.stripePaymentError} />
                   </Collapse>
@@ -557,15 +557,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
   }
 
-  onInvoiceClick(invoiceNumber:number) {
+  onInvoiceClick(invoiceNumber: number) {
     window.open(`${window.location.origin}/invoice/${invoiceNumber}`, '_blank')
   }
 
-  async onPaymentSubmit(elements:StripeElements, stripe:Stripe) {
+  async onPaymentSubmit(elements: StripeElements, stripe: Stripe) {
     this.setState({ isSubmitting: true, stripePaymentError: undefined });
 
     const cardNumberElement = elements.getElement(CardNumberElement);
-    if(cardNumberElement === null) {
+    if (cardNumberElement === null) {
       this.setState({
         stripePaymentError: 'Payment processor not initialized yet',
         isSubmitting: false,
@@ -574,7 +574,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     }
 
     const tokenResult = await stripe.createToken(cardNumberElement);
-    if(!tokenResult.token) {
+    if (!tokenResult.token) {
       this.setState({
         stripePaymentError: tokenResult.error
           ? `${tokenResult.error.message} (${tokenResult.error.code || tokenResult.error.decline_code || tokenResult.error.type})`

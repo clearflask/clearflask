@@ -28,7 +28,7 @@ const styles = (theme: Theme) => createStyles({
   },
   nothing: {
     margin: theme.spacing(4),
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
   },
   [Direction.Horizontal]: {
     ...(contentScrollApplyStyles(theme, Side.Center, false)),
