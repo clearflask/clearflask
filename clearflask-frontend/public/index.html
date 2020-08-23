@@ -24,11 +24,32 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>ClearFlask: Product Feedback Solution</title>
-    <link
-      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
-      rel="stylesheet"
-    />
     <style>
+      /* roboto-regular - vietnamese_latin-ext_latin_greek_cyrillic */
+      /* https://google-webfonts-helper.herokuapp.com/fonts/roboto?subsets=cyrillic,greek,latin,latin-ext,vietnamese */
+      @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 400;
+        /* IE9 Compat Modes */
+        src: url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.eot');
+        src: local('Roboto'), local('Roboto-Regular'),
+          /* IE6-IE8 */
+            url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.eot?#iefix')
+            format('embedded-opentype'),
+          /* Super Modern Browsers */
+            url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.woff2')
+            format('woff2'),
+          /* Modern Browsers */
+            url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.woff')
+            format('woff'),
+          /* Safari, Android, iOS */
+            url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.ttf')
+            format('truetype'),
+          /* Legacy iOS */
+            url('/font/roboto-v20-vietnamese_latin-ext_latin_greek_cyrillic-regular.svg#Roboto')
+            format('svg');
+      }
       .body {
         margin: 0px;
       }
