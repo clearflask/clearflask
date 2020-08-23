@@ -11,15 +11,20 @@ const styles = (theme: Theme) => createStyles({
   footerSpacing: {
     width: '100%',
     maxWidth: '1024px',
-    margin: `0px auto ${theme.spacing(1)}px auto`,
+    padding: theme.spacing(0, 1),
+    margin: `0px auto`,
   },
   grow: {
     flexGrow: 1,
   },
   footerItems: {
+    width: '85%',
     display: 'flex',
     alignItems: 'center',
-    margin: theme.spacing(0, 1, 1, 1),
+    margin: theme.spacing(1, 1, 4, 1),
+  },
+  divider: {
+    margin: theme.spacing(2, 0, 0, 0),
   },
 });
 interface Props {
@@ -41,7 +46,7 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     } else {
       footer = (
         <div className={this.props.classes.footerSpacing}>
-          <Divider />
+          <Divider className={this.props.classes.divider} />
         </div>
       );
     }
