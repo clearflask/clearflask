@@ -1,24 +1,25 @@
-import { Collapse, Container, DialogActions, IconButton, TextField, Typography, Grid, InputAdornment } from '@material-ui/core';
+import { Collapse, Container, DialogActions, Grid, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
+import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import ErrorPage from '../app/ErrorPage';
+import Loader from '../app/utils/Loader';
 import AcceptTerms from '../common/AcceptTerms';
 import Message from '../common/Message';
-import { saltHashPassword } from '../common/util/auth';
-import { isProd } from '../common/util/detectEnv';
+import SubmitButton from '../common/SubmitButton';
 import notEmpty from '../common/util/arrayUtil';
+import { saltHashPassword } from '../common/util/auth';
+import { isProd, isTracking } from '../common/util/detectEnv';
 import PlanPeriodSelect from './PlanPeriodSelect';
-import Loader from '../app/utils/Loader';
 import PricingPlan from './PricingPlan';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
-import { Status } from '../api/server';
-import SubmitButton from '../common/SubmitButton';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = false;
@@ -129,7 +130,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
                     selected={selectedPlanId === plan.planid}
                     actionTitle={selectedPlanId === plan.planid ? 'Selected' : 'Select'}
                     actionType='radio'
-                    actionOnClick={() => this.setState({planid: plan.planid})}
+                    actionOnClick={() => this.setState({ planid: plan.planid })}
                   />
                 </Grid>
               ))}
@@ -190,7 +191,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
                     {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
                   </IconButton>
                 </InputAdornment>
-              ),  
+              ),
             }}
           />
           <AcceptTerms />
@@ -212,6 +213,14 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
   }
 
   async signUp(selectedPlanId: string) {
+    if (isTracking()) {
+      ReactGA.event({
+        category: 'account-signup',
+        action: 'click-create',
+        label: selectedPlanId,
+      });
+    }
+
     this.setState({ isSubmitting: true });
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {

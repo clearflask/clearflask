@@ -603,7 +603,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         {commentsAllowed && (
           <Button key='addComment' variant='text' className={this.props.classes.addCommentButton}
             onClick={e => this.setState({ commentExpanded: true })}>
-            <Typography variant='caption'>Reply</Typography>
+            <Typography variant='caption'>Comment</Typography>
           </Button>
         )}
         {this.props.idea.commentCount > 0 && (

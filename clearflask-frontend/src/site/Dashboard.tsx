@@ -213,9 +213,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
+        const postId = activeSubPath && activeSubPath[0] as string || '';
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <PostPage server={activeProject.server} postId={activeSubPath && activeSubPath[0] as string || ''} />
+            <PostPage key={postId} server={activeProject.server} postId={postId} />
           </Provider>
         );
         crumbs = [{ name: 'Posts', slug: 'posts' }];
@@ -227,9 +228,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           showCreateProjectWarning = true;
           break;
         }
+        const userId = activeSubPath && activeSubPath[0] as string || '';
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <UserPage server={activeProject.server} userId={activeSubPath && activeSubPath[0] as string || ''} />
+            <UserPage key={userId} server={activeProject.server} userId={userId} />
           </Provider>
         );
         crumbs = [{ name: 'Users', slug: 'users' }];
@@ -383,16 +385,18 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     if (quickViewEnabled && activeProject) {
       switch (this.state.quickView?.type) {
         case 'post':
+          const postId = this.state.quickView.id;
           preview = (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostPage server={activeProject.server} postId={this.state.quickView.id} />
+              <PostPage key={postId} server={activeProject.server} postId={postId} />
             </Provider>
           );
           break;
         case 'user':
+          const userId = this.state.quickView.id;
           preview = (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <UserPage server={activeProject.server} userId={activeSubPath && activeSubPath[0] as string || ''} />
+              <UserPage key={userId} server={activeProject.server} userId={userId} />
             </Provider>
           );
           break;

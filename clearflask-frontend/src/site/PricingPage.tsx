@@ -3,6 +3,7 @@ import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../api/admin';
@@ -10,7 +11,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
 import notEmpty from '../common/util/arrayUtil';
-import { isProd } from '../common/util/detectEnv';
+import { isProd, isTracking } from '../common/util/detectEnv';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
@@ -99,10 +100,20 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                   <PricingPlan
                     plan={plan}
                     actionTitle={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    actionOnClick={() => plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())
-                      ? this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid })
-                      : this.props.history.push('/contact/demo')
-                    }
+                    actionOnClick={() => {
+                      if (isTracking()) {
+                        ReactGA.event({
+                          category: 'pricing',
+                          action: 'click-plan',
+                          label: plan.planid,
+                        });
+                      }
+                      if (plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())) {
+                        this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid });
+                      } else {
+                        this.props.history.push('/contact/demo');
+                      }
+                    }}
                   />
                 </Grid>
               ))}

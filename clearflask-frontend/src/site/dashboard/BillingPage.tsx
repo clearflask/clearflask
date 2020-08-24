@@ -8,6 +8,7 @@ import { CardNumberElement, ElementsConsumer } from '@stripe/react-stripe-js';
 import { Stripe, StripeElements } from '@stripe/stripe-js';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import TimeAgo from 'react-timeago';
@@ -21,6 +22,7 @@ import AcceptTerms from '../../common/AcceptTerms';
 import CreditCard from '../../common/CreditCard';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
+import { isTracking } from '../../common/util/detectEnv';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 
@@ -337,7 +339,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   disabled={this.state.showAddPayment}
-                  onClick={() => this.setState({ showAddPayment: true })}
+                  onClick={() => {
+                    if (isTracking()) {
+                      ReactGA.event({
+                        category: 'billing',
+                        action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
+                        label: this.props.account?.plan.planid,
+                      });
+                    }
+                    this.setState({ showAddPayment: true })
+                  }}
                 >
                   {setPaymentTitle}
                 </SubmitButton>
@@ -525,7 +536,22 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <Typography>{planDesc}</Typography>
             {showPlanChange && (
               <div className={this.props.classes.sectionButtons}>
-                <Button disabled={this.state.isSubmitting || this.state.showPlanChange} onClick={() => this.setState({ showPlanChange: true })}>Switch plan</Button>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showPlanChange}
+                  onClick={() => {
+                    if (isTracking()) {
+                      ReactGA.event({
+                        category: 'billing',
+                        action: 'click-plan-switch-open',
+                        label: this.props.account?.plan.planid,
+                      });
+                    }
+
+                    this.setState({ showPlanChange: true });
+                  }}
+                >
+                  Switch plan
+                </Button>
               </div>
             )}
           </div>
@@ -534,6 +560,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           open={!!this.state.showPlanChange}
           onClose={() => this.setState({ showPlanChange: undefined })}
           onSubmit={planid => {
+            if (isTracking()) {
+              ReactGA.event({
+                category: 'billing',
+                action: 'click-plan-switch-submit',
+                label: planid,
+              });
+            }
+
             this.setState({ isSubmitting: true });
             ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
               accountUpdateAdmin: {
@@ -562,6 +596,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe) {
+    if (isTracking()) {
+      ReactGA.event({
+        category: 'billing',
+        action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
+        label: this.props.account?.plan.planid,
+        value: this.props.account?.plan.pricing?.price,
+      });
+    }
+
     this.setState({ isSubmitting: true, stripePaymentError: undefined });
 
     const cardNumberElement = elements.getElement(CardNumberElement);

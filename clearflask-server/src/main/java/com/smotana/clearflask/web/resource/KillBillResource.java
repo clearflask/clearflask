@@ -52,7 +52,16 @@ public class KillBillResource extends ManagedService {
     public static final String WEBHOOK_PATH = "/webhook/killbill";
 
     public interface Config {
-        @DefaultValue(value = "ACCOUNT_CHANGE,SUBSCRIPTION_CREATION,SUBSCRIPTION_PHASE,SUBSCRIPTION_CHANGE,SUBSCRIPTION_CANCEL,SUBSCRIPTION_UNCANCEL,SUBSCRIPTION_BCD_CHANGE,PAYMENT_SUCCESS,PAYMENT_FAILED", innerType = String.class)
+        /** See {@link ExtBusEventType} for all options */
+        @DefaultValue(value = "ACCOUNT_CHANGE" +
+                ",SUBSCRIPTION_CREATION" +
+                ",SUBSCRIPTION_PHASE" +
+                ",SUBSCRIPTION_CHANGE" +
+                ",SUBSCRIPTION_CANCEL" +
+                ",SUBSCRIPTION_UNCANCEL" +
+                ",SUBSCRIPTION_BCD_CHANGE" +
+                ",PAYMENT_SUCCESS" +
+                ",PAYMENT_FAILED", innerType = String.class)
         Set<String> eventsToListenFor();
 
         Observable<Set<String>> eventsToListenForObservable();
