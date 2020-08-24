@@ -69,7 +69,8 @@
     "redux": "4.0.5",
     "redux-promise-middleware": "6.1.2",
     "redux-thunk": "2.3.0",
-    "typescript": "3.7.5"
+    "typescript": "3.7.5",
+    "use-query-params": "1.1.6"
   },
   "scripts": {
     "start": "react-scripts start",
