@@ -7,7 +7,12 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.FeaturesTable;
+import com.smotana.clearflask.api.model.FeaturesTableFeatures;
+import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.api.model.PlanPerk;
+import com.smotana.clearflask.api.model.PlanPricing;
+import com.smotana.clearflask.api.model.PlansGetResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
@@ -26,14 +31,14 @@ public class KillBillPlanStore implements PlanStore {
     private static final String TERMS_CREDIT = "Spend time-based credits on future ClearFlask development features";
     private static final ImmutableMap<String, Plan> AVAILABLE_PLANS = ImmutableMap.of(
             "basic-monthly", new Plan("basic-monthly", PLAN_TITLE_BASIC,
-                    new PlanPricing(30L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
+                    new PlanPricing(50L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Voting and expressions", TERMS_VOTING),
                     new PlanPerk("Unlimited projects", TERMS_PROJECTS),
                     new PlanPerk("Up to 100 contributors", TERMS_ACTIVE_USERS),
                     new PlanPerk("20min feature credits", TERMS_CREDIT)),
                     null, false),
             "standard-monthly", new Plan("standard-monthly", PLAN_TITLE_STANDARD,
-                    new PlanPricing(75L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
+                    new PlanPricing(200L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Credit System", TERMS_CREDIT_SYSTEM),
                     new PlanPerk("Single Sign-On", null),
                     new PlanPerk("Up to 1,000 contributors", TERMS_ACTIVE_USERS),
