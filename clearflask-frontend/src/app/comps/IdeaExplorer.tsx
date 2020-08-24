@@ -21,6 +21,16 @@ import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
+// import {
+//   withQueryParams,
+//   StringParam,
+//   NumberParam,
+//   ArrayParam,
+//   withDefault,
+//   DecodedValueMap,
+//   SetQuery,
+//   QueryParamConfig,
+// } from 'use-query-params';
 
 enum FilterType {
   Search = 'search',
@@ -93,6 +103,12 @@ interface State {
   logInOpen?: boolean;
   createFormHasExpanded?: boolean;
 }
+// class QueryState {
+//   search: QueryParamConfig<Partial<Client.IdeaSearch>> = {
+//     encode: () => string;
+//     decode: () => ;
+//   };
+// }
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -493,4 +509,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     loggedInUserId: state.users.loggedIn.user ? state.users.loggedIn.user.userId : undefined,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))));
+}, null, null, { forwardRef: true })(
+  // withQueryParams(QueryState, 
+    withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))))
+    // )
+    ;
