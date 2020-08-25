@@ -234,7 +234,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
             </div>
           )}
           searchSize={searchWidth}
-          search={expand ? undefined : (
+          search={(
             <TextField
               className={this.props.classes.searchInput}
               placeholder='Search'

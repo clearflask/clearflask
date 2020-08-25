@@ -147,13 +147,23 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       || !!this.state.newItemTitle
       || !!this.state.newItemDescription;
 
-    var content, topBar;
+    const search = this.props.explorer.allowSearch && (
+      <PanelSearch
+        className={this.props.classes.panelSearch}
+        innerRef={this.panelSearchRef}
+        server={this.props.server}
+        search={this.state.search}
+        onSearchChanged={search => this.setState({ search: search })}
+        explorer={this.props.explorer}
+      />
+    );
+    const createLabel = (
+      <Typography variant='overline' className={this.props.classes.caption}>
+        Similar:
+      </Typography>
+    );
+    var content;
     if (createShown) {
-      topBar = (
-        <Typography variant='overline' className={this.props.classes.caption}>
-          Similar:
-        </Typography>
-      );
       const searchOverride = this.state.newItemSearchText ? { searchText: this.state.newItemSearchText } : undefined;
       content = (
         <div className={this.props.classes.content}>
@@ -182,16 +192,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         </div>
       );
     } else {
-      topBar = this.props.explorer.allowSearch && (
-        <PanelSearch
-          className={this.props.classes.panelSearch}
-          innerRef={this.panelSearchRef}
-          server={this.props.server}
-          search={this.state.search}
-          onSearchChanged={search => this.setState({ search: search })}
-          explorer={this.props.explorer}
-        />
-      );
       content = (
         <div className={this.props.classes.content}>
           <Panel
@@ -276,10 +276,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         <ExplorerTemplate
           createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
+          createLabel={createLabel}
           createVisible={createVisible}
           createCollapsible={createCollapsible}
           searchSize={this.props.explorer.allowSearch ? 100 : undefined}
-          search={topBar}
+          search={search}
           content={content}
         />
       </InViewObserver>

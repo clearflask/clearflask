@@ -1,8 +1,9 @@
-import { Collapse, Fade, Hidden } from '@material-ui/core';
+import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp, isWidthDown } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../utils/DividerCorner';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   explorer: {
@@ -16,11 +17,10 @@ const styles = (theme: Theme) => createStyles({
     },
     [theme.breakpoints.down('xs')]: {
       gridTemplateColumns: 'auto',
-      gridTemplateRows: 'auto auto auto auto',
+      gridTemplateRows: 'auto auto auto',
       gridTemplateAreas:
         "'t'"
         + " 'cc'"
-        + " 's'"
         + " 'r'",
     },
   },
@@ -28,20 +28,24 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 't',
     alignSelf: 'end',
     display: 'flex',
-    [theme.breakpoints.up('sm')]: {
-      alignItems: 'flex-end',
-    },
-    [theme.breakpoints.down('xs')]: {
-      alignItems: 'flex-start',
-      flexDirection: 'column',
-    },
+    alignItems: 'flex-end',
   },
   results: {
     gridArea: 'r',
   },
   search: {
-    gridArea: 's',
     flexGrow: 1,
+  },
+  createLabel: {
+    flexGrow: 1,
+  },
+  createLabelVertical: {
+    marginTop: theme.spacing(2),
+  },
+  searchAndCreateLabelContainer: {
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
   createVisible: {
     transition: theme.transitions.create(['min-width', 'width'], { duration: theme.explorerExpandTimeout }),
@@ -59,6 +63,7 @@ interface Props {
   createSize?: number;
   searchSize?: number;
   createShown?: boolean;
+  createLabel?: React.ReactNode;
   createVisible?: React.ReactNode;
   createCollapsible?: React.ReactNode;
   search?: React.ReactNode;
@@ -69,7 +74,7 @@ interface State {
   hasExpanded?: boolean;
 }
 
-class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
 
   constructor(props) {
     super(props);
@@ -81,6 +86,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
 
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
+    const expandDirectionHorizontal = !this.props.width || isWidthUp('sm', this.props.width, true);
     var results = (
       <Fade
         in={!expandInMotion}
@@ -104,6 +110,11 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
         </DividerCorner>
       );
     }
+    const labelContainer = (
+      <div className={classNames(this.props.classes.createLabel, !expandDirectionHorizontal && this.props.classes.createLabelVertical)}>
+        {this.props.createLabel}
+      </div>
+    );
     return (
       <div className={this.props.classes.explorer}>
         <div className={this.props.classes.top}>
@@ -115,21 +126,21 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
               {this.props.createVisible}
             </div>
           )}
-          {this.props.search && (
-            <div className={this.props.classes.search} style={{ visibility: expandInMotion ? 'hidden' : 'visible' }}>
-              <Hidden xsDown implementation='css'>
-                {this.props.search}
-              </Hidden>
-            </div>
-          )}
-        </div>
-        {this.props.search && (
-          <div className={this.props.classes.search} style={{ visibility: expandInMotion ? 'hidden' : 'visible' }}>
-            <Hidden smUp implementation='css'>
-              {this.props.search}
-            </Hidden>
+          <div className={this.props.classes.searchAndCreateLabelContainer}>
+            {expandDirectionHorizontal && this.props.createLabel && (
+              <Collapse in={!!this.state.hasExpanded && !expandInMotion}>
+                {labelContainer}
+              </Collapse>
+            )}
+            {this.props.search && (
+              <Collapse in={!this.state.hasExpanded && !expandInMotion}>
+                <div className={this.props.classes.search}>
+                  {this.props.search}
+                </div>
+              </Collapse>
+            )}
           </div>
-        )}
+        </div>
         {this.props.createCollapsible && (
           <div
             className={this.props.classes.createCollapsible}
@@ -150,6 +161,11 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
               }}
             >
               {this.props.createCollapsible}
+              {!expandDirectionHorizontal && this.props.createLabel && (
+                <Fade in={!!this.state.hasExpanded && !expandInMotion}>
+                  {labelContainer}
+                </Fade>
+              )}
             </Collapse>
           </div>
         )}
@@ -161,4 +177,4 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(ExplorerTemplate));
+export default withStyles(styles, { withTheme: true })(withRouter(withWidth()(ExplorerTemplate)));
