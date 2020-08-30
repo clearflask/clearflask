@@ -5,10 +5,20 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -17,6 +27,7 @@ import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
@@ -75,6 +86,8 @@ public interface UserStore {
     void revokeSessions(String projectId, String userId, Optional<String> sessionToLeaveOpt);
 
     ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId);
+
+    boolean getAndSetUserActive(String projectId, String userId, String periodId, Period periodLength);
 
     @Value
     class SearchUsersResponse {
@@ -258,5 +271,23 @@ public interface UserStore {
 
         @NonNull
         String userId;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "userActiveForPeriod", rangeKeys = "periodId")
+    class UserActive {
+        @NonNull
+        String projectId;
+
+        @NonNull
+        String userId;
+
+        @NonNull
+        String periodId;
+
+        @NonNull
+        long ttlInEpochSec;
     }
 }

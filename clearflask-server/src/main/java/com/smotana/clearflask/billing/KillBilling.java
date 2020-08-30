@@ -5,19 +5,25 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
@@ -27,18 +33,34 @@ import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
+import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
-import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.Invoice;
+import org.killbill.billing.client.model.gen.OverdueState;
+import org.killbill.billing.client.model.gen.PaymentMethod;
+import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
+import org.killbill.billing.client.model.gen.PlanDetail;
+import org.killbill.billing.client.model.gen.PluginProperty;
+import org.killbill.billing.client.model.gen.RolledUpUnit;
+import org.killbill.billing.client.model.gen.RolledUpUsage;
+import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
+import org.killbill.billing.client.model.gen.UnitUsageRecord;
+import org.killbill.billing.client.model.gen.UsageRecord;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.util.api.AuditLevel;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
+import java.time.Period;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -47,7 +69,9 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 
 @Slf4j
 @Singleton
-public class KillBilling implements Billing {
+public class KillBilling extends ManagedService implements Billing {
+    /** If changed, also change in catalogXXX.xml */
+    private static final String ACTIVE_USER_UNIT_NAME = "active-user";
 
     public interface Config {
         @DefaultValue("30000")
@@ -68,7 +92,23 @@ public class KillBilling implements Billing {
     @Inject
     private CatalogApi kbCatalog;
     @Inject
+    private UsageApi kbUsage;
+    @Inject
     private KillBillHttpClient kbClient;
+    @Inject
+    private UserStore userStore;
+
+    private ExecutorService usageExecutor;
+
+    @Override
+    protected void serviceStart() throws Exception {
+        usageExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+                .setNameFormat("KillBilling-usage").build());
+    }
+
+    @Override
+    protected void serviceStop() throws Exception {
+    }
 
     @Override
     public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
@@ -498,12 +538,82 @@ public class KillBilling implements Billing {
         }
     }
 
+    @Override
+    public ListenableFuture<Boolean> recordUsage(String accountId, String projectId, String userId) {
+        return usageExecutor.submit(() -> {
+            try {
+                Subscription subscription = getSubscription(accountId);
+
+                boolean isTrial = false;
+                long periodNum;
+                if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
+                    periodNum = 0;
+                    isTrial = true;
+                } else {
+                    // TODO continue here
+                    periodNum = Period.between(subscription.getBillingStartDate().to)
+                    subscription.getBillingPeriod().getPeriod().getDays()
+                }
+                String periodId = subscription.getSubscriptionId() + ";" + periodNum;
+
+                boolean userWasActive = userStore.getAndSetUserActive(projectId, userId, periodId, Period.ofDays(subscription.getBillingPeriod().getPeriod().getDays()));
+
+                if (userWasActive) {
+                    return true;
+                }
+
+                String trackingId = periodId + "-" + userId;
+                kbUsage.recordUsage(new SubscriptionUsageRecord(
+                        subscription.getSubscriptionId(),
+                        trackingId,
+                        ImmutableList.of(new UnitUsageRecord(
+                                ACTIVE_USER_UNIT_NAME,
+                                ImmutableList.of(new UsageRecord(
+                                        LocalDate.now(),
+                                        1L))))
+                ), KillBillUtil.roDefault());
+
+                if (isTrial) {
+                    RolledUpUsage usage = kbUsage.getUsage(
+                            subscription.getSubscriptionId(),
+                            ACTIVE_USER_UNIT_NAME,
+                            subscription.getStartDate(),
+                            LocalDate.now(),
+                            KillBillUtil.roDefault());
+                    long activeUsers = usage.getRolledUpUnits().stream()
+                            .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))
+                            .mapToLong(RolledUpUnit::getAmount)
+                            .sum();
+                    if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
+                        // TODO trigger trial end if exceeded
+                    }
+                }
+                return false;
+            } catch (Throwable th) {
+                log.error("Failed to execute usage recording", th);
+                throw th;
+            }
+        });
+    }
+
+    @Override
+    public long getUsageCurrentPeriod(String accountId) {
+        // TODO
+        return 0;
+    }
+
+    @Override
+    public void upcomingInvoiceWebhook(String accountId) {
+        // TODO
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override
             protected void configure() {
                 bind(Billing.class).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class);
             }
         };
     }

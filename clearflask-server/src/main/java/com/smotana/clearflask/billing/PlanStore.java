@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface PlanStore {
 
+    long STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES = 10;
+
     PlansGetResponse getPublicPlans();
 
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);

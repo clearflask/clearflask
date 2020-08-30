@@ -2,6 +2,7 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.Value;
@@ -45,6 +46,13 @@ public interface Billing {
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
 
     ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
+
+    /** Future returns whether user was previously active */
+    ListenableFuture<Boolean> recordUsage(String accountId, String projectId, String userId);
+
+    long getUsageCurrentPeriod(String accountId);
+
+    void upcomingInvoiceWebhook(String accountId);
 
     @Value
     class AccountWithSubscription {

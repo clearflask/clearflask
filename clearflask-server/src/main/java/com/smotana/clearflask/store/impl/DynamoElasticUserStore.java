@@ -1,14 +1,42 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.HashFunction;
@@ -40,7 +68,13 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +106,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.time.Period;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -110,6 +151,12 @@ public class DynamoElasticUserStore implements UserStore {
 
         @NoDefaultValue
         SecretKey tokenSignerPrivKey();
+
+        @DefaultValue("1.5d")
+        double userActivityExpireAfterPeriodMultiplier();
+
+        @DefaultValue("PT3H")
+        Duration userActivityCacheExpireAfterAccess();
     }
 
     private static final String USER_INDEX = "user";
@@ -140,6 +187,9 @@ public class DynamoElasticUserStore implements UserStore {
     private IndexSchema<IdentifierUser> identifierByProjectIdSchema;
     private TableSchema<UserSession> sessionByIdSchema;
     private IndexSchema<UserSession> sessionByUserSchema;
+    private TableSchema<UserActive> userActiveSchema;
+    /** Value not important, simply need to check for existence of key */
+    private Cache<String, Object> userActivityCache;
 
     @Inject
     private void setup() {
@@ -149,6 +199,12 @@ public class DynamoElasticUserStore implements UserStore {
         identifierByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, IdentifierUser.class);
         sessionByIdSchema = dynamoMapper.parseTableSchema(UserSession.class);
         sessionByUserSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, UserSession.class);
+        userActiveSchema = dynamoMapper.parseTableSchema(UserActive.class);
+
+        userActivityCache = CacheBuilder.newBuilder()
+                .maximumSize(10_000L)
+                .expireAfterAccess(config.userActivityCacheExpireAfterAccess())
+                .build();
     }
 
     @Override
@@ -901,6 +957,41 @@ public class DynamoElasticUserStore implements UserStore {
         // Note: not deleting sessions, they will expire themselves eventually
 
         return deleteFuture;
+    }
+
+    @Override
+    public boolean getAndSetUserActive(String projectId, String userId, String periodId, Period periodLength) {
+        String cacheKey = userId + ";" + periodId;
+        if (userActivityCache.getIfPresent(cacheKey) != null) {
+            return true;
+        }
+
+        if (userActiveSchema.table().getItem(new GetItemSpec()
+                .withPrimaryKey(userActiveSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "userId", userId,
+                        "periodId", periodId)))) != null) {
+            userActivityCache.put(cacheKey, cacheKey);
+            return true;
+        }
+
+        long expireTtlInEpochSec = (long) (Instant.now().plus(periodLength).getEpochSecond() * config.userActivityExpireAfterPeriodMultiplier());
+        try {
+            userActiveSchema.table().putItem(new PutItemSpec()
+                    .withItem(userActiveSchema.toItem(new UserActive(
+                            projectId,
+                            userId,
+                            periodId,
+                            expireTtlInEpochSec)))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", userActiveSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            // Already populated by someone else in the meantime
+        }
+
+        // Only populate if successfully inserted to Dynamo
+        userActivityCache.put(cacheKey, cacheKey);
+        return false;
     }
 
     private String hashIdentifier(String identifier) {
