@@ -35,6 +35,8 @@ public interface Billing {
 
     Subscription undoPendingCancel(String accountId);
 
+    Subscription endTrial(String accountId);
+
     Subscription changePlan(String accountId, String planId);
 
     Subscription activateSubscription(String accountId, String planId);
@@ -47,8 +49,7 @@ public interface Billing {
 
     ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
 
-    /** Future returns whether user was previously active */
-    ListenableFuture<Boolean> recordUsage(String accountId, String projectId, String userId);
+    ListenableFuture<Void> recordUsage(String accountId, String projectId, String userId);
 
     long getUsageCurrentPeriod(String accountId);
 

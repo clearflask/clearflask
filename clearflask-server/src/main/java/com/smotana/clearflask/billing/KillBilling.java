@@ -5,7 +5,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -20,6 +23,7 @@ import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +63,6 @@ import java.time.Period;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -76,6 +79,15 @@ public class KillBilling extends ManagedService implements Billing {
     public interface Config {
         @DefaultValue("30000")
         long callTimeoutInMillis();
+
+        @DefaultValue("true")
+        boolean usageRecordEnabled();
+
+        @DefaultValue("true")
+        boolean usageRecordSendToKbEnabled();
+
+        @DefaultValue("true")
+        boolean usageRecordUseTracking();
     }
 
     @Inject
@@ -98,16 +110,18 @@ public class KillBilling extends ManagedService implements Billing {
     @Inject
     private UserStore userStore;
 
-    private ExecutorService usageExecutor;
+    private ListeningExecutorService usageExecutor;
 
     @Override
     protected void serviceStart() throws Exception {
-        usageExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-                .setNameFormat("KillBilling-usage").build());
+        usageExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
+                .setNameFormat("KillBilling-usage").build()));
     }
 
     @Override
     protected void serviceStop() throws Exception {
+        usageExecutor.shutdown();
+        usageExecutor.awaitTermination(5, TimeUnit.MINUTES);
     }
 
     @Override
@@ -306,6 +320,30 @@ public class KillBilling extends ManagedService implements Billing {
         } catch (KillBillClientException ex) {
             log.warn("Failed to unCancel KillBill subscription for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to un-cancel subscription", ex);
+        }
+    }
+
+    @Override
+    public Subscription endTrial(String accountId) {
+        try {
+            Subscription subscription = getSubscription(accountId);
+            if (!PhaseType.TRIAL.equals(subscription.getPhaseType())) {
+                return subscription;
+            }
+            subscription.setPhaseType(PhaseType.TRIAL);
+            kbSubscription.changeSubscriptionPlan(
+                    subscription.getSubscriptionId(),
+                    subscription,
+                    null,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                    null,
+                    null,
+                    KillBillUtil.roDefault());
+            return getSubscription(accountId);
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to end KillBill plan trial for account id {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
         }
     }
 
@@ -539,8 +577,11 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Override
-    public ListenableFuture<Boolean> recordUsage(String accountId, String projectId, String userId) {
-        return usageExecutor.submit(() -> {
+    public ListenableFuture<Void> recordUsage(String accountId, String projectId, String userId) {
+        if (!config.usageRecordEnabled()) {
+            return Futures.immediateFuture(null);
+        }
+        return usageExecutor.<Void>submit(() -> {
             try {
                 Subscription subscription = getSubscription(accountId);
 
@@ -550,47 +591,46 @@ public class KillBilling extends ManagedService implements Billing {
                     periodNum = 0;
                     isTrial = true;
                 } else {
-                    // TODO continue here
-                    periodNum = Period.between(subscription.getBillingStartDate().to)
-                    subscription.getBillingPeriod().getPeriod().getDays()
+                    periodNum = Period.between(
+                            java.time.LocalDate.of(
+                                    subscription.getBillingStartDate().getYear(),
+                                    subscription.getBillingStartDate().getMonthOfYear(),
+                                    subscription.getBillingStartDate().getDayOfMonth()),
+                            java.time.LocalDate.now()).getDays()
+                            / subscription.getBillingPeriod().getPeriod().getDays();
                 }
                 String periodId = subscription.getSubscriptionId() + ";" + periodNum;
 
                 boolean userWasActive = userStore.getAndSetUserActive(projectId, userId, periodId, Period.ofDays(subscription.getBillingPeriod().getPeriod().getDays()));
 
                 if (userWasActive) {
-                    return true;
+                    return null;
                 }
 
-                String trackingId = periodId + "-" + userId;
+                Optional<String> trackingIdOpt = config.usageRecordUseTracking()
+                        ? Optional.of(periodId + "-" + userId)
+                        : Optional.empty();
                 kbUsage.recordUsage(new SubscriptionUsageRecord(
                         subscription.getSubscriptionId(),
-                        trackingId,
+                        trackingIdOpt.orElse(null),
                         ImmutableList.of(new UnitUsageRecord(
                                 ACTIVE_USER_UNIT_NAME,
                                 ImmutableList.of(new UsageRecord(
                                         LocalDate.now(),
-                                        1L))))
-                ), KillBillUtil.roDefault());
+                                        1L))))), KillBillUtil.roDefault());
 
                 if (isTrial) {
-                    RolledUpUsage usage = kbUsage.getUsage(
-                            subscription.getSubscriptionId(),
-                            ACTIVE_USER_UNIT_NAME,
-                            subscription.getStartDate(),
-                            LocalDate.now(),
-                            KillBillUtil.roDefault());
-                    long activeUsers = usage.getRolledUpUnits().stream()
-                            .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))
-                            .mapToLong(RolledUpUnit::getAmount)
-                            .sum();
+                    long activeUsers = getUsageCurrentPeriod(subscription);
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
-                        // TODO trigger trial end if exceeded
+                        endTrial(accountId);
+                        // TODO notify by email of trial ending
                     }
                 }
-                return false;
+                return null;
             } catch (Throwable th) {
-                log.error("Failed to execute usage recording", th);
+                if (LogUtil.rateLimitAllowLog("killbilling-usage-record-fail")) {
+                    log.warn("Failed to execute usage recording", th);
+                }
                 throw th;
             }
         });
@@ -598,12 +638,32 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Override
     public long getUsageCurrentPeriod(String accountId) {
-        // TODO
-        return 0;
+        return getUsageCurrentPeriod(getSubscription(accountId));
+    }
+
+    private long getUsageCurrentPeriod(Subscription subscription) {
+        try {
+            RolledUpUsage usage = kbUsage.getUsage(
+                    subscription.getSubscriptionId(),
+                    ACTIVE_USER_UNIT_NAME,
+                    subscription.getStartDate(),
+                    null,
+                    KillBillUtil.roDefault());
+            long activeUsers = usage.getRolledUpUnits().stream()
+                    .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))
+                    .mapToLong(RolledUpUnit::getAmount)
+                    .sum();
+            return activeUsers;
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to get usage for subscription id {}", subscription.getSubscriptionId(), ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to get subscription usage", ex);
+        }
     }
 
     @Override
     public void upcomingInvoiceWebhook(String accountId) {
+        TODO
         // TODO
     }
 
