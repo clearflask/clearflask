@@ -10,8 +10,10 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.TokenVerifyStore;
@@ -24,6 +26,7 @@ import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -78,6 +81,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private NotificationService notificationService;
     @Inject
     private AuthCookie authCookie;
+    @Inject
+    private Billing billing;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -383,6 +388,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
         // TODO Sanity check userUpdateAdmin
         if (userUpdateAdmin.getTransactionCreate() != null) {
             voteStore.balanceAdjustTransaction(
@@ -391,6 +397,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     userUpdateAdmin.getTransactionCreate().getAmount(),
                     Optional.ofNullable(Strings.emptyToNull(userUpdateAdmin.getTransactionCreate().getSummary())).orElse("Admin adjustment"));
             userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
+            billing.recordUsage(Billing.UsageType.CREDIT, accountSession.getAccountId(), projectId, userId);
         }
         return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
     }

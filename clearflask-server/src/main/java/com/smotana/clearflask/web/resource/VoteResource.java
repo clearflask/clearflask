@@ -9,6 +9,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.VoteApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
@@ -53,6 +54,8 @@ public class VoteResource extends AbstractResource implements VoteApi {
     private UserStore userStore;
     @Inject
     private CommentStore commentStore;
+    @Inject
+    private Billing billing;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
@@ -86,6 +89,8 @@ public class VoteResource extends AbstractResource implements VoteApi {
         VoteStore.VoteValue vote = VoteStore.VoteValue.fromVoteOption(commentVoteUpdate.getVote());
         CommentModel comment = commentStore.voteComment(projectId, ideaId, commentId, userId, vote)
                 .getCommentModel();
+
+        billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);
 
         return new CommentVoteUpdateResponse(comment.toCommentWithVote(vote.toVoteOption()));
     }
@@ -204,6 +209,8 @@ public class VoteResource extends AbstractResource implements VoteApi {
             transactionOpt = Optional.of(fundIdeaResponse.getTransaction().toTransaction());
             fundAmountOpt = Optional.of(fundIdeaResponse.getIdeaFundAmount());
         }
+
+        billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);
 
         return new IdeaVoteUpdateResponse(
                 new IdeaVote(

@@ -3,6 +3,7 @@ package com.smotana.clearflask.core.push;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -25,6 +26,7 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -39,6 +41,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -152,7 +155,13 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId();
 
+            Set<String> userSeen = Sets.newHashSet();
+            Project project = projectStore.getProject(idea.getProjectId(), true).get();
             BiConsumer<SubscriptionAction, UserModel> sendToUser = (subscriptionAction, user) -> {
+                if (!userSeen.add(user.getUserId())) {
+                    return;
+                }
+
                 try {
                     notificationStore.notificationCreate(new NotificationModel(
                             idea.getProjectId(),
@@ -415,8 +424,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
         executor.submit(() -> {
             try {
                 task.run();
-            } catch (Exception ex) {
-                log.warn("Failed to complete task", ex);
+            } catch (Throwable th) {
+                log.warn("Failed to complete task", th);
             }
         });
     }

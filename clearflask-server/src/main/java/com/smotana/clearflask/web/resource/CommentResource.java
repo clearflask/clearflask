@@ -7,10 +7,12 @@ import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
@@ -47,6 +49,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     private VoteStore voteStore;
     @Inject
     private NotificationService notificationService;
+    @Inject
+    private Billing billing;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
@@ -54,7 +58,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public CommentWithVote commentCreate(String projectId, String ideaId, CommentCreate create) {
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.FORBIDDEN, "User not found"));
-        ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+        Project project = projectStore.getProject(projectId, true).get();
+        ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)
                 .orElseThrow(() -> new BadRequestException("Cannot create comment, containing idea doesn't exist"));
         Optional<CommentModel> parentCommentOpt = Optional.ofNullable(Strings.emptyToNull(create.getParentCommentId()))
@@ -88,6 +93,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 parentCommentOpt,
                 commentModel,
                 user);
+        billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user.getUserId());
         return commentModel.toCommentWithVote(VoteOption.UPVOTE);
     }
 

@@ -12,6 +12,7 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public class ProjectStoreTest extends AbstractTest {
     @Test(timeout = 10_000L)
     public void test() throws Exception {
         String newProject = "newProject";
-        store.createProject(newProject, ModelUtil.createEmptyConfig(newProject));
+        store.createProject(IdUtil.randomId(), newProject, ModelUtil.createEmptyConfig(newProject));
 
         assertTrue(store.getProject(newProject, false).isPresent());
         assertFalse(store.getProjects(ImmutableSet.of(newProject), false).isEmpty());

@@ -18,10 +18,6 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 
 public interface ProjectStore {
 
-    default String genProjectId() {
-        return IdUtil.randomId();
-    }
-
     default String genConfigVersion() {
         return IdUtil.randomAscId();
     }
@@ -32,13 +28,15 @@ public interface ProjectStore {
 
     ImmutableSet<Project> getProjects(ImmutableSet<String> projectIds, boolean useCache);
 
-    Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin);
+    Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin);
 
     void updateConfig(String projectId, Optional<String> previousVersion, VersionedConfigAdmin versionedConfigAdmin);
 
     void deleteProject(String projectId);
 
     interface Project {
+        String getAccountId();
+
         String getProjectId();
 
         String getVersion();
@@ -58,13 +56,16 @@ public interface ProjectStore {
     @DynamoTable(type = Primary, partitionKeys = "projectId", rangePrefix = "project")
     class ProjectModel {
         @NonNull
-        private final String projectId;
+        String accountId;
 
         @NonNull
-        private final String version;
+        String projectId;
 
         @NonNull
-        private final String configJson;
+        String version;
+
+        @NonNull
+        String configJson;
     }
 
     @Value
@@ -74,12 +75,14 @@ public interface ProjectStore {
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = "projectId", rangePrefix = "slugByProjectId")
     class SlugModel {
         @NonNull
-        private final String slug;
+        String slug;
 
         @NonNull
-        private final String projectId;
+        String projectId;
 
-        /** Only set during migration to phase out an old slug */
-        private final Long ttlInEpochSec;
+        /**
+         * Only set during migration to phase out an old slug
+         */
+        Long ttlInEpochSec;
     }
 }

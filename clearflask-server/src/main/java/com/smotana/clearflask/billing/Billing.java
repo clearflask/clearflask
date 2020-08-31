@@ -49,11 +49,9 @@ public interface Billing {
 
     ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
 
-    ListenableFuture<Void> recordUsage(String accountId, String projectId, String userId);
+    ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId);
 
     long getUsageCurrentPeriod(String accountId);
-
-    void upcomingInvoiceWebhook(String accountId);
 
     @Value
     class AccountWithSubscription {
@@ -92,5 +90,13 @@ public interface Billing {
         public boolean isAllowedInProduction() {
             return allowedInProduction;
         }
+    }
+
+
+    enum UsageType {
+        POST,
+        COMMENT,
+        VOTE,
+        CREDIT,
     }
 }

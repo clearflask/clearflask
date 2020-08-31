@@ -152,12 +152,13 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public Project createProject(String projectId, VersionedConfigAdmin versionedConfigAdmin) {
+    public Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin) {
         SlugModel slugModel = new SlugModel(
                 versionedConfigAdmin.getConfig().getSlug(),
                 projectId,
                 null);
         ProjectModel projectModel = new ProjectModel(
+                accountId,
                 projectId,
                 versionedConfigAdmin.getVersion(),
                 gson.toJson(versionedConfigAdmin.getConfig()));
@@ -188,7 +189,8 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Override
     public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin) {
-        Optional<String> slugOptPrevious = Optional.ofNullable(getProject(projectId, false).get().getVersionedConfigAdmin().getConfig().getSlug());
+        Project project = getProject(projectId, false).get();
+        Optional<String> slugOptPrevious = Optional.ofNullable(project.getVersionedConfigAdmin().getConfig().getSlug());
         Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
         if (!slugOpt.equals(slugOptPrevious)) {
             if (LogUtil.rateLimitAllowLog("projectStore-slugChange")) {
@@ -216,6 +218,7 @@ public class DynamoProjectStore implements ProjectStore {
         }
         PutItemSpec putItemSpec = new PutItemSpec()
                 .withItem(projectSchema.toItem(new ProjectModel(
+                        project.getAccountId(),
                         projectId,
                         versionedConfigAdmin.getVersion(),
                         gson.toJson(versionedConfigAdmin.getConfig()))));
@@ -268,6 +271,7 @@ public class DynamoProjectStore implements ProjectStore {
     @ToString(of = {"projectId", "version"})
     private class ProjectImpl implements Project {
         private static final double EXPRESSION_WEIGHT_DEFAULT = 1d;
+        private final String accountId;
         private final String projectId;
         private final String version;
         private final VersionedConfig versionedConfig;
@@ -276,6 +280,7 @@ public class DynamoProjectStore implements ProjectStore {
         private final ImmutableMap<String, Category> categories;
 
         private ProjectImpl(ProjectModel projectModel) {
+            this.accountId = projectModel.getAccountId();
             this.projectId = projectModel.getProjectId();
             this.version = projectModel.getVersion();
             this.versionedConfig = new VersionedConfig(gson.fromJson(projectModel.getConfigJson(), com.smotana.clearflask.api.model.Config.class), projectModel.getVersion());

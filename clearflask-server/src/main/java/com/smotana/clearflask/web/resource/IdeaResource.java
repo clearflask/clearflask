@@ -11,11 +11,15 @@ import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -54,6 +58,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private UserStore userStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private Billing billing;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -91,6 +97,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         ideaStore.createIdea(ideaModel);
         ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
+        Project project = projectStore.getProject(projectId, true).get();
+        billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
@@ -98,6 +106,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
         UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         IdeaModel ideaModel = new IdeaModel(
@@ -127,6 +136,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         ideaStore.createIdea(ideaModel);
         ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
+        billing.recordUsage(UsageType.POST, accountSession.getAccountId(), projectId, user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
