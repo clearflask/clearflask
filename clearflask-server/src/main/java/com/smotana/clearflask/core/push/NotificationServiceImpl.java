@@ -26,7 +26,6 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
-import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -156,7 +155,6 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/post/" + idea.getIdeaId();
 
             Set<String> userSeen = Sets.newHashSet();
-            Project project = projectStore.getProject(idea.getProjectId(), true).get();
             BiConsumer<SubscriptionAction, UserModel> sendToUser = (subscriptionAction, user) -> {
                 if (!userSeen.add(user.getUserId())) {
                     return;

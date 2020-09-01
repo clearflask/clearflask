@@ -13,6 +13,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
+import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -52,7 +53,9 @@ public class KillBillResource extends ManagedService {
     public static final String WEBHOOK_PATH = "/webhook/killbill";
 
     public interface Config {
-        /** See {@link ExtBusEventType} for all options */
+        /**
+         * See {@link ExtBusEventType} for all options
+         */
         @DefaultValue(value = "ACCOUNT_CHANGE" +
                 ",SUBSCRIPTION_CREATION" +
                 ",SUBSCRIPTION_PHASE" +
@@ -61,7 +64,8 @@ public class KillBillResource extends ManagedService {
                 ",SUBSCRIPTION_UNCANCEL" +
                 ",SUBSCRIPTION_BCD_CHANGE" +
                 ",PAYMENT_SUCCESS" +
-                ",PAYMENT_FAILED", innerType = String.class)
+                ",PAYMENT_FAILED" +
+                ",INVOICE_PAYMENT_SUCCESS", innerType = String.class)
         Set<String> eventsToListenFor();
 
         Observable<Set<String>> eventsToListenForObservable();
@@ -98,6 +102,8 @@ public class KillBillResource extends ManagedService {
     private Billing billing;
     @Inject
     private TenantApi kbTenant;
+    @Inject
+    private ClearFlaskCreditSync clearFlaskCreditSync;
 
     private ImmutableSet<ExtBusEventType> eventsToListenForCached = ImmutableSet.of();
 
@@ -166,6 +172,11 @@ public class KillBillResource extends ManagedService {
         Optional<AccountStore.Account> accountOpt = accountStore.getAccountByAccountId(accountId);
         if (!accountOpt.isPresent()) {
             log.warn("Received event for non-existent account, KillBill account and subscription exist, with account id {}", accountId);
+            return;
+        }
+
+        if (ExtBusEventType.INVOICE_PAYMENT_SUCCESS.equals(event.eventType)) {
+            clearFlaskCreditSync.process(accountOpt.get());
             return;
         }
 

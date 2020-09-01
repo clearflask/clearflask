@@ -5,7 +5,9 @@ import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.CreditAdminApi;
 import com.smotana.clearflask.api.CreditApi;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
@@ -13,12 +15,14 @@ import com.smotana.clearflask.store.VoteStore.ListResponse;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.Valid;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
@@ -32,6 +36,28 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     private VoteStore voteStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private Billing billing;
+
+    @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void creditIncome(String projectId, @Valid CreditIncome creditIncome) {
+        AccountStore.AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
+        UserModel user = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.SSO_GUID, creditIncome.getGuid())
+                .orElseGet(() -> userStore.ssoCreateOrGet(
+                        projectId,
+                        creditIncome.getGuid(),
+                        Optional.ofNullable(Strings.emptyToNull(creditIncome.getEmail())),
+                        Optional.ofNullable(Strings.emptyToNull(creditIncome.getName()))));
+        voteStore.balanceAdjustTransaction(
+                projectId,
+                user.getUserId(),
+                creditIncome.getAmount(),
+                Optional.ofNullable(Strings.emptyToNull(creditIncome.getSummary())).orElse("Automatic income"));
+        userStore.updateUserBalance(projectId, user.getUserId(), creditIncome.getAmount(), Optional.empty());
+        billing.recordUsage(Billing.UsageType.CREDIT, accountSession.getAccountId(), projectId, user.getUserId());
+    }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)

@@ -41,7 +41,7 @@ public class ClearFlaskSso {
                 .setIssuedAt(new Date(now.toEpochMilli()))
                 .setExpiration(new Date(now.plus(config.tokenTtl()).toEpochMilli()))
                 .addClaims(ImmutableMap.of(
-                        "guid", account.getAccountId(),
+                        "guid", account.getClearFlaskGuid(),
                         "email", account.getEmail(),
                         "name", account.getName()))
                 .signWith(new SecretKeySpec(config.secretKey().getBytes(Charsets.UTF_8), SignatureAlgorithm.HS256.getJcaName()))

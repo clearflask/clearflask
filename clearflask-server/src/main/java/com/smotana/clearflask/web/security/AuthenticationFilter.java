@@ -29,6 +29,8 @@ import java.util.Optional;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
+    private static final String EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID = "";
+    private static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "";
     private static final ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
             SubscriptionStatus.ACTIVE,
             SubscriptionStatus.ACTIVENORENEWAL,
@@ -112,6 +114,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
+        Optional<String> headerAccountId = getHeaderParameter(requestContext, "x-cf-account");
+        Optional<String> headerAccountToken = getHeaderParameter(requestContext, "x-cf-secret");
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
@@ -135,36 +139,69 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<String> pathParamCommentIdOpt;
         switch (role) {
             case Role.ADMINISTRATOR_ACTIVE:
-                if (!accountSession.isPresent()) {
-                    return false;
+                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                    if (!accountOpt.isPresent()) {
+                        return false;
+                    }
+
+                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        return false;
+                    }
+                } else {
+                    if (!accountSession.isPresent()) {
+                        return false;
+                    }
+                    accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
+                    if (!accountOpt.isPresent()) {
+                        return false;
+                    }
                 }
-                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
                 if (!SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     return false;
                 }
                 return true;
             case Role.ADMINISTRATOR:
-                return accountSession.isPresent();
+                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                    if (!accountOpt.isPresent()) {
+                        return false;
+                    }
+                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        return false;
+                    }
+                } else {
+                    if (!accountSession.isPresent()) {
+                        return false;
+                    }
+                }
+                return true;
             case Role.USER:
                 return userSession.isPresent();
             case Role.PROJECT_OWNER_ACTIVE:
-                if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
-                    return false;
-                }
-                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
-                if (!accountOpt.isPresent()) {
-                    return false;
-                }
-                if (!SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
-                    return false;
-                }
-                return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
             case Role.PROJECT_OWNER:
-                if (!accountSession.isPresent() || !pathParamProjectIdOpt.isPresent()) {
+                if (!pathParamProjectIdOpt.isPresent()) {
                     return false;
                 }
-                accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
-                if (!accountOpt.isPresent()) {
+                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                    if (!accountOpt.isPresent()) {
+                        return false;
+                    }
+                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        return false;
+                    }
+                } else {
+                    if (!accountSession.isPresent()) {
+                        return false;
+                    }
+                    accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
+                    if (!accountOpt.isPresent()) {
+                        return false;
+                    }
+                }
+                if (role == Role.PROJECT_OWNER
+                        || !SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     return false;
                 }
                 return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
@@ -214,5 +251,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return Optional.empty();
         }
         return Optional.ofNullable(Strings.emptyToNull(params.get(0)));
+    }
+
+    private Optional<String> getHeaderParameter(ContainerRequestContext requestContext, String name) {
+        return Optional.ofNullable(Strings.emptyToNull(requestContext.getHeaderString(name)));
     }
 }

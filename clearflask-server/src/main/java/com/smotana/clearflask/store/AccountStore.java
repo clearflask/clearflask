@@ -1,5 +1,6 @@
 package com.smotana.clearflask.store;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
@@ -38,6 +39,8 @@ public interface AccountStore {
     Account updatePassword(String accountId, String password, String sessionIdToLeave);
 
     Account updateEmail(String accountId, String emailNew, String sessionIdToLeave);
+
+    Account updateApiKey(String accountId, String apiKey);
 
     Account updateStatus(String accountId, SubscriptionStatus status);
 
@@ -81,10 +84,10 @@ public interface AccountStore {
     @DynamoTable(type = Primary, partitionKeys = "email", rangePrefix = "accountIdByEmail")
     class AccountEmail {
         @NonNull
-        private final String email;
+        String email;
 
         @NonNull
-        private final String accountId;
+        String accountId;
     }
 
     @Value
@@ -93,31 +96,40 @@ public interface AccountStore {
     @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
     class Account {
         @NonNull
-        private final String accountId;
+        String accountId;
 
         @NonNull
-        private final String email;
+        String email;
 
         @NonNull
-        private final SubscriptionStatus status;
+        SubscriptionStatus status;
+
+        String apiKey;
 
         @NonNull
-        private final String planid;
+        String planid;
 
         @NonNull
-        private final Instant created;
+        Instant created;
 
         @NonNull
-        private final String name;
+        String name;
 
         @NonNull
         @ToString.Exclude
-        private final String password;
+        String password;
 
-        private final String paymentToken;
+        String paymentToken;
 
         @NonNull
-        private final ImmutableSet<String> projectIds;
+        ImmutableSet<String> projectIds;
+
+        /**
+         * ClearFlask Feedback page guid
+         */
+        public String getClearFlaskGuid() {
+            return getAccountId();
+        }
 
         public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso) {
             return new AccountAdmin(
@@ -125,7 +137,8 @@ public interface AccountStore {
                     getStatus(),
                     getName(),
                     getEmail(),
-                    cfSso.generateToken(this));
+                    cfSso.generateToken(this),
+                    !Strings.isNullOrEmpty(getApiKey()));
         }
     }
 }

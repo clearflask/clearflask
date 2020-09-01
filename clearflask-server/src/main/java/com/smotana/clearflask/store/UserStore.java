@@ -5,20 +5,10 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.Balance;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -69,7 +59,15 @@ public interface UserStore {
 
     Optional<UserModel> verifyToken(String token);
 
+    /**
+     * Create or return existing user IFF token is valid
+     */
     Optional<UserModel> ssoCreateOrGet(String projectId, String secretKey, String token);
+
+    /**
+     * Create or return existing user.
+     */
+    UserModel ssoCreateOrGet(String projectId, String guid, Optional<String> emailOpt, Optional<String> nameOpt);
 
     default String genUserSessionId() {
         return IdUtil.randomAscId();
