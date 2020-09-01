@@ -7,11 +7,25 @@ import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
 
 const styles = (theme: Theme) => createStyles({
+  title: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
   cardPricing: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'baseline',
     marginBottom: theme.spacing(2),
+  },
+  cardPricingTerms: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: theme.spacing(-1),
+    marginBottom: theme.spacing(2),
+    lineHeight: 1.3 + '!important',
   },
   comingSoon: {
     color: theme.palette.text.secondary,
@@ -23,6 +37,7 @@ const styles = (theme: Theme) => createStyles({
   beta: {
     fontSize: '0.5em',
     color: theme.palette.text.secondary,
+    marginLeft: '1em',
   },
   box: {
     transition: theme.transitions.create('border'),
@@ -48,44 +63,23 @@ interface Props {
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    var billed;
-    switch (this.props.plan.pricing?.period) {
-      case Admin.PlanPricingPeriodEnum.Monthly:
-        break;
-      case Admin.PlanPricingPeriodEnum.Quarterly:
-        billed = `$${this.props.plan.pricing.basePrice * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
-        break;
-      case Admin.PlanPricingPeriodEnum.Yearly:
-        billed = `$${this.props.plan.pricing.basePrice * 12} billed ${this.props.plan.pricing.period.toLowerCase()}`;
-        break;
-    }
-
     return (
       <Card elevation={0} className={classNames(this.props.className, this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
         <CardHeader
           title={(
-            <React.Fragment>
+            <div className={this.props.classes.title}>
               {this.props.plan.title}
-              {this.props.plan.beta && (<span className={this.props.classes.beta}>&nbsp;EARLY ACCESS</span>)}
-            </React.Fragment>
+              {this.props.plan.beta && (
+                <div className={this.props.classes.beta}>
+                  EARLY<br />ACCESS
+                </div>
+              )}
+            </div>
           )}
           titleTypographyProps={{ align: 'center' }}
         />
         <CardContent>
-          <div className={this.props.classes.cardPricing}>
-            {!!this.props.plan.pricing ? (
-              <React.Fragment>
-                <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                <Typography component='h2' variant='h4'>{this.props.plan.pricing?.basePrice || 'Custom'}</Typography>
-                <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
-              </React.Fragment>
-            ) : (
-                <Typography component='h2' variant='h4' style={{ color: this.props.theme.palette.text.secondary }}>Contact</Typography>
-              )}
-          </div>
-          <div className={this.props.classes.cardPricing}>
-            <Typography component='h3'>{billed}</Typography>
-          </div>
+          {this.renderPriceTag()}
           {!this.props.hidePerks && this.props.plan.perks.map(perk => (
             <div key={perk.desc} style={{ display: 'flex', alignItems: 'baseline' }}>
               <CheckIcon fontSize='inherit' />
@@ -127,6 +121,71 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           )
         }
       </Card >
+    );
+  }
+
+  renderPriceTag() {
+    if (!this.props.plan.pricing) return (
+      <div className={this.props.classes.cardPricing}>
+        <Typography component='div' variant='h4' style={{ color: this.props.theme.palette.text.secondary }}>Contact</Typography>
+      </div>
+    );
+
+    var billed: any = null;
+    switch (this.props.plan.pricing?.period) {
+      case Admin.PlanPricingPeriodEnum.Monthly:
+        break;
+      case Admin.PlanPricingPeriodEnum.Quarterly:
+        billed = `$${this.props.plan.pricing.basePrice * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        break;
+      case Admin.PlanPricingPeriodEnum.Yearly:
+        billed = `$${this.props.plan.pricing.basePrice * 12} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        break;
+    }
+    if (billed) billed = (
+      <Typography component='div' variant='subtitle1'>{billed}</Typography>
+    );
+
+    const simplifiedMaus: boolean = this.props.plan.pricing.basePrice === this.props.plan.pricing.unitPrice
+      && this.props.plan.pricing.baseMau === this.props.plan.pricing?.unitMau;
+
+    if (simplifiedMaus) return (
+      <div className={this.props.classes.cardPricing}>
+        <Typography component='div' variant='subtitle1' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+        <Typography component='div' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
+        <Typography component='div' variant='subtitle1' color='textSecondary'>{`/ ${this.props.plan.pricing.baseMau} MAU`}</Typography>
+        {billed && (
+          <div className={this.props.classes.cardPricingTerms}>
+            {billed}
+          </div>
+        )}
+      </div>
+    );
+
+    var extraMau: any = null;
+    if ((this.props.plan.pricing.unitPrice || 0) > 0) {
+      extraMau = (
+        <React.Fragment>
+          <Typography component='div' variant='subtitle1' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle1' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / extra ${this.props.plan.pricing.unitMau} MAU`}</Typography>
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <React.Fragment>
+        <div className={this.props.classes.cardPricing}>
+          <Typography component='h2' variant='subtitle1' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+          <Typography component='h2' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
+          <Typography component='h2' variant='subtitle1' color='textSecondary'>{'/ month'}</Typography>
+        </div>
+        {(extraMau || billed) && (
+          <div className={this.props.classes.cardPricingTerms}>
+            {extraMau}
+            {billed}
+          </div>
+        )}
+      </React.Fragment>
     );
   }
 }

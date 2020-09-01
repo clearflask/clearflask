@@ -12,7 +12,7 @@ const termsProjects = 'You can create separate projects each having their own se
 const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'standard-monthly': {
-    planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Interior',
+    planid: 'standard-monthly', title: 'Growth',
     pricing: { basePrice: 50, baseMau: 50, unitMau: 50, unitPrice: 15, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
