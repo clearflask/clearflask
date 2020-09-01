@@ -55,6 +55,8 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/admin/transaction/search:
     $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1transaction~1search'
+  /project/{projectId}/admin/credit/income:
+    $ref: 'api-credit.yaml#/~1project~1{projectId}~1admin~1credit~1income'
   /project/config/admin:
     $ref: 'api-project.yaml#/~1project~1config~1admin'
   /project/admin:

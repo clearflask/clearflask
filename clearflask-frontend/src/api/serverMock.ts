@@ -10,59 +10,20 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
-const termsAnalytics = 'View top ideas based on return on investement considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.';
-const termsVoting = 'Voting and expressions allows users to prioritize each post.';
-const termsCreditSystem = 'Credit System allows fine-grained prioritization of value for each idea.';
-const termsCredit = 'Spend time credits on future ClearFlask development features';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
-  'E5A119e3-1477-4621-A9EA-85355B34A6D4': {
+  'standard-monthly': {
     planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4', title: 'Interior',
-    pricing: { price: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { basePrice: 50, baseMau: 50, unitMau: 50, unitPrice: 15, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: 'Up to 200 contributors', terms: termsActiveUsers },
-      { desc: 'Unlimited private projects', terms: termsProjects },
-      { desc: 'Voting and expressions', terms: termsVoting },
-      { desc: 'Feature credits', terms: termsCredit },
+      { desc: 'Unlimited projects', terms: termsProjects },
+      { desc: 'Unlimited team members' },
+      { desc: 'Voting and Credit System', terms: termsActiveUsers },
+      { desc: 'Make it your own' },
     ],
     beta: true,
-  },
-  '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89': {
-    planid: '9C7EA3A5-B4AE-46AA-9C2E-98659BC65B89', title: 'Standard',
-    pricing: { price: 200, period: Admin.PlanPricingPeriodEnum.Monthly },
-    perks: [
-      { desc: 'Unlimited contributors', terms: termsActiveUsers },
-      { desc: 'Public and private projects', terms: termsProjects },
-      { desc: 'Credit System', terms: termsCreditSystem },
-      { desc: 'Single Sign-On' },
-      { desc: 'Feature credits', terms: termsCredit },
-    ],
-    beta: true,
-  },
-  'CDBF4982-1805-4352-8A57-824AFB565973': {
-    planid: 'CDBF4982-1805-4352-8A57-824AFB565973', title: 'Analytic',
-    perks: [
-      { desc: 'Powerful Analytics', terms: termsAnalytics },
-      { desc: 'Multi-agent' },
-      { desc: 'Full API access' },
-      { desc: 'SLA' },
-    ],
-    beta: true,
-    comingSoon: true,
   },
 };
-const FeaturesTable: Admin.FeaturesTable = {
-  plans: ['Interior', 'Standard', 'Analytic'],
-  features: [
-    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'], terms: termsProjects },
-    { feature: 'Contributors', values: ['100', '1,000', 'No limit'], terms: termsActiveUsers },
-    { feature: 'Layout and Style customization', values: ['Yes', 'Yes', 'Yes'], terms: 'Ideas, Roadmap, FAQ, Knowledge base, etc...' },
-    { feature: 'Voting and expressions', values: ['Yes', 'Yes', 'Yes'], terms: termsVoting },
-    { feature: 'Credit System', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem },
-    { feature: 'Single Sign-On', values: ['No', 'Yes', 'Yes'], terms: termsCreditSystem },
-    { feature: 'Powerful Analytics', values: ['No', 'No', 'Yes'], terms: termsAnalytics },
-    { feature: 'Full API access', values: ['No', 'No', 'Yes'] },
-  ],
-};
+const FeaturesTable: Admin.FeaturesTable | undefined = undefined;
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithVote {
   parentIdPath: string[];
@@ -151,7 +112,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
-      plan: AvailablePlans['E5A119e3-1477-4621-A9EA-85355B34A6D4'],
+      plan: AvailablePlans['standard-monthly'],
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       cfJwt: jsonwebtoken.sign({
@@ -160,6 +121,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
       subscriptionStatus: Admin.SubscriptionStatus.ActiveTrial,
+      hasApiKey: false,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
@@ -183,6 +145,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.cancelEndOfTerm !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.cancelEndOfTerm
       ? Admin.SubscriptionStatus.ActiveNoRenewal : Admin.SubscriptionStatus.Active;
     if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
+    if (request.accountUpdateAdmin.apiKey) this.account.hasApiKey = true;
     return this.returnLater(this.account);
   }
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
@@ -342,6 +305,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...this.filterCursor<Client.Transaction>(transactions, 10, request.cursor),
       balance: { balance },
     });
+  }
+  creditIncome(request: Admin.CreditIncomeRequest): Promise<void> {
+    throw new Error("Method not implemented.");
   }
   ideaCreate(request: Client.IdeaCreateRequest): Promise<Client.IdeaWithVote> {
     return this.ideaCreateAdmin({

@@ -134,6 +134,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
+    var hasAvailablePlansToSwitch: boolean = (this.props.accountBilling?.availablePlans || [])
+      .filter(p => p.planid !== this.props.account?.plan.planid)
+      .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
     var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
@@ -145,8 +148,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         setPaymentTitle = 'Update payment method';
         showCancelSubscription = true;
         planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, balance will be prorated.`;
-        showPlanChange = true;
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan.`;
+        if (hasAvailablePlansToSwitch) {
+          planDesc += ' If you switch plans now, balance will be prorated.';
+          showPlanChange = true;
+        }
         break;
       case Admin.SubscriptionStatus.ActiveTrial:
         if (this.props.accountBilling?.payment) {
@@ -157,8 +163,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           setPaymentTitle = 'Update payment method';
           showCancelSubscription = true;
           planTitle = 'Your plan is active';
-          planDesc = `You have full access to your ${this.props.account.plan.title} plan. If you switch plans now, your first payment will reflect your new plan.`;
-          showPlanChange = true;
+          planDesc = `You have full access to your ${this.props.account.plan.title} plan.`;
+          if (hasAvailablePlansToSwitch) {
+            planDesc += ' If you switch plans now, your first payment will reflect your new plan.';
+            showPlanChange = true;
+          }
         } else {
           paymentTitle = 'Automatic renewal requires a payment method';
           paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic renewal.';
@@ -175,7 +184,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             planTitle = 'Your plan is active until your trial expires';
           }
           planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
-          showPlanChange = true;
+          if (hasAvailablePlansToSwitch) {
+            showPlanChange = true;
+          }
         }
         break;
       case Admin.SubscriptionStatus.ActivePaymentRetry:
@@ -601,7 +612,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         category: 'billing',
         action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
         label: this.props.account?.plan.planid,
-        value: this.props.account?.plan.pricing?.price,
+        value: this.props.account?.plan.pricing?.basePrice,
       });
     }
 

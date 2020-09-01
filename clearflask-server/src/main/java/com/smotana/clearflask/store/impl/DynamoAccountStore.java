@@ -201,6 +201,20 @@ public class DynamoAccountStore implements AccountStore {
     }
 
     @Override
+    public Account updateApiKey(String accountId, String apiKey) {
+        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression("SET #apiKey = :apiKey")
+                .withNameMap(new NameMap()
+                        .with("#apiKey", "apiKey")
+                        .with("#partitionKey", accountSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withString(":apiKey", apiKey))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
     public Account updateStatus(String accountId, SubscriptionStatus status) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))

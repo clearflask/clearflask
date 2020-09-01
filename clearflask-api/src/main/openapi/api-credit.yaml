@@ -94,7 +94,26 @@ components:
         * Vote - Balance changes due to funding an idea
         * Income - Income based on project settings or via API.
         * Adjustment - Typically Admin initiated change in credit.
-
+    CreditIncome:
+      type: object
+      required:
+      - guid
+      - transactionId
+      - amount
+      properties:
+        guid:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        transactionId:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        summary:
+          type: string
 
 /project/{projectId}/user/{userId}/transactionsearch:
   post:
@@ -178,3 +197,26 @@ components:
                   $ref: 'api-credit.yaml#/components/schemas/Balance'
               required:
               - results
+/project/{projectId}/admin/credit/income:
+  post:
+    operationId: creditIncome
+    tags: [CreditAdmin]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-credit.yaml#/components/schemas/CreditIncome'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+      '403':
+        $ref: 'api-client.yaml#/components/responses/Forbidden'

@@ -65,6 +65,17 @@ class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, tr
           /></Grid>
         </Grid>
         <Grid container alignItems='baseline' className={this.props.classes.item}>
+          <Grid item xs={12} sm={6}><Typography>API Token</Typography></Grid>
+          <Grid item xs={12} sm={6}><UpdatableField
+            isToken
+            value=''
+            onSave={newApiKey => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+              accountUpdateAdmin: { apiKey: newApiKey }
+            }))}
+            helperText='Warning: Token will not be shown again. Resetting a token invalidates previous one.'
+          /></Grid>
+        </Grid>
+        <Grid container alignItems='baseline' className={this.props.classes.item}>
           <Grid item xs={12} sm={6}><Typography>Account deletion</Typography></Grid>
           <Grid item xs={12} sm={6}>
             <Button

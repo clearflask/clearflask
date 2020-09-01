@@ -16,10 +16,22 @@ components:
         pricing:
           type: object
           required:
-          - price
+          - basePrice
+          - baseMau
+          - unitMau
+          - unitPrice
           - period
           properties:
-            price:
+            basePrice:
+              type: integer
+              format: int64
+            baseMau:
+              type: integer
+              format: int64
+            unitMau:
+              type: integer
+              format: int64
+            unitPrice:
               type: integer
               format: int64
             period:
@@ -106,6 +118,7 @@ components:
       - name
       - email
       - cfJwt
+      - hasApiKey
       properties:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
@@ -117,6 +130,8 @@ components:
           type: string
         cfJwt:
           type: string
+        hasApiKey:
+          type: boolean
     SubscriptionStatus:
       type: string
       enum:
@@ -136,6 +151,8 @@ components:
         email:
           type: string
         password:
+          type: string
+        apiKey:
           type: string
         renewAutomatically:
           type: boolean
@@ -263,7 +280,6 @@ components:
               type: object
               required:
               - plans
-              - featuresTable
               properties:
                 plans:
                   type: array

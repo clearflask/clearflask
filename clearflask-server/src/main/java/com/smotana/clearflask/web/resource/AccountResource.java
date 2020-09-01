@@ -184,6 +184,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 accountId,
                 signup.getEmail(),
                 status,
+                null,
                 plan.getPlanid(),
                 Instant.now(),
                 signup.getName(),
@@ -209,6 +210,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = null;
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
             account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName());
+        }
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
+            account = accountStore.updateApiKey(accountSession.getAccountId(), accountUpdateAdmin.getApiKey());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
             account = accountStore.updatePassword(accountSession.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());

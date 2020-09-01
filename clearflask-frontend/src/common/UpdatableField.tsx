@@ -4,6 +4,8 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import SubmitButton from './SubmitButton';
+import randomUuid from './util/uuid';
+import KeyRefreshIcon from '@material-ui/icons/Refresh';
 
 const styles = (theme: Theme) => createStyles({
   wrapper: {
@@ -15,6 +17,8 @@ interface Props {
   value?: string;
   onSave: (value: string) => Promise<any>;
   isPassword?: boolean;
+  isToken?: boolean;
+  helperText?: string;
 }
 
 interface State {
@@ -36,7 +40,9 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
           onChange={e => this.setState({ value: e.target.value })}
           type={!this.props.isPassword || this.state.revealPassword ? 'text' : 'password'}
           disabled={this.state.isSubmitting}
+          helperText={this.props.helperText}
           InputProps={{
+            readOnly: this.props.isToken ? true : undefined,
             endAdornment: this.props.isPassword ? (
               <InputAdornment position='end'>
                 <IconButton
@@ -47,7 +53,17 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
                   {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
                 </IconButton>
               </InputAdornment>
-            ) : undefined,
+            ) : (this.props.isToken ? (
+              <InputAdornment position='end'>
+                <IconButton
+                  aria-label='Reset'
+                  onClick={() => this.setState({ value: randomUuid() })}
+                  disabled={this.state.isSubmitting}
+                >
+                  <KeyRefreshIcon fontSize='small' />
+                </IconButton>
+              </InputAdornment>
+            ) : undefined),
           }}
         />
         <SubmitButton

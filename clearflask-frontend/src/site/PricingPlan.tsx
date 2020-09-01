@@ -53,10 +53,10 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       case Admin.PlanPricingPeriodEnum.Monthly:
         break;
       case Admin.PlanPricingPeriodEnum.Quarterly:
-        billed = `$${this.props.plan.pricing.price * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        billed = `$${this.props.plan.pricing.basePrice * 3} billed ${this.props.plan.pricing.period.toLowerCase()}`;
         break;
       case Admin.PlanPricingPeriodEnum.Yearly:
-        billed = `$${this.props.plan.pricing.price * 12} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+        billed = `$${this.props.plan.pricing.basePrice * 12} billed ${this.props.plan.pricing.period.toLowerCase()}`;
         break;
     }
 
@@ -76,7 +76,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             {!!this.props.plan.pricing ? (
               <React.Fragment>
                 <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                <Typography component='h2' variant='h4'>{this.props.plan.pricing?.price || 'Custom'}</Typography>
+                <Typography component='h2' variant='h4'>{this.props.plan.pricing?.basePrice || 'Custom'}</Typography>
                 <Typography component='h2' variant='h6' color='textSecondary'>{'/ month'}</Typography>
               </React.Fragment>
             ) : (
