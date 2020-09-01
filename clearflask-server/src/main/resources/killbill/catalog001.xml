@@ -76,6 +76,7 @@
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
+                        <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
                         <unit>UNLIMITED</unit>
                     </duration>
                     <fixed>
@@ -129,7 +130,7 @@
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>50</value>
+                                                <value>15</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -146,6 +147,7 @@
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
+                        <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
                         <unit>UNLIMITED</unit>
                     </duration>
                     <fixed>
@@ -180,7 +182,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>1000</size>
+                                        <size>500</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -195,7 +197,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>1000</size>
+                                        <size>500</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -211,45 +213,11 @@
                 </usages>
             </finalPhase>
         </plan>
-        <plan name="analytic-monthly">
-            <product>Analytic</product>
-            <initialPhases>
-                <phase type="TRIAL">
-                    <duration>
-                        <unit>DAYS</unit>
-                        <number>14</number>
-                    </duration>
-                    <fixed>
-                        <fixedPrice>
-                            <price>
-                                <currency>USD</currency>
-                                <value>0</value>
-                            </price>
-                        </fixedPrice>
-                    </fixed>
-                </phase>
-            </initialPhases>
-            <finalPhase type="EVERGREEN">
-                <duration>
-                    <unit>UNLIMITED</unit>
-                </duration>
-                <recurring>
-                    <billingPeriod>MONTHLY</billingPeriod>
-                    <recurringPrice>
-                        <price>
-                            <currency>USD</currency>
-                            <value>500.00</value>
-                        </price>
-                    </recurringPrice>
-                </recurring>
-            </finalPhase>
-        </plan>
     </plans>
 
     <priceLists>
         <defaultPriceList name="DEFAULT">
             <plans>
-                <plan>basic-monthly</plan>
                 <plan>standard-monthly</plan>
                 <plan>analytic-monthly</plan>
             </plans>
