@@ -4,14 +4,23 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.CreditAdminApi;
 import com.smotana.clearflask.api.CreditApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.CreditIncome;
+import com.smotana.clearflask.api.model.TransactionSearch;
+import com.smotana.clearflask.api.model.TransactionSearchAdmin;
+import com.smotana.clearflask.api.model.TransactionSearchAdminResponse;
+import com.smotana.clearflask.api.model.TransactionSearchResponse;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.ListResponse;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
@@ -37,7 +46,11 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Inject
     private UserStore userStore;
     @Inject
+    private ProjectStore projectStore;
+    @Inject
     private Billing billing;
+    @Inject
+    private NotificationService notificationService;
 
     @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
@@ -50,13 +63,15 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
                         creditIncome.getGuid(),
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getEmail())),
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getName()))));
-        voteStore.balanceAdjustTransaction(
+        TransactionModel transaction = voteStore.balanceAdjustTransaction(
                 projectId,
                 user.getUserId(),
                 creditIncome.getAmount(),
                 Optional.ofNullable(Strings.emptyToNull(creditIncome.getSummary())).orElse("Automatic income"));
         userStore.updateUserBalance(projectId, user.getUserId(), creditIncome.getAmount(), Optional.empty());
         billing.recordUsage(Billing.UsageType.CREDIT, accountSession.getAccountId(), projectId, user.getUserId());
+        ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+        notificationService.onCreditChanged(configAdmin, user, transaction);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -70,11 +85,11 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Limit(requiredPermits = 1)
     @Override
     public TransactionSearchResponse transactionSearch(String projectId, String userId, TransactionSearch transactionSearch, String cursor) {
-        ListResponse<VoteStore.TransactionModel> transactionModelListResponse = voteStore.transactionList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
+        ListResponse<TransactionModel> transactionModelListResponse = voteStore.transactionList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.FORBIDDEN, "User not found"));
         return new TransactionSearchResponse(
                 transactionModelListResponse.getCursorOpt().orElse(null),
-                transactionModelListResponse.getItems().stream().map(VoteStore.TransactionModel::toTransaction).collect(ImmutableList.toImmutableList()),
+                transactionModelListResponse.getItems().stream().map(TransactionModel::toTransaction).collect(ImmutableList.toImmutableList()),
                 new Balance(user.getBalance()));
     }
 }

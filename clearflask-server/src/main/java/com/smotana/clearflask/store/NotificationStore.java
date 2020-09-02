@@ -50,7 +50,6 @@ public interface NotificationStore {
         @NonNull
         String notificationId;
 
-        @NonNull
         String relatedIdeaId;
 
         String relatedCommentId;

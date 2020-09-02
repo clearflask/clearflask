@@ -9,7 +9,25 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.ForgotPassword;
+import com.smotana.clearflask.api.model.NotificationMethods;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBindResponse;
+import com.smotana.clearflask.api.model.UserCreate;
+import com.smotana.clearflask.api.model.UserCreateAdmin;
+import com.smotana.clearflask.api.model.UserCreateResponse;
+import com.smotana.clearflask.api.model.UserLogin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserSearchResponse;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.Users;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -22,6 +40,7 @@ import com.smotana.clearflask.store.UserStore.SearchUsersResponse;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -391,13 +410,16 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
         // TODO Sanity check userUpdateAdmin
         if (userUpdateAdmin.getTransactionCreate() != null) {
-            voteStore.balanceAdjustTransaction(
+            TransactionModel transaction = voteStore.balanceAdjustTransaction(
                     projectId,
                     userId,
                     userUpdateAdmin.getTransactionCreate().getAmount(),
                     Optional.ofNullable(Strings.emptyToNull(userUpdateAdmin.getTransactionCreate().getSummary())).orElse("Admin adjustment"));
             userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
             billing.recordUsage(Billing.UsageType.CREDIT, accountSession.getAccountId(), projectId, userId);
+            ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+            UserModel user = userStore.getUser(projectId, userId).get();
+            notificationService.onCreditChanged(configAdmin, user, transaction);
         }
         return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
     }

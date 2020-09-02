@@ -4,12 +4,15 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 
 import java.util.Optional;
 
 public interface NotificationService {
 
     void onStatusOrResponseChanged(ConfigAdmin configAdmin, IdeaModel idea, boolean statusChanged, boolean responseChanged);
+
+    void onCreditChanged(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction);
 
     void onCommentReply(ConfigAdmin configAdmin, IdeaModel idea, Optional<CommentModel> parentCommentOpt, CommentModel comment, UserModel sender);
 
