@@ -29,8 +29,8 @@ import java.util.Optional;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
-    private static final String EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID = "";
-    private static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "";
+    public static final String EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID = "x-cf-account";
+    public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "x-cf-secret";
     private static final ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
             SubscriptionStatus.ACTIVE,
             SubscriptionStatus.ACTIVENORENEWAL,
@@ -114,8 +114,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
-        Optional<String> headerAccountId = getHeaderParameter(requestContext, "x-cf-account");
-        Optional<String> headerAccountToken = getHeaderParameter(requestContext, "x-cf-secret");
+        Optional<String> headerAccountId = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID);
+        Optional<String> headerAccountToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID);
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {

@@ -38,6 +38,9 @@ import SettingsPage from './dashboard/SettingsPage';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
+/** If changed, also change in ClearFlaskCreditSync.java */
+const ClearFlaskProjectId = 'clearflask';
+
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
   ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
@@ -539,7 +542,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   openFeedback(page?: string) {
-    window.open(`${window.location.protocol}//feedback.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`, '_blank')
+    window.open(`${window.location.protocol}//${ClearFlaskProjectId}.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`, '_blank')
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

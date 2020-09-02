@@ -24,10 +24,10 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.ObjectType;
+import org.killbill.billing.client.KillBillClientException;
+import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.TenantApi;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import rx.Observable;
 
@@ -35,12 +35,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -102,6 +100,8 @@ public class KillBillResource extends ManagedService {
     private Billing billing;
     @Inject
     private TenantApi kbTenant;
+    @Inject
+    private InvoiceApi kbInvoice;
     @Inject
     private ClearFlaskCreditSync clearFlaskCreditSync;
 
@@ -176,7 +176,7 @@ public class KillBillResource extends ManagedService {
         }
 
         if (ExtBusEventType.INVOICE_PAYMENT_SUCCESS.equals(event.eventType)) {
-            clearFlaskCreditSync.process(accountOpt.get());
+            processInvoiceCreditSync(accountOpt.get(), event);
             return;
         }
 
@@ -202,6 +202,37 @@ public class KillBillResource extends ManagedService {
                 log.info("KillBill event {} was unnecessary {}", event.getEventType(), event);
             }
         }
+    }
+
+    private void processInvoiceCreditSync(AccountStore.Account account, Event event) {
+
+        if (event.getObjectType() != ObjectType.INVOICE) {
+            log.warn("Expected {} event to have object type {}, but found {}",
+                    event.getEventType(), ObjectType.INVOICE, event.objectType);
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
+
+        Invoice invoice = null;
+        try {
+            invoice = kbInvoice.getInvoice(event.objectId, KillBillUtil.roDefault());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to fetch invoice, id {} eventType {}",
+                    event.objectId, event.getEventType(), ex);
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        Optional<String> planNameOpt = invoice.getItems().stream()
+                .map(InvoiceItem::getPrettyPlanName)
+                .findAny();
+        String summary = "Credit for Invoice #"
+                + invoice.getInvoiceNumber()
+                + planNameOpt.map(n -> " with " + n + " plan").orElse("");
+
+        clearFlaskCreditSync.process(
+                invoice.getInvoiceId().toString(),
+                account,
+                invoice.getAmount().longValueExact(),
+                summary);
     }
 
     private void updateEventsToListenFor(Set<String> eventsToListenForStr, boolean doThrow) {
