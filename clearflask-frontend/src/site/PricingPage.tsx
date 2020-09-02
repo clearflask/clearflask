@@ -14,6 +14,7 @@ import notEmpty from '../common/util/arrayUtil';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
+import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 const styles = (theme: Theme) => createStyles({
@@ -117,6 +118,9 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                   />
                 </Grid>
               ))}
+              <Grid item key='slider' xs={12} sm={6} md={4}>
+                <PricingSlider />
+              </Grid>
             </Grid>
           </Loader>
         </Container>
