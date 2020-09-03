@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ControllableSleepingStopwatch;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
+import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
@@ -26,6 +27,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.ExpressModel;
 import com.smotana.clearflask.store.VoteStore.FundModel;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteModel;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
@@ -84,6 +86,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(EmailTemplates.module());
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
+        install(OnCreditChange.module());
         install(OnForgotPassword.module());
         install(OnAdminInvite.module());
         install(OnEmailChanged.module());
@@ -208,6 +211,46 @@ public class NotificationServiceTest extends AbstractTest {
                 Optional.of(parentComment),
                 comment,
                 sender);
+
+        Email email = mockEmailService.sent.take();
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        log.info("email {}", email);
+        log.info("push {}", push);
+        log.info("inApp {}", inApp);
+        assertNotNull(email);
+        assertFalse(email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText().contains("__"));
+        assertNotNull(push);
+        assertFalse(push.getTitle().contains("__"));
+        assertFalse(push.getBody().contains("__"));
+        assertNotNull(inApp);
+        assertFalse(inApp.getDescription().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnCreditChange() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        UserModel user = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("user@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        TransactionModel transaction = MockModelUtil.getRandomTransaction().toBuilder()
+                .transactionType(TransactionType.INCOME.name())
+                .userId(user.getUserId())
+                .targetId(null)
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onCreditChanged(
+                versionedConfigAdmin.getConfig(),
+                user,
+                transaction);
 
         Email email = mockEmailService.sent.take();
         BrowserPush push = mockBrowserPushService.sent.take();

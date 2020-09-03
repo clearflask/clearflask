@@ -267,8 +267,8 @@ public class DynamoProjectStore implements ProjectStore {
                 });
     }
 
-    @EqualsAndHashCode(of = {"projectId", "version"})
-    @ToString(of = {"projectId", "version"})
+    @EqualsAndHashCode(of = {"accountId", "projectId", "version"})
+    @ToString(of = {"accountId", "projectId", "version"})
     private class ProjectImpl implements Project {
         private static final double EXPRESSION_WEIGHT_DEFAULT = 1d;
         private final String accountId;
@@ -298,6 +298,11 @@ public class DynamoProjectStore implements ProjectStore {
                     .collect(ImmutableMap.toImmutableMap(
                             Category::getCategoryId,
                             c -> c));
+        }
+
+        @Override
+        public String getAccountId() {
+            return accountId;
         }
 
         @Override

@@ -14,13 +14,12 @@ const styles = (theme: Theme) => createStyles({
     opacity: 0.6,
   },
 });
-
 interface Props {
   val: number;
   credits: Client.Credits;
 }
-
 class CreditView extends Component<Props> {
+  /** If changed, also change CreditViewUtil.java */
   render() {
     const format = creditGetFormat(this.props.val, this.props.credits);
     const valFormatted = format ? creditFormatVal(this.props.val, format) : this.props.val;
@@ -33,9 +32,11 @@ class CreditView extends Component<Props> {
   }
 }
 
+/** If changed, also change CreditViewUtil.java */
 export const creditGetFormat = (val: number, credits: Client.Credits): Client.CreditFormatterEntry | undefined => {
+  if(!credits.formats) return;
   const valAbs = Math.abs(val);
-  return credits.formats?.find(format => {
+  return credits.formats.find(format => {
     if (format.greaterOrEqual !== undefined && valAbs < format.greaterOrEqual) {
       return false;
     }
@@ -46,6 +47,7 @@ export const creditGetFormat = (val: number, credits: Client.Credits): Client.Cr
   });
 };
 
+/** If changed, also change CreditViewUtil.java */
 export const creditFormatVal = (val: number, format: Client.CreditFormatterEntry, suppressSuffix: boolean = false) => {
   var result: any = val;
 
@@ -69,6 +71,7 @@ export const creditFormatVal = (val: number, format: Client.CreditFormatterEntry
   return result;
 };
 
+/** If changed, also change CreditViewUtil.java */
 export const CreditVal = withStyles(styles, { withTheme: true })((props:
   { valFormatted: string, isNegative: boolean }
   & WithStyles<typeof styles, true>) => {

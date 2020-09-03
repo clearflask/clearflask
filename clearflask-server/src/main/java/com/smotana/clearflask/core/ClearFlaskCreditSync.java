@@ -22,6 +22,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.ws.rs.WebApplicationException;
+import java.io.IOException;
 
 import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID;
 import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID;
@@ -65,12 +66,12 @@ public class ClearFlaskCreditSync extends ManagedService {
 
     @Override
     protected void serviceStop() throws Exception {
-        if (client != = null) {
+        if (client != null) {
             client.close();
         }
     }
 
-    public void process(String idempotentKey, Account account, long amount, String summary) {
+    public void process(String idempotentKey, Account account, long amount, String summary) throws IOException {
         if (!config.enabled()) {
             return;
         }

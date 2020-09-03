@@ -235,11 +235,17 @@ public class KillBillResource extends ManagedService {
                 + invoice.getInvoiceNumber()
                 + planNameOpt.map(n -> " with " + n + " plan").orElse("");
 
-        clearFlaskCreditSync.process(
-                invoice.getInvoiceId().toString(),
-                account,
-                invoice.getAmount().longValueExact(),
-                summary);
+        try {
+            clearFlaskCreditSync.process(
+                    invoice.getInvoiceId().toString(),
+                    account,
+                    invoice.getAmount().longValueExact(),
+                    summary);
+        } catch (Exception ex) {
+            log.warn("Failed to sync credit, invoiceId {} eventType {}",
+                    event.objectId, event.getEventType(), ex);
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private void updateEventsToListenFor(Set<String> eventsToListenForStr, boolean doThrow) {

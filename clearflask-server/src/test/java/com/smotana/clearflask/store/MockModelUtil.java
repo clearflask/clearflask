@@ -3,12 +3,15 @@ package com.smotana.clearflask.store;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.IdUtil;
 
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 
@@ -80,5 +83,18 @@ public class MockModelUtil {
                 textToMockDraftjs("This is a comment " + IdUtil.randomId()),
                 0,
                 0);
+    }
+
+    public static TransactionModel getRandomTransaction() {
+        return new TransactionModel(
+                IdUtil.randomId(),
+                IdUtil.randomId(),
+                IdUtil.randomId(),
+                Instant.now(),
+                10,
+                TransactionType.VOTE.name(),
+                IdUtil.randomId(),
+                "This is my transaction summary",
+                TimeUnit.DAYS.toSeconds(300));
     }
 }

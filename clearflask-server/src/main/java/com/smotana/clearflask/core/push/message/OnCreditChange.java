@@ -7,15 +7,14 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
-import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import com.smotana.clearflask.util.CreditViewUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKEN_PARAM_NAME;
@@ -39,8 +38,7 @@ public class OnCreditChange {
     @Inject
     private EmailTemplates emailTemplates;
 
-    public Email email(UserModel user, TransactionModel transaction) {
-        TODO
+    public Email email(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
 
         String subject = config.subjectTemplate();
@@ -49,8 +47,11 @@ public class OnCreditChange {
         subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
         content = content.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
 
-        subject = subject.replaceAll("__amount__", transaction.getAmount() + "");
-        content = content.replaceAll("__amount__", transaction.getAmount() + "");
+        String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
+        subject = subject.replaceAll("__amount__", amountFormatted);
+        content = content.replaceAll("__amount__", amountFormatted);
+
+        content = content.replaceAll("__summary__", emailTemplates.sanitize(transaction.getSummary()));
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
@@ -58,35 +59,8 @@ public class OnCreditChange {
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
 
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        templateHtml = templateHtml.replaceAll("__title__",
-                "<span style=\"font-weight: bold\">" +
-                        title +
-                        "</span>");
-        templateText = templateText.replaceAll("__title__", title);
-        title = StringUtils.abbreviate(title, 20);
-        subject = subject.replaceAll("__title__", title);
-
-        String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
-        templateHtml = templateHtml.replaceAll("__reply__",
-                "<span style=\"font-weight: bold\">" +
-                        reply +
-                        "</span>");
-        templateText = templateText.replaceAll("__reply__", reply);
-
-        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
-        if (senderName.isEmpty()) {
-            senderName = "Someone";
-        }
-        subject = subject.replaceAll("__sender__", senderName);
-        templateText = templateText.replaceAll("__sender__", senderName);
-        templateHtml = templateHtml.replaceAll("__sender__",
-                "<span style=\"font-weight: bold\">" +
-                        senderName +
-                        "</span>");
-
-        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
-        templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW REPLY");
+        templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", "VIEW BALANCE");
+        templateText = templateText.replaceAll("__BUTTON_TEXT__", "VIEW BALANCE");
 
         link += "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken;
         templateHtml = templateHtml.replaceAll("__BUTTON_URL__", link);
@@ -102,45 +76,42 @@ public class OnCreditChange {
                 templateHtml,
                 templateText,
                 configAdmin.getProjectId(),
-                "COMMENT_REPLY"
+                "CREDIT_CHANGE"
         );
     }
 
-    public BrowserPush browserPush(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link, String authToken) {
-        TODO
+    public BrowserPush browserPush(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getBrowserPushToken()));
 
         String subject = config.subjectTemplate();
+        String content = config.template();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
+        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        content = content.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
 
-        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
-        if (senderName.isEmpty()) {
-            senderName = "Someone";
-        }
-        subject = subject.replaceAll("__sender__", senderName);
+        String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
+        subject = subject.replaceAll("__amount__", amountFormatted);
+        content = content.replaceAll("__amount__", amountFormatted);
 
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replaceAll("__title__", title);
-
-        String content = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
+        content = content.replaceAll("__summary__", emailTemplates.sanitize(transaction.getSummary()));
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
                 subject,
                 content,
-                idea.getProjectId(),
+                transaction.getProjectId(),
                 user.getUserId(),
                 link + "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken
         );
     }
 
-    public String inAppDescription(UserModel user, TransactionModel transaction) {
-        TODO amount needs to be correctly formatted
+    public String inAppDescription(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction) {
         String subject = config.subjectTemplate();
 
         subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
-        subject = subject.replaceAll("__amount__", transaction.getAmount() + "");
+
+        String amountFormatted = CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits());
+        subject = subject.replaceAll("__amount__", amountFormatted + "");
 
         return subject;
     }
