@@ -1,16 +1,37 @@
 import { FormControl, MenuItem, Select } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { StyleRules } from '@material-ui/styles/withStyles';
+import classNames from 'classnames';
 import React, { Component, Key } from 'react';
+
+export const tabHoverApplyStyles = (theme: Theme): StyleRules => ({
+  '&::before': {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    content: '"\\00a0"',
+    borderRadius: '1px',
+    borderBottom: `1px solid rgba(0, 0, 0, 0)`,
+    transition: 'border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+  },
+  '&:hover::before': {
+    borderBottom: '2px solid rgba(0, 0, 0, 0.87)',
+  },
+});
 
 const styles = (theme: Theme) => createStyles({
   outer: {
-    [theme.breakpoints.up('md')]: {
-      minWidth: '160px',
-    },
     display: 'flex',
     justifyContent: 'center',
-    paddingLeft: '24px',
-    paddingRight: '24px',
+  },
+  inner: {
+    padding: '0px 24px',
+    [theme.breakpoints.down('md')]: {
+      padding: '0px 12px',
+    },
+    ...(tabHoverApplyStyles(theme)),
   },
   select: {
     height: '48px',
@@ -34,9 +55,6 @@ const styles = (theme: Theme) => createStyles({
     paddingRight: '20px',
     textTransform: 'uppercase',
     textAlign: 'center',
-    [theme.breakpoints.up('md')]: {
-      fontSize: theme.typography.pxToRem(13),
-    },
     color: theme.palette.text.primary,
     // Get rid of focused background color
     '&:focus': {
@@ -52,6 +70,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props extends WithStyles<typeof styles, true> {
+  className?: string;
   key?: Key;
   label?: string;
   links: Array<{ name: string; val: string }>;
@@ -73,7 +92,7 @@ class DropdownTab extends Component<Props> {
     const id = `dropdowntab-${this.props.key}`;
     return (
       <div className={this.props.classes.outer}>
-        <FormControl>
+        <FormControl className={this.props.classes.inner}>
           <Select
             className={this.props.classes.select}
             classes={{
@@ -83,7 +102,7 @@ class DropdownTab extends Component<Props> {
             key={this.props.key}
             onChange={e => this.props.onDropdownTabSelect(e.target.value as string)}
             inputProps={{
-              className: `${this.props.classes.tabButton} ${anySelected && this.props.classes.tabButtonSelected}`,
+              className: classNames(this.props.classes.tabButton, anySelected && this.props.classes.tabButtonSelected, this.props.className),
               id: id,
             }}
             displayEmpty

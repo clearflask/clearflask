@@ -8,8 +8,7 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../api/server';
-import { contentScrollApplyStyles, Side } from '../common/ContentScroll';
-import DropdownTab from '../common/DropdownTab';
+import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
 import InViewObserver from '../common/InViewObserver';
 import notEmpty from '../common/util/arrayUtil';
 import { animateWrapper } from '../site/landing/animateUtil';
@@ -19,82 +18,104 @@ import NotificationBadge from './NotificationBadge';
 import NotificationPopup from './NotificationPopup';
 
 const styles = (theme: Theme) => createStyles({
+  header: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    flexWrap: 'wrap-reverse',
+    minHeight: 48,
+  },
   indicator: {
     borderRadius: '1px',
-    bottom: 'unset',
-    top: 0,
-    height: 1,
+    // height: 1,
+    // Uncomment to flip to the top
+    // bottom: 'unset',
+    // top: 0,
+  },
+  logoAndMenu: {
+    flex: 100000,
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   headerSpacing: {
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
-    padding: theme.spacing(1, 1, 0, 1),
+    padding: theme.spacing(0, 1),
   },
-  menuSpacing: {
-    width: '100%',
-    maxWidth: '1024px',
+  menu: {
+    flex: 1,
     margin: '0px auto',
-    padding: theme.spacing(0, 1, 1, 1),
   },
-  // TODO figure out how to place these AND allow scroll buttons
-  // tabs: {
-  // display: 'inline-flex',
-  // whiteSpace: 'nowrap',
-  // '&:before': {
-  //   content: '\'\'',
-  //   width: '100%',
-  //   minWidth: '0px',
-  //   maxWidth: '50px',
-  //   display: 'inline-block',
-  //   height: '100px',
-  // },
-  // '&:after': {
-  //   content: '\'\'',
-  //   width: '100%',
-  //   minWidth: '0px',
-  //   maxWidth: '50px',
-  //   display: 'inline-block',
-  //   height: '100px',
-  // },
-  // },
   tabRoot: {
     minWidth: '0px!important',
     padding: '6px 12px',
     [theme.breakpoints.up('md')]: {
       padding: '6px 24px',
     },
+    ...(tabHoverApplyStyles(theme)),
+    '&::before': {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: 'none',
+      content: '"\\00a0"',
+      borderRadius: '1px',
+      borderBottom: `1px solid rgba(0, 0, 0, 0)`,
+      transition: 'border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+    },
+    '&:hover::before': {
+      borderBottom: '2px solid rgba(0, 0, 0, 0.87)',
+    },
   },
   tabsFlexContainer: {
     alignItems: 'center',
-    ...(contentScrollApplyStyles(theme, Side.Left)),
+  },
+  tab: {
+    textTransform: 'initial',
   },
   grow: {
     flexGrow: 1,
   },
-  logoAndActions: {
-    display: 'flex',
-    alignItems: 'center',
-  },
   logo: {
     display: 'flex',
     alignItems: 'center',
-    padding: theme.spacing(1, 2, 0, 2),
+    padding: theme.spacing(0, 2, 0, 2),
+    minHeight: 48,
   },
   logoImg: {
     maxHeight: '48px',
-    margin: theme.spacing(1),
+    padding: theme.spacing(1),
+  },
+  logoText: {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   actions: {
+    minHeight: 48,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    padding: theme.spacing(1, 2, 0, 2),
+  },
+  actionsContainer: {
+    flex: 1,
+    // When menu is too big and things wrap,
+    // allow actions to overlap to make sure logo and actions are on the same line
+    height: 0,
+    overflow: 'visible',
+  },
+  actionButton: {
+    margin: theme.spacing(0, 0.5, 0, 0),
+    [theme.breakpoints.down('sm')]: {
+      margin: 0,
+      padding: 8,
+    },
+    fontSize: '1.2rem',
   },
   menuDivider: {
-    // Uncomment to merge line with active line. However,
-    // the content scroll shadow is in the way...
-    // marginBottom: -1,
+    marginTop: -1,
   },
 });
 
@@ -151,6 +172,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           return (
             <Tab
               key={page.slug}
+              className={this.props.classes.tab}
               value={page.slug}
               disableRipple
               label={menu.name || page.name}
@@ -174,6 +196,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         return (
           <DropdownTab
             key={menu.menuId}
+            className={this.props.classes.tab}
             value={menu.menuId}
             selectedValue={this.props.page && this.props.page.slug}
             label={menu.name}
@@ -183,8 +206,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         );
       });
       menu = (
-        <div className={this.props.classes.menuSpacing}>
-          <Divider className={this.props.classes.menuDivider} />
+        <div className={this.props.classes.menu}>
           <Tabs
             // centered
             variant='standard'
@@ -220,7 +242,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       );
       if (this.props.config && this.props.config.website) {
         name = (
-          <Link color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
+          <Link className={this.props.classes.logoText} color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
             {name}
           </Link>
         );
@@ -239,11 +261,12 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         rightSide = (
           <div className={this.props.classes.actions}>
             <IconButton
+              className={this.props.classes.actionButton}
               aria-label='Notifications'
               onClick={e => this.setState({ notificationAnchorEl: !!this.state.notificationAnchorEl ? undefined : e.currentTarget })}
             >
               <NotificationBadge server={this.props.server}>
-                <NotificationsIcon fontSize='small' />
+                <NotificationsIcon fontSize='inherit' />
                 <NotificationPopup
                   server={this.props.server}
                   anchorEl={this.state.notificationAnchorEl}
@@ -253,13 +276,15 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             </IconButton>
             {this.props.config.users.credits && (
               <IconButton
+                className={this.props.classes.actionButton}
                 aria-label='Balance'
                 onClick={() => this.props.history.push('/transaction')}
               >
-                <BalanceIcon fontSize='small' />
+                <BalanceIcon fontSize='inherit' />
               </IconButton>
             )}
             <IconButton
+              className={this.props.classes.actionButton}
               aria-label='Account'
               onClick={() => this.props.history.push('/account')}
             >
@@ -268,7 +293,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
                 invisible={!!this.props.loggedInUser.email && !!this.props.loggedInUser.name && this.props.loggedInUser.hasPassword}
                 variant='dot'
               >
-                <AccountIcon fontSize='small' />
+                <AccountIcon fontSize='inherit' />
               </Badge>
             </IconButton>
           </div>
@@ -277,10 +302,11 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         rightSide = (
           <div className={this.props.classes.actions}>
             <IconButton
+              className={this.props.classes.actionButton}
               aria-label='Account'
               onClick={() => this.setState({ logInOpen: true })}
             >
-              <AccountIcon fontSize='small' />
+              <AccountIcon fontSize='inherit' />
             </IconButton>
             <LogIn
               server={this.props.server}
@@ -291,14 +317,22 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           </div>
         );
       }
+      rightSide = (
+        <div className={this.props.classes.actionsContainer}>
+          {rightSide}
+        </div>
+      );
 
       header = (
         <div className={this.props.classes.headerSpacing}>
-          <div className={this.props.classes.logoAndActions}>
-            {logo}
-            <div className={this.props.classes.grow} />
+          <div className={this.props.classes.header}>
+            <div className={this.props.classes.logoAndMenu}>
+              {logo}
+              {menu}
+            </div>
             {rightSide}
           </div>
+          <Divider className={this.props.classes.menuDivider} />
         </div>
       );
     }
@@ -306,7 +340,6 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         {header}
-        {menu}
       </InViewObserver>
     );
   }

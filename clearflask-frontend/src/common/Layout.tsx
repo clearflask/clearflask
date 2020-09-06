@@ -1,4 +1,4 @@
-import { AppBar, Divider, Drawer, Hidden, IconButton, Toolbar } from '@material-ui/core';
+import { AppBar, Divider, Drawer, Fade, Hidden, IconButton, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
@@ -113,8 +113,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
             </IconButton>
             {this.props.toolbarLeft}
             <div className={this.props.classes.grow} />
-            {this.props.toolbarRight}
-            {this.props.preview && (
+            <Fade in={!!this.props.preview}>
               <IconButton
                 color="inherit"
                 aria-label="Preview changes"
@@ -123,7 +122,8 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
               >
                 {this.state.mobilePreviewOpen ? (<PreviewOffIcon />) : (<PreviewOnIcon />)}
               </IconButton>
-            )}
+            </Fade>
+            {this.props.toolbarRight}
           </Toolbar>
           <Divider />
         </AppBar>
