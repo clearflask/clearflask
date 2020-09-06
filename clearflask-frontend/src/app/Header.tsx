@@ -92,7 +92,9 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(1, 2, 0, 2),
   },
   menuDivider: {
-    marginBottom: -1,
+    // Uncomment to merge line with active line. However,
+    // the content scroll shadow is in the way...
+    // marginBottom: -1,
   },
 });
 

@@ -1,4 +1,4 @@
-import { FormControlLabel, Switch, withWidth, WithWidth } from '@material-ui/core';
+import { withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -36,7 +36,7 @@ const styles = (theme: Theme) => createStyles({
   },
   controls: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
 });
 
@@ -87,7 +87,6 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
     return (
       <div className={this.props.classes.container}>
         <div className={this.props.classes.controls}>
-          <div />
           <PanelSearch
             className={this.props.classes.search}
             innerRef={this.panelSearchRef}
@@ -101,7 +100,7 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
               allowSearch: { enableSort: false, enableSearchText: false, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
             }}
           />
-          <FormControlLabel
+          {/* <FormControlLabel
             className={this.props.classes.expandSwitchLabel}
             control={(
               <Switch
@@ -112,7 +111,7 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
               />
             )}
             label={this.state.expanded ? 'Expanded' : 'Collapsed'}
-          />
+          /> */}
         </div>
         <div className={this.props.classes.board}>
           {this.renderPanel('Trending', {

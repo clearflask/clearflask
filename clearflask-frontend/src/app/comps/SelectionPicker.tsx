@@ -54,12 +54,13 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   inputValue?: string;
   menuIsOpen?: boolean;
   options: Label[];
+  noOptionsMessage?: string;
   colorLookup?: ColorLookup;
   disabled?: boolean;
   isMulti?: boolean;
   showClearWithOneValue?: boolean;
   bare?: boolean;
-  width?: string
+  width?: number | string;
   inputMinWidth?: string | number;
   overrideComponents?: Partial<SelectComponents<Label>>;
   formatCreateLabel?: (input: string) => string;
@@ -122,11 +123,12 @@ class SelectionPicker extends Component<Props> {
 }
 
 const NoOptionsMessage = (props) => {
+  const outerProps: Props = props.selectProps.commonProps;
   return (
     <Typography color="textSecondary" {...props.innerProps} style={{
       padding: `${10}px ${10 * 2}px`,
     }}>
-      {props.children}
+      {outerProps.noOptionsMessage || props.children}
     </Typography>
   );
 }
@@ -225,7 +227,8 @@ const Placeholder = (props) => {
       position: 'absolute',
       left: 2,
       fontSize: 16,
-      color: outerProps.theme.palette.text.secondary,
+      opacity: 0.42,
+      color: outerProps.theme.palette.text.primary,
     }}>
       {props.children}
     </Typography>

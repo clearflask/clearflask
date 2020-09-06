@@ -924,6 +924,8 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
             }, {}),
         },
       };
+    case Client.userLoginActionStatus.Fulfilled:
+    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1055,6 +1057,8 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
             }, {}),
         },
       };
+    case Client.userLoginActionStatus.Fulfilled:
+    case Admin.userLoginAdminActionStatus.Fulfilled:
     case Client.userCreateActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
     case Client.userDeleteActionStatus.Fulfilled:
@@ -1159,8 +1163,8 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
           balance,
         },
       };
-    case Client.userDeleteActionStatus.Fulfilled:
     case Client.userLogoutActionStatus.Fulfilled:
+    case Client.userDeleteActionStatus.Fulfilled:
       return {
         ...state,
         myBalance: {}, // Clear on logout
