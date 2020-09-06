@@ -1,4 +1,4 @@
-import { Button, Collapse, Fade, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -56,6 +56,7 @@ const styles = (theme: Theme) => createStyles({
     flexWrap: 'wrap',
     height: 64,
     alignItems: 'flex-end',
+    marginBottom: -1,
   },
   projectUserSelectorHeader: {
     margin: theme.spacing(1, 1, 0),
@@ -429,9 +430,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
 
     const isSelectProjectUserInMenu = !quickViewEnabled;
-    const SelectProjectUserTransition = isSelectProjectUserInMenu ? Collapse : Fade;
     const selectProjectUser = (
-      <SelectProjectUserTransition in={showProjectSelect}>
+      <Collapse in={!!showProjectSelect}>
         <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
@@ -481,7 +481,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </Provider>
           )}
         </div>
-      </SelectProjectUserTransition>
+      </Collapse>
     );
 
     return (
