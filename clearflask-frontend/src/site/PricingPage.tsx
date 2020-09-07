@@ -119,7 +119,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 </Grid>
               ))}
               <Grid item key='slider' xs={12} sm={6} md={4}>
-                <PricingSlider />
+                <PricingSlider plans={plans} />
               </Grid>
             </Grid>
           </Loader>

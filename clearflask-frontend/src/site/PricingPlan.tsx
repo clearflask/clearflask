@@ -177,7 +177,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         <div className={this.props.classes.cardPricing}>
           <Typography component='h2' variant='subtitle1' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
           <Typography component='h2' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
-          <Typography component='h2' variant='subtitle1' color='textSecondary'>{'/ month'}</Typography>
+          <Typography component='h2' variant='subtitle1' color='textSecondary'>{'/ mo'}</Typography>
         </div>
         {(extraMau || billed) && (
           <div className={this.props.classes.cardPricingTerms}>
