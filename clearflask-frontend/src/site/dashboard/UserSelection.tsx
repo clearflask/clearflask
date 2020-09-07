@@ -18,8 +18,14 @@ interface Props {
   className?: string;
   disabled?: boolean;
   server: Server;
-  onChange?: (userLabel: Label) => void;
+  onChange?: (userLabel?: Label) => void;
   allowCreate?: boolean;
+  allowClear?: boolean;
+  placeholder?: string;
+  helperText?: string;
+  errorMsg?: string;
+  width?: string | number;
+  inputMinWidth?: string | number;
 }
 interface ConnectProps {
   loggedInUserLabel?: Label;
@@ -74,11 +80,15 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     return (
       <SelectionPicker
         className={this.props.className}
-        placeholder='Author'
-        errorMsg={!this.state.selectedUserLabel ? 'Select author' : undefined}
+        placeholder={this.props.placeholder}
+        helperText={this.props.helperText}
+        noOptionsMessage='Type to search'
+        errorMsg={!this.state.selectedUserLabel && this.props.errorMsg || undefined}
         value={this.state.selectedUserLabel ? [this.state.selectedUserLabel] : []}
         options={options}
-        width='100%'
+        showClearWithOneValue={this.props.allowClear}
+        width={this.props.width}
+        inputMinWidth={this.props.inputMinWidth}
         disabled={this.props.disabled}
         onInputChange={(newValue, actionMeta) => {
           if (actionMeta.action === 'input-change') {
@@ -86,11 +96,20 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           }
         }}
         onValueChange={(labels, action) => {
-          if (action.action !== 'set-value' || labels.length !== 1) return;
+          console.log('DEBUG', labels, action);
+          var selectedLabel;
+          if ((action.action === 'set-value' || action.action === 'select-option')
+            && labels.length === 1) {
+            selectedLabel = labels[0];
+          } else if (action.action === 'clear' || action.action === 'remove-value' || action.action === 'deselect-option') {
+            selectedLabel = undefined;
+          } else {
+            return;
+          }
           this.setState({ selectedUserLabel: labels[0] })
           this.props.onChange && this.props.onChange(labels[0]);
         }}
-        formatCreateLabel={this.props.allowCreate ? inputValue => `Create user '${inputValue}'` : undefined}
+        formatCreateLabel={this.props.allowCreate ? inputValue => `Create '${inputValue}'` : undefined}
         onValueCreate={this.props.allowCreate ? name => {
           this.props.server.dispatchAdmin()
             .then(d => d.userCreateAdmin({

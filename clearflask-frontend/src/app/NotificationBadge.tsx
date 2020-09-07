@@ -6,6 +6,7 @@ import { ReduxState, Server, Status } from '../api/server';
 
 interface Props {
   server: Server;
+  showCount?: boolean;
   children?: React.ReactNode;
 }
 interface ConnectProps {
@@ -28,6 +29,7 @@ class NotificationBadge extends Component<Props & ConnectProps> {
       <Badge
         badgeContent={this.props.notifications ? this.props.notifications.length : 0}
         color='secondary'
+        variant={this.props.showCount ? 'standard' : 'dot'}
         max={999}
       >
         {this.props.children}

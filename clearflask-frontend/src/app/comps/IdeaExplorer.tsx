@@ -320,6 +320,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         {this.props.server.isModLoggedIn() && (
           <UserSelection
             server={this.props.server}
+            placeholder='Author'
+            errorMsg='Select author'
+            width='100%'
             className={this.props.classes.createFormField}
             disabled={this.state.newItemIsSubmitting}
             onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
@@ -512,6 +515,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   }
 }, null, null, { forwardRef: true })(
   // withQueryParams(QueryState, 
-    withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))))
-    // )
-    ;
+  withStyles(styles, { withTheme: true })(withRouter(withWidth()(IdeaExplorer))))
+  // )
+  ;

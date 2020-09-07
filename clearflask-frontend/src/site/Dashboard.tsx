@@ -1,4 +1,4 @@
-import { Button, Fade, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -18,7 +18,6 @@ import ErrorPage from '../app/ErrorPage';
 import LoadingPage from '../app/LoadingPage';
 import DividerCorner from '../app/utils/DividerCorner';
 import SubscriptionStatusNotifier from '../app/utils/SubscriptionStatusNotifier';
-import AsUser from '../common/AsUser';
 import * as ConfigEditor from '../common/config/configEditor';
 import ConfigView from '../common/config/settings/ConfigView';
 import Crumbs from '../common/config/settings/Crumbs';
@@ -35,6 +34,7 @@ import BillingPage from './dashboard/BillingPage';
 import CommentsPage from './dashboard/CommentsPage';
 import CreatePage from './dashboard/CreatePage';
 import SettingsPage from './dashboard/SettingsPage';
+import UserSelection from './dashboard/UserSelection';
 import UsersPage from './dashboard/UsersPage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
@@ -49,16 +49,23 @@ const stripePromise = loadStripe(isProd()
 const styles = (theme: Theme) => createStyles({
   toolbarLeft: {
     display: 'flex',
-    alignItems: 'baseline'
+    alignItems: 'center',
   },
-  projectPicker: {
-    marginLeft: theme.spacing(2),
+  projectUserSelectorsHeader: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    height: 64,
+    alignItems: 'flex-end',
+    marginBottom: -1,
+  },
+  projectUserSelectorHeader: {
+    margin: theme.spacing(1, 1, 0),
+  },
+  projectUserSelectorMenu: {
+    margin: theme.spacing(2),
   },
   selectProjectLabel: {
     color: theme.palette.text.secondary,
-  },
-  projectUserSelectors: {
-    display: 'flex',
   },
 });
 
@@ -422,6 +429,61 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
     }
 
+    const isSelectProjectUserInMenu = !quickViewEnabled;
+    const selectProjectUser = (
+      <Collapse in={!!showProjectSelect}>
+        <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
+          <SelectionPicker
+            className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
+            value={[selectedLabel]}
+            overrideComponents={{ DropdownIndicator: null }}
+            options={projectOptions}
+            helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
+            inputMinWidth={150}
+            isMulti={false}
+            bare={false}
+            onValueChange={(labels, action) => {
+              if (labels.length === 1) {
+                if (labels[0].value === '__CREATE__') {
+                  this.pageClicked('create');
+                } else {
+                  this.setState({ selectedProjectId: labels[0].value });
+                }
+              }
+            }}
+          />
+          {activeProject && (
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <UserSelection
+                className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
+                server={activeProject.server}
+                allowCreate
+                allowClear
+                helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
+                placeholder='Anonymous'
+                inputMinWidth={150}
+                onChange={userLabel => {
+                  if (activeProject) {
+                    const projectId = activeProject.projectId
+                    if (userLabel) {
+                      activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
+                        projectId,
+                        userId: userLabel.value,
+                      }));
+                    } else {
+                      activeProject.server.dispatch().userLogout({
+                        projectId,
+                      });
+                    }
+                  }
+                }}
+              />
+            </Provider>
+          )}
+        </div>
+      </Collapse>
+    );
+
     return (
       <Elements stripe={stripePromise}>
         {this.props.account && (
@@ -431,6 +493,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           toolbarLeft={
             <div className={this.props.classes.toolbarLeft}>
               <Typography
+                style={{ width: !isSelectProjectUserInMenu ? 180 : undefined }}
                 variant='h6'
                 color="inherit"
                 noWrap
@@ -438,33 +501,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               >
                 Dashboard
               </Typography>
-              <Fade in={showProjectSelect}>
-                <div className={this.props.classes.projectUserSelectors}>
-                  <SelectionPicker
-                    className={this.props.classes.projectPicker}
-                    value={[selectedLabel]}
-                    overrideComponents={{ DropdownIndicator: null }}
-                    options={projectOptions}
-                    inputMinWidth='100px'
-                    isMulti={false}
-                    bare={false}
-                    onValueChange={(labels, action) => {
-                      if (labels.length === 1) {
-                        if (labels[0].value === '__CREATE__') {
-                          this.pageClicked('create');
-                        } else {
-                          this.setState({ selectedProjectId: labels[0].value });
-                        }
-                      }
-                    }}
-                  />
-                  {activeProject && (
-                    <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-                      <AsUser key={activeProject.projectId} server={activeProject?.server} />
-                    </Provider>
-                  )}
-                </div>
-              </Fade>
+              {!isSelectProjectUserInMenu && selectProjectUser}
             </div>
           }
           toolbarRight={
@@ -478,32 +515,35 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           }
           preview={preview}
           menu={(
-            <Menu
-              items={[
-                { type: 'item', slug: '', name: 'Home' } as MenuItem,
-                { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
-                { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
-                { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
-                activeProject ? {
-                  type: 'project',
-                  name: 'Settings',
-                  slug: 'settings',
-                  projectId: activeProject.server.getProjectId(),
-                  page: activeProject.editor.getPage([]),
-                  hasUnsavedChanges: activeProject.hasUnsavedChanges()
-                } as MenuProject
-                  : { type: 'item', slug: 'settings', name: 'Settings' } as MenuItem,
-                { type: 'item', slug: 'account', name: 'Account' } as MenuItem,
-                { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
-                { type: 'item', slug: 'help', name: 'Help' } as MenuItem,
-                { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
-                { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
-                { type: 'item', name: 'Feedback', offset: 1, onClick: () => this.openFeedback('feedback') } as MenuItem,
-              ].filter(notEmpty)}
-              activePath={activePath}
-              activeSubPath={activeSubPath}
-              pageClicked={this.pageClicked.bind(this)}
-            />
+            <div>
+              {isSelectProjectUserInMenu && selectProjectUser}
+              <Menu
+                items={[
+                  { type: 'item', slug: '', name: 'Home' } as MenuItem,
+                  { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
+                  activeProject ? {
+                    type: 'project',
+                    name: 'Settings',
+                    slug: 'settings',
+                    projectId: activeProject.server.getProjectId(),
+                    page: activeProject.editor.getPage([]),
+                    hasUnsavedChanges: activeProject.hasUnsavedChanges()
+                  } as MenuProject
+                    : { type: 'item', slug: 'settings', name: 'Settings' } as MenuItem,
+                  { type: 'item', slug: 'account', name: 'Account' } as MenuItem,
+                  { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'help', name: 'Help' } as MenuItem,
+                  { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
+                  { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
+                  { type: 'item', name: 'Feedback', offset: 1, onClick: () => this.openFeedback('feedback') } as MenuItem,
+                ].filter(notEmpty)}
+                activePath={activePath}
+                activeSubPath={activeSubPath}
+                pageClicked={this.pageClicked.bind(this)}
+              />
+            </div>
           )}
           barBottom={(activePath === 'settings' && activeProject && activeProject.hasUnsavedChanges()) ? (
             <React.Fragment>
