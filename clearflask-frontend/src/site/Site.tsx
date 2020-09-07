@@ -7,22 +7,15 @@ import { NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import Promised from '../common/Promised';
 import setTitle from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
-import CaseStudyPage from './CaseStudyPage';
-import CollectPage from './CollectPage';
 import ContactPage from './ContactPage';
-import CustomizePage from './CustomizePage';
-import DemoApp, { getProject, Project } from './DemoApp';
-import EngagePage from './EngagePage';
+import { Project } from './DemoApp';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
-import PricingPage from './PricingPage';
-import PrioritizePage from './PrioritizePage';
-import ProductPage from './ProductPage';
 import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
+
 const styles = (theme: Theme) => createStyles({
   toolbar: {
     display: 'flex',
@@ -197,10 +190,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               setTitle('Login');
               return (<SigninPage {...props} />);
             }} />
-            <Route exact path={'/pricing'} render={props => {
-              setTitle('Pricing');
-              return (<PricingPage {...props} />);
-            }} />
             <Route path={'/contact'} render={props => {
               setTitle('Contact');
               return (<ContactPage {...props} />);
@@ -217,46 +206,6 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               setTitle('Privacy Policy');
               return (<LegalPage type='privacy' />);
             }} />
-            <Route path={`/:projectId(demo)`} render={props => {
-              setTitle('Demo');
-              if (!this.projectPromise) this.projectPromise = getProject(
-                templater => templater.demo(),
-                mocker => mocker.mockAll(),
-                'demo',
-              );
-              return (
-                <Promised promise={this.projectPromise} render={project => (
-                  <DemoApp
-                    {...props}
-                    server={project.server}
-                  />
-                )} />
-              );
-            }} />
-            <Route exact path={`/collect`} component={props => {
-              setTitle('Collect');
-              return (<CollectPage />);
-            }} />
-            <Route exact path={`/prioritize`} component={props => {
-              setTitle('Prioritize');
-              return (<PrioritizePage />);
-            }} />
-            <Route exact path={`/engage`} component={props => {
-              setTitle('Engage');
-              return (<EngagePage />);
-            }} />
-            <Route exact path={`/customize`} component={props => {
-              setTitle('Customize');
-              return (<CustomizePage />);
-            }} />
-            <Route exact path={`/case-study`} component={props => {
-              setTitle('Case Studies');
-              return (<CaseStudyPage />);
-            }} />
-            <Route exact path={`/product`} component={props => {
-              setTitle('Product');
-              return (<ProductPage />);
-            }} />
             <Route exact path={`/`} component={props => {
               setTitle();
               return (<LandingPage />);
@@ -270,13 +219,13 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>
             <Grid container justify='center' alignContent='center' spacing={6}>
-              <Grid item xs={10} sm={4} md={3} xl={2}>
+              {/* <Grid item xs={10} sm={4} md={3} xl={2}>
                 <div className={this.props.classes.bottomHeader}>PRODUCT</div>
                 <NavLink to='/contact/sales' className={this.props.classes.bottomItem}>Talk to Sales</NavLink>
                 <NavLink to='/pricing' className={this.props.classes.bottomItem}>Pricing</NavLink>
                 <NavLink to='/demo' className={this.props.classes.bottomItem}>Demo</NavLink>
-                {/* <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink> */}
-              </Grid>
+                <NavLink to='/signup' className={this.props.classes.bottomItem}>Sign up</NavLink>
+              </Grid> */}
               <Grid item xs={10} sm={4} md={3} xl={2}>
                 <div className={this.props.classes.bottomHeader}>RESOURCES</div>
                 <NavLink to='/contact/support' className={this.props.classes.bottomItem}>Support</NavLink>

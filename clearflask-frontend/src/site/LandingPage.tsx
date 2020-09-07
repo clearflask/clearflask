@@ -484,7 +484,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           // variant='content'
           title='Give credits to users based on their contribution'
           description='When a customer completes a purchase, issue them credit.'
-          alignItems='flex-end'
+          alignItems='center'
           demo={(
             <div className={this.props.classes.pointsContainer}>
               <div className={this.props.classes.point}>

@@ -1,4 +1,4 @@
-import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp, isWidthDown } from '@material-ui/core';
+import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
