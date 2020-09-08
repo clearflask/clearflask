@@ -1,4 +1,4 @@
-import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, Switch, TextField, Typography, InputAdornment } from '@material-ui/core';
+import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -8,9 +8,10 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
+import UserContributions from '../common/UserContributions';
+import setTitle from '../common/util/titleUtil';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
-import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -154,7 +155,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
                           </IconButton>
                         </InputAdornment>
-                      ),  
+                      ),
                     }}
                   />
                 </Badge>
@@ -240,6 +241,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Grid>
           )}
         </DividerCorner>
+        <UserContributions server={this.props.server} userId={this.props.userMe.userId} />
       </div>
     );
   }

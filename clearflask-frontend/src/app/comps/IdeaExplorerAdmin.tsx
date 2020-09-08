@@ -54,7 +54,6 @@ interface State {
 }
 class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
-  readonly panelSearchRef: React.RefObject<any> = React.createRef();
 
   render() {
     const display: Client.PostDisplay = this.state.expanded ? {
@@ -89,7 +88,6 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
         <div className={this.props.classes.controls}>
           <PanelSearch
             className={this.props.classes.search}
-            innerRef={this.panelSearchRef}
             server={this.props.server}
             search={this.state.search}
             minWidth={200}

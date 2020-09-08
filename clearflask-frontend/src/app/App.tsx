@@ -14,6 +14,7 @@ import BankPage from './BankPage';
 import BasePage from './BasePage';
 import { isExpanded } from './comps/Post';
 import PostPage from './comps/PostPage';
+import UserPage from './comps/UserPage';
 import CustomPage from './CustomPage';
 import Header from './Header';
 import SsoSuccessPage from './SsoSuccessPage';
@@ -169,7 +170,7 @@ class App extends Component<Props> {
                 )} >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
-                    {/* <UserPage server={this.server} userId={props.match.params.userId} /> */}
+                    <UserPage server={this.server} userId={props.match.params.userId} />
                   </BasePage>
                 )} />
                 <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (

@@ -29,6 +29,9 @@ components:
           type: array
           items:
             type: string
+        filterAuthorId:
+          x-clearflask-hide: true
+          type: string
         searchText:
           x-clearflask-prop: { order: 5, name: 'Search query', description: 'Filter results matching this search term' }
           type: string

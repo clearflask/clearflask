@@ -1,4 +1,4 @@
-import { Button, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { Button, Dialog, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import AndroidIcon from '@material-ui/icons/Android';
@@ -22,6 +22,7 @@ import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
+import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
@@ -103,7 +104,7 @@ interface State {
   searchCursor?: string;
   modsOnly?: boolean;
 }
-class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
@@ -234,7 +235,7 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
             </div>
           )}
           searchSize={searchWidth}
-          search={(
+          search={expand ? undefined : (
             <TextField
               className={this.props.classes.searchInput}
               placeholder='Search'
@@ -304,24 +305,30 @@ class UsersPage extends Component<Props & ConnectProps & WithStyles<typeof style
                                 <Typography variant='caption'>Edit</Typography>
                               </Button>
                               {this.state.editExpandedForUserId !== undefined && (
-                                <UserEdit
-                                  key={`edit${user.userId}`}
-                                  server={this.props.server}
-                                  user={user}
-                                  credits={this.props.credits}
+                                <Dialog
                                   open={this.state.editExpandedForUserId === user.userId}
                                   onClose={() => this.setState({ editExpandedForUserId: '' })}
-                                  onUpdated={userUpdated => {
-                                    const updatedSearchResult = [...this.state.searchResult!];
-                                    updatedSearchResult[index] = userUpdated;
-                                    this.setState({ searchResult: updatedSearchResult });
-                                  }}
-                                  onDeleted={() => {
-                                    const updatedSearchResult = [...this.state.searchResult!];
-                                    updatedSearchResult.splice(index, 1);
-                                    this.setState({ searchResult: updatedSearchResult });
-                                  }}
-                                />
+                                  scroll='body'
+                                  fullScreen={this.props.mediaQuery}
+                                  fullWidth
+                                >
+                                  <UserEdit
+                                    key={`edit${user.userId}`}
+                                    server={this.props.server}
+                                    user={user}
+                                    credits={this.props.credits}
+                                    onUpdated={userUpdated => {
+                                      const updatedSearchResult = [...this.state.searchResult!];
+                                      updatedSearchResult[index] = userUpdated;
+                                      this.setState({ searchResult: updatedSearchResult });
+                                    }}
+                                    onDeleted={() => {
+                                      const updatedSearchResult = [...this.state.searchResult!];
+                                      updatedSearchResult.splice(index, 1);
+                                      this.setState({ searchResult: updatedSearchResult });
+                                    }}
+                                  />
+                                </Dialog>
                               )}
                             </TableCell>
                           </TableRow>
@@ -376,4 +383,5 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     showBalance: !!state.conf.conf?.users.credits,
   };
   return connectProps;
-})(withStyles(styles, { withTheme: true })(UsersPage));
+})(withStyles(styles, { withTheme: true })(
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(UsersPage)));

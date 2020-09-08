@@ -338,6 +338,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       : allIdeas;
     const categories = this.getProject(request.projectId).config.config.content.categories;
     return this.returnLater(this.filterCursor(this.sort(ideas
+      .filter(idea => request.ideaSearch.filterAuthorId === undefined
+        || (idea.authorUserId === request.ideaSearch.filterAuthorId))
       .filter(idea => !request.ideaSearch.fundedByMeAndActive
         || !idea.statusId
         || categories.find(c => c.categoryId === idea.categoryId)!
@@ -680,6 +682,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   userDeleteBulkAdmin(request: Admin.UserDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
+  }
+  userGet(request: Client.UserGetRequest): Promise<Client.User> {
+    return this.userGetAdmin(request);
   }
   userGetAdmin(request: Admin.UserGetAdminRequest): Promise<Admin.UserAdmin> {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);

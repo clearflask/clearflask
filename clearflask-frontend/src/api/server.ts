@@ -652,7 +652,24 @@ const stateUsersDefault = {
 };
 function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions): StateUsers {
   switch (action.type) {
+    case Admin.userSearchAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (usersById, user) => {
+              usersById[user.userId] = {
+                user,
+                status: Status.FULFILLED,
+              };
+              return usersById;
+            }, {}),
+        }
+      };
     case Admin.userUpdateAdminActionStatus.Fulfilled:
+    case Client.userGetActionStatus.Fulfilled:
+    case Admin.userGetAdminActionStatus.Fulfilled:
       return {
         ...state,
         byId: {

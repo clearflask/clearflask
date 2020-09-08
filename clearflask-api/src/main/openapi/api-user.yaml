@@ -48,6 +48,8 @@ components:
           type: string
         name:
           type: string
+        isMod:
+          type: boolean
     UserMe:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'
@@ -59,8 +61,6 @@ components:
             - emailNotify
             - hasPassword
           properties:
-            isMod:
-              type: boolean
             isSso:
               type: boolean
             email:
@@ -278,6 +278,28 @@ components:
                 user:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/{projectId}/user/{userId}:
+  get:
+    operationId: userGet
+    tags: [User]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-user.yaml#/components/schemas/User'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
   patch:
     operationId: userUpdate
     tags: [User]
