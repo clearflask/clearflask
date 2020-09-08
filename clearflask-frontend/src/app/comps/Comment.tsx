@@ -11,6 +11,7 @@ import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
+import ModAction from '../../common/ModAction';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
@@ -202,7 +203,9 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
       <React.Fragment key='adminDelete'>
         <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}>
-          <Typography variant='caption'>Delete</Typography>
+          <Typography variant='caption'>
+            <ModAction label='Delete' />
+          </Typography>
         </Button>
         {this.state.adminDeleteExpanded !== undefined && (
           <CommentDelete

@@ -320,13 +320,20 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                                     onUpdated={userUpdated => {
                                       const updatedSearchResult = [...this.state.searchResult!];
                                       updatedSearchResult[index] = userUpdated;
-                                      this.setState({ searchResult: updatedSearchResult });
+                                      this.setState({
+                                        searchResult: updatedSearchResult,
+                                        editExpandedForUserId: '',
+                                      });
                                     }}
                                     onDeleted={() => {
                                       const updatedSearchResult = [...this.state.searchResult!];
                                       updatedSearchResult.splice(index, 1);
-                                      this.setState({ searchResult: updatedSearchResult });
+                                      this.setState({
+                                        searchResult: updatedSearchResult,
+                                        editExpandedForUserId: '',
+                                       });
                                     }}
+                                    onClose={() => this.setState({ editExpandedForUserId: '' })}
                                   />
                                 </Dialog>
                               )}

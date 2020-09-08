@@ -43,6 +43,8 @@ components:
       type: object
       required:
         - userId
+        - created
+        - isMod
       properties:
         userId:
           type: string
@@ -50,6 +52,9 @@ components:
           type: string
         isMod:
           type: boolean
+        created:
+          type: string
+          format: date-time
     UserMe:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/User'
@@ -85,14 +90,9 @@ components:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
         - type: object
-          required:
-          - created
           properties:
             email:
               type: string
-            created:
-              type: string
-              format: date-time
     UserCreate:
       type: object
       properties:

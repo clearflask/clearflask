@@ -25,7 +25,7 @@ class UserContributions extends React.Component<Props & WithStyles<typeof styles
     return (
       <div className={this.props.classes.panels}>
         <DividerCorner
-          title='User submitted'
+          title='Submissions'
           isExplorer
         >
           <Panel

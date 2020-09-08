@@ -21,6 +21,7 @@ import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
+import ModAction from '../../common/ModAction';
 // import {
 //   withQueryParams,
 //   StringParam,
@@ -345,7 +346,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 onChange={e => this.setState({ newItemChosenCategoryId: e.target.value as string })}
               >
                 {categoryOptions.map(categoryOption => (
-                  <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>{categoryOption.name}</MenuItem>
+                  <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>
+                    {categoryOption.userCreatable ? categoryOption.name : (
+                      <!!TODO ADD THESE EVERYWHERE ModAction label={categoryOption.name} />
+                    )}
+                  </MenuItem>
                 ))}
               </Select>
               <FormHelperText>

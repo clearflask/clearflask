@@ -6,6 +6,7 @@ import { Server } from '../../api/server';
 import RichEditor from '../../common/RichEditor';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import SubmitButton from '../../common/SubmitButton';
+import ModAction from '../../common/ModAction';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -137,7 +138,9 @@ export const CommentDelete = withTheme((props: {
                 props.onClose();
               })
               .catch(e => setSubmitting(false))
-          }}>Delete</SubmitButton>
+            }}>
+              {props.asAdmin ? (<ModAction label='Delete' />) : 'Delete'}
+            </SubmitButton>
       </DialogActions>
     </Dialog>
   )

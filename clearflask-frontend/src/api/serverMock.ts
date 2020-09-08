@@ -662,7 +662,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       userId: randomUuid(),
       created: new Date(),
       balance: 0,
-      isMod: request.userCreateAdmin.isMod,
+      isMod: !!request.userCreateAdmin.isMod,
       emailNotify: !!request.userCreateAdmin.email,
       iosPush: !!request.userCreateAdmin.iosPushToken,
       androidPush: !!request.userCreateAdmin.androidPushToken,

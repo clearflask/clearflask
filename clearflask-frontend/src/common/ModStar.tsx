@@ -24,6 +24,7 @@ class ModStar extends React.Component<Props & WithStyles<typeof styles, true>> {
     return (
       <div className={this.props.classes.container}>
         {this.props.name}
+        &nbsp;
         <ModeratorIcon fontSize='inherit' />
       </div>
     );

@@ -23,6 +23,8 @@ interface Props {
   credits: Admin.Credits;
   onUpdated: (user: Admin.UserAdmin) => void;
   onDeleted: () => void;
+  /** If set, shows a close button */
+  onClose?: () => void;
 }
 interface State {
   deleteDialogOpen?: boolean;
@@ -201,7 +203,9 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => this.props.onClose()}>Close</Button>
+          {this.props.onClose && (
+            <Button onClick={() => this.props.onClose && this.props.onClose()}>Close</Button>
+          )}
           <SubmitButton
             isSubmitting={this.state.isSubmitting}
             style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
@@ -241,7 +245,6 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   browserPush: undefined,
                 });
                 this.props.onUpdated(user);
-                this.props.onClose();
               })
               .catch(e => this.setState({ isSubmitting: false }))
           }}>Save</SubmitButton>
@@ -268,7 +271,6 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   .then(() => {
                     this.setState({ isSubmitting: false });
                     this.props.onDeleted();
-                    this.props.onClose();
                   })
                   .catch(e => this.setState({ isSubmitting: false }))
               }}>Delete</SubmitButton>
