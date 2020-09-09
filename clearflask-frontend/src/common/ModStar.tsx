@@ -1,6 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import ModeratorIcon from '@material-ui/icons/StarRateSharp';
 import React from 'react';
-import ModeratorIcon from '@material-ui/icons/Star';
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -18,13 +18,12 @@ interface Props {
 class ModStar extends React.Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    if(!this.props.isMod) {
+    if (!this.props.isMod) {
       return this.props.name || null;
     }
     return (
       <div className={this.props.classes.container}>
         {this.props.name}
-        &nbsp;
         <ModeratorIcon fontSize='inherit' />
       </div>
     );

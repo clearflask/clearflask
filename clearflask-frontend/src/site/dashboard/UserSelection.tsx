@@ -22,6 +22,7 @@ interface Props {
   allowCreate?: boolean;
   allowClear?: boolean;
   placeholder?: string;
+  placeholderWrapper?: (placeholder: string) => React.ReactNode;
   helperText?: string;
   errorMsg?: string;
   width?: string | number;
@@ -81,6 +82,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
       <SelectionPicker
         className={this.props.className}
         placeholder={this.props.placeholder}
+        placeholderWrapper={this.props.placeholderWrapper}
         helperText={this.props.helperText}
         noOptionsMessage='Type to search'
         errorMsg={!this.state.selectedUserLabel && this.props.errorMsg || undefined}
@@ -96,7 +98,6 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           }
         }}
         onValueChange={(labels, action) => {
-          console.log('DEBUG', labels, action);
           var selectedLabel;
           if ((action.action === 'set-value' || action.action === 'select-option')
             && labels.length === 1) {
@@ -106,8 +107,8 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           } else {
             return;
           }
-          this.setState({ selectedUserLabel: labels[0] })
-          this.props.onChange && this.props.onChange(labels[0]);
+          this.setState({ selectedUserLabel: selectedLabel })
+          this.props.onChange && this.props.onChange(selectedLabel);
         }}
         formatCreateLabel={this.props.allowCreate ? inputValue => `Create '${inputValue}'` : undefined}
         onValueCreate={this.props.allowCreate ? name => {

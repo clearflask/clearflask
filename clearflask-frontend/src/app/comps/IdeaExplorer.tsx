@@ -8,6 +8,7 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
+import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
@@ -21,7 +22,6 @@ import Panel, { Direction } from './Panel';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
-import ModAction from '../../common/ModAction';
 // import {
 //   withQueryParams,
 //   StringParam,
@@ -322,6 +322,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           <UserSelection
             server={this.props.server}
             placeholder='Author'
+            placeholderWrapper={placeholder => (<ModAction label={placeholder} />)}
             errorMsg='Select author'
             width='100%'
             className={this.props.classes.createFormField}
@@ -348,7 +349,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 {categoryOptions.map(categoryOption => (
                   <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>
                     {categoryOption.userCreatable ? categoryOption.name : (
-                      <!!TODO ADD THESE EVERYWHERE ModAction label={categoryOption.name} />
+                      <ModAction label={categoryOption.name} />
                     )}
                   </MenuItem>
                 ))}

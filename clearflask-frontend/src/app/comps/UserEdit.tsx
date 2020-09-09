@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, IconButton, InputAdornment, Switch, TextField } from '@material-ui/core';
+import { Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, IconButton, InputAdornment, Switch, TextField } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -9,6 +9,7 @@ import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import DividerCorner from '../utils/DividerCorner';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -21,6 +22,8 @@ interface Props {
   server: Server;
   user: Admin.UserAdmin;
   credits: Admin.Credits;
+  isMe: boolean;
+  isInsideDialog?: boolean;
   onUpdated: (user: Admin.UserAdmin) => void;
   onDeleted: () => void;
   /** If set, shows a close button */
@@ -59,9 +62,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         || this.state.browserPush !== undefined
       );
 
-    return (
+    var editForm = (
       <React.Fragment>
-        <DialogTitle>Edit user</DialogTitle>
         <DialogContent>
           <Grid container alignItems='baseline'>
             <Grid item xs={12} className={this.props.classes.row}>
@@ -169,7 +171,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 />
               </Grid>
             )}
-            <Grid item xs={4} className={this.props.classes.row}>
+            <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 disabled={this.state.isSubmitting}
                 label='Balance adjustment'
@@ -185,7 +187,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 onChange={e => this.setState({ balanceAdjustment: e.target.value })}
               />
             </Grid>
-            <Grid item xs={8} className={this.props.classes.row}>
+            <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
                 label='Reason for adjustment'
@@ -229,6 +231,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   summary: this.state.balanceDescription,
                 } : undefined,
               },
+            }, {
+              isMe: this.props.isMe,
             }))
               .then(user => {
                 this.setState({
@@ -255,7 +259,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         >
           <DialogTitle>Delete Post</DialogTitle>
           <DialogContent>
-            <DialogContentText>Are you sure you want to permanently delete this post?</DialogContentText>
+            <DialogContentText>Are you sure you want to permanently delete this user?</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ deleteDialogOpen: false })}>Cancel</Button>
@@ -278,6 +282,21 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         </Dialog>
       </React.Fragment>
     );
+
+    editForm = this.props.isInsideDialog ? (
+      <React.Fragment>
+        <DialogTitle>Edit user</DialogTitle>
+        {editForm}
+      </React.Fragment>
+    ) : (
+        <DividerCorner title='Edit User'>
+          <Container maxWidth='sm'>
+            {editForm}
+          </Container>
+        </DividerCorner>
+      );
+
+    return editForm;
   }
 }
 

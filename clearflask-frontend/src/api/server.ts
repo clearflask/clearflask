@@ -1184,8 +1184,18 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
     case Client.userDeleteActionStatus.Fulfilled:
       return {
         ...state,
+        transactionSearch: {}, // Clear on logout
         myBalance: {}, // Clear on logout
       };
+    case Admin.userUpdateAdminActionStatus.Fulfilled:
+      if (action.meta.action['isMe']) {
+        return {
+          ...state,
+          transactionSearch: {}, // Clear instead of merging
+          myBalance: action.payload.balance,
+        };
+      }
+      return state;
     default:
       return state;
   }

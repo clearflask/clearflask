@@ -142,6 +142,9 @@ components:
           type: string
         browserPushToken:
           type: string
+        balanceUpdateTransaction:
+          $ref: 'api-credit.yaml#/components/schemas/Transaction'
+
     UserUpdateAdmin:
       type: object
       properties:

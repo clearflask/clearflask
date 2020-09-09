@@ -403,7 +403,7 @@ class DataMock {
 
   mockAll(): Promise<any> {
     return this.mockAccountCreate()
-      .then(() => this.mockLoggedIn())
+      .then(() => this.mockLoggedIn(1000, true))
       .then(userMe =>
         this.mockItems(userMe)
           .then(() => this.mockNotification(userMe)))
@@ -430,7 +430,7 @@ class DataMock {
     });
   }
 
-  mockLoggedIn(bankBalance: number = 10000): Promise<Admin.UserMeWithBalance> {
+  mockLoggedIn(bankBalance: number = 10000, isMod: boolean = false): Promise<Admin.UserMeWithBalance> {
     return ServerMock.get().userCreate({
       projectId: this.projectId,
       userCreate: {
@@ -441,7 +441,7 @@ class DataMock {
         // browserPushToken: 'fake-browser-push-token',
         ...{
           emailVerification: 'token',
-          isMod: true,
+          isMod,
           userId: 'me',
         },
       }

@@ -21,6 +21,7 @@ import EmojiPicker from '../../common/EmojiPicker';
 import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
+import ModAction from '../../common/ModAction';
 import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
@@ -638,16 +639,21 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderEdit(variant: PostVariant) {
+    const isMod = this.props.server.isModLoggedIn();
+    const isAuthor = this.props.idea && this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId;
     if (!this.props.idea
       || !this.props.category
       || !this.props.credits
-      || (!this.props.server.isModLoggedIn() && !(this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId))) return null;
+      || (!isMod && !isAuthor)) return null;
 
+    const labelEdit = isAuthor
+      ? 'Edit'
+      : (<ModAction label='Edit' />);
     return (
       <React.Fragment key='edit'>
         <Button variant='text' className={this.props.classes.editButton}
           onClick={e => this.setState({ editExpanded: !this.state.editExpanded })}>
-          <Typography variant='caption'>Edit</Typography>
+          <Typography variant='caption'>{labelEdit}</Typography>
         </Button>
         {this.state.editExpanded !== undefined && (
           <PostEdit

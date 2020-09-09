@@ -49,6 +49,7 @@ interface Props extends ListProps, WithStyles<typeof styles, true> {
   label?: string;
   helperText?: string;
   placeholder?: string;
+  placeholderWrapper?: (placeholder: string) => React.ReactNode;
   errorMsg?: string;
   value?: Label[];
   inputValue?: string;
@@ -222,6 +223,10 @@ const ClearIndicator = (props) => {
 
 const Placeholder = (props) => {
   const outerProps: Props = props.selectProps.commonProps;
+  var inner = props.children;
+  if (outerProps.placeholderWrapper) {
+    inner = outerProps.placeholderWrapper(inner);
+  }
   return (
     <Typography color="textSecondary" {...props.innerProps} style={{
       position: 'absolute',
@@ -230,7 +235,7 @@ const Placeholder = (props) => {
       opacity: 0.42,
       color: outerProps.theme.palette.text.primary,
     }}>
-      {props.children}
+      {inner}
     </Typography>
   );
 }

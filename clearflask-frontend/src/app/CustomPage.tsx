@@ -146,7 +146,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         );
         if (board.title) {
           boardCmpt = (
-            <DividerCorner title={board.title} height='90%'>
+            <DividerCorner title={board.title} height='50%'>
               <div className={classNames(this.props.classes.board, this.props.classes.boardInCorner)}>
                 {panels}
               </div>

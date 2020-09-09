@@ -87,6 +87,7 @@ interface Props {
 interface ConnectProps {
   credits?: Client.Credits;
   showBalance?: boolean;
+  loggedInUser?: Client.UserMe;
 }
 interface State {
   createRefFocused?: boolean;
@@ -317,6 +318,8 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                                     server={this.props.server}
                                     user={user}
                                     credits={this.props.credits}
+                                    isMe={this.props.loggedInUser.userId === user.userId}
+                                    isInsideDialog
                                     onUpdated={userUpdated => {
                                       const updatedSearchResult = [...this.state.searchResult!];
                                       updatedSearchResult[index] = userUpdated;
@@ -331,7 +334,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                                       this.setState({
                                         searchResult: updatedSearchResult,
                                         editExpandedForUserId: '',
-                                       });
+                                      });
                                     }}
                                     onClose={() => this.setState({ editExpandedForUserId: '' })}
                                   />
@@ -388,6 +391,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const connectProps: ConnectProps = {
     credits: state.conf.conf?.users.credits,
     showBalance: !!state.conf.conf?.users.credits,
+    loggedInUser: state.users.loggedIn.user,
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(
