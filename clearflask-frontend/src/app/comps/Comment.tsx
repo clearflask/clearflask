@@ -12,6 +12,8 @@ import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
 import ModAction from '../../common/ModAction';
+import UserDisplay from '../../common/UserDisplay';
+import DeletedIcon from '@material-ui/icons/Clear';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
@@ -30,6 +32,15 @@ const styles = (theme: Theme) => createStyles({
   votingControl: {
     gridArea: 'v',
     margin: theme.spacing(0, 2),
+    position: 'relative',
+  },
+  votingControlDeletedIcon: {
+    position: 'relative',
+    left: '50%',
+    top: '50%',
+    fontSize: '1.7rem',
+    transform: 'translateX(-50%) translateY(-50%)',
+    color: theme.palette.grey[theme.palette.type === 'light' ? 200 : 600],
   },
   footer: {
     gridArea: 'f',
@@ -49,7 +60,7 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
   commentDeleted: {
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.hint,
   },
   edited: {
     fontStyle: 'italic',
@@ -68,10 +79,6 @@ const styles = (theme: Theme) => createStyles({
   },
   pre: {
     whiteSpace: 'pre-wrap',
-  },
-  editIconButton: {
-    padding: '0px',
-    color: theme.palette.text.secondary,
   },
   ...cssBlurry,
 });
@@ -105,7 +112,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
         >
           {this.renderContent()}
         </div>
-        <div className={this.props.classes.votingControl}>{this.renderVotingControl()}</div>
+        {this.renderVotingControl()}
         <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
       </div>
     );
@@ -124,16 +131,22 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderVotingControl() {
     if (!this.props.comment) return null;
+    const hidden = !this.props.comment.content;
     return (
-      <VotingControl
-        vote={this.props.comment.vote}
-        hidden={!this.props.comment.content}
-        voteValue={this.props.comment.voteValue || 0}
-        isSubmittingVote={this.state.isSubmittingVote}
-        votingAllowed={!!this.props.comment}
-        onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
-        onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
-      />
+      <div className={this.props.classes.votingControl}>
+        {hidden && (
+          <DeletedIcon fontSize='inherit' className={this.props.classes.votingControlDeletedIcon} />
+        )}
+        <VotingControl
+          vote={this.props.comment.vote}
+          hidden={hidden}
+          voteValue={this.props.comment.voteValue || 0}
+          isSubmittingVote={this.state.isSubmittingVote}
+          votingAllowed={!!this.props.comment}
+          onUpvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Upvote ? Client.VoteOption.None : Client.VoteOption.Upvote)}
+          onDownvote={() => this.voteUpdate(this.props.comment?.vote === Client.VoteOption.Downvote ? Client.VoteOption.None : Client.VoteOption.Downvote)}
+        />
+      </div>
     );
   }
 
@@ -269,8 +282,11 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     }
 
     return (
-      <Typography key='author' className={this.props.classes.barItem} variant='caption'>
-        <ModStar name={this.props.comment.authorName} isMod={this.props.comment.authorIsMod} />
+      <Typography key='author' className={this.props.classes.barItem} style={{margin: 0,}} variant='caption'>
+        <UserDisplay user={{
+          userId: this.props.comment.authorUserId,
+          name: this.props.comment.authorName,
+          isMod: this.props.comment.authorIsMod}} />
       </Typography>
     );
   }
@@ -283,10 +299,6 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
         <TimeAgo date={this.props.comment.created} />
       </Typography>
     );
-  }
-
-  contentClick() {
-
   }
 }
 

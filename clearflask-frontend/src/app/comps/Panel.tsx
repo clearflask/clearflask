@@ -46,9 +46,6 @@ interface Props {
   searchOverride?: Partial<Client.IdeaSearch>;
   direction: Direction
   maxHeight?: string | number,
-  onClickTag?: (tagId: string) => void;
-  onClickCategory?: (categoryId: string) => void;
-  onClickStatus?: (statusId: string) => void;
   onClickPost?: (postId: string) => void;
   forceDisablePostExpand?: boolean;
 }
@@ -100,9 +97,6 @@ class Panel extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               idea={idea}
               expandable
               forceDisablePostExpand={this.props.forceDisablePostExpand}
-              onClickTag={this.props.onClickTag}
-              onClickCategory={this.props.onClickCategory}
-              onClickStatus={this.props.onClickStatus}
               onClickPost={this.props.onClickPost}
               display={display}
               variant='list'

@@ -41,7 +41,7 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
-    padding: theme.spacing(0, 1),
+    padding: theme.spacing(0, 1, 2, 1),
   },
   menu: {
     flex: 1,

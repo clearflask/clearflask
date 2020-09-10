@@ -214,14 +214,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               showExpression: true,
             }}
             searchOverride={this.state.search}
-            {...(this.props.explorer.allowSearch ? {
-              onClickTag: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Tag)
-                ? tagId => this.panelSearchRef.current && this.panelSearchRef.current.onClickTag(tagId) : undefined,
-              onClickStatus: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Status)
-                ? statusId => this.panelSearchRef.current && this.panelSearchRef.current.onClickStatus(statusId) : undefined,
-              onClickCategory: this.panelSearchRef.current && this.panelSearchRef.current.isFilterControllable(FilterType.Category)
-                ? categoryId => this.panelSearchRef.current && this.panelSearchRef.current.onClickCategory(categoryId) : undefined,
-            } : {})}
           />
         </div>
       );

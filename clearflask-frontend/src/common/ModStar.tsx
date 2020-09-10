@@ -1,5 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import ModeratorIcon from '@material-ui/icons/StarRateSharp';
+import ModeratorIcon from '@material-ui/icons/StarRateRounded';
 import React from 'react';
 
 const styles = (theme: Theme) => createStyles({

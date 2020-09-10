@@ -191,7 +191,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                             color='primary'
                           />
                         )}
-                        label={`Notify users of ${notifyReasons}`}
+                        label={`Notify subscribers of ${notifyReasons}`}
                       />
                     </Collapse>
                   </Grid>

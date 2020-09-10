@@ -1192,7 +1192,10 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         return {
           ...state,
           transactionSearch: {}, // Clear instead of merging
-          myBalance: action.payload.balance,
+          myBalance: {
+            status: Status.FULFILLED,
+            balance: action.payload.balance,
+          },
         };
       }
       return state;

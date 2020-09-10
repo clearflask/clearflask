@@ -513,7 +513,7 @@ class DataMock {
       });
   }
 
-  mockUser(name?: string): Promise<Admin.UserAdmin> {
+  mockUser(name?: string, isMod?: boolean): Promise<Admin.UserAdmin> {
     return ServerMock.get().userCreateAdmin({
       projectId: this.projectId,
       userCreateAdmin: {
@@ -522,7 +522,10 @@ class DataMock {
           count: 2,
         }),
         email: 'example@example.com',
-        ...{ created: this.mockDate() },
+        ...{
+          created: this.mockDate(),
+          isMod,
+        },
       },
     });
   }
@@ -530,6 +533,10 @@ class DataMock {
   async mockIdea(category: Admin.Category, status: Admin.IdeaStatus | undefined = undefined, user: Admin.User | undefined = undefined, extra: Partial<Admin.Idea> = {}, suppressComments: boolean = false): Promise<Admin.Idea> {
     if (user === undefined) {
       user = await this.mockUser();
+    }
+    var responseUser;
+    if (Math.random() < 0.3) {
+      responseUser = await this.mockUser();
     }
     const item = await ServerMock.get().ideaCreateAdmin({
       projectId: this.projectId,
@@ -544,10 +551,14 @@ class DataMock {
           units: 'paragraphs',
           count: Math.round(Math.random() * 3 + 1),
         })),
-        response: Math.random() < 0.3 ? undefined : textToRaw(loremIpsum({
-          units: 'words',
-          count: Math.round(Math.random() * 10 + 3),
-        })),
+        ...(!responseUser ? {} : {
+          response: textToRaw(loremIpsum({
+            units: 'words',
+            count: Math.round(Math.random() * 10 + 3),
+          })),
+          responseAuthorUserId: responseUser.userId,
+          responseAuthorName: responseUser.name,
+        }),
         categoryId: category.categoryId,
         tagIds: Math.random() < 0.3 ? [] : category.tagging.tags
           .filter(t => Math.random() < 0.3)

@@ -39,6 +39,7 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
+import UserDisplay from '../../common/UserDisplay';
 
 export type PostVariant = 'list' | 'page';
 
@@ -93,6 +94,10 @@ const styles = (theme: Theme) => createStyles({
     fontSize: '1.2rem',
   },
   titleList: {
+  },
+  titleContainer: {
+    display: 'flex',
+    alignItems: 'baseline',
   },
   titleAndDescription: {
     margin: theme.spacing(0.5),
@@ -481,7 +486,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                   className={classNames(this.props.classes.titleAndDescription, (targetVariant === 'list' && expandable) ? this.props.classes.expandable : undefined)}
                   onClick={expandable ? this.onExpand.bind(this) : undefined}
                 >
-                  {this.renderTitle(isMoving ? 'page' : variant)}
+                  <div className={this.props.classes.titleContainer}>
+                    {this.renderTitle(isMoving ? 'page' : variant)}
+                    {this.renderStatus(variant)}
+                  </div>
                   {this.renderDescription(isMoving ? 'page' : variant)}
                   {this.renderResponse(isMoving ? 'page' : variant)}
                 </div>
@@ -511,14 +519,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   renderBottomBar(variant: PostVariant) {
     const leftSide = [
       this.renderExpression(variant),
-      this.renderStatus(variant),
-      this.renderCategory(variant),
-      ...(this.renderTags(variant) || []),
     ].filter(notEmpty);
     const rightSide = [
+      this.renderCategory(variant),
+      ...(this.renderTags(variant) || []),
       this.renderCommentCount(variant),
       this.renderCreatedDatetime(variant),
-      this.renderAuthor(variant),
       this.renderEdit(variant),
     ].filter(notEmpty);
 
@@ -547,7 +553,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
-        <ModStar name={this.props.idea.authorName} isMod={this.props.idea.authorIsMod} />
+        <UserDisplay user={{
+          userId: this.props.idea.authorUserId,
+          name: this.props.idea.authorName,
+          isMod: this.props.idea.authorIsMod}} />
       </Typography>
     );
   }
@@ -681,12 +690,15 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (!status) return null;
 
     return (
+      <React.Fragment>
+        &nbsp;
       <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
         onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
         <Typography variant='caption' style={{ color: status.color }}>
           {status.name}
         </Typography>
       </Button>
+      </React.Fragment>
     );
   }
 
@@ -710,12 +722,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderCategory(variant: PostVariant) {
-    if (variant !== 'page' && this.props.display && this.props.display.showCategoryName === false
+    if (variant === 'page'
+      || this.props.display && this.props.display.showCategoryName === false
       || !this.props.idea
       || !this.props.category) return null;
 
     return (
-      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant === 'page'}
+      <Button key='category' variant="text" className={this.props.classes.button} disabled={!this.props.onClickCategory || variant !== 'list'}
         onClick={e => this.props.onClickCategory && this.props.onClickCategory(this.props.category!.categoryId)}>
         <Typography variant='caption' style={{ color: this.props.category.color }}>
           {this.props.category.name}
@@ -1142,14 +1155,20 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div className={this.props.classes.responseContainer}>
         <Typography variant='caption' component={'span'} className={this.props.classes.responsePrefixText}>
-          {this.props.idea.responseAuthorName ? (
+          {this.props.idea.responseAuthorUserId && this.props.idea.responseAuthorName ? (
             <React.Fragment>
-              <ModStar name={this.props.idea.responseAuthorName} isMod />
-              &nbsp;
-              reply:&nbsp;&nbsp;
+              {variant === 'list' ? (
+                <ModStar name={this.props.idea.responseAuthorName} isMod />
+              ) : (
+                <UserDisplay user={{
+                  userId: this.props.idea.responseAuthorUserId,
+                  name: this.props.idea.responseAuthorName,
+                  isMod: true}} />
+                )}
+              :&nbsp;&nbsp;
             </React.Fragment>
           ) : (
-              <React.Fragment>Reply:&nbsp;&nbsp;</React.Fragment>
+              <React.Fragment>Admin reply:&nbsp;&nbsp;</React.Fragment>
             )}
         </Typography>
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>

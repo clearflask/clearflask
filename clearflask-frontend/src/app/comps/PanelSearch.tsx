@@ -66,16 +66,6 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     }
   }
 
-  onClickTag(tagId: string): void {
-    this.props.onSearchChanged({ ...this.props.search, filterTagIds: [tagId] });
-  }
-  onClickCategory(categoryId: string): void {
-    this.props.onSearchChanged({ ...this.props.search, filterCategoryIds: [categoryId] });
-  }
-  onClickStatus(statusId: string): void {
-    this.props.onSearchChanged({ ...this.props.search, filterStatusIds: [statusId] });
-  }
-
   render() {
     const controls = this.getControls();
     return (

@@ -16,6 +16,9 @@ const styles = (theme: Theme) => createStyles({
     padding: theme.spacing(2),
     display: 'flex',
   },
+  dividerCorner: {
+    maxWidth: 600,
+  },
 });
 
 interface Props {
@@ -289,10 +292,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         {editForm}
       </React.Fragment>
     ) : (
-        <DividerCorner title='Edit User'>
-          <Container maxWidth='sm'>
-            {editForm}
-          </Container>
+        <DividerCorner title='Edit User' className={this.props.classes.dividerCorner}>
+          {editForm}
         </DividerCorner>
       );
 

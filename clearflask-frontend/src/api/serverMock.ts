@@ -725,7 +725,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       user.browserPush = false;
     };
     var balance = this.getProject(request.projectId).balances[request.userId];
-    var balanceUpdateTransaction: Client.Transaction | undefined;
+    var balanceUpdateTransaction: Admin.Transaction | undefined;
     if (request.userUpdateAdmin.transactionCreate !== undefined) {
       balance = (balance || 0) + request.userUpdateAdmin.transactionCreate.amount;
       balanceUpdateTransaction = {
@@ -733,7 +733,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         transactionId: randomUuid(),
         created: new Date(),
         amount: request.userUpdateAdmin.transactionCreate.amount,
-        balance: balance,
         transactionType: Admin.TransactionType.Adjustment,
         summary: request.userUpdateAdmin.transactionCreate.summary,
       };
@@ -743,7 +742,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({
       ...user,
       balance,
-      balanceUpdateTransaction,
     });
   }
   ideaVoteUpdate(request: Client.IdeaVoteUpdateRequest): Promise<Client.IdeaVoteUpdateResponse> {

@@ -318,7 +318,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                                     server={this.props.server}
                                     user={user}
                                     credits={this.props.credits}
-                                    isMe={this.props.loggedInUser.userId === user.userId}
+                                    isMe={this.props.loggedInUser?.userId === user.userId}
                                     isInsideDialog
                                     onUpdated={userUpdated => {
                                       const updatedSearchResult = [...this.state.searchResult!];
