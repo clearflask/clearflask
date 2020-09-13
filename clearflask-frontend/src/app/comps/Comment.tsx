@@ -1,19 +1,18 @@
 import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import DeletedIcon from '@material-ui/icons/Clear';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
-import ModStar from '../../common/ModStar';
+import ModAction from '../../common/ModAction';
 import RichViewer from '../../common/RichViewer';
+import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
-import ModAction from '../../common/ModAction';
-import UserDisplay from '../../common/UserDisplay';
-import DeletedIcon from '@material-ui/icons/Clear';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
@@ -282,11 +281,12 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     }
 
     return (
-      <Typography key='author' className={this.props.classes.barItem} style={{margin: 0,}} variant='caption'>
+      <Typography key='author' className={this.props.classes.barItem} style={{ margin: 0, }} variant='caption'>
         <UserDisplay user={{
           userId: this.props.comment.authorUserId,
           name: this.props.comment.authorName,
-          isMod: this.props.comment.authorIsMod}} />
+          isMod: this.props.comment.authorIsMod
+        }} />
       </Typography>
     );
   }

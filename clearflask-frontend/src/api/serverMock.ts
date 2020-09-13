@@ -249,17 +249,17 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   commentDelete(request: Client.CommentDeleteRequest): Promise<Client.CommentWithVote> {
     return this.commentDeleteAdmin(request);
   }
-  commentList(request: Client.CommentListRequest): Promise<Client.CommentListResponse> {
+  ideaCommentSearch(request: Client.IdeaCommentSearchRequest): Promise<Client.IdeaCommentSearchResponse> {
     const minCommentIdToExclude: string | '' = [
-      ...(request.commentList.excludeChildrenCommentIds || []),
-      ...(request.commentList.parentCommentId ? [request.commentList.parentCommentId] : []),
+      ...(request.ideaCommentSearch.excludeChildrenCommentIds || []),
+      ...(request.ideaCommentSearch.parentCommentId ? [request.ideaCommentSearch.parentCommentId] : []),
     ].reduce((l, r) => l > r ? l : r, '');
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     const data = this.sort(this.getProject(request.projectId).comments
       .filter(comment => comment.ideaId === request.ideaId)
-      .filter(comment => !request.commentList.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.commentList.parentCommentId)))
-      .filter(comment => !request.commentList.excludeChildrenCommentIds ||
-        !request.commentList.excludeChildrenCommentIds.some(ec =>
+      .filter(comment => !request.ideaCommentSearch.parentCommentId || (comment.parentIdPath && comment.parentIdPath.includes(request.ideaCommentSearch.parentCommentId)))
+      .filter(comment => !request.ideaCommentSearch.excludeChildrenCommentIds ||
+        !request.ideaCommentSearch.excludeChildrenCommentIds.some(ec =>
           ec === comment.commentId
           || comment.parentIdPath.some(pc => ec === pc)))
       .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude)

@@ -1,9 +1,9 @@
-import React from 'react';
-import ModStar from './ModStar';
-import * as Client from '../api/client';
 import { Button, Typography } from '@material-ui/core';
-import { withRouter, WithRouterProps, RouteComponentProps } from 'react-router';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import React from 'react';
+import { RouteComponentProps, withRouter } from 'react-router';
+import * as Client from '../api/client';
+import ModStar from './ModStar';
 
 const styles = (theme: Theme) => createStyles({
   button: {
@@ -38,7 +38,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
   }
 
   onClick() {
-    if(this.props.onClick) {
+    if (this.props.onClick) {
       this.props.onClick(this.props.user.userId);
     } else {
       this.props.history.push(`/user/${this.props.user.userId}`);

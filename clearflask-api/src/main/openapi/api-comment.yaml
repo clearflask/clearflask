@@ -1,6 +1,6 @@
 components:
   schemas:
-    CommentList:
+    IdeaCommentSearch:
       type: object
       properties:
         parentCommentId:
@@ -9,6 +9,13 @@ components:
           type: array
           items:
             type: string
+    CommentSearch:
+      type: object
+      required:
+      - filterAuthorId
+      properties:
+        filterAuthorId:
+          type: string
     Comment:
       type: object
       required:
@@ -71,6 +78,8 @@ components:
     CommentSearchAdmin:
       type: object
       properties:
+        filterAuthorId:
+          type: string
         searchText:
           type: string
         sortBy:
@@ -85,9 +94,45 @@ components:
             - Asc
             - Desc
 
+/project/{projectId}/commentsearch:
+  post:
+    operationId: commentSearch
+    tags: [Comment]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentSearch'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CommentSearchResponse
+              type: object
+              required:
+                - results
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
 /project/{projectId}/idea/{ideaId}/commentsearch:
   post:
-    operationId: commentList
+    operationId: ideaCommentSearch
     tags: [Comment]
     parameters:
     - name: projectId
@@ -105,13 +150,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: 'api-comment.yaml#/components/schemas/CommentList'
+            $ref: 'api-comment.yaml#/components/schemas/IdeaCommentSearch'
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: CommentListResponse
+              title: IdeaCommentSearchResponse
               type: object
               required:
               - results
@@ -209,7 +254,7 @@ components:
               $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
-/project/{projectId}/admin/commentSearch:
+/project/{projectId}/admin/commentsearch:
   post:
     operationId: commentSearchAdmin
     tags: [CommentAdmin]
@@ -234,7 +279,7 @@ components:
         content:
           application/json:
             schema:
-              title: CommentSearchResponse
+              title: CommentSearchAdminResponse
               type: object
               required:
                 - results

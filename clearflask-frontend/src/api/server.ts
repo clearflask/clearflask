@@ -513,24 +513,24 @@ const stateCommentsDefault = {
 };
 function reducerComments(state: StateComments = stateCommentsDefault, action: AllActions): StateComments {
   switch (action.type) {
-    case Client.commentListActionStatus.Pending:
+    case Client.ideaCommentSearchActionStatus.Pending:
       return {
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
             status: Status.PENDING
           }
         },
       };
-    case Client.commentListActionStatus.Rejected:
+    case Client.ideaCommentSearchActionStatus.Rejected:
       return {
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
             status: Status.REJECTED
           }
         },
@@ -551,14 +551,14 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           }
         },
       };
-    case Client.commentListActionStatus.Fulfilled:
+    case Client.ideaCommentSearchActionStatus.Fulfilled:
       // First set state
       var newState = {
         ...state,
         byIdeaIdOrParentCommentId: {
           ...state.byIdeaIdOrParentCommentId,
-          [action.meta.request.commentList.parentCommentId || action.meta.request.ideaId]: {
-            ...state.byIdeaIdOrParentCommentId[action.meta.request.commentList.parentCommentId || action.meta.request.ideaId],
+          [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
+            ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
             status: Status.FULFILLED
           }
         },
@@ -1054,7 +1054,7 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
           },
         } : {}),
       };
-    case Client.commentListActionStatus.Fulfilled:
+    case Client.ideaCommentSearchActionStatus.Fulfilled:
       return {
         ...state,
         statusByCommentId: {

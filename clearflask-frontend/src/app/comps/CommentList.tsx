@@ -3,7 +3,6 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { CommentListResponse } from '../../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../../api/server';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
@@ -29,7 +28,7 @@ interface Props {
 interface ConnectProps {
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
-  loadMore: () => Promise<CommentListResponse>;
+  loadMore: () => Promise<Client.IdeaCommentSearchResponse>;
   settings: StateSettings;
 }
 
@@ -41,10 +40,10 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
 
     // If we are top level comment list and no list has been fetched and there are comments, fetch them now
     if (!this.props.parentCommentId && !this.props.commentsStatus && this.props.expectedCommentCount > 0) {
-      this.props.server.dispatch().commentList({
+      this.props.server.dispatch().ideaCommentSearch({
         projectId: this.props.server.getProjectId(),
         ideaId: this.props.ideaId,
-        commentList: {},
+        ideaCommentSearch: {},
       });
     }
   }
@@ -133,10 +132,10 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
     commentsStatus: commentsStatus,
     comments: comments,
     settings: state.settings,
-    loadMore: (): Promise<CommentListResponse> => ownProps.server.dispatch().commentList({
+    loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().ideaCommentSearch({
       projectId: state.projectId,
       ideaId: ownProps.ideaId,
-      commentList: {
+      ideaCommentSearch: {
         parentCommentId: ownProps.parentCommentId,
         excludeChildrenCommentIds: commentIds && commentIds.commentIds ? [...commentIds.commentIds] : undefined,
       },

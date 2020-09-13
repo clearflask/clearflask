@@ -33,14 +33,6 @@ import TagSelect from './TagSelect';
 //   QueryParamConfig,
 // } from 'use-query-params';
 
-enum FilterType {
-  Search = 'search',
-  Sort = 'sort',
-  Category = 'category',
-  Tag = 'tag',
-  Status = 'status',
-}
-
 const styles = (theme: Theme) => createStyles({
   content: {
   },
