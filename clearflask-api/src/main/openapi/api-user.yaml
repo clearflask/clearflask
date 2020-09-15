@@ -162,6 +162,8 @@ components:
           type: boolean
         transactionCreate:
           $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
+        isMod:
+          type: boolean
 
 /project/{projectId}/forgot:
   post:

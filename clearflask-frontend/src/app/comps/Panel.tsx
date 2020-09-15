@@ -39,7 +39,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 
-interface Props {
+export interface Props {
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   displayDefaults?: Client.PostDisplay;

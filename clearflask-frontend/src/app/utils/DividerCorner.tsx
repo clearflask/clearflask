@@ -2,8 +2,14 @@ import { Divider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import DividerVertical from './DividerVertical';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    marginTop: theme.spacing(2),
+  },
   title: {
     margin: theme.spacing(1),
     color: theme.palette.text.secondary,
@@ -37,9 +43,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     return (
-      <div className={this.props.className} style={{
-        display: 'flex',
-        flexDirection: 'column',
+      <div className={classNames(this.props.className, this.props.classes.container)} style={{
         alignItems: this.props.rtl ? 'flex-end' : 'flex-start',
       }}>
         <div className={this.props.classes.widthTransition} style={{

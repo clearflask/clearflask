@@ -275,6 +275,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       results: data.slice(0, Math.min(data.length, 10)),
     });
   }
+  commentSearch(request: Client.CommentSearchRequest): Promise<Client.CommentSearchResponse> {
+    return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
+      .filter(comment => comment.authorUserId === request.commentSearch.filterAuthorId)
+      , [(l, r) => l.created.getTime() - r.created.getTime()])
+      , this.DEFAULT_LIMIT, request.cursor));
+  }
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.CommentWithVote> {
     const comment = this.getImmutable(
       this.getProject(request.projectId).comments,
@@ -283,7 +289,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.edited = new Date();
     return this.returnLater(comment);
   }
-  commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchResponse> {
+  commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchAdminResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).comments
       .filter(comment => !request.commentSearchAdmin.searchText
         || comment.authorName && comment.authorName.indexOf(request.commentSearchAdmin.searchText) >= 0
