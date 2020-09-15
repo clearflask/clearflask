@@ -8,7 +8,8 @@ import RichViewer from '../common/RichViewer';
 import setTitle from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
-import Panel, { Direction } from './comps/Panel';
+import { Direction } from './comps/Panel';
+import PanelPost from './comps/PanelPost';
 import TemplateLiquid from './comps/TemplateLiquid';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
@@ -88,7 +89,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
               const searchKey = getSearchKey(panel.search);
               return (
                 <div key={searchKey} className={this.props.classes.singlePanel}>
-                  <Panel
+                  <PanelPost
                     key={searchKey}
                     direction={Direction.Horizontal}
                     panel={panel}
@@ -118,7 +119,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         const board = this.props.page.board;
         var panels: any = board.panels.map((panel, panelIndex) => (
           <div key={panelIndex} className={this.props.classes.boardPanel}>
-            <Panel
+            <PanelPost
               key={getSearchKey(panel.search)}
               maxHeight={vh(80)}
               direction={Direction.Vertical}

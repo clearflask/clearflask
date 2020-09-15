@@ -157,6 +157,12 @@ export const getSearchKey = (search: Client.IdeaSearch): string => {
   ].join('-');
 }
 
+export const getCommentSearchKey = (search: Client.CommentSearch): string => {
+  return [
+    search.filterAuthorId,
+  ].join('-');
+}
+
 export const getTransactionSearchKey = (search: Client.TransactionSearch): string => {
   return [
     (search.filterTransactionTypes || []).join('.'),
@@ -506,12 +512,21 @@ export interface StateComments {
       commentIds?: Set<string>;
     }
   };
+  bySearch: {
+    [searchKey: string]: {
+      status: Status,
+      commentIds?: string[],
+      cursor?: string,
+    }
+  };
 }
 const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
+  bySearch: {},
 };
 function reducerComments(state: StateComments = stateCommentsDefault, action: AllActions): StateComments {
+  var searchKey;
   switch (action.type) {
     case Client.ideaCommentSearchActionStatus.Pending:
       return {
@@ -627,6 +642,60 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
               }
             }
             : {}),
+        },
+      };
+    case Client.commentSearchActionStatus.Pending:
+      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            status: Status.PENDING,
+          }
+        }
+      };
+    case Client.commentSearchActionStatus.Rejected:
+      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      return {
+        ...state,
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            ...state.bySearch[searchKey],
+            status: Status.REJECTED,
+          }
+        }
+      };
+    case Client.commentSearchActionStatus.Fulfilled:
+      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (commentsById, comment) => {
+              commentsById[comment.commentId] = {
+                comment,
+                status: Status.FULFILLED,
+              };
+              return commentsById;
+            }, {}),
+        },
+        bySearch: {
+          ...state.bySearch,
+          [searchKey]: {
+            status: Status.FULFILLED,
+            commentIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
+              ? [ // Append results to existing comment ids
+                ...(state.bySearch[searchKey].commentIds || []),
+                ...action.payload.results.map(comment => comment.commentId),
+              ] : ( // Replace results if cursor doesn't match
+                action.payload.results.map(comment => comment.commentId)
+              ),
+            cursor: action.payload.cursor,
+          }
         },
       };
     default:

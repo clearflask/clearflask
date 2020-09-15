@@ -7,7 +7,8 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server } from '../../api/server';
 import { vh } from '../../common/util/vhUtil';
 import DividerCorner from '../utils/DividerCorner';
-import Panel, { Direction } from './Panel';
+import { Direction } from './Panel';
+import PanelPost from './PanelPost';
 import PanelSearch from './PanelSearch';
 
 const styles = (theme: Theme) => createStyles({
@@ -147,7 +148,7 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
         title={title}
         isExplorer
       >
-        <Panel
+        <PanelPost
           key={getSearchKey({ ...searchOverride, ...panel.search })}
           maxHeight={vh(80)}
           direction={Direction.Vertical}

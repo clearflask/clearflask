@@ -18,7 +18,8 @@ import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
-import Panel, { Direction } from './Panel';
+import { Direction } from './Panel';
+import PanelPost from './PanelPost';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
@@ -160,7 +161,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       const searchOverride = this.state.newItemSearchText ? { searchText: this.state.newItemSearchText } : undefined;
       content = (
         <div className={this.props.classes.content}>
-          <Panel
+          <PanelPost
             key={getSearchKey({ ...searchOverride, ...this.props.explorer.search })}
             direction={Direction.Vertical}
             panel={this.props.explorer}
@@ -187,7 +188,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     } else {
       content = (
         <div className={this.props.classes.content}>
-          <Panel
+          <PanelPost
             key={getSearchKey(this.props.explorer.search)}
             server={this.props.server}
             direction={Direction.Vertical}
