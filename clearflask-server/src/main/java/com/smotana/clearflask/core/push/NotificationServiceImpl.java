@@ -17,8 +17,14 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.core.push.message.*;
+import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
+import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
+import com.smotana.clearflask.core.push.message.OnCreditChange;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
@@ -29,6 +35,7 @@ import com.smotana.clearflask.store.NotificationStore.NotificationModel;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.Application;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -90,6 +97,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private UserStore userStore;
     @Inject
     private OnCommentReply onCommentReply;
+    @Inject
+    private OnCreditChange onCreditChange;
     @Inject
     private OnStatusOrResponseChange onStatusOrResponseChange;
     @Inject
@@ -205,6 +214,52 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             subscribers.usersExpressed.forEach(user -> sendToUser.accept(EXPRESSED, user));
             subscribers.usersFunded.forEach(user -> sendToUser.accept(FUNDED, user));
             subscribers.usersVoted.forEach(user -> sendToUser.accept(VOTED, user));
+        });
+    }
+
+    @Override
+    public void onCreditChanged(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configAdmin.getSlug() + "." + configApp.domain() + "/transaction";
+
+            try {
+                notificationStore.notificationCreate(new NotificationModel(
+                        transaction.getProjectId(),
+                        user.getUserId(),
+                        notificationStore.genNotificationId(),
+                        null,
+                        null,
+                        transaction.getCreated(),
+                        Instant.now().plus(config.notificationExpiry()).getEpochSecond(),
+                        onCreditChange.inAppDescription(user, transaction)));
+            } catch (Exception ex) {
+                log.warn("Failed to send in-app notification", ex);
+            }
+            Optional<String> authTokenOpt = Optional.empty();
+            try {
+                if (user.isEmailNotify() && !Strings.isNullOrEmpty(user.getEmail())) {
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                    }
+                    emailService.send(onCreditChange.email(user, userAuthorType, sender, idea, comment, configAdmin, link, authTokenOpt.get()));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+            try {
+                if (!Strings.isNullOrEmpty(user.getBrowserPushToken())) {
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(user.getProjectId(), user.getUserId(), config.autoLoginExpiry()));
+                    }
+                    browserPushService.send(onCreditChange.browserPush(user, userAuthorType, sender, idea, comment, link, authTokenOpt.get()));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send browser push notification", ex);
+            }
         });
     }
 

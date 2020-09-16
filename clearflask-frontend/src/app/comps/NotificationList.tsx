@@ -85,6 +85,8 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
       } else {
         this.props.history.push(`/post/${notification.relatedIdeaId}`);
       }
+    } else {
+      this.props.history.push(`/transaction`);
     }
   }
 

@@ -7,12 +7,12 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -22,28 +22,13 @@ import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKE
 
 @Slf4j
 @Singleton
-public class OnCommentReply {
-
-    public enum AuthorType {
-        IDEA_REPLY("commented on your post"),
-        COMMENT_REPLY("replied to your comment in");
-
-        private final String replyString;
-
-        AuthorType(String replyString) {
-            this.replyString = replyString;
-        }
-
-        public String getReplyString() {
-            return replyString;
-        }
-    }
+public class OnCreditChange {
 
     public interface Config {
-        @DefaultValue("__sender__ __reply_type__ '__title__'")
+        @DefaultValue("You were __action_type__ __amount__'")
         String subjectTemplate();
 
-        @DefaultValue("__sender__ __reply_type__ __title__ with __reply__")
+        @DefaultValue("Your account balance was __action_type__ __amount__ with description: \"__summary__\"")
         String template();
     }
 
@@ -54,14 +39,18 @@ public class OnCommentReply {
     @Inject
     private EmailTemplates emailTemplates;
 
-    public Email email(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, ConfigAdmin configAdmin, String link, String authToken) {
+    public Email email(UserModel user, TransactionModel transaction) {
+        TODO
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
 
         String subject = config.subjectTemplate();
         String content = config.template();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
-        content = content.replaceAll("__reply_type__", userAuthorType.getReplyString());
+        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        content = content.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+
+        subject = subject.replaceAll("__amount__", transaction.getAmount() + "");
+        content = content.replaceAll("__amount__", transaction.getAmount() + "");
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
@@ -118,6 +107,7 @@ public class OnCommentReply {
     }
 
     public BrowserPush browserPush(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link, String authToken) {
+        TODO
         checkArgument(!Strings.isNullOrEmpty(user.getBrowserPushToken()));
 
         String subject = config.subjectTemplate();
@@ -145,19 +135,12 @@ public class OnCommentReply {
         );
     }
 
-    public String inAppDescription(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, String link) {
+    public String inAppDescription(UserModel user, TransactionModel transaction) {
+        TODO amount needs to be correctly formatted
         String subject = config.subjectTemplate();
 
-        subject = subject.replaceAll("__reply_type__", userAuthorType.getReplyString());
-
-        String senderName = StringUtils.abbreviate(emailTemplates.sanitize(sender.getName() == null ? "" : sender.getName()), 10);
-        if (senderName.isEmpty()) {
-            senderName = "Someone";
-        }
-        subject = subject.replaceAll("__sender__", senderName);
-
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replaceAll("__title__", title);
+        subject = subject.replaceAll("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        subject = subject.replaceAll("__amount__", transaction.getAmount() + "");
 
         return subject;
     }
@@ -166,7 +149,7 @@ public class OnCommentReply {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(OnCommentReply.class).asEagerSingleton();
+                bind(OnCreditChange.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

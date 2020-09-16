@@ -22,9 +22,17 @@ class PricingSlider extends Component<Props & WithStyles<typeof styles, true>, S
             const value = val as any as number;
             this.setState({ value });
           }}
-          valueLabelFormat={(val) => (
-            <div>{val}</div>
-          )}
+          ValueLabelComponent={(props: {
+            value: number;
+            open: boolean;
+            children: React.ReactElement;
+          }) => (
+              <div>
+                {props.children}
+                {props.value}
+              </div>
+            )}
+          valueLabelDisplay='on'
         />
       </div>
     );

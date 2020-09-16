@@ -195,7 +195,6 @@ public class OnStatusOrResponseChange {
 
     public String inAppDescription(UserModel user, IdeaModel idea, ConfigAdmin configAdmin, SubscriptionAction subscriptionAction, String link, Optional<IdeaStatus> changedStatus, Optional<String> changedResponse) {
         checkArgument(changedStatus.isPresent() || changedResponse.isPresent());
-        checkArgument(!Strings.isNullOrEmpty(user.getBrowserPushToken()));
 
         String subject;
         if (!changedStatus.isPresent()) {
