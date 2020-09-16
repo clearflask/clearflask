@@ -28,6 +28,7 @@ import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import rx.Observable;
 
@@ -216,9 +217,15 @@ public class KillBillResource extends ManagedService {
         try {
             invoice = kbInvoice.getInvoice(event.objectId, KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
-            log.warn("Failed to fetch invoice, id {} eventType {}",
+            log.warn("Failed to fetch invoice, invoiceId {} eventType {}",
                     event.objectId, event.getEventType(), ex);
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        if (!InvoiceStatus.COMMITTED.equals(invoice.getStatus())) {
+            log.debug("Not processing invoice in non-committed status, invoiceId {}",
+                    event.objectId);
+            return;
         }
 
         Optional<String> planNameOpt = invoice.getItems().stream()
