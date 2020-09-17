@@ -1,14 +1,13 @@
 import { Divider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import DividerVertical from './DividerVertical';
-import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    marginTop: theme.spacing(2),
   },
   title: {
     margin: theme.spacing(1),

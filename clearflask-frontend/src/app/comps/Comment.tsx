@@ -8,6 +8,7 @@ import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
 import RichViewer from '../../common/RichViewer';
+import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
 import Delimited from '../utils/Delimited';
@@ -84,6 +85,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  className?: string;
   comment?: Client.CommentWithVote;
   isBlurry?: boolean;
   loggedInUser?: Client.User;
@@ -91,6 +93,7 @@ interface Props {
   onCommentClick?: () => void;
   onReplyClicked?: () => void;
   logIn: () => Promise<void>;
+  truncateLines?: number;
 }
 interface State {
   editExpanded?: boolean;
@@ -104,7 +107,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   render() {
     return (
-      <div className={this.props.classes.comment}>
+      <div className={classNames(this.props.classes.comment, this.props.className)}>
         <div
           className={classNames(this.props.classes.content, !!this.props.onCommentClick && this.props.classes.clickable)}
           onClick={!!this.props.onCommentClick ? this.props.onCommentClick.bind(this) : undefined}
@@ -119,13 +122,28 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
   renderContent() {
     if (!this.props.comment) return null;
-    return this.props.comment.authorUserId === undefined ? (
-      <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
-    ) : (
-        <Typography variant='body1' className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
-          <RichViewer key={this.props.comment.content || 'empty'} initialRaw={this.props.comment.content || ''} />
+    if (this.props.comment.authorUserId === undefined) {
+      return (
+        <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
+      );
+    } else {
+      const variant = 'body1';
+      var content = (
+        <RichViewer key={this.props.comment.content || 'empty'} initialRaw={this.props.comment.content || ''} />
+      );
+      if (this.props.truncateLines) {
+        content = (
+          <TruncateFade variant={variant} lines={this.props.truncateLines}>
+            {content}
+          </TruncateFade>
+        );
+      }
+      return (
+        <Typography variant={variant} className={`${this.props.classes.pre} ${this.props.isBlurry ? this.props.classes.blurry : ''}`}>
+          {content}
         </Typography>
       );
+    }
   }
 
   renderVotingControl() {

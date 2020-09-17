@@ -45,6 +45,7 @@ interface State {
   iosPush?: boolean;
   androidPush?: boolean;
   browserPush?: boolean;
+  isMod?: boolean;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -63,6 +64,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
         || this.state.iosPush !== undefined
         || this.state.androidPush !== undefined
         || this.state.browserPush !== undefined
+        || this.state.isMod !== undefined
       );
 
     var editForm = (
@@ -76,6 +78,20 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 fullWidth
                 value={this.state.name === undefined ? this.props.user.name : this.state.name}
                 onChange={e => this.setState({ name: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                className={this.props.classes.row}
+                disabled={this.state.isSubmitting}
+                control={(
+                  <Switch
+                    checked={this.state.isMod === undefined ? this.props.user.isMod : this.state.isMod}
+                    onChange={(e, checked) => this.setState({ isMod: checked === this.props.user.isMod ? undefined : checked })}
+                    color='primary'
+                  />
+                )}
+                label={`Moderator`}
               />
             </Grid>
             <Grid item xs={12} className={this.props.classes.row}>
@@ -119,7 +135,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 control={(
                   <Switch
                     checked={this.state.emailNotify === undefined ? this.props.user.emailNotify : this.state.emailNotify}
-                    onChange={(e, checked) => this.setState({ emailNotify: checked ? true : undefined })}
+                    onChange={(e, checked) => this.setState({ emailNotify: checked === this.props.user.emailNotify ? undefined : checked })}
                     color='primary'
                   />
                 )}
@@ -134,7 +150,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   control={(
                     <Switch
                       checked={this.state.iosPush === undefined ? this.props.user.iosPush : this.state.iosPush}
-                      onChange={(e, checked) => this.setState({ iosPush: checked ? true : undefined })}
+                      onChange={(e, checked) => this.setState({ iosPush: checked === this.props.user.iosPush ? undefined : checked })}
                       color='primary'
                     />
                   )}
@@ -150,7 +166,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   control={(
                     <Switch
                       checked={this.state.androidPush === undefined ? this.props.user.androidPush : this.state.androidPush}
-                      onChange={(e, checked) => this.setState({ androidPush: checked ? true : undefined })}
+                      onChange={(e, checked) => this.setState({ androidPush: checked === this.props.user.androidPush ? undefined : checked })}
                       color='primary'
                     />
                   )}
@@ -166,7 +182,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   control={(
                     <Switch
                       checked={this.state.browserPush === undefined ? this.props.user.browserPush : this.state.browserPush}
-                      onChange={(e, checked) => this.setState({ browserPush: checked ? true : undefined })}
+                      onChange={(e, checked) => this.setState({ browserPush: checked === this.props.user.browserPush ? undefined : checked })}
                       color='primary'
                     />
                   )}
@@ -229,6 +245,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 iosPush: this.state.iosPush,
                 androidPush: this.state.androidPush,
                 browserPush: this.state.browserPush,
+                isMod: this.state.isMod,
                 transactionCreate: (this.state.balanceAdjustment !== undefined && balanceAdjustmentChanged) ? {
                   amount: +this.state.balanceAdjustment,
                   summary: this.state.balanceDescription,
@@ -250,6 +267,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   iosPush: undefined,
                   androidPush: undefined,
                   browserPush: undefined,
+                  isMod: undefined,
                 });
                 this.props.onUpdated(user);
               })

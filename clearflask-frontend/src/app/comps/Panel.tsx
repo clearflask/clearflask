@@ -12,6 +12,7 @@ export enum Direction {
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
+    alignItems: 'baseline',
   },
   [Direction.Horizontal]: {
     ...(contentScrollApplyStyles(theme, Side.Center, false)),

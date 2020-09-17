@@ -25,6 +25,7 @@ import ModAction from '../../common/ModAction';
 import ModStar from '../../common/ModStar';
 import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
+import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
 import { createMutableRef } from '../../common/util/refUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
@@ -39,7 +40,6 @@ import FundingControl from './FundingControl';
 import LogIn from './LogIn';
 import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
-import UserDisplay from '../../common/UserDisplay';
 
 export type PostVariant = 'list' | 'page';
 
@@ -57,7 +57,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   outer: {
-    minWidth: 200,
+    minWidth: 'auto',
     margin: theme.spacing(0.5),
   },
   post: {
@@ -311,6 +311,9 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    float: 'left', // Exclude from baseline calculation
+    clear: 'left', // Exclude from baseline calculation
+    width: '100%', // Exclude from baseline calculation
   },
   pulsateFunding: {
     opacity: 0.1,
@@ -556,7 +559,8 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <UserDisplay user={{
           userId: this.props.idea.authorUserId,
           name: this.props.idea.authorName,
-          isMod: this.props.idea.authorIsMod}} />
+          isMod: this.props.idea.authorIsMod
+        }} />
       </Typography>
     );
   }
@@ -692,12 +696,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <React.Fragment>
         &nbsp;
-      <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
-        onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
-        <Typography variant='caption' style={{ color: status.color }}>
-          {status.name}
-        </Typography>
-      </Button>
+        <Button key='status' variant='text' className={this.props.classes.button} disabled={!this.props.onClickStatus || variant === 'page'}
+          onClick={e => this.props.onClickStatus && this.props.onClickStatus(status.statusId)}>
+          <Typography variant='caption' style={{ color: status.color }}>
+            {status.name}
+          </Typography>
+        </Button>
       </React.Fragment>
     );
   }
@@ -860,14 +864,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <Typography
           variant='caption'
           className={this.props.classes.fundThisButtonLabel}
-          color='primary'
+          color={fundingAllowed ? 'primary' : 'inherit'}
         >
           {fundingAllowed
             ? <span style={{ display: 'flex', alignItems: 'center' }}>
               <AddIcon fontSize='inherit' />
               {iFundedThis ? 'Adjust' : 'Fund'}
             </span>
-            : 'Funding is closed'}
+            : 'Closed'}
         </Typography>
       </Button>
     );
@@ -1160,10 +1164,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               {variant === 'list' ? (
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
-                <UserDisplay user={{
-                  userId: this.props.idea.responseAuthorUserId,
-                  name: this.props.idea.responseAuthorName,
-                  isMod: true}} />
+                  <UserDisplay user={{
+                    userId: this.props.idea.responseAuthorUserId,
+                    name: this.props.idea.responseAuthorName,
+                    isMod: true
+                  }} />
                 )}
               :&nbsp;&nbsp;
             </React.Fragment>

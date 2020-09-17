@@ -27,6 +27,9 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(4),
     color: theme.palette.text.secondary,
   },
+  comment: {
+    maxWidth: 200,
+  },
 });
 interface Props {
   server: Server;
@@ -83,11 +86,13 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
           content = this.props.searchResult.comments.map(comment => (
             <Comment
               key={comment && comment.commentId}
+              className={this.props.classes.comment}
               server={this.props.server}
               onCommentClick={this.props.onClickComment ? () => this.props.onClickComment && this.props.onClickComment(comment.ideaId, comment.commentId) : undefined}
               comment={comment}
               loggedInUser={this.props.loggedInUser}
               logIn={logIn}
+              truncateLines={3}
             />
           ));
         }
