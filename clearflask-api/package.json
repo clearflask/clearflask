@@ -1,7 +1,7 @@
 {
   "private": true,
   "dependencies": {
-    "@apidevtools/swagger-parser": "10.0.2",
+    "swagger-parser": "10.0.2",
     "@openapitools/openapi-generator-cli": "cli-4.1.3"
   }
 }
