@@ -1,4 +1,4 @@
-image: openjdk:8-jdk-alpine
+image: maven:3.6.3
 
 variables:
   DOCKER_HOST: tcp://docker:2375
