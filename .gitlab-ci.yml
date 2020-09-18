@@ -1,11 +1,10 @@
-image: maven:latest
+image: ayan4m1/maven-node:latest
 
 before_script:
-  - apt-get -qq update && apt-get -qq install -y openapi-generator
+  - npm install -g openapi-generator
 
 stages:
   - build
-  - test
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode"
@@ -19,10 +18,4 @@ cache:
 build:
   stage: build
   script:
-    - mvn $MAVEN_CLI_OPTS compile
-
-test:
-  stage: test
-  script:
-    - mvn $MAVEN_CLI_OPTS test
-
+    - mvn $MAVEN_CLI_OPTS install
