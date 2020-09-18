@@ -11,7 +11,7 @@ services:
   - docker:19.03.12-dind
 
 before_script:
-  - apt-get update -qq && apt-get install -y -qq protoc
+  - apk update && apk install -y protoc
   - docker info
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
