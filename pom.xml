@@ -31,6 +31,9 @@
         <hk2.version>2.5.0-b62</hk2.version>
         <jjwt.version>0.10.5</jjwt.version>
         <sqlite4java>1.0.392</sqlite4java>
+        <node.version>v10.12.0</node.version>
+        <yarn.version>v1.10.1</yarn.version>
+        <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
     </properties>
 
     <modules>

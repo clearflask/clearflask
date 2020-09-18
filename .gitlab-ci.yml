@@ -1,4 +1,4 @@
-image: ayan4m1/maven-node:latest
+image: maven:latest
 
 before_script:
   - npm install @openapitools/openapi-generator-cli@cli-4.1.3 -g

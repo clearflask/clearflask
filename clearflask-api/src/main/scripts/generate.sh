@@ -7,32 +7,39 @@ SCRIPTS_DIR=$2
 OPENAPI_TARGET_DIR=$3
 TEMPLATE_SOURCE_DIR=$4
 
+PATH="$PWD/node/":$PATH
+NODE="node/node"
+NPM="${NODE} node/node_modules/npm/bin/npm-cli.js"
+NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
+
+OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
+
 # Client API
-openapi-generator generate \
+${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-client.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-client &
 
 # Admin API
-openapi-generator generate \
+${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-admin.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-admin &
 
 # HTML Docs
-openapi-generator generate \
+${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api.yaml \
     -g html \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
 # Config Schema
-npm install swagger-parser
-node ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
+${NPM} install @apidevtools/swagger-parser@10.0.2
+${NODE} ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
 
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
-openapi-generator generate \
+${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/java-jaxrs \
     --ignore-file-override=${TEMPLATE_SOURCE_DIR}/java-jaxrs/.openapi-generator-ignore \
     -i ${OPENAPI_SOURCE_DIR}/api.yaml \
