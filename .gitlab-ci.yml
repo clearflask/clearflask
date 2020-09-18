@@ -1,7 +1,8 @@
 image: ayan4m1/maven-node:latest
 
 before_script:
-  - npm install -g openapi-generator
+  - npm install swagger-parser @openapitools/openapi-generator-cli@cli-4.1.3 -g
+  - openapi-generator version
 
 stages:
   - build
