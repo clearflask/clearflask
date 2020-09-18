@@ -28,6 +28,7 @@ openapi-generator generate \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
 # Config Schema
+npm install swagger-parser
 node ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
 
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
