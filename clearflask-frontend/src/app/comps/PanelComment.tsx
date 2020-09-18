@@ -28,7 +28,8 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
   },
   comment: {
-    maxWidth: 200,
+    minWidth: 200,
+    maxWidth: 350,
   },
 });
 interface Props {
@@ -38,6 +39,7 @@ interface Props {
   direction: Direction;
   maxHeight?: string | number;
   hideIfEmpty?: boolean;
+  hideAuthor?: boolean;
   onClickComment?: (ideaId: string, commentId: string) => void;
 }
 interface ConnectProps {
@@ -93,6 +95,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
               loggedInUser={this.props.loggedInUser}
               logIn={logIn}
               truncateLines={3}
+              hideAuthor={this.props.hideAuthor}
             />
           ));
         }

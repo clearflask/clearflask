@@ -18,6 +18,10 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(3),
     color: theme.palette.text.secondary,
   },
+  button: {
+    margin: 'auto',
+    display: 'block',
+  },
 });
 
 interface Props {
@@ -61,12 +65,12 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
           </Table>
         </div>
         {hasNotifications && (
-          <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.clearAll()}>
+          <Button fullWidth className={this.props.classes.button} onClick={() => this.clearAll()}>
             Clear all
           </Button>
         )}
         {this.props.getNextNotifications && (
-          <Button style={{ margin: 'auto', display: 'block' }} onClick={() => this.props.getNextNotifications && this.props.getNextNotifications()}>
+          <Button fullWidth className={this.props.classes.button} onClick={() => this.props.getNextNotifications && this.props.getNextNotifications()}>
             Show more
           </Button>
         )}

@@ -94,6 +94,7 @@ interface Props {
   onReplyClicked?: () => void;
   logIn: () => Promise<void>;
   truncateLines?: number;
+  hideAuthor?: boolean;
 }
 interface State {
   editExpanded?: boolean;
@@ -289,7 +290,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 
   renderAuthor() {
-    if (!this.props.comment) return null;
+    if (!this.props.comment || this.props.hideAuthor) return null;
     if (!this.props.comment.authorUserId || !this.props.comment.authorName) {
       return (
         <Typography key='author' className={`${this.props.classes.barItem} ${this.props.classes.unknownUser}`} variant='caption'>

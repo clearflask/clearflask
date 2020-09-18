@@ -58,6 +58,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
           search={commentSearch}
           direction={Direction.Horizontal}
           onClickComment={(ideaId, commentId) => this.props.history.push(preserveEmbed(`/post/${ideaId}`, this.props.location))}
+          hideAuthor
         />
       </div>
     );

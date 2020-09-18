@@ -72,7 +72,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.header}>
             <div>
               <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h4" color="textSecondary">Trial ends when you start getting feedback</Typography>
+              <Typography component="div" variant="h5" color="textSecondary">Trial ends when you start receiving feedback</Typography>
             </div>
             <Container maxWidth='md'>
               <img
