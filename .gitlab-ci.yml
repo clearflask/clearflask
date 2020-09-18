@@ -1,5 +1,8 @@
 image: maven:latest
 
+before_script:
+  - apt-get -qq update && apt-get -qq install -y openapi-generator
+
 stages:
   - build
   - test
