@@ -56,6 +56,16 @@
                         </goals>
                         <phase>initialize</phase>
                     </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                        <phase>initialize</phase>
+                    </execution>
                 </executions>
                 <configuration>
                     <nodeVersion>${node.version}</nodeVersion>
