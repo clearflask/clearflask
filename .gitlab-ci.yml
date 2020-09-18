@@ -1,8 +1,4 @@
-image: maven:latest
-
-before_script:
-  - npm install @openapitools/openapi-generator-cli@cli-4.1.3 -g
-  - openapi-generator version
+image: maven:3.6.3
 
 stages:
   - build
