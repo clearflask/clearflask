@@ -35,8 +35,7 @@ ${OPENAPI_GENERATOR} generate \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
 # Config Schema
-${NPM} install @apidevtools/swagger-parser@10.0.2
-${NODE} ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
+${NPX} -p @apidevtools/swagger-parser@10.0.2 ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
 
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
 ${OPENAPI_GENERATOR} generate \
