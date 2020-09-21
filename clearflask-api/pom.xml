@@ -54,7 +54,7 @@
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
-                        <phase>validate</phase>
+                        <phase>initialize</phase>
                     </execution>
                     <execution>
                         <id>npm install</id>
@@ -64,7 +64,7 @@
                         <configuration>
                             <arguments>install</arguments>
                         </configuration>
-                        <phase>initialize</phase>
+                        <phase>generate-sources</phase>
                     </execution>
                 </executions>
                 <configuration>
@@ -80,7 +80,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
