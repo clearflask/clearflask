@@ -2,6 +2,7 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
@@ -18,6 +19,12 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 public interface Billing {
+
+    ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.ACTIVENORENEWAL,
+            SubscriptionStatus.ACTIVEPAYMENTRETRY,
+            SubscriptionStatus.ACTIVETRIAL);
 
     AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId);
 

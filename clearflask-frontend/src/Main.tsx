@@ -102,7 +102,7 @@ class Main extends Component {
                         postId={props.match.params['postId'] || ''}
                       />
                     )} />
-                   ), (
+                  ), (
                     <Route key='app' path="/" render={props => (
                       <App projectId={subdomain} {...props} />
                     )} />
@@ -115,7 +115,7 @@ class Main extends Component {
                   ), (
                     <Route key='invoice' path="/invoice/:invoiceNumber" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
-                        <Invoice invoiceNumber={props.match.params['invoiceNumber']} />
+                        <Invoice invoiceNumber={parseInt(props.match.params['invoiceNumber'])} />
                       </Provider>
                     )} />
                   ), (

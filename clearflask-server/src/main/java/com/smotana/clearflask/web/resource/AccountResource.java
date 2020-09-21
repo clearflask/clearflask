@@ -8,7 +8,19 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.PlanApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountBilling;
+import com.smotana.clearflask.api.model.AccountBillingPayment;
+import com.smotana.clearflask.api.model.AccountBindAdminResponse;
+import com.smotana.clearflask.api.model.AccountLogin;
+import com.smotana.clearflask.api.model.AccountSignupAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
+import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.api.model.LegalResponse;
+import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
@@ -27,10 +39,7 @@ import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrinc
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
-import org.joda.time.base.AbstractInstant;
 import org.killbill.billing.catalog.api.PhaseType;
-import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Subscription;
 
 import javax.annotation.security.PermitAll;
@@ -334,20 +343,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
         });
 
-        Instant billingPeriodEnd = null;
-        if (subscription.getPhaseType() == PhaseType.TRIAL) {
-            billingPeriodEnd = subscription.getEvents().stream()
-                    .filter(e -> !e.getPhase().endsWith("-trial"))
-                    .filter(e -> e.getEffectiveDate().isAfter(LocalDate.now(DateTimeZone.UTC)))
-                    .findAny()
-                    .map(EventSubscription::getEffectiveDate)
-                    .map(d -> d.toDateTimeAtStartOfDay(DateTimeZone.UTC))
-                    .map(AbstractInstant::toInstant)
-                    .map(org.joda.time.Instant::getMillis)
-                    .map(Instant::ofEpochMilli)
-                    .orElse(null);
+        Long billingPeriodMau = null;
+        if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(account.getStatus())) {
+            billingPeriodMau = billing.getUsageCurrentPeriod(accountSession.getAccountId());
         }
-        if (billingPeriodEnd == null
+
+        Instant billingPeriodEnd = null;
+        if (subscription.getPhaseType() == PhaseType.EVERGREEN
                 && subscription.getChargedThroughDate() != null) {
             // TODO double check this is the correct time, should it not be at end of day instead?
             billingPeriodEnd = Instant.ofEpochMilli(subscription.getChargedThroughDate()
@@ -363,6 +365,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 newStatus,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
+                billingPeriodMau <= 0 ? null : billingPeriodMau,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,

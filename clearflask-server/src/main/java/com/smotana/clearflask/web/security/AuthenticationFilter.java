@@ -1,12 +1,14 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
@@ -31,11 +33,6 @@ import java.util.Optional;
 public class AuthenticationFilter implements ContainerRequestFilter {
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID = "x-cf-account";
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "x-cf-secret";
-    private static final ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
-            SubscriptionStatus.ACTIVE,
-            SubscriptionStatus.ACTIVENORENEWAL,
-            SubscriptionStatus.ACTIVEPAYMENTRETRY,
-            SubscriptionStatus.ACTIVETRIAL);
 
     @Context
     protected HttpServletResponse response;
@@ -157,7 +154,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                         return false;
                     }
                 }
-                if (!SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     return false;
                 }
                 return true;
@@ -201,7 +198,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     }
                 }
                 if (role == Role.PROJECT_OWNER
-                        || !SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                        || !Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
                     return false;
                 }
                 return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);

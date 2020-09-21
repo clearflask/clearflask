@@ -164,6 +164,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           expiryYear: 2032,
         },
       billingPeriodEnd,
+      billingPeriodMau: 341,
       availablePlans: Object.values(AvailablePlans),
       invoices: {
         cursor: 'one more',

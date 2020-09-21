@@ -32,6 +32,9 @@ const styles = (theme: Theme) => createStyles({
   },
   planContainer: {
     alignSelf: 'flex-start',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     width: 350,
   },
   spacing: {
@@ -316,8 +319,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <React.Fragment>
                   <Box gridArea='payTtl'><Typography component='div'>Credits:</Typography></Box>
                   <Box gridArea='payAmt' display='flex'>
-                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='h2' variant='h4' color={hasPayable ? 'primary' : undefined}>
+                    <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component='div' variant='h4' color={hasPayable ? 'primary' : undefined}>
                       {this.props.accountBilling?.accountPayable || 0}
                     </Typography>
                   </Box>
@@ -327,8 +330,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <React.Fragment>
                   <Box gridArea='rcvTtl'><Typography component='div'>Overdue:</Typography></Box>
                   <Box gridArea='rcvAmt' display='flex'>
-                    <Typography component='h2' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='h2' variant='h4' color={hasReceivable ? 'error' : undefined}>
+                    <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component='div' variant='h4' color={hasReceivable ? 'error' : undefined}>
                       {this.props.accountBilling?.accountReceivable || 0}
                     </Typography>
                   </Box>
@@ -541,6 +544,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               className={this.props.classes.plan}
               plan={this.props.account.plan}
             />
+            {(this.props.accountBilling?.billingPeriodMau !== undefined) && (
+              <Box display='grid' gridTemplateAreas='"mauLbl mauAmt"' alignItems='baseline' gridGap='10px 10px'>
+                <Box gridArea='mauLbl'><Typography component='div'>Current MAU:</Typography></Box>
+                <Box gridArea='mauAmt' display='flex'>
+                  <Typography component='div' variant='h5'>
+                    {this.props.accountBilling.billingPeriodMau}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
           </div>
           <div className={this.props.classes.actionContainer}>
             <Typography variant='h6' component='div'>{planTitle}</Typography>

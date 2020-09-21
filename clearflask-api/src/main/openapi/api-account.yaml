@@ -201,6 +201,9 @@ components:
         billingPeriodEnd:
           type: string
           format: date-time
+        billingPeriodMau:
+          type: integer
+          format: int64
         availablePlans:
           type: array
           items:

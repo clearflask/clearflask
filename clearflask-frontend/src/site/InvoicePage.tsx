@@ -6,14 +6,14 @@ import Loader from '../app/utils/Loader';
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
-  invoiceNumber: string;
+  invoiceNumber: number;
 }
 interface State {
   invoiceHtml?: string;
   error?: string;
 }
 class InvoicePage extends Component<Props & WithStyles<typeof styles, true>, State> {
-  state:State = {};
+  state: State = {};
   constructor(props) {
     super(props);
 
