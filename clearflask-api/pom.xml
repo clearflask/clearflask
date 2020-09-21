@@ -54,7 +54,7 @@
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
-                        <phase>initialize</phase>
+                        <phase>validate</phase>
                     </execution>
                     <execution>
                         <id>npm install</id>
