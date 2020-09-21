@@ -64,7 +64,7 @@
                         <configuration>
                             <arguments>install</arguments>
                         </configuration>
-                        <phase>generate-sources</phase>
+                        <phase>initialize</phase>
                     </execution>
                 </executions>
                 <configuration>
