@@ -8,10 +8,10 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 
 services:
-  - docker:19.03.12-dind
+  - docker:dind
 
 before_script:
-  - apk update && apk add protobuf maven
+  - apk update && apk add protobuf maven docker
   - docker info
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
