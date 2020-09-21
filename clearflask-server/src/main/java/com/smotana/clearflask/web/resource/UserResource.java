@@ -9,29 +9,10 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.EmailSignup;
-import com.smotana.clearflask.api.model.ForgotPassword;
-import com.smotana.clearflask.api.model.NotificationMethods;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserCreateAdmin;
-import com.smotana.clearflask.api.model.UserCreateResponse;
-import com.smotana.clearflask.api.model.UserLogin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
-import com.smotana.clearflask.api.model.Users;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.TokenVerifyStore;
@@ -45,7 +26,6 @@ import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
-import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -292,6 +272,15 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
+    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @Limit(requiredPermits = 10)
+    @Override
+    public User userGet(String projectId, String userId) {
+        return userStore.getUser(projectId, userId)
+                .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"))
+                .toUser();
+    }
+
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
@@ -407,7 +396,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
-        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
         // TODO Sanity check userUpdateAdmin
         if (userUpdateAdmin.getTransactionCreate() != null) {
             TransactionModel transaction = voteStore.balanceAdjustTransaction(
@@ -416,7 +404,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     userUpdateAdmin.getTransactionCreate().getAmount(),
                     Optional.ofNullable(Strings.emptyToNull(userUpdateAdmin.getTransactionCreate().getSummary())).orElse("Admin adjustment"));
             userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
-            billing.recordUsage(Billing.UsageType.CREDIT, accountSession.getAccountId(), projectId, userId);
             ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
             UserModel user = userStore.getUser(projectId, userId).get();
             notificationService.onCreditChanged(configAdmin, user, transaction);

@@ -100,11 +100,11 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
     @Limit(requiredPermits = 10)
     @Override
-    public CommentListResponse commentList(String projectId, String ideaId, CommentList commentList) {
+    public IdeaCommentSearchResponse ideaCommentSearch(String projectId, String ideaId, IdeaCommentSearch ideaCommentSearch) {
         ImmutableSet<CommentModel> comments = commentStore.listComments(projectId, ideaId,
-                Optional.ofNullable(Strings.emptyToNull(commentList.getParentCommentId())),
-                commentList.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(commentList.getExcludeChildrenCommentIds()));
-        return new CommentListResponse(toCommentWithVotes(projectId, comments));
+                Optional.ofNullable(Strings.emptyToNull(ideaCommentSearch.getParentCommentId())),
+                ideaCommentSearch.getExcludeChildrenCommentIds() == null ? ImmutableSet.of() : ImmutableSet.copyOf(ideaCommentSearch.getExcludeChildrenCommentIds()));
+        return new IdeaCommentSearchResponse(toCommentWithVotes(projectId, comments));
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})
@@ -121,6 +121,23 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public Comment commentDelete(String projectId, String ideaId, String commentId) {
         return commentStore.markAsDeletedComment(projectId, ideaId, commentId)
                 .getCommentModel().toComment();
+    }
+
+    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @Limit(requiredPermits = 10)
+    @Override
+    public CommentSearchResponse commentSearch(String projectId, CommentSearch commentSearch, String cursor) {
+        CommentStore.SearchCommentsResponse response = commentStore.searchComments(
+                projectId,
+                CommentSearchAdmin.builder()
+                        .filterAuthorId(commentSearch.getFilterAuthorId())
+                        .build(),
+                false,
+                Optional.ofNullable(Strings.emptyToNull(cursor)),
+                Optional.empty());
+        return new CommentSearchResponse(
+                response.getCursorOpt().orElse(null),
+                toCommentWithVotes(projectId, response.getComments()));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})

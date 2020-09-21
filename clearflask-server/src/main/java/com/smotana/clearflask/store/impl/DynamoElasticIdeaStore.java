@@ -268,6 +268,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         ideaSearch.getFilterCategoryIds(),
                         ideaSearch.getFilterStatusIds(),
                         ideaSearch.getFilterTagIds(),
+                        ideaSearch.getFilterAuthorId(),
                         ideaSearch.getSearchText(),
                         ideaSearch.getFundedByMeAndActive(),
                         ideaSearch.getLimit(),

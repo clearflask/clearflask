@@ -103,7 +103,6 @@ public interface Billing {
     enum UsageType {
         POST,
         COMMENT,
-        VOTE,
-        CREDIT,
+        VOTE
     }
 }

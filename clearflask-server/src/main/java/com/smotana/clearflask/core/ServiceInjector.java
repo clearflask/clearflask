@@ -136,6 +136,7 @@ public enum ServiceInjector {
                 install(EmailServiceImpl.module());
                 install(BrowserPushServiceImpl.module());
                 install(OnCommentReply.module());
+                install(OnCreditChange.module());
                 install(OnStatusOrResponseChange.module());
                 install(OnForgotPassword.module());
                 install(OnAdminInvite.module());

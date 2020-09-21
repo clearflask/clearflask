@@ -204,6 +204,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsMod(),
+                    this.getCreated(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),
@@ -219,6 +220,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsMod(),
+                    this.getCreated(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),
@@ -235,6 +237,7 @@ public interface UserStore {
                     this.getUserId(),
                     this.getName(),
                     this.getIsMod(),
+                    this.getCreated(),
                     this.getSsoGuid() != null ? true : null,
                     this.getEmail(),
                     this.getEmailVerified(),
@@ -243,8 +246,15 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
-                    this.getBalance(),
-                    this.getCreated());
+                    this.getBalance());
+        }
+
+        public User toUser() {
+            return new User(
+                    getUserId(),
+                    getName(),
+                    getIsMod(),
+                    getCreated());
         }
 
         public Balance toBalance() {
