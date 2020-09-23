@@ -2,7 +2,6 @@ package com.smotana.clearflask.core;
 
 import com.google.common.base.Charsets;
 import com.google.gson.Gson;
-import com.google.gson.GsonNonNull;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -11,9 +10,9 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.api.model.CreditIncome;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.web.Application;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -75,7 +74,7 @@ public class ClearFlaskCreditSync extends ManagedService {
         if (!config.enabled()) {
             return;
         }
-        CreditRequest creditRequest = new CreditRequest(
+        CreditIncome creditRequest = new CreditIncome(
                 account.getClearFlaskGuid(),
                 account.getEmail(),
                 account.getName(),
@@ -103,23 +102,6 @@ public class ClearFlaskCreditSync extends ManagedService {
                 throw new WebApplicationException(res.getStatusLine().getStatusCode());
             }
         }
-    }
-
-    @Value
-    private class CreditRequest {
-        @GsonNonNull
-        String guid;
-
-        String email;
-
-        String name;
-
-        String transactionId;
-
-        @GsonNonNull
-        long amount;
-
-        String summary;
     }
 
     public static Module module() {

@@ -68,8 +68,8 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("true")
         boolean usageRecordSendToKbEnabled();
 
-        @DefaultValue("true")
-        boolean usageRecordUseTracking();
+        @DefaultValue("false")
+        boolean usageRecordKbIdempotentEnabled();
     }
 
     @Inject
@@ -589,8 +589,12 @@ public class KillBilling extends ManagedService implements Billing {
                     return null;
                 }
 
+                if (!config.usageRecordSendToKbEnabled()) {
+                    return null;
+                }
+
                 log.trace("Recording new active user due to {} userId {}", type, userId);
-                Optional<String> trackingIdOpt = config.usageRecordUseTracking()
+                Optional<String> trackingIdOpt = config.usageRecordKbIdempotentEnabled()
                         ? Optional.of(periodId + "-" + userId)
                         : Optional.empty();
                 kbUsage.recordUsage(new SubscriptionUsageRecord(

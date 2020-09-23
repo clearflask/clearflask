@@ -1196,7 +1196,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.props.onClickPost) {
       this.props.onClickPost(this.props.idea.ideaId);
     } else {
-      this.props.history.push(`${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`);
+      this.props.history.push(`/post/${this.props.idea.ideaId}`);
     }
   }
 

@@ -167,7 +167,7 @@ public interface VoteStore {
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
-    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = "transactionId")
+    @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "transaction", rangeKeys = {"transactionId"})
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "transactionByProjectId", rangeKeys = {"created"})
     class TransactionModel {
         @NonNull
