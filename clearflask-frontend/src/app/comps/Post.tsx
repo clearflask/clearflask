@@ -27,6 +27,7 @@ import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import { createMutableRef } from '../../common/util/refUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import setTitle from '../../common/util/titleUtil';
@@ -1196,7 +1197,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     if (this.props.onClickPost) {
       this.props.onClickPost(this.props.idea.ideaId);
     } else {
-      this.props.history.push(`/post/${this.props.idea.ideaId}`);
+      this.props.history.push(preserveEmbed(`/post/${this.props.idea.ideaId}`, this.props.location));
     }
   }
 

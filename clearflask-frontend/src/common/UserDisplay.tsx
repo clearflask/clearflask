@@ -4,6 +4,7 @@ import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
 import ModStar from './ModStar';
+import { preserveEmbed } from './util/historyUtil';
 
 const styles = (theme: Theme) => createStyles({
   button: {
@@ -41,7 +42,7 @@ class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyl
     if (this.props.onClick) {
       this.props.onClick(this.props.user.userId);
     } else {
-      this.props.history.push(`/user/${this.props.user.userId}`);
+      this.props.history.push(preserveEmbed(`/user/${this.props.user.userId}`, this.props.location));
     }
   }
 }

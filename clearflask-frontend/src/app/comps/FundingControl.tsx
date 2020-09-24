@@ -8,6 +8,7 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import InViewObserver from '../../common/InViewObserver';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import minmax from '../../common/util/mathutil';
 import { MutableRef } from '../../common/util/refUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -156,7 +157,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
                 <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
                   <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
                   {!showFirstIdea && (
-                    <Button onClick={() => this.props.history.push(`/post/${idea.ideaId}`)}>
+                    <Button onClick={() => this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location))}>
                       View
                     </Button>
                   )}

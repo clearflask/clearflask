@@ -14,8 +14,43 @@ import notEmpty from '../common/util/arrayUtil';
 import { isProd, isTracking } from '../common/util/detectEnv';
 import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
-import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
+
+const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
+  {
+    heading: 'What are Monthly Active Users (MAUs)?',
+    body: (
+      <React.Fragment>
+        <p>
+          Monthly Active User (MAU) is any user that has provided you feedback
+          in the past month by either submitting a post, commenting or voting.
+        </p>
+        <p>
+          Typically only about 1% of your monthly unique users will provide you feedback
+          every month. The main influencing factor is how tightly you integrate ClearFlask
+          with your product.
+        </p>
+      </React.Fragment>
+    ),
+  },
+  {
+    heading: 'How does it compare to "tracked users"?',
+    body: (
+      <React.Fragment>
+        <p>
+          Our competitors have standardized in charging you based on "tracked users".
+          A user becomes tracked after any activity and will continue to be tracked
+          forever.
+        </p>
+        <p>
+          The important distinction is that you will continue to accumulate tracked users
+          that are no longer giving you active feedback.
+          With us, you only pay for the feedback you receive.
+        </p>
+      </React.Fragment>
+    ),
+  },
+];
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -42,6 +77,9 @@ const styles = (theme: Theme) => createStyles({
       maxWidth: 300,
     },
     width: '100%',
+  },
+  faqItem: {
+    margin: theme.spacing(4),
   },
 });
 
@@ -118,11 +156,31 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                   />
                 </Grid>
               ))}
-              <Grid item key='slider' xs={12} sm={6} md={4}>
+              {/* <Grid item key='slider' xs={12} sm={6} md={4}>
                 <PricingSlider plans={plans} />
-              </Grid>
+              </Grid> */}
             </Grid>
           </Loader>
+        </Container>
+        <br />
+        <br />
+        <br />
+        <Container maxWidth='md'>
+          <Grid container spacing={5} alignItems='stretch' justify='center'>
+            {Faq.map((faqItem, index) => (
+              <Grid key={index} item xs={12} sm={6}>
+                <div className={this.props.classes.faqItem}>
+                  <Typography component='div' variant='h5'>
+                    {faqItem.heading}
+                  </Typography>
+                  <br />
+                  <Typography component='div' variant='body1' color='textSecondary'>
+                    {faqItem.body}
+                  </Typography>
+                </div>
+              </Grid>
+            ))}
+          </Grid>
         </Container>
         <br />
         <br />

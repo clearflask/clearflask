@@ -151,9 +151,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
 
     if (simplifiedMaus) return (
       <div className={this.props.classes.cardPricing}>
-        <Typography component='div' variant='subtitle1' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+        <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
         <Typography component='div' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
-        <Typography component='div' variant='subtitle1' color='textSecondary'>{`/ ${this.props.plan.pricing.baseMau} MAU`}</Typography>
+        <Typography component='div' variant='subtitle2' color='textSecondary'>{`/ ${this.props.plan.pricing.baseMau} MAU`}</Typography>
         {billed && (
           <div className={this.props.classes.cardPricingTerms}>
             {billed}
@@ -166,8 +166,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     if ((this.props.plan.pricing.unitPrice || 0) > 0) {
       extraMau = (
         <React.Fragment>
-          <Typography component='div' variant='subtitle1' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
-          <Typography component='div' variant='subtitle1' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / extra ${this.props.plan.pricing.unitMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / extra ${this.props.plan.pricing.unitMau} MAU`}</Typography>
         </React.Fragment>
       );
     }
@@ -175,9 +175,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
     return (
       <React.Fragment>
         <div className={this.props.classes.cardPricing}>
-          <Typography component='h2' variant='subtitle1' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+          <Typography component='h2' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
           <Typography component='h2' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
-          <Typography component='h2' variant='subtitle1' color='textSecondary'>{'/ mo'}</Typography>
+          <Typography component='h2' variant='subtitle2' color='textSecondary'>{'/ mo'}</Typography>
         </div>
         {(extraMau || billed) && (
           <div className={this.props.classes.cardPricingTerms}>

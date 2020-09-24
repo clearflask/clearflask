@@ -8,6 +8,7 @@ import * as Client from '../../api/client';
 import { getTransactionSearchKey, ReduxState, Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import ErrorMsg from '../ErrorMsg';
 import DividerCorner from '../utils/DividerCorner';
 
@@ -73,7 +74,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                       <TableCell key='description'>
                         {transaction.summary}
                         {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
-                          <Button onClick={() => this.props.history.push(`/post/${transaction.targetId}`)}>
+                          <Button onClick={() => this.props.history.push(preserveEmbed(`/post/${transaction.targetId}`, this.props.location))}>
                             View
                           </Button>
                         )}

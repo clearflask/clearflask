@@ -9,27 +9,24 @@ import * as Client from './client';
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 const termsProjects = 'You can create separate projects each having their own set of users and content';
-const termsActiveUsers = 'Contributors are users that have signed up or made public contributions counted on a rolling 3 month median';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'growth-monthly': {
-    planid: 'standard-monthly', title: 'Growth',
-    pricing: { basePrice: 50, baseMau: 50, unitMau: 50, unitPrice: 15, period: Admin.PlanPricingPeriodEnum.Monthly },
+    planid: 'growth-monthly', title: 'Growth',
+    pricing: { basePrice: 20, baseMau: 40, unitPrice: 20, unitMau: 40, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
       { desc: 'Unlimited team members' },
-      { desc: 'Voting and Credit System', terms: termsActiveUsers },
-      { desc: 'Make it your own' },
+      { desc: 'Credit System' },
     ],
     beta: true,
   },
   'standard-monthly': {
     planid: 'standard-monthly', title: 'Standard',
-    pricing: { basePrice: 150, baseMau: 50, unitMau: 50, unitPrice: 15, period: Admin.PlanPricingPeriodEnum.Monthly },
+    pricing: { basePrice: 200, baseMau: 400, unitPrice: 200, unitMau: 400, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
-      { desc: '← Everything in Growth plan' },
-      { desc: 'Private boards' },
       { desc: 'Single Sign-On' },
-      { desc: 'Custom HTML' },
+      { desc: 'Private projects' },
+      { desc: 'Site template' },
     ],
     beta: true,
   },
