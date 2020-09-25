@@ -3,39 +3,25 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import * as Admin from '../api/admin';
 
-const expectedActivePercValues :Array<{
- perc: number;
- desc: string; 
-}> = [
-  {perc: 0, desc: 'No longer share feedback with users'},
-  {perc: 0.01, desc: 'Feedback hidden away or shared'},
-  {perc: 0.02, desc: 'Typical user response'},
-  {perc: 0.03, desc: ''},
-];
-const expectedActivePercMarks: Mark[] = expectedActivePercValues.map((e, index) => ({
-  value: index,
-  label: `${e.perc * 100}%`,
-}));
-
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   plans: Admin.Plan[];
 }
 interface State {
-  mau: number;
-  expectedActivePercIndex: number;
+  mauIndex: number;
+  marks: Array<number>;
 }
 class PricingSlider extends Component<Props & WithStyles<typeof styles, true>, State> {
   state: State = {
-    mau: 50,
-    expectedActivePercIndex: 2,
+    mauIndex: 1,
+    marks: this.getMarks(),
   };
+
   render() {
     if(this.props.plans.length === 0) return null;
 
-    const lowestUnit = 25;
-    const mau = this.state.mau - (this.state.mau % lowestUnit);
+    const mau = this.state.marks[this.state.mauIndex] || 0;
 
     var plan: Admin.Plan | undefined;
     this.props.plans.forEach(p => {
@@ -47,7 +33,7 @@ class PricingSlider extends Component<Props & WithStyles<typeof styles, true>, S
     if(!plan) return null;
     const pricing: Admin.PlanPricing = plan.pricing!;
 
-    const percMuMau = expectedActivePercValues[this.state.expectedActivePercIndex].perc;
+    const percMuMau = 0.01;
 
     const monthlyUsers = Math.round(mau / percMuMau);
 
@@ -57,26 +43,50 @@ class PricingSlider extends Component<Props & WithStyles<typeof styles, true>, S
     return (
       <div>
         <div>
-          {monthlyUsers} x {percMuMau * 100}% = {mau}
+          {this.formatNumber(monthlyUsers)} x {percMuMau * 100}% = {this.formatNumber(mau)}
         </div>
         <div>
           ${pricing.basePrice} + ${addtPrice} = ${price}
         </div>
         <Slider
-          value={this.state.mau}
+          // orientation='vertical'
+          value={this.state.mauIndex}
           min={0}
-          max={1000}
-          onChange={(e, val) => this.setState({ mau: val as any as number })}
-        />
-        <Slider
-          value={this.state.expectedActivePercIndex}
-          min={0}
-          max={expectedActivePercMarks.length - 1}
-          marks={expectedActivePercMarks}
-          onChange={(e, val) => this.setState({ expectedActivePercIndex: val as any as number })}
+          step={1}
+          max={this.state.marks.length - 1}
+          onChange={(e, val) => this.setState({ mauIndex: val as any as number })}
         />
       </div>
     );
+  }
+
+  formatNumber(val: number): string {
+    return val.toLocaleString('en-US');
+  }
+
+  getMarks() {
+    var fractionsToInclude = 2;
+    var currMaxMau = 4001;
+    const points = this.props.plans.slice().reverse().flatMap(plan => {
+      const pts: Array<number> = [];
+      if(!plan.pricing) return pts;
+
+      // TODO
+      var currPt: number = plan.pricing.baseMau;
+      while(currPt < currMaxMau) {
+        pts.push(currPt);
+        currPt += plan.pricing.unitMau;
+      }
+
+      currMaxMau = plan.pricing.baseMau;
+      return pts;
+    });
+    points.sort((l, r) => l - r);
+    while(fractionsToInclude > 0) {
+      points.unshift(points[0] / 2);
+      fractionsToInclude--;
+    }
+    return points;
   }
 }
 
