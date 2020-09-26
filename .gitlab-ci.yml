@@ -11,7 +11,7 @@ services:
   - docker:dind
 
 before_script:
-  - apt-get update -qq && apt-get install -qqy protobuf-compiler docker
+  - apt-get update -qq && apt-get install -qqy protobuf-compiler docker-compose
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
 stages:
