@@ -418,6 +418,13 @@
                 <artifactId>analytics-plugin</artifactId>
                 <version>7.0.8</version>
             </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-catalog</artifactId>
+                <version>0.22.10</version>
+                <scope>test</scope>
+            </dependency>
+
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
             <dependency>

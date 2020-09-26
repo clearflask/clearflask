@@ -221,12 +221,12 @@
             </finalPhase>
         </plan>
         <plan name="flat-yearly">
-            <product>analytic</product>
+            <product>flat</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
-                        <number>14</number>
                         <unit>DAYS</unit>
+                        <number>14</number>
                     </duration>
                     <fixed>
                         <fixedPrice>
@@ -258,8 +258,8 @@
     <priceLists>
         <defaultPriceList name="DEFAULT">
             <plans>
+                <plan>growth-monthly</plan>
                 <plan>standard-monthly</plan>
-                <plan>analytic-monthly</plan>
                 <plan>flat-yearly</plan>
             </plans>
         </defaultPriceList>
