@@ -1,4 +1,4 @@
-image: maven:3-jdk-8
+image: maven:3.6.3-openjdk-11
 
 variables:
   DOCKER_HOST: tcp://docker:2375
@@ -11,7 +11,7 @@ services:
   - docker:dind
 
 before_script:
-  - apk update && apk add protobuf maven docker
+  - apk update && apk add protobuf docker
   - docker info
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
