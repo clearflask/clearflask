@@ -24,6 +24,7 @@ import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = false;
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
+export const REQUIRES_WORK_EMAIL_ABOVE_PRICE = 50;
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -95,12 +96,19 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
     const selectedPeriod = this.state.period
       || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
     const plans = allPlans
-      .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period)
+      .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period);
     const selectedPlanId = this.state.planid || plans[0]?.planid;
+    const selectedPlan = !selectedPlanId ? undefined : allPlans
+      .find(plan => plan.planid === selectedPlanId);
+
+    const selectedPlanRequiresWorkEmail = !!selectedPlan
+      && !!selectedPlan.pricing
+      && (selectedPlan.pricing.basePrice > REQUIRES_WORK_EMAIL_ABOVE_PRICE || selectedPlan.pricing.unitPrice > REQUIRES_WORK_EMAIL_ABOVE_PRICE)
+    const requiresWorkEmail = !!selectedPlanRequiresWorkEmail && !!this.state.emailIsFreeOrDisposable;
 
     const canSubmit = !!this.state.name
       && !!this.state.email
-      && !this.state.emailIsFreeOrDisposable
+      && !requiresWorkEmail
       && !!this.state.pass;
     const emailDisposableList = import('../common/util/emailDisposableList');
 
@@ -163,7 +171,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
               emailDisposableList.then(eu => this.setState({ emailIsFreeOrDisposable: eu.isFreeOrDisposable(newEmail) }));
             }}
           />
-          <Collapse in={!!this.state.emailIsFreeOrDisposable}>
+          <Collapse in={!!requiresWorkEmail}>
             <Message variant='warning' message={(
               <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', }} >
                 Please enter your work email. Don't have one?&nbsp;

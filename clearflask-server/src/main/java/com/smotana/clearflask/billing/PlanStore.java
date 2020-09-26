@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface PlanStore {
 
+    /** If changed, also update PricingPage.tsx */
     long STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES = 10;
 
     PlansGetResponse getPublicPlans();

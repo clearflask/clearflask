@@ -16,10 +16,13 @@
     </units>
 
     <products>
+        <product prettyName="Growth" name="growth">
+            <category>BASE</category>
+        </product>
         <product prettyName="Standard" name="standard">
             <category>BASE</category>
         </product>
-        <product prettyName="Analytic" name="analytic">
+        <product prettyName="Flat" name="flat">
             <category>BASE</category>
         </product>
     </products>
@@ -31,8 +34,12 @@
                 <policy>IMMEDIATE</policy>
             </changePolicyCase>
             <changePolicyCase>
-                <fromProduct>standard</fromProduct>
-                <toProduct>analytic</toProduct>
+                <fromProduct>growth</fromProduct>
+                <toProduct>standard</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>flat</toProduct>
                 <policy>IMMEDIATE</policy>
             </changePolicyCase>
             <changePolicyCase>
@@ -71,7 +78,7 @@
     </rules>
 
     <plans>
-        <plan name="standard-monthly">
+        <plan name="growth-monthly">
             <product>standard</product>
             <initialPhases>
                 <phase type="TRIAL">
@@ -98,12 +105,12 @@
                     <recurringPrice>
                         <price>
                             <currency>USD</currency>
-                            <value>50.00</value>
+                            <value>20.00</value>
                         </price>
                     </recurringPrice>
                 </recurring>
                 <usages>
-                    <usage prettyName="Active Users" name="basic-active-users" billingMode="IN_ARREAR"
+                    <usage prettyName="Active Users" name="growth-active-users" billingMode="IN_ARREAR"
                            usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
                         <billingPeriod>MONTHLY</billingPeriod>
                         <tiers>
@@ -111,7 +118,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>50</size>
+                                        <size>40</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -126,11 +133,11 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>50</size>
+                                        <size>40</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>15</value>
+                                                <value>20</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -142,8 +149,8 @@
                 </usages>
             </finalPhase>
         </plan>
-        <plan name="analytic-monthly">
-            <product>analytic</product>
+        <plan name="standard-monthly">
+            <product>standard</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
@@ -182,7 +189,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>500</size>
+                                        <size>400</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -197,7 +204,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>500</size>
+                                        <size>400</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -213,6 +220,39 @@
                 </usages>
             </finalPhase>
         </plan>
+        <plan name="flat-yearly">
+            <product>analytic</product>
+            <initialPhases>
+                <phase type="TRIAL">
+                    <duration>
+                        <number>14</number>
+                        <unit>DAYS</unit>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>ANNUAL</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>200.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
     </plans>
 
     <priceLists>
@@ -220,6 +260,7 @@
             <plans>
                 <plan>standard-monthly</plan>
                 <plan>analytic-monthly</plan>
+                <plan>flat-yearly</plan>
             </plans>
         </defaultPriceList>
     </priceLists>

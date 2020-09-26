@@ -67,7 +67,7 @@ public interface VoteStore {
         return IdUtil.randomAscId();
     }
 
-    TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary);
+    TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary, Optional<String> idempotentKey);
 
     TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary);
 

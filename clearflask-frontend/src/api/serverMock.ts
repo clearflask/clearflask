@@ -15,8 +15,8 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     pricing: { basePrice: 20, baseMau: 40, unitPrice: 20, unitMau: 40, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Unlimited team members' },
       { desc: 'Credit System' },
+      { desc: 'Roadmap' },
     ],
     beta: true,
   },
@@ -30,8 +30,27 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     ],
     beta: true,
   },
+  'flat-yearly': {
+    planid: 'flat-yearly', title: 'Flat',
+    perks: [
+      { desc: 'Predictable annual price' },
+      { desc: 'Selected features' },
+    ],
+    beta: true,
+  },
 };
-const FeaturesTable: Admin.FeaturesTable | undefined = undefined;
+const FeaturesTable: Admin.FeaturesTable | undefined = {
+  plans: ['Growth', 'Standard'],
+  features: [
+    { feature: 'Projects', values: ['No limit', 'No limit'] },
+    { feature: 'Credit System', values: ['Yes', 'Yes'] },
+    { feature: 'Roadmap view', values: ['Yes', 'Yes'] },
+    { feature: 'Content customization', values: ['Yes', 'Yes'] },
+    { feature: 'Private projects', values: ['No', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
+    { feature: 'Single Sign-On', values: ['No', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
+    { feature: 'Site template', values: ['No', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
+  ],
+};
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithVote {
   parentIdPath: string[];

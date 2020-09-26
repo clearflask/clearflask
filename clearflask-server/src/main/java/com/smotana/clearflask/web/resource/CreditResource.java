@@ -4,7 +4,13 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.CreditAdminApi;
 import com.smotana.clearflask.api.CreditApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.CreditIncome;
+import com.smotana.clearflask.api.model.TransactionSearch;
+import com.smotana.clearflask.api.model.TransactionSearchAdmin;
+import com.smotana.clearflask.api.model.TransactionSearchAdminResponse;
+import com.smotana.clearflask.api.model.TransactionSearchResponse;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -55,11 +61,11 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getEmail())),
                         Optional.ofNullable(Strings.emptyToNull(creditIncome.getName()))));
         TransactionModel transaction = voteStore.balanceAdjustTransaction(
-                creditIncome.getTransactionId()
                 projectId,
                 user.getUserId(),
                 creditIncome.getAmount(),
-                Optional.ofNullable(Strings.emptyToNull(creditIncome.getSummary())).orElse("Automatic income"));
+                Optional.ofNullable(Strings.emptyToNull(creditIncome.getSummary())).orElse("Automatic income"),
+                Optional.of(creditIncome.getTransactionId()));
         userStore.updateUserBalance(projectId, user.getUserId(), creditIncome.getAmount(), Optional.empty());
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
         notificationService.onCreditChanged(configAdmin, user, transaction);

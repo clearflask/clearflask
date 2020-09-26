@@ -49,6 +49,15 @@ const styles = (theme: Theme) => createStyles({
   actions: {
     margin: theme.spacing(0, 3, 1),
   },
+  remark: {
+    display: 'flex',
+    justifyContent: 'center',
+    margin: theme.spacing(0, 1, 1),
+  },
+  reallyBlurry: {
+    color: 'transparent',
+    textShadow: '0px 0px 9px rgba(0,0,0,0.3)',
+  }
 });
 
 interface Props {
@@ -59,6 +68,7 @@ interface Props {
   actionType?: 'button' | 'radio';
   actionOnClick?: () => void;
   hidePerks?: boolean;
+  remark?: string;
 }
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
@@ -94,6 +104,11 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </div>
           ))}
         </CardContent>
+        {this.props.remark && (
+          <div className={this.props.classes.remark}>
+            <Typography variant='caption' component='div' color='textSecondary'>{this.props.remark}</Typography>
+          </div>
+        )}
         {
           !!this.props.actionTitle && (
             <CardActions className={this.props.classes.actions}>
@@ -110,7 +125,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   )}
                 />
               ) : (
-                  <Button fullWidth color="primary"
+                  <Button fullWidth color='primary'
                     onClick={this.props.actionOnClick}
                     disabled={!this.props.actionOnClick}
                   >
@@ -127,7 +142,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   renderPriceTag() {
     if (!this.props.plan.pricing) return (
       <div className={this.props.classes.cardPricing}>
-        <Typography component='div' variant='h4' style={{ color: this.props.theme.palette.text.secondary }}>Contact</Typography>
+        <Typography className={this.props.classes.reallyBlurry} component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+        <Typography className={this.props.classes.reallyBlurry} component='div' variant='h4'>800</Typography>
+        <Typography component='div' variant='subtitle2' color='textSecondary'>&nbsp;&nbsp;/&nbsp;year</Typography>
       </div>
     );
 

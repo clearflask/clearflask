@@ -17,6 +17,10 @@ import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
+/** If changed, also update PlanStore.java */
+const StopTrialAfterActiveUsersReaches = 10;
+const EstimatedPercUsersBecomeActive = 0.02;
+
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
     heading: 'What are Monthly Active Users (MAUs)?',
@@ -27,7 +31,7 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
           in the past month by either submitting a post, commenting or voting.
         </p>
         <p>
-          Typically only about 1% of your monthly unique users will provide you feedback
+          Typically only about {EstimatedPercUsersBecomeActive * 100}% of your monthly unique users will provide you feedback
           every month. The main influencing factor is how tightly you integrate ClearFlask
           with your product.
         </p>
@@ -35,18 +39,28 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     ),
   },
   {
-    heading: 'How does it compare to "tracked users"?',
+    heading: 'How do you compare MAU with "tracked users"?',
     body: (
       <React.Fragment>
         <p>
-          Our competitors have standardized in charging you based on "tracked users".
-          A user becomes tracked after any activity and will continue to be tracked
-          forever.
+          Our competitors are charging based on "tracked users" which are
+          users that have posted, commented or voted at least once in the past.
         </p>
         <p>
-          The important distinction is that you will continue to accumulate tracked users
-          that are no longer giving you active feedback.
-          With us, you only pay for the feedback you receive.
+          Over time, you will accumulate and continue to pay for tracked users
+          that are no longer providing you with feedback.
+          With us, you only pay for users active in the past month.
+        </p>
+      </React.Fragment>
+    ),
+  },
+  {
+    heading: 'How long is the Trial period?',
+    body: (
+      <React.Fragment>
+        <p>
+          Trial period ends when you reach {StopTrialAfterActiveUsersReaches} MAU. Your MAU count will reset
+          and you will be asked to provide a payment option if you haven't already.
         </p>
       </React.Fragment>
     ),
@@ -111,7 +125,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.header}>
             <div>
               <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h5" color="textSecondary">Trial ends when you start receiving feedback</Typography>
+              <Typography component="div" variant="h6" color="textSecondary">Value-based plans</Typography>
             </div>
             <Container maxWidth='md'>
               <img
@@ -136,10 +150,11 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <Loader loaded={!!this.props.plans}>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
               {plans.map((plan, index) => (
-                <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
+                <Grid item key={plan.planid} xs={12} sm={6} md={4}>
                   <PricingPlan
                     plan={plan}
                     actionTitle={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+                    remark={plan.pricing ? 'Unlimited-time trial below 10 MAU' : 'Tell us what you need'}
                     actionOnClick={() => {
                       if (isTracking()) {
                         ReactGA.event({
@@ -158,30 +173,10 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 </Grid>
               ))}
               <Grid item key='slider' xs={12} sm={6} md={4}>
-                <PricingSlider plans={plans} />
+                <PricingSlider plans={plans} estimatedPercUsersBecomeActive={EstimatedPercUsersBecomeActive} />
               </Grid>
             </Grid>
           </Loader>
-        </Container>
-        <br />
-        <br />
-        <br />
-        <Container maxWidth='md'>
-          <Grid container spacing={5} alignItems='stretch' justify='center'>
-            {Faq.map((faqItem, index) => (
-              <Grid key={index} item xs={12} sm={6}>
-                <div className={this.props.classes.faqItem}>
-                  <Typography component='div' variant='h5'>
-                    {faqItem.heading}
-                  </Typography>
-                  <br />
-                  <Typography component='div' variant='body1' color='textSecondary'>
-                    {faqItem.body}
-                  </Typography>
-                </div>
-              </Grid>
-            ))}
-          </Grid>
         </Container>
         <br />
         <br />
@@ -205,6 +200,26 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
             )}
           </Container>
         )}
+        <br />
+        <br />
+        <br />
+        <Container maxWidth='md'>
+          <Grid container spacing={5} alignItems='stretch' justify='center'>
+            {Faq.map((faqItem, index) => (
+              <Grid key={index} item xs={12} sm={6}>
+                <div className={this.props.classes.faqItem}>
+                  <Typography component='div' variant='h5'>
+                    {faqItem.heading}
+                  </Typography>
+                  <br />
+                  <Typography component='div' variant='body1' color='textSecondary'>
+                    {faqItem.body}
+                  </Typography>
+                </div>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
       </div>
     );
   }
