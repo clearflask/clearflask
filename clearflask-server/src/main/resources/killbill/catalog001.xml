@@ -84,7 +84,8 @@
                 <phase type="TRIAL">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
-                        <unit>UNLIMITED</unit>
+                        <unit>YEARS</unit>
+                        <number>100</number>
                     </duration>
                     <fixed>
                         <fixedPrice>
@@ -155,7 +156,8 @@
                 <phase type="TRIAL">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
-                        <unit>UNLIMITED</unit>
+                        <unit>YEARS</unit>
+                        <number>100</number>
                     </duration>
                     <fixed>
                         <fixedPrice>
