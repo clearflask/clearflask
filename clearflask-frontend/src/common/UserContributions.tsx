@@ -6,7 +6,6 @@ import { getCommentSearchKey, getSearchKey, Server } from '../api/server';
 import { Direction } from '../app/comps/Panel';
 import PanelComment from '../app/comps/PanelComment';
 import PanelPost from '../app/comps/PanelPost';
-import { preserveEmbed } from './util/historyUtil';
 
 const styles = (theme: Theme) => createStyles({
   panels: {
@@ -57,7 +56,6 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
           server={this.props.server}
           search={commentSearch}
           direction={Direction.Horizontal}
-          onClickComment={(ideaId, commentId) => this.props.history.push(preserveEmbed(`/post/${ideaId}`, this.props.location))}
           hideAuthor
         />
       </div>

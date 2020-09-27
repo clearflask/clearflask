@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
 
 const styles = (theme: Theme) => createStyles({
@@ -120,8 +121,10 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
           />
           <div className={classNames(this.props.classes.floating, this.props.classes.info)} style={{ bottom }}>
             {callForQuote ? (
-              <Button color='primary'
-                onClick={() => this.props.history.push('/contact/sales')}
+              <Button
+                color='primary'
+                component={Link}
+                to='/contact/sales'
               >Talk to us</Button>
             ) : (
                 <React.Fragment>

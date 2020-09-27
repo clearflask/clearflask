@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { StyleRules } from '@material-ui/styles/withStyles';
 import classNames from 'classnames';
 import React, { Component, Key } from 'react';
+import { Link } from 'react-router-dom';
 
 export const tabHoverApplyStyles = (theme: Theme): StyleRules => ({
   '&::before': {
@@ -86,7 +87,14 @@ class DropdownTab extends Component<Props> {
     const items = this.props.links.map(link => {
       if (this.props.selectedValue === link.val) anySelected = true;
       return (
-        <MenuItem key={link.name + link.val} value={link.val}>{link.name}</MenuItem>
+        <MenuItem
+          component={Link as any}
+          to={link.val}
+          key={link.name + link.val}
+          value={link.val}
+        >
+          {link.name}
+        </MenuItem>
       );
     });
     const id = `dropdowntab-${this.props.key}`;

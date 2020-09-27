@@ -1,7 +1,7 @@
-import { Button, ButtonProps, CircularProgress } from '@material-ui/core';
+import { Button, CircularProgress } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
 import classNames from 'classnames';
+import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
   wrapper: {
@@ -23,11 +23,11 @@ interface Props {
 interface State {
   clicked?: boolean;
 }
-class SubmitButton extends Component<Props & ButtonProps & WithStyles<typeof styles, true>, State> {
-  state:State = {};
+class SubmitButton extends Component<Props & React.ComponentPropsWithoutRef<typeof Button> & WithStyles<typeof styles, true>, State> {
+  state: State = {};
 
-  static getDerivedStateFromProps(props:Props & ButtonProps & WithStyles<typeof styles, true>, state: State): Partial<State> | null {
-    if(!props.isSubmitting && !!state.clicked) {
+  static getDerivedStateFromProps(props: Props & React.ComponentPropsWithoutRef<typeof Button> & WithStyles<typeof styles, true>, state: State): Partial<State> | null {
+    if (!props.isSubmitting && !!state.clicked) {
       return { clicked: undefined };
     }
     return null;
@@ -44,7 +44,7 @@ class SubmitButton extends Component<Props & ButtonProps & WithStyles<typeof sty
           className={classNames(classes.button, buttonProps.className)}
           disabled={isSubmitting || buttonProps.disabled}
           onClick={e => {
-            this.setState({clicked: true});
+            this.setState({ clicked: true });
             buttonProps.onClick && buttonProps.onClick(e)
           }}
         />

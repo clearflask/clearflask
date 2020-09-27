@@ -11,6 +11,7 @@ import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
@@ -346,7 +347,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               {showContactSupport && (
                 <Button
                   disabled={this.state.isSubmitting || this.state.showAddPayment}
-                  onClick={() => this.props.history.push('/contact/support')}
+                  component={Link}
+                  to='/contact/support'
                 >Contact support</Button>
               )}
               {showSetPayment && (

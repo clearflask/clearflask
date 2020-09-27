@@ -1,9 +1,9 @@
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link, Menu, MenuItem, Toolbar } from '@material-ui/core';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
@@ -65,6 +65,7 @@ const styles = (theme: Theme) => createStyles({
     textTransform: 'unset',
     fontSize: '1.4em',
     cursor: 'pointer',
+    textDecoration: 'none',
   },
   logo: {
     maxWidth: '48px',
@@ -125,57 +126,68 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                   onClose={() => this.setState({ menuOpen: false })}
                 >
                   {[...menuItemsLeft, ...menuItemsRight].map((menuItem, index) => menuItem.type === 'button' ? (
-                    <MenuItem key={menuItem.path} onClick={() => {
-                      this.setState({ menuOpen: false });
-                      this.props.history.push(menuItem.path);
-                    }}>{menuItem.title}</MenuItem>
+                    <MenuItem
+                      key={menuItem.path}
+                      component={Link as any}
+                      to={menuItem.path}
+                      onClick={() => this.setState({ menuOpen: false })}
+                    >{menuItem.title}</MenuItem>
                   ) : [(
                     <MenuItem disabled key={menuItem.title}>{menuItem.title}</MenuItem>
                   ),
                   menuItem.items.map(subMenuItem => (
-                    <MenuItem key={subMenuItem.val} className={this.props.classes.menuIndent} onClick={() => {
-                      this.setState({ menuOpen: false });
-                      this.props.history.push(subMenuItem.val);
-                    }}>{subMenuItem.name}</MenuItem>
+                    <MenuItem
+                      key={subMenuItem.val}
+                      className={this.props.classes.menuIndent}
+                      component={Link as any}
+                      to={subMenuItem.val}
+                      onClick={() => this.setState({ menuOpen: false })}
+                    >{subMenuItem.name}</MenuItem>
                   ))])}
                 </Menu>
               </Hidden>
-              <div
+              <Link
                 className={this.props.classes.logoButton}
-                onClick={() => this.props.history.push('/')}
+                to='/'
               >
                 <img
                   alt='logo'
                   className={this.props.classes.logo}
                   src='/img/clearflask-logo.png' />
                 ClearFlask
-              </div>
+              </Link>
               <Hidden xsDown implementation='css'>
                 {menuItemsLeft.map(menuItem => menuItem.type === 'button' ? (
-                  <Button key={menuItem.path} className={this.props.classes.menuButton} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
+                  <Button
+                    key={menuItem.path}
+                    className={this.props.classes.menuButton}
+                    component={Link}
+                    to={menuItem.path}
+                  >{menuItem.title}</Button>
                 ) : (
                     <DropdownButton
                       key={menuItem.title}
                       buttonClassName={this.props.classes.menuButton}
                       label={menuItem.title}
                       links={menuItem.items}
-                      // TODO value={}
-                      onChange={val => this.props.history.push(val)}
                     />
                   ))}
               </Hidden>
               <div className={this.props.classes.grow} />
               <Hidden xsDown implementation='css'>
                 {menuItemsRight.map(menuItem => menuItem.type === 'button' ? (
-                  <Button key={menuItem.path} className={this.props.classes.menuButton} onClick={() => this.props.history.push(menuItem.path)}>{menuItem.title}</Button>
+                  <Button
+                    key={menuItem.path}
+                    className={this.props.classes.menuButton}
+                    component={Link}
+                    to={menuItem.path}
+                  >{menuItem.title}</Button>
                 ) : (
                     <DropdownButton
                       key={menuItem.title}
                       buttonClassName={this.props.classes.menuButton}
                       label={menuItem.title}
                       links={menuItem.items}
-                      // TODO value={}
-                      onChange={val => this.props.history.push(val)}
                     />
                   ))}
               </Hidden>
@@ -234,8 +246,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               </Grid>
               <Grid item xs={10} sm={4} md={3} xl={2} className={this.props.classes.growAndFlex}>
                 <div className={this.props.classes.bottomHeader}>COMPANY</div>
-                <Link target="_blank" href='https://www.smotana.com' className={this.props.classes.bottomItem}>Smotana</Link>
-                <Link href='mailto:hi@smotana.com' className={this.props.classes.bottomItem}>hi@smotana.com</Link>
+                <MuiLink target="_blank" href='https://www.smotana.com' className={this.props.classes.bottomItem}>Smotana</MuiLink>
+                <MuiLink href='mailto:hi@smotana.com' className={this.props.classes.bottomItem}>hi@smotana.com</MuiLink>
                 <div className={this.props.classes.grow} />
                 <div className={this.props.classes.bottomItem}>© ClearFlask</div>
               </Grid>

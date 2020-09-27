@@ -3,6 +3,8 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import DeletedIcon from '@material-ui/icons/Clear';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
@@ -11,6 +13,7 @@ import RichViewer from '../../common/RichViewer';
 import TruncateFade from '../../common/Truncate';
 import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
+import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import VotingControl from './VotingControl';
@@ -90,6 +93,7 @@ interface Props {
   isBlurry?: boolean;
   loggedInUser?: Client.User;
   replyOpen?: boolean;
+  linkToPost?: boolean;
   onCommentClick?: () => void;
   onReplyClicked?: () => void;
   logIn: () => Promise<void>;
@@ -103,18 +107,29 @@ interface State {
   isSubmittingVote?: Client.VoteOption;
 }
 
-class Comment extends Component<Props & WithStyles<typeof styles, true>, State> {
+class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
+    var content = this.renderContent();
+    content = this.props.linkToPost && this.props.comment ? (
+      <Link
+        className={classNames(this.props.classes.content, this.props.classes.clickable)}
+        to={preserveEmbed(`/post/${this.props.comment.ideaId}`, this.props.location)}
+      >
+        {content}
+      </Link>
+    ) : (
+        <div
+          className={classNames(this.props.classes.content, this.props.onCommentClick && this.props.classes.clickable)}
+          onClick={this.props.onCommentClick}
+        >
+          {content}
+        </div>
+      );
     return (
       <div className={classNames(this.props.classes.comment, this.props.className)}>
-        <div
-          className={classNames(this.props.classes.content, !!this.props.onCommentClick && this.props.classes.clickable)}
-          onClick={!!this.props.onCommentClick ? this.props.onCommentClick.bind(this) : undefined}
-        >
-          {this.renderContent()}
-        </div>
+        {content}
         {this.renderVotingControl()}
         <div className={this.props.classes.footer}>{this.renderBottomBar()}</div>
       </div>
@@ -321,4 +336,4 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Comment);
+export default withStyles(styles, { withTheme: true })(withRouter(Comment));

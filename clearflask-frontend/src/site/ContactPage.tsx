@@ -5,6 +5,7 @@ import { History } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { match, Route } from 'react-router';
+import { Link } from 'react-router-dom';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
@@ -244,7 +245,8 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     />
                     <CardActions style={{ justifyContent: 'flex-end' }}>
                       <Button
-                        onClick={() => this.props.history.push(`${prefixMatch}/${form.type}`)}
+                        component={Link}
+                        to={`${prefixMatch}/${form.type}`}
                       >
                         {form.submitTitle}
                       </Button>

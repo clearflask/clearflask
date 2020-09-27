@@ -15,3 +15,7 @@ html {
   background: transparent;
   -webkit-appearance: none;
 }
+
+a {
+  color: currentColor;
+}

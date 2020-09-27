@@ -163,12 +163,13 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                           label: plan.planid,
                         });
                       }
-                      if (plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())) {
-                        this.props.history.push('/signup', { [PRE_SELECTED_PLAN_ID]: plan.planid });
-                      } else {
-                        this.props.history.push('/contact/demo');
-                      }
                     }}
+                    actionTo={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())
+                      ? {
+                        pathname: '/signup',
+                        state: { [PRE_SELECTED_PLAN_ID]: plan.planid },
+                      }
+                      : '/contact/demo'}
                   />
                 </Grid>
               ))}

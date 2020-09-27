@@ -2,7 +2,9 @@ import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, R
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
+import { LocationDescriptor } from 'history';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
 
@@ -66,6 +68,7 @@ interface Props {
   selected?: boolean;
   actionTitle?: string;
   actionType?: 'button' | 'radio';
+  actionTo?: LocationDescriptor;
   actionOnClick?: () => void;
   hidePerks?: boolean;
   remark?: string;
@@ -128,6 +131,10 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   <Button fullWidth color='primary'
                     onClick={this.props.actionOnClick}
                     disabled={!this.props.actionOnClick}
+                    {...(this.props.actionTo ? {
+                      component: Link,
+                      to: this.props.actionTo,
+                    } : {})}
                   >
                     {this.props.actionTitle}
                   </Button>

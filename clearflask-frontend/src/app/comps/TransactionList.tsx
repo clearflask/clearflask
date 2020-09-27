@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { getTransactionSearchKey, ReduxState, Server } from '../../api/server';
@@ -74,7 +75,10 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                       <TableCell key='description'>
                         {transaction.summary}
                         {transaction.transactionType === Client.TransactionType.Vote && transaction.targetId && (
-                          <Button onClick={() => this.props.history.push(preserveEmbed(`/post/${transaction.targetId}`, this.props.location))}>
+                          <Button
+                            component={Link}
+                            to={preserveEmbed(`/post/${transaction.targetId}`, this.props.location)}
+                          >
                             View
                           </Button>
                         )}

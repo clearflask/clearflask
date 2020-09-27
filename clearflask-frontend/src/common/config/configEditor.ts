@@ -85,6 +85,8 @@ export interface xCfProp {
   falseAsUndefined?: boolean;
   /** Applicable to arrays only. Prevent re-ordering of items by user. */
   disableReordering?: boolean;
+  trueLabel?: string;
+  falseLabel?: string;
 }
 export enum PropSubType {
   /**
@@ -240,6 +242,8 @@ export interface IntegerProperty extends PropertyBase<PropertyType.Integer, numb
 }
 
 export interface BooleanProperty extends PropertyBase<PropertyType.Boolean, boolean> {
+  trueLabel?: string;
+  falseLabel?: string;
 }
 
 export interface EnumProperty extends PropertyBase<PropertyType.Enum, string> {
@@ -1354,6 +1358,8 @@ export class EditorImpl implements Editor {
               this.notify(localSubscribers);
             },
           } : {}),
+          trueLabel: xProp.trueLabel,
+          falseLabel: xProp.falseLabel,
         };
         break;
       case 'array':

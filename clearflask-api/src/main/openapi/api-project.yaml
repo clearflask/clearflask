@@ -159,7 +159,7 @@ components:
                   type: string
                   enum: [None, Required]
                 allowedDomains:
-                  x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify an allow list of domains that must match before giving access to content. Email must be verified prior to access.' }
+                  x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify a list of allowed domains that must match before giving access to content. User will be forced to verify email prior to access.' }
                   type: array
                   items:
                     x-clearflask-prop: { order: 1, name: 'Domain', placeholder: 'example.com' }
@@ -277,27 +277,27 @@ components:
           - pages
           properties:
             header:
-              x-clearflask-prop: { order: 1, name: 'Header', subType: 'multiline' }
+              x-clearflask-prop: { order: 1, name: 'Header', description: 'Replaces top part of every page including logo, menu and account settings', subType: 'multiline' }
               type: string
             menu:
-              x-clearflask-prop: { order: 2, name: 'Menu', subType: 'multiline' }
+              x-clearflask-prop: { order: 2, name: 'Menu', description: 'Replaces only the menu portion of the page within the Header', subType: 'multiline' }
               type: string
             pages:
-              x-clearflask-prop: { order: 3, name: 'Pages', disableReordering: true }
+              x-clearflask-prop: { order: 3, name: 'Pages', description: 'Replace specific pages with custom content', disableReordering: true }
               type: array
               items:
                 x-clearflask-prop: { name: 'Page' }
                 type: object
                 properties:
                   pageId:
-                    x-clearflask-prop: { order: 1, name: 'Page' }
+                    x-clearflask-prop: { order: 1, name: 'Page', description: 'Select the page to replace' }
                     x-clearflask-prop-link: { idPropName: 'pageId', linkPath: ['layout', 'pages'], displayPropName: 'name'}
                     type: string
                   template:
-                    x-clearflask-prop: { order: 2, name: 'Template', subType: 'multiline' }
+                    x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
                     type: string
             footer:
-              x-clearflask-prop: { order: 4, name: 'Footer', subType: 'multiline' }
+              x-clearflask-prop: { order: 4, name: 'Footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden.', subType: 'multiline' }
               type: string
     support:
       x-clearflask-page: { order: 4, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
@@ -468,19 +468,19 @@ components:
                 x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
                 type: string
               disableFunding:
-                x-clearflask-prop: { order: 4, name: 'Disable Funding', description: 'Overrides parent settings to disable funding during this status' }
+                x-clearflask-prop: { order: 4, name: 'Freeze funding', description: 'Overrides parent settings to freeze funding during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
                 type: boolean
               disableVoting:
-                x-clearflask-prop: { order: 5, name: 'Disable Voting', description: 'Overrides parent settings to disable voting during this status' }
+                x-clearflask-prop: { order: 5, name: 'Freeze voting', description: 'Overrides parent settings to freeze voting during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
                 type: boolean
               disableExpressions:
-                x-clearflask-prop: { order: 5, name: 'Disable Expressions', description: 'Overrides parent settings to disable expressions during this status' }
+                x-clearflask-prop: { order: 5, name: 'Freeze expressions', description: 'Overrides parent settings to freeze expressions during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
                 type: boolean
               disableIdeaEdits:
-                x-clearflask-prop: { order: 6, name: 'Disable Editing', description: 'Overrides parent settings to disable editing of the idea during this status' }
+                x-clearflask-prop: { order: 6, name: 'Freeze edits by author', description: 'Overrides parent settings to disable editing of the post during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
                 type: boolean
               disableComments:
-                x-clearflask-prop: { order: 7, name: 'Disable Commenting', description: 'Overrides parent settings to disable commenting during this status' }
+                x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
                 type: boolean
     tagging:
       x-clearflask-page: { order: 6, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }

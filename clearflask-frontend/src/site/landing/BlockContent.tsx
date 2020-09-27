@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import GoIcon from '@material-ui/icons/ArrowRightAlt';
 import classNames from 'classnames';
 import React, { Component } from 'react';
-import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import ScrollAnchor, { Props as ScrollAnchorProps } from '../../common/util/ScrollAnchor';
 
 const styles = (theme: Theme) => createStyles({
@@ -42,7 +42,7 @@ export interface Props {
   icon?: React.ReactNode;
   scrollAnchor?: ScrollAnchorProps;
 }
-class BlockContent extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps> {
+class BlockContent extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     var titleVariant;
@@ -95,11 +95,17 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
           <Button
             className={this.props.classes.button}
             variant='text'
+            color='primary'
             onClick={() => {
               this.props.buttonOnClick && this.props.buttonOnClick();
-              this.props.buttonLink && this.props.history.push(this.props.buttonLink, this.props.buttonState);
             }}
-            color='primary'
+            {...(this.props.buttonLink ? {
+              component: Link,
+              to: {
+                pathname: this.props.buttonLink,
+                state: this.props.buttonState,
+              },
+            } : {})}
           >
             {this.props.buttonTitle}
             &nbsp;
@@ -111,4 +117,4 @@ class BlockContent extends Component<Props & WithStyles<typeof styles, true> & R
   }
 }
 
-export default withStyles(styles, { withTheme: true })(withRouter(BlockContent));
+export default withStyles(styles, { withTheme: true })(BlockContent);

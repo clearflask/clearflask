@@ -265,7 +265,11 @@ export default class Property extends Component<Props> {
                       color='default'
                     />
                   )}
-                  label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
+                  label={!this.props.bare && (<FormHelperText component='span' error={!!prop.errorMsg}>
+                    {!!prop.value
+                      ? (prop.trueLabel || 'Enabled')
+                      : (prop.falseLabel || 'Disabled')}
+                  </FormHelperText>)}
                 />
               </div>
             </div>

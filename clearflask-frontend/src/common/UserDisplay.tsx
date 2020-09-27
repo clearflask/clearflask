@@ -2,6 +2,7 @@ import { Button, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import ModStar from './ModStar';
 import { preserveEmbed } from './util/historyUtil';
@@ -24,26 +25,31 @@ interface Props {
 }
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
-    return (
+    const user = (
+      <Typography variant='caption'>
+        <ModStar name={this.props.user.name} isMod={this.props.user.isMod} />
+      </Typography>
+    );
+    return this.props.onClick ? (
       <Button
         key={`user-${this.props.user.userId}`}
         className={this.props.classes.button}
         variant='text'
-        onClick={e => this.onClick()}
+        onClick={e => this.props.onClick && this.props.onClick(this.props.user.userId)}
       >
-        <Typography variant='caption'>
-          <ModStar name={this.props.user.name} isMod={this.props.user.isMod} />
-        </Typography>
+        {user}
       </Button>
-    );
-  }
-
-  onClick() {
-    if (this.props.onClick) {
-      this.props.onClick(this.props.user.userId);
-    } else {
-      this.props.history.push(preserveEmbed(`/user/${this.props.user.userId}`, this.props.location));
-    }
+    ) : (
+        <Button
+          key={`user-${this.props.user.userId}`}
+          className={this.props.classes.button}
+          variant='text'
+          component={Link}
+          to={preserveEmbed(`/user/${this.props.user.userId}`, this.props.location)}
+        >
+          {user}
+        </Button>
+      );
   }
 }
 

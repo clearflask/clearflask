@@ -1,11 +1,11 @@
-import { Badge, Divider, IconButton, Link, Tab, Tabs, Typography } from '@material-ui/core';
+import { Badge, Divider, IconButton, Link as MuiLink, Tab, Tabs, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import BalanceIcon from '@material-ui/icons/AccountBalance';
 import AccountIcon from '@material-ui/icons/AccountCircle';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import * as Client from '../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../api/server';
 import DropdownTab, { tabHoverApplyStyles } from '../common/DropdownTab';
@@ -92,6 +92,7 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    textDecoration: 'none',
   },
   actions: {
     minHeight: 48,
@@ -134,7 +135,7 @@ interface State {
   logInOpen?: boolean;
   notificationAnchorEl?: HTMLElement;
 }
-class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   _isMounted: boolean = false;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
@@ -173,6 +174,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             <Tab
               key={page.slug}
               className={this.props.classes.tab}
+              component={Link}
+              to={`/${page.slug}`}
               value={page.slug}
               disableRipple
               label={menu.name || page.name}
@@ -242,9 +245,9 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       );
       if (this.props.config && this.props.config.website) {
         name = (
-          <Link className={this.props.classes.logoText} color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
+          <MuiLink className={this.props.classes.logoText} color='inherit' href={this.props.config.website} underline='none' rel='noopener nofollow'>
             {name}
-          </Link>
+          </MuiLink>
         );
       }
       var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
@@ -278,7 +281,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
               <IconButton
                 className={this.props.classes.actionButton}
                 aria-label='Balance'
-                onClick={() => this.props.history.push('/transaction')}
+                component={Link}
+                to='/transaction'
               >
                 <BalanceIcon fontSize='inherit' />
               </IconButton>
@@ -286,7 +290,8 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
             <IconButton
               className={this.props.classes.actionButton}
               aria-label='Account'
-              onClick={() => this.props.history.push('/account')}
+              component={Link}
+              to='/account'
             >
               <Badge
                 color='secondary'
@@ -379,4 +384,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     loggedInUser: state.users.loggedIn.user,
     settings: state.settings,
   };
-})(withStyles(styles, { withTheme: true })(withRouter(Header)));
+})(withStyles(styles, { withTheme: true })(Header));

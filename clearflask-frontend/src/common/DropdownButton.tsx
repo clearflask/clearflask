@@ -2,6 +2,7 @@ import { Button, Menu, MenuItem } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DropdownIcon from '@material-ui/icons/ArrowDropDown';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -10,8 +11,6 @@ interface Props extends WithStyles<typeof styles, true> {
   label: string;
   buttonClassName?: string;
   links: Array<{ name: string; val: string }>;
-  value?: string;
-  onChange: (val: string) => void;
 }
 interface State {
   menuOpen?: boolean;
@@ -40,10 +39,9 @@ class DropdownButton extends Component<Props, State> {
             <MenuItem
               key={link.val}
               className={this.props.buttonClassName}
-              onClick={() => {
-                this.setState({ menuOpen: false });
-                this.props.onChange(link.val);
-              }}
+              component={Link as any}
+              to={link.val}
+              onClick={() => this.setState({ menuOpen: false })}
             >{link.name}</MenuItem>
           ))}
         </Menu>

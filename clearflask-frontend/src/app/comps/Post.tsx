@@ -12,13 +12,13 @@ import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
 import ClosablePopover from '../../common/ClosablePopover';
 import EmojiPicker from '../../common/EmojiPicker';
-import Expander from '../../common/Expander';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
@@ -29,8 +29,6 @@ import UserDisplay from '../../common/UserDisplay';
 import notEmpty from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import { createMutableRef } from '../../common/util/refUtil';
-import { truncateWithElipsis } from '../../common/util/stringUtil';
-import setTitle from '../../common/util/titleUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
 import Loader from '../utils/Loader';
@@ -43,15 +41,6 @@ import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
 export type PostVariant = 'list' | 'page';
-
-/**
- * Before enabling:
- * 1/ fix the back button
- * 2/ fix the page's footer overlaps the expanded post page
- * 3/ fix the choppy animation
- */
-export const ENABLE_EXPANSION = false;
-export const isExpanded = (): boolean => !!Post.expandedPath;
 
 const styles = (theme: Theme) => createStyles({
   comment: {
@@ -112,6 +101,7 @@ const styles = (theme: Theme) => createStyles({
       textDecoration: 'underline',
     },
     cursor: 'pointer',
+    textDecoration: 'none'
   },
   description: {
     marginTop: theme.spacing(1),
@@ -396,12 +386,6 @@ interface State {
   demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
 }
 class Post extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
-  /**
-   * expandedPath allows a page transition from a list of posts into a
-   * single post without having to render a new page.
-   */
-  static expandedPath: string | undefined;
-  expandedPath: string | undefined;
   onLoggedIn?: () => void;
   _isMounted: boolean = false;
   readonly fundingControlRef = createMutableRef<any>();
@@ -427,9 +411,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
   componentWillUnmount() {
     this._isMounted = false;
-    if (Post.expandedPath === this.expandedPath) {
-      Post.expandedPath = undefined;
-    }
   }
 
   render() {
@@ -438,84 +419,47 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       </Loader>
     );
 
-    var forceExpand = false;
-    if (this.expandedPath) {
-      if (this.expandedPath !== Post.expandedPath) {
-        this.expandedPath = undefined;
-      } else if (this.expandedPath !== this.props.location.pathname) {
-        this.expandedPath = undefined;
-        Post.expandedPath = undefined;
-      } else {
-        forceExpand = true;
-      }
-    }
-    const targetVariant = forceExpand ? 'page' : this.props.variant;
     const variant = this.state.currentVariant;
-    const isMoving = variant !== targetVariant;
-    const expandable = !!this.props.expandable && variant !== 'page' && !this.props.settings.demoDisableExpand;
 
     return (
       <Loader className={this.props.classes.outer} loaded={!!this.props.idea}>
-        <Expander
-          expand={forceExpand}
-          onBackButtonPress={() => this.props.history.goBack()}
-          onRest={() => {
-            if (isMoving) {
-              this.setState({ currentVariant: targetVariant });
-            }
-          }}
-          onExpand={() => {
-            this.priorToExpandDocumentTitle = document.title;
-            if (this.props.idea) {
-              setTitle(truncateWithElipsis(25, this.props.idea.title), true);
-            }
-          }}
-          onCollapse={() => {
-            if (this.priorToExpandDocumentTitle) {
-              document.title = this.priorToExpandDocumentTitle;
-              this.priorToExpandDocumentTitle = undefined;
-            }
-          }}
-        >
-          <InViewObserver ref={this.inViewObserverRef}>
-            <div className={this.props.classes.post}>
-              <div className={this.props.classes.postVoting}>
-                {this.renderVoting(isMoving ? 'page' : variant)}
-              </div>
-              <div className={this.props.classes.postFunding}>
-                {this.renderFunding(isMoving ? 'page' : variant)}
-              </div>
-              <div className={this.props.classes.postContent}>
-                <div
-                  className={classNames(this.props.classes.titleAndDescription, (targetVariant === 'list' && expandable) ? this.props.classes.expandable : undefined)}
-                  onClick={expandable ? this.onExpand.bind(this) : undefined}
-                >
+        <InViewObserver ref={this.inViewObserverRef}>
+          <div className={this.props.classes.post}>
+            <div className={this.props.classes.postVoting}>
+              {this.renderVoting(variant)}
+            </div>
+            <div className={this.props.classes.postFunding}>
+              {this.renderFunding(variant)}
+            </div>
+            <div className={this.props.classes.postContent}>
+              {this.renderTitleAndDescription(variant, (
+                <React.Fragment>
                   <div className={this.props.classes.titleContainer}>
-                    {this.renderTitle(isMoving ? 'page' : variant)}
+                    {this.renderTitle(variant)}
                     {this.renderStatus(variant)}
                   </div>
-                  {this.renderDescription(isMoving ? 'page' : variant)}
-                  {this.renderResponse(isMoving ? 'page' : variant)}
-                </div>
-                {this.renderBottomBar(isMoving ? 'page' : variant)}
-              </div>
-              <div className={this.props.classes.postComments}>
-                {this.renderComments(isMoving ? 'page' : variant)}
-              </div>
+                  {this.renderDescription(variant)}
+                  {this.renderResponse(variant)}
+                </React.Fragment>
+              ))}
+              {this.renderBottomBar(variant)}
             </div>
-            <LogIn
-              actionTitle='Get notified of replies'
-              server={this.props.server}
-              open={this.state.logInOpen}
-              onClose={() => this.setState({ logInOpen: false })}
-              onLoggedInAndClose={() => {
-                this.setState({ logInOpen: false });
-                this.onLoggedIn && this.onLoggedIn();
-                this.onLoggedIn = undefined;
-              }}
-            />
-          </InViewObserver>
-        </Expander>
+            <div className={this.props.classes.postComments}>
+              {this.renderComments(variant)}
+            </div>
+          </div>
+          <LogIn
+            actionTitle='Get notified of replies'
+            server={this.props.server}
+            open={this.state.logInOpen}
+            onClose={() => this.setState({ logInOpen: false })}
+            onLoggedInAndClose={() => {
+              this.setState({ logInOpen: false });
+              this.onLoggedIn && this.onLoggedIn();
+              this.onLoggedIn = undefined;
+            }}
+          />
+        </InViewObserver>
       </Loader>
     );
   }
@@ -1188,17 +1132,28 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  onExpand() {
-    if (!this.props.expandable || !this.props.idea) return;
-    if (ENABLE_EXPANSION && !this.props.forceDisablePostExpand && !this.props.theme.disableTransitions) {
-      this.expandedPath = `${this.props.match.url.replace(/\/$/, '')}/post/${this.props.idea.ideaId}`;
-      Post.expandedPath = this.expandedPath;
-    }
-    if (this.props.onClickPost) {
-      this.props.onClickPost(this.props.idea.ideaId);
-    } else {
-      this.props.history.push(preserveEmbed(`/post/${this.props.idea.ideaId}`, this.props.location));
-    }
+  renderTitleAndDescription(variant: PostVariant, children: React.ReactNode) {
+    if (variant === 'page'
+      || !this.props.expandable
+      || !!this.props.onClickPost
+      || !this.props.idea) return (
+        <div
+          className={classNames(this.props.classes.titleAndDescription, this.props.onClickPost && this.props.classes.expandable)}
+          onClick={this.props.onClickPost ? () => this.props.onClickPost && this.props.idea
+            && this.props.onClickPost(this.props.idea.ideaId) : undefined}
+        >
+          {children}
+        </div>
+      );
+
+    return (
+      <Link
+        className={classNames(this.props.classes.titleAndDescription, this.props.classes.expandable)}
+        to={preserveEmbed(`/post/${this.props.idea.ideaId}`, this.props.location)}
+      >
+        {children}
+      </Link>
+    );
   }
 
   async demoFundingControlAnimate(changes: Array<{ index: number; fundDiff: number; }>) {

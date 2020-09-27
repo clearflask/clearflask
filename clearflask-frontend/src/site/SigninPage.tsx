@@ -1,17 +1,19 @@
-import { Container, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Container, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Redirect, RouteComponentProps } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import ErrorPage from '../app/ErrorPage';
+import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd } from '../common/util/detectEnv';
-import SubmitButton from '../common/SubmitButton';
+import { SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 export const ADMIN_LOGIN_REDIRECT_TO = 'ADMIN_LOGIN_REDIRECT_TO';
 
@@ -103,11 +105,11 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             disabled={this.state.isSubmitting}
           />
           <DialogActions>
-            {!isProd() && ( // TODO Enable signups
-              <SubmitButton
-                onClick={() => this.props.history.push('/signup')}
-                isSubmitting={this.state.isSubmitting}
-              >Or Signup</SubmitButton>
+            {(SIGNUP_PROD_ENABLED || !isProd()) && (
+              <Button
+                component={Link}
+                to='/signup'
+              >Or Signup</Button>
             )}
             <SubmitButton
               color='primary'

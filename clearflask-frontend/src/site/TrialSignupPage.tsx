@@ -1,11 +1,11 @@
-import { Collapse, Container, DialogActions, Grid, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, Collapse, Container, DialogActions, Grid, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
+import { Link, NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -204,10 +204,10 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
           />
           <AcceptTerms />
           <DialogActions>
-            <SubmitButton
-              onClick={() => this.props.history.push('/dashboard')}
-              isSubmitting={this.state.isSubmitting}
-            >Or Login</SubmitButton>
+            <Button
+              component={Link}
+              to='/dashboard'
+            >Or Login</Button>
             <SubmitButton
               color='primary'
               isSubmitting={this.state.isSubmitting}

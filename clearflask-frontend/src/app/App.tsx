@@ -2,7 +2,7 @@ import { History, Location } from 'history';
 import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import { match } from 'react-router';
-import { Redirect, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import { Server, StateSettings } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status } from '../common/notification/webNotification';
@@ -12,7 +12,6 @@ import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
 import BasePage from './BasePage';
-import { isExpanded } from './comps/Post';
 import PostPage from './comps/PostPage';
 import UserPage from './comps/UserPage';
 import CustomPage from './CustomPage';
@@ -110,13 +109,6 @@ class App extends Component<Props> {
     }
   }
 
-  isExpandedLast = isExpanded();
-  shouldComponentUpdate(nextProps) {
-    const shouldUpdate = isExpanded() !== this.isExpandedLast;
-    this.isExpandedLast = isExpanded();
-    return shouldUpdate;
-  }
-
   render() {
     const appRootId = `appRoot-${this.server.getProjectId()}-${this.uniqId}`;
     return (
@@ -188,21 +180,14 @@ class App extends Component<Props> {
                     <SsoSuccessPage />
                   </BasePage>
                 )} />
-                {!isExpanded() && (
-                  <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
-                    <BasePage showFooter={!props.match.params['embed']}>
-                      <PostPage
-                        postId={props.match.params['postId'] || ''}
-                        server={this.server}
-                      />
-                    </BasePage>
-                  )} />
-                )}
-                {!isExpanded() && (
-                  <Route key='postWildcard' path='/:prefix?/post/:postId' render={props => (props.match.params['prefix'] === 'embed' || props.match.params['prefix'] === 'embed-status') ? null : (
-                    <Redirect exact to={{ pathname: `/post/${props.match.params.postId}` }} />
-                  )} />
-                )}
+                <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
+                  <BasePage showFooter={!props.match.params['embed']}>
+                    <PostPage
+                      postId={props.match.params['postId'] || ''}
+                      server={this.server}
+                    />
+                  </BasePage>
+                )} />
               </AnimatedPageSwitch>
             </PrivateProjectLogin>
           </div>

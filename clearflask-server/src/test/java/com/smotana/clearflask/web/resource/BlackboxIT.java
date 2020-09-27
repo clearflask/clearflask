@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.model.CommentCreate;
 import com.smotana.clearflask.api.model.CommentVoteUpdate;
 import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
 import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
@@ -63,6 +64,7 @@ import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
@@ -212,26 +214,7 @@ public class BlackboxIT extends AbstractIT {
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
                 projectId,
                 ModelUtil.createEmptyConfig(projectId).getConfig());
-        UserMeWithBalance user1 = userResource.userCreate(projectId, UserCreate.builder()
-                .name("john")
-                .email("john@example.com")
-                .build())
-                .getUser();
-        IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
-                .authorUserId(user1.getUserId())
-                .title("Add dark mode")
-                .categoryId(newProjectResult.getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
-                .tagIds(ImmutableList.of())
-                .build());
-        IdeaVoteUpdateResponse idea1vote1 = voteResource.ideaVoteUpdate(projectId, idea1.getIdeaId(), IdeaVoteUpdate.builder()
-                .vote(VoteOption.UPVOTE)
-                .build());
-        CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
-                .content(textToMockDraftjs("I like this"))
-                .build());
-        CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
-                .vote(VoteOption.DOWNVOTE)
-                .build());
+        addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .paymentToken(AccountUpdateAdminPaymentToken.builder()
                         .type(Billing.Gateway.TEST.getPluginName())
@@ -239,6 +222,11 @@ public class BlackboxIT extends AbstractIT {
                         .build())
                 .build());
         sleepAndRefreshStatus(accountId, 16L);
+        log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
+        for (long x = 0L; x < 15; x++) {
+            addActiveUser(projectId, newProjectResult.getConfig().getConfig());
+        }
+        sleepAndRefreshStatus(accountId, 2L);
         log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)
@@ -248,7 +236,7 @@ public class BlackboxIT extends AbstractIT {
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(false)
                 .build());
-        sleepAndRefreshStatus(accountId, 36L);
+        sleepAndRefreshStatus(accountId, 34L);
         log.info("account status {} billing {}", accountStore.getAccountByAccountId(accountId).get().getStatus(), accountResource.accountBillingAdmin());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .planid("standard-monthly")
@@ -256,6 +244,30 @@ public class BlackboxIT extends AbstractIT {
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();
         dumpDynamoTable();
+    }
+
+    private UserMeWithBalance addActiveUser(String projectId, ConfigAdmin configAdmin) throws Exception {
+        UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
+                .name("john-" + IdUtil.randomId())
+                .email("john-" + IdUtil.randomId() + "@example.com")
+                .build())
+                .getUser();
+        IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(user.getUserId())
+                .title("Add dark mode " + IdUtil.randomId())
+                .categoryId(configAdmin.getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+        IdeaVoteUpdateResponse idea1vote1 = voteResource.ideaVoteUpdate(projectId, idea1.getIdeaId(), IdeaVoteUpdate.builder()
+                .vote(VoteOption.UPVOTE)
+                .build());
+        CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
+                .content(textToMockDraftjs("I like this " + IdUtil.randomId()))
+                .build());
+        CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
+                .vote(VoteOption.DOWNVOTE)
+                .build());
+        return user;
     }
 
     private void sleepAndRefreshStatus(String accountId, long sleepInDays) throws KillBillClientException {

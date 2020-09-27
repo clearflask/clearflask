@@ -343,8 +343,7 @@ public class KillBillSync extends ManagedService {
             Overdue overdueCurrent = kbOverdueProvider.get().getOverdueConfigJson(KillBillUtil.roDefault());
             if (!OVERDUE.equals(overdueCurrent)) {
                 log.info("Uploading overdue file since server has differences");
-                // TODO change to debug
-                log.info("Server: {} expected {}", overdueCurrent, OVERDUE);
+                log.debug("Server: {} expected {}", overdueCurrent, OVERDUE);
                 kbOverdueProvider.get().uploadOverdueConfigJson(OVERDUE, KillBillUtil.roDefault());
             }
         }

@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings, Status } from '../../api/server';
@@ -157,7 +158,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
                 <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
                   <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
                   {!showFirstIdea && (
-                    <Button onClick={() => this.props.history.push(preserveEmbed(`/post/${idea.ideaId}`, this.props.location))}>
+                    <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`, this.props.location)}>
                       View
                     </Button>
                   )}

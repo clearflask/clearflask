@@ -40,7 +40,6 @@ interface Props {
   maxHeight?: string | number;
   hideIfEmpty?: boolean;
   hideAuthor?: boolean;
-  onClickComment?: (ideaId: string, commentId: string) => void;
 }
 interface ConnectProps {
   searchResult: SearchResult;
@@ -90,10 +89,10 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
               key={comment && comment.commentId}
               className={this.props.classes.comment}
               server={this.props.server}
-              onCommentClick={this.props.onClickComment ? () => this.props.onClickComment && this.props.onClickComment(comment.ideaId, comment.commentId) : undefined}
               comment={comment}
               loggedInUser={this.props.loggedInUser}
               logIn={logIn}
+              linkToPost
               truncateLines={3}
               hideAuthor={this.props.hideAuthor}
             />

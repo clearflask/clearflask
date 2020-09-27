@@ -3,6 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -52,14 +53,18 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
                   variant='overline'
                 >No notifications</Typography>
               ) : this.props.notifications!.map(notification => (
-                <TableRow
-                  key={notification.notificationId}
-                  hover
-                  onClick={() => this.clickNotification(notification)}
+                <Link
+                  to={this.getNotificationTo(notification)}
+                  onClick={() => this.clearNotification(notification)}
                 >
-                  <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
-                  <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
-                </TableRow>
+                  <TableRow
+                    key={notification.notificationId}
+                    hover
+                  >
+                    <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
+                    <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
+                  </TableRow>
+                </Link>
               ))}
             </TableBody>
           </Table>
@@ -78,20 +83,23 @@ class NotificationList extends Component<Props & ConnectProps & WithStyles<typeo
     );
   }
 
-  clickNotification(notification: Client.Notification) {
+  getNotificationTo(notification: Client.Notification): string {
+    if (notification.relatedIdeaId) {
+      if (notification.relatedCommentId) {
+        return `/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`;
+      } else {
+        return `/post/${notification.relatedIdeaId}`;
+      }
+    } else {
+      return `/transaction`;
+    }
+  }
+
+  clearNotification(notification: Client.Notification) {
     this.props.server.dispatch().notificationClear({
       projectId: this.props.server.getProjectId(),
       notificationId: notification.notificationId,
     });
-    if (notification.relatedIdeaId) {
-      if (notification.relatedCommentId) {
-        this.props.history.push(`/post/${notification.relatedIdeaId}/comment/${notification.relatedCommentId}`);
-      } else {
-        this.props.history.push(`/post/${notification.relatedIdeaId}`);
-      }
-    } else {
-      this.props.history.push(`/transaction`);
-    }
   }
 
   clearAll() {
