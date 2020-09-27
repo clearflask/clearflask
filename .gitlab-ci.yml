@@ -27,6 +27,4 @@ cache:
 build:
   stage: build
   script:
-    - sudo -H -u runner -i sh -e -x << EOS
-      mvn $MAVEN_CLI_OPTS install
-      EOS
+    - su -s /bin/bash runner -c "mvn $MAVEN_CLI_OPTS install"
