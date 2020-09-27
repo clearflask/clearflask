@@ -11,7 +11,7 @@ services:
   - docker:dind
 
 before_script:
-  - apt-get update -qq && apt-get install -qqy protobuf-compiler docker-compose
+  - apt-get update -qq && apt-get install -qqy protobuf-compiler docker-compose pass
   - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
 
 stages:

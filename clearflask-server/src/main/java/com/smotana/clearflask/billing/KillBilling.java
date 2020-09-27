@@ -5,7 +5,11 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -29,10 +33,26 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.*;
+import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.InvoiceApi;
+import org.killbill.billing.client.api.gen.SubscriptionApi;
+import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
-import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.Invoice;
+import org.killbill.billing.client.model.gen.OverdueState;
+import org.killbill.billing.client.model.gen.PaymentMethod;
+import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
+import org.killbill.billing.client.model.gen.PlanDetail;
+import org.killbill.billing.client.model.gen.PluginProperty;
+import org.killbill.billing.client.model.gen.RolledUpUnit;
+import org.killbill.billing.client.model.gen.RolledUpUsage;
+import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
+import org.killbill.billing.client.model.gen.UnitUsageRecord;
+import org.killbill.billing.client.model.gen.UsageRecord;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.util.api.AuditLevel;
@@ -636,7 +656,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getSubscriptionId(),
                     ACTIVE_USER_UNIT_NAME,
                     subscription.getStartDate(),
-                    null,
+                    LocalDate.now(),
                     KillBillUtil.roDefault());
             long activeUsers = usage.getRolledUpUnits().stream()
                     .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))
