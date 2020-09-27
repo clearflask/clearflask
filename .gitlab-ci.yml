@@ -13,6 +13,7 @@ services:
 before_script:
   - apt-get update -qq && apt-get install -qqy protobuf-compiler docker-compose pass
   - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+  - useradd -d /builds/${GITLAB_USER_LOGIN} --non-unique --system --uid 1000 -g users -M -N runner
 
 stages:
   - build
@@ -25,4 +26,6 @@ cache:
 build:
   stage: build
   script:
-    - mvn $MAVEN_CLI_OPTS install
+    - sudo -H -u runner -i sh -e -x << EOS
+    mvn $MAVEN_CLI_OPTS install
+    EOS
