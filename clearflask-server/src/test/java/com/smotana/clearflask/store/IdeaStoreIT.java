@@ -67,7 +67,7 @@ public class IdeaStoreIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void test() throws Exception {
         String projectId = IdUtil.randomId();
         UserStore.UserModel moderator = MockModelUtil.getRandomUser().toBuilder().isMod(true).build();
@@ -107,7 +107,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Optional.empty(), store.getIdea(projectId, idea2Updated.getIdeaId()));
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testSearch() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -217,7 +217,7 @@ public class IdeaStoreIT extends AbstractIT {
                 .build(), false, Optional.empty()).getIdeaIds());
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testVote() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -259,7 +259,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Long.valueOf(-1L), store.getIdea(projectId, idea.getIdeaId()).get().getVoteValue());
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testExpress() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
@@ -309,7 +309,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(-1.5d, store.getIdea(projectId, idea.getIdeaId()).get().getExpressionsValue(), 0.001);
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testFund() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
