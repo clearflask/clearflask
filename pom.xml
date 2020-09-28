@@ -34,6 +34,8 @@
         <node.version>v10.12.0</node.version>
         <yarn.version>v1.10.1</yarn.version>
         <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
+        <skipTests></skipTests>
+        <skipITs></skipITs>
     </properties>
 
     <modules>

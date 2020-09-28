@@ -388,7 +388,7 @@
                     <clusterName>test</clusterName>
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
-                    <skip>${skipTests}</skip>
+                    <skip>${skipTests}${skipITs}</skip>
                 </configuration>
                 <executions>
                     <execution>
@@ -411,7 +411,7 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
-                    <skip>${skipTests}</skip>
+                    <skip>${skipTests}${skipITs}</skip>
                     <autoRemove>true</autoRemove>
                     <startParallel>true</startParallel>
                     <images>
