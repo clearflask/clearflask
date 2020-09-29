@@ -1,6 +1,7 @@
 import { createMuiTheme, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider } from '@material-ui/core/styles';
+import { ProviderContext } from 'notistack';
 import React, { Component, Suspense } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
@@ -16,6 +17,24 @@ import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import setTitle from './common/util/titleUtil';
 import { vh } from './common/util/vhUtil';
+
+const notistackRef = React.createRef<ProviderContext>();
+const importSuccess = i => {
+  closeLoadingScreen();
+  return i;
+};
+const importFailed = e => {
+  notistackRef.current?.enqueueSnackbar("Network connectivity issues, please reload the page", {
+    variant: 'error',
+    preventDuplicate: true,
+    persist: true,
+  });
+};
+const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(importSuccess).catch(importFailed));
+const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(importSuccess).catch(importFailed));
+const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(importSuccess).catch(importFailed));
+const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(importSuccess).catch(importFailed));
+const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(importSuccess).catch(importFailed));
 
 const theme: Theme = createMuiTheme({
   palette: {
@@ -62,15 +81,10 @@ class Main extends Component {
       // Redirect www to homepage
       window.location.replace(window.location.origin.replace(`${subdomain}.`, ''));
     }
-    const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(i => { closeLoadingScreen(); return i; }));
-    const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(i => { closeLoadingScreen(); return i; }));
-    const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(i => { closeLoadingScreen(); return i; }));
-    const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(i => { closeLoadingScreen(); return i; }));
-    const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(i => { closeLoadingScreen(); return i; }));
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
-        <MuiSnackbarProvider>
+        <MuiSnackbarProvider notistackRef={notistackRef}>
           <CssBaseline />
           <ServerErrorNotifier server={ServerAdmin.get()} />
           <CaptchaChallenger server={ServerAdmin.get()} />

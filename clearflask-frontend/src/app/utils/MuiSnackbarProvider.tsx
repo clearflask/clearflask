@@ -1,7 +1,7 @@
 import { IconButton } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import DismissIcon from '@material-ui/icons/CloseRounded';
-import { SnackbarProvider } from 'notistack';
+import { ProviderContext, SnackbarProvider } from 'notistack';
 import React from 'react';
 
 const muiSnackbarStyles = makeStyles({
@@ -9,8 +9,11 @@ const muiSnackbarStyles = makeStyles({
     color: 'white',
   },
 });
-const MuiSnackbarProvider = (props: any) => {
-  const notistackRef = React.createRef<any>();
+const MuiSnackbarProvider = (props: {
+  children: React.ReactNode;
+  notistackRef?: React.RefObject<ProviderContext>;
+}) => {
+  const notistackRef = props.notistackRef || React.createRef<ProviderContext>();
   const classes = muiSnackbarStyles();
   return (
     <SnackbarProvider

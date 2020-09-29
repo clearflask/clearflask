@@ -6,13 +6,14 @@ import CreditPreview from './injects/CreditPreview';
 import PresetWidget from './PresetWidget';
 import Property from './Property';
 
+const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'/* webpackChunkName: "workflowPreview" */));
+
 interface Props {
   key: string;
   page: ConfigEditor.Page;
   editor: ConfigEditor.Editor;
   pageClicked: (path: ConfigEditor.Path) => void;
 }
-
 export default class Page extends Component<Props> {
   unsubscribe?: () => void;
 
@@ -29,7 +30,6 @@ export default class Page extends Component<Props> {
       && (<CreditPreview editor={this.props.editor} />);
     var workflowPreview;
     if (this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
-      const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'));
       workflowPreview = (
         <Suspense fallback={<Loading />}>
           <WorkflowPreviewLazyCmpt editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />

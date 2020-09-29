@@ -110,7 +110,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       && !!this.state.email
       && !requiresWorkEmail
       && !!this.state.pass;
-    const emailDisposableList = import('../common/util/emailDisposableList');
+    const emailDisposableList = import('../common/util/emailDisposableList'/* webpackChunkName: "emailDisposableList" */);
 
     return (
       <div className={this.props.classes.page}>
