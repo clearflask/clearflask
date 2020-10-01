@@ -1,0 +1,16 @@
+killbill:
+  version: 0.22.10
+  plugins:
+    java:
+      - name: analytics
+        version: 7.0.8
+      - name: email-notifications
+        version: 0.6.1
+      - name: stripe
+        version: 7.0.4
+  webapp_path: /var/lib/tomcat/webapps/killbill.war
+  plugins_dir: /var/lib/killbill/bundles
+kaui:
+  version: 2.0.5
+  plugins_dir: /var/lib/kaui # Used for sha1.yml
+  webapp_path: /var/lib/tomcat/webapps/kaui.war
