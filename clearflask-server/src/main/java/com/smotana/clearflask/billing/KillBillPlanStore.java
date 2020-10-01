@@ -31,17 +31,17 @@ public class KillBillPlanStore implements PlanStore {
                     new PlanPerk("Unlimited projects", null),
                     new PlanPerk("Credit System", null),
                     new PlanPerk("Roadmap", null)),
-                    null, true),
+                    null, null),
             "standard-monthly", new Plan("standard-monthly", "Standard",
                     new PlanPricing(200L, 400L, 400L, 200L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Single Sign-On", TERMS_SSO),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
-                    null, true),
+                    null, null),
             "flat-yearly", new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
                     new PlanPerk("Predictable annual price", null),
-                    new PlanPerk("Selected features", null)),
+                    new PlanPerk("Tailored plan", null)),
                     null, true)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(

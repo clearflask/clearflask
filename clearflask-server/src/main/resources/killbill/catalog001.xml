@@ -84,8 +84,8 @@
                 <phase type="TRIAL">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
-                        <unit>YEARS</unit>
-                        <number>100</number>
+                        <unit>MONTHS</unit>
+                        <number>6</number>
                     </duration>
                     <fixed>
                         <fixedPrice>
@@ -156,8 +156,8 @@
                 <phase type="TRIAL">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
-                        <unit>YEARS</unit>
-                        <number>100</number>
+                        <unit>MONTHS</unit>
+                        <number>6</number>
                     </duration>
                     <fixed>
                         <fixedPrice>
@@ -249,7 +249,7 @@
                     <recurringPrice>
                         <price>
                             <currency>USD</currency>
-                            <value>200.00</value>
+                            <value>2000.00</value>
                         </price>
                     </recurringPrice>
                 </recurring>

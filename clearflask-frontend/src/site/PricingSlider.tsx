@@ -72,7 +72,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
     const mauIndex = this.state.mauIndex;
 
-    const callForQuote = mauIndex >= this.state.marks.length;
+    const callForQuote = mauIndex >= this.state.marks.length - 1;
     const mau = callForQuote
       ? this.state.marks[this.state.marks.length - 1]
       : this.state.marks[mauIndex];
@@ -93,7 +93,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
     const price = pricing.basePrice + addtPrice;
 
     const min = 0;
-    const max = this.state.marks.length;
+    const max = this.state.marks.length - 1;
 
     const bottom = `${mauIndex / (max - min) * 100}%`;
     return (
@@ -157,7 +157,6 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
       const pts: Array<number> = [];
       if (!plan.pricing) return pts;
 
-      // TODO
       var currPt: number = plan.pricing.baseMau;
       while (currPt < currMaxMau) {
         pts.push(currPt);

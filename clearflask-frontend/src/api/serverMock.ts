@@ -32,7 +32,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     planid: 'flat-yearly', title: 'Flat',
     perks: [
       { desc: 'Predictable annual price' },
-      { desc: 'Custom features' },
+      { desc: 'Tailored plan' },
     ],
   },
 };
