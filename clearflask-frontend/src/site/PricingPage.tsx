@@ -125,7 +125,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.header}>
             <div>
               <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h6" color="textSecondary">Value-based plans</Typography>
+              <Typography component="div" variant="h6" color="textSecondary">No-time-limit no-credit-card trial up to 10 MAU</Typography>
             </div>
             <Container maxWidth='md'>
               <img
@@ -154,7 +154,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                   <PricingPlan
                     plan={plan}
                     actionTitle={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    remark={plan.pricing ? 'Unlimited-time trial below 10 MAU' : 'Tell us what you need'}
+                    remark={plan.pricing ? undefined : 'Tell us what you\'re looking for'}
                     actionOnClick={() => {
                       if (isTracking()) {
                         ReactGA.event({
@@ -169,7 +169,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                         pathname: '/signup',
                         state: { [PRE_SELECTED_PLAN_ID]: plan.planid },
                       }
-                      : '/contact/demo'}
+                      : '/contact/sales'}
                   />
                 </Grid>
               ))}

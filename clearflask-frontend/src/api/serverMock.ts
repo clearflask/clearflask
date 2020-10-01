@@ -18,7 +18,6 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
       { desc: 'Credit System' },
       { desc: 'Roadmap' },
     ],
-    beta: true,
   },
   'standard-monthly': {
     planid: 'standard-monthly', title: 'Standard',
@@ -28,15 +27,13 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
       { desc: 'Private projects' },
       { desc: 'Site template' },
     ],
-    beta: true,
   },
   'flat-yearly': {
     planid: 'flat-yearly', title: 'Flat',
     perks: [
       { desc: 'Predictable annual price' },
-      { desc: 'Selected features' },
+      { desc: 'Custom features' },
     ],
-    beta: true,
   },
 };
 const FeaturesTable: Admin.FeaturesTable | undefined = {

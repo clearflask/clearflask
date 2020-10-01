@@ -220,17 +220,17 @@ export default class Templater {
         ]);
         break;
       case 'funding':
-        this.demoBoard('Crowd-funding', [
-          { title: 'Gathering interest' },
+        this.demoBoard('Feature crowd-funding', [
+          // { title: 'Gathering interest' },
           { title: 'Raising funds', display: { showFunding: true } },
-          { title: 'Funded', display: { showFunding: true }, status: { disableFunding: true } },
+          { title: 'Successfully funded', display: { showFunding: true }, status: { disableFunding: true } },
         ]);
         break;
       case 'design':
         this.demoBoard('Design process', [
           { title: 'Ideas' },
-          { title: 'Concept', display: { showExpression: true } },
-          { title: 'Approved' },
+          { title: 'Concept' },
+          { title: 'Approved', display: { showExpression: true } },
         ]);
         break;
     }

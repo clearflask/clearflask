@@ -34,7 +34,7 @@ class PrioritizationControls extends Component<Props & WithStyles<typeof styles,
               onChange={this.handleChangeEnableDownvote.bind(this)}
             />
           )}
-          label={<FormHelperText component='span'>Enable downvoting</FormHelperText>}
+          label={<FormHelperText component='span'>Downvoting</FormHelperText>}
         />
       </div>
     );

@@ -88,6 +88,7 @@ const forms: ContactForm[] = [
     imagePath: '/img/support/sales.svg',
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
+      { attrName: 'company', title: 'Company/Product name', placeholder: 'Sirius Cybernetics', required: false },
       { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },

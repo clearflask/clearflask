@@ -7,12 +7,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.smotana.clearflask.api.model.FeaturesTable;
-import com.smotana.clearflask.api.model.FeaturesTableFeatures;
-import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlanPerk;
-import com.smotana.clearflask.api.model.PlanPricing;
-import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -32,7 +27,7 @@ public class KillBillPlanStore implements PlanStore {
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
     private static final ImmutableMap<String, Plan> AVAILABLE_PLANS = ImmutableMap.of(
             "growth-monthly", new Plan("growth-monthly", "Growth",
-                    new PlanPricing(20L, 30L, 40L, 20L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
+                    new PlanPricing(20L, 40L, 40L, 20L, PlanPricing.PeriodEnum.MONTHLY), ImmutableList.of(
                     new PlanPerk("Unlimited projects", null),
                     new PlanPerk("Credit System", null),
                     new PlanPerk("Roadmap", null)),

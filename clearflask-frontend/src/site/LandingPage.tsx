@@ -168,8 +168,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderHero() {
     return (
       <Hero
-        title='Involve your customer in your product development'
-        description='Product Feedback Solution for transparent organizations'
+        title='Involve your customers during product development'
+        description='Product Feedback Solution for community-driven transparent organizations'
         imagePath='/img/landing/hero.svg'
         mirror
       />
@@ -223,8 +223,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                 </div>
               )}
-              buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
+              // buttonTitle='Learn more'
+              // buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
             />
           </div>
           <div className={this.props.classes.textCircleItemContainer}>
@@ -246,8 +246,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                 </div>
               )}
-              buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
+              // buttonTitle='Learn more'
+              // buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
             />
           </div>
           <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
@@ -269,8 +269,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                 </div>
               )}
-              buttonTitle='Learn more'
-              buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
+              // buttonTitle='Learn more'
+              // buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
             />
             <div style={{ width: '10%' }} />
           </div>
@@ -294,7 +294,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         )}
         <Demo
           variant='heading-main'
-          title='Understand your customer needs'
+          title='Ask your customer what they need'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
           alignItems='flex-start'
           imagePath='/img/landing/listen.svg'
@@ -315,7 +315,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             // demoBlurryShadow: true,
             demoCreateAnimate: {
               title: 'Add Dark Mode',
-              description: 'To reduce eye-strain, please add a dark mode option',
+              description: 'To reduce eye-strain, please add a low-light option',
               similarSearchTerm: 'theme',
             },
           }}
@@ -406,7 +406,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         )}
         <Demo
           variant='heading-main'
-          title='Give your valuable customers a proportionate voice'
+          title='Give your most-valuable customers a proportionate voice'
           description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
           mirror
           alignItems='center'
@@ -482,8 +482,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         </HorizontalPanels>
         <Block
           // variant='content'
-          title='Give credits to users based on their contribution'
-          description='When a customer completes a purchase, issue them credit.'
+          title='Give credits based on customer value'
+          description='Decide which customers deserve your attention. Typically credits are issued based on monetary contribution and can be automatically issued with our API.'
           alignItems='center'
           demo={(
             <div className={this.props.classes.pointsContainer}>
@@ -577,7 +577,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           title='Build a community around your product'
           description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
           variant='heading-main'
-          alignItems='center'
+          alignItems='baseline'
           initialSubPath='/embed/demo'
           imagePath='/img/landing/community.svg'
           imageLocation='above'
@@ -587,7 +587,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             templater.styleWhite();
           }}
           settings={{
-            demoBlurryShadow: true,
+            // demoBlurryShadow: true,
           }}
           mock={(mocker, config) => mocker.mockFakeIdeaWithComments('ideaId')
             .then(() => mocker.mockLoggedIn())}
@@ -601,6 +601,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   logIn={() => Promise.resolve()}
                   newCommentsAllowed
                   loggedInUser={project.server.getStore().getState().users.loggedIn.user}
+                  onAuthorClick={(c, u) => {console.log("AHA clicked", c, u)}}
                 />
               </AppThemeProvider>
             </Provider>
@@ -609,20 +610,20 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm' staggerHeight={240}>
           <BlockContent
             variant='content'
-            title='Activate users waiting for a particular feature'
-            description='Notifications blah blah asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-            icon={(<NotificationIcon />)}
-          />
-          <BlockContent
-            variant='content'
-            title='Respond to suggestions to let your users know'
-            description='Suggestion Admin Reply and Status change asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            title='Respond to suggestions'
+            description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
             icon={(<RespondIcon />)}
           />
           <BlockContent
             variant='content'
-            title='Get involved in community discussions'
-            description='Threaded comments, forums blah blah ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
+            title='Activate users'
+            description='Bring your users back when their wishes have been fulfilled'
+            icon={(<NotificationIcon />)}
+          />
+          <BlockContent
+            variant='content'
+            title='Get involved'
+            description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
             icon={(<CommunityIcon />)}
           />
         </HorizontalPanels>
@@ -645,13 +646,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           demoWrapPadding={40}
           template={templater => templater.demoBoardPreset('development')}
           mock={mocker => mocker.demoBoard([
-            { status: '0', extra: { voteValue: 14 } },
-            { status: '0', extra: { voteValue: 7 } },
-            { status: '0', extra: { voteValue: 2 } },
-            { status: '1', extra: { funded: 7800, fundGoal: 9000, fundersCount: 12, expressions: { '👍': 7, '❤️': 4 } } },
-            { status: '1', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, expressions: { '👍': 1 } } },
-            { status: '2', extra: { funded: 6700, fundGoal: 5000, fundersCount: 32, } },
-            { status: '2', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
+            { status: '0', extra: { funded: 0, fundGoal: 9000, fundersCount: 0, voteValue: 14 } },
+            { status: '0', extra: { funded: 500, fundGoal: 5000, fundersCount: 1, voteValue: 7 } },
+            { status: '0', extra: { funded: 6700, fundGoal: 10000, fundersCount: 32, voteValue: 2 } },
+            { status: '1', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
+            { status: '1', extra: { funded: 5200, fundGoal: 5000, fundersCount: 4 } },
+            { status: '2', extra: { expressions: { '👍': 7, '❤️': 4 } } },
+            { status: '2', extra: { expressions: { '👍': 1 } } },
           ])}
           settings={{
             demoBlurryShadow: true,

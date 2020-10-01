@@ -8,6 +8,7 @@ import ServerMock from "./serverMock";
 interface MockedComment {
   content?: string;
   author?: Admin.User | string;
+  authorIsMod?: boolean;
   created?: Date;
   edited?: Date;
   children?: MockedComment[];
@@ -325,7 +326,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Add Dark Mode',
-          description: textToRaw('To reduce eye-strain, please add a dark mode option'),
+          description: textToRaw('To reduce eye-strain, please add a low-light option'),
           categoryId: 'demoCategoryId', // From configTemplater.demoCategory
           tagIds: [],
           ...{ // Fake data
@@ -611,7 +612,7 @@ class DataMock {
       ideaCreateAdmin: {
         authorUserId: user.userId,
         title: 'Add Dark Mode',
-        description: textToRaw('To reduce eye-strain, please add a dark mode option'),
+        description: textToRaw('To reduce eye-strain, please add a low-light option'),
         response: textToRaw('Added to our backlog, thanks!'),
         categoryId: config.content.categories[0].categoryId,
         statusId: config.content.categories[0].workflow.entryStatus,
@@ -636,16 +637,16 @@ class DataMock {
       {
         content: 'Also, it would be great if the black color can be a pure black in order to save mobile battery life.', author: 'John', voteValue: 43, children: [
           {
-            content: 'A pure black color does not look good in all cases', author: 'Charlotte', voteValue: 22, children: [
+            content: 'That\'s a great idea, we will work on that right away', author: 'Charlotte', authorIsMod: true,  voteValue: 22, children: [
               {
-                content: 'I disagree, a pure black looks nice if done right', author: 'John', voteValue: 1, created: new Date(),
+                content: 'Thank you for the quick response', author: 'John', voteValue: 2, created: new Date(),
               },
             ]
           },
           {
-            content: 'It would be great if you could choose between various themes', author: 'Daisy', voteValue: 12, children: [
+            content: 'Even better, you can choose the shade of the color', author: 'Daisy', voteValue: 12, children: [
               {
-                content: 'They wont have time do all of that', author: 'John', voteValue: -3,
+                content: 'I don\'t think they have time to do that', author: 'John', voteValue: -5,
               }
             ]
           },
@@ -663,7 +664,7 @@ class DataMock {
       var user: Admin.User | undefined;
       if (typeof comment.author === 'string') {
         if (!users[comment.author]) {
-          users[comment.author] = await this.mockUser(comment.author);
+          users[comment.author] = await this.mockUser(comment.author, comment.authorIsMod);
         }
         user = users[comment.author];
       } else {

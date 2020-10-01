@@ -14,7 +14,6 @@ const styles = (theme: Theme) => createStyles({
     marginLeft: theme.spacing(3),
   },
 });
-
 interface Props {
   server: Server;
   ideaId: string;
@@ -23,15 +22,14 @@ interface Props {
   newCommentsAllowed?: boolean; // TODO add comment replies
   loggedInUser?: Client.User;
   logIn: () => Promise<void>;
+  onAuthorClick?: (commentId: string, userId: string) => void;
 }
-
 interface ConnectProps {
   comments: Client.CommentWithVote[];
   commentsStatus?: Status;
   loadMore: () => Promise<Client.IdeaCommentSearchResponse>;
   settings: StateSettings;
 }
-
 class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   state = {};
 
@@ -62,16 +60,15 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
               replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
               onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
               logIn={this.props.logIn}
+              onAuthorClick={!!this.props.onAuthorClick
+                ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
+                : undefined}
             />
             {comment.childCommentCount > 0 && (
               <CommentList
-                server={this.props.server}
-                ideaId={this.props.ideaId}
+                {...this.props}
                 expectedCommentCount={comment.childCommentCount}
                 parentCommentId={comment.commentId}
-                newCommentsAllowed={this.props.newCommentsAllowed}
-                loggedInUser={this.props.loggedInUser}
-                logIn={this.props.logIn}
               />
             )}
             <Collapse

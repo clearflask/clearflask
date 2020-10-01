@@ -99,6 +99,7 @@ interface Props {
   logIn: () => Promise<void>;
   truncateLines?: number;
   hideAuthor?: boolean;
+  onAuthorClick?: (userId: string) => void;
 }
 interface State {
   editExpanded?: boolean;
@@ -316,11 +317,14 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
 
     return (
       <Typography key='author' className={this.props.classes.barItem} style={{ margin: 0, }} variant='caption'>
-        <UserDisplay user={{
-          userId: this.props.comment.authorUserId,
-          name: this.props.comment.authorName,
-          isMod: this.props.comment.authorIsMod
-        }} />
+        <UserDisplay
+          onClick={this.props.onAuthorClick}
+          user={{
+            userId: this.props.comment.authorUserId,
+            name: this.props.comment.authorName,
+            isMod: this.props.comment.authorIsMod
+          }}
+        />
       </Typography>
     );
   }

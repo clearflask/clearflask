@@ -96,7 +96,7 @@ class CollectPage extends Component<WithStyles<typeof styles, true>> {
           demoBlurryShadow: true,
           demoCreateAnimate: {
             title: 'Add Dark Mode',
-            description: 'To reduce eye-strain, please add a dark mode option',
+            description: 'To reduce eye-strain, please add a low-light option',
           },
         }}
       />

@@ -58,7 +58,7 @@ const styles = (theme: Theme) => createStyles({
   },
   reallyBlurry: {
     color: 'transparent',
-    textShadow: '0px 0px 9px rgba(0,0,0,0.3)',
+    textShadow: '0px 0px 3px rgba(0,0,0,0.3)',
   }
 });
 
@@ -147,13 +147,15 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   renderPriceTag() {
-    if (!this.props.plan.pricing) return (
-      <div className={this.props.classes.cardPricing}>
-        <Typography className={this.props.classes.reallyBlurry} component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-        <Typography className={this.props.classes.reallyBlurry} component='div' variant='h4'>800</Typography>
-        <Typography component='div' variant='subtitle2' color='textSecondary'>&nbsp;&nbsp;/&nbsp;year</Typography>
-      </div>
-    );
+    if (!this.props.plan.pricing) {
+      return (
+        <div className={this.props.classes.cardPricing}>
+          <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+          <Typography component='div' variant='h4'>2000+</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
+        </div>
+      );
+  }
 
     var billed: any = null;
     switch (this.props.plan.pricing?.period) {

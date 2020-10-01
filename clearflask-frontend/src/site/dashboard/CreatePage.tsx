@@ -159,7 +159,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                           onChange={(e, enableDownvote) => this.setStateAndPreview({ votingEnableDownvote: enableDownvote })}
                         />
                       )}
-                      label={<FormHelperText component='span'>Enable downvoting</FormHelperText>}
+                      label={<FormHelperText component='span'>Downvoting</FormHelperText>}
                     />
                   </div></Collapse>
                   <Collapse in={this.state.expressionAllowed}><div className={this.props.classes.extraControls}>

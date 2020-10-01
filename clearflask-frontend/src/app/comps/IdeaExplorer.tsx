@@ -221,6 +221,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           : (this.props.explorer.allowCreate.actionTitle || 'Add')}
         value={this.state.newItemTitle || ''}
         onChange={e => {
+          if(this.state.newItemTitle === e.target.value) {
+            return;
+          }
           this.updateSearchText(e.target.value, this.state.newItemDescription);
           this.setState({
             newItemTitle: e.target.value,
@@ -296,6 +299,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           placeholder='Description'
           value={this.state.newItemDescription || ''}
           onChange={e => {
+            if(this.state.newItemDescription === e.target.value
+              || (!this.state.newItemDescription && !e.target.value)) {
+              return;
+            }
             this.updateSearchText(this.state.newItemTitle, e.target.value);
             this.setState({ newItemDescription: e.target.value })
           }}
@@ -447,8 +454,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
-      if (await animate({ sleepInMs: 1500 })) return;
-
       if (searchTerm) {
         if (await animate({ setState: { newItemSearchText: searchTerm } })) return;
       }
@@ -490,6 +495,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           setState: { newItemTitle: this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1) },
         })) return;
       }
+      
+      if (await animate({ sleepInMs: 1500 })) return;
     }
   }
 }
