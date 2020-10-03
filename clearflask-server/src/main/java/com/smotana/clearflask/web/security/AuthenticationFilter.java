@@ -208,6 +208,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                             role, requestContext.getUriInfo().getRequestUri());
                     return false;
                 }
+                if (userSession.isPresent() && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
+                    return true;
+                }
                 Optional<ProjectStore.Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
                 if (!projectOpt.isPresent()) {
                     return false;
@@ -220,7 +223,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                         .getVisibility();
                 return Onboarding.VisibilityEnum.PUBLIC.equals(visibility);
             case Role.PROJECT_USER:
-                return userSession.isPresent() && pathParamProjectIdOpt.isPresent();
+                return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
+                        && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get());
             case Role.IDEA_OWNER:
                 pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
                 if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent()) {

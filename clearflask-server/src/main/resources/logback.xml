@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<configuration debug="true" scan="true" scanPeriod="60 seconds">
+<configuration
+        debug="true" scan="true" scanPeriod="60 seconds"
+        xmlns="http://ch.qos.logback/xml/ns/logback"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://ch.qos.logback/xml/ns/logback https://raw.githubusercontent.com/enricopulatzo/logback-XSD/master/src/main/xsd/logback.xsd">
     <jmxConfigurator/>
 
     <property name="logs-folder" value="${catalina.base}/logs"/>
 
-    <!-- Enable logging during shutdown https://stackoverflow.com/questions/37557754/logging-from-servlet-context-destroyed-event -->
-    <context-param>
-        <param-name>logbackDisableServletContainerInitializer</param-name>
-        <param-value>true</param-value>
-    </context-param>
-
     <contextName>${appName}</contextName>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>${logs-folder}/clearflask.log</File>
+        <file>${logs-folder}/clearflask.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <FileNamePattern>${logs-folder}/clearflask.%d{yyyy-MM-dd}.%i.log.gz</FileNamePattern>
-            <MaxHistory>30</MaxHistory>
+            <fileNamePattern>${logs-folder}/clearflask.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
@@ -38,7 +36,6 @@
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%msg</pattern>
         </layout>
     </appender>
-
     <appender name="ASYNC_EMAIL_SES" class="ch.qos.logback.classic.AsyncAppender">
         <param name="IncludeCallerData" value="true"/>
         <appender-ref ref="EMAIL_SES"/>
@@ -47,20 +44,11 @@
         </filter>
     </appender>
 
-    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
-        <target>System.err</target>
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
     <logger name="ch.qos.logback" level="INFO"/>
     <logger name="com.kik.config.ice" level="INFO"/>
     <logger name="org.reflections.Reflections" level="INFO"/>
 
     <root level="INFO">
-        <!-- Log to STDERR also for docker to pick up -->
-        <appender-ref ref="STDERR"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>
     </root>

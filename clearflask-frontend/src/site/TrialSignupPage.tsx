@@ -244,7 +244,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       this.setState({ isSubmitting: false });
       return;
     }
-    this.props.history.push('/dashboard');
+    this.props.history.push('/dashboard/create');
   }
 }
 

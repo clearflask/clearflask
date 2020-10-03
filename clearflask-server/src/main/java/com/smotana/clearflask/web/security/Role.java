@@ -22,8 +22,8 @@ public class Role {
 
     /**
      * Applies to entity that is anonymous but accessing a project resource.
-     * If the project has private visibility, access will not be allowed.
-     * Should typically be combined with PROJECT_USER role.
+     * If the project has private visibility, access will not be allowed
+     * unless the user is logged in.
      */
     public static final String PROJECT_ANON = "PROJECT_ANON";
     /**

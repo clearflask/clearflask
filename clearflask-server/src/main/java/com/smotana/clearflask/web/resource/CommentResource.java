@@ -2,18 +2,36 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Comment;
+import com.smotana.clearflask.api.model.CommentCreate;
+import com.smotana.clearflask.api.model.CommentSearch;
+import com.smotana.clearflask.api.model.CommentSearchAdmin;
+import com.smotana.clearflask.api.model.CommentSearchResponse;
+import com.smotana.clearflask.api.model.CommentUpdate;
+import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.IdeaCommentSearch;
+import com.smotana.clearflask.api.model.IdeaCommentSearchResponse;
+import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.Application;
@@ -97,7 +115,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         return commentModel.toCommentWithVote(VoteOption.UPVOTE);
     }
 
-    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaCommentSearchResponse ideaCommentSearch(String projectId, String ideaId, IdeaCommentSearch ideaCommentSearch) {
@@ -123,7 +141,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .getCommentModel().toComment();
     }
 
-    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 10)
     @Override
     public CommentSearchResponse commentSearch(String projectId, CommentSearch commentSearch, String cursor) {

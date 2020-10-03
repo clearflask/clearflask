@@ -42,7 +42,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg</pattern>
         </encoder>
     </appender>
 
@@ -59,7 +59,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg</pattern>
         </encoder>
     </appender>
 
@@ -105,7 +105,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
         </encoder>
     </appender>
 
@@ -122,7 +122,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
         </encoder>
     </appender>
 
@@ -144,7 +144,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -166,7 +166,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -188,7 +188,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -210,7 +210,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -232,7 +232,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -254,7 +254,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
                 </encoder>
             </appender>
         </sift>

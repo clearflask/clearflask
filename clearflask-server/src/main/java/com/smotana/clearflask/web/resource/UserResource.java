@@ -291,7 +291,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
-    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 10)
     @Override
     public User userGet(String projectId, String userId) {

@@ -1,8 +1,9 @@
-import { Badge, ListItem, ListItemText } from '@material-ui/core';
+import { Badge, Link as MuiLink, ListItem, ListItemText } from '@material-ui/core';
 import Collapse from '@material-ui/core/Collapse';
 import List, { ListProps } from '@material-ui/core/List';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import * as ConfigEditor from '../configEditor';
 
 export interface MenuHeading {
@@ -17,7 +18,7 @@ export interface MenuItem {
   disabled?: boolean;
   slug?: string;
   ext?: string;
-  onClick?: () => void;
+  newTab?: string;
   offset?: number;
   hasNotification?: boolean;
 }
@@ -31,6 +32,11 @@ export interface MenuProject {
   hasUnsavedChanges?: boolean;
   offset?: number;
 }
+
+const paddingForLevel = (offset: number = 0, path: ConfigEditor.Path = []): React.CSSProperties | undefined => {
+  const paddingLevel = path.length + offset;
+  return paddingLevel === 0 ? undefined : { paddingLeft: paddingLevel * 10 };
+};
 
 const styles = (theme: Theme) => createStyles({
   badgeDot: {
@@ -46,34 +52,50 @@ const styles = (theme: Theme) => createStyles({
     position: 'absolute',
     borderRight: '1px solid rgba(224, 224, 224, 0.3)',
   },
+  link: {
+    color: 'currentColor',
+  },
 });
 
 interface Props extends ListProps {
   items: (MenuProject | MenuItem | MenuHeading)[];
   activePath: string;
   activeSubPath: ConfigEditor.Path;
-  pageClicked: (path: string, subPath?: ConfigEditor.Path) => void;
+  onAnyClick: () => void;
 }
 
-export default class Menu extends Component<Props> {
+class MenuWithoutStyle extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
       <List dense component='nav' style={{ padding: '0px' }}>
         {this.props.items.map((item, index) => {
           if (item.type === 'item') {
+            var component;
+            var componentProps = {};
+            if (item.slug !== undefined) {
+              component = Link;
+              componentProps = {
+                to: `/dashboard/${item.slug}`,
+              };
+            } else if (item.ext) {
+              component = MuiLink;
+              componentProps = {
+                href: item.ext,
+                target: '_blank',
+              };
+            }
             return (
-              <ListItem key={`${index}-${item.slug || 'empty'}`} disabled={item.disabled} selected={item.slug === this.props.activePath} button onClick={() => {
-                if (item.onClick) {
-                  item.onClick();
-                }
-                if (item.slug !== undefined) {
-                  this.props.pageClicked(item.slug);
-                }
-                if (item.ext !== undefined) {
-                  window.open(item.ext, '_blank');
-                }
-              }}>
-                <ListItemText style={Menu.paddingForLevel(item.offset)} primary={(
+              <ListItem
+                key={`${index}-${item.slug || item.ext || 'empty'}`}
+                button
+                disabled={item.disabled}
+                selected={item.slug === this.props.activePath}
+                onClick={this.props.onAnyClick}
+                className={this.props.classes.link}
+                component={component}
+                {...componentProps}
+              >
+                <ListItemText style={paddingForLevel(item.offset)} primary={(
                   <React.Fragment>
                     <span>{item.name}</span>
                     <Badge
@@ -96,13 +118,14 @@ export default class Menu extends Component<Props> {
                 page={item.page}
                 hasUnsavedChanges={item.hasUnsavedChanges}
                 activePath={item.slug === this.props.activePath ? this.props.activeSubPath : undefined}
-                pageClicked={path => this.props.pageClicked(item.slug, path)}
+                slug={item.slug}
+                onAnyClick={this.props.onAnyClick}
               />
             );
           } else if (item.type === 'heading') {
             return (
               <ListItem key={`${index}-${item.text}`} disabled>
-                <ListItemText style={Menu.paddingForLevel(item.offset)} primary={item.text} />
+                <ListItemText style={paddingForLevel(item.offset)} primary={item.text} />
               </ListItem>
             );
           } else {
@@ -112,19 +135,17 @@ export default class Menu extends Component<Props> {
       </List>
     );
   }
-
-  static paddingForLevel(offset: number = 0, path: ConfigEditor.Path = []): React.CSSProperties | undefined {
-    const paddingLevel = path.length + offset;
-    return paddingLevel === 0 ? undefined : { paddingLeft: paddingLevel * 10 };
-  }
 }
+const Menu = withStyles(styles, { withTheme: true })(MenuWithoutStyle);
+export default Menu;
 
 interface PropsPage {
   key: string;
   page: ConfigEditor.Page;
   overrideName?: string | React.ReactNode | undefined;
   activePath?: ConfigEditor.Path;
-  pageClicked: (path: ConfigEditor.Path) => void;
+  slug: string;
+  onAnyClick: () => void;
   offset?: number;
   hasUnsavedChanges?: boolean;
 }
@@ -142,14 +163,18 @@ class MenuPageWithoutStyle extends Component<PropsPage & WithStyles<typeof style
 
   render() {
     const expanded = this.isExpanded(this.props.page.path);
-    const padding = Menu.paddingForLevel(this.props.offset || 0, this.props.page.path);
+    const padding = paddingForLevel(this.props.offset || 0, this.props.page.path);
     const color = this.props.page.getColor();
     const { classes, ...menuProps } = this.props;
     return (
       <Collapse in={this.props.page.required || this.props.page.value === true} timeout="auto" unmountOnExit>
-        <ListItem selected={this.isSelected(this.props.page.path)} button onClick={() => {
-          this.props.pageClicked(this.props.page.path);
-        }}>
+        <ListItem
+          selected={this.isSelected(this.props.page.path)}
+          button
+          component={Link}
+          to={`/dashboard/${[this.props.slug, ...this.props.page.path].join('/')}`}
+          onClick={() => this.props.onAnyClick()}
+        >
           <ListItemText style={padding} primary={(
             <React.Fragment>
               <span style={{ color }}>
@@ -213,7 +238,8 @@ interface PropsPageGroup {
   key: string;
   pageGroup: ConfigEditor.PageGroup;
   activePath?: ConfigEditor.Path;
-  pageClicked: (path: ConfigEditor.Path) => void;
+  slug: string;
+  onAnyClick: () => void;
 }
 
 class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<typeof styles, true>> {
@@ -229,7 +255,7 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
 
   render() {
     const childPages = this.props.pageGroup.getChildPages();
-    const padding = Menu.paddingForLevel(1, this.props.pageGroup.path);
+    const padding = paddingForLevel(1, this.props.pageGroup.path);
     const { classes, ...menuProps } = this.props;
     return (
       <Collapse in={childPages.length > 0} timeout="auto" unmountOnExit>

@@ -7,7 +7,12 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.FeaturesTable;
+import com.smotana.clearflask.api.model.FeaturesTableFeatures;
+import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.api.model.PlanPerk;
+import com.smotana.clearflask.api.model.PlanPricing;
+import com.smotana.clearflask.api.model.PlansGetResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -42,7 +47,7 @@ public class KillBillPlanStore implements PlanStore {
                     null, ImmutableList.of(
                     new PlanPerk("Predictable annual price", null),
                     new PlanPerk("Tailored plan", null)),
-                    null, true)
+                    null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
             ImmutableList.of("Growth", "Standard"),

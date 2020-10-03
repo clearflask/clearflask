@@ -105,14 +105,6 @@
             <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-chrome-driver</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
         </dependency>
@@ -189,6 +181,10 @@
             <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
         </dependency>
@@ -212,22 +208,6 @@
         <dependency>
             <groupId>org.kill-bill.billing.plugin</groupId>
             <artifactId>killbill-plugin-api-notification</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.billing.plugin.java</groupId>
-            <artifactId>payment-test-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.billing.plugin.java</groupId>
-            <artifactId>stripe-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.billing.plugin.java</groupId>
-            <artifactId>killbill-email-notifications-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.billing.plugin.java</groupId>
-            <artifactId>analytics-plugin</artifactId>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
@@ -345,6 +325,16 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>DynamoDBLocal</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.elasticsearch.plugin</groupId>
@@ -416,8 +406,8 @@
                         <image>
                             <alias>killbill-db</alias>
                             <name>killbill/mariadb:0.22</name>
-                            <autoRemove>true</autoRemove>
                             <run>
+                                <autoRemove>true</autoRemove>
                                 <volumes>
                                     <bind>
                                         <volume>
@@ -444,8 +434,8 @@
                         <image>
                             <alias>killbill-engine</alias>
                             <name>killbill/killbill:0.22.10</name>
-                            <autoRemove>true</autoRemove>
                             <run>
+                                <autoRemove>true</autoRemove>
                                 <volumes>
                                     <bind>
                                         <volume>
@@ -745,6 +735,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                 </configuration>

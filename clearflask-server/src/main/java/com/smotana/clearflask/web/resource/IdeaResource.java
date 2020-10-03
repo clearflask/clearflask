@@ -10,18 +10,34 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Idea;
+import com.smotana.clearflask.api.model.IdeaCreate;
+import com.smotana.clearflask.api.model.IdeaCreateAdmin;
+import com.smotana.clearflask.api.model.IdeaSearch;
+import com.smotana.clearflask.api.model.IdeaSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaSearchResponse;
+import com.smotana.clearflask.api.model.IdeaUpdate;
+import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
+import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
@@ -140,7 +156,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
 
-    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaGet(String projectId, String ideaId) {
@@ -163,7 +179,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
-    @RolesAllowed({Role.PROJECT_ANON, Role.PROJECT_USER})
+    @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaWithVoteSearchResponse ideaSearch(String projectId, IdeaSearch ideaSearch, String cursor) {

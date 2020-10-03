@@ -100,6 +100,14 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	-v $(shell pwd -P)/.nginx:/etc/nginx/conf.d \
 	nginx
 
+deploy: deploy-war deploy-rotate-instances
+
+deploy-war: ./clearflask-server/target/clearflask-server-0.1.war
+	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
+
+deploy-rotate-instances:
+	aws autoscaling start-instance-refresh --auto-scaling-group-name clearflask-server
+
 .nginx:
 	mkdir -p .nginx
 .nginx/%.pem: | .nginx

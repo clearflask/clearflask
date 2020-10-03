@@ -535,13 +535,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'account', name: 'Account' } as MenuItem,
                   { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
                   { type: 'item', slug: 'help', name: 'Help' } as MenuItem,
-                  { type: 'item', name: 'Docs', offset: 1, onClick: () => this.openFeedback('docs') } as MenuItem,
-                  { type: 'item', name: 'Roadmap', offset: 1, onClick: () => this.openFeedback('roadmap') } as MenuItem,
-                  { type: 'item', name: 'Feedback', offset: 1, onClick: () => this.openFeedback('feedback') } as MenuItem,
+                  { type: 'item', name: 'Docs', offset: 1, ext: this.openFeedbackUrl('docs') } as MenuItem,
+                  { type: 'item', name: 'Roadmap', offset: 1, ext: this.openFeedbackUrl('roadmap') } as MenuItem,
+                  { type: 'item', name: 'Feedback', offset: 1, ext: this.openFeedbackUrl('feedback') } as MenuItem,
                 ].filter(notEmpty)}
+                onAnyClick={() => this.setState({ quickView: undefined })}
                 activePath={activePath}
                 activeSubPath={activeSubPath}
-                pageClicked={this.pageClicked.bind(this)}
               />
             </div>
           )}
@@ -581,8 +581,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     );
   }
 
-  openFeedback(page?: string) {
-    window.open(`${window.location.protocol}//${ClearFlaskProjectId}.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`, '_blank')
+  openFeedbackUrl(page?: string) {
+    return `${window.location.protocol}//${ClearFlaskProjectId}.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {

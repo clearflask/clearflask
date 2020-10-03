@@ -17,6 +17,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.billing.ReportConfigurationJson.ReportType;
 import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
@@ -39,8 +40,6 @@ import org.killbill.billing.client.model.gen.OverdueStateConfig;
 import org.killbill.billing.client.model.gen.Tenant;
 import org.killbill.billing.client.model.gen.TenantKeyValue;
 import org.killbill.billing.overdue.api.OverdueCancellationPolicy;
-import org.killbill.billing.plugin.analytics.json.ReportConfigurationJson;
-import org.killbill.billing.plugin.analytics.reports.configuration.ReportsConfigurationModelDao.ReportType;
 import org.w3c.dom.Document;
 import rx.Observable;
 

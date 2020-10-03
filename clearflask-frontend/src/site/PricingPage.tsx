@@ -153,7 +153,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 <Grid item key={plan.planid} xs={12} sm={6} md={4}>
                   <PricingPlan
                     plan={plan}
-                    actionTitle={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
+                    actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
                     remark={plan.pricing ? undefined : 'Tell us what you\'re looking for'}
                     actionOnClick={() => {
                       if (isTracking()) {
@@ -164,7 +164,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                         });
                       }
                     }}
-                    actionTo={plan.pricing && (!SIGNUP_PROD_ENABLED || !isProd())
+                    actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
                       ? {
                         pathname: '/signup',
                         state: { [PRE_SELECTED_PLAN_ID]: plan.planid },

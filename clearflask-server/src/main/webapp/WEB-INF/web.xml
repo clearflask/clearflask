@@ -5,6 +5,12 @@
          version="3.0"
          metadata-complete="true">
 
+    <!-- Enable logging during shutdown https://stackoverflow.com/questions/37557754/logging-from-servlet-context-destroyed-event -->
+    <context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
     <filter>
         <filter-name>LogExFilter</filter-name>
         <filter-class>com.smotana.clearflask.web.filter.LogExFilter</filter-class>

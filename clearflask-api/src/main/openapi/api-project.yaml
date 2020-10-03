@@ -834,12 +834,13 @@ components:
                   type: string
                 config:
                   $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+/project/{projectId}/admin:
   delete:
     operationId: projectDeleteAdmin
     tags: [ProjectAdmin]
     parameters:
       - name: projectId
-        in: query
+        in: path
         required: true
         schema:
           type: string

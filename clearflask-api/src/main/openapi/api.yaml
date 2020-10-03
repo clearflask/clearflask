@@ -107,5 +107,7 @@ paths:
     $ref: 'api-project.yaml#/~1project~1config~1admin'
   /project/admin:
     $ref: 'api-project.yaml#/~1project~1admin'
+  /project/{projectId}/admin:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1admin'
   /project/{projectId}/admin/config:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1config'

@@ -82,6 +82,7 @@ export interface Props {
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
+  onboardBefore?: Client.Onboarding;
   loggedInUser?: Client.UserMe;
 }
 
@@ -113,9 +114,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   render() {
     if (!this.props.open) return null;
 
+    const onboarding = this.props.config?.users.onboarding || this.props.onboardBefore;
+
     const notifOpts: Set<NotificationType> = new Set();
-    if (this.props.config) {
-      // if (this.props.config.users.onboarding.notificationMethods.mobilePush === true
+    if (onboarding) {
+      // if (onboarding.notificationMethods.mobilePush === true
       //   && (this.props.overrideMobileNotification || MobileNotification.getInstance()).canAskPermission()) {
       //   switch ((this.props.overrideMobileNotification || MobileNotification.getInstance()).getDevice()) {
       //     case Device.Android:
@@ -126,19 +129,19 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       //       break;
       //   }
       // }
-      if (this.props.config.users.onboarding.notificationMethods.browserPush === true
+      if (onboarding.notificationMethods.browserPush === true
         && (this.props.overrideWebNotification || WebNotification.getInstance()).canAskPermission()) {
         notifOpts.add(NotificationType.Browser);
       }
-      if (this.props.config.users.onboarding.notificationMethods.anonymous
-        && (this.props.config.users.onboarding.notificationMethods.anonymous.onlyShowIfPushNotAvailable !== true
+      if (onboarding.notificationMethods.anonymous
+        && (onboarding.notificationMethods.anonymous.onlyShowIfPushNotAvailable !== true
           || (!notifOpts.has(NotificationType.Android) && !notifOpts.has(NotificationType.Ios) && !notifOpts.has(NotificationType.Browser)))) {
         notifOpts.add(NotificationType.Silent)
       }
-      if (this.props.config.users.onboarding.notificationMethods.email) {
+      if (onboarding.notificationMethods.email) {
         notifOpts.add(NotificationType.Email);
       }
-      if (this.props.config.users.onboarding.notificationMethods.sso) {
+      if (onboarding.notificationMethods.sso) {
         notifOpts.add(NotificationType.SSO);
       }
     }
@@ -160,7 +163,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       );
     } else {
       const signupAllowed = notifOpts.size > 0;
-      const loginAllowed = !!this.props.config && !!this.props.config.users.onboarding.notificationMethods.email;
+      const loginAllowed = !!onboarding?.notificationMethods.email;
       const isLogin = (signupAllowed && loginAllowed) ? this.state.isLogin : loginAllowed;
       const onlySingleOption = notifOpts.size === 1;
       const singleColumnLayout = this.props.fullScreen || onlySingleOption;
@@ -172,11 +175,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const emailValid = this.isEmailValid(this.state.email);
       const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-      const showDisplayNameInput = this.props.config && signupAllowed && this.props.config.users.onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
-      const isDisplayNameRequired = this.props.config && this.props.config.users.onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
+      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
+      const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
-      const showPasswordInput = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
-      const isPasswordRequired = this.props.config && this.props.config.users.onboarding.notificationMethods.email && this.props.config.users.onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
+      const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
+      const isPasswordRequired = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password === Client.EmailSignupPasswordEnum.Required;
       const isSignupSubmittable = selectedNotificationType
         && (selectedNotificationType !== NotificationType.SSO)
         && (selectedNotificationType !== NotificationType.Android || this.state.notificationDataAndroid)
@@ -211,7 +214,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       disabled={this.state.isSubmitting}
                     >
                       <ListItemIcon><SsoIcon /></ListItemIcon>
-                      <ListItemText primary={this.props.config?.users.onboarding.notificationMethods.sso?.buttonTitle
+                      <ListItemText primary={onboarding?.notificationMethods.sso?.buttonTitle
                         || this.props.config?.name
                         || 'External'} />
                     </ListItem>
@@ -314,7 +317,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           type='email'
                           error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
                           helperText={(<span className={this.props.classes.noWrap}>{
-                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
+                            !this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}</span>)}
                           margin='normal'
                           style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
                           disabled={this.state.isSubmitting}
@@ -354,7 +357,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 </div>
               </div>
               {(signupAllowed || loginAllowed) && (
-                <AcceptTerms overrideTerms={this.props.config?.users.onboarding.terms?.documents} />
+                <AcceptTerms overrideTerms={onboarding?.terms?.documents} />
               )}
             </Collapse>
             <Collapse in={!!isLogin}>
@@ -568,8 +571,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
 
   isAllowedDomain(email?: string) {
     if (!email) return false;
-    if (this.props.config?.users.onboarding.notificationMethods.email?.allowedDomains) {
-      return this.props.config.users.onboarding.notificationMethods.email.allowedDomains
+    const onboarding = this.props.config?.users.onboarding || this.props.onboardBefore;
+    if (onboarding?.notificationMethods.email?.allowedDomains) {
+      return onboarding.notificationMethods.email.allowedDomains
         .some(allowedDomain => email.trim().endsWith(`@${allowedDomain}`));
     }
     return true;
@@ -587,12 +591,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
   }
 
   onClickSsoNotif() {
-    if (!this.props.config?.users.onboarding.notificationMethods.sso?.redirectUrl) return;
+    const onboarding = this.props.config?.users.onboarding || this.props.onboardBefore;
+    if (!onboarding?.notificationMethods.sso?.redirectUrl) return;
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'sso' });
-    window.open(this.props.config.users.onboarding.notificationMethods.sso.redirectUrl
+    window.open(onboarding.notificationMethods.sso.redirectUrl
       .replace('<return_uri>', `${window.location.protocol}//${window.location.host}/sso`),
-      `cf_${this.props.config.projectId}_sso`,
+      `cf_${this.props.server.getProjectId()}_sso`,
       `width=${document.documentElement.clientWidth * 0.9},height=${document.documentElement.clientHeight * 0.9}`,
     );
   }
@@ -641,6 +646,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   return {
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
+    onboardBefore: state.conf.onboardBefore,
     loggedInUser: state.users.loggedIn.status === Status.FULFILLED ? state.users.loggedIn.user : undefined,
   }
 })(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps>({ breakpoint: 'xs' })(LogIn))));

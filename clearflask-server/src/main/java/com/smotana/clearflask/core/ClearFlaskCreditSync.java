@@ -74,6 +74,7 @@ public class ClearFlaskCreditSync extends ManagedService {
         if (!config.enabled()) {
             return;
         }
+
         CreditIncome creditRequest = new CreditIncome(
                 account.getClearFlaskGuid(),
                 account.getEmail(),
