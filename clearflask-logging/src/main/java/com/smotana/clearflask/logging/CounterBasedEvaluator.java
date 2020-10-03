@@ -1,4 +1,4 @@
-package com.smotana.clearflask.util.logging;
+package com.smotana.clearflask.logging;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;

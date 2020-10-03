@@ -1,4 +1,4 @@
-package com.smotana.clearflask.util.logging;
+package com.smotana.clearflask.logging;
 
 import ch.qos.logback.classic.net.SMTPAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -8,7 +8,6 @@ import ch.qos.logback.core.util.ContentTypeUtil;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.RawMessage;
 import com.amazonaws.services.simpleemail.model.SendRawEmailRequest;
-import com.google.common.base.Charsets;
 
 import javax.mail.Multipart;
 import javax.mail.internet.AddressException;
@@ -149,7 +148,7 @@ public class EmailSesAppender extends SMTPAppender {
                 mimeMsg.writeTo(out);
 
                 RawMessage rm = new RawMessage();
-                rm.setData(ByteBuffer.wrap(out.toString().getBytes(Charsets.UTF_8)));
+                rm.setData(ByteBuffer.wrap(out.toString().getBytes("UTF-8")));
 
                 ses.sendRawEmail(new SendRawEmailRequest().withRawMessage(rm));
             }

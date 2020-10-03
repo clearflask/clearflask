@@ -1,4 +1,4 @@
-package com.smotana.clearflask.util.logging;
+package com.smotana.clearflask.logging;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.pattern.Converter;
@@ -6,9 +6,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
 
-/**
- * @author cfairles
- */
 public class HTMLLayout extends ch.qos.logback.classic.html.HTMLLayout {
     @Override
     public String doLayout(ILoggingEvent event) {

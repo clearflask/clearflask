@@ -3,7 +3,7 @@ package com.smotana.clearflask.web;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.NoDefaultValue;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.limiter.LimiterDynamicFeature;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ public class Application extends ResourceConfig {
     public static final String RESOURCE_VERSION = "/v1";
 
     public interface Config {
-        @NoDefaultValue
+        @DefaultValue("clearflask.com")
         String domain();
     }
 

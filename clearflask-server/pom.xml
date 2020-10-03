@@ -17,8 +17,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -26,6 +24,11 @@
         <dependency>
             <groupId>com.smotana.clearflask</groupId>
             <artifactId>clearflask-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.smotana.clearflask</groupId>
+            <artifactId>clearflask-logging</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -144,10 +147,6 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ses</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
         </dependency>
         <dependency>
             <groupId>com.almworks.sqlite4java</groupId>
@@ -412,12 +411,12 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${skipTests}${skipITs}</skip>
-                    <autoRemove>true</autoRemove>
                     <startParallel>true</startParallel>
                     <images>
                         <image>
                             <alias>killbill-db</alias>
                             <name>killbill/mariadb:0.22</name>
+                            <autoRemove>true</autoRemove>
                             <run>
                                 <volumes>
                                     <bind>
@@ -445,6 +444,7 @@
                         <image>
                             <alias>killbill-engine</alias>
                             <name>killbill/killbill:0.22.10</name>
+                            <autoRemove>true</autoRemove>
                             <run>
                                 <volumes>
                                     <bind>
@@ -494,6 +494,7 @@
                         <!-- <image>
                             <alias>killbill-kaui</alias>
                             <name>killbill/kaui:2.0.5</name>
+                            <autoRemove>true</autoRemove>
                             <run>
                                 <env>
                                     <KAUI_CONFIG_DAO_URL>jdbc:mysql://host.docker.internal:38306/kaui</KAUI_CONFIG_DAO_URL>

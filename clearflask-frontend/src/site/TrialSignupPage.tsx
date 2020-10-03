@@ -22,7 +22,7 @@ import PricingPlan from './PricingPlan';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
-export const SIGNUP_PROD_ENABLED = false;
+export const SIGNUP_PROD_ENABLED = true;
 export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
 export const REQUIRES_WORK_EMAIL_ABOVE_PRICE = 50;
 

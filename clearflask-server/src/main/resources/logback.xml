@@ -23,18 +23,18 @@
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %logger{36} [%thread] - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} [%thread] - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <appender name="EMAIL_SES" class="com.smotana.clearflask.util.logging.EmailSesAppender">
+    <appender name="EMAIL_SES" class="com.smotana.clearflask.logging.EmailSesAppender">
         <To>ops@clearflask.com</To>
         <From>no-reply@clearflask.com</From>
         <Subject>[ClearFlask Logs] [WebServer] ${HOSTNAME}</Subject>
-        <evaluator class="com.smotana.clearflask.util.logging.CounterBasedEvaluator">
+        <evaluator class="com.smotana.clearflask.logging.CounterBasedEvaluator">
             <param name="CounterLimit" value="10"/>
         </evaluator>
-        <layout class="com.smotana.clearflask.util.logging.HTMLLayout">
+        <layout class="com.smotana.clearflask.logging.HTMLLayout">
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%msg</pattern>
         </layout>
     </appender>
@@ -50,7 +50,7 @@
     <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.err</target>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 

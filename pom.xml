@@ -34,6 +34,7 @@
         <node.version>v10.12.0</node.version>
         <yarn.version>v1.10.1</yarn.version>
         <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
+        <projectlombok.version>1.18.4</projectlombok.version>
         <skipTests></skipTests>
         <skipITs></skipITs>
     </properties>
@@ -42,6 +43,7 @@
         <module>clearflask-legal</module>
         <module>clearflask-api</module>
         <module>clearflask-frontend</module>
+        <module>clearflask-logging</module>
         <module>clearflask-server</module>
     </modules>
 
@@ -136,6 +138,13 @@
                             <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
                             </annotationProcessor>
                         </annotationProcessors>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${projectlombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
             </plugins>
@@ -256,7 +265,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.4</version>
+                <version>${projectlombok.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
