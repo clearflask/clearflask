@@ -39,7 +39,7 @@ sudo mv /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomca
 
 sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration debug="true" scan="true" scanPeriod="60 seconds">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg</pattern>
@@ -98,7 +98,7 @@ EOF
 
 sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator/>
     <conversionRule conversionWord="maskedMsg"
                     converterClass="org.killbill.billing.server.log.obfuscators.ObfuscatorConverter"/>
