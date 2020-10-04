@@ -58,7 +58,7 @@ public class ExtendedSecurityContext implements SecurityContext {
                 requestContext);
     }
 
-    public static ExtendedSecurityContext notAuthenticated(@NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext notAuthenticated(@NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         return new ExtendedSecurityContext(
                 null,
                 role -> false,

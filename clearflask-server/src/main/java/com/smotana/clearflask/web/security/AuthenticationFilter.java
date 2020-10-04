@@ -57,7 +57,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<UserSession> userSessionOpt = authenticateUser(accountSessionOpt, requestContext);
 
         if (!accountSessionOpt.isPresent() && !userSessionOpt.isPresent()) {
-            return ExtendedSecurityContext.notAuthenticated(requestContext);
+            return ExtendedSecurityContext.notAuthenticated(
+                    role -> hasRole(role, accountSessionOpt, userSessionOpt, requestContext),
+                    requestContext);
         }
 
         log.trace("Setting authenticated security context, accountId {} userId {}",
@@ -107,12 +109,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, ContainerRequestContext requestContext) {
-        log.trace("Checking if user has role {}", role);
-
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
         Optional<String> headerAccountId = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID);
         Optional<String> headerAccountToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID);
+
+        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {} userIdParam {}",
+                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
@@ -128,9 +131,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {} userIdParam {}",
-                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
-
         Optional<AccountStore.Account> accountOpt;
         Optional<String> pathParamIdeaIdOpt;
         Optional<String> pathParamCommentIdOpt;
@@ -139,22 +139,27 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
                     accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
                     if (!accountOpt.isPresent()) {
+                        log.trace("Role {} missing account", role);
                         return false;
                     }
 
                     if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        log.trace("Role {} api key mismatch", role);
                         return false;
                     }
                 } else {
                     if (!accountSession.isPresent()) {
+                        log.trace("Role {} missing account session", role);
                         return false;
                     }
                     accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
                     if (!accountOpt.isPresent()) {
+                        log.trace("Role {} missing account", role);
                         return false;
                     }
                 }
                 if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                    log.trace("Role {} inactive subscription", role);
                     return false;
                 }
                 return true;
@@ -162,13 +167,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
                     accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
                     if (!accountOpt.isPresent()) {
+                        log.trace("Role {} missing account", role);
                         return false;
                     }
                     if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        log.trace("Role {} api key mismatch", role);
                         return false;
                     }
                 } else {
                     if (!accountSession.isPresent()) {
+                        log.trace("Role {} missing account session", role);
                         return false;
                     }
                 }
@@ -178,27 +186,33 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.PROJECT_OWNER_ACTIVE:
             case Role.PROJECT_OWNER:
                 if (!pathParamProjectIdOpt.isPresent()) {
+                    log.trace("Role {} missing project id", role);
                     return false;
                 }
                 if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
                     accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
                     if (!accountOpt.isPresent()) {
+                        log.trace("Role {} missing account", role);
                         return false;
                     }
                     if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
+                        log.trace("Role {} api key mismatch", role);
                         return false;
                     }
                 } else {
                     if (!accountSession.isPresent()) {
+                        log.trace("Role {} missing account session", role);
                         return false;
                     }
                     accountOpt = accountStore.getAccountByAccountId(accountSession.get().getAccountId());
                     if (!accountOpt.isPresent()) {
+                        log.trace("Role {} missing account", role);
                         return false;
                     }
                 }
                 if (role == Role.PROJECT_OWNER
                         || !Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                    log.trace("Role {} inactive subscription", role);
                     return false;
                 }
                 return accountOpt.get().getProjectIds().stream().anyMatch(pathParamProjectIdOpt.get()::equals);
@@ -213,6 +227,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 }
                 Optional<ProjectStore.Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
                 if (!projectOpt.isPresent()) {
+                    log.trace("Role {} missing project", role);
                     return false;
                 }
                 Onboarding.VisibilityEnum visibility = projectOpt.get()
@@ -228,6 +243,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.IDEA_OWNER:
                 pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
                 if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent()) {
+                    log.trace("Role {} missing path param idea id", role);
                     return false;
                 }
                 Optional<IdeaStore.IdeaModel> idea = ideaStore.getIdea(userSession.get().getProjectId(), pathParamIdeaIdOpt.get());
@@ -235,7 +251,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.COMMENT_OWNER:
                 pathParamIdeaIdOpt = getPathParameter(requestContext, "ideaId");
                 pathParamCommentIdOpt = getPathParameter(requestContext, "commentId");
-                if (!userSession.isPresent() || !pathParamIdeaIdOpt.isPresent() || !pathParamCommentIdOpt.isPresent()) {
+                if (!userSession.isPresent()) {
+                    log.trace("Role {} missing user session", role);
+                    return false;
+                }
+                if (!pathParamIdeaIdOpt.isPresent()) {
+                    log.trace("Role {} missing path param idea id", role);
+                    return false;
+                }
+                if (!pathParamCommentIdOpt.isPresent()) {
+                    log.trace("Role {} missing path param comment id", role);
                     return false;
                 }
                 Optional<CommentStore.CommentModel> comment = commentStore.getComment(userSession.get().getProjectId(), pathParamIdeaIdOpt.get(), pathParamCommentIdOpt.get());

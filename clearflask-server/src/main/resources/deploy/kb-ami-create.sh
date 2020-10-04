@@ -3,6 +3,8 @@
 set -ex
 sudo yum install -y mc telnet
 sudo amazon-linux-extras install -y ruby2.6 tomcat8.5
+ln -s /usr/share/tomcat ~/tomcat
+sudo ln -s /usr/share/tomcat ~/tomcat
 sudo yum install -y java-1.8.0-openjdk gcc ruby-devel
 sudo gem update --system 2.7.5 --install-dir=/usr/share/gems --bindir /usr/local/bin
 sudo gem install io-console
@@ -40,6 +42,8 @@ sudo mv /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomca
 sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
+    <jmxConfigurator />
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg</pattern>
@@ -59,7 +63,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %msg</pattern>
+            <pattern>%msg</pattern>
         </encoder>
     </appender>
 
@@ -71,7 +75,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
             <param name="CounterLimit" value="10"/>
         </evaluator>
         <layout class="com.smotana.clearflask.logging.HTMLLayout">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%msg</pattern>
+            <pattern>%msg</pattern>
         </layout>
     </appender>
     <appender name="ASYNC_EMAIL_SES" class="ch.qos.logback.classic.AsyncAppender">
@@ -100,12 +104,13 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator/>
+
     <conversionRule conversionWord="maskedMsg"
                     converterClass="org.killbill.billing.server.log.obfuscators.ObfuscatorConverter"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
         </encoder>
     </appender>
 
@@ -122,7 +127,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
         </encoder>
     </appender>
 
@@ -144,7 +149,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -166,7 +171,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -188,7 +193,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -210,7 +215,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -232,7 +237,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -254,7 +259,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
                     </timeBasedFileNamingAndTriggeringPolicy>
                 </rollingPolicy>
                 <encoder>
-                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg</pattern>
+                  <pattern>%d{HH:mm:ss.SSS} %-5level %X{rails.actionName} [%thread] %maskedMsg%n</pattern>
                 </encoder>
             </appender>
         </sift>
@@ -268,7 +273,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
             <param name="CounterLimit" value="10"/>
         </evaluator>
         <layout class="com.smotana.clearflask.logging.HTMLLayout">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%msg</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}%level%logger%thread%maskedMsg%n</pattern>
         </layout>
     </appender>
     <appender name="ASYNC_EMAIL_SES" class="ch.qos.logback.classic.AsyncAppender">
@@ -429,6 +434,13 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #               -XX:+UseCodeCacheFlushing
 #               -Xms512m
 #               -Xmx1024m
+#               -Dcom.sun.management.jmxremote
+#               -Dcom.sun.management.jmxremote.port=9050
+#               -Dcom.sun.management.jmxremote.ssl=false
+#               -Dcom.sun.management.jmxremote.authenticate=false
+#               -Dcom.sun.management.jmxremote.local.only=false
+#               -Djava.rmi.server.hostname=localhost
+#               -Dcom.sun.management.jmxremote.rmi.port=9051
 #               -XX:+CMSClassUnloadingEnabled
 #               -XX:-OmitStackTraceInFastThrow
 #               -XX:+UseParNewGC

@@ -9,7 +9,7 @@
 
     <property name="logs-folder" value="${catalina.base}/logs"/>
 
-    <contextName>${appName}</contextName>
+    <contextName>ClearFlask</contextName>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${logs-folder}/clearflask.log</file>
