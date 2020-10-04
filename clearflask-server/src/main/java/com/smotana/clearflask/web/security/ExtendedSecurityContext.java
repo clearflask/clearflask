@@ -24,6 +24,8 @@ public class ExtendedSecurityContext implements SecurityContext {
         @NonNull
         private final String name;
         @NonNull
+        private final String remoteIp;
+        @NonNull
         private final Optional<AccountStore.AccountSession> accountSessionOpt;
         @NonNull
         private final Optional<UserStore.UserSession> userSessionOpt;
@@ -43,25 +45,18 @@ public class ExtendedSecurityContext implements SecurityContext {
         this.requestContext = requestContext;
     }
 
-    public static ExtendedSecurityContext authenticated(@NonNull Optional<AccountStore.AccountSession> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext create(@NonNull String remoteIp, @NonNull Optional<AccountStore.AccountSession> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         String name;
         if (accountSession.isPresent()) {
             name = accountSession.get().getAccountId();
         } else if (userSession.isPresent()) {
             name = userSession.get().getUserId();
         } else {
-            throw new IllegalArgumentException("Either account or user session must be present");
+            name = remoteIp;
         }
         return new ExtendedSecurityContext(
-                new ExtendedPrincipal(name, accountSession, userSession),
+                new ExtendedPrincipal(name, remoteIp, accountSession, userSession),
                 userHasRolePredicate,
-                requestContext);
-    }
-
-    public static ExtendedSecurityContext notAuthenticated(@NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
-        return new ExtendedSecurityContext(
-                null,
-                role -> false,
                 requestContext);
     }
 

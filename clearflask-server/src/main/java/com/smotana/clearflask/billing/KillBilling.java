@@ -260,8 +260,7 @@ public class KillBilling extends ManagedService implements Billing {
             log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}",
                     status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState);
         }
-        // TODO change to TRACE
-        log.info("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}",
+        log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}",
                 status, account, subscription, overdueState);
         return status;
     }

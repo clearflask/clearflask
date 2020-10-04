@@ -3,6 +3,7 @@ package com.smotana.clearflask.web.security;
 import com.google.common.base.Strings;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.CommentStore;
@@ -10,12 +11,14 @@ import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -35,7 +38,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "x-cf-secret";
 
     @Context
+    private HttpServletRequest request;
+    @Context
     protected HttpServletResponse response;
+    @Inject
+    private Environment env;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -55,17 +62,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
         Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext);
         Optional<UserSession> userSessionOpt = authenticateUser(accountSessionOpt, requestContext);
-
-        if (!accountSessionOpt.isPresent() && !userSessionOpt.isPresent()) {
-            return ExtendedSecurityContext.notAuthenticated(
-                    role -> hasRole(role, accountSessionOpt, userSessionOpt, requestContext),
-                    requestContext);
-        }
-
-        log.trace("Setting authenticated security context, accountId {} userId {}",
-                accountSessionOpt.map(AccountSession::getAccountId),
-                userSessionOpt.map(UserSession::getUserId));
-        return ExtendedSecurityContext.authenticated(
+        return ExtendedSecurityContext.create(
+                IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,
                 userSessionOpt,
                 role -> hasRole(role, accountSessionOpt, userSessionOpt, requestContext),

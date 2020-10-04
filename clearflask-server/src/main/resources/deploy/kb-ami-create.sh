@@ -43,6 +43,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator />
+    <contextName>Kaui</contextName>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -104,6 +105,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator/>
+    <contextName>KillBill</contextName>
 
     <conversionRule conversionWord="maskedMsg"
                     converterClass="org.killbill.billing.server.log.obfuscators.ObfuscatorConverter"/>
