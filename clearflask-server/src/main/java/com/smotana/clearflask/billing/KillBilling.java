@@ -23,6 +23,7 @@ import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -126,6 +127,7 @@ public class KillBilling extends ManagedService implements Billing {
         usageExecutor.awaitTermination(5, TimeUnit.MINUTES);
     }
 
+    @Extern
     @Override
     public AccountWithSubscription createAccountWithSubscription(String accountId, String email, String name, String planId) {
         Account account;
@@ -164,6 +166,7 @@ public class KillBilling extends ManagedService implements Billing {
         return new AccountWithSubscription(account, subscription);
     }
 
+    @Extern
     @Override
     public Account getAccount(String accountId) {
         try {
@@ -206,6 +209,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription getSubscription(String accountId) {
         try {
@@ -290,6 +294,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription cancelSubscription(String accountId) {
         try {
@@ -310,6 +315,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription undoPendingCancel(String accountId) {
         try {
@@ -324,6 +330,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription endTrial(String accountId) {
         try {
@@ -348,6 +355,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription changePlan(String accountId, String planId) {
         try {
@@ -371,6 +379,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Subscription activateSubscription(String accountId, String planId) {
         try {
@@ -468,6 +477,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public String getInvoiceHtml(String accountId, long invoiceNumber) {
         try {
@@ -495,6 +505,7 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Extern
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
         try {
@@ -644,6 +655,7 @@ public class KillBilling extends ManagedService implements Billing {
         });
     }
 
+    @Extern
     @Override
     public long getUsageCurrentPeriod(String accountId) {
         return getUsageCurrentPeriod(getSubscription(accountId));

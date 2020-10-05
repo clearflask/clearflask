@@ -9,6 +9,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.util.Extern;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -58,6 +59,7 @@ public class LocalRateLimiter implements RateLimiter {
         return true;
     }
 
+    @Extern
     @Override
     public void clearAll() {
         rateLimiters.clear();

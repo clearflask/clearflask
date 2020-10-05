@@ -27,6 +27,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.NotificationStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import lombok.extern.slf4j.Slf4j;
 
@@ -105,6 +106,7 @@ public class DynamoNotificationStore implements NotificationStore {
         return new NotificationListResponse(notifications, newCursorOpt);
     }
 
+    @Extern
     @Override
     public void notificationClear(String projectId, String userId, String notificationId) {
         notificationSchema.table().deleteItem(new DeleteItemSpec()
@@ -114,6 +116,7 @@ public class DynamoNotificationStore implements NotificationStore {
                         "notificationId", notificationId))));
     }
 
+    @Extern
     @Override
     public void notificationClearAll(String projectId, String userId) {
         Iterables.partition(StreamSupport.stream(notificationSchema.table().query(new QuerySpec()

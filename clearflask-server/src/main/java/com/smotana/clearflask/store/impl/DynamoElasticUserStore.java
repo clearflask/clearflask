@@ -1,16 +1,42 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.HashFunction;
@@ -40,9 +66,16 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.*;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.RequiredTypeException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +108,13 @@ import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -171,6 +210,7 @@ public class DynamoElasticUserStore implements UserStore {
                 .build();
     }
 
+    @Extern
     @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
@@ -255,6 +295,7 @@ public class DynamoElasticUserStore implements UserStore {
         return new UserAndIndexingFuture<>(user, indexingFuture);
     }
 
+    @Extern
     @Override
     public Optional<UserModel> getUser(String projectId, String userId) {
         return Optional.ofNullable(userSchema.fromItem(userSchema.table().getItem(new GetItemSpec()
@@ -659,6 +700,7 @@ public class DynamoElasticUserStore implements UserStore {
                 .compact();
     }
 
+    @Extern
     @Override
     public Optional<UserModel> verifyToken(String token) {
         if (Strings.isNullOrEmpty(token)) {
@@ -715,6 +757,7 @@ public class DynamoElasticUserStore implements UserStore {
         return userOpt;
     }
 
+    @Extern
     @Override
     public Optional<UserModel> ssoCreateOrGet(String projectId, String secretKey, String token) {
         if (Strings.isNullOrEmpty(token) || Strings.isNullOrEmpty(secretKey)) {
@@ -799,6 +842,7 @@ public class DynamoElasticUserStore implements UserStore {
         return userOpt.get();
     }
 
+    @Extern
     @Override
     public UserSession createSession(String projectId, String userId, long ttlInEpochSec) {
         UserSession userSession = new UserSession(
@@ -811,6 +855,7 @@ public class DynamoElasticUserStore implements UserStore {
         return userSession;
     }
 
+    @Extern
     @Override
     public Optional<UserSession> getSession(String sessionId) {
         return Optional.ofNullable(sessionByIdSchema
@@ -871,6 +916,7 @@ public class DynamoElasticUserStore implements UserStore {
                 });
     }
 
+    @Extern
     @Override
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete users

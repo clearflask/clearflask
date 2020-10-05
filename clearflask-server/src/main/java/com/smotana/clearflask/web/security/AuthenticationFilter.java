@@ -56,7 +56,12 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        requestContext.setSecurityContext(authenticate(requestContext));
+        try {
+            requestContext.setSecurityContext(authenticate(requestContext));
+        } catch (Exception ex) {
+            log.warn("Uncaught exception in Auth Filter", ex);
+            throw ex;
+        }
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {

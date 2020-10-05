@@ -19,13 +19,15 @@ public class IpUtil {
             case PRODUCTION_AWS:
                 String xForwardedFor = request.getHeader("x-forwarded-for");
                 if (Strings.isNullOrEmpty(xForwardedFor)) {
-                    throw new InternalServerErrorException("X-Forwarded-For not set in AWS");
-                }
-                int indexOfFirstComma = xForwardedFor.indexOf(',');
-                if (indexOfFirstComma == -1) {
-                    remoteIp = xForwardedFor.trim();
+                    // Most likely originated as a LB health check or a local query bypassing LB
+                    remoteIp = request.getRemoteAddr();
                 } else {
-                    remoteIp = xForwardedFor.substring(0, indexOfFirstComma).trim();
+                    int indexOfFirstComma = xForwardedFor.indexOf(',');
+                    if (indexOfFirstComma == -1) {
+                        remoteIp = xForwardedFor.trim();
+                    } else {
+                        remoteIp = xForwardedFor.substring(0, indexOfFirstComma).trim();
+                    }
                 }
                 break;
             case TEST:

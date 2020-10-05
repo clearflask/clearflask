@@ -11,6 +11,7 @@ import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.util.Extern;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
@@ -90,11 +91,13 @@ public class CaptchaChallenger implements Challenger {
         this.challenge = gson.toJson(new CaptchaChallenge(Version.RECAPTCHA_V2, siteKey));
     }
 
+    @Extern
     @Override
     public String issue(String remoteIp, String target) {
         return challenge;
     }
 
+    @Extern
     @Override
     public boolean verify(String remoteIp, String target, String solutionStr) {
         if (!config.enabled()) {

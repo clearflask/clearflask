@@ -1,14 +1,29 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.Page;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
@@ -35,6 +50,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -70,7 +86,12 @@ import rx.Observable;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -151,6 +172,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         wilsonScoreInterval = new WilsonScoreInterval(config.scoreWilsonConfidenceLevel());
     }
 
+    @Extern
     @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
@@ -192,6 +214,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return indexingFuture;
     }
 
+    @Extern
     @Override
     public double computeCommentScore(int upvotes, int downvotes) {
         // https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
@@ -261,6 +284,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return new CommentAndIndexingFuture<>(comment, Futures.allAsList(builder.build()));
     }
 
+    @Extern
     @Override
     public Optional<CommentModel> getComment(String projectId, String ideaId, String commentId) {
         return Optional.ofNullable(commentSchema.fromItem(commentSchema.table().getItem(new GetItemSpec()
@@ -550,6 +574,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return new CommentAndIndexingFuture<>(comment, indexingFuture);
     }
 
+    @Extern
     @Override
     public CommentAndIndexingFuture<UpdateResponse> markAsDeletedComment(String projectId, String ideaId, String commentId) {
         CommentModel comment = commentSchema.fromItem(commentSchema.table().updateItem(new UpdateItemSpec()
@@ -579,6 +604,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return new CommentAndIndexingFuture<>(comment, indexingFuture);
     }
 
+    @Extern
     @Override
     public ListenableFuture<DeleteResponse> deleteComment(String projectId, String ideaId, String commentId) {
         // TODO update childCommentCount for all parents
@@ -596,6 +622,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return indexingFuture;
     }
 
+    @Extern
     @Override
     public ListenableFuture<BulkByScrollResponse> deleteCommentsForIdea(String projectId, String ideaId) {
         Iterables.partition(StreamSupport.stream(commentSchema.table().query(new QuerySpec()
@@ -628,6 +655,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         return indexingFuture;
     }
 
+    @Extern
     @Override
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete comments

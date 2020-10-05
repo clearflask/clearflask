@@ -13,6 +13,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.TokenVerifyStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.Extern;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -42,6 +43,7 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
         tokenSchema = dynamoMapper.parseTableSchema(Token.class);
     }
 
+    @Extern
     @Override
     public Token createToken(String targetId) {
         Token token = new Token(
@@ -55,6 +57,7 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
         return token;
     }
 
+    @Extern
     @Override
     public boolean useToken(String tokenStr, String targetId) {
         Token deletedToken = tokenSchema.fromItem(tokenSchema.table().deleteItem(new DeleteItemSpec()

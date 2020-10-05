@@ -13,6 +13,7 @@ import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlanPerk;
 import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.util.Extern;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -67,11 +68,13 @@ public class KillBillPlanStore implements PlanStore {
     @Inject
     private Billing billing;
 
+    @Extern
     @Override
     public PlansGetResponse getPublicPlans() {
         return PLANS_GET_RESPONSE;
     }
 
+    @Extern
     @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
         Subscription subscription = billing.getSubscription(accountId);
@@ -86,6 +89,7 @@ public class KillBillPlanStore implements PlanStore {
         }
     }
 
+    @Extern
     @Override
     public Optional<Plan> getPlan(String planId) {
         return Optional.ofNullable(AVAILABLE_PLANS.get(planId));

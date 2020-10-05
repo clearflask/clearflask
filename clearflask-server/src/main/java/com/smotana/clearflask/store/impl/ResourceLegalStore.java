@@ -6,6 +6,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.smotana.clearflask.store.LegalStore;
+import com.smotana.clearflask.util.Extern;
 
 public class ResourceLegalStore implements LegalStore {
 
@@ -18,11 +19,13 @@ public class ResourceLegalStore implements LegalStore {
         this.privacyPolicy = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("legal/Privacy-Policy.md"), Charsets.UTF_8);
     }
 
+    @Extern
     @Override
     public String termsOfService() {
         return termsOfService;
     }
 
+    @Extern
     @Override
     public String privacyPolicy() {
         return privacyPolicy;

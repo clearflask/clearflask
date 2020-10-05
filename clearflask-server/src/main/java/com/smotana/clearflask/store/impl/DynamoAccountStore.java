@@ -5,10 +5,20 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -21,6 +31,7 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,6 +86,7 @@ public class DynamoAccountStore implements AccountStore {
                 .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
     }
 
+    @Extern
     @Override
     public Optional<Account> getAccountByAccountId(String accountId) {
         return Optional.ofNullable(accountSchema
@@ -84,6 +96,7 @@ public class DynamoAccountStore implements AccountStore {
                                         "accountId", accountId)))));
     }
 
+    @Extern
     @Override
     public Optional<Account> getAccountByEmail(String email) {
         return Optional.ofNullable(accountIdByEmailSchema.fromItem(accountIdByEmailSchema.table().getItem(new GetItemSpec()
@@ -93,6 +106,7 @@ public class DynamoAccountStore implements AccountStore {
                         .orElseThrow(() -> new IllegalStateException("AccountEmail entry exists but Account doesn't for email " + email)));
     }
 
+    @Extern
     @Override
     public Account setPlan(String accountId, String planid) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -108,6 +122,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public Account addProject(String accountId, String projectId) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -122,6 +137,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public Account removeProject(String accountId, String projectId) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -136,6 +152,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public Account updateName(String accountId, String name) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -150,6 +167,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public Account updatePassword(String accountId, String password, String sessionIdToLeave) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -166,6 +184,7 @@ public class DynamoAccountStore implements AccountStore {
         return account;
     }
 
+    @Extern
     @Override
     public Account updateEmail(String accountId, String emailNew, String sessionIdToLeave) {
         Account accountOld = getAccountByAccountId(accountId).get();
@@ -200,6 +219,7 @@ public class DynamoAccountStore implements AccountStore {
         return accountOld.toBuilder().email(emailNew).build();
     }
 
+    @Extern
     @Override
     public Account updateApiKey(String accountId, String apiKey) {
         return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
@@ -228,6 +248,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public void deleteAccount(String accountId) {
         String email = getAccountByAccountId(accountId).get().getEmail();
@@ -242,6 +263,7 @@ public class DynamoAccountStore implements AccountStore {
         revokeSessions(accountId);
     }
 
+    @Extern
     @Override
     public AccountSession createSession(String accountId, long ttlInEpochSec) {
         AccountSession accountSession = new AccountSession(genSessionId(), accountId, ttlInEpochSec);
@@ -250,6 +272,7 @@ public class DynamoAccountStore implements AccountStore {
         return accountSession;
     }
 
+    @Extern
     @Override
     public Optional<AccountSession> getSession(String sessionId) {
         return Optional.ofNullable(sessionBySessionIdSchema
@@ -279,6 +302,7 @@ public class DynamoAccountStore implements AccountStore {
                 .getItem());
     }
 
+    @Extern
     @Override
     public void revokeSession(String sessionId) {
         sessionBySessionIdSchema.table().deleteItem(new DeleteItemSpec()
@@ -286,11 +310,13 @@ public class DynamoAccountStore implements AccountStore {
                         "sessionId", sessionId))));
     }
 
+    @Extern
     @Override
     public void revokeSessions(String accountId) {
         revokeSessions(accountId, Optional.empty());
     }
 
+    @Extern
     @Override
     public void revokeSessions(String accountId, String sessionToLeave) {
         revokeSessions(accountId, Optional.of(sessionToLeave));

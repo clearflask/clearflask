@@ -1,12 +1,28 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -39,6 +55,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -68,7 +85,12 @@ import org.elasticsearch.search.sort.SortOrder;
 
 import javax.ws.rs.core.Response;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
@@ -125,6 +147,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         expDecayScoreWeek = new ExpDecayScore(EXP_DECAY_PERIOD_MILLIS);
     }
 
+    @Extern
     @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
@@ -234,6 +257,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         return indexingFuture;
     }
 
+    @Extern
     @Override
     public Optional<IdeaModel> getIdea(String projectId, String ideaId) {
         return Optional.ofNullable(ideaSchema.fromItem(ideaSchema.table().getItem(new GetItemSpec()
@@ -749,6 +773,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 indexingFuture);
     }
 
+    @Extern
     @Override
     public IdeaAndIndexingFuture incrementIdeaCommentCount(String projectId, String ideaId, boolean incrementChildCount) {
         ImmutableList.Builder<AttributeUpdate> attrUpdates = ImmutableList.builder();
@@ -778,6 +803,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         return new IdeaAndIndexingFuture(idea, indexingFuture);
     }
 
+    @Extern
     @Override
     public ListenableFuture<DeleteResponse> deleteIdea(String projectId, String ideaId) {
         ideaSchema.table().deleteItem(new DeleteItemSpec()
@@ -813,6 +839,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         return indexingFuture;
     }
 
+    @Extern
     @Override
     public ListenableFuture<AcknowledgedResponse> deleteAllForProject(String projectId) {
         // Delete ideas

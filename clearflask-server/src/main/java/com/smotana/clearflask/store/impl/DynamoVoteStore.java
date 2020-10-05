@@ -34,6 +34,7 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -102,6 +103,7 @@ public class DynamoVoteStore implements VoteStore {
         transactionByProjectIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(2, TransactionModel.class);
     }
 
+    @Extern
     @Override
     public VoteValue vote(String projectId, String userId, String targetId, VoteValue vote) {
         return Optional.ofNullable(voteSchemaByUser.fromItem(
@@ -365,6 +367,7 @@ public class DynamoVoteStore implements VoteStore {
         return transaction;
     }
 
+    @Extern
     @Override
     public TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary) {
         Optional<String> conditionExpressionOpt = Optional.empty();
@@ -531,6 +534,7 @@ public class DynamoVoteStore implements VoteStore {
                         .map(serverSecretCursor::encryptString));
     }
 
+    @Extern
     @Override
     public void deleteAllForProject(String projectId) {
         // Delete votes
