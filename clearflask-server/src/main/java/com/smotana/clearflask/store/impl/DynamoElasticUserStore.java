@@ -287,7 +287,7 @@ public class DynamoElasticUserStore implements UserStore {
                                 "name", orNull(user.getName()),
                                 "email", orNull(user.getEmail()),
                                 "balance", orNull(user.getBalance()),
-                                "isMod", user.getIsMod() != null && user.getIsMod()
+                                "isMod", user.getIsMod() == Boolean.TRUE
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));

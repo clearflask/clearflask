@@ -667,7 +667,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getSubscriptionId(),
                     ACTIVE_USER_UNIT_NAME,
                     subscription.getStartDate(),
-                    LocalDate.now(),
+                    LocalDate.now().plusDays(1),
                     KillBillUtil.roDefault());
             long activeUsers = usage.getRolledUpUnits().stream()
                     .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))

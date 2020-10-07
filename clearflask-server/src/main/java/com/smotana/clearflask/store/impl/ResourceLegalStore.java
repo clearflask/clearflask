@@ -5,9 +5,13 @@ import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.util.Extern;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Singleton
 public class ResourceLegalStore implements LegalStore {
 
     private String termsOfService;

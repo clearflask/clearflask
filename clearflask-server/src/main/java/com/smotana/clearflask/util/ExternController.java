@@ -16,8 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.StringJoiner;
 
 
 @Slf4j
@@ -44,8 +44,7 @@ public class ExternController extends ManagedService {
             return;
         }
         ImmutableList.Builder<ObjectName> registeredObjectNamesBuilder = ImmutableList.builder();
-        WeakReference<Injector> injectorRef = new WeakReference<>(injector);
-        for (Key<?> objKey : injector.getAllBindings().keySet()) {
+        for (Key<?> objKey : this.injector.getAllBindings().keySet()) {
             ImmutableMap.Builder<String, Method> methodsByNameBuilder = ImmutableMap.builder();
             Class cls = objKey.getTypeLiteral().getRawType();
             while (cls != null) {
@@ -54,7 +53,7 @@ public class ExternController extends ManagedService {
                         if (!method.isAccessible()) {
                             method.setAccessible(true);
                         }
-                        methodsByNameBuilder.put(method.getName(), method);
+                        methodsByNameBuilder.put(getMethodName(method), method);
                     }
                 }
                 cls = cls.getSuperclass();
@@ -64,7 +63,7 @@ public class ExternController extends ManagedService {
                 continue;
             }
 
-            ExternBean bean = new ExternBean(injectorRef, objKey, methodsByName);
+            ExternBean bean = new ExternBean(this.injector, objKey, methodsByName);
 
             ObjectName objectName = new ObjectName(bean.getMBeanName());
             mBeanServer.registerMBean(bean, objectName);
@@ -79,6 +78,21 @@ public class ExternController extends ManagedService {
         for (ObjectName objectName : registeredObjectNames) {
             mBeanServer.unregisterMBean(objectName);
         }
+    }
+
+    String getMethodName(Method m) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(m.getName());
+        sb.append('(');
+        StringJoiner sj = new StringJoiner(",");
+        for (Class<?> parameterType : m.getParameterTypes()) {
+            sj.add(parameterType.getTypeName());
+        }
+        sb.append(sj.toString());
+        sb.append(')');
+
+        return sb.toString();
     }
 
     public static Module module() {

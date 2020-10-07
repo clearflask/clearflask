@@ -27,7 +27,15 @@ tomcat-run-dev:
 	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
 	docker run --rm --name clearflask-webserver \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
+	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \
+		-Dcom.sun.management.jmxremote.authenticate=false \
+		-Dcom.sun.management.jmxremote.ssl=false \
+		-Dcom.sun.management.jmxremote.port=9950 \
+		-Dcom.sun.management.jmxremote.rmi.port=9951 \
+		-Djava.rmi.server.hostname=0.0.0.0" \
 	-p 80:8080 \
+	-p 9950:9950 \
+	-p 9951:9951 \
 	-v `pwd -P`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \
 	-v `pwd -P`/clearflask-server/src/test/resources/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml \
 	-v `pwd -P`/clearflask-server/src/test/resources/logging-dev.properties:/usr/local/tomcat/conf/logging.properties \

@@ -16,7 +16,6 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
@@ -26,17 +25,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Slf4j
 public class ExternBean implements DynamicMBean {
 
-    private final WeakReference<Injector> injectorRef;
-    private final Key objKey;
+    private final Injector injector;
+    private final Key<?> objKey;
     private final Map<String, Method> methodsByName;
     private final MBeanInfo mBeanInfo;
     private final String mBeanName;
 
-    public ExternBean(WeakReference<Injector> injectorRef, Key objKey, ImmutableMap<String, Method> methodsByName) {
-        this.injectorRef = injectorRef;
+    public ExternBean(Injector injector, Key<?> objKey, ImmutableMap<String, Method> methodsByName) {
+        this.injector = injector;
 
         this.objKey = objKey;
-        checkNotNull(injectorRef.get().getExistingBinding(this.objKey));
+        checkNotNull(injector.getExistingBinding(this.objKey));
 
         this.methodsByName = methodsByName;
 
@@ -45,8 +44,9 @@ public class ExternBean implements DynamicMBean {
                 null,
                 null,
                 null,
-                this.methodsByName.entrySet().stream()
-                        .map(e -> new MBeanOperationInfo(null, e.getValue()))
+                this.methodsByName.values().stream()
+                        /* TODO Here is the issue, mbeanoperationinfo name must match map's key */
+                        .map(method -> new MBeanOperationInfo(null, method))
                         .toArray(MBeanOperationInfo[]::new),
                 null);
 
@@ -70,7 +70,7 @@ public class ExternBean implements DynamicMBean {
         try {
             log.info("Invoking method {}", actionName);
             return methodsByName.get(actionName)
-                    .invoke(injectorRef.get().getInstance(objKey), params);
+                    .invoke(injector.getInstance(objKey), params);
         } catch (Exception ex) {
             log.error("Failed method invoke {}", actionName, ex);
             throw new MBeanException(ex);

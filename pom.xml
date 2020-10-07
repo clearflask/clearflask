@@ -202,6 +202,19 @@
                 <groupId>org.glassfish.jersey.connectors</groupId>
                 <artifactId>jersey-apache-connector</artifactId>
                 <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.9</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
