@@ -61,7 +61,7 @@ _killbill-run: killbill-engine-run killbill-kaui-run killbill-db-run
 killbill-engine-run:
 	docker run --rm --name clearflask-killbill-engine \
 	-e KILLBILL_DAO_URL=jdbc:mysql://host.docker.internal:8306/killbill \
-	-e KILLBILL_DAO_USER=root \
+	-e KILLBILL_DAO_USER=killbill \
 	-e KILLBILL_DAO_PASSWORD=killbill \
 	-e KILLBILL_SERVER_TEST_MODE=true \
 	-e KILLBILL_NOTIFICATIONQ_ANALYTICS_TABLE_NAME=analytics_notifications \
@@ -77,7 +77,7 @@ killbill-engine-run:
 killbill-kaui-run:
 	docker run --rm --name clearflask-killbill-kaui \
 	-e KAUI_CONFIG_DAO_URL=jdbc:mysql://host.docker.internal:8306/kaui \
-	-e KAUI_CONFIG_DAO_USER=root \
+	-e KAUI_CONFIG_DAO_USER=killbill \
 	-e KAUI_CONFIG_DAO_PASSWORD=killbill \
 	-e KAUI_KILLBILL_URL=http://host.docker.internal:8082 \
 	-p 8081:8080 \

@@ -8,11 +8,8 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -26,19 +23,10 @@ import org.killbill.billing.catalog.api.TimeUnit;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.OverdueApi;
-import org.killbill.billing.client.api.gen.PluginInfoApi;
-import org.killbill.billing.client.api.gen.TenantApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.DateTimes;
 import org.killbill.billing.client.model.PluginInfos;
-import org.killbill.billing.client.model.gen.Duration;
-import org.killbill.billing.client.model.gen.Overdue;
-import org.killbill.billing.client.model.gen.OverdueCondition;
-import org.killbill.billing.client.model.gen.OverdueStateConfig;
-import org.killbill.billing.client.model.gen.Tenant;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.overdue.api.OverdueCancellationPolicy;
 import org.w3c.dom.Document;
 import rx.Observable;
@@ -58,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static com.smotana.clearflask.billing.KillBillClientProvider.EMAIL_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.HOURLY;
 
 @Slf4j
 @Singleton
@@ -97,7 +86,7 @@ public class KillBillSync extends ManagedService {
      */
     private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
             // Dashboard views
-            .add(new ReportConfigurationJson(null, "accounts_summary", "Account summary", ReportType.COUNTERS, "v_report_accounts_summary", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "accounts_summary", "Account summary", ReportType.COUNTERS, "v_report_accounts_summary", "refresh_report_accounts_summary", HOURLY, null, null))
             .add(new ReportConfigurationJson(null, "active_by_product_term_monthly", "Active subscriptions", ReportType.TIMELINE, "v_report_active_by_product_term_monthly", null, null, null, null))
             .add(new ReportConfigurationJson(null, "cancellations_count_daily", "Cancellations", ReportType.TIMELINE, "v_report_cancellations_daily", null, null, null, null))
             .add(new ReportConfigurationJson(null, "chargebacks_daily", "Chargebacks", ReportType.TIMELINE, "v_report_chargebacks_daily", null, null, null, null))
@@ -322,9 +311,19 @@ public class KillBillSync extends ManagedService {
         }
 
         if (config.uploadAnalyticsReports()) {
+            // Undocumented API to retrieve all reports rather than making a call for each report
+            // https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/java/org/killbill/billing/plugin/analytics/http/ReportsResource.java
+            List<ReportConfigurationJson> reports = (List<ReportConfigurationJson>) kbClientProvider.get().doGet("/plugins/killbill-analytics/reports", List.class, KillBillUtil.roDefault());
+            ImmutableMap<String, ReportConfigurationJson> reportsMap = reports.stream().collect(ImmutableMap.toImmutableMap(
+                    r -> r.getReportName(), r -> r));
             for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
-                log.info("Uploading analytics plugin report {}", report);
-                kbClientProvider.get().doPost("/plugins/killbill-analytics/reports", report, KillBillUtil.roBuilder()
+                if (report.equals(reportsMap.get(report.getReportName()))) {
+                    log.info("Skipping analytics plugin report {}, already exists", report);
+                    continue;
+                }
+                boolean oldReportExists = reportsMap.containsKey(report.getReportName());
+                log.info("{} analytics plugin report {}", oldReportExists ? "Updating" : "Creating", report);
+                kbClientProvider.get().doPost("/plugins/killbill-analytics/reports" + (oldReportExists ? "?shouldUpdate=true" : ""), report, KillBillUtil.roBuilder()
                         .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
             }

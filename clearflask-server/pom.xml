@@ -577,14 +577,6 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>payment-test-plugin</artifactId>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-ddl/sources/payment-test-plugin/
-                                    </outputDirectory>
-                                    <includes>ddl.sql</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
                                     <artifactId>stripe-plugin</artifactId>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/stripe-plugin/
@@ -623,13 +615,6 @@
                             <overWriteReleases>true</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.kill-bill.billing.plugin.java</groupId>
-                                    <artifactId>payment-test-plugin</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/kb-plugins/</outputDirectory>
-                                </artifactItem>
                                 <artifactItem>
                                     <groupId>org.kill-bill.billing.plugin.java</groupId>
                                     <artifactId>stripe-plugin</artifactId>

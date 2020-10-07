@@ -410,22 +410,20 @@
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
-                <artifactId>payment-test-plugin</artifactId>
-                <version>7.0.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>stripe-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-stripe-plugin -->
                 <version>7.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>killbill-email-notifications-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-email-notifications-plugin -->
                 <version>0.6.1</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>analytics-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-analytics-plugin -->
                 <version>7.0.8</version>
             </dependency>
             <dependency>
