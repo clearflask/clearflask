@@ -12,16 +12,22 @@ echo "-- PLUGIN DDL" >>${TARGET}
 echo "CREATE USER IF NOT EXISTS 'killbill'@'%' IDENTIFIED BY 'killbill';" >>${TARGET}
 echo "ALTER DATABASE killbill CHARACTER SET utf8 COLLATE utf8_bin;" >>${TARGET}
 echo >>${TARGET}
-for DIR in ${SOURCE_DIR}/*/; do
+for DIR in "${SOURCE_DIR}"/*/; do
   DIR=${DIR%*/}
   NAME=${DIR##*/}
   if [[ ${NAME} == "analytics-plugin" ]]; then
-    DDL_FILES="$(find ${DIR} -name 'ddl.sql')"
-    DDL_FILES+="${DDL_FILES} ${DIR}/reports/calendar.sql"
-    DDL_FILES+="${DDL_FILES} $(find "${DIR}"/reports -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)"
-    DDL_FILES+="${DDL_FILES} $(find "${DIR}"/system -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)"
+    DDL_FILES=$(find "${DIR}" -name 'ddl.sql')
+    DDL_FILES=$(find "${DIR}" -name 'calendar.sql')
+    DDL_FILES+=$(find "${DIR}"/system -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
+    DDL_FILES+=$(find "${DIR}"/reports -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
+    REPORT_PATHS=$(find "${DIR}"/reports -type d -mindepth 1 -maxdepth 1)
+    for REPORT_PATH in ${REPORT_PATHS}; do
+      DDL_FILES+=$(find "${REPORT_PATH}" -type f -name 'v_*.sql' -o -name 'v_*.ddl')
+      DDL_FILES+=$(find "${REPORT_PATH}" -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'v_*')
+      DDL_FILES+=$(find "${REPORT_PATH}" -type f -name '*.prc')
+    done
   else
-    DDL_FILES=$(find ${DIR} -name 'ddl.sql')
+    DDL_FILES=$(find "${DIR}" -name 'ddl.sql')
   fi
   echo "DDL_FILES ${DDL_FILES}"
 
@@ -38,20 +44,13 @@ for DIR in ${SOURCE_DIR}/*/; do
     echo "drop table if exists report_active_by_product_term_monthly;" >>${TARGET}
     echo "drop table if exists report_cancellations_daily;" >>${TARGET}
     echo "drop table if exists report_chargebacks_daily;" >>${TARGET}
-    echo "drop table if exists ;" >>${TARGET}
-    echo "drop table if exists ;" >>${TARGET}
   fi
   echo >>${TARGET}
 
   for DDL_FILE in $DDL_FILES; do
     DDL_NAME=${DDL_FILE##*/}
     echo "-- PLUGIN DDL -> ${NAME} -> ${DDL_NAME}" >>${TARGET}
-    if [[ ${NAME} == "stripe-plugin" || ${NAME} == "killbill-email-notifications-plugin" ]]; then
-      # Remove directives within comments such as "CHARACTER SET..." and "SET storage_engine..."
-      sed 's/\/\*.*\*\///' ${DDL_FILE} >>${TARGET}
-    else
-      cat ${DDL_FILE} >>${TARGET}
-    fi
+    sed 's/\/\*.*\*\///' ${DDL_FILE} >>${TARGET}
     echo >>${TARGET}
   done
 

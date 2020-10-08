@@ -14,7 +14,6 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.billing.ReportConfigurationJson.ReportType;
 import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
@@ -46,7 +45,9 @@ import java.util.stream.Collectors;
 
 import static com.smotana.clearflask.billing.KillBillClientProvider.EMAIL_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.DAILY;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.HOURLY;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.*;
 
 @Slf4j
 @Singleton
@@ -86,28 +87,33 @@ public class KillBillSync extends ManagedService {
      */
     private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
             // Dashboard views
-            .add(new ReportConfigurationJson(null, "accounts_summary", "Account summary", ReportType.COUNTERS, "v_report_accounts_summary", "refresh_report_accounts_summary", HOURLY, null, null))
-            .add(new ReportConfigurationJson(null, "active_by_product_term_monthly", "Active subscriptions", ReportType.TIMELINE, "v_report_active_by_product_term_monthly", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "cancellations_count_daily", "Cancellations", ReportType.TIMELINE, "v_report_cancellations_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "chargebacks_daily", "Chargebacks", ReportType.TIMELINE, "v_report_chargebacks_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "conversions_daily", "Conversions", ReportType.TIMELINE, "v_report_conversions_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "invoice_adjustments_daily", "Invoice adjustments", ReportType.TIMELINE, "v_report_invoice_adjustments_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "invoice_item_adjustments_daily", "Invoice item adjustments", ReportType.TIMELINE, "v_report_invoice_item_adjustments_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "invoice_item_credits_daily", "Invoice credits", ReportType.TIMELINE, "v_report_invoice_item_credits_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "invoices_balance_daily", "Invoice balance", ReportType.TIMELINE, "v_report_invoices_balance_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "invoices_daily", "Invoices", ReportType.TIMELINE, "v_report_invoices_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "mrr_daily", "MRR", ReportType.TIMELINE, "v_report_mrr_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "new_accounts_daily", "New accounts", ReportType.TIMELINE, "v_report_new_accounts_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "overdue_states_count_daily", "Overdue states", ReportType.TIMELINE, "v_report_overdue_states_count_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "payments_total_daily", "Payment ($ amount)", ReportType.TIMELINE, "v_report_payments_total_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "refunds_total_daily", "Refunds", ReportType.TIMELINE, "v_report_refunds_total_daily", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "trial_starts_count_daily", "Trials", ReportType.TIMELINE, "v_report_trial_starts_count_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_accounts_summary", "Account summary", COUNTERS, "report_accounts_summary", "refresh_report_accounts_summary", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_active_by_product_term_monthly", "Monthly active subscriptions", TIMELINE, "report_active_by_product_term_monthly", "refresh_report_active_by_product_term_monthly", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_cancellations_daily", "Daily cancellations", TIMELINE, "report_cancellations_daily", "refresh_report_cancellations_daily", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_chargebacks_daily", "Daily chargebacks value", TIMELINE, "report_chargebacks_daily", "refresh_report_chargebacks_daily", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_conversions_daily", "Conversions", TIMELINE, "v_report_conversions_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_invoice_adjustments_daily", "Invoice adjustments", TIMELINE, "v_report_invoice_adjustments_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_invoice_item_adjustments_daily", "Invoice item adjustments", TIMELINE, "v_report_invoice_item_adjustments_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_invoice_item_credits_daily", "Invoice credits", TIMELINE, "v_report_invoice_item_credits_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_invoices_balance_daily", "Daily invoice balance", TIMELINE, "report_invoices_balance_daily", "refresh_report_invoices_balance_daily", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_invoices_daily", "Daily invoices value", TIMELINE, "report_invoices_daily", "refresh_report_invoices_daily", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_mrr_daily", "Daily MRR", TIMELINE, "report_mrr_daily", "refresh_report_mrr_daily", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_new_accounts_daily", "Daily new accounts", TIMELINE, "report_new_accounts_daily", "refresh_report_new_accounts_daily", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_overdue_states_count_daily", "Overdue states", TIMELINE, "v_report_overdue_states_count_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_payments_total_daily", "Daily payments value", TIMELINE, "report_payments_total_daily", "refresh_report_payments_total_daily", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_refunds_total_daily", "Daily refunds value", TIMELINE, "report_refunds_total_daily", "refresh_report_refunds_total_daily", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_trial_starts_count_daily", "Trials", TIMELINE, "v_report_trial_starts_count_daily", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "report_payment_provider_conversion", "Payment Provider Conversion", TABLE, "report_payment_provider_conversion_history", "refresh_report_payment_provider_conversion_history", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_payment_provider_errors", "Payment Provider Errors", TIMELINE, "report_payment_provider_errors", "refresh_report_payment_provider_errors", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_payment_provider_monitor", "Payment Provider Monitor", TABLE, "report_payment_provider_monitor_history", "refresh_report_payment_provider_monitor_history", DAILY, null, null))
+            .add(new ReportConfigurationJson(null, "report_payments_by_provider", "Payments By Provider", TABLE, "report_payments_by_provider_history", "refresh_report_payments_by_provider_history", HOURLY, null, null))
+            .add(new ReportConfigurationJson(null, "report_payments_by_provider_last_24h_summary", "Payments By Provider (24h summary)", COUNTERS, "report_payments_by_provider_last_24h_summary", "refresh_report_payments_by_provider_last_24h_summary", DAILY, null, null))
             // System views
-            .add(new ReportConfigurationJson(null, "system_report_control_tag_no_test", "Control tags", ReportType.COUNTERS, "v_system_report_control_tag_no_test", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name", "Notification queues", ReportType.TIMELINE, "v_system_report_notifications_per_queue_name", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name_late", "Late notifications", ReportType.COUNTERS, "v_system_report_notifications_per_queue_name_late", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "system_report_payments", "Payments status", ReportType.COUNTERS, "v_system_report_payments", null, null, null, null))
-            .add(new ReportConfigurationJson(null, "system_report_payments_per_day", "Payments", ReportType.TIMELINE, "v_system_report_payments_per_day", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_control_tag_no_test", "Control tags", COUNTERS, "v_system_report_control_tag_no_test", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name", "Notification queues", TIMELINE, "v_system_report_notifications_per_queue_name", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_notifications_per_queue_name_late", "Late notifications", COUNTERS, "v_system_report_notifications_per_queue_name_late", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_payments", "Payments status", COUNTERS, "v_system_report_payments", null, null, null, null))
+            .add(new ReportConfigurationJson(null, "system_report_payments_per_day", "Payments", TIMELINE, "v_system_report_payments_per_day", null, null, null, null))
             .build();
 
     public interface Config {

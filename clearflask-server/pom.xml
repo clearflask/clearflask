@@ -598,8 +598,7 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
                                     </outputDirectory>
-                                    <includes>org/killbill/billing/plugin/analytics/ddl.sql,system/**,reports/**
-                                    </includes>
+                                    <includes>ddl.sql,*.sql,*.prc,*.ddl</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
