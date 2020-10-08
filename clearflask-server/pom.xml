@@ -381,6 +381,7 @@
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
                     <skip>${skipTests}${skipITs}</skip>
+                    <timeout>120</timeout>
                 </configuration>
                 <executions>
                     <execution>
@@ -598,7 +599,7 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
                                     </outputDirectory>
-                                    <includes>ddl.sql,*.sql,*.prc,*.ddl</includes>
+                                    <includes>**/ddl.sql,system/**/*.sql,system/**/*.prc,system/**/*.ddl,reports/**/*.sql,reports/**/*.prc,reports/**/*.ddl</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

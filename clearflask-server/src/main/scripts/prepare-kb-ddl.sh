@@ -9,20 +9,22 @@ TARGET=$2
 echo >${TARGET}
 
 echo "-- PLUGIN DDL" >>${TARGET}
-echo "CREATE USER IF NOT EXISTS 'killbill'@'%' IDENTIFIED BY 'killbill';" >>${TARGET}
+echo "USE 'killbill';" >>${TARGET}
 echo "ALTER DATABASE killbill CHARACTER SET utf8 COLLATE utf8_bin;" >>${TARGET}
 echo >>${TARGET}
 for DIR in "${SOURCE_DIR}"/*/; do
   DIR=${DIR%*/}
   NAME=${DIR##*/}
   if [[ ${NAME} == "analytics-plugin" ]]; then
+    # Load sql files in appropriate order
     DDL_FILES=$(find "${DIR}" -name 'ddl.sql')
     DDL_FILES+=" "$(find "${DIR}" -name 'calendar.sql')
     DDL_FILES+=" "$(find "${DIR}"/system -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
     DDL_FILES+=" "$(find "${DIR}"/reports -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'calendar.sql' -maxdepth 1)
     REPORT_PATHS=$(find "${DIR}"/reports -type d -mindepth 1 -maxdepth 1)
     for REPORT_PATH in ${REPORT_PATHS}; do
-      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f -name 'v_*.sql' -o -name 'v_*.ddl')
+      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f -name 'v_*sub*.sql' -o -name 'v_*sub*.ddl' | sort)
+      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f \( -name 'v_*.sql' -o -name 'v_*.ddl' \) -a -not -name 'v_*sub*' | sort)
       DDL_FILES+=" "$(find "${REPORT_PATH}" -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'v_*')
       DDL_FILES+=" "$(find "${REPORT_PATH}" -type f -name '*.prc')
     done
@@ -66,8 +68,3 @@ for DIR in "${SOURCE_DIR}"/*/; do
     echo >>${TARGET}
   done
 done
-
-echo >>${TARGET}
-echo "-- PLUGIN DDL finalize" >>${TARGET}
-echo "GRANT SELECT, UPDATE, DELETE, INSERT ON killbill.* TO 'killbill'@'%';" >>${TARGET}
-echo >>${TARGET}

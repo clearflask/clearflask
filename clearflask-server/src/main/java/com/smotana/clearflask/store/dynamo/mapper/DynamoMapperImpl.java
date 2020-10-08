@@ -17,7 +17,7 @@ import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -153,7 +153,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 }
                 dynamoDoc.createTable(createTableRequest);
                 log.info("Table {} created", getTableOrIndexName(Primary, -1));
-            } catch (ResourceNotFoundException ex) {
+            } catch (ResourceInUseException ex) {
                 log.trace("Table {} already exists", getTableOrIndexName(Primary, -1));
             }
         }
