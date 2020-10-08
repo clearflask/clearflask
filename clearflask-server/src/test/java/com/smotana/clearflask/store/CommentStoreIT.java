@@ -8,6 +8,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
+import com.smotana.clearflask.api.model.CommentSearchAdmin;
 import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
@@ -72,7 +73,7 @@ public class CommentStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 10_000L)
-    public void testCreateGet() throws Exception {
+    public void testCreateGetSearch() throws Exception {
         String projectId = IdUtil.randomId();
         store.createIndex(projectId).get();
         ideaStore.createIndex(projectId);
@@ -87,11 +88,20 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c00), store.getComment(projectId, ideaId, c00.getCommentId()));
         assertEquals(ImmutableSet.of(c0, c00), ImmutableSet.copyOf(store.getComments(projectId, ideaId, ImmutableSet.of(c0.getCommentId(), c00.getCommentId())).values()));
         assertEquals(Optional.of(c0), store.getComment(projectId, ideaId, c0.getCommentId()));
-    }
 
-    @Test(timeout = 10_000L)
-    public void testSearch() throws Exception {
-        // TODO
+        // Search by DynamoDB
+        ImmutableList<CommentModel> comments = store.searchComments(projectId, CommentSearchAdmin.builder()
+                .build(), false, Optional.empty(), Optional.empty())
+                .getComments();
+        assertEquals(2, comments.size());
+
+        // Search by ElasticSearch
+        comments = store.searchComments(projectId, CommentSearchAdmin.builder()
+                .filterAuthorId(c0.getAuthorUserId())
+                .build(), false, Optional.empty(), Optional.empty())
+                .getComments();
+        assertEquals(1, comments.size());
+        assertEquals(c0.getCommentId(), comments.get(0).getCommentId());
     }
 
     @Test(timeout = 10_000L)

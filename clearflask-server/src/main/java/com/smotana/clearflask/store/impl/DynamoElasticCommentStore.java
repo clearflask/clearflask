@@ -357,6 +357,7 @@ public class DynamoElasticCommentStore implements CommentStore {
 
         int pageSize = Math.min(pageSizeOpt.orElse(10), DYNAMO_READ_BATCH_MAX_SIZE);
         if (Strings.isNullOrEmpty(commentSearchAdmin.getSearchText())
+                && Strings.isNullOrEmpty(commentSearchAdmin.getFilterAuthorId())
                 && sortFields.isEmpty()) {
             // If no search term, do a simple dynamo query
             Page<Item, QueryOutcome> page = commentByProjectIdSchema.index().query(new QuerySpec()
@@ -386,13 +387,18 @@ public class DynamoElasticCommentStore implements CommentStore {
         } else {
             // For complex searches, fallback to elasticsearch
             BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-            queryBuilder.must(QueryBuilders.multiMatchQuery(commentSearchAdmin.getSearchText(), "content", "authorName")
-                    .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+            if (!Strings.isNullOrEmpty(commentSearchAdmin.getFilterAuthorId())) {
+                queryBuilder.must(QueryBuilders.termQuery("authorUserId", commentSearchAdmin.getFilterAuthorId()));
+            }
+            if (!Strings.isNullOrEmpty(commentSearchAdmin.getSearchText())) {
+                queryBuilder.must(QueryBuilders.multiMatchQuery(commentSearchAdmin.getSearchText(), "content", "authorName")
+                        .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+            }
             log.trace("Comment search query: {}", queryBuilder);
             ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                     new SearchRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId))
                             .source(new SearchSourceBuilder()
-                                    .fetchSource(false)
+                                    .fetchSource(true)
                                     .query(queryBuilder)),
                     cursorOpt, sortFields, sortOrderOpt, useAccurateCursor, Optional.of(pageSize), configSearch, ImmutableSet.of("ideaId"));
 
