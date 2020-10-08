@@ -17,14 +17,14 @@ for DIR in "${SOURCE_DIR}"/*/; do
   NAME=${DIR##*/}
   if [[ ${NAME} == "analytics-plugin" ]]; then
     DDL_FILES=$(find "${DIR}" -name 'ddl.sql')
-    DDL_FILES=$(find "${DIR}" -name 'calendar.sql')
-    DDL_FILES+=$(find "${DIR}"/system -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
-    DDL_FILES+=$(find "${DIR}"/reports -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
+    DDL_FILES+=" "$(find "${DIR}" -name 'calendar.sql')
+    DDL_FILES+=" "$(find "${DIR}"/system -type f -name '*.sql' -o -name '*.ddl' -maxdepth 1)
+    DDL_FILES+=" "$(find "${DIR}"/reports -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'calendar.sql' -maxdepth 1)
     REPORT_PATHS=$(find "${DIR}"/reports -type d -mindepth 1 -maxdepth 1)
     for REPORT_PATH in ${REPORT_PATHS}; do
-      DDL_FILES+=$(find "${REPORT_PATH}" -type f -name 'v_*.sql' -o -name 'v_*.ddl')
-      DDL_FILES+=$(find "${REPORT_PATH}" -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'v_*')
-      DDL_FILES+=$(find "${REPORT_PATH}" -type f -name '*.prc')
+      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f -name 'v_*.sql' -o -name 'v_*.ddl')
+      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f \( -name '*.sql' -o -name '*.ddl' \) -a -not -name 'v_*')
+      DDL_FILES+=" "$(find "${REPORT_PATH}" -type f -name '*.prc')
     done
   else
     DDL_FILES=$(find "${DIR}" -name 'ddl.sql')
@@ -44,6 +44,18 @@ for DIR in "${SOURCE_DIR}"/*/; do
     echo "drop table if exists report_active_by_product_term_monthly;" >>${TARGET}
     echo "drop table if exists report_cancellations_daily;" >>${TARGET}
     echo "drop table if exists report_chargebacks_daily;" >>${TARGET}
+    echo "drop table if exists report_invoices_balance_daily;" >>${TARGET}
+    echo "drop table if exists report_invoices_daily;" >>${TARGET}
+    echo "drop table if exists report_mrr_daily;" >>${TARGET}
+    echo "drop table if exists report_new_accounts_daily;" >>${TARGET}
+    echo "drop table if exists report_payment_provider_conversion_history;" >>${TARGET}
+    echo "drop table if exists report_payment_provider_errors_sub2;" >>${TARGET}
+    echo "drop table if exists report_payment_provider_errors;" >>${TARGET}
+    echo "drop table if exists report_payment_provider_monitor_history;" >>${TARGET}
+    echo "drop table if exists report_payments_by_provider_history;" >>${TARGET}
+    echo "drop table if exists report_payments_by_provider_last_24h_summary;" >>${TARGET}
+    echo "drop table if exists report_payments_total_daily;" >>${TARGET}
+    echo "drop table if exists report_refunds_total_daily;" >>${TARGET}
   fi
   echo >>${TARGET}
 
@@ -53,8 +65,6 @@ for DIR in "${SOURCE_DIR}"/*/; do
     sed 's/\/\*.*\*\///' ${DDL_FILE} >>${TARGET}
     echo >>${TARGET}
   done
-
-  COUNT=$((COUNT + 1))
 done
 
 echo >>${TARGET}
