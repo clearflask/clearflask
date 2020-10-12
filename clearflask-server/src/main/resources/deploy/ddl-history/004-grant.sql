@@ -1,0 +1,5 @@
+
+-- USER ACCESS CONTROL
+
+GRANT SELECT, UPDATE, DELETE, INSERT ON killbill.* TO 'killbill'@'%';
+

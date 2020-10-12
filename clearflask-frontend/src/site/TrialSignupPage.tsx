@@ -153,7 +153,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             className={this.props.classes.item}
             fullWidth
             id='name'
-            label='Name'
+            label='Your name'
             required
             value={this.state.name || ''}
             onChange={e => this.setState({ name: e.target.value })}

@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.resource;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonNonNull;
@@ -8,7 +9,6 @@ import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillSync;
@@ -86,8 +86,8 @@ public class KillBillResource extends ManagedService {
         @DefaultValue("true")
         boolean registerWebhookOnStartup();
 
-        @NoDefaultValue(innerType = String.class)
-        Optional<String> overrideWebhookDomain();
+        @DefaultValue("")
+        String overrideWebhookDomain();
 
         @DefaultValue("true")
         boolean useHttps();
@@ -124,7 +124,7 @@ public class KillBillResource extends ManagedService {
     @Override
     protected void serviceStart() throws Exception {
         if (config.registerWebhookOnStartup()) {
-            String domain = config.overrideWebhookDomain().orElse(configApp.domain());
+            String domain = Optional.ofNullable(Strings.emptyToNull(config.overrideWebhookDomain())).orElse(configApp.domain());
             String protocol = config.useHttps() ? "https://" : "http://";
             String webhookPath = protocol + domain + "/api" + Application.RESOURCE_VERSION + WEBHOOK_PATH;
             log.info("Registering KillBill webhook on {}", webhookPath);
