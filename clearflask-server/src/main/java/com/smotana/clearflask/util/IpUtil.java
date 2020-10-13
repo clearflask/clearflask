@@ -22,11 +22,13 @@ public class IpUtil {
                     // Most likely originated as a LB health check or a local query bypassing LB
                     remoteIp = request.getRemoteAddr();
                 } else {
-                    int indexOfFirstComma = xForwardedFor.indexOf(',');
-                    if (indexOfFirstComma == -1) {
-                        remoteIp = xForwardedFor.trim();
+                    String[] xForwardedForIps = xForwardedFor.split(",");
+                    if (xForwardedForIps.length == 0) {
+                        remoteIp = request.getRemoteAddr();
+                    } else if (xForwardedForIps.length == 1) {
+                        remoteIp = xForwardedForIps[0].trim();
                     } else {
-                        remoteIp = xForwardedFor.substring(0, indexOfFirstComma).trim();
+                        remoteIp = xForwardedForIps[xForwardedForIps.length - 2].trim();
                     }
                 }
                 break;
@@ -36,6 +38,10 @@ public class IpUtil {
                 break;
             default:
                 throw new InternalServerErrorException("Unknown environment: " + env);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Got remote IP {} from remoteAddr {} and x-forwarded-for {}",
+                    remoteIp, request.getRemoteAddr(), request.getHeader("x-forwarded-for"));
         }
         if (!InetAddresses.isInetAddress(remoteIp)) {
             throw new InternalServerErrorException("Not a valid remote IP: " + remoteIp);

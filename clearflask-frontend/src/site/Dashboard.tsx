@@ -32,6 +32,7 @@ import setTitle from '../common/util/titleUtil';
 import ContactPage from './ContactPage';
 import BillingPage from './dashboard/BillingPage';
 import CommentsPage from './dashboard/CommentsPage';
+import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
 import SettingsPage from './dashboard/SettingsPage';
 import UserSelection from './dashboard/UserSelection';
@@ -192,6 +193,20 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         );
         crumbs = [{ name: 'Home', slug: activePath }];
         break;
+      case 'created':
+        setTitle('Success - Dashboard');
+        showProjectSelect = true;
+        if (!activeProject) {
+          showCreateProjectWarning = true;
+          break;
+        }
+        page = (
+          <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+            <CreatedPage key={activeProject.server.getProjectId()} server={activeProject.server} />
+          </Provider>
+        );
+        crumbs = [{ name: 'Project Created', slug: activePath }];
+        break;
       case 'posts':
         setTitle('Posts - Dashboard');
         showProjectSelect = true;
@@ -313,7 +328,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             previewProject={this.createProject}
             projectCreated={(projectId) => {
               this.setState({ selectedProjectId: projectId });
-              this.pageClicked('settings');
+              this.pageClicked('created');
             }}
           />
         );
@@ -459,6 +474,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 server={activeProject.server}
                 allowCreate
                 allowClear
+                alwaysOverrideWithLoggedInUser
                 helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
                 placeholder='Anonymous'
                 inputMinWidth={150}

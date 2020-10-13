@@ -176,7 +176,7 @@ export const getTransactionSearchKey = (search: Client.TransactionSearch): strin
 function reducerProjectId(projectId: string = 'unknown', action: AllActions): string {
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
-      return (action as any).payload.config.projectId || projectId;
+      return action.payload.config.projectId || projectId;
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return action.payload.config?.config.projectId || projectId;
     default:
@@ -247,11 +247,15 @@ function reducerConf(state: StateConf = {}, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
+    case Admin.projectCreateAdminActionStatus.Fulfilled:
     case Admin.configGetAdminActionStatus.Fulfilled:
+      const versionedConfigAdmin = action.type === Admin.projectCreateAdminActionStatus.Fulfilled
+        ? action.payload.config
+        : action.payload;
       return {
         status: Status.FULFILLED,
-        conf: (action as any).payload.config,
-        ver: (action as any).payload.version,
+        conf: versionedConfigAdmin.config,
+        ver: versionedConfigAdmin.version,
       };
     case Client.configGetAndUserBindActionStatus.Fulfilled:
       return {

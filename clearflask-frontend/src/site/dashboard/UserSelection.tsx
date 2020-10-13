@@ -2,7 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
-import { ReduxState, Server } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import debounce from '../../common/util/debounce';
 
@@ -27,8 +27,10 @@ interface Props {
   errorMsg?: string;
   width?: string | number;
   inputMinWidth?: string | number;
+  alwaysOverrideWithLoggedInUser?: boolean;
 }
 interface ConnectProps {
+  loggedInUserStatus?: Status;
   loggedInUserLabel?: Label;
 }
 interface State {
@@ -60,6 +62,9 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
   render() {
     const seenUserIds: Set<string> = new Set();
     const options: Label[] = [];
+    const selectedUserLabel = this.props.alwaysOverrideWithLoggedInUser
+      ? this.props.loggedInUserLabel || this.state.selectedUserLabel
+      : this.state.selectedUserLabel;
 
     if (!!this.state.selectedUserLabel) {
       seenUserIds.add(this.state.selectedUserLabel.value);
@@ -85,8 +90,8 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         placeholderWrapper={this.props.placeholderWrapper}
         helperText={this.props.helperText}
         noOptionsMessage='Type to search'
-        errorMsg={!this.state.selectedUserLabel && this.props.errorMsg || undefined}
-        value={this.state.selectedUserLabel ? [this.state.selectedUserLabel] : []}
+        errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
+        value={selectedUserLabel ? [selectedUserLabel] : []}
         options={options}
         showClearWithOneValue={this.props.allowClear}
         width={this.props.width}
@@ -138,6 +143,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const connectProps: ConnectProps = {
+    loggedInUserStatus: state.users.loggedIn.status,
     loggedInUserLabel: state.users.loggedIn.user ? UserSelection.mapUserToLabel(state.users.loggedIn.user) : undefined,
   };
   return connectProps;

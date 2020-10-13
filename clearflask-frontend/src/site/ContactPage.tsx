@@ -10,6 +10,7 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import SubmitButton from '../common/SubmitButton';
+import preloadImage from '../common/util/imageUtil';
 import { vh } from '../common/util/vhUtil';
 
 // If changed, also change in SupportResource.java
@@ -129,7 +130,15 @@ interface State {
   // Also includes dynamic fields not covered by this interface
 }
 class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
-  state: State = {};
+
+  constructor(props) {
+    super(props);
+
+    this.state = {};
+
+    forms.forEach(form => form.imagePath && preloadImage(form.imagePath));
+  }
+
   render() {
     const prefixMatch = this.props.match.url.replace(/\/$/, '');
     return (

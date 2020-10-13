@@ -11,7 +11,9 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '../../common/config/configTemplater';
 import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
+import preloadImage from '../../common/util/imageUtil';
 import { Project } from '../DemoApp';
+import { CreatedImagePath } from './CreatedPage';
 
 const styles = (theme: Theme) => createStyles({
   item: {
@@ -62,6 +64,8 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       this.mockData(config).then(() => this.props.previewProject.editor.setConfig(config));
     }, 200);
     this.updatePreview();
+
+    preloadImage(CreatedImagePath);
   }
 
   render() {
