@@ -50,7 +50,7 @@ public interface AccountStore {
         return IdUtil.randomAscId();
     }
 
-    AccountSession createSession(String accountId, long ttlInEpochSec);
+    AccountSession createSession(Account account, long ttlInEpochSec);
 
     Optional<AccountSession> getSession(String sessionId);
 
@@ -73,6 +73,12 @@ public interface AccountStore {
 
         @NonNull
         String accountId;
+
+        /**
+         * Used for checking for Super Admin role
+         */
+        @NonNull
+        String email;
 
         @NonNull
         long ttlInEpochSec;

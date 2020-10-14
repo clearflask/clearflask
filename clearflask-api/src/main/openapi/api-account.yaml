@@ -94,6 +94,19 @@ components:
           type: string
         password:
           type: string
+    AccountLoginAs:
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          type: string
+    AccountSearchSuperAdmin:
+      type: object
+      properties:
+        searchText:
+          type: string
+          description: Search by name and email.
     AccountSignupAdmin:
       type: object
       required:
@@ -109,6 +122,16 @@ components:
         password:
           type: string
         planid:
+          type: string
+    Account:
+      type: object
+      required:
+      - name
+      - email
+      properties:
+        name:
+          type: string
+        email:
           type: string
     AccountAdmin:
       type: object
@@ -131,6 +154,8 @@ components:
         cfJwt:
           type: string
         hasApiKey:
+          type: boolean
+        isSuperAdmin:
           type: boolean
     SubscriptionStatus:
       type: string
@@ -336,9 +361,13 @@ components:
             schema:
               title: AccountBindAdminResponse
               type: object
+              required:
+              - isSuperAdmin
               properties:
                 account:
                   $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+                isSuperAdmin:
+                  type: boolean
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
 /admin/account/login:
@@ -357,6 +386,53 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/superadmin/account/loginas:
+  post:
+    operationId: accountLoginAsSuperAdmin
+    tags: [AccountSuperAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountLoginAs'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/superadmin/accountsearch:
+  post:
+    operationId: accountSearchSuperAdmin
+    tags: [AccountSuperAdmin]
+    parameters:
+    - name: cursor
+      in: query
+      schema:
+        $ref: 'api-client.yaml#/components/schemas/Cursor'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountSearchSuperAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: AccountSearchResponse
+              type: object
+              required:
+                - results
+              properties:
+                cursor:
+                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-account.yaml#/components/schemas/Account'
 /admin/account/logout:
   post:
     operationId: accountLogoutAdmin

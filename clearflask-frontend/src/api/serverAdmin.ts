@@ -214,6 +214,7 @@ export default class ServerAdmin {
 }
 
 export interface StateAccount {
+  isSuperAdmin: boolean;
   account: {
     status?: Status;
     account?: Admin.AccountAdmin;
@@ -224,6 +225,7 @@ export interface StateAccount {
   };
 }
 const stateAccountDefault = {
+  isSuperAdmin: false,
   account: {},
   billing: {},
 };
@@ -250,8 +252,10 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountSignupAdminActionStatus.Fulfilled:
     case Admin.accountLoginAdminActionStatus.Fulfilled:
     case Admin.accountUpdateAdminActionStatus.Fulfilled:
+    case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
       return {
         ...state,
+        isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin,
         account: {
           status: Status.FULFILLED,
           account: action.payload,
@@ -261,6 +265,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
       if (!action.payload.account) return state;
       return {
         ...state,
+        isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin || !!action.payload.account.isSuperAdmin,
         account: {
           status: Status.FULFILLED,
           account: action.payload.account,
@@ -300,8 +305,12 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Pending:
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
-    case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return stateAccountDefault;
+    case Admin.accountDeleteAdminActionStatus.Fulfilled:
+      return {
+        ...stateAccountDefault,
+        isSuperAdmin: state.isSuperAdmin,
+      };
     default:
       return state;
   }

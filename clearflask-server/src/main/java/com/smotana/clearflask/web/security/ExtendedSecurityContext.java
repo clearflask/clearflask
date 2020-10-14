@@ -1,8 +1,8 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.UserStore.UserSession;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -26,9 +26,11 @@ public class ExtendedSecurityContext implements SecurityContext {
         @NonNull
         private final String remoteIp;
         @NonNull
-        private final Optional<AccountStore.AccountSession> accountSessionOpt;
+        private final Optional<AccountSession> accountSessionOpt;
         @NonNull
-        private final Optional<UserStore.UserSession> userSessionOpt;
+        private final Optional<AccountSession> superAdminSessionOpt;
+        @NonNull
+        private final Optional<UserSession> userSessionOpt;
     }
 
     private final ExtendedPrincipal userPrincipal;
@@ -45,7 +47,7 @@ public class ExtendedSecurityContext implements SecurityContext {
         this.requestContext = requestContext;
     }
 
-    public static ExtendedSecurityContext create(@NonNull String remoteIp, @NonNull Optional<AccountStore.AccountSession> accountSession, @NonNull Optional<UserStore.UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
+    public static ExtendedSecurityContext create(@NonNull String remoteIp, @NonNull Optional<AccountSession> accountSession, @NonNull Optional<AccountSession> superAdminSession, @NonNull Optional<UserSession> userSession, @NonNull Predicate<String> userHasRolePredicate, @NonNull ContainerRequestContext requestContext) {
         String name;
         if (accountSession.isPresent()) {
             name = accountSession.get().getAccountId();
@@ -55,7 +57,7 @@ public class ExtendedSecurityContext implements SecurityContext {
             name = remoteIp;
         }
         return new ExtendedSecurityContext(
-                new ExtendedPrincipal(name, remoteIp, accountSession, userSession),
+                new ExtendedPrincipal(name, remoteIp, accountSession, superAdminSession, userSession),
                 userHasRolePredicate,
                 requestContext);
     }

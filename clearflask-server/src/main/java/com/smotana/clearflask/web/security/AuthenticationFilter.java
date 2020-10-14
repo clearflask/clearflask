@@ -4,12 +4,8 @@ import com.google.common.base.Strings;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -44,6 +40,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     @Inject
     private Environment env;
     @Inject
+    private IsSuperAdmin isSuperAdmin;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
@@ -65,13 +63,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext);
+        Optional<AccountSession> superAdminSessionOpt = authenticateSuperAdmin(requestContext);
+        Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext)
+                .or(() -> superAdminSessionOpt);
         Optional<UserSession> userSessionOpt = authenticateUser(accountSessionOpt, requestContext);
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,
+                superAdminSessionOpt,
                 userSessionOpt,
-                role -> hasRole(role, accountSessionOpt, userSessionOpt, requestContext),
+                role -> hasRole(role, accountSessionOpt, userSessionOpt, superAdminSessionOpt, requestContext),
                 requestContext);
     }
 
@@ -82,10 +83,27 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         }
 
         // TODO check for HttpOnly, isSecure, etc...
-
         // TODO sanity check cookie.getValue()
 
         return accountStore.getSession(cookie.getValue());
+    }
+
+    private Optional<AccountSession> authenticateSuperAdmin(ContainerRequestContext requestContext) {
+        Cookie cookie = requestContext.getCookies().get(AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME);
+        if (cookie == null) {
+            return Optional.empty();
+        }
+
+        // TODO check for HttpOnly, isSecure, etc...
+        // TODO sanity check cookie.getValue()
+
+        Optional<AccountSession> superAdminSession = accountStore.getSession(cookie.getValue());
+        if (!superAdminSession.isPresent()
+                || !isSuperAdmin.isEmailSuperAdmin(superAdminSession.get().getEmail())) {
+            return Optional.empty();
+        }
+
+        return superAdminSession;
     }
 
     private Optional<UserSession> authenticateUser(Optional<AccountSession> accountSessionOpt, ContainerRequestContext requestContext) {
@@ -95,14 +113,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         }
 
         // TODO check for HttpOnly, isSecure, etc...
-
         // TODO sanity check cookie.getValue()
 
         return userStore.getSession(cookie.getValue());
     }
 
-    private boolean hasRole(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, ContainerRequestContext requestContext) {
-        boolean hasRole = hasRoleInternal(role, accountSession, userSession, requestContext);
+    private boolean hasRole(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
+        boolean hasRole = hasRoleInternal(role, accountSession, userSession, superAdminSessionOpt, requestContext);
         if (hasRole) {
             log.debug("User does have role {}", role);
         } else {
@@ -111,7 +128,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return hasRole;
     }
 
-    private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, ContainerRequestContext requestContext) {
+    private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
         Optional<String> headerAccountId = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID);
@@ -138,6 +155,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<String> pathParamIdeaIdOpt;
         Optional<String> pathParamCommentIdOpt;
         switch (role) {
+            case Role.SUPER_ADMIN:
+                return superAdminSessionOpt.isPresent();
             case Role.ADMINISTRATOR_ACTIVE:
                 if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
                     accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());

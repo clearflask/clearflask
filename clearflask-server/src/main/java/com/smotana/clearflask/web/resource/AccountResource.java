@@ -7,20 +7,9 @@ import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
+import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanApi;
-import com.smotana.clearflask.api.model.AccountAdmin;
-import com.smotana.clearflask.api.model.AccountBilling;
-import com.smotana.clearflask.api.model.AccountBillingPayment;
-import com.smotana.clearflask.api.model.AccountBindAdminResponse;
-import com.smotana.clearflask.api.model.AccountLogin;
-import com.smotana.clearflask.api.model.AccountSignupAdmin;
-import com.smotana.clearflask.api.model.AccountUpdateAdmin;
-import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
-import com.smotana.clearflask.api.model.Invoices;
-import com.smotana.clearflask.api.model.LegalResponse;
-import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlansGetResponse;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
@@ -56,7 +45,7 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class AccountResource extends AbstractResource implements AccountAdminApi, PlanApi {
+public class AccountResource extends AbstractResource implements AccountAdminApi, AccountSuperAdminApi, PlanApi {
 
     public interface Config {
         @DefaultValue("P30D")
@@ -66,6 +55,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Duration sessionRenewIfExpiringIn();
     }
 
+    public static final String SUPER_ADMIN_AUTH_COOKIE_NAME = "cf_sup_auth";
     public static final String ACCOUNT_AUTH_COOKIE_NAME = "cf_act_auth";
 
     @Inject
@@ -141,7 +131,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         log.debug("Successful account login for email {}", credentials.getEmail());
 
         AccountStore.AccountSession accountSession = accountStore.createSession(
-                account.getAccountId(),
+                account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
@@ -204,7 +194,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         // Create auth session
         AccountStore.AccountSession accountSession = accountStore.createSession(
-                account.getAccountId(),
+                account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
@@ -370,6 +360,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 invoices,
                 accountReceivable,
                 accountPayable);
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public AccountAdmin accountLoginAsSuperAdmin(AccountLoginAs accountLoginAs) {
+        // TODO
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public AccountSearchResponse accountSearchSuperAdmin(AccountSearchSuperAdmin accountSearchSuperAdmin, String cursor) {
+        // TODO
     }
 
     @PermitAll

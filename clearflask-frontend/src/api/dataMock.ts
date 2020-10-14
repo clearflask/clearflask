@@ -3,7 +3,7 @@ import { CreateTemplateOptions } from "../common/config/configTemplater";
 import { saltHashPassword } from "../common/util/auth";
 import { textToRaw } from "../common/util/draftJsUtil";
 import * as Admin from "./admin";
-import ServerMock from "./serverMock";
+import ServerMock, { SuperAdminEmail } from "./serverMock";
 
 interface MockedComment {
   content?: string;
@@ -424,7 +424,7 @@ class DataMock {
     return ServerMock.get().accountSignupAdmin({
       accountSignupAdmin: {
         name: 'John Doe',
-        email: 'a@a.a',
+        email: SuperAdminEmail,
         password: saltHashPassword('pass'),
         planid: 'E5A119e3-1477-4621-A9EA-85355B34A6D4',
       }

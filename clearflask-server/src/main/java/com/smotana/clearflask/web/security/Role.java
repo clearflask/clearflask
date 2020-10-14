@@ -4,7 +4,7 @@ public class Role {
     /**
      * Applies to me
      */
-    public static final String MATUS = "MATUS";
+    public static final String SUPER_ADMIN = "SUPER_ADMIN";
     /**
      * Applies to any ClearFlask customer; NOT ClearFlask administrator AND
      * account is in good active standing.

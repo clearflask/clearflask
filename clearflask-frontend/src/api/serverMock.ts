@@ -1,6 +1,7 @@
 import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
+import notEmpty from '../common/util/arrayUtil';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
@@ -8,6 +9,7 @@ import * as Client from './client';
 
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
+export const SuperAdminEmail = 'admin@clearflask.com';
 const termsProjects = 'You can create separate projects each having their own set of users and content';
 const AvailablePlans: { [planid: string]: Admin.Plan } = {
   'growth-monthly': {
@@ -71,6 +73,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   readonly DEFAULT_LIMIT = 10;
   hasLatency: boolean = false;
 
+  // Mock super admin login (server-side cookie data)
+  superLoggedIn: boolean = false;
   // Mock account login (server-side cookie data)
   loggedIn: boolean = false;
   account?: Admin.AccountAdmin = undefined;
@@ -119,19 +123,48 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountBindAdmin(): Promise<Admin.AccountBindAdminResponse> {
     return this.returnLater(this.loggedIn && this.account
-      ? { account: this.account } : {});
+      ? {
+        account: this.account,
+        isSuperAdmin: !!this.superLoggedIn || !!this.account.isSuperAdmin,
+      } : {});
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account
       || request.accountLogin.email !== this.account.email
       || request.accountLogin.password !== this.accountPass) {
-      return this.throwLater(403, 'Username or email incorrect');
+      return this.throwLater(403, 'Email or password incorrect');
+    }
+    this.loggedIn = true;
+    if (this.account.isSuperAdmin) {
+      this.superLoggedIn = true;
+    }
+    return this.returnLater(this.account);
+  }
+  accountLoginAsSuperAdmin(request: Admin.AccountLoginAsSuperAdminRequest): Promise<Admin.AccountAdmin> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
+    if (!this.account
+      || request.accountLoginAs.email !== this.account.email) {
+      return this.throwLater(403, 'Email incorrect');
     }
     this.loggedIn = true;
     return this.returnLater(this.account);
   }
+  accountSearchSuperAdmin(request: Admin.AccountSearchSuperAdminRequest): Promise<Admin.AccountSearchResponse> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
+    return this.returnLater(this.filterCursor([this.account]
+      .filter(notEmpty)
+      .filter(account => !request.accountSearchSuperAdmin.searchText
+        || account.name && account.name.indexOf(request.accountSearchSuperAdmin.searchText) >= 0
+        || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
+        this.DEFAULT_LIMIT, request.cursor));
+  }
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;
+    this.superLoggedIn = false;
     return this.returnLater();
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
@@ -139,6 +172,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       plan: AvailablePlans['standard-monthly'],
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
+      isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
       cfJwt: jsonwebtoken.sign({
         guid: request.accountSignupAdmin.email,
         email: request.accountSignupAdmin.email,
@@ -150,6 +184,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.accountPass = request.accountSignupAdmin.password;
     this.account = account;
     this.loggedIn = true;
+    if (this.account.isSuperAdmin) {
+      this.superLoggedIn = true;
+    }
     return this.returnLater(account);
   }
   accountDeleteAdmin(): Promise<void> {

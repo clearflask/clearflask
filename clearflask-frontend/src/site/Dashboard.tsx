@@ -88,6 +88,7 @@ interface State {
     type: 'user' | 'post';
     id: string;
   }
+  accountSearch?: AdminClient.Account[];
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   unsubscribes: { [projectId: string]: () => void } = {};
@@ -131,7 +132,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         pathname: "/login",
         state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
       }} />);
-    } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs) {
+    } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs || !this.props.account) {
       return (<LoadingPage />);
     }
     const activePath = this.props.match.params['path'] || '';
@@ -429,7 +430,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
 
     var billingHasNotification: boolean = false;
-    switch (this.props.account?.subscriptionStatus) {
+    switch (this.props.account.subscriptionStatus) {
       case AdminClient.SubscriptionStatus.ActiveTrial:
       case AdminClient.SubscriptionStatus.ActivePaymentRetry:
       case AdminClient.SubscriptionStatus.ActiveNoRenewal:
@@ -444,10 +445,52 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
     }
 
+    const seenAccountEmails: Set<string> = new Set();
+    const curAccountLabel: Label = { label: this.props.account.name, value: this.props.account.email };
+    const accountOptions = [curAccountLabel];
+    seenAccountEmails.add(this.props.account.email)
+    this.state.accountSearch && this.state.accountSearch.forEach(account => {
+      if (!seenAccountEmails.has(account.email)) {
+        seenAccountEmails.add(account.email);
+        accountOptions.push({ label: account.name, value: account.email});
+      }
+    });
+
     const isSelectProjectUserInMenu = !quickViewEnabled;
     const selectProjectUser = (
-      <Collapse in={!!showProjectSelect}>
-        <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
+      <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
+        <Collapse in={!!this.props.account?.isSuperAdmin}>
+          <SelectionPicker
+            className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
+            value={[curAccountLabel]}
+            overrideComponents={{ DropdownIndicator: null }}
+            options={accountOptions}
+            helperText={isSelectProjectUserInMenu && 'Current account' || undefined}
+            inputMinWidth={150}
+            isMulti={false}
+            bare={false}
+            onInputChange={(newValue, actionMeta) => {
+              if (actionMeta.action === 'input-change') {
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
+                  accountSearchSuperAdmin: {
+                    searchText: newValue,
+                  },
+                }))
+                .then(result => this.setState({accountSearch: result.results}));
+              }
+            }}
+            onValueChange={(labels, action) => {
+              if (labels.length === 1) {
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
+                  accountLoginAs: {
+                    email: labels[0].value,
+                  },
+                }));
+              }
+            }}
+          />
+        </Collapse>
+        <Collapse in={!!showProjectSelect}>
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[selectedLabel]}
@@ -467,6 +510,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               }
             }}
           />
+        </Collapse>
+        <Collapse in={!!showProjectSelect}>
           {activeProject && (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserSelection
@@ -496,8 +541,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               />
             </Provider>
           )}
-        </div>
-      </Collapse>
+        </Collapse>
+      </div>
     );
 
     return (
