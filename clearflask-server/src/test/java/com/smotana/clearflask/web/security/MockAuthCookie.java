@@ -30,6 +30,7 @@ public class MockAuthCookie implements AuthCookie {
     private UserStore userStore;
 
     private Optional<AccountSession> accountSession = Optional.empty();
+    private Optional<AccountSession> superAdminSession = Optional.empty();
     private Optional<UserSession> userSession = Optional.empty();
 
     @Override
@@ -39,6 +40,12 @@ public class MockAuthCookie implements AuthCookie {
                 case AccountResource.ACCOUNT_AUTH_COOKIE_NAME:
                     if (accountStore != null) {
                         accountSession = accountStore.getSession(sessionId);
+                        updateSecurityContext();
+                    }
+                    break;
+                case AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME:
+                    if (accountStore != null) {
+                        superAdminSession = accountStore.getSession(sessionId);
                         updateSecurityContext();
                     }
                     break;
@@ -76,9 +83,12 @@ public class MockAuthCookie implements AuthCookie {
                         accountSession.map(AccountSession::getAccountId).orElseGet(() -> userSession.map(UserSession::getUserId).orElse("127.0.0.1")),
                         "127.0.0.1",
                         accountSession,
+                        superAdminSession,
                         userSession);
                 userHasRolePredicate = role -> {
                     switch (role) {
+                        case Role.SUPER_ADMIN:
+                            return superAdminSession.isPresent();
                         case Role.ADMINISTRATOR_ACTIVE:
                         case Role.PROJECT_OWNER_ACTIVE:
                             return accountSession.isPresent();

@@ -1,14 +1,25 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import lombok.*;
+import com.smotana.clearflask.web.security.SuperAdminPredicate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -22,29 +33,31 @@ public interface AccountStore {
         return IdUtil.randomId();
     }
 
-    void createAccount(Account account);
+    AccountAndIndexingFuture<IndexResponse> createAccount(Account account);
 
     Optional<Account> getAccountByAccountId(String accountId);
 
     Optional<Account> getAccountByEmail(String email);
 
-    Account setPlan(String accountId, String planid);
+    SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
-    Account addProject(String accountId, String projectId);
+    AccountAndIndexingFuture<UpdateResponse> setPlan(String accountId, String planid);
 
-    Account removeProject(String accountId, String projectId);
+    AccountAndIndexingFuture<UpdateResponse> addProject(String accountId, String projectId);
 
-    Account updateName(String accountId, String name);
+    AccountAndIndexingFuture<UpdateResponse> removeProject(String accountId, String projectId);
+
+    AccountAndIndexingFuture<UpdateResponse> updateName(String accountId, String name);
 
     Account updatePassword(String accountId, String password, String sessionIdToLeave);
 
-    Account updateEmail(String accountId, String emailNew, String sessionIdToLeave);
+    AccountAndIndexingFuture<UpdateResponse> updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
     Account updateApiKey(String accountId, String apiKey);
 
-    Account updateStatus(String accountId, SubscriptionStatus status);
+    AccountAndIndexingFuture<UpdateResponse> updateStatus(String accountId, SubscriptionStatus status);
 
-    void deleteAccount(String accountId);
+    ListenableFuture<DeleteResponse> deleteAccount(String accountId);
 
     default String genSessionId() {
         return IdUtil.randomAscId();
@@ -61,6 +74,19 @@ public interface AccountStore {
     void revokeSessions(String accountId);
 
     void revokeSessions(String accountId, String sessionToLeave);
+
+    @Value
+    class SearchAccountsResponse {
+        ImmutableList<String> accountIds;
+        ImmutableList<com.smotana.clearflask.api.model.Account> accounts;
+        Optional<String> cursorOpt;
+    }
+
+    @Value
+    class AccountAndIndexingFuture<T> {
+        Account account;
+        ListenableFuture<T> indexingFuture;
+    }
 
     @Value
     @Builder(toBuilder = true)
@@ -125,8 +151,6 @@ public interface AccountStore {
         @ToString.Exclude
         String password;
 
-        String paymentToken;
-
         @NonNull
         ImmutableSet<String> projectIds;
 
@@ -137,14 +161,15 @@ public interface AccountStore {
             return getAccountId();
         }
 
-        public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso) {
+        public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
             return new AccountAdmin(
                     planStore.getPlan(getPlanid()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanid())),
                     getStatus(),
                     getName(),
                     getEmail(),
                     cfSso.generateToken(this),
-                    !Strings.isNullOrEmpty(getApiKey()));
+                    !Strings.isNullOrEmpty(getApiKey()),
+                    superAdminPredicate.isEmailSuperAdmin(getEmail()));
         }
     }
 }

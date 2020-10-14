@@ -214,38 +214,36 @@ public class DynamoElasticUserStore implements UserStore {
     @Override
     public ListenableFuture<CreateIndexResponse> createIndex(String projectId) {
         SettableFuture<CreateIndexResponse> indexingFuture = SettableFuture.create();
-        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId)).settings(
-                gson.toJson(ImmutableMap.of(
-                        "index", ImmutableMap.of(
-                                "analysis", ImmutableMap.of(
-                                        "analyzer", ImmutableMap.of(
-                                                AUTOCOMPLETE_ANALYZER_NAME, AUTOCOMPLETE_ANALYZER
-                                        ),
-                                        "tokenizer", ImmutableMap.of(
-                                                AUTOCOMPLETE_TOKENIZER_NAME, AUTOCOMPLETE_TOKENIZER
-                                        )
-                                )
-                        )
-                )), XContentType.JSON).mapping(gson.toJson(ImmutableMap.of(
-                "dynamic", "false",
-                "properties", ImmutableMap.builder()
-                        .put("name", ImmutableMap.of(
-                                "type", "text",
-                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
-                                "index_prefixes", ImmutableMap.of(
-                                        "min_chars", 1,
-                                        "max_chars", 4)))
-                        .put("email", ImmutableMap.of(
-                                "type", "text",
-                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
-                                "index_prefixes", ImmutableMap.of(
-                                        "min_chars", 1,
-                                        "max_chars", 4)))
-                        .put("balance", ImmutableMap.of(
-                                "type", "double"))
-                        .put("isMod", ImmutableMap.of(
-                                "type", "boolean"))
-                        .build())), XContentType.JSON),
+        elastic.indices().createAsync(new CreateIndexRequest(elasticUtil.getIndexName(USER_INDEX, projectId))
+                        .settings(gson.toJson(ImmutableMap.of(
+                                "index", ImmutableMap.of(
+                                        "analysis", ImmutableMap.of(
+                                                "analyzer", ImmutableMap.of(
+                                                        AUTOCOMPLETE_ANALYZER_NAME, AUTOCOMPLETE_ANALYZER
+                                                ),
+                                                "tokenizer", ImmutableMap.of(
+                                                        AUTOCOMPLETE_TOKENIZER_NAME, AUTOCOMPLETE_TOKENIZER
+                                                ))))), XContentType.JSON)
+                        .mapping(gson.toJson(ImmutableMap.of(
+                                "dynamic", "false",
+                                "properties", ImmutableMap.builder()
+                                        .put("name", ImmutableMap.of(
+                                                "type", "text",
+                                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                                "index_prefixes", ImmutableMap.of(
+                                                        "min_chars", 1,
+                                                        "max_chars", 4)))
+                                        .put("email", ImmutableMap.of(
+                                                "type", "text",
+                                                "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                                "index_prefixes", ImmutableMap.of(
+                                                        "min_chars", 1,
+                                                        "max_chars", 4)))
+                                        .put("balance", ImmutableMap.of(
+                                                "type", "double"))
+                                        .put("isMod", ImmutableMap.of(
+                                                "type", "boolean"))
+                                        .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
         return indexingFuture;

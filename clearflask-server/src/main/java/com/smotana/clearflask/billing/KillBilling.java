@@ -68,7 +68,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 @Slf4j
@@ -548,11 +547,6 @@ public class KillBilling extends ManagedService implements Billing {
                                 break;
                         }
                     }
-                } else if (PAYMENT_TEST_PLUGIN_NAME.equals(paymentMethod.getPluginName())) {
-                    cardLast4 = Optional.of("????");
-                    cardBrand = Optional.of("???????");
-                    cardExpiryMonth = Optional.of(1L);
-                    cardExpiryYear = Optional.of(2099L);
                 }
 
                 Gateway gateway = Arrays.stream(Gateway.values())

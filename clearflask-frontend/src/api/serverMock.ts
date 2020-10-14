@@ -126,7 +126,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ? {
         account: this.account,
         isSuperAdmin: !!this.superLoggedIn || !!this.account.isSuperAdmin,
-      } : {});
+      } : {
+        isSuperAdmin: false,
+      });
   }
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account
@@ -160,7 +162,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(account => !request.accountSearchSuperAdmin.searchText
         || account.name && account.name.indexOf(request.accountSearchSuperAdmin.searchText) >= 0
         || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
-        this.DEFAULT_LIMIT, request.cursor));
+      this.DEFAULT_LIMIT, request.cursor));
   }
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;

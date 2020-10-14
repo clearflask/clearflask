@@ -9,7 +9,22 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountBilling;
+import com.smotana.clearflask.api.model.AccountBillingPayment;
+import com.smotana.clearflask.api.model.AccountBindAdminResponse;
+import com.smotana.clearflask.api.model.AccountLogin;
+import com.smotana.clearflask.api.model.AccountLoginAs;
+import com.smotana.clearflask.api.model.AccountSearchResponse;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
+import com.smotana.clearflask.api.model.AccountSignupAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
+import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.api.model.LegalResponse;
+import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
@@ -19,6 +34,7 @@ import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
@@ -26,6 +42,7 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
 import org.killbill.billing.catalog.api.PhaseType;
@@ -78,14 +95,17 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private AuthCookie authCookie;
     @Inject
     private ClearFlaskSso cfSso;
+    @Inject
+    private SuperAdminPredicate superAdminPredicate;
 
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
     public AccountBindAdminResponse accountBindAdmin() {
         Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
+        Optional<AccountSession> superAdminSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAdminSessionOpt);
         if (!accountSessionOpt.isPresent()) {
-            return new AccountBindAdminResponse(null);
+            return new AccountBindAdminResponse(null, false);
         }
         AccountSession accountSession = accountSessionOpt.get();
 
@@ -97,6 +117,15 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
             authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
+        if (superAdminSessionOpt.isPresent()) {
+            if (superAdminSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
+                AccountSession superAdminSession = accountStore.refreshSession(
+                        superAdminSessionOpt.get(),
+                        Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+
+                authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, superAdminSession.getSessionId(), superAdminSession.getTtlInEpochSec());
+            }
+        }
 
         // Fetch account
         Optional<Account> accountOpt = accountStore.getAccountByAccountId(accountSession.getAccountId());
@@ -105,11 +134,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     accountSession.getAccountId());
             accountStore.revokeSessions(accountSession.getAccountId());
             authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
-            return new AccountBindAdminResponse(null);
+            return new AccountBindAdminResponse(null, false);
         }
         Account account = accountOpt.get();
 
-        return new AccountBindAdminResponse(account.toAccountAdmin(planStore, cfSso));
+        return new AccountBindAdminResponse(
+                account.toAccountAdmin(planStore, cfSso, superAdminPredicate),
+                superAdminSessionOpt.isPresent());
     }
 
     @PermitAll
@@ -134,8 +165,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
+            authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        }
 
-        return account.toAccountAdmin(planStore, cfSso);
+        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }
 
     @PermitAll
@@ -153,6 +187,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         accountStore.revokeSession(accountSessionOpt.get().getSessionId());
 
         authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
+        authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME);
     }
 
     @PermitAll
@@ -188,7 +223,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now(),
                 signup.getName(),
                 passwordHashed,
-                null,
                 ImmutableSet.of());
         accountStore.createAccount(account);
 
@@ -197,8 +231,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
+            authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        }
 
-        return account.toAccountAdmin(planStore, cfSso);
+        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -208,7 +245,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = null;
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
-            account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName());
+            account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName()).getAccount();
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
             account = accountStore.updateApiKey(accountSession.getAccountId(), accountUpdateAdmin.getApiKey());
@@ -217,7 +254,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updatePassword(accountSession.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
-            account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId());
+            account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
         if (accountUpdateAdmin.getPaymentToken() != null) {
             Optional<Gateway> gatewayOpt = Arrays.stream(Gateway.values())
@@ -246,7 +283,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     subscription);
             log.info("Account id {} status change {} -> {}, reason: user requested {}",
                     accountSession.getAccountId(), account.getStatus(), newStatus, accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel");
-            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
+            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
             String newPlanid = accountUpdateAdmin.getPlanid();
@@ -259,12 +296,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
             billing.changePlan(accountSession.getAccountId(), newPlanid);
-            account = accountStore.setPlan(accountSession.getAccountId(), newPlanid);
+            account = accountStore.setPlan(accountSession.getAccountId(), newPlanid).getAccount();
         }
         return (account == null
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
                 : account)
-                .toAccountAdmin(planStore, cfSso);
+                .toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -312,7 +349,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!account.getStatus().equals(newStatus)) {
             log.warn("Account id {} status change {} -> {}, reason: Status was found mismatched",
                     accountSession.getAccountId(), account.getStatus(), newStatus);
-            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus);
+            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
         }
 
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
@@ -365,13 +402,33 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AccountAdmin accountLoginAsSuperAdmin(AccountLoginAs accountLoginAs) {
-        // TODO
+        Optional<Account> accountOpt = accountStore.getAccountByEmail(accountLoginAs.getEmail());
+        if (!accountOpt.isPresent()) {
+            log.info("Account login with non-existent email {}", accountLoginAs.getEmail());
+            throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Account does not exist");
+        }
+        Account account = accountOpt.get();
+
+        AccountStore.AccountSession accountSession = accountStore.createSession(
+                account,
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+
+        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AccountSearchResponse accountSearchSuperAdmin(AccountSearchSuperAdmin accountSearchSuperAdmin, String cursor) {
-        // TODO
+        SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(
+                accountSearchSuperAdmin,
+                false,
+                Optional.ofNullable(Strings.emptyToNull(cursor)),
+                Optional.empty());
+
+        return new AccountSearchResponse(
+                searchAccountsResponse.getCursorOpt().orElse(null),
+                searchAccountsResponse.getAccounts());
     }
 
     @PermitAll

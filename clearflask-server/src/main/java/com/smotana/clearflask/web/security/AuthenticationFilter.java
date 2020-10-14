@@ -4,8 +4,12 @@ import com.google.common.base.Strings;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -40,7 +44,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     @Inject
     private Environment env;
     @Inject
-    private IsSuperAdmin isSuperAdmin;
+    private SuperAdminPredicate superAdminPredicate;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -99,7 +103,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
         Optional<AccountSession> superAdminSession = accountStore.getSession(cookie.getValue());
         if (!superAdminSession.isPresent()
-                || !isSuperAdmin.isEmailSuperAdmin(superAdminSession.get().getEmail())) {
+                || !superAdminPredicate.isEmailSuperAdmin(superAdminSession.get().getEmail())) {
             return Optional.empty();
         }
 

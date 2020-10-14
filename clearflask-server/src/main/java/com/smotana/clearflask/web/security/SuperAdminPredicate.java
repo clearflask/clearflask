@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Singleton
-public class IsSuperAdmin {
+public class SuperAdminPredicate {
 
     public interface Config {
         @DefaultValue(".^")
@@ -32,7 +32,7 @@ public class IsSuperAdmin {
     @Inject
     private void setup() {
         Action1<String> compileSuperAdminEmailRegex = r -> superAdminEmailPredicate = Pattern.compile(r).asPredicate();
-        config.superAdminEmailRegexObservable().subscribe(compileSuperAdminEmailRegex)
+        config.superAdminEmailRegexObservable().subscribe(compileSuperAdminEmailRegex);
         compileSuperAdminEmailRegex.call(config.superAdminEmailRegex());
     }
 
@@ -44,7 +44,7 @@ public class IsSuperAdmin {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(IsSuperAdmin.class).asEagerSingleton();
+                bind(SuperAdminPredicate.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

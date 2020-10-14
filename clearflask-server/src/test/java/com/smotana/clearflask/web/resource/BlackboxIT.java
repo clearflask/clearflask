@@ -11,11 +11,40 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.*;
+import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountSignupAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
+import com.smotana.clearflask.api.model.CommentCreate;
+import com.smotana.clearflask.api.model.CommentVoteUpdate;
+import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
+import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.IdeaCreate;
+import com.smotana.clearflask.api.model.IdeaVoteUpdate;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
+import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.api.model.UserCreate;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.billing.KillBillSync;
+import com.smotana.clearflask.billing.KillBillUtil;
+import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
-import com.smotana.clearflask.core.push.message.*;
+import com.smotana.clearflask.core.push.message.EmailTemplates;
+import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
+import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.OnCreditChange;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -25,12 +54,26 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
-import com.smotana.clearflask.store.impl.*;
+import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
+import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
+import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
+import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoNotificationStore;
+import com.smotana.clearflask.store.impl.DynamoProjectStore;
+import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
+import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.*;
+import com.smotana.clearflask.util.DefaultServerSecret;
+import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.StringableSecretKey;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
+import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -110,8 +153,9 @@ public class BlackboxIT extends AbstractIT {
                 LocalRateLimiter.module(),
                 ResourceLegalStore.module(),
                 KillBillPlanStore.module(),
+                SuperAdminPredicate.module(),
                 DynamoElasticCommentStore.module(),
-                DynamoAccountStore.module(),
+                DynamoElasticAccountStore.module(),
                 DynamoNotificationStore.module(),
                 DynamoElasticIdeaStore.module(),
                 DynamoProjectStore.module(),
@@ -178,7 +222,7 @@ public class BlackboxIT extends AbstractIT {
         addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .paymentToken(AccountUpdateAdminPaymentToken.builder()
-                        .type(Billing.Gateway.TEST.getPluginName())
+                        .type(Billing.Gateway.EXTERNAL.getPluginName())
                         .token("token")
                         .build())
                 .build());

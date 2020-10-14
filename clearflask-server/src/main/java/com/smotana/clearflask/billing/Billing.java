@@ -15,7 +15,6 @@ import org.killbill.billing.client.model.gen.Subscription;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 public interface Billing {
@@ -78,7 +77,6 @@ public interface Billing {
 
     enum Gateway {
         STRIPE(STRIPE_PLUGIN_NAME, true),
-        TEST(PAYMENT_TEST_PLUGIN_NAME, false),
         EXTERNAL("__EXTERNAL_PAYMENT__", false),
         OTHER("unknown", false);
 

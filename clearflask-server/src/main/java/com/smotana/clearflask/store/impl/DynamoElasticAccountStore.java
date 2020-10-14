@@ -5,61 +5,178 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.store.elastic.ActionListeners;
+import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.search.MatchQuery;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
+import static com.smotana.clearflask.util.ElasticUtil.*;
+import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 
 @Slf4j
 @Singleton
-public class DynamoAccountStore implements AccountStore {
+public class DynamoElasticAccountStore extends ManagedService implements AccountStore {
 
+    private static final String ACCOUNT_INDEX = "account";
+
+    public interface Config {
+        /**
+         * Intended for tests. Force immediate index refresh after write request.
+         */
+        @DefaultValue("false")
+        boolean elasticForceRefresh();
+
+        @DefaultValue("true")
+        boolean createIndexOnStartup();
+    }
+
+    @Inject
+    private Config config;
+    @Inject
+    @Named("account")
+    private ElasticUtil.ConfigSearch configSearch;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private Gson gson;
+    @Inject
+    private ElasticUtil elasticUtil;
+    @Inject
+    private RestHighLevelClient elastic;
 
     private TableSchema<Account> accountSchema;
     private TableSchema<AccountEmail> accountIdByEmailSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
     private IndexSchema<AccountSession> sessionByAccountIdSchema;
 
-    @Inject
-    private void setup() {
+    @Override
+    protected void serviceStart() throws Exception {
         accountSchema = dynamoMapper.parseTableSchema(Account.class);
         accountIdByEmailSchema = dynamoMapper.parseTableSchema(AccountEmail.class);
         sessionBySessionIdSchema = dynamoMapper.parseTableSchema(AccountSession.class);
         sessionByAccountIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
+
+        if (config.createIndexOnStartup()) {
+            try {
+                elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX)
+                                .settings(gson.toJson(ImmutableMap.of(
+                                        "index", ImmutableMap.of(
+                                                "analysis", ImmutableMap.of(
+                                                        "analyzer", ImmutableMap.of(
+                                                                AUTOCOMPLETE_ANALYZER_NAME, AUTOCOMPLETE_ANALYZER
+                                                        ),
+                                                        "tokenizer", ImmutableMap.of(
+                                                                AUTOCOMPLETE_TOKENIZER_NAME, AUTOCOMPLETE_TOKENIZER
+                                                        ))))), XContentType.JSON)
+                                .mapping(gson.toJson(ImmutableMap.of(
+                                        "dynamic", "false",
+                                        "properties", ImmutableMap.builder()
+                                                .put("name", ImmutableMap.of(
+                                                        "type", "text",
+                                                        "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                                        "index_prefixes", ImmutableMap.of(
+                                                                "min_chars", 1,
+                                                                "max_chars", 4)))
+                                                .put("email", ImmutableMap.of(
+                                                        "type", "text",
+                                                        "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
+                                                        "index_prefixes", ImmutableMap.of(
+                                                                "min_chars", 1,
+                                                                "max_chars", 4)))
+                                                .put("status", ImmutableMap.of(
+                                                        "type", "keyword"))
+                                                .put("planid", ImmutableMap.of(
+                                                        "type", "keyword"))
+                                                .put("created", ImmutableMap.of(
+                                                        "type", "date",
+                                                        "format", "epoch_second"))
+                                                .put("projectIds", ImmutableMap.of(
+                                                        "type", "keyword"))
+                                                .build())), XContentType.JSON),
+                        RequestOptions.DEFAULT);
+            } catch (ResponseException ex) {
+                if (ex.getResponse().getStatusLine().getStatusCode() == 400 &&
+                        (ex.getMessage().contains("index_already_exists_exception")
+                                || ex.getMessage().contains("IndexAlreadyExistsException"))) {
+                    log.debug("Not creating index if already exists for account");
+                } else {
+                    throw ex;
+                }
+            }
+        }
     }
 
     @Override
-    public void createAccount(Account account) {
+    public AccountAndIndexingFuture<IndexResponse> createAccount(Account account) {
         try {
             accountIdByEmailSchema.table().putItem(new PutItemSpec()
                     .withItem(accountIdByEmailSchema.toItem(new AccountEmail(
@@ -74,6 +191,23 @@ public class DynamoAccountStore implements AccountStore {
                 .withItem(accountSchema.toItem(account))
                 .withConditionExpression("attribute_not_exists(#partitionKey)")
                 .withNameMap(new NameMap().with("#partitionKey", accountSchema.partitionKeyName())));
+
+        SettableFuture<IndexResponse> indexingFuture = SettableFuture.create();
+        elastic.indexAsync(new IndexRequest(ACCOUNT_INDEX)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL)
+                        .id(account.getAccountId())
+                        .source(gson.toJson(ImmutableMap.builder()
+                                .put("name", account.getName())
+                                .put("email", account.getEmail())
+                                .put("status", account.getStatus())
+                                .put("planid", account.getPlanid())
+                                .put("created", account.getCreated())
+                                .put("projectIds", orNull(account.getProjectIds()))
+                                .build()), XContentType.JSON),
+                RequestOptions.DEFAULT,
+                ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
@@ -96,10 +230,41 @@ public class DynamoAccountStore implements AccountStore {
                         .orElseThrow(() -> new IllegalStateException("AccountEmail entry exists but Account doesn't for email " + email)));
     }
 
+    @Override
+    public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        queryBuilder.must(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(), "name", "email")
+                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+        log.trace("Account search query: {}", queryBuilder);
+        ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
+                new SearchRequest(ACCOUNT_INDEX)
+                        .source(new SearchSourceBuilder()
+                                .fetchSource(true)
+                                .query(queryBuilder)),
+                cursorOpt, ImmutableList.of("name"), Optional.empty(), useAccurateCursor, pageSizeOpt, configSearch,
+                ImmutableSet.of("name", "email"));
+
+        SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
+        if (hits.length == 0) {
+            return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
+        }
+
+        return new SearchAccountsResponse(
+                Arrays.stream(hits)
+                        .map(SearchHit::getId)
+                        .collect(ImmutableList.toImmutableList()),
+                Arrays.stream(hits)
+                        .map(hit -> {
+                            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+                            return new com.smotana.clearflask.api.model.Account((String) sourceAsMap.get("name"), (String) sourceAsMap.get("email"));
+                        }).collect(ImmutableList.toImmutableList()),
+                searchResponseWithCursor.getCursorOpt());
+    }
+
     @Extern
     @Override
-    public Account setPlan(String accountId, String planid) {
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+    public AccountAndIndexingFuture<UpdateResponse> setPlan(String accountId, String planid) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withUpdateExpression("SET #planid = :planid")
@@ -110,12 +275,22 @@ public class DynamoAccountStore implements AccountStore {
                         .withString(":planid", planid))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "planid", planid
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
     @Override
-    public Account addProject(String accountId, String projectId) {
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+    public AccountAndIndexingFuture<UpdateResponse> addProject(String accountId, String projectId) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withUpdateExpression("ADD #projectIds :projectId")
@@ -125,12 +300,22 @@ public class DynamoAccountStore implements AccountStore {
                 .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "projectIds", orNull(account.getProjectIds())
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
     @Override
-    public Account removeProject(String accountId, String projectId) {
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+    public AccountAndIndexingFuture<UpdateResponse> removeProject(String accountId, String projectId) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withUpdateExpression("DELETE #projectIds :projectId")
@@ -140,12 +325,22 @@ public class DynamoAccountStore implements AccountStore {
                 .withValueMap(new ValueMap().withStringSet(":projectId", projectId))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "projectIds", orNull(account.getProjectIds())
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
     @Override
-    public Account updateName(String accountId, String name) {
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+    public AccountAndIndexingFuture<UpdateResponse> updateName(String accountId, String name) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withUpdateExpression("SET #name = :name")
@@ -155,6 +350,16 @@ public class DynamoAccountStore implements AccountStore {
                 .withValueMap(new ValueMap().withString(":name", name))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "name", account.getName()
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
@@ -176,7 +381,7 @@ public class DynamoAccountStore implements AccountStore {
 
     @Extern
     @Override
-    public Account updateEmail(String accountId, String emailNew, String sessionIdToLeave) {
+    public AccountAndIndexingFuture<UpdateResponse> updateEmail(String accountId, String emailNew, String sessionIdToLeave) {
         Account accountOld = getAccountByAccountId(accountId).get();
         dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
                 .add(new TransactWriteItem().withPut(new Put()
@@ -206,7 +411,17 @@ public class DynamoAccountStore implements AccountStore {
                                 ":email", accountSchema.toAttrValue("email", emailNew)))))
                 .build()));
         revokeSessions(accountId, sessionIdToLeave);
-        return accountOld.toBuilder().email(emailNew).build();
+        Account account = accountOld.toBuilder().email(emailNew).build();
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "email", account.getEmail()
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
@@ -225,8 +440,8 @@ public class DynamoAccountStore implements AccountStore {
     }
 
     @Override
-    public Account updateStatus(String accountId, SubscriptionStatus status) {
-        return accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+    public AccountAndIndexingFuture<UpdateResponse> updateStatus(String accountId, SubscriptionStatus status) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                 .withConditionExpression("attribute_exists(#partitionKey)")
                 .withUpdateExpression("SET #status = :status")
@@ -236,11 +451,21 @@ public class DynamoAccountStore implements AccountStore {
                 .withValueMap(new ValueMap().with(":status", accountSchema.toDynamoValue("status", status)))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+
+        SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
+        elastic.updateAsync(new UpdateRequest(ACCOUNT_INDEX, accountId)
+                        .doc(gson.toJson(ImmutableMap.of(
+                                "status", account.getStatus()
+                        )), XContentType.JSON)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return new AccountAndIndexingFuture<>(account, indexingFuture);
     }
 
     @Extern
     @Override
-    public void deleteAccount(String accountId) {
+    public ListenableFuture<DeleteResponse> deleteAccount(String accountId) {
         String email = getAccountByAccountId(accountId).get().getEmail();
         accountIdByEmailSchema.table().deleteItem(new DeleteItemSpec()
                 .withConditionExpression("attribute_exists(#partitionKey)")
@@ -251,6 +476,13 @@ public class DynamoAccountStore implements AccountStore {
         accountSchema.table().deleteItem(new DeleteItemSpec()
                 .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId))));
         revokeSessions(accountId);
+
+        SettableFuture<DeleteResponse> indexingFuture = SettableFuture.create();
+        elastic.deleteAsync(new DeleteRequest(ACCOUNT_INDEX, accountId)
+                        .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
+                RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
+
+        return indexingFuture;
     }
 
     @Extern
@@ -339,7 +571,10 @@ public class DynamoAccountStore implements AccountStore {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(AccountStore.class).to(DynamoAccountStore.class).asEagerSingleton();
+                bind(AccountStore.class).to(DynamoElasticAccountStore.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
+                install(ConfigSystem.configModule(ElasticUtil.ConfigSearch.class, Names.named("account")));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticAccountStore.class);
             }
         };
     }
