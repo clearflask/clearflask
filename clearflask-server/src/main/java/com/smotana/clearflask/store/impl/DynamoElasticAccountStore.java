@@ -74,7 +74,6 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
-import static com.smotana.clearflask.util.ElasticUtil.*;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
 
 
@@ -127,41 +126,25 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
         if (config.createIndexOnStartup()) {
             try {
-                elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX)
-                                .settings(gson.toJson(ImmutableMap.of(
-                                        "index", ImmutableMap.of(
-                                                "analysis", ImmutableMap.of(
-                                                        "analyzer", ImmutableMap.of(
-                                                                AUTOCOMPLETE_ANALYZER_NAME, AUTOCOMPLETE_ANALYZER
-                                                        ),
-                                                        "tokenizer", ImmutableMap.of(
-                                                                AUTOCOMPLETE_TOKENIZER_NAME, AUTOCOMPLETE_TOKENIZER
-                                                        ))))), XContentType.JSON)
-                                .mapping(gson.toJson(ImmutableMap.of(
-                                        "dynamic", "false",
-                                        "properties", ImmutableMap.builder()
-                                                .put("name", ImmutableMap.of(
-                                                        "type", "text",
-                                                        "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
-                                                        "index_prefixes", ImmutableMap.of(
-                                                                "min_chars", 1,
-                                                                "max_chars", 4)))
-                                                .put("email", ImmutableMap.of(
-                                                        "type", "text",
-                                                        "analyzer", AUTOCOMPLETE_ANALYZER_NAME,
-                                                        "index_prefixes", ImmutableMap.of(
-                                                                "min_chars", 1,
-                                                                "max_chars", 4)))
-                                                .put("status", ImmutableMap.of(
-                                                        "type", "keyword"))
-                                                .put("planid", ImmutableMap.of(
-                                                        "type", "keyword"))
-                                                .put("created", ImmutableMap.of(
-                                                        "type", "date",
-                                                        "format", "epoch_second"))
-                                                .put("projectIds", ImmutableMap.of(
-                                                        "type", "keyword"))
-                                                .build())), XContentType.JSON),
+                elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
+                        "dynamic", "false",
+                        "properties", ImmutableMap.builder()
+                                .put("name", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("email", ImmutableMap.of(
+                                        "type", "text",
+                                        "index_prefixes", ImmutableMap.of()))
+                                .put("status", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("planid", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .put("created", ImmutableMap.of(
+                                        "type", "date",
+                                        "format", "epoch_second"))
+                                .put("projectIds", ImmutableMap.of(
+                                        "type", "keyword"))
+                                .build())), XContentType.JSON),
                         RequestOptions.DEFAULT);
             } catch (ResponseException ex) {
                 if (ex.getResponse().getStatusLine().getStatusCode() == 400 &&
@@ -233,8 +216,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Override
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        queryBuilder.must(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(), "name", "email")
-                .fuzziness("AUTO").zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+
+        queryBuilder.should(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
+                "email", "name")
+                .field("email", 2f)
+                .fuzziness("AUTO")
+                .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
         log.trace("Account search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(ACCOUNT_INDEX)
