@@ -16,13 +16,7 @@
     </units>
 
     <products>
-        <product prettyName="Growth" name="growth">
-            <category>BASE</category>
-        </product>
-        <product prettyName="Standard" name="standard">
-            <category>BASE</category>
-        </product>
-        <product prettyName="Flat" name="flat">
+        <product prettyName="ClearFlask" name="clearflask">
             <category>BASE</category>
         </product>
     </products>
@@ -79,7 +73,7 @@
 
     <plans>
         <plan name="growth-monthly">
-            <product>standard</product>
+            <product>clearflask</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
@@ -134,11 +128,11 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>40</size>
+                                        <size>10</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>20</value>
+                                                <value>5</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -151,7 +145,7 @@
             </finalPhase>
         </plan>
         <plan name="standard-monthly">
-            <product>standard</product>
+            <product>clearflask</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
@@ -206,11 +200,11 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>400</size>
+                                        <size>100</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>200</value>
+                                                <value>50</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -223,7 +217,7 @@
             </finalPhase>
         </plan>
         <plan name="flat-yearly">
-            <product>flat</product>
+            <product>clearflask</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>

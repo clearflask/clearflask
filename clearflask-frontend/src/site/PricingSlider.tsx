@@ -63,7 +63,7 @@ interface State {
 }
 class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {
-    mauIndex: 6,
+    mauIndex: 18,
     marks: this.getMarks(),
   };
 
