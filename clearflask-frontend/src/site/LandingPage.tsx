@@ -168,10 +168,18 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderHero() {
     return (
       <Hero
-        title='Involve your customers during product development'
+        title='Involve your customers in your product lifecycle'
         description='Product Feedback Solution for community-driven transparent organizations'
         imagePath='/img/landing/hero.svg'
         mirror
+        buttonTitle='Get started'
+        buttonLink='/signup'
+        buttonRemark={(
+          <div>
+            <div>Free trial up to 10 users.</div>
+            <div>No time-limit. No credit card.</div>
+          </div>
+        )}
       />
     );
   }
@@ -223,8 +231,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                 </div>
               )}
-              // buttonTitle='Learn more'
-              // buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
             />
           </div>
           <div className={this.props.classes.textCircleItemContainer}>
@@ -246,8 +254,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                 </div>
               )}
-              // buttonTitle='Learn more'
-              // buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
             />
           </div>
           <div className={classNames(this.props.classes.textCircleItemContainer, this.props.classes.textCircleItemThreeContainer)}>
@@ -265,12 +273,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   </div>
                   <div className={this.props.classes.point}>
                     <NotificationIcon fontSize='inherit' className={this.props.classes.pointIconSmall} />
-                    <div>Directly respond to customer feedback</div>
+                    <div>Directly respond to your customers</div>
                   </div>
                 </div>
               )}
-              // buttonTitle='Learn more'
-              // buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
             />
             <div style={{ width: '10%' }} />
           </div>
@@ -601,7 +609,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                   logIn={() => Promise.resolve()}
                   newCommentsAllowed
                   loggedInUser={project.server.getStore().getState().users.loggedIn.user}
-                  onAuthorClick={(c, u) => {console.log("AHA clicked", c, u)}}
+                  onAuthorClick={(c, u) => { console.log("AHA clicked", c, u) }}
                 />
               </AppThemeProvider>
             </Provider>

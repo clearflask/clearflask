@@ -11,7 +11,7 @@ import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
-import debounce from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
@@ -118,7 +118,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         newItemSearchText:
           `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`
       }),
-      1000);
+      SearchTypeDebounceTime);
   }
 
   componentDidMount() {
@@ -221,7 +221,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           : (this.props.explorer.allowCreate.actionTitle || 'Add')}
         value={this.state.newItemTitle || ''}
         onChange={e => {
-          if(this.state.newItemTitle === e.target.value) {
+          if (this.state.newItemTitle === e.target.value) {
             return;
           }
           this.updateSearchText(e.target.value, this.state.newItemDescription);
@@ -299,7 +299,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           placeholder='Description'
           value={this.state.newItemDescription || ''}
           onChange={e => {
-            if(this.state.newItemDescription === e.target.value
+            if (this.state.newItemDescription === e.target.value
               || (!this.state.newItemDescription && !e.target.value)) {
               return;
             }
@@ -495,7 +495,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           setState: { newItemTitle: this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1) },
         })) return;
       }
-      
+
       if (await animate({ sleepInMs: 1500 })) return;
     }
   }

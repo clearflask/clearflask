@@ -27,6 +27,7 @@ import ProjectSettings from '../common/config/settings/ProjectSettings';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
 import notEmpty from '../common/util/arrayUtil';
+import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { isProd } from '../common/util/detectEnv';
 import setTitle from '../common/util/titleUtil';
 import ContactPage from './ContactPage';
@@ -95,6 +96,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
   forcePathListener: ((forcePath: string) => void) | undefined;
+  readonly searchAccounts: (newValue: string) => void;
 
   constructor(props) {
     super(props);
@@ -120,6 +122,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         currentPagePath: [],
       };
     }
+    this.searchAccounts = debounce(
+      (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
+        accountSearchSuperAdmin: {
+          searchText: newValue,
+        },
+      })).then(result => this.setState({ accountSearch: result.results }))
+      , SearchTypeDebounceTime);
   }
 
   componentWillUnmount() {
@@ -452,7 +461,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     this.state.accountSearch && this.state.accountSearch.forEach(account => {
       if (!seenAccountEmails.has(account.email)) {
         seenAccountEmails.add(account.email);
-        accountOptions.push({ label: account.name, value: account.email});
+        accountOptions.push({ label: account.name, value: account.email });
       }
     });
 
@@ -471,12 +480,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             bare={false}
             onInputChange={(newValue, actionMeta) => {
               if (actionMeta.action === 'input-change') {
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
-                  accountSearchSuperAdmin: {
-                    searchText: newValue,
-                  },
-                }))
-                .then(result => this.setState({accountSearch: result.results}));
+                this.searchAccounts(newValue);
               }
             }}
             onValueChange={(labels, action) => {

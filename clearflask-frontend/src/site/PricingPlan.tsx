@@ -50,6 +50,7 @@ const styles = (theme: Theme) => createStyles({
   },
   actions: {
     margin: theme.spacing(0, 3, 1),
+    flexDirection: 'column',
   },
   remark: {
     display: 'flex',
@@ -107,11 +108,6 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </div>
           ))}
         </CardContent>
-        {this.props.remark && (
-          <div className={this.props.classes.remark}>
-            <Typography variant='caption' component='div' color='textSecondary'>{this.props.remark}</Typography>
-          </div>
-        )}
         {
           !!this.props.actionTitle && (
             <CardActions className={this.props.classes.actions}>
@@ -128,7 +124,11 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   )}
                 />
               ) : (
-                  <Button fullWidth color='primary'
+                  <Button
+                    color='primary'
+                    variant='contained'
+                    disableElevation
+                    style={{ fontWeight: 900 }}
                     onClick={this.props.actionOnClick}
                     disabled={!this.props.actionOnClick}
                     {...(this.props.actionTo ? {
@@ -142,6 +142,11 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             </CardActions>
           )
         }
+        {this.props.remark && (
+          <div className={this.props.classes.remark}>
+            <Typography variant='caption' component='div' color='textSecondary'>{this.props.remark}</Typography>
+          </div>
+        )}
       </Card >
     );
   }
@@ -149,13 +154,19 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   renderPriceTag() {
     if (!this.props.plan.pricing) {
       return (
-        <div className={this.props.classes.cardPricing}>
-          <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-          <Typography component='div' variant='h4'>2000+</Typography>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
-        </div>
+        <React.Fragment>
+          <div className={this.props.classes.cardPricing}>
+            <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+            <Typography component='div' variant='h4'>2000+</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
+          </div>
+          <div className={this.props.classes.cardPricingTerms}>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited MAU`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
+          </div>
+        </React.Fragment>
       );
-  }
+    }
 
     var billed: any = null;
     switch (this.props.plan.pricing?.period) {
@@ -172,28 +183,28 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       <Typography component='div' variant='subtitle1'>{billed}</Typography>
     );
 
-    const simplifiedMaus: boolean = this.props.plan.pricing.basePrice === this.props.plan.pricing.unitPrice
-      && this.props.plan.pricing.baseMau === this.props.plan.pricing?.unitMau;
-
-    if (simplifiedMaus) return (
-      <div className={this.props.classes.cardPricing}>
-        <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-        <Typography component='div' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
-        <Typography component='div' variant='subtitle2' color='textSecondary'>{`/ ${this.props.plan.pricing.baseMau} MAU`}</Typography>
-        {billed && (
-          <div className={this.props.classes.cardPricingTerms}>
-            {billed}
-          </div>
-        )}
-      </div>
-    );
+    // NOTE: Simplified menus were confusing when shown alongside a yearly option
+    // const simplifiedMaus: boolean = this.props.plan.pricing.basePrice === this.props.plan.pricing.unitPrice
+    //   && this.props.plan.pricing.baseMau === this.props.plan.pricing?.unitMau;
+    // if (simplifiedMaus) return (
+    //   <div className={this.props.classes.cardPricing}>
+    //     <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+    //     <Typography component='div' variant='h4'>{this.props.plan.pricing.basePrice}</Typography>
+    //     <Typography component='div' variant='subtitle2' color='textSecondary'>{`/ ${this.props.plan.pricing.baseMau} MAU`}</Typography>
+    //     {billed && (
+    //       <div className={this.props.classes.cardPricingTerms}>
+    //         {billed}
+    //       </div>
+    //     )}
+    //   </div>
+    // );
 
     var extraMau: any = null;
     if ((this.props.plan.pricing.unitPrice || 0) > 0) {
       extraMau = (
         <React.Fragment>
           <Typography component='div' variant='subtitle2' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / extra ${this.props.plan.pricing.unitMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} each ${this.props.plan.pricing.unitMau} MAU`}</Typography>
         </React.Fragment>
       );
     }

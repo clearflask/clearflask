@@ -10,7 +10,7 @@ import Comment from '../../app/comps/Comment';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import LogIn from '../../app/comps/LogIn';
 import Loader from '../../app/utils/Loader';
-import debounce from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
@@ -93,7 +93,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
   constructor(props) {
     super(props);
     this.state = {};
-    this.updateSearchText = debounce(this.search.bind(this), 500);
+    this.updateSearchText = debounce(this.search.bind(this), SearchTypeDebounceTime);
     this.search();
   }
 

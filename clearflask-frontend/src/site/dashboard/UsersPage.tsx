@@ -21,7 +21,7 @@ import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
-import debounce from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const searchWidth = 100;
@@ -112,7 +112,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
   constructor(props) {
     super(props);
     this.state = {};
-    this.updateSearchText = debounce(this.search.bind(this), 500);
+    this.updateSearchText = debounce(this.search.bind(this), SearchTypeDebounceTime);
     this.search();
   }
 

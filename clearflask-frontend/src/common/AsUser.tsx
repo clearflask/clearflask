@@ -8,7 +8,7 @@ import * as Client from '../api/client';
 import { ReduxState, Server, Status } from '../api/server';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import notEmpty from './util/arrayUtil';
-import debounce from './util/debounce';
+import debounce, { SearchTypeDebounceTime } from './util/debounce';
 
 const styles = (theme: Theme) => createStyles({
   picker: {
@@ -40,7 +40,7 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
   constructor(props) {
     super(props);
     this.state = {};
-    this.searchUser = debounce(this.search.bind(this), 500);
+    this.searchUser = debounce(this.search.bind(this), SearchTypeDebounceTime);
     this.search();
   }
 

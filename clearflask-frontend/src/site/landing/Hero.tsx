@@ -1,6 +1,7 @@
-import { Grid, Typography } from '@material-ui/core';
+import { Button, Grid, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import { vh } from '../../common/util/vhUtil';
 
 const styles = (theme: Theme) => createStyles({
@@ -12,6 +13,10 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  heroTextContainer: {
+    display: 'flex',
+    flexDirection: 'column',
   },
   heroDescription: {
     marginTop: theme.spacing(2),
@@ -26,6 +31,20 @@ const styles = (theme: Theme) => createStyles({
       padding: theme.spacing(8, 2),
     },
   },
+  buttonAndRemark: {
+    alignSelf: 'flex-end',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    margin: theme.spacing(4, 10),
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(4, 6),
+    },
+  },
+  remark: {
+    textAlign: 'center',
+    margin: theme.spacing(1),
+  },
 });
 
 interface Props {
@@ -33,6 +52,9 @@ interface Props {
   description?: string;
   imagePath?: string;
   mirror?: boolean;
+  buttonTitle?: string;
+  buttonLink?: string;
+  buttonRemark?: React.ReactNode;
 }
 class Hero extends Component<Props & WithStyles<typeof styles, true>> {
 
@@ -54,13 +76,36 @@ class Hero extends Component<Props & WithStyles<typeof styles, true>> {
               />
             </Grid>
           )}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} lg={5} xl={4} className={this.props.classes.heroTextContainer}>
             <Typography variant='h3' component='h1'>
               {this.props.title}
             </Typography>
             <Typography variant='h5' component='h2' className={this.props.classes.heroDescription}>
               {this.props.description}
             </Typography>
+            {this.props.buttonTitle && (
+              <div
+                className={this.props.classes.buttonAndRemark}
+              >
+                <Button
+                  color='primary'
+                  variant='contained'
+                  disableElevation
+                  style={{ fontWeight: 900 }}
+                  {...(this.props.buttonLink ? {
+                    component: Link,
+                    to: this.props.buttonLink,
+                  } : {})}
+                >
+                  {this.props.buttonTitle}
+                </Button>
+                {!!this.props.buttonRemark && (
+                  <div className={this.props.classes.remark}>
+                    <Typography variant='caption' component='div' color='textSecondary'>{this.props.buttonRemark}</Typography>
+                  </div>
+                )}
+              </div>
+            )}
           </Grid>
         </Grid>
       </div>

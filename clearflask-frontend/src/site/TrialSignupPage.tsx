@@ -1,24 +1,20 @@
-import { Button, Collapse, Container, DialogActions, Grid, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Collapse, Container, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { Link, NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
+import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import ErrorPage from '../app/ErrorPage';
-import Loader from '../app/utils/Loader';
 import AcceptTerms from '../common/AcceptTerms';
 import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
-import notEmpty from '../common/util/arrayUtil';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import PlanPeriodSelect from './PlanPeriodSelect';
-import PricingPlan from './PricingPlan';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
@@ -28,10 +24,31 @@ export const REQUIRES_WORK_EMAIL_ABOVE_PRICE = 50;
 
 const styles = (theme: Theme) => createStyles({
   page: {
+    flex: '0 1',
     margin: theme.spacing(2),
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    display: 'flex',
+    [theme.breakpoints.down('sm')]: {
+      flexWrap: 'wrap',
+    },
+  },
+  itemContainer: {
+    margin: theme.spacing(2),
+    minWidth: 300,
+    maxWidth: 300,
   },
   item: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(1, 2),
+  },
+  image: {
+    width: '100%',
+    [theme.breakpoints.up('md')]: {
+      marginTop: 300,
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0, 8),
+    },
   },
   link: {
     color: 'unset',
@@ -52,8 +69,6 @@ interface ConnectProps {
   plans?: Admin.Plan[];
 }
 interface State {
-  period?: Admin.PlanPricingPeriodEnum;
-  planid?: string;
   isSubmitting?: boolean;
   name?: string;
   email?: string;
@@ -64,14 +79,6 @@ interface State {
 
 class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
-
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      planid: props.location.state?.[PRE_SELECTED_PLAN_ID],
-    };
-  }
 
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
@@ -88,18 +95,9 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       )} />
     }
 
-    const allPlans = this.props.plans || [];
-    const periodsSet = new Set(allPlans
-      .map(plan => plan.pricing?.period)
-      .filter(notEmpty));
-    const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
-    const selectedPeriod = this.state.period
-      || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
-    const plans = allPlans
-      .filter(plan => plan.pricing && selectedPeriod === plan.pricing.period);
-    const selectedPlanId = this.state.planid || plans[0]?.planid;
-    const selectedPlan = !selectedPlanId ? undefined : allPlans
-      .find(plan => plan.planid === selectedPlanId);
+    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_PLAN_ID]
+      || (this.props.plans ? this.props.plans[0].planid : undefined);
+    const selectedPlan = !selectedPlanId ? undefined : this.props.plans?.find(plan => plan.planid === selectedPlanId);
 
     const selectedPlanRequiresWorkEmail = !!selectedPlan
       && !!selectedPlan.pricing
@@ -113,47 +111,16 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
     const emailDisposableList = import('../common/util/emailDisposableList'/* webpackChunkName: "emailDisposableList" */);
 
     return (
-      <div className={this.props.classes.page}>
-        <Container maxWidth='md'>
+      <Container maxWidth='md' className={this.props.classes.page}>
+        <div className={this.props.classes.itemContainer}>
           <Typography component="h1" variant="h2" color="textPrimary">Sign up</Typography>
-          <Typography component="h2" variant="h4" color="textSecondary">Start your free 14-day trial</Typography>
-          {periods.length > 1 && (
-            <PlanPeriodSelect
-              plans={this.props.plans}
-              value={selectedPeriod}
-              onChange={period => this.setState({ period, planid: undefined })}
-            />
-          )}
-        </Container>
-        <br />
-        <br />
-        <br />
-        <Container maxWidth='md'>
-          <Loader loaded={!!this.props.plans}>
-            <Grid container spacing={5} alignItems='stretch' justify='center'>
-              {plans.map((plan, index) => (
-                <Grid item key={plan.planid} xs={12} sm={index === 2 ? 12 : 6} md={4}>
-                  <PricingPlan
-                    plan={plan}
-                    selected={selectedPlanId === plan.planid}
-                    actionTitle={selectedPlanId === plan.planid ? 'Selected' : 'Select'}
-                    actionType='radio'
-                    actionOnClick={() => this.setState({ planid: plan.planid })}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          </Loader>
-        </Container>
-        <br />
-        <br />
-        <br />
-        <Container maxWidth='xs'>
+          <Typography component="h2" variant="h5" color="textSecondary">Start gathering feedback</Typography>
+          <br />
           <TextField
             className={this.props.classes.item}
             fullWidth
             id='name'
-            label='Your name / organization'
+            placeholder='Your name / organization'
             required
             value={this.state.name || ''}
             onChange={e => this.setState({ name: e.target.value })}
@@ -162,7 +129,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             className={this.props.classes.item}
             fullWidth
             id='email'
-            label='Work email'
+            placeholder='Work email'
             required
             value={this.state.email || ''}
             onChange={e => {
@@ -184,7 +151,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             className={this.props.classes.item}
             fullWidth
             id='pass'
-            label='Password'
+            placeholder='Password'
             required
             value={this.state.pass || ''}
             onChange={e => this.setState({ pass: e.target.value })}
@@ -203,11 +170,8 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
             }}
           />
           <AcceptTerms />
+          <br />
           <DialogActions>
-            <Button
-              component={Link}
-              to='/dashboard'
-            >Or Login</Button>
             <SubmitButton
               color='primary'
               isSubmitting={this.state.isSubmitting}
@@ -215,8 +179,13 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
               onClick={this.signUp.bind(this, selectedPlanId)}
             >Create account</SubmitButton>
           </DialogActions>
-        </Container>
-      </div>
+        </div>
+        <img
+          alt='signup'
+          className={this.props.classes.image}
+          src='/img/dashboard/enter.svg'
+        />
+      </Container>
     );
   }
 

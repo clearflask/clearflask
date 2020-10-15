@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, Status } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
-import debounce from '../../common/util/debounce';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
 const styles = (theme: Theme) => createStyles({
   createFormField: {
@@ -56,7 +56,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           const userLabels = results.results.map(UserSelection.mapUserToLabel);
           this.setState({ options: userLabels });
         })
-      , 200);
+      , SearchTypeDebounceTime);
   }
 
   render() {

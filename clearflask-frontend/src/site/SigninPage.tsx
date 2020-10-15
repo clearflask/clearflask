@@ -1,4 +1,4 @@
-import { Button, Container, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
+import { Button, DialogActions, IconButton, InputAdornment, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -24,6 +24,12 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
+  },
+  signinContainer: {
+    minWidth: 250,
+    maxWidth: 250,
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
 });
 
@@ -70,14 +76,14 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
 
     return (
       <div className={this.props.classes.page}>
-        <Container maxWidth='xs'>
+        <div className={this.props.classes.signinContainer}>
           <Typography component="h1" variant="h4" color="textPrimary">Log in</Typography>
           <TextField
             fullWidth
             required
             value={this.state.email || ''}
             onChange={e => this.setState({ email: e.target.value })}
-            label='Email'
+            placeholder='Email'
             type='email'
             margin='normal'
             disabled={this.state.isSubmitting}
@@ -87,7 +93,7 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             required
             value={this.state.pass || ''}
             onChange={e => this.setState({ pass: e.target.value })}
-            label='Password'
+            placeholder='Password'
             type={this.state.revealPassword ? 'text' : 'password'}
             InputProps={{
               endAdornment: (
@@ -105,20 +111,20 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
             disabled={this.state.isSubmitting}
           />
           <DialogActions>
-            {(SIGNUP_PROD_ENABLED || !isProd()) && (
-              <Button
-                component={Link}
-                to='/signup'
-              >Or Signup</Button>
-            )}
             <SubmitButton
               color='primary'
               isSubmitting={this.state.isSubmitting}
               disabled={!this.state.email || !this.state.pass}
               onClick={this.onSubmit.bind(this)}
             >Continue</SubmitButton>
+            {(SIGNUP_PROD_ENABLED || !isProd()) && (
+              <Button
+                component={Link}
+                to='/signup'
+              >Or Signup</Button>
+            )}
           </DialogActions>
-        </Container>
+        </div>
       </div>
     );
   }
@@ -134,7 +140,11 @@ class SigninPage extends Component<RouteComponentProps & ConnectProps & WithStyl
     })).then((result) => {
       this.setState({ isSubmitting: false });
     }).catch((e) => {
-      this.setState({ isSubmitting: false });
+      if (e && e.status && e.status === 403) {
+        this.setState({ isSubmitting: false, pass: undefined });
+      } else {
+        this.setState({ isSubmitting: false });
+      }
     });
   }
 }
