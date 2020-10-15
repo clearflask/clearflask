@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import Promised from '../common/Promised';
 import SubmitButton from '../common/SubmitButton';
 import preloadImage from '../common/util/imageUtil';
 import { vh } from '../common/util/vhUtil';
@@ -63,7 +64,7 @@ interface ContactForm {
     helperText?: string;
     fillWithAccountEmail?: boolean;
     placeholder?: string;
-    type?: 'text' | 'multiline' | 'checkbox';
+    type?: 'text' | 'multiline' | 'checkbox' | 'datetime';
     required?: boolean;
   }[];
 }
@@ -78,6 +79,7 @@ const forms: ContactForm[] = [
     hideFromMainPage: true,
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
+      { attrName: 'appointment', type: 'datetime', title: 'When are you free?', required: false },
       { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
@@ -182,6 +184,57 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             )}
                             label={field.title}
                           />
+                        ) : (field.type === 'datetime' ? (
+                          <Promised
+                            promise={Promise.all<unknown, unknown, unknown, unknown>([
+                              import('@material-ui/pickers/DateTimePicker'),
+                              import('@material-ui/pickers/MuiPickersUtilsProvider'),
+                              import('@date-io/moment'),
+                              import('moment-timezone'), // Add timezone to dates
+                            ])}
+                            render={(libs: any) => {
+                              const DateTimePicker = libs[0].DateTimePicker;
+                              const MuiPickersUtilsProvider = libs[1].default;
+                              const MomentUtils = libs[2].default;
+                              const moment = libs[3].default;
+
+                              const cutoff = new Date();
+                              cutoff.setDate(cutoff.getDate() + 2);
+
+                              return (
+                                <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
+                                  <DateTimePicker
+                                    disablePast
+                                    variant='inline'
+                                    views={['date', 'hours']}
+                                    ampm={false}
+                                    disableToolbar
+                                    format='MMMM Do H:mm'
+                                    autoOk
+                                    initialFocusedDate={new Date()}
+                                    className={this.props.classes.field}
+                                    disabled={this.state.isSubmitting}
+                                    label={field.title}
+                                    emptyLabel={field.placeholder}
+                                    shouldDisableDate={(date) => {
+                                      if (!date) return true;
+                                      if (date.isBefore(cutoff)) return true;
+                                      const weekday = date.format('dddd');
+                                      if (weekday === 'Saturday' || weekday === 'Sunday') return true;
+                                      return false
+                                    }}
+                                    helperText={field.helperText}
+                                    value={this.state[`field_${form.type}_${field.attrName}`] || null}
+                                    onChange={val => {
+                                      val.tz(moment.tz.guess())
+                                      val = val ? val.minutes(0).seconds(0) : val;
+                                      return this.setState({ [`field_${form.type}_${field.attrName}`]: val })
+                                    }}
+                                  />
+                                </MuiPickersUtilsProvider>
+                              )
+                            }}
+                          />
                         ) : (
                             <TextField
                               className={this.props.classes.field}
@@ -195,7 +248,7 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                               multiline={field.type === 'multiline'}
                               rowsMax={field.type === 'multiline' ? 10 : undefined}
                             />
-                          ))}
+                          )))}
                         <SubmitButton
                           className={this.props.classes.field}
                           isSubmitting={this.state.isSubmitting}
@@ -205,7 +258,13 @@ class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           onClick={() => {
                             this.setState({ isSubmitting: true });
                             const content = {};
-                            form.fields.forEach(field => content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || '');
+                            form.fields.forEach(field => {
+                              if (field.type === 'datetime') {
+                                content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`]?.format('MMMM Do H:mm zz') || '';
+                              } else {
+                                content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || ''
+                              }
+                            });
                             ServerAdmin.get().dispatchAdmin().then(d => d.supportMessage({
                               supportMessage: {
                                 content: {
