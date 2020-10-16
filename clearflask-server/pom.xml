@@ -367,6 +367,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -599,7 +602,9 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/kb-ddl/sources/analytics-plugin/
                                     </outputDirectory>
-                                    <includes>**/ddl.sql,system/**/*.sql,system/**/*.prc,system/**/*.ddl,reports/**/*.sql,reports/**/*.prc,reports/**/*.ddl</includes>
+                                    <includes>
+                                        **/ddl.sql,system/**/*.sql,system/**/*.prc,system/**/*.ddl,reports/**/*.sql,reports/**/*.prc,reports/**/*.ddl
+                                    </includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

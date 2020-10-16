@@ -205,7 +205,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'created':
         setTitle('Success - Dashboard');
-        showProjectSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;

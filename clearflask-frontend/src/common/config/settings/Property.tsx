@@ -1,5 +1,5 @@
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
-import VisitPageIcon from '@material-ui/icons/ArrowRightAlt';
+import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
 import PaintbrushIcon from '@material-ui/icons/Palette';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';

@@ -38,16 +38,10 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
   },
-  imageCreated: {
+  image: {
     padding: theme.spacing(4),
     width: '100%',
     maxWidth: 400,
-  },
-  image: {
-    padding: theme.spacing(0, 0, 8, 0),
-    width: '100%',
-    margin: 'auto',
-    maxHeight: vh(40),
   },
 });
 interface Props {
@@ -98,7 +92,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <Typography component="h2" variant="h5" color="textSecondary">You've created {this.props.server.store.getState().conf.conf?.name || 'your project'}</Typography>
               <img
                 alt='Project created'
-                className={this.props.classes.imageCreated}
+                className={this.props.classes.image}
                 src={CreatedImagePath}
               />
             </Grid>
@@ -148,53 +142,55 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     >Add</SubmitButton>
                   </StepContent>
                 </Step>
-                <Step completed={!!this.state.newItemSubmitted} {...expandedProp(!this.state.newItemSubmitted)}>
-                  <StepLabel>Create your first idea</StepLabel>
-                  <StepContent>
-                    <TextField
-                      disabled={this.state.isSubmitting}
-                      className={this.props.classes.field}
-                      placeholder='Title'
-                      value={this.state.newItemTitle || ''}
-                      onChange={e => this.setState({ newItemTitle: e.target.value })}
-                    />
-                    <RichEditor
-                      disabled={this.state.isSubmitting}
-                      className={this.props.classes.field}
-                      placeholder='Description'
-                      value={this.state.newItemDescription || ''}
-                      onChange={e => this.setState({ newItemDescription: e.target.value })}
-                      multiline
-                      rows={1}
-                      rowsMax={5}
-                    />
-                    <SubmitButton
-                      className={this.props.classes.button}
-                      color='primary'
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={!isLoggedIn || !this.state.newItemTitle}
-                      onClick={e => {
-                        this.setState({ isSubmitting: true });
-                        this.props.server.dispatch().ideaCreate({
-                          projectId: this.props.server.getProjectId(),
-                          ideaCreate: {
-                            authorUserId: this.props.loggedInUser!.userId,
-                            title: this.state.newItemTitle!,
-                            description: this.state.newItemDescription,
-                            categoryId: this.props.ideaCategoryId!,
-                            tagIds: [],
-                          },
-                        })
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            newItemSubmitted: true,
-                            activeStep: 2,
-                          }))
-                          .catch(() => this.setState({ isSubmitting: false }));
-                      }}
-                    >Post</SubmitButton>
-                  </StepContent>
-                </Step>
+                {!!this.props.ideaCategoryId && (
+                  <Step completed={!!this.state.newItemSubmitted} {...expandedProp(!this.state.newItemSubmitted)}>
+                    <StepLabel>Create your first post</StepLabel>
+                    <StepContent>
+                      <TextField
+                        disabled={this.state.isSubmitting}
+                        className={this.props.classes.field}
+                        placeholder='Title'
+                        value={this.state.newItemTitle || ''}
+                        onChange={e => this.setState({ newItemTitle: e.target.value })}
+                      />
+                      <RichEditor
+                        disabled={this.state.isSubmitting}
+                        className={this.props.classes.field}
+                        placeholder='Description'
+                        value={this.state.newItemDescription || ''}
+                        onChange={e => this.setState({ newItemDescription: e.target.value })}
+                        multiline
+                        rows={1}
+                        rowsMax={5}
+                      />
+                      <SubmitButton
+                        className={this.props.classes.button}
+                        color='primary'
+                        isSubmitting={this.state.isSubmitting}
+                        disabled={!isLoggedIn || !this.state.newItemTitle}
+                        onClick={e => {
+                          this.setState({ isSubmitting: true });
+                          this.props.server.dispatch().ideaCreate({
+                            projectId: this.props.server.getProjectId(),
+                            ideaCreate: {
+                              authorUserId: this.props.loggedInUser!.userId,
+                              title: this.state.newItemTitle!,
+                              description: this.state.newItemDescription,
+                              categoryId: this.props.ideaCategoryId!,
+                              tagIds: [],
+                            },
+                          })
+                            .then(() => this.setState({
+                              isSubmitting: false,
+                              newItemSubmitted: true,
+                              activeStep: 2,
+                            }))
+                            .catch(() => this.setState({ isSubmitting: false }));
+                        }}
+                      >Post</SubmitButton>
+                    </StepContent>
+                  </Step>
+                )}
                 <Step completed={!!this.state.linkClicked} {...expandedProp(true)}>
                   <StepLabel>Share it with your users</StepLabel>
                   <StepContent>

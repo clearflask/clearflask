@@ -77,6 +77,7 @@ const styles = (theme: Theme) => createStyles({
   },
   overlapContainer: {
     position: 'relative',
+    margin: theme.spacing(4, 0),
   },
   textCircleContainer: {
     margin: 'auto',
@@ -153,6 +154,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
     return (
       <React.Fragment>
         {this.renderHero()}
+        {this.renderDemo()}
         {this.renderLoop()}
         {this.renderCollectFeedback()}
         {this.renderPrioritization()}
@@ -187,13 +189,12 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderDemo() {
     const opts: CreateTemplateOptions = {
       ...createTemplateOptionsDefault,
-      fundingAllowed: false,
     };
     return (
       <Container maxWidth='lg'>
         <Demo
           type='demoOnly'
-          edgeType='outline'
+          demoWrap='browser'
           demoFixedHeight={500}
           template={templater => templater.demo(opts)}
           mock={mocker => mocker.templateMock(opts)}

@@ -25,11 +25,14 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.primary,
   },
   box: {
-    transition: theme.transitions.create('border'),
+    transition: theme.transitions.create(['border', 'opacity']),
     border: '1px solid ' + theme.palette.grey[300],
   },
   boxSelected: {
     borderColor: theme.palette.primary.main,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   extraControls: {
     display: 'flex',
@@ -84,11 +87,18 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
             </StepLabel>
             <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
               <Grid container spacing={4} alignItems='flex-start' className={this.props.classes.item}>
-                <TemplateCard
+              <TemplateCard
                   title='Feedback'
-                  content='Collect feedback from user. Comes with a "Feature" and "Bug" category.'
+                  content='Collect feedback from customers.'
                   checked={!!this.state.templateFeedback}
                   onChange={() => this.setStateAndPreview({ templateFeedback: !this.state.templateFeedback })}
+                />
+                <TemplateCard
+                  title='Roadmap'
+                  disabled={!this.state.templateFeedback}
+                  content='Show a roadmap to your users'
+                  checked={!!this.state.templateRoadmap}
+                  onChange={() => this.setStateAndPreview({ templateRoadmap: !this.state.templateRoadmap })}
                 />
                 <TemplateCard
                   title='Changelog'
@@ -121,81 +131,6 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
               </Box>
             </StepContent>
           </Step>
-          {!!this.state.templateFeedback && (
-            <Step key='prioritization' completed={false}>
-              <StepLabel>
-                <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
-                  Feedback
-                </Link>
-              </StepLabel>
-              <StepContent TransitionProps={{ mountOnEnter: true, unmountOnExit: false }}>
-                <ToggleButtonGroup
-                  {...{ size: 'small' }}
-                  value={supportButtonGroupVal}
-                  style={{ display: 'inline-block' }}
-                  onChange={(e, val) => this.setStateAndPreview({
-                    fundingAllowed: val.includes('funding'),
-                    expressionAllowed: val.includes('expression'),
-                    votingAllowed: val.includes('voting'),
-                  })}
-                >
-                  <ToggleButton value='funding'>Fund</ToggleButton>
-                  <ToggleButton value='voting'>Vote</ToggleButton>
-                  <ToggleButton value='expression'>Express</ToggleButton>
-                </ToggleButtonGroup>
-                <div className={this.props.classes.extraControls}>
-                  <Collapse in={this.state.fundingAllowed}><div className={this.props.classes.extraControls}>
-                    <RadioGroup
-                      value={this.state.fundingType}
-                      onChange={(e, val) => this.setStateAndPreview({ fundingType: val as any })}
-                    >
-                      <FormControlLabel value='currency' control={<Radio color='primary' />} label='Currency' />
-                      <FormControlLabel value='time' control={<Radio color='primary' />} label='Development time' />
-                      <FormControlLabel value='beer' control={<Radio color='primary' />} label="Custom" />
-                    </RadioGroup>
-                  </div></Collapse>
-                  <Collapse in={this.state.votingAllowed}><div className={this.props.classes.extraControls}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          color='primary'
-                          checked={!!this.state.votingEnableDownvote}
-                          onChange={(e, enableDownvote) => this.setStateAndPreview({ votingEnableDownvote: enableDownvote })}
-                        />
-                      )}
-                      label={<FormHelperText component='span'>Downvoting</FormHelperText>}
-                    />
-                  </div></Collapse>
-                  <Collapse in={this.state.expressionAllowed}><div className={this.props.classes.extraControls}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          color='primary'
-                          checked={!!this.state.expressionsLimitEmojis}
-                          onChange={(e, limitEmojis) => this.setStateAndPreview({ expressionsLimitEmojis: limitEmojis })}
-                        />
-                      )}
-                      label={<FormHelperText component='span'>Limit available emojis</FormHelperText>}
-                    />
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          color='primary'
-                          checked={!!this.state.expressionsAllowMultiple}
-                          onChange={(e, allowMultiple) => this.setStateAndPreview({ expressionsAllowMultiple: allowMultiple })}
-                        />
-                      )}
-                      label={<FormHelperText component='span'>Allow selecting multiple emojis</FormHelperText>}
-                    />
-                  </div></Collapse>
-                </div>
-                <Typography variant='caption'>You can customize this in more detail later.</Typography>
-                <Box display='flex' className={this.props.classes.item}>
-                  <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
-                </Box>
-              </StepContent>
-            </Step>
-          )}
           <Step key='info' completed={false}>
             <StepLabel>
               <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 + (!!this.state.templateFeedback ? 1 : 0) })} className={this.props.classes.link}>
@@ -316,12 +251,13 @@ interface TemplateCardProps {
   title: string;
   content: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: () => void;
 }
 
 const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCardProps & WithStyles<typeof styles, true>) => (
   <Grid item key='feedback' xs={12} sm={6} md={12} lg={4}>
-    <Card elevation={0} className={classNames(props.classes.box, props.checked && props.classes.boxSelected)}>
+    <Card elevation={0} className={classNames(props.classes.box, props.checked && props.classes.boxSelected, props.disabled && props.classes.disabled)}>
       <CardHeader
         title={props.title}
         titleTypographyProps={{ align: 'center' }}
@@ -334,6 +270,7 @@ const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCar
             <Checkbox color="primary"
               checked={props.checked}
               onChange={props.onChange}
+              disabled={props.disabled}
             />
           )}
           label={props.checked ? 'Selected' : 'Select'}

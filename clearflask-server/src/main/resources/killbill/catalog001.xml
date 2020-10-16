@@ -16,7 +16,13 @@
     </units>
 
     <products>
-        <product prettyName="ClearFlask" name="clearflask">
+        <product prettyName="Growth" name="growth">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Standard" name="standard">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Flat" name="flat">
             <category>BASE</category>
         </product>
     </products>
@@ -73,7 +79,7 @@
 
     <plans>
         <plan name="growth-monthly">
-            <product>clearflask</product>
+            <product>growth</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
@@ -145,7 +151,7 @@
             </finalPhase>
         </plan>
         <plan name="standard-monthly">
-            <product>clearflask</product>
+            <product>standard</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>
@@ -217,7 +223,7 @@
             </finalPhase>
         </plan>
         <plan name="flat-yearly">
-            <product>clearflask</product>
+            <product>flat</product>
             <initialPhases>
                 <phase type="TRIAL">
                     <duration>

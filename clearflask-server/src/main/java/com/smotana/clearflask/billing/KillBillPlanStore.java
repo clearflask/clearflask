@@ -8,13 +8,9 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
-import com.smotana.clearflask.api.model.FeaturesTable;
-import com.smotana.clearflask.api.model.FeaturesTableFeatures;
 import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlanPerk;
-import com.smotana.clearflask.api.model.PlanPricing;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
-import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.util.Extern;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +18,7 @@ import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.Catalogs;
-import org.killbill.billing.client.model.gen.Catalog;
-import org.killbill.billing.client.model.gen.Phase;
-import org.killbill.billing.client.model.gen.Product;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.Usage;
+import org.killbill.billing.client.model.gen.*;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -37,28 +29,24 @@ import java.util.stream.Stream;
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
-    private static final String TERMS_ACTIVE_USERS = "Contributors are users that have signed up or made public contributions counted on a rolling 3 month median.";
-    private static final String TERMS_ANALYTICS = "View top ideas based on return on investment considering popularity, opportunity and complexity. Explore data based on trends, demographics, and custom metrics.";
-    private static final String TERMS_VOTING = "Voting and expressions allows prioritization of value for each idea.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
-    private static final String TERMS_CREDIT = "Spend time-based credits on future ClearFlask development features";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
     private static final String TERMS_SSO = "Use your existing user accounts to log into ClearFlask";
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
-    private static final ImmutableMap<String, Function<PlanPricing, Plan>> AVAILABLE_PLANS_BUILDER = ImmutableMap.of(
-            "growth-monthly", pp -> new Plan("growth-monthly", "Growth",
+    private static final ImmutableMap<String, Function<PlanPricing, Plan>> AVAILABLE_PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
+            .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited projects", null),
                     new PlanPerk("Credit System", null),
                     new PlanPerk("Roadmap", null)),
-                    null, null),
-            "standard-monthly", pp -> new Plan("standard-monthly", "Standard",
+                    null, null))
+            .put("standard-monthly", pp -> new Plan("standard-monthly", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Single Sign-On", TERMS_SSO),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
                     new PlanPerk("Site template", TERMS_SITE_TEMPLATE)),
-                    null, null),
-            );
+                    null, null))
+            .build();
     private static final ImmutableList<Plan> AVAILABLE_PLANS_STATIC_BUILDER = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
@@ -97,6 +85,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Catalog catalog = catalogs.stream().max(Comparator.comparing(Catalog::getEffectiveDate)).get();
         Product product = catalog.getProducts().stream().filter(p -> "clearflask".equals(p.getName())).findAny().get();
         ImmutableList<Plan> plans = AVAILABLE_PLANS_BUILDER.entrySet().stream().map(e -> {
+            // Oh god this is just terrible, this is what happens when you check in at 4am
             String planName = e.getKey();
             org.killbill.billing.client.model.gen.Plan plan = product.getPlans().stream().filter(p -> planName.equals(p.getName())).findAny().get();
             Phase evergreen = plan.getPhases().stream().filter(p -> PhaseType.EVERGREEN.name().equals(p.getType())).findAny().get();
@@ -143,8 +132,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "growth-monthly":
             case "standard-monthly":
                 return ImmutableSet.of(
-                        AVAILABLE_PLANS.get("growth-monthly"),
-                        AVAILABLE_PLANS.get("standard-monthly"));
+                        availablePlans.get("growth-monthly"),
+                        availablePlans.get("standard-monthly"));
             default:
                 return ImmutableSet.of();
         }
@@ -153,7 +142,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Extern
     @Override
     public Optional<Plan> getPlan(String planId) {
-        return Optional.ofNullable(AVAILABLE_PLANS.get(planId));
+        return Optional.ofNullable(availablePlans.get(planId));
     }
 
     public static Module module() {

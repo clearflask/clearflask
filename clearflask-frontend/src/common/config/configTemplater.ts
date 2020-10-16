@@ -12,13 +12,14 @@ import * as ConfigEditor from "./configEditor";
 // TODO FORUM
 export interface CreateTemplateOptions {
   templateFeedback?: boolean;
+  templateRoadmap?: boolean;
   templateChangelog?: boolean;
   templateKnowledgeBase?: boolean;
 
-  fundingAllowed: boolean;
-  votingAllowed: boolean;
-  expressionAllowed: boolean;
-  fundingType: 'currency' | 'time' | 'beer';
+  fundingAllowed?: boolean;
+  votingAllowed?: boolean;
+  expressionAllowed?: boolean;
+  fundingType?: 'currency' | 'time' | 'beer';
   votingEnableDownvote?: boolean;
   expressionsLimitEmojis?: boolean;
   expressionsAllowMultiple?: boolean;
@@ -30,10 +31,8 @@ export interface CreateTemplateOptions {
 }
 export const createTemplateOptionsDefault: CreateTemplateOptions = {
   templateFeedback: true,
-  fundingAllowed: true,
+  templateRoadmap: true,
   votingAllowed: true,
-  expressionAllowed: false,
-  fundingType: 'currency',
 };
 
 export default class Templater {
@@ -63,7 +62,7 @@ export default class Templater {
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
     if (opts.templateFeedback) {
-      this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed);
+      this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed, opts.templateRoadmap);
       const postCategoryIndex = this._get<ConfigEditor.PageGroup>(['content', 'categories']).getChildPages().length - 1;
       if (opts.votingAllowed) {
         this.supportVoting(postCategoryIndex, opts.votingEnableDownvote);
@@ -79,6 +78,7 @@ export default class Templater {
       if (opts.fundingAllowed) {
         this.supportFunding(postCategoryIndex);
         switch (opts.fundingType) {
+          default:
           case 'currency':
             this.creditsCurrency();
             break;
@@ -94,6 +94,12 @@ export default class Templater {
     if (opts.templateChangelog) this.templateChangelog();
     // if (opts.templateBlog) this.templateBlog();
     if (opts.templateKnowledgeBase) this.templateKnowledgeBase();
+
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+    if(menuProp.childProperties?.length === 1) {
+      // If only one item in menu, just don't show it
+      menuProp.delete(0);
+    }
   }
 
   styleWhite() {
@@ -319,7 +325,7 @@ export default class Templater {
     }));
   }
 
-  templateFeedback(withFunding: boolean, withStandaloneFunding: boolean = true) {
+  templateFeedback(withFunding: boolean = false, withStandaloneFunding: boolean = true, withRoadmap: boolean = true) {
     // Ideas
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const postCategoryId = randomUuid();
@@ -334,78 +340,81 @@ export default class Templater {
     const postStatuses = this.workflowFeatures(postCategoryIndex, withFunding, withStandaloneFunding);
     this.taggingIdeaBug(postCategoryIndex);
 
-    // Roadmap page
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
-    const roadmapPageId = randomUuid();
-    const postDisplay: Admin.PostDisplay = {
-      titleTruncateLines: 1,
-      descriptionTruncateLines: 0,
-      responseTruncateLines: 0,
-      showCommentCount: false,
-      showCategoryName: false,
-      showCreated: false,
-      showAuthor: false,
-      showStatus: false,
-      showTags: false,
-      showVoting: false,
-      showFunding: false,
-      showExpression: false,
-    };
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: roadmapPageId,
-      name: 'Roadmap',
-      slug: 'roadmap',
-      title: undefined,
-      description: undefined,
-      panels: [],
-      board: Admin.PageBoardToJSON({
-        title: 'Roadmap',
-        panels: [
-          ...(withFunding && withStandaloneFunding ? [
+    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
+
+    if (withRoadmap) {
+      // Roadmap page
+      const roadmapPageId = randomUuid();
+      const postDisplay: Admin.PostDisplay = {
+        titleTruncateLines: 1,
+        descriptionTruncateLines: 0,
+        responseTruncateLines: 0,
+        showCommentCount: false,
+        showCategoryName: false,
+        showCreated: false,
+        showAuthor: false,
+        showStatus: false,
+        showTags: false,
+        showVoting: false,
+        showFunding: false,
+        showExpression: false,
+      };
+      pagesProp.insert().setRaw(Admin.PageToJSON({
+        pageId: roadmapPageId,
+        name: 'Roadmap',
+        slug: 'roadmap',
+        title: undefined,
+        description: undefined,
+        panels: [],
+        board: Admin.PageBoardToJSON({
+          title: 'Roadmap',
+          panels: [
+            ...(withFunding && withStandaloneFunding ? [
+              Admin.PagePanelWithHideIfEmptyToJSON({
+                title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
+                  ...postDisplay,
+                  showFunding: true,
+                }), search: Admin.IdeaSearchToJSON({
+                  sortBy: Admin.IdeaSearchSortByEnum.New,
+                  filterCategoryIds: [postCategoryId],
+                  filterStatusIds: postStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+                })
+              }),
+            ] : []),
             Admin.PagePanelWithHideIfEmptyToJSON({
-              title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
-                ...postDisplay,
-                showFunding: true,
-              }), search: Admin.IdeaSearchToJSON({
+              title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
                 sortBy: Admin.IdeaSearchSortByEnum.New,
                 filterCategoryIds: [postCategoryId],
-                filterStatusIds: postStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+                filterStatusIds: postStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
               })
             }),
-          ] : []),
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [postCategoryId],
-              filterStatusIds: postStatuses.filter(s => s.name.match(/Planned/)).map(s => s.statusId),
-            })
-          }),
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [postCategoryId],
-              filterStatusIds: [
-                ...postStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
-              ],
-            })
-          }),
-          Admin.PagePanelWithHideIfEmptyToJSON({
-            title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
-              sortBy: Admin.IdeaSearchSortByEnum.New,
-              filterCategoryIds: [postCategoryId],
-              filterStatusIds: [
-                ...postStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
-              ],
-            })
-          }),
-        ],
-      }),
-      explorer: undefined,
-    }));
-    const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [roadmapPageId],
-    }));
+            Admin.PagePanelWithHideIfEmptyToJSON({
+              title: 'In progress', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+                sortBy: Admin.IdeaSearchSortByEnum.New,
+                filterCategoryIds: [postCategoryId],
+                filterStatusIds: [
+                  ...postStatuses.filter(s => s.name.match(/In progress/)).map(s => s.statusId),
+                ],
+              })
+            }),
+            Admin.PagePanelWithHideIfEmptyToJSON({
+              title: 'Completed', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
+                sortBy: Admin.IdeaSearchSortByEnum.New,
+                filterCategoryIds: [postCategoryId],
+                filterStatusIds: [
+                  ...postStatuses.filter(s => s.name.match(/Completed/)).map(s => s.statusId),
+                ],
+              })
+            }),
+          ],
+        }),
+        explorer: undefined,
+      }));
+      (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
+        menuId: randomUuid(), pageIds: [roadmapPageId],
+      }));
+    }
 
     // Post page
     const postPageId = randomUuid();
