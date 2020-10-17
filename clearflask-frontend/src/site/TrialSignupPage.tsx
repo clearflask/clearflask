@@ -15,6 +15,8 @@ import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import { saltHashPassword } from '../common/util/auth';
 import { isProd, isTracking } from '../common/util/detectEnv';
+import preloadImage from '../common/util/imageUtil';
+import { WelcomeImagePath } from './dashboard/WelcomePage';
 import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
@@ -78,7 +80,14 @@ interface State {
 }
 
 class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
-  state: State = {};
+
+  constructor(props) {
+    super(props);
+
+    this.state = {};
+
+    preloadImage(WelcomeImagePath);
+  }
 
   render() {
     if (this.props.accountStatus === Status.FULFILLED) {
@@ -213,7 +222,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       this.setState({ isSubmitting: false });
       return;
     }
-    this.props.history.push('/dashboard/create');
+    this.props.history.push('/dashboard/welcome');
   }
 }
 

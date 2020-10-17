@@ -26,15 +26,12 @@ import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
-import { Device } from '../common/DeviceContainer';
 import ScrollAnchor from '../common/util/ScrollAnchor';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
-import OnboardingControls, { setInitSignupMethodsTemplate } from './landing/OnboardingControls';
-import OnboardingDemo from './landing/OnboardingDemo';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
@@ -143,6 +140,9 @@ const styles = (theme: Theme) => createStyles({
     minWidth: 'unset',
     textTransform: 'unset',
   },
+  demo: {
+    marginBottom: theme.spacing(24),
+  },
 });
 interface State {
   scrollTo?: string;
@@ -191,11 +191,13 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       ...createTemplateOptionsDefault,
     };
     return (
-      <Container maxWidth='lg'>
+      <Container maxWidth='md' className={this.props.classes.demo}>
         <Demo
+          noSpacing
           type='demoOnly'
           demoWrap='browser'
           demoFixedHeight={500}
+          demoOverflowYScroll
           template={templater => templater.demo(opts)}
           mock={mocker => mocker.templateMock(opts)}
           settings={{
@@ -294,7 +296,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
     );
   }
 
-  onboardingDemoRef: React.RefObject<any> = React.createRef();
   renderCollectFeedback() {
     return (
       <React.Fragment>
@@ -334,20 +335,6 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           {/* Prioritize based on customer value */}
           {/* Keep your users updated */}
           {/* Explore */}
-          {/* <Demo
-            variant='content'
-            type='column'
-            title='Single Sign-On to for existing users or use our frictionless signup'
-            description='New user sign up is optimized for conversion with several choices of options for users to receive updates. The best experience is using Single Sign-On with your existing account system.'
-            initialSubPath='/embed/demo'
-            demoFixedWidth={420}
-            template={templater => {
-              setInitSignupMethodsTemplate(templater);
-              templater.styleWhite();
-            }}
-            controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
-            demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-          /> */}
           <BlockContent
             variant='content'
             title='Capture feedback publicly, internally, or on-behalf'
@@ -781,26 +768,27 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
     );
   }
 
-  renderCustomizeOther() {
-    return (
-      <React.Fragment>
-        <Demo
-          variant='heading'
-          type='column'
-          title='Choose sign-up options'
-          description='Introduce least amount of friction by choosing the right sign-up options for your product.'
-          initialSubPath='/embed/demo'
-          demoFixedWidth={420}
-          template={templater => {
-            setInitSignupMethodsTemplate(templater);
-            templater.styleWhite();
-          }}
-          controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
-          demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
-        />
-      </React.Fragment>
-    );
-  }
+  // onboardingDemoRef: React.RefObject<any> = React.createRef();
+  // renderCustomizeOther() {
+  //   return (
+  //     <React.Fragment>
+  //       <Demo
+  //         variant='heading'
+  //         type='column'
+  //         title='Choose sign-up options'
+  //         description='Introduce least amount of friction by choosing the right sign-up options for your product.'
+  //         initialSubPath='/embed/demo'
+  //         demoFixedWidth={420}
+  //         template={templater => {
+  //           setInitSignupMethodsTemplate(templater);
+  //           templater.styleWhite();
+  //         }}
+  //         controls={project => (<OnboardingControls onboardingDemoRef={this.onboardingDemoRef} templater={project.templater} />)}
+  //         demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
+  //       />
+  //     </React.Fragment>
+  //   );
+  // }
 
   renderSales() {
     return (

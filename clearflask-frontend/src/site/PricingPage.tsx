@@ -108,6 +108,8 @@ interface ConnectProps {
 }
 interface State {
   period?: Admin.PlanPricingPeriodEnum;
+  highlightedPlanid?: string;
+  callForQuote?: boolean;
 }
 class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -155,6 +157,8 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 <Grid item key={plan.planid} xs={12} sm={6} md={4}>
                   <PricingPlan
                     plan={plan}
+                    selected={this.state.highlightedPlanid === plan.planid
+                      || this.state.callForQuote && !plan.pricing}
                     actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
                     remark={plan.pricing ? TrialInfoText : 'Tell us what you\'re looking for'}
                     actionOnClick={() => {
@@ -176,7 +180,14 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                 </Grid>
               ))}
               <Grid item key='slider' xs={12} sm={6} md={4}>
-                <PricingSlider plans={plans} estimatedPercUsersBecomeActive={EstimatedPercUsersBecomeActive} />
+                <PricingSlider
+                  plans={plans}
+                  estimatedPercUsersBecomeActive={EstimatedPercUsersBecomeActive}
+                  onSelectedPlanChange={(planid, callForQuote) => this.setState({
+                    highlightedPlanid: callForQuote ? undefined : planid,
+                    callForQuote,
+                  })}
+                />
               </Grid>
             </Grid>
           </Loader>

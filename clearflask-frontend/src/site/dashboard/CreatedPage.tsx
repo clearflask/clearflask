@@ -9,7 +9,6 @@ import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
-import { vh } from '../../common/util/vhUtil';
 
 export const CreatedImagePath = '/img/dashboard/created.svg';
 
@@ -91,7 +90,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               <Typography component="h1" variant="h3" color="textPrimary">Success!</Typography>
               <Typography component="h2" variant="h5" color="textSecondary">You've created {this.props.server.store.getState().conf.conf?.name || 'your project'}</Typography>
               <img
-                alt='Project created'
+                alt=''
                 className={this.props.classes.image}
                 src={CreatedImagePath}
               />

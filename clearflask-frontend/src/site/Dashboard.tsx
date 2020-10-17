@@ -38,6 +38,7 @@ import CreatePage from './dashboard/CreatePage';
 import SettingsPage from './dashboard/SettingsPage';
 import UserSelection from './dashboard/UserSelection';
 import UsersPage from './dashboard/UsersPage';
+import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
 /** If changed, also change in ClearFlaskCreditSync.java */
@@ -202,6 +203,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           </Provider>
         );
         crumbs = [{ name: 'Home', slug: activePath }];
+        break;
+      case 'welcome':
+        setTitle('Welcome - Dashboard');
+        page = (
+          <WelcomePage />
+        );
+        crumbs = [{ name: 'Welcome', slug: activePath }];
         break;
       case 'created':
         setTitle('Success - Dashboard');
@@ -589,13 +597,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
                   activeProject ? {
                     type: 'project',
-                    name: 'Settings',
+                    name: 'Project Settings',
                     slug: 'settings',
                     projectId: activeProject.server.getProjectId(),
                     page: activeProject.editor.getPage([]),
                     hasUnsavedChanges: activeProject.hasUnsavedChanges()
                   } as MenuProject
-                    : { type: 'item', slug: 'settings', name: 'Settings' } as MenuItem,
+                    : { type: 'item', slug: 'settings', name: 'Project Settings' } as MenuItem,
+                  { type: 'item', slug: 'create', name: 'New project' } as MenuItem,
                   { type: 'item', slug: 'account', name: 'Account' } as MenuItem,
                   { type: 'item', slug: 'billing', name: 'Billing', hasNotification: billingHasNotification, offset: 1 } as MenuItem,
                   { type: 'item', slug: 'help', name: 'Help' } as MenuItem,

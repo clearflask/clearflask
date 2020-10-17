@@ -24,6 +24,13 @@ export interface CreateTemplateOptions {
   expressionsLimitEmojis?: boolean;
   expressionsAllowMultiple?: boolean;
 
+  projectPrivate?: boolean;
+  anonAllowed?: boolean;
+  webPushAllowed?: boolean;
+  emailAllowed?: boolean;
+  emailDomainAllowed?: string;
+  ssoAllowed?: boolean;
+
   infoWebsite?: string;
   infoName?: string;
   infoSlug?: string;
@@ -33,6 +40,7 @@ export const createTemplateOptionsDefault: CreateTemplateOptions = {
   templateFeedback: true,
   templateRoadmap: true,
   votingAllowed: true,
+  emailAllowed: true,
 };
 
 export default class Templater {
@@ -96,10 +104,16 @@ export default class Templater {
     if (opts.templateKnowledgeBase) this.templateKnowledgeBase();
 
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
-    if(menuProp.childProperties?.length === 1) {
+    if (menuProp.childProperties?.length === 1) {
       // If only one item in menu, just don't show it
       menuProp.delete(0);
     }
+
+    if (opts.projectPrivate) this.privateProject();
+    this.usersOnboardingAnonymous(!!opts.anonAllowed);
+    this.usersOnboardingBrowserPush(!!opts.webPushAllowed);
+    this.usersOnboardingEmail(!!opts.emailAllowed, undefined, opts.emailDomainAllowed ? [opts.emailDomainAllowed] : undefined);
+    this.usersOnboardingSso(!!opts.ssoAllowed);
   }
 
   styleWhite() {
@@ -824,26 +838,27 @@ export default class Templater {
     this._get<ConfigEditor.EnumProperty>(['users', 'onboarding', 'visibility']).set('Private');
   }
 
-  usersOnboardingEmail(enable: boolean, passwordRequirement: Admin.EmailSignupPasswordEnum = Admin.EmailSignupPasswordEnum.Optional) {
+  usersOnboardingEmail(enable: boolean, passwordRequirement?: Admin.EmailSignupPasswordEnum, allowedDomains?: string[]) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'email']).set(enable ? true : undefined);
     if (enable) {
-      this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'password']).set(passwordRequirement);
+      if (passwordRequirement !== undefined) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'password']).set(passwordRequirement);
+      if (allowedDomains !== undefined) this._get<ConfigEditor.ArrayProperty>(['users', 'onboarding', 'notificationMethods', 'email', 'allowedDomains']).setRaw(allowedDomains);
     }
   }
 
-  usersOnboardingAnonymous(enable: boolean, onlyShowIfPushNotAvailable: boolean = false) {
+  usersOnboardingAnonymous(enable: boolean, onlyShowIfPushNotAvailable?: boolean) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous']).set(enable ? true : undefined);
     if (enable) {
-      this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous', 'onlyShowIfPushNotAvailable']).set(onlyShowIfPushNotAvailable);
+      if (onlyShowIfPushNotAvailable !== undefined) this._get<ConfigEditor.BooleanProperty>(['users', 'onboarding', 'notificationMethods', 'anonymous', 'onlyShowIfPushNotAvailable']).set(onlyShowIfPushNotAvailable);
     }
   }
 
   usersOnboardingSso(enable: boolean, secretKey?: string, redirectUrl?: string, buttonTitle?: string) {
     this._get<ConfigEditor.ObjectProperty>(['users', 'onboarding', 'notificationMethods', 'sso']).set(enable ? true : undefined);
     if (enable) {
-      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'redirectUrl']).set(redirectUrl);
-      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'buttonTitle']).set(buttonTitle);
-      if (redirectUrl) this._get<ConfigEditor.StringProperty>(['ssoSecretKey']).set(secretKey);
+      if (redirectUrl !== undefined) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'redirectUrl']).set(redirectUrl);
+      if (buttonTitle !== undefined) this._get<ConfigEditor.StringProperty>(['users', 'onboarding', 'notificationMethods', 'sso', 'buttonTitle']).set(buttonTitle);
+      if (secretKey !== undefined) this._get<ConfigEditor.StringProperty>(['ssoSecretKey']).set(secretKey);
     }
   }
 

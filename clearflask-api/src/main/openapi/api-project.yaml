@@ -21,17 +21,17 @@ components:
           x-clearflask-prop: { subType: 'id' }
           type: string
         website:
-          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your website; used for linking your users back to your website.', placeholder: 'https://' }
+          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your product website.', placeholder: 'https://' }
           type: string
         name:
-          x-clearflask-prop: { order: 1, name: 'Name', description: 'Project name, typically your organization name' }
+          x-clearflask-prop: { order: 1, name: 'Name', description: 'Product name' }
           type: string
         logoUrl:
-          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Add your logo with a url. (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
+          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Show your logo (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
           description: Location of the logo to display.
           type: string
         slug:
-          x-clearflask-prop: { order: 4, name: 'Slug', description: 'Url subdomain of your project. (ie: "https://<slug>.clearflask.com") During migration, your old slug will be guaranteed to be accessible for 24hrs.' }
+          x-clearflask-prop: { order: 4, name: 'Subdomain', description: 'Customize subdomain of your project (ie: "https://<subdomain>.clearflask.com")' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'

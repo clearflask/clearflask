@@ -57,7 +57,7 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'text',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.hint,
   },
   panelSearch: {
     // (Un)comment these to align with corner

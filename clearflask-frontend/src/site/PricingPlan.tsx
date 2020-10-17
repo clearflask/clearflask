@@ -1,4 +1,4 @@
-import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, Typography } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
@@ -60,7 +60,11 @@ const styles = (theme: Theme) => createStyles({
   reallyBlurry: {
     color: 'transparent',
     textShadow: '0px 0px 3px rgba(0,0,0,0.3)',
-  }
+  },
+  customInput: {
+    fontSize: '1.4rem',
+    width: 78,
+  },
 });
 
 interface Props {
@@ -157,7 +161,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         <React.Fragment>
           <div className={this.props.classes.cardPricing}>
             <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-            <Typography component='div' variant='h4'>2000+</Typography>
+            &nbsp;&nbsp;
+              <TextField value='Custom' disabled InputProps={{ classes: { input: this.props.classes.customInput } }} />
+              &nbsp;&nbsp;
             <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;year</Typography>
           </div>
           <div className={this.props.classes.cardPricingTerms}>
@@ -204,7 +210,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       extraMau = (
         <React.Fragment>
           <Typography component='div' variant='subtitle2' color='textSecondary'>{`includes ${this.props.plan.pricing.baseMau} MAU`}</Typography>
-          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} each ${this.props.plan.pricing.unitMau} MAU`}</Typography>
+          <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} additional ${this.props.plan.pricing.unitMau} MAU`}</Typography>
         </React.Fragment>
       );
     }

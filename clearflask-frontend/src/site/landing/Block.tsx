@@ -65,14 +65,6 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '100%',
     alignSelf: 'center',
   },
-  edgeSpacing: {
-    [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(4),
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(2),
-    },
-  }
 });
 
 export interface Props extends BlockContentProps {
@@ -86,7 +78,7 @@ export interface Props extends BlockContentProps {
   icon?: React.ReactNode;
   mirror?: boolean;
   edgeType?: 'shadow' | 'outline';
-  edgeSpacing?: boolean;
+  noSpacing?: boolean;
   displayAlign?: GridItemsAlignment;
   alignItems?: GridItemsAlignment;
 }
@@ -107,7 +99,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     var demo = this.props.demo;
     if (demo && this.props.edgeType) {
       demo = (
-        <div className={`${this.props.edgeType ? this.props.classes['edge' + this.props.edgeType] : ''} ${this.props.edgeSpacing ? this.props.classes.edgeSpacing : ''}`}>
+        <div className={classNames(this.props.edgeType ? this.props.classes['edge' + this.props.edgeType] : '')}>
           {demo}
         </div>
       );
@@ -133,7 +125,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
     if (this.props.type === 'demoOnly') {
       return (
         <div
-          className={classNames(this.props.classes.spacing, this.props.className)}
+          className={classNames(!this.props.noSpacing && this.props.classes.spacing, this.props.className)}
         >
           {display}
         </div>
@@ -177,7 +169,7 @@ class Block extends Component<Props & WithStyles<typeof styles, true> & RouteCom
       const isLargeDemo = this.props.type === 'largeDemo';
       return (
         <Grid
-          className={`${isHero ? this.props.classes.heroSpacing : this.props.classes.spacing} ${this.props.className || ''}`}
+          className={classNames(!this.props.noSpacing && (isHero ? this.props.classes.heroSpacing : this.props.classes.spacing), this.props.className)}
           container
           wrap='wrap-reverse'
           direction={!this.props.mirror ? 'row-reverse' : undefined}

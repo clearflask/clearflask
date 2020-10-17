@@ -12,14 +12,6 @@ import DemoApp, { deleteProject, getProject, Project } from '../DemoApp';
 import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
-  edgeSpacing: {
-    [theme.breakpoints.up('md')]: {
-      padding: theme.spacing(4),
-    },
-    [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(2),
-    },
-  }
 });
 
 interface Props {
@@ -34,9 +26,9 @@ interface Props {
   demoWrapPadding?: number | string,
   demoOverflowYScroll?: boolean;
   demoPreventInteraction?: boolean
+  demoProject?: Promise<Project>;
   scale?: number;
   settings?: StateSettings;
-  edgeSpacing?: boolean;
   containerPortal?: boolean;
 }
 class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & WithStyles<typeof styles, true>> {
@@ -51,7 +43,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
       ...props.settings,
       demoPortalContainer: this.containerRef,
     } : props.settings;
-    this.projectPromise = getProject(props.template, props.mock, undefined, this.settings);
+    this.projectPromise = props.demoProject || getProject(props.template, props.mock, undefined, this.settings);
   }
 
   componentWillUnmount() {
@@ -61,77 +53,74 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
   render() {
     const { classes, ...blockProps } = this.props;
 
+    var demoPromised = (
+      <Promised promise={this.projectPromise} renderLoading={() => (
+        <div key='loading' style={{
+          width: this.props.demoFixedWidth,
+          height: this.props.demoFixedHeight,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          <Loading showImmediately />
+        </div>
+      )} render={project => {
+        var demo = this.props.demo
+          ? this.props.demo(project)
+          : (
+            <DemoApp
+              server={project.server}
+              intialSubPath={this.props.initialSubPath}
+              settings={this.settings}
+            />
+          );
+        if (this.props.scale !== undefined) {
+          demo = (
+            <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
+              {demo}
+            </Scale>
+          );
+        }
+        demo = (
+          <div
+            onClickCapture={this.props.demoPreventInteraction ? undefined : (e) => this.onClickCapture(e, project)}
+            style={{
+              height: this.props.demoFixedHeight,
+              width: this.props.demoFixedWidth,
+              overflowX: 'hidden',
+              overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'hidden',
+              position: 'relative', // For containerPortal
+              pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
+            }}
+            ref={this.containerRef}
+          >
+            {demo}
+          </div>
+        );
+        return demo;
+      }} />
+    );
+    if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
+      const isDark = this.props.demoWrap === 'browser-dark';
+      demoPromised = (
+        <FakeBrowser
+          darkMode={isDark}
+          contentPadding={this.props.demoWrapPadding}
+          fixedWidth={this.props.demoFixedWidth}
+          fixedHeight={this.props.demoFixedHeight}
+        >
+          {demoPromised}
+        </FakeBrowser>
+      );
+    }
+
     return (
       <Block
         {...blockProps}
-        edgeSpacing={undefined}
         controls={this.props.controls && (
           <Promised promise={this.projectPromise} render={project => this.props.controls && this.props.controls(project)} />
         )}
-        demo={(
-          <Promised promise={this.projectPromise} renderLoading={() => (
-            <div key='loading' style={{
-              width: this.props.demoFixedWidth,
-              height: this.props.demoFixedHeight,
-            }}>
-              <Loading {...this.props} />
-            </div>
-          )} render={project => {
-            var demo = this.props.demo
-              ? this.props.demo(project)
-              : (
-                <DemoApp
-                  server={project.server}
-                  intialSubPath={this.props.initialSubPath}
-                  settings={this.settings}
-                />
-              );
-            if (this.props.edgeSpacing) {
-              demo = (
-                <div className={this.props.classes.edgeSpacing}>
-                  {demo}
-                </div>
-              );
-            }
-            if (this.props.scale !== undefined) {
-              demo = (
-                <Scale scale={this.props.scale} height={this.props.demoFixedHeight}>
-                  {demo}
-                </Scale>
-              );
-            }
-            demo = (
-              <div
-                onClickCapture={this.props.demoPreventInteraction ? undefined : (e) => this.onClickCapture(e, project)}
-                style={{
-                  height: this.props.demoFixedHeight,
-                  width: this.props.demoFixedWidth,
-                  overflowX: 'hidden',
-                  overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'hidden',
-                  position: 'relative', // For containerPortal
-                  pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
-                }}
-                ref={this.containerRef}
-              >
-                {demo}
-              </div>
-            );
-            if (this.props.demoWrap === 'browser' || this.props.demoWrap === 'browser-dark') {
-              const isDark = this.props.demoWrap === 'browser-dark';
-              demo = (
-                <FakeBrowser
-                  darkMode={isDark}
-                  contentPadding={this.props.demoWrapPadding}
-                  fixedWidth={this.props.demoFixedWidth}
-                  fixedHeight={this.props.demoFixedHeight}
-                >
-                  {demo}
-                </FakeBrowser>
-              );
-            }
-            return demo;
-          }} />
-        )}
+        demo={demoPromised}
       />
     );
   }

@@ -6,6 +6,9 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
 
+type Marks = Array<{ val: number, planid: string }>;
+const quadrupleStepAfterIteration = 17;
+
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
@@ -56,16 +59,20 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   plans: Admin.Plan[];
   estimatedPercUsersBecomeActive: number;
+  onSelectedPlanChange: (planid: string, callForQuote: boolean) => void;
 }
 interface State {
   mauIndex: number;
-  marks: Array<number>;
+  marks: Marks;
 }
 class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {
     mauIndex: 18,
     marks: this.getMarks(),
   };
+  sliderWasTouched?: boolean;
+  lastSelectedPlanid?: string;
+  lastCallForQuote?: boolean;
 
   render() {
     if (this.props.plans.length === 0) return null;
@@ -73,18 +80,22 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
     const mauIndex = this.state.mauIndex;
 
     const callForQuote = mauIndex >= this.state.marks.length - 1;
-    const mau = callForQuote
+    const mauMark = callForQuote
       ? this.state.marks[this.state.marks.length - 1]
       : this.state.marks[mauIndex];
+    const mau = mauMark.val;
 
-    var plan: Admin.Plan | undefined;
-    this.props.plans.forEach(p => {
-      if (!plan
-        || (p.pricing && p.pricing!.baseMau < mau && mau <= p.pricing.baseMau)) {
-        plan = p;
-      }
-    });
+    const plan = this.props.plans.find(p => p.planid === mauMark.planid);
     if (!plan) return null;
+
+    if (this.sliderWasTouched
+      && (this.lastSelectedPlanid !== plan.planid
+        || this.lastCallForQuote !== callForQuote)) {
+      this.props.onSelectedPlanChange(plan.planid, callForQuote);
+      this.lastSelectedPlanid = plan.planid;
+      this.lastCallForQuote = callForQuote;
+    }
+
     const pricing: Admin.PlanPricing = plan.pricing!;
 
     const monthlyUsers = Math.round(mau / this.props.estimatedPercUsersBecomeActive);
@@ -117,7 +128,10 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
             step={1}
             orientation='vertical'
             max={max}
-            onChange={(e, val) => this.setState({ mauIndex: (val as any as number) })}
+            onChange={(e, val) => {
+              this.sliderWasTouched = true;
+              this.setState({ mauIndex: (val as any as number) })
+            }}
           />
           <div className={classNames(this.props.classes.floating, this.props.classes.info)} style={{ bottom }}>
             {callForQuote ? (
@@ -150,25 +164,31 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
     return val.toLocaleString('en-US');
   }
 
-  getMarks() {
+  getMarks(): Marks {
     var fractionsToInclude = 2;
     var currMaxMau = 2001;
     const points = this.props.plans.slice().reverse().flatMap(plan => {
-      const pts: Array<number> = [];
+      var step = 1;
+      const pts: Marks = [];
       if (!plan.pricing) return pts;
 
       var currPt: number = plan.pricing.baseMau;
       while (currPt < currMaxMau) {
-        pts.push(currPt);
+        pts.push({ val: currPt, planid: plan.planid });
         currPt += plan.pricing.unitMau;
+        if (step++ >= quadrupleStepAfterIteration) {
+          currPt += plan.pricing.unitMau;
+          currPt += plan.pricing.unitMau;
+          currPt += plan.pricing.unitMau;
+        }
       }
 
       currMaxMau = plan.pricing.baseMau;
       return pts;
     });
-    points.sort((l, r) => l - r);
+    points.sort((l, r) => l.val - r.val);
     while (fractionsToInclude > 0) {
-      points.unshift(points[0] / 2);
+      points.unshift({ val: points[0].val / 2, planid: points[0].planid });
       fractionsToInclude--;
     }
     return points;

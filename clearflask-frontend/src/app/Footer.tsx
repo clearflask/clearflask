@@ -11,7 +11,10 @@ const styles = (theme: Theme) => createStyles({
   footerSpacing: {
     width: '100%',
     maxWidth: '1024px',
-    padding: theme.spacing(0, 1),
+    padding: theme.spacing(0, 4),
+    [theme.breakpoints.down('xs')]: {
+      padding: theme.spacing(0, 1),
+    },
     margin: `0px auto`,
   },
   grow: {

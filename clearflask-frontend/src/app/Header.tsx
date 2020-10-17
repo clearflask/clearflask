@@ -41,7 +41,10 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
-    padding: theme.spacing(1, 2, 2),
+    padding: theme.spacing(2, 4, 2),
+    [theme.breakpoints.down('xs')]: {
+      padding: theme.spacing(2, 1, 2),
+    },
   },
   menu: {
     flex: 1,
@@ -253,7 +256,7 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       var logo = this.props.config && (this.props.config.logoUrl || this.props.config.name) ? (
         <div className={this.props.classes.logo}>
           {this.props.config.logoUrl && (
-            <img alt='logo' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
+            <img alt='' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
           )}
           {name}
         </div>

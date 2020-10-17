@@ -1,6 +1,6 @@
 import React from 'react';
-import Loading, { Props as LoadingProps } from '../app/utils/Loading';
 import ErrorMsg from '../app/ErrorMsg';
+import Loading, { Props as LoadingProps } from '../app/utils/Loading';
 
 interface Props<T> extends LoadingProps {
   promise: Promise<T>,

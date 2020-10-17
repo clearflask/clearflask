@@ -1,6 +1,7 @@
 import { MenuItem, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/SearchRounded';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { ActionMeta } from 'react-select/lib/types';
@@ -35,6 +36,9 @@ const styles = (theme: Theme) => createStyles({
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
   },
+  filterIcon: {
+    color: theme.palette.text.hint,
+  }
 });
 
 interface Props {
@@ -86,7 +90,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
             overrideComponents={{
               DropdownIndicator: (dropdownIndicatorProps) => (
-                <FilterIcon fontSize='inherit' className={dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon} />
+                <FilterIcon fontSize='inherit' className={classNames(dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon, this.props.classes.filterIcon)} />
               ),
               MenuList: (menuProps) => {
                 var newSearch: React.ReactNode | undefined;
