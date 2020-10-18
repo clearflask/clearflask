@@ -1,4 +1,4 @@
-import { Button, Dialog, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { Button, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import AndroidIcon from '@material-ui/icons/Android';
@@ -17,7 +17,6 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
-import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
@@ -129,6 +128,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
           onChange={(e, val) => {
             if (val === 'users') this.setState({ modsOnly: false });
             if (val === 'moderators') this.setState({ modsOnly: true });
+            this.updateSearchText(this.state.searchText);
           }}
         >
           <ToggleButton value={'users'}>Users</ToggleButton>
@@ -272,7 +272,6 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                             <TableCell key='balance'>Balance</TableCell>
                           )}
                           <TableCell key='notifications'>Notifications</TableCell>
-                          <TableCell key='edit'></TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -300,47 +299,6 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                               {user.iosPush && (<IosIcon fontSize='inherit' />)}
                               {user.androidPush && (<AndroidIcon fontSize='inherit' />)}
                             </Typography></TableCell>
-                            <TableCell>
-                              <Button key='edit' variant='text'
-                                onClick={e => this.setState({ editExpandedForUserId: user.userId })}>
-                                <Typography variant='caption'>Edit</Typography>
-                              </Button>
-                              {this.state.editExpandedForUserId !== undefined && (
-                                <Dialog
-                                  open={this.state.editExpandedForUserId === user.userId}
-                                  onClose={() => this.setState({ editExpandedForUserId: '' })}
-                                  scroll='body'
-                                  fullScreen={this.props.mediaQuery}
-                                  fullWidth
-                                >
-                                  <UserEdit
-                                    key={`edit${user.userId}`}
-                                    server={this.props.server}
-                                    user={user}
-                                    credits={this.props.credits}
-                                    isMe={this.props.loggedInUser?.userId === user.userId}
-                                    isInsideDialog
-                                    onUpdated={userUpdated => {
-                                      const updatedSearchResult = [...this.state.searchResult!];
-                                      updatedSearchResult[index] = userUpdated;
-                                      this.setState({
-                                        searchResult: updatedSearchResult,
-                                        editExpandedForUserId: '',
-                                      });
-                                    }}
-                                    onDeleted={() => {
-                                      const updatedSearchResult = [...this.state.searchResult!];
-                                      updatedSearchResult.splice(index, 1);
-                                      this.setState({
-                                        searchResult: updatedSearchResult,
-                                        editExpandedForUserId: '',
-                                      });
-                                    }}
-                                    onClose={() => this.setState({ editExpandedForUserId: '' })}
-                                  />
-                                </Dialog>
-                              )}
-                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
