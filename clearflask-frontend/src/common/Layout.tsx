@@ -1,5 +1,6 @@
 import { AppBar, Divider, Drawer, Fade, Hidden, IconButton, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import InfoIcon from '@material-ui/icons/InfoOutlined';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
@@ -46,6 +47,15 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
     background: theme.palette.background.default,
   },
+  previewBar: {
+    display: 'flex',
+    padding: theme.spacing(0.5, 1),
+    alignItems: 'center',
+    borderBottom: '1px dashed ' + theme.palette.grey[300],
+  },
+  previewBarItem: {
+    margin: theme.spacing(1),
+  },
   appBar: {
     zIndex: Math.max(theme.zIndex.modal, theme.zIndex.drawer) + 1,
   },
@@ -74,6 +84,8 @@ interface Props {
   toolbarLeft: React.ReactNode;
   toolbarRight?: React.ReactNode;
   menu: React.ReactNode;
+  previewBar?: React.ReactNode;
+  previewBarInfo?: React.ReactNode;
   preview?: React.ReactNode;
   barBottom?: React.ReactNode;
   children: React.ReactNode;
@@ -99,6 +111,31 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
   }
 
   render() {
+    const previewBar = (this.props.previewBar || this.props.previewBarInfo) && (
+      <React.Fragment>
+        {this.props.previewBar ? this.props.previewBar : (
+          <div className={this.props.classes.previewBar}>
+            <InfoIcon className={this.props.classes.previewBarItem} />
+            <div className={this.props.classes.previewBarItem}>
+              {this.props.previewBarInfo}
+            </div>
+          </div>
+        )}
+        {/* <Divider /> */}
+      </React.Fragment>
+    );
+
+    const preview = this.props.preview && (
+      <React.Fragment>
+        <div className={this.props.classes.toolbar} />
+        <Divider />
+        {previewBar}
+        <div style={{ flex: '1 1 auto' }}>
+          {this.props.preview}
+        </div>
+      </React.Fragment>
+    );
+
     return (
       <div ref={this.containerRef}>
         <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
@@ -209,11 +246,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
                     container: () => this.containerRef.current!
                   }}
                 >
-                  <div className={this.props.classes.toolbar} />
-                  <Divider />
-                  <div style={{ flex: '1 1 auto' }}>
-                    {this.props.preview}
-                  </div>
+                  {preview}
                 </Drawer>
               </Hidden>
               <Hidden smDown implementation='css'>
@@ -231,13 +264,7 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
                     container: () => this.containerRef.current!
                   }}
                 >
-                  <div className={this.props.classes.toolbar} />
-                  <Divider />
-                  <div style={{
-                    flex: '1 1 auto',
-                  }}>
-                    {this.props.preview}
-                  </div>
+                  {preview}
                 </Drawer>
               </Hidden>
             </React.Fragment>

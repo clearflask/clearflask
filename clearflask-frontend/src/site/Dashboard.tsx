@@ -1,4 +1,4 @@
-import { Button, Collapse, IconButton, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -24,8 +24,8 @@ import Crumbs from '../common/config/settings/Crumbs';
 import Menu, { MenuItem, MenuProject } from '../common/config/settings/Menu';
 import Page from '../common/config/settings/Page';
 import ProjectSettings from '../common/config/settings/ProjectSettings';
-import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout from '../common/Layout';
+import UserDisplayMe from '../common/UserDisplayMe';
 import notEmpty from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { isProd } from '../common/util/detectEnv';
@@ -69,6 +69,10 @@ const styles = (theme: Theme) => createStyles({
   },
   selectProjectLabel: {
     color: theme.palette.text.secondary,
+  },
+  previewBarText: {
+    display: 'flex',
+    alignItems: 'baseline',
   },
 });
 
@@ -186,6 +190,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
     var page;
     var preview;
+    var previewBar;
+    var previewBarInfo;
     var crumbs: { name: string, slug: string }[] | undefined;
     var showProjectSelect: boolean = false;
     var showCreateProjectWarning: boolean = false;
@@ -344,12 +350,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <CreatePage
             previewProject={this.createProject}
             projectCreated={(projectId) => {
-              this.setState({ selectedProjectId: projectId });
-              this.pageClicked('created');
+              this.setState({ selectedProjectId: projectId },
+                () => this.pageClicked('created'));
             }}
           />
         );
         crumbs = [{ name: 'Create', slug: activePath }];
+        previewBarInfo = this.createProject && 'Preview project with sample data.';
         preview = this.createProject && (
           <DemoApp
             key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
@@ -401,6 +408,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             </React.Fragment>
           );
         }
+        previewBarInfo = (
+          <div className={this.props.classes.previewBarText}>
+            Preview live changes as&nbsp;
+            <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+              <UserDisplayMe variant='text' />
+            </Provider>
+          </div>
+        );
         preview = (
           <DemoApp
             key={activeProject.configVersion}
@@ -576,15 +591,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               {!isSelectProjectUserInMenu && selectProjectUser}
             </div>
           }
-          toolbarRight={
-            <IconButton
-              color="inherit"
-              aria-label="Preview changes"
-              onClick={() => ServerAdmin.get(this.props.forceMock).dispatchAdmin().then(d => d.accountLogoutAdmin())}
-            >
-              <LogoutIcon />
-            </IconButton>
-          }
+          previewBar={previewBar}
+          previewBarInfo={previewBarInfo}
           preview={preview}
           menu={(
             <div>

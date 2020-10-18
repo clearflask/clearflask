@@ -1,14 +1,14 @@
 
-import { Grid, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import DividerCorner from '../../app/utils/DividerCorner';
+import SubmitButton from '../../common/SubmitButton';
 import UpdatableField from '../../common/UpdatableField';
 import { saltHashPassword } from '../../common/util/auth';
-import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
   details: {
@@ -74,6 +74,16 @@ class SettingsPage extends Component<ConnectProps & WithStyles<typeof styles, tr
             }))}
             helperText='Warning: Token will not be shown again. Resetting a token invalidates previous one.'
           /></Grid>
+        </Grid>
+        <Grid container alignItems='baseline' className={this.props.classes.item}>
+          <Grid item xs={12} sm={6}><Typography>Account sign out</Typography></Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              disabled={this.state.isSubmitting}
+              // style={{ color: !this.state.isSubmitting ? this.props.theme.palette.error.main : undefined }}
+              onClick={() => ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin())}
+            >Sign out</Button>
+          </Grid>
         </Grid>
         <Grid container alignItems='baseline' className={this.props.classes.item}>
           <Grid item xs={12} sm={6}><Typography>Account deletion</Typography></Grid>
