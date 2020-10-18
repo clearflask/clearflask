@@ -67,7 +67,7 @@ interface State {
 }
 class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {
-    mauIndex: 18,
+    mauIndex: 6,
     marks: this.getMarks(),
   };
   sliderWasTouched?: boolean;
@@ -165,8 +165,8 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
   }
 
   getMarks(): Marks {
-    var fractionsToInclude = 2;
-    var currMaxMau = 2001;
+    var fractionsToInclude = 1;
+    var currMaxMau = 1201;
     const points = this.props.plans.slice().reverse().flatMap(plan => {
       var step = 1;
       const pts: Marks = [];

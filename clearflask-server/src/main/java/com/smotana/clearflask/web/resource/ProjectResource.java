@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -80,6 +81,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private CommentStore commentStore;
     @Inject
     private VoteStore voteStore;
+    @Inject
+    private PlanStore planStore;
     @Inject
     private AuthCookie authCookie;
 
@@ -201,11 +204,16 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, ConfigAdmin configAdmin, String versionLast) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+        Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);
+
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
                 projectId,
                 Optional.ofNullable(Strings.emptyToNull(versionLast)),
                 versionedConfigAdmin);
+
         return versionedConfigAdmin;
     }
 

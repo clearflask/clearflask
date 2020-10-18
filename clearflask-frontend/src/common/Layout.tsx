@@ -50,6 +50,7 @@ const styles = (theme: Theme) => createStyles({
   previewBar: {
     display: 'flex',
     padding: theme.spacing(0.5, 1),
+    color: theme.palette.text.secondary,
     alignItems: 'center',
     borderBottom: '1px dashed ' + theme.palette.grey[300],
   },

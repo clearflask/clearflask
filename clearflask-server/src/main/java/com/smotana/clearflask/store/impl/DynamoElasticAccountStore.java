@@ -47,6 +47,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -56,7 +57,6 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -146,14 +146,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                         "type", "keyword"))
                                 .build())), XContentType.JSON),
                         RequestOptions.DEFAULT);
-            } catch (ResponseException ex) {
-                if (ex.getResponse().getStatusLine().getStatusCode() == 400 &&
-                        (ex.getMessage().contains("index_already_exists_exception")
-                                || ex.getMessage().contains("IndexAlreadyExistsException"))) {
-                    log.debug("Not creating index if already exists for account");
-                } else {
-                    throw ex;
-                }
+            } catch (ElasticsearchStatusException ex) {
+                log.debug("Not creating index if already exists for account", ex);
             }
         }
     }

@@ -8,18 +8,29 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.FeaturesTable;
+import com.smotana.clearflask.api.model.FeaturesTableFeatures;
+import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.PlanPerk;
+import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
+import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.Catalogs;
-import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.Catalog;
+import org.killbill.billing.client.model.gen.Phase;
+import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.Usage;
 
+import javax.ws.rs.core.Response;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Function;
@@ -83,13 +94,16 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     protected void serviceStart() throws Exception {
         Catalogs catalogs = catalogApi.getCatalogJson(null, null, KillBillUtil.roDefault());
         Catalog catalog = catalogs.stream().max(Comparator.comparing(Catalog::getEffectiveDate)).get();
-        Product product = catalog.getProducts().stream().filter(p -> "clearflask".equals(p.getName())).findAny().get();
         ImmutableList<Plan> plans = AVAILABLE_PLANS_BUILDER.entrySet().stream().map(e -> {
             // Oh god this is just terrible, this is what happens when you check in at 4am
             String planName = e.getKey();
-            org.killbill.billing.client.model.gen.Plan plan = product.getPlans().stream().filter(p -> planName.equals(p.getName())).findAny().get();
+            org.killbill.billing.client.model.gen.Plan plan = catalog.getProducts().stream()
+                    .flatMap(p -> p.getPlans().stream())
+                    .filter(p -> planName.equals(p.getName()))
+                    .findAny()
+                    .get();
             Phase evergreen = plan.getPhases().stream().filter(p -> PhaseType.EVERGREEN.name().equals(p.getType())).findAny().get();
-            long basePrice = evergreen.getFixedPrices().get(0).getValue().longValueExact();
+            long basePrice = evergreen.getPrices().get(0).getValue().longValueExact();
             Usage usage = evergreen.getUsages().get(0);
             PeriodEnum period;
             if (BillingPeriod.MONTHLY.name().equals(usage.getBillingPeriod())) {
@@ -97,9 +111,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             } else {
                 period = PeriodEnum.YEARLY;
             }
-            long baseMau = Long.parseLong(usage.getTiers().get(0).getBlocks().get(0).getSize());
+            long baseMau = Double.valueOf(usage.getTiers().get(0).getBlocks().get(0).getSize()).longValue();
             long unitPrice = usage.getTiers().get(1).getBlocks().get(0).getPrices().get(0).getValue().longValueExact();
-            long unitMau = Long.parseLong(usage.getTiers().get(1).getBlocks().get(0).getSize());
+            long unitMau = Double.valueOf(usage.getTiers().get(1).getBlocks().get(0).getSize()).longValue();
             PlanPricing planPricing = PlanPricing.builder()
                     .basePrice(basePrice)
                     .baseMau(baseMau)
@@ -111,7 +125,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         }).collect(ImmutableList.toImmutableList());
         availablePlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
                 .collect(ImmutableMap.toImmutableMap(
-                        p -> p.getPlanid(),
+                        Plan::getPlanid,
                         p -> p));
         plansGetResponse = new PlansGetResponse(
                 availablePlans.values().asList(),
@@ -143,6 +157,29 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public Optional<Plan> getPlan(String planId) {
         return Optional.ofNullable(availablePlans.get(planId));
+    }
+
+    @Override
+    public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException {
+        switch (planId) {
+            case "growth-monthly":
+                // Restrict Single Sign-On
+                if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use SSO with your plan");
+                }
+                // Restrict Private projects
+                if (config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility with your plan");
+                }
+                // Restrict Site template
+                if (config.getStyle().getTemplates() != null) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Templates with your plan");
+                }
+                break;
+            case "standard-monthly":
+            default:
+                break;
+        }
     }
 
     public static Module module() {

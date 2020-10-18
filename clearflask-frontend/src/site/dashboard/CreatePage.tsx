@@ -61,6 +61,9 @@ const styles = (theme: Theme) => createStyles({
     flexWrap: 'wrap',
     alignItems: 'baseline',
   },
+  flexBreak: {
+    width: '100%',
+  },
 });
 
 interface Props {
@@ -130,6 +133,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   checked={!!this.state.templateRoadmap && !!this.state.templateFeedback}
                   onChange={() => this.setStateAndPreview({ templateRoadmap: !this.state.templateRoadmap })}
                 />
+                <div className={this.props.classes.flexBreak} />
                 <TemplateCard
                   title='Changelog'
                   content='Update your users with new changes to your product.'

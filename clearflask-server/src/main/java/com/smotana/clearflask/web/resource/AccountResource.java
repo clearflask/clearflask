@@ -36,6 +36,7 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -89,6 +90,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private PlanStore planStore;
     @Inject
     private LegalStore legalStore;
+    @Inject
+    private ProjectStore projectStore;
     @Inject
     private PasswordUtil passwordUtil;
     @Inject
@@ -295,6 +298,16 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         accountSession.getAccountId(), newPlanid);
                 throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
+
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            account.getProjectIds().stream()
+                    .map(projectId -> projectStore.getProject(projectId, true))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(project -> planStore.verifyConfigMeetsPlanRestrictions(newPlanid, project.getVersionedConfigAdmin().getConfig()));
+
             billing.changePlan(accountSession.getAccountId(), newPlanid);
             account = accountStore.setPlan(accountSession.getAccountId(), newPlanid).getAccount();
         }

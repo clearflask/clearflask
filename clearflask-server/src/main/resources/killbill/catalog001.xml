@@ -106,7 +106,7 @@
                     <recurringPrice>
                         <price>
                             <currency>USD</currency>
-                            <value>20.00</value>
+                            <value>50.00</value>
                         </price>
                     </recurringPrice>
                 </recurring>
@@ -119,7 +119,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>40</size>
+                                        <size>50</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -134,11 +134,11 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>10</size>
+                                        <size>50</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>5</value>
+                                                <value>30</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>
@@ -191,7 +191,7 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>400</size>
+                                        <size>300</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
@@ -206,11 +206,11 @@
                                 <blocks>
                                     <tieredBlock>
                                         <unit>active-user</unit>
-                                        <size>100</size>
+                                        <size>300</size>
                                         <prices>
                                             <price>
                                                 <currency>USD</currency>
-                                                <value>50</value>
+                                                <value>100</value>
                                             </price>
                                         </prices>
                                         <max>-1</max>

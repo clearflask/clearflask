@@ -356,7 +356,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           />
         );
         crumbs = [{ name: 'Create', slug: activePath }];
-        previewBarInfo = this.createProject && 'Preview project with sample data.';
+        previewBarInfo = this.createProject && 'Project preview with sample data.';
         preview = this.createProject && (
           <DemoApp
             key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
@@ -410,7 +410,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         previewBarInfo = (
           <div className={this.props.classes.previewBarText}>
-            Preview live changes as&nbsp;
+            Preview changes live as&nbsp;
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserDisplayMe variant='text' />
             </Provider>
@@ -462,7 +462,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
 
     var billingHasNotification: boolean = false;
     switch (this.props.account.subscriptionStatus) {
-      case AdminClient.SubscriptionStatus.ActiveTrial:
       case AdminClient.SubscriptionStatus.ActivePaymentRetry:
       case AdminClient.SubscriptionStatus.ActiveNoRenewal:
       case AdminClient.SubscriptionStatus.TrialExpired:
@@ -471,6 +470,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         billingHasNotification = true;
         break;
       default:
+      case AdminClient.SubscriptionStatus.ActiveTrial:
       case AdminClient.SubscriptionStatus.Pending:
       case AdminClient.SubscriptionStatus.Active:
         break;
@@ -652,7 +652,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             pageClicked={this.pageClicked.bind(this)}
           />
           {page}
-          {activeProject && (this.state.titleClicked || 0) >= 5 && (
+          {activeProject && (this.state.titleClicked || 0) >= 10 && (
             <DividerCorner title='Configuration dump'>
               <ConfigView editor={activeProject.editor} />
             </DividerCorner>
