@@ -304,7 +304,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         )}
         <Demo
           variant='heading-main'
-          title='Ask your customer what they need'
+          title='Ask your customers what they need'
           description='Collect customer feedback from all your support channels seamlessly into one scalable funnel. Drive your product forward with customers in mind.'
           alignItems='flex-start'
           imagePath='/img/landing/listen.svg'

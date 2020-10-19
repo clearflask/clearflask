@@ -1,24 +1,11 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -69,6 +56,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -220,25 +208,31 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(ACCOUNT_INDEX)
                         .source(new SearchSourceBuilder()
-                                .fetchSource(true)
+                                .fetchSource(false)
                                 .query(queryBuilder)),
-                cursorOpt, ImmutableList.of("name"), Optional.empty(), useAccurateCursor, pageSizeOpt, configSearch,
-                ImmutableSet.of("name", "email"));
+                cursorOpt, ImmutableList.of("name"), Optional.empty(), useAccurateCursor, pageSizeOpt, configSearch, ImmutableSet.of());
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         if (hits.length == 0) {
             return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
         }
 
+        ImmutableList<Account> accounts = dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
+                .withPrimaryKeys(Arrays.stream(hits)
+                        .map(hit -> accountSchema.primaryKey(ImmutableMap.of(
+                                "accountId", hit.getId())))
+                        .toArray(PrimaryKey[]::new)))
+                .getTableItems()
+                .values()
+                .stream()
+                .flatMap(Collection::stream)
+                .map(i -> accountSchema.fromItem(i))
+                .collect(ImmutableList.toImmutableList());
+
+
         return new SearchAccountsResponse(
-                Arrays.stream(hits)
-                        .map(SearchHit::getId)
-                        .collect(ImmutableList.toImmutableList()),
-                Arrays.stream(hits)
-                        .map(hit -> {
-                            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-                            return new com.smotana.clearflask.api.model.Account((String) sourceAsMap.get("name"), (String) sourceAsMap.get("email"));
-                        }).collect(ImmutableList.toImmutableList()),
+                accounts.stream().map(Account::getAccountId).collect(ImmutableList.toImmutableList()),
+                accounts.stream().map(Account::toAccount).collect(ImmutableList.toImmutableList()),
                 searchResponseWithCursor.getCursorOpt());
     }
 

@@ -12,11 +12,7 @@ import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -159,6 +155,12 @@ public interface AccountStore {
          */
         public String getClearFlaskGuid() {
             return getAccountId();
+        }
+
+        public com.smotana.clearflask.api.model.Account toAccount() {
+            return new com.smotana.clearflask.api.model.Account(
+                    getName(),
+                    getEmail());
         }
 
         public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
