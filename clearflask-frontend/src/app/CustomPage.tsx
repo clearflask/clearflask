@@ -185,7 +185,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.title) {
         top = (
           <DividerCorner
-            height='90%'
+            height={this.props.page.description ? 20 : 0}
             title={this.props.page.title}
           >
             {top}

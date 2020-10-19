@@ -104,7 +104,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
           width={this.props.createShown ? 80 : (
             (this.props.createSize || 0) + (this.props.searchSize || 0) + 20
           )}
-          height={this.props.createShown ? 180 : 0}
+          height={this.props.createShown ? 180 : 20}
         >
           {results}
         </DividerCorner>

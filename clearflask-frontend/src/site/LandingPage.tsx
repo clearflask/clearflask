@@ -490,7 +490,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                     Payment provider
                     &nbsp;
                     <PostStatusIframe
-                      postId='customer-segmentation-and-analytics'
+                      postId='payment-provider'
                       height={14}
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />

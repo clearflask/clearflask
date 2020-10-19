@@ -4,12 +4,9 @@ import com.google.common.base.Strings;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -127,7 +124,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         if (hasRole) {
             log.debug("User does have role {}", role);
         } else {
-            log.info("User doesn't have role {}", role);
+            log.debug("User doesn't have role {}", role);
         }
         return hasRole;
     }
@@ -251,7 +248,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 if (userSession.isPresent() && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
                     return true;
                 }
-                Optional<ProjectStore.Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
+                Optional<Project> projectOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true);
                 if (!projectOpt.isPresent()) {
                     log.trace("Role {} missing project", role);
                     return false;
@@ -263,6 +260,25 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                         .getOnboarding()
                         .getVisibility();
                 return Onboarding.VisibilityEnum.PUBLIC.equals(visibility);
+            case Role.PROJECT_MODERATOR:
+                return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
+                        && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
+                        && userSession.get().getIsMod() == Boolean.TRUE;
+            case Role.PROJECT_MODERATOR_ACTIVE:
+                accountOpt = projectStore.getProject(pathParamProjectIdOpt.get(), true)
+                        .map(Project::getAccountId)
+                        .flatMap(accountStore::getAccountByAccountId);
+                if (!accountOpt.isPresent()) {
+                    log.trace("Role {} missing account from projectId {}", role, pathParamProjectIdOpt.get());
+                    return false;
+                }
+                if (!Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(accountOpt.get().getStatus())) {
+                    log.trace("Role {} with inactive account status {}", role, accountOpt.get().getStatus());
+                    return false;
+                }
+                return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
+                        && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())
+                        && userSession.get().getIsMod() == Boolean.TRUE;
             case Role.PROJECT_USER:
                 return userSession.isPresent() && pathParamProjectIdOpt.isPresent()
                         && userSession.get().getProjectId().equals(pathParamProjectIdOpt.get());

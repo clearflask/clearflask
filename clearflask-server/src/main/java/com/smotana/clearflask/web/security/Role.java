@@ -28,6 +28,16 @@ public class Role {
     public static final String PROJECT_ANON = "PROJECT_ANON";
     /**
      * Applies to entity that is registered to the project specified in path parameter
+     * and has moderator privileges.
+     */
+    public static final String PROJECT_MODERATOR = "PROJECT_MODERATOR";
+    /**
+     * Applies to entity that is registered to the project specified in path parameter
+     * and has moderator privileges and the account is active.
+     */
+    public static final String PROJECT_MODERATOR_ACTIVE = "PROJECT_MODERATOR_ACTIVE";
+    /**
+     * Applies to entity that is registered to the project specified in path parameter
      */
     public static final String PROJECT_USER = "PROJECT_USER";
     /**

@@ -9,19 +9,14 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import java.io.IOException;
 
 @Slf4j
 public class LogExFilter implements Filter {
 
     public interface Config {
-        @DefaultValue("Broken pipe")
+        @DefaultValue("Broken pipe|Connection reset by peer")
         String ignoreMessageRegex();
     }
 

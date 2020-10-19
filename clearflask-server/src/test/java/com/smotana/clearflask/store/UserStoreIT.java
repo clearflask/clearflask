@@ -290,12 +290,12 @@ public class UserStoreIT extends AbstractIT {
         store.createIndex(user.getProjectId()).get();
         store.createUser(user).getIndexingFuture().get();
 
-        UserSession session1 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        UserSession session1 = store.createSession(user, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         log.info("Created session 1 {}", session1);
         assertTrue(store.getSession(session1.getSessionId()).isPresent());
         assertEquals(session1, store.getSession(session1.getSessionId()).get());
 
-        UserSession session2 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        UserSession session2 = store.createSession(user, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         log.info("Created session 2 {}", session2);
         assertTrue(store.getSession(session2.getSessionId()).isPresent());
         assertEquals(session2, store.getSession(session2.getSessionId()).get());
@@ -305,7 +305,7 @@ public class UserStoreIT extends AbstractIT {
         assertFalse(store.getSession(session1.getSessionId()).isPresent());
         assertTrue(store.getSession(session2.getSessionId()).isPresent());
 
-        UserSession session3 = store.createSession(user.getProjectId(), user.getUserId(), Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
+        UserSession session3 = store.createSession(user, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
         assertTrue(store.getSession(session3.getSessionId()).isPresent());
         assertEquals(session3, store.getSession(session3.getSessionId()).get());
         assertTrue(store.getSession(session2.getSessionId()).isPresent());

@@ -5,11 +5,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.*;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -34,26 +30,10 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.AccountApi;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.SubscriptionApi;
-import org.killbill.billing.client.api.gen.UsageApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.Invoice;
-import org.killbill.billing.client.model.gen.OverdueState;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.PlanDetail;
-import org.killbill.billing.client.model.gen.PluginProperty;
-import org.killbill.billing.client.model.gen.RolledUpUnit;
-import org.killbill.billing.client.model.gen.RolledUpUsage;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
-import org.killbill.billing.client.model.gen.UnitUsageRecord;
-import org.killbill.billing.client.model.gen.UsageRecord;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.util.api.AuditLevel;
@@ -335,9 +315,10 @@ public class KillBilling extends ManagedService implements Billing {
         try {
             Subscription subscription = getSubscription(accountId);
             if (!PhaseType.TRIAL.equals(subscription.getPhaseType())) {
+                log.debug("Trying to end trial when already ended for account {}", accountId);
                 return subscription;
             }
-            subscription.setPhaseType(PhaseType.TRIAL);
+            subscription.setPhaseType(PhaseType.EVERGREEN);
             kbSubscription.changeSubscriptionPlan(
                     subscription.getSubscriptionId(),
                     subscription,
@@ -633,10 +614,13 @@ public class KillBilling extends ManagedService implements Billing {
                 if (isTrial) {
                     long activeUsers = getUsageCurrentPeriod(subscription);
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
-                        log.debug("Account trial ended due to reached limit of {} active users, accountId {}",
-                                PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
+                        log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {}",
+                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
                         endTrial(accountId);
                         // TODO notify by email of trial ending
+                    } else {
+                        log.trace("Account trial has yet to reach limit of active users {}/{}, accountId {}",
+                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
                     }
                 }
                 return null;

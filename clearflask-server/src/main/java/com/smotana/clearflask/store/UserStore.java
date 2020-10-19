@@ -73,7 +73,7 @@ public interface UserStore {
         return IdUtil.randomAscId();
     }
 
-    UserSession createSession(String projectId, String userId, long ttlInEpochSec);
+    UserSession createSession(UserModel user, long ttlInEpochSec);
 
     Optional<UserSession> getSession(String sessionId);
 
@@ -140,6 +140,8 @@ public interface UserStore {
 
         @NonNull
         long ttlInEpochSec;
+
+        Boolean isMod;
     }
 
     @Value

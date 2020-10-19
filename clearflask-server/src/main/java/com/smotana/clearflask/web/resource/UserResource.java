@@ -9,26 +9,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.EmailSignup;
-import com.smotana.clearflask.api.model.ForgotPassword;
-import com.smotana.clearflask.api.model.NotificationMethods;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserCreateAdmin;
-import com.smotana.clearflask.api.model.UserCreateResponse;
-import com.smotana.clearflask.api.model.UserLogin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
-import com.smotana.clearflask.api.model.Users;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -236,8 +217,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         userStore.createUser(user);
 
         UserSession session = userStore.createSession(
-                projectId,
-                user.getUserId(),
+                user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
@@ -349,8 +329,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Successful user login for email {}", userLogin.getEmail());
 
         UserSession session = userStore.createSession(
-                projectId,
-                user.getUserId(),
+                user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
@@ -369,8 +348,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Successful user login by admin for userId {}", userId);
 
         UserSession session = userStore.createSession(
-                projectId,
-                user.getUserId(),
+                user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
 
@@ -411,7 +389,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return user.toUserMe();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
@@ -431,7 +409,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER})
+    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {

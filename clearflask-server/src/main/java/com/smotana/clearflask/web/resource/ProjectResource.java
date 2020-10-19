@@ -12,24 +12,13 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ConfigAndBindResult;
-import com.smotana.clearflask.api.model.ConfigGetAllResult;
-import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -119,7 +108,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         // Auto login using sso token
         if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getSsoToken())) {
-            userOpt = userStore.ssoCreateOrGet(projectId, projectOpt.get().getVersionedConfigAdmin().getConfig().getSsoSecretKey(), configGetAndUserBind.getAuthToken());
+            userOpt = userStore.ssoCreateOrGet(projectId, projectOpt.get().getVersionedConfigAdmin().getConfig().getSsoSecretKey(), configGetAndUserBind.getSsoToken());
             if (userOpt.isPresent()) {
                 createSession = true;
             }
@@ -142,8 +131,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         if (createSession) {
             UserStore.UserSession session = userStore.createSession(
-                    projectId,
-                    userOpt.get().getUserId(),
+                    userOpt.get(),
                     Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
             authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
         }
