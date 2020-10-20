@@ -27,5 +27,5 @@ cache:
 build:
   stage: build
   script:
-    - su -s /bin/bash runner -c "mvn $MAVEN_CLI_OPTS install -DskipITs"
+    - su -s /bin/bash runner -c "mvn $MAVEN_CLI_OPTS install"
   
