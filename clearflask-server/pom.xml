@@ -415,10 +415,6 @@
                             <name>killbill/mariadb:0.22</name>
                             <run>
                                 <autoRemove>true</autoRemove>
-                                <network>
-                                    <name>network</name>
-                                    <alias>killbill-db</alias>
-                                </network>
                                 <volumes>
                                     <bind>
                                         <volume>
@@ -447,10 +443,9 @@
                             <name>killbill/killbill:0.22.10</name>
                             <run>
                                 <autoRemove>true</autoRemove>
-                                <network>
-                                    <name>network</name>
-                                    <alias>killbill-engine</alias>
-                                </network>
+                                <links>
+                                    <link>killbill-db</link>
+                                </links>
                                 <volumes>
                                     <bind>
                                         <volume>

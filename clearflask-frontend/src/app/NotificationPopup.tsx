@@ -70,7 +70,7 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
           transition
         >
           {({ TransitionProps }) => (
-            <Fade {...TransitionProps} timeout={350}>
+            <Fade {...TransitionProps}>
               <Paper className={this.props.classes.paper}>
                 <span className={this.props.classes.arrow} ref={this.arrowRef} />
                 <NotificationList server={this.props.server} />

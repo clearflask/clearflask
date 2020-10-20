@@ -1,7 +1,7 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
-import { Picker, PickerProps } from 'emoji-mart';
 import 'emoji-mart/css/emoji-mart.css';
+import { Picker, PickerProps } from 'emoji-mart/dist-es/index.js';
 import React from 'react';
 
 const styles = (theme: Theme) => createStyles({

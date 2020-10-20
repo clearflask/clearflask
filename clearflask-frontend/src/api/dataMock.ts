@@ -637,7 +637,7 @@ class DataMock {
       {
         content: 'Also, it would be great if the black color can be a pure black in order to save mobile battery life.', author: 'John', voteValue: 43, children: [
           {
-            content: 'That\'s a great idea, we will work on that right away', author: 'Charlotte', authorIsMod: true,  voteValue: 22, children: [
+            content: 'That\'s a great idea, we will work on that right away', author: 'Charlotte', authorIsMod: true, voteValue: 22, children: [
               {
                 content: 'Thank you for the quick response', author: 'John', voteValue: 2, created: new Date(),
               },

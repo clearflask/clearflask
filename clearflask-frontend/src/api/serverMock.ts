@@ -741,6 +741,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...request.userCreateAdmin,
     };
     this.getProject(request.projectId).users.push(user);
+    const creditsOnSignup = this.getProject(request.projectId).config.config.users.credits?.creditOnSignup?.amount || 0;
+    if (creditsOnSignup > 0) {
+      const newBalance = user.balance + creditsOnSignup;
+      const balanceUpdateTransaction = {
+        userId: user.userId,
+        transactionId: randomUuid(),
+        created: new Date(),
+        amount: creditsOnSignup,
+        transactionType: Admin.TransactionType.Income,
+        summary: this.getProject(request.projectId).config.config.users.credits?.creditOnSignup?.summary || 'Sign-up credits',
+      };
+      this.getProject(request.projectId).transactions.push(balanceUpdateTransaction);
+      this.getProject(request.projectId).balances[user.userId] = newBalance;
+    }
     return this.returnLater(user);
   }
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {

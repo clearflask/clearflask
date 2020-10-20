@@ -1,9 +1,9 @@
 import { Collapse, FormControl, FormControlLabel, FormHelperText, IconButton, InputAdornment, InputLabel, MenuItem, Select, Switch, TextField } from '@material-ui/core';
-import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import DeleteIcon from '@material-ui/icons/CloseRounded';
+import VisitPageIcon from '@material-ui/icons/MoreHoriz';
 import PaintbrushIcon from '@material-ui/icons/Palette';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
-import { BaseEmoji } from 'emoji-mart';
+import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
 import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';

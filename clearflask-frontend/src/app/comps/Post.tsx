@@ -1,5 +1,4 @@
-import { Button, Chip, Collapse, Fade, Typography } from '@material-ui/core';
-import { PopoverActions, PopoverPosition } from '@material-ui/core/Popover';
+import { Button, Chip, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 import AddIcon from '@material-ui/icons/Add';
@@ -7,7 +6,7 @@ import AddIcon from '@material-ui/icons/Add';
 import SpeechIcon from '@material-ui/icons/CommentOutlined';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
 import classNames from 'classnames';
-import { BaseEmoji } from 'emoji-mart';
+import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -17,7 +16,6 @@ import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
-import ClosablePopover from '../../common/ClosablePopover';
 import ClosablePopper from '../../common/ClosablePopper';
 import EmojiPicker from '../../common/EmojiPicker';
 import GradientFade from '../../common/GradientFade';
@@ -215,6 +213,10 @@ const styles = (theme: Theme) => createStyles({
     border: '1px solid ' + theme.palette.primary.main,
     color: theme.palette.primary.main,
   },
+  expressionPopperPaper: {
+    paddingBottom: theme.spacing(1),
+    flexWrap: 'wrap',
+  },
   fundMoreButton: {
     height: 'auto',
     padding: 0,
@@ -299,10 +301,11 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
   },
   funding: {
-    margin: theme.spacing(1, 1.5, 0, 1.5),
+    paddingTop: theme.spacing(1),
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     float: 'left', // Exclude from baseline calculation
     clear: 'left', // Exclude from baseline calculation
     width: '100%', // Exclude from baseline calculation
@@ -310,6 +313,12 @@ const styles = (theme: Theme) => createStyles({
   pulsateFunding: {
     opacity: 0.1,
     animation: `$postVotingPulsate 2000ms ${theme.transitions.easing.easeInOut} 0ms infinite`,
+  },
+  fundingPopper: {
+    maxWidth: '100%',
+  },
+  fundingPopperPaper: {
+    paddingBottom: theme.spacing(1),
   },
   pulsateVoting: {
     opacity: 0.1,
@@ -375,9 +384,7 @@ interface ConnectProps {
 interface State {
   currentVariant: PostVariant;
   fundingExpanded?: boolean;
-  fundingExpandedAnchor?: PopoverPosition & { width: number };
   expressionExpanded?: boolean;
-  expressionExpandedAnchor?: PopoverPosition;
   logInOpen?: boolean;
   isSubmittingVote?: Client.VoteOption;
   isSubmittingFund?: boolean;
@@ -757,22 +764,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     }
   }
 
-  readonly fundingPadding = this.props.theme.spacing(3);
   fundingExpand(callback?: () => void) {
-    const rect = this.fundingBarRef.current!.getBoundingClientRect();
-    const rectParent = this.props.settings.demoPortalContainer?.current?.getBoundingClientRect();
     this.setState({
       fundingExpanded: true,
-      fundingExpandedAnchor: {
-        width: rect.width,
-        top: rect.top - this.fundingPadding - (rectParent?.top || 0),
-        left: rect.left - this.fundingPadding - (rectParent?.left || 0),
-      }
     }, callback);
   }
 
   fundingBarRef: React.RefObject<HTMLDivElement> = React.createRef();
-  fundingPopoverActions?: PopoverActions;
   renderFunding(variant: PostVariant) {
     if (variant !== 'page' && this.props.display && this.props.display.showFunding === false
       || !this.props.idea
@@ -823,55 +821,39 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
 
     return (
-      <div
-        className={classNames(
-          this.props.classes.funding,
-          !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateFunding
-            : (this.state.demoFlashPostVotingControlsHovering === 'fund' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
-        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'fund' }) : undefined}
-        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
-      >
-        <FundingBar
-          fundingBarRef={this.fundingBarRef}
-          idea={this.props.idea}
-          credits={this.props.credits}
-          maxFundAmountSeen={this.props.maxFundAmountSeen}
-          style={{ alignSelf: 'stretch' }}
-          overrideRight={fundThisButton}
-        />
+      <div style={{ display: 'flex' }}>
         {fundingAllowed && (
-          <ClosablePopover
-            container={this.props.settings.demoPortalContainer?.current}
-            BackdropProps={{ invisible: !!this.props.settings.demoPortalContainer }}
-            unlockScroll={!!this.props.settings.demoPortalContainer}
-            elevation={0}
-            TransitionComponent={Fade}
+          <ClosablePopper
             open={!!this.state.fundingExpanded}
-            anchorReference='anchorPosition'
-            anchorPosition={this.state.fundingExpandedAnchor}
             onClose={() => this.setState({ fundingExpanded: false })}
-            anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left', }}
-            marginThreshold={2}
-            PaperProps={{
-              className: this.props.classes.popover,
-              style: {
-                overflow: 'hidden',
-                width: this.state.fundingExpandedAnchor ? this.state.fundingExpandedAnchor.width + this.fundingPadding * 2 : 0,
-                padding: this.fundingPadding,
-              }
-            }}
-            disableRestoreFocus
-            action={actions => this.fundingPopoverActions = actions || undefined}
+            className={this.props.classes.fundingPopper}
           >
-            <FundingControl
-              myRef={this.fundingControlRef}
-              server={this.props.server}
-              ideaId={this.props.idea.ideaId}
-              onOtherFundedIdeasLoaded={() => this.fundingPopoverActions && this.fundingPopoverActions.updatePosition()}
-            />
-          </ClosablePopover>
+            <div className={classNames(this.props.classes.funding, this.props.classes.fundingPopperPaper)}>
+              <FundingControl
+                myRef={this.fundingControlRef}
+                server={this.props.server}
+                ideaId={this.props.idea.ideaId}
+                maxOther={2}
+              />
+            </div>
+          </ClosablePopper>
         )}
+        <div
+          className={classNames(
+            this.props.classes.funding,
+            !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateFunding
+              : (this.state.demoFlashPostVotingControlsHovering === 'fund' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
+          onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'fund' }) : undefined}
+          onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
+        >
+          <FundingBar
+            fundingBarRef={this.fundingBarRef}
+            idea={this.props.idea}
+            credits={this.props.credits}
+            maxFundAmountSeen={this.props.maxFundAmountSeen}
+            overrideRight={fundThisButton}
+          />
+        </div>
       </div>
     );
   }
@@ -906,16 +888,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     );
   }
 
-  readonly expressPadding = this.props.theme.spacing(0.5);
   expressExpand(callback?: () => void) {
-    const rect = this.expressBarRef.current!.getBoundingClientRect();
-    const rectParent = this.props.settings.demoPortalContainer?.current?.getBoundingClientRect();
     this.setState({
       expressionExpanded: true,
-      expressionExpandedAnchor: {
-        top: rect.top - this.expressPadding - (rectParent?.top || 0),
-        left: rect.left - this.expressPadding - (rectParent?.left || 0),
-      }
     }, callback);
   }
 
@@ -1000,36 +975,35 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <React.Fragment>
+      <div style={{ display: 'flex' }}>
         <ClosablePopper
+          style={{
+            width: limitEmojiSet ? 'max-content' : 'min-content',
+          }}
           open={!!this.state.expressionExpanded}
           onClose={() => this.setState({ expressionExpanded: false })}
         >
-          <div className={this.props.classes.funding}>
-            <div style={{ display: 'flex' }}>
-              {[
-                ...expressionsExpressed,
-                ...expressionsUnused,
-              ]}
-            </div>
+          <div className={classNames(this.props.classes.expressionPopperPaper, this.props.classes.funding)}>
+            {[
+              ...expressionsExpressed,
+              ...expressionsUnused,
+            ]}
           </div>
           {picker}
         </ClosablePopper>
-      <div
-        key='expression'
-        ref={this.expressBarRef}
-        className={classNames(
-          this.props.classes.funding,
-          !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateExpressions
-            : (this.state.demoFlashPostVotingControlsHovering === 'express' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
-        onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'express' }) : undefined}
-        onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
-        style={{
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex' }}>
-          
+        <div
+          key='expression'
+          ref={this.expressBarRef}
+          className={classNames(
+            this.props.classes.funding,
+            !!this.props.settings.demoFlashPostVotingControls && (this.state.demoFlashPostVotingControlsHovering === undefined ? this.props.classes.pulsateExpressions
+              : (this.state.demoFlashPostVotingControlsHovering === 'express' ? this.props.classes.pulsateShown : this.props.classes.pulsateHidden)))}
+          onMouseOver={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: 'express' }) : undefined}
+          onMouseOut={!!this.props.settings.demoFlashPostVotingControls ? () => this.setState({ demoFlashPostVotingControlsHovering: undefined }) : undefined}
+          style={{
+            position: 'relative',
+          }}
+        >
           <GradientFade
             disabled={summaryItems.length < maxItems}
             start={'50%'}
@@ -1053,38 +1027,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             () => this.expressExpand(),
           )}
         </div>
-        {/* <ClosablePopover
-          container={this.props.settings.demoPortalContainer?.current}
-          BackdropProps={{ invisible: !!this.props.settings.demoPortalContainer }}
-          unlockScroll={!!this.props.settings.demoPortalContainer}
-          elevation={0}
-          TransitionComponent={Fade}
-          open={!!this.state.expressionExpanded}
-          anchorReference='anchorPosition'
-          anchorPosition={this.state.expressionExpandedAnchor}
-          onClose={() => this.setState({ expressionExpanded: false })}
-          anchorOrigin={{ vertical: 'top', horizontal: 'left', }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left', }}
-          marginThreshold={2}
-          PaperProps={{
-            className: this.props.classes.popover,
-            style: {
-              overflow: 'hidden',
-              ...(limitEmojiSet ? {} : { width: 'min-content' }),
-              padding: this.expressPadding,
-              paddingBottom: limitEmojiSet ? this.expressPadding : 0,
-            }
-          }}
-          disableRestoreFocus
-        >
-          {[
-            ...expressionsExpressed,
-            ...expressionsUnused,
-            picker,
-          ]}
-        </ClosablePopover> */}
       </div>
-      </React.Fragment>
     );
   }
 

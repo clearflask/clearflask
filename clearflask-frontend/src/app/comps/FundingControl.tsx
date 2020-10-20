@@ -1,5 +1,6 @@
 import { Button, Slider, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -8,6 +9,7 @@ import Truncate from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings, Status } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
+import Hr from '../../common/Hr';
 import InViewObserver from '../../common/InViewObserver';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import minmax from '../../common/util/mathutil';
@@ -25,7 +27,7 @@ interface SearchResult {
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    maxWidth: FundingMaxWidth,
+    width: FundingMaxWidth,
   },
   separatorMargin: {
     marginTop: theme.spacing(3),
@@ -33,15 +35,22 @@ const styles = (theme: Theme) => createStyles({
   slider: {
     padding: 0,
   },
+  sliderContainer: {
+    transition: theme.transitions.create('opacity'),
+    opacity: 1,
+  },
+  sliderContainerHide: {
+    opacity: 0,
+  },
   sliderTransitionNone: {
-    transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
+    transition: theme.transitions.create(['width', 'transform', 'box-shadow', 'opacity'], {
       duration: 0,
       easing: theme.transitions.easing.easeOut,
     }),
     color: theme.palette.text.primary,
   },
   sliderTransitionSmooth: {
-    transition: theme.transitions.create(['width', 'transform', 'box-shadow'], {
+    transition: theme.transitions.create(['width', 'transform', 'box-shadow', 'opacity'], {
       duration: theme.transitions.duration.shortest,
       easing: theme.transitions.easing.easeOut,
     }),
@@ -60,6 +69,7 @@ interface Props {
   /** If you want to show a particular idea first, set idea id here */
   ideaId?: string;
   onOtherFundedIdeasLoaded?: () => void;
+  maxOther?: number;
 }
 
 interface ConnectProps {
@@ -125,18 +135,23 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     if (!this.props.credits) return null;
 
     const showFirstIdea = !!this.props.idea;
+
     var msg;
-    if (showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0) {
-      msg = 'Prioritize against others';
-    } else if (!showFirstIdea
+    var removeSlider: boolean = false;
+    if (!showFirstIdea
       && this.props.otherFundedIdeas.status === Status.FULFILLED
       && this.props.otherFundedIdeas.ideas.length === 0) {
       msg = 'No items funded yet';
+    } else if (showFirstIdea
+      && this.props.balance === 0
+      && this.props.otherFundedIdeas.ideas.length === 0) {
+      msg = 'You have insufficient funds';
+      removeSlider = true;
     }
 
     return (
       <InViewObserver ref={this.inViewObserverRef}>
-        <div style={this.props.style} className={`${this.props.className} ${this.props.classes.container}`}>
+        <div style={this.props.style} className={`${this.props.className || ''} ${this.props.classes.container}`}>
           {showFirstIdea && this.props.idea && (<div>
             <FundingBar
               idea={this.props.idea}
@@ -144,13 +159,16 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
               maxFundAmountSeen={this.props.maxFundAmountSeen}
               fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
             />
-            {this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
+            {!removeSlider && this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
           </div>)}
-          {msg && (
+          {!!msg && (
             <Typography
               className={`${this.props.classes.separatorMargin} ${this.props.classes.msg}`}
               variant='overline'
             >{msg}</Typography>
+          )}
+          {showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0 && (
+            <Hr length='120px'>Compare</Hr>
           )}
           <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
             {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
@@ -194,7 +212,9 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     const minMaxTitleOpacity = widthPerc > 25 ? 0.1 : 0;
 
     return (
-      <div>
+      <div
+        className={classNames(this.props.classes.sliderContainer, (min === max) && this.props.classes.sliderContainerHide)}
+      >
         <Slider
           className={this.props.classes.slider}
           style={{ width: widthPerc + '%' }}
@@ -358,7 +378,10 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
-  const search = { fundedByMeAndActive: true };
+  const search = {
+    fundedByMeAndActive: true,
+    limit: ownProps.maxOther,
+  };
   const dispatchIdeaGetOnIdeaId = (ownProps.ideaId && state.ideas.byId[ownProps.ideaId]?.status === undefined) ? ownProps.ideaId : undefined;
   var newProps: ConnectProps = {
     idea: ownProps.ideaId ? state.ideas.byId[ownProps.ideaId]?.idea : undefined,

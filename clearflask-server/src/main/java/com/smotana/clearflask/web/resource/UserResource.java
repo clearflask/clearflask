@@ -9,7 +9,23 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
+import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.ForgotPassword;
+import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBindResponse;
+import com.smotana.clearflask.api.model.UserCreate;
+import com.smotana.clearflask.api.model.UserCreateAdmin;
+import com.smotana.clearflask.api.model.UserCreateResponse;
+import com.smotana.clearflask.api.model.UserLogin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserSearchResponse;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -143,14 +159,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
-        Optional<Project> project = projectStore.getProject(projectId, true);
-        Optional<EmailSignup> emailSignupOpt = project
-                .map(Project::getVersionedConfigAdmin)
-                .map(VersionedConfigAdmin::getConfig)
-                .map(ConfigAdmin::getUsers)
-                .map(Users::getOnboarding)
-                .map(Onboarding::getNotificationMethods)
-                .map(NotificationMethods::getEmail);
+        Project project = projectStore.getProject(projectId, true).get();
+        Optional<EmailSignup> emailSignupOpt = Optional.ofNullable(project.getVersionedConfigAdmin()
+                .getConfig()
+                .getUsers()
+                .getOnboarding()
+                .getNotificationMethods()
+                .getEmail());
 
         boolean emailVerificationRequired = false;
 
@@ -174,7 +189,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             if (Strings.isNullOrEmpty(userCreate.getEmailVerification())) {
                 TokenVerifyStore.Token token = tokenVerifyStore.createToken(userCreate.getEmail());
                 notificationService.onEmailVerify(
-                        project.get().getVersionedConfigAdmin().getConfig(),
+                        project.getVersionedConfigAdmin().getConfig(),
                         userCreate.getEmail(),
                         token.getToken());
                 return new UserCreateResponse(true, null);
@@ -186,6 +201,12 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                             "Invalid code");
                 }
             }
+        }
+
+        long balance = 0;
+        CreditsCreditOnSignup creditOnSignup = project.getVersionedConfigAdmin().getConfig().getUsers().getCredits().getCreditOnSignup();
+        if (creditOnSignup != null && creditOnSignup.getAmount() > 0L) {
+            balance = creditOnSignup.getAmount();
         }
 
         // Now we're ready to create the user
@@ -206,7 +227,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 passwordHashed.orElse(null),
                 null,
                 userCreate.getEmail() != null,
-                0L,
+                balance,
                 userCreate.getIosPushToken(),
                 userCreate.getAndroidPushToken(),
                 userCreate.getBrowserPushToken(),
@@ -220,6 +241,15 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+
+        if (balance > 0L) {
+            voteStore.balanceAdjustTransaction(
+                    user.getProjectId(),
+                    user.getUserId(),
+                    creditOnSignup.getAmount(),
+                    creditOnSignup.getSummary() == null ? "Sign-up credit" : creditOnSignup.getSummary(),
+                    Optional.of("signup-credit"));
+        }
 
         return new UserCreateResponse(null, user.toUserMeWithBalance());
     }

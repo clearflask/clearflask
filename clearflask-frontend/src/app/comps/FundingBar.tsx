@@ -10,6 +10,7 @@ export const FundingMaxWidth = 300;
 const styles = (theme: Theme) => createStyles({
   container: {
     maxWidth: FundingMaxWidth,
+    width: '100%',
   },
   fundingAmount: {
     fontSize: '1.2em',

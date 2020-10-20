@@ -48,6 +48,19 @@ components:
       required:
         - formats
       properties:
+        creditOnSignup:
+          x-clearflask-prop: { order: 0, name: 'Credits on sign-up', description: 'Give a certain amount of credits to users upon sign-up' }
+          type: object
+          required:
+            - amount
+          properties:
+            amount:
+              x-clearflask-prop: { order: 1, name: 'Credit amount', description: 'Specify how many credits will users automatically receive', defaultValue: 1 }
+              type: integer
+              format: int64
+            summary:
+              x-clearflask-prop: { order: 2, name: 'Transaction summary', description: 'Description to show to the user as part of this transaction' }
+              type: string
         formats:
           x-clearflask-prop: { order: 1, name: 'Display rules', description: '
             Your base currency value will be displayed to your users based on the following rules in order:
