@@ -1,22 +1,9 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.CancellationReason;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -30,11 +17,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Expression;
-import com.smotana.clearflask.api.model.VersionedConfig;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -210,31 +193,22 @@ public class DynamoProjectStore implements ProjectStore {
     @Override
     public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin) {
         Project project = getProject(projectId, false).get();
-        Optional<String> slugOptPrevious = Optional.ofNullable(project.getVersionedConfigAdmin().getConfig().getSlug());
-        Optional<String> slugOpt = Optional.ofNullable(versionedConfigAdmin.getConfig().getSlug());
-        if (!slugOpt.equals(slugOptPrevious)) {
+        String slugPrevious = project.getVersionedConfigAdmin().getConfig().getSlug();
+        String slug = versionedConfigAdmin.getConfig().getSlug();
+        boolean updateSlug = !slug.equals(slugPrevious);
+        if (updateSlug) {
             if (LogUtil.rateLimitAllowLog("projectStore-slugChange")) {
-                log.info("Project {} changing slug from {} to {}", projectId, slugOptPrevious, slugOpt);
+                log.info("Project {} changing slug from {} to {}", projectId, slugPrevious, slug);
             }
             try {
-                slugOpt.ifPresent(slug -> slugSchema.table().putItem(new PutItemSpec()
+                slugSchema.table().putItem(new PutItemSpec()
                         .withItem(slugSchema.toItem(new SlugModel(slug, projectId, null)))
                         .withConditionExpression("attribute_not_exists(#partitionKey)")
-                        .withNameMap(Map.of("#partitionKey", slugSchema.partitionKeyName()))));
+                        .withNameMap(Map.of("#partitionKey", slugSchema.partitionKeyName())));
+                slugCache.invalidate(slug);
             } catch (ConditionalCheckFailedException ex) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
             }
-            slugOptPrevious.ifPresent(slugPrevious -> slugSchema.table()
-                    .putItem(new PutItemSpec()
-                            .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
-                            .withNameMap(Map.of(
-                                    "#partitionKey", slugSchema.partitionKeyName(),
-                                    "#projectId", "projectId"))
-                            .withValueMap(Map.of(":projectId", projectId))
-                            .withItem(slugSchema.toItem(new SlugModel(
-                                    slugPrevious,
-                                    projectId,
-                                    Instant.now().plus(config.slugExpireAfterMigration()).getEpochSecond())))));
         }
         PutItemSpec putItemSpec = new PutItemSpec()
                 .withItem(projectSchema.toItem(new ProjectModel(
@@ -248,10 +222,39 @@ public class DynamoProjectStore implements ProjectStore {
         try {
             projectSchema.table().putItem(putItemSpec);
         } catch (ConditionalCheckFailedException ex) {
+            // Undo creating slug just now
+            slugSchema.table()
+                    .deleteItem(new DeleteItemSpec()
+                            .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
+                            .withNameMap(Map.of(
+                                    "#partitionKey", slugSchema.partitionKeyName(),
+                                    "#projectId", "projectId"))
+                            .withValueMap(Map.of(
+                                    ":projectId", projectId))
+                            .withPrimaryKey(slugSchema.primaryKey(ImmutableMap.of(
+                                    "slug", slug))));
+            slugCache.invalidate(slug);
             throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
         }
-        slugOptPrevious.ifPresent(slugCache::invalidate);
-        slugOpt.ifPresent(slugCache::invalidate);
+        if (updateSlug) {
+            try {
+                slugSchema.table()
+                        .putItem(new PutItemSpec()
+                                .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
+                                .withNameMap(Map.of(
+                                        "#partitionKey", slugSchema.partitionKeyName(),
+                                        "#projectId", "projectId"))
+                                .withValueMap(Map.of(
+                                        ":projectId", projectId))
+                                .withItem(slugSchema.toItem(new SlugModel(
+                                        slugPrevious,
+                                        projectId,
+                                        Instant.now().plus(config.slugExpireAfterMigration()).getEpochSecond()))));
+                slugCache.invalidate(slugPrevious);
+            } catch (ConditionalCheckFailedException ex) {
+                log.warn("Updating slug, but previous slug already doesn't exist?", ex);
+            }
+        }
         projectCache.invalidate(projectId);
     }
 
