@@ -38,6 +38,7 @@ class ClosablePopover extends Component<Props & WithStyles<typeof styles, true>>
         style={this.props.unlockScroll ? {
           position: 'relative!important' as 'absolute',
         } : undefined}
+        onClose={onClose}
         {...popoverProps}
       >
         <IconButton className={this.props.classes.closeButton} aria-label="Close" onClick={() => this.props.onClose()}>

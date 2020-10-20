@@ -1,7 +1,8 @@
-import { Badge, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
+import { Badge, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import { Alert } from '@material-ui/lab';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -38,6 +39,7 @@ interface State {
   email?: string;
   password?: string;
   revealPassword?: boolean;
+  signoutWarnNoEmail?: boolean;
 }
 
 class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
@@ -54,6 +56,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     // const androidPushControl = this.renderMobilePushControl(MobileNotificationDevice.Android);
     // const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
     const emailControl = this.renderEmailControl();
+
+    const isOnlyPush = (this.props.userMe.iosPush || this.props.userMe.androidPush || this.props.userMe.browserPush)
+      && !this.props.userMe.email
+      && !this.props.userMe.isSso
+
     return (
       <div className={this.props.classes.page}>
         <DividerCorner title='Account'>
@@ -179,9 +186,29 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Grid>
           )}
           <Grid container alignItems='baseline' className={this.props.classes.item}>
-            <Grid item xs={12} sm={6}><Typography>Sign out of your account</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>
+              Sign out of your account
+              {!!isOnlyPush && (
+                <Collapse in={!!this.state.signoutWarnNoEmail}>
+                  <Alert
+                    variant='outlined'
+                    severity='warning'
+                  >
+                    Please add an email before signing out or delete your account instead.
+                  </Alert>
+                </Collapse>
+                )}
+            </Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <Button onClick={() => this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })}
+              <Button
+                disabled={!!isOnlyPush && !!this.state.signoutWarnNoEmail}
+                onClick={() => {
+                  if(isOnlyPush){
+                    this.setState({signoutWarnNoEmail: true});
+                  } else {
+                    this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })
+                  }
+                }}
               >Sign out</Button>
             </Grid>
           </Grid>

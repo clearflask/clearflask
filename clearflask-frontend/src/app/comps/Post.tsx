@@ -18,6 +18,7 @@ import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
 import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
 import ClosablePopover from '../../common/ClosablePopover';
+import ClosablePopper from '../../common/ClosablePopper';
 import EmojiPicker from '../../common/EmojiPicker';
 import GradientFade from '../../common/GradientFade';
 import InViewObserver from '../../common/InViewObserver';
@@ -999,6 +1000,21 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
+      <React.Fragment>
+        <ClosablePopper
+          open={!!this.state.expressionExpanded}
+          onClose={() => this.setState({ expressionExpanded: false })}
+        >
+          <div className={this.props.classes.funding}>
+            <div style={{ display: 'flex' }}>
+              {[
+                ...expressionsExpressed,
+                ...expressionsUnused,
+              ]}
+            </div>
+          </div>
+          {picker}
+        </ClosablePopper>
       <div
         key='expression'
         ref={this.expressBarRef}
@@ -1013,6 +1029,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         }}
       >
         <div style={{ display: 'flex' }}>
+          
           <GradientFade
             disabled={summaryItems.length < maxItems}
             start={'50%'}
@@ -1036,7 +1053,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             () => this.expressExpand(),
           )}
         </div>
-        <ClosablePopover
+        {/* <ClosablePopover
           container={this.props.settings.demoPortalContainer?.current}
           BackdropProps={{ invisible: !!this.props.settings.demoPortalContainer }}
           unlockScroll={!!this.props.settings.demoPortalContainer}
@@ -1065,8 +1082,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             ...expressionsUnused,
             picker,
           ]}
-        </ClosablePopover>
+        </ClosablePopover> */}
       </div>
+      </React.Fragment>
     );
   }
 

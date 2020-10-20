@@ -902,14 +902,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         }
       }
 
-      const expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express!;
+      const expressing = this.getProject(request.projectId).config.config.content.categories.find(c => c.categoryId === idea.categoryId)!.support.express;
       expressionsToAdd.forEach(expression => {
-        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
+        const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! += weight;
         idea.expressions[expression] = (idea.expressions[expression] || 0) + 1
       })
       expressionsToRemove.forEach(expression => {
-        const weight = expressing.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
+        const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! -= weight;
         idea.expressions[expression] = (idea.expressions[expression] || 0) - 1
         if (idea.expressions[expression] <= 0) delete idea.expressions[expression];

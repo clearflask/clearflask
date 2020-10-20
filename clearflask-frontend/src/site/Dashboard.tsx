@@ -490,7 +490,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     const isSelectProjectUserInMenu = !quickViewEnabled;
     const selectProjectUser = (
       <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
-        <Collapse in={!!this.props.account?.isSuperAdmin}>
+        {!!this.props.account?.isSuperAdmin && (
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
@@ -515,7 +515,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               }
             }}
           />
-        </Collapse>
+        )}
         <Collapse in={!!showProjectSelect}>
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}

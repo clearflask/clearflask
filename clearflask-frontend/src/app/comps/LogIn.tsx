@@ -218,8 +218,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         || this.props.config?.name
                         || 'External'} />
                     </ListItem>
-                    <Collapse in={onlySingleOptionRequiresAllow}>
-                      <Button className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
+                    <Collapse in={onlySingleOption}>
+                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
                     </Collapse>
                   </Collapse>
                   <Collapse in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
@@ -234,7 +234,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
                     </ListItem>
                     <Collapse in={onlySingleOptionRequiresAllow}>
-                      <Button className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
+                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
                     </Collapse>
                   </Collapse>
                   <Collapse in={notifOpts.has(NotificationType.Browser)}>
@@ -248,7 +248,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
                     </ListItem>
                     <Collapse in={onlySingleOptionRequiresAllow}>
-                      <Button className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
+                      <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
                     </Collapse>
                   </Collapse>
                   <Collapse in={notifOpts.has(NotificationType.Email)}>

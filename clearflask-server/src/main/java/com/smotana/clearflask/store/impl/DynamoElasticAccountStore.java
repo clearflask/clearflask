@@ -198,7 +198,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
 
-        queryBuilder.should(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
+        queryBuilder.must(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
                 "email", "name")
                 .field("email", 2f)
                 .fuzziness("AUTO")
