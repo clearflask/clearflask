@@ -11,8 +11,9 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
-import com.smotana.clearflask.core.ServiceInjector;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +63,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
     @Inject
     private AmazonSimpleEmailServiceV2 ses;
     @Inject
-    private ServiceInjector.Environment env;
+    private Environment env;
     @Context
     private HttpServletRequest request;
 
@@ -112,7 +113,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
     private String generateBody(SupportMessage supportMessage) {
         return Stream.concat(
                 ImmutableMap.of(
-                        "ip", request.getHeader("x-forwarded-for")
+                        "ip", IpUtil.getRemoteIp(request, env)
                 ).entrySet().stream(),
                 supportMessage.getContent().entrySet().stream())
                 .map(pair -> Strings.nullToEmpty(pair.getKey()) + ": " + Strings.nullToEmpty(pair.getValue()))

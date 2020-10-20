@@ -436,6 +436,9 @@
                                     <prefix>killbill-db:</prefix>
                                     <color>cyan</color>
                                 </log>
+                                <extraHosts>
+                                    <extraHost>host.docker.internal:host-gateway</extraHost>
+                                </extraHosts>
                             </run>
                         </image>
                         <image>
@@ -485,6 +488,9 @@
                                     <prefix>killbill-engine:</prefix>
                                     <color>cyan</color>
                                 </log>
+                                <extraHosts>
+                                    <extraHost>host.docker.internal:host-gateway</extraHost>
+                                </extraHosts>
                             </run>
                         </image>
                         <!-- Uncomment to enable Kaui -->
@@ -506,6 +512,9 @@
                                     <time>300000</time>
                                     <log>.*INFO: Server startup in .* ms.*</log>
                                 </wait>
+                                <extraHosts>
+                                    <extraHost>host.docker.internal:host-gateway</extraHost>
+                                </extraHosts>
                             </run>
                         </image> -->
                     </images>

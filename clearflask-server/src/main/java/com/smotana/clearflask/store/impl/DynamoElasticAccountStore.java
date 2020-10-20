@@ -34,7 +34,6 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -46,6 +45,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -113,7 +113,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         sessionByAccountIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
 
         if (config.createIndexOnStartup()) {
-            try {
+            boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
+            if (!exists) {
                 elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
                         "dynamic", "false",
                         "properties", ImmutableMap.builder()
@@ -134,8 +135,6 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                         "type", "keyword"))
                                 .build())), XContentType.JSON),
                         RequestOptions.DEFAULT);
-            } catch (ElasticsearchStatusException ex) {
-                log.debug("Not creating index if already exists for account", ex);
             }
         }
     }
