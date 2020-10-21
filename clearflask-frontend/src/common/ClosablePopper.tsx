@@ -35,21 +35,21 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
   readonly anchorRef = React.createRef<HTMLDivElement>();
 
   render() {
-    const { classes, onClose, ...popoverProps } = this.props;
+    const { classes, onClose, ...popperProps } = this.props;
 
     return (
       <React.Fragment>
         <Popper
-          className={this.props.className}
-          open={!!this.props.open}
           placement='right-start'
           anchorEl={() => this.anchorRef.current!}
           modifiers={{
             preventOverflow: {
               enabled: false,
             },
+            ...(popperProps.modifiers || {}),
           }}
           transition
+          {...popperProps}
         >
           {({ TransitionProps }) => (
             <Fade {...TransitionProps}>
