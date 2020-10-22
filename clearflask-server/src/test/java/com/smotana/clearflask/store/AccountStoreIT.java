@@ -12,11 +12,7 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.util.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
@@ -59,7 +55,7 @@ public class AccountStoreIT extends AbstractIT {
         }));
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
                 store.genAccountId(),
@@ -118,7 +114,7 @@ public class AccountStoreIT extends AbstractIT {
         assertFalse(store.getAccountByEmail(account.getEmail()).isPresent());
     }
 
-    @Test(timeout = 10_000L)
+    @Test(timeout = 30_000L)
     public void testSession() throws Exception {
         Account account = new Account(
                 store.genAccountId(),
