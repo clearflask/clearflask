@@ -83,7 +83,7 @@ interface ConnectProps {
   accountStatus?: Status;
   account?: AdminClient.AccountAdmin;
   configsStatus?: Status;
-  configs?: AdminClient.VersionedConfigAdmin[];
+  bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
 interface State {
   currentPagePath: ConfigEditor.Path;
@@ -115,13 +115,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         .then(d => d.accountBindAdmin({})
           .then(result => {
             this.setState({ binding: false })
-            if (result.account) d.configGetAllAdmin()
+            if (result.account) d.configGetAllAndUserBindAllAdmin()
           }));
     } else if (props.accountStatus === Status.FULFILLED && !props.configsStatus) {
       this.state = {
         currentPagePath: [],
       };
-      ServerAdmin.get(props.forceMock).dispatchAdmin().then(d => d.configGetAllAdmin());
+      ServerAdmin.get(props.forceMock).dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
     } else {
       this.state = {
         currentPagePath: [],
@@ -146,12 +146,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         pathname: "/login",
         state: { ADMIN_LOGIN_REDIRECT_TO: this.props.location }
       }} />);
-    } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.configs || !this.props.account) {
+    } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.bindByProjectId || !this.props.account) {
       return (<LoadingPage />);
     }
     const activePath = this.props.match.params['path'] || '';
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
-    const projects = this.props.configs.map(c => ServerAdmin.get(this.props.forceMock).getProject(c));
+    const projects = Object.keys(this.props.bindByProjectId)
+      .map(projectId => ServerAdmin.get(this.props.forceMock)
+        .getOrCreateProject(this.props.bindByProjectId![projectId].config,
+          this.props.bindByProjectId![projectId].user));
     projects.forEach(project => {
       if (!this.unsubscribes[project.projectId]) {
         this.unsubscribes[project.projectId] = project.subscribeToUnsavedChanges(() => {
@@ -694,7 +697,7 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     accountStatus: state.account.account.status,
     account: state.account.account.account,
     configsStatus: state.configs.configs.status,
-    configs: state.configs.configs.configs && Object.values(state.configs.configs.configs),
+    bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth()(Dashboard)));

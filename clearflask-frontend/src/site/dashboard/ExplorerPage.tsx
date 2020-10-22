@@ -4,6 +4,7 @@ import { connect, Provider } from 'react-redux';
 import { Server } from '../../api/server';
 import ServerAdmin, { Project, ReduxStateAdmin } from '../../api/serverAdmin';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import notEmpty from '../../common/util/arrayUtil';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -22,7 +23,7 @@ class ExplorerPage extends Component<Props & ConnectProps & WithStyles<typeof st
   constructor(props) {
     super(props);
     if (props.isLoggedIn && !props.configsStatus) {
-      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAdmin());
+      ServerAdmin.get().dispatchAdmin().then(d => d.configGetAllAndUserBindAllAdmin());
     }
     this.state = {};
   }
@@ -60,9 +61,12 @@ class ExplorerPage extends Component<Props & ConnectProps & WithStyles<typeof st
 }
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state) => {
-  const connectProps: ConnectProps = {
-    projects: state.configs.configs.configs && Object.values(state.configs.configs.configs)
-      .map(c => ServerAdmin.get().getProject(c)) || [],
+  const connectProps = {
+    projects: state.configs.configs.byProjectId && Object.keys(state.configs.configs.byProjectId)
+      .map(projectId => ServerAdmin.get().getOrCreateProject(
+        state.configs.configs.byProjectId![projectId].config,
+        state.configs.configs.byProjectId![projectId].user))
+      .filter(notEmpty) || [],
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(ExplorerPage));

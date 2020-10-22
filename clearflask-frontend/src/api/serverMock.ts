@@ -705,10 +705,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.getProject(request.projectId).config);
   }
-  configGetAllAdmin(): Promise<Admin.ConfigGetAllResult> {
+  configGetAllAndUserBindAllAdmin(): Promise<Admin.ConfigAndBindAllResult> {
     if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
+    const byProjectId = {};
+    Object.keys(this.db).forEach(projectId => byProjectId[projectId] = {
+      config: this.db[projectId].config,
+      user: this.db[projectId].loggedInUser,
+    })
     return this.returnLater({
-      configs: Object.values(this.db).map(p => p.config),
+      byProjectId,
     });
   }
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {

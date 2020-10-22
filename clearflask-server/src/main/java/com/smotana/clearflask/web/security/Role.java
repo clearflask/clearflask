@@ -15,10 +15,6 @@ public class Role {
      * account may or may not be in good standing.
      */
     public static final String ADMINISTRATOR = "ADMINISTRATOR_LIMITED";
-    /**
-     * Applies to any registered user
-     */
-    public static final String USER = "USER";
 
     /**
      * Applies to entity that is anonymous but accessing a project resource.

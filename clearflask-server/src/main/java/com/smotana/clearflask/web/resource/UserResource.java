@@ -78,7 +78,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         Duration sendOnEmailChangedEmailIfLastChangeGreaterThan();
     }
 
-    public static final String USER_AUTH_COOKIE_NAME = "cf_usr_auth";
+    public static final String USER_AUTH_COOKIE_NAME_PREFIX = "cf_usr_auth_";
 
     @Inject
     private Config config;
@@ -137,7 +137,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     userSession,
                     Instant.now().plus(config.sessionExpiry()).getEpochSecond());
 
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, userSession.getSessionId(), userSession.getTtlInEpochSec());
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSession.getSessionId(), userSession.getTtlInEpochSec());
         }
 
         // Fetch account
@@ -146,7 +146,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             log.info("User bind on valid session to non-existent user, revoking all sessions for userId {}",
                     userSession.getUserId());
             userStore.revokeSessions(projectId, userSession.getUserId(), Optional.empty());
-            authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
+            authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId);
             return new UserBindResponse(null);
         }
 
@@ -240,7 +240,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserSession session = userStore.createSession(
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
         if (balance > 0L) {
             voteStore.balanceAdjustTransaction(
@@ -361,7 +361,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserSession session = userStore.createSession(
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -380,7 +380,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         UserSession session = userStore.createSession(
                 user,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+        authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
         return user.toUserMeWithBalance();
     }
@@ -399,7 +399,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         log.debug("Logout session for user {}", session.getUserId());
         userStore.revokeSession(session);
 
-        authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME);
+        authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId);
     }
 
     @RolesAllowed({Role.PROJECT_USER})

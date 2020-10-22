@@ -12,13 +12,24 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.ConfigAndBindResult;
+import com.smotana.clearflask.api.model.ConfigGetAllResult;
+import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
+import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -42,7 +53,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME;
+import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME_PREFIX;
 
 @Slf4j
 @Singleton
@@ -95,7 +106,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             userSessionOpt = Optional.of(userStore.refreshSession(
                     userSessionOpt.get(),
                     Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond()));
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
         }
 
         // Auto login using auth token
@@ -133,7 +144,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             UserStore.UserSession session = userStore.createSession(
                     userOpt.get(),
                     Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME, session.getSessionId(), session.getTtlInEpochSec());
+            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
         }
 
         if (!userOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()

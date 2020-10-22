@@ -8,14 +8,16 @@ import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.web.resource.AccountResource;
-import com.smotana.clearflask.web.resource.UserResource;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.function.Predicate;
+
+import static com.smotana.clearflask.web.resource.AccountResource.ACCOUNT_AUTH_COOKIE_NAME;
+import static com.smotana.clearflask.web.resource.AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME;
+import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME_PREFIX;
 
 @Singleton
 @Slf4j
@@ -36,25 +38,21 @@ public class MockAuthCookie implements AuthCookie {
     @Override
     public void setAuthCookie(HttpServletResponse response, String cookieName, String sessionId, long ttlInEpochSec) {
         if (mockExtendedSecurityContext != null) {
-            switch (cookieName) {
-                case AccountResource.ACCOUNT_AUTH_COOKIE_NAME:
-                    if (accountStore != null) {
-                        accountSession = accountStore.getSession(sessionId);
-                        updateSecurityContext();
-                    }
-                    break;
-                case AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME:
-                    if (accountStore != null) {
-                        superAdminSession = accountStore.getSession(sessionId);
-                        updateSecurityContext();
-                    }
-                    break;
-                case UserResource.USER_AUTH_COOKIE_NAME:
-                    if (userStore != null) {
-                        userSession = userStore.getSession(sessionId);
-                        updateSecurityContext();
-                    }
-                    break;
+            if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
+                if (accountStore != null) {
+                    accountSession = accountStore.getSession(sessionId);
+                    updateSecurityContext();
+                }
+            } else if (SUPER_ADMIN_AUTH_COOKIE_NAME.equals(cookieName)) {
+                if (accountStore != null) {
+                    superAdminSession = accountStore.getSession(sessionId);
+                    updateSecurityContext();
+                }
+            } else if (cookieName.startsWith(USER_AUTH_COOKIE_NAME_PREFIX)) {
+                if (userStore != null) {
+                    userSession = userStore.getSession(sessionId);
+                    updateSecurityContext();
+                }
             }
         }
     }
@@ -62,13 +60,10 @@ public class MockAuthCookie implements AuthCookie {
     @Override
     public void unsetAuthCookie(HttpServletResponse response, String cookieName) {
         if (mockExtendedSecurityContext != null) {
-            switch (cookieName) {
-                case AccountResource.ACCOUNT_AUTH_COOKIE_NAME:
-                    accountSession = Optional.empty();
-                    break;
-                case UserResource.USER_AUTH_COOKIE_NAME:
-                    userSession = Optional.empty();
-                    break;
+            if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
+                accountSession = Optional.empty();
+            } else if (cookieName.startsWith(USER_AUTH_COOKIE_NAME_PREFIX)) {
+                userSession = Optional.empty();
             }
             updateSecurityContext();
         }
@@ -92,7 +87,9 @@ public class MockAuthCookie implements AuthCookie {
                         case Role.ADMINISTRATOR_ACTIVE:
                         case Role.PROJECT_OWNER_ACTIVE:
                             return accountSession.isPresent();
-                        case Role.USER:
+                        case Role.PROJECT_MODERATOR:
+                        case Role.PROJECT_MODERATOR_ACTIVE:
+                            return userSession.isPresent() && userSession.get().getIsMod() == Boolean.TRUE;
                         case Role.PROJECT_USER:
                         case Role.IDEA_OWNER:
                         case Role.COMMENT_OWNER:

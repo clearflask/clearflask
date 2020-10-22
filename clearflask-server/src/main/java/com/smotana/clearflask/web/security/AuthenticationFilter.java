@@ -4,9 +4,13 @@ import com.google.common.base.Strings;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
+import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -64,10 +68,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
+        Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<AccountSession> superAdminSessionOpt = authenticateSuperAdmin(requestContext);
         Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext)
                 .or(() -> superAdminSessionOpt);
-        Optional<UserSession> userSessionOpt = authenticateUser(accountSessionOpt, requestContext);
+        Optional<UserSession> userSessionOpt = pathParamProjectIdOpt.flatMap(projectId -> authenticateUser(projectId, requestContext);
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,
@@ -107,8 +112,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         return superAdminSession;
     }
 
-    private Optional<UserSession> authenticateUser(Optional<AccountSession> accountSessionOpt, ContainerRequestContext requestContext) {
-        Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME);
+    private Optional<UserSession> authenticateUser(String projectId, ContainerRequestContext requestContext) {
+        Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId);
         if (cookie == null) {
             return Optional.empty();
         }
@@ -204,8 +209,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     }
                 }
                 return true;
-            case Role.USER:
-                return userSession.isPresent();
             case Role.PROJECT_OWNER_ACTIVE:
             case Role.PROJECT_OWNER:
                 if (!pathParamProjectIdOpt.isPresent()) {

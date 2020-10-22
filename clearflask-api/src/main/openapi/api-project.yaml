@@ -799,7 +799,7 @@ components:
                   $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/config/admin:
   get:
-    operationId: configGetAllAdmin
+    operationId: configGetAllAndUserBindAllAdmin
     tags: [ProjectAdmin]
     parameters:
     responses:
@@ -807,15 +807,22 @@ components:
         content:
           application/json:
             schema:
-              title: ConfigGetAllResult
+              title: ConfigAndBindAllResult
               type: object
               required:
-                - configs
+              - byProjectId
               properties:
-                configs:
-                  type: array
-                  items:
-                    $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                byProjectId:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    required:
+                    - config
+                    properties:
+                      config:
+                        $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                      user:
+                        $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
 /project/admin:
   post:
     operationId: projectCreateAdmin

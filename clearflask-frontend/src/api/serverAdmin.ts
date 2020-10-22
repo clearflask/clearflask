@@ -159,11 +159,11 @@ export default class ServerAdmin {
     return result.value;
   }
 
-  getProject(versionedConfig: Admin.VersionedConfigAdmin): Project {
+  getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {
     const projectId = versionedConfig.config.projectId;
     var project = this.projects[projectId];
     if (!project) {
-      const server = new Server(projectId, undefined, this.apiOverride, versionedConfig);
+      const server = new Server(projectId, undefined, this.apiOverride);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, DemoUpdateDelay);
@@ -195,6 +195,18 @@ export default class ServerAdmin {
       };
       this.projects[projectId] = project;
     }
+
+    // Simulate config get and bind
+    const configGetAndUserBindAction: Client.configGetAndUserBindActionFulfilled = {
+      type: Client.configGetAndUserBindActionStatus.Fulfilled,
+      meta: { action: Client.Action.configGetAndUserBind, request: { projectId, configGetAndUserBind: {} } },
+      payload: {
+        config: versionedConfig,
+        user: loggedInUser,
+      },
+    };
+    project.server.getStore().dispatch(configGetAndUserBindAction);
+
     return project;
   }
 
@@ -365,7 +377,7 @@ function reducerPlans(state: StatePlans = statePlansDefault, action: Admin.Actio
 export interface StateConfigs {
   configs: {
     status?: Status;
-    configs?: { [projectId: string]: Admin.VersionedConfigAdmin };
+    byProjectId?: { [projectId: string]: Admin.ConfigAndBindAllResultByProjectId };
   };
 }
 const stateConfigsDefault = {
@@ -373,7 +385,7 @@ const stateConfigsDefault = {
 };
 function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin.Actions): StateConfigs {
   switch (action.type) {
-    case Admin.configGetAllAdminActionStatus.Pending:
+    case Admin.configGetAllAndUserBindAllAdminActionStatus.Pending:
       return {
         ...state,
         configs: {
@@ -381,7 +393,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
           status: Status.PENDING,
         },
       };
-    case Admin.configGetAllAdminActionStatus.Rejected:
+    case Admin.configGetAllAndUserBindAllAdminActionStatus.Rejected:
       return {
         ...state,
         configs: {
@@ -389,15 +401,12 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
           status: Status.REJECTED,
         },
       };
-    case Admin.configGetAllAdminActionStatus.Fulfilled:
+    case Admin.configGetAllAndUserBindAllAdminActionStatus.Fulfilled:
       return {
         ...state,
         configs: {
           status: Status.FULFILLED,
-          configs: action.payload.configs.reduce((configs, config) => {
-            configs[config.config.projectId] = config;
-            return configs;
-          }, {}),
+          byProjectId: action.payload.byProjectId,
         },
       };
     case Admin.projectCreateAdminActionStatus.Fulfilled:
@@ -405,19 +414,21 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
         ...state,
         configs: {
           ...state.configs,
-          configs: {
-            ...state.configs.configs,
-            [action.payload.projectId]: action.payload.config,
+          byProjectId: {
+            ...state.configs.byProjectId,
+            [action.payload.projectId]: {
+              config: action.payload.config,
+            },
           },
         },
       };
     case Admin.projectDeleteAdminActionStatus.Fulfilled:
-      const { [action.meta.request.projectId]: removedConfig, ...configsWithoutDeleted } = state.configs.configs || {};
+      const { [action.meta.request.projectId]: removedConfig, ...projectsWithoutDeleted } = state.configs.byProjectId || {};
       return {
         ...state,
         configs: {
           ...state.configs,
-          configs: configsWithoutDeleted,
+          byProjectId: projectsWithoutDeleted,
         },
       };
     case Admin.accountLogoutAdminActionStatus.Pending:

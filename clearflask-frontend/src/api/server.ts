@@ -26,7 +26,7 @@ export class Server {
   readonly errorSubscribers: ((errorMsg: string, isUserFacing: boolean) => void)[] = [];
   challengeSubscriber?: ((challenge: string) => Promise<string | undefined>);
 
-  constructor(projectId: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface, versionedConfig?: Admin.VersionedConfigAdmin) {
+  constructor(projectId: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
@@ -40,7 +40,7 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(projectId, settings, versionedConfig),
+      Server.initialState(projectId, settings),
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
@@ -71,13 +71,11 @@ export class Server {
     };
   }
 
-  static initialState(projectId: string, settings?: StateSettings, versionedConfig?: Admin.VersionedConfigAdmin): any {
+  static initialState(projectId: string, settings?: StateSettings): any {
     const state: ReduxState = {
       projectId: projectId,
       settings: settings || stateSettingsDefault,
-      conf: versionedConfig ? {
-        status: Status.FULFILLED, conf: versionedConfig.config, ver: versionedConfig.version,
-      } : {},
+      conf: stateConfDefault,
       ideas: stateIdeasDefault,
       comments: stateCommentsDefault,
       users: stateUsersDefault,
@@ -243,7 +241,8 @@ export interface StateConf {
   onboardBefore?: Client.Onboarding;
   ver?: string;
 }
-function reducerConf(state: StateConf = {}, action: AllActions): StateConf {
+const stateConfDefault = {};
+function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configGetAndUserBindActionStatus.Pending:
       return { status: Status.PENDING };
