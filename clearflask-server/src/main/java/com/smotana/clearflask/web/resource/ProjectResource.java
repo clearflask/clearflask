@@ -12,13 +12,8 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ConfigAndBindResult;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.ConfigGetAllResult;
-import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -33,6 +28,7 @@ import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
+import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
@@ -180,7 +176,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
-    public ConfigGetAllResult configGetAllAdmin() {
+    public ConfigAndBindAllResult configGetAllAndUserBindAllAdmin() {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> {
             log.warn("Account not found for session with accountId {}", accountSession.getAccountId());
@@ -194,6 +190,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                     account.getEmail(), Sets.difference(account.getProjectIds(), projects.stream()
                             .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
+
+        for (Project project : projects) {
+            AuthenticationFilter.authenticateUserCookie(
+                    userStore,
+                    requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId));
+        }
+
         return new ConfigGetAllResult(projects.stream()
                 .map(Project::getVersionedConfigAdmin)
                 .collect(ImmutableList.toImmutableList()));

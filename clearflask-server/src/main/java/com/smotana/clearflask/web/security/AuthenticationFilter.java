@@ -72,7 +72,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<AccountSession> superAdminSessionOpt = authenticateSuperAdmin(requestContext);
         Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext)
                 .or(() -> superAdminSessionOpt);
-        Optional<UserSession> userSessionOpt = pathParamProjectIdOpt.flatMap(projectId -> authenticateUser(projectId, requestContext);
+        Optional<UserSession> userSessionOpt = pathParamProjectIdOpt.flatMap(projectId -> authenticateUser(projectId, requestContext));
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,
@@ -113,7 +113,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private Optional<UserSession> authenticateUser(String projectId, ContainerRequestContext requestContext) {
-        Cookie cookie = requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId);
+        return authenticateUserCookie(
+                userStore,
+                requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId));
+    }
+
+    /** TODO Kind of a hack, authenticate* methods should be refactored out to a separate singleton class */
+    public static Optional<UserSession> authenticateUserCookie(UserStore userStore, Cookie cookie) {
         if (cookie == null) {
             return Optional.empty();
         }
