@@ -46,6 +46,12 @@ public class ClearFlaskCreditSync extends ManagedService {
 
         @NoDefaultValue
         String tokenId();
+
+        /**
+         * $1 equal to 100 credits
+         */
+        @DefaultValue("100")
+        double dollarToCreditRatio();
     }
 
     @Inject
@@ -70,8 +76,16 @@ public class ClearFlaskCreditSync extends ManagedService {
         }
     }
 
-    public void process(String idempotentKey, Account account, long amount, String summary) throws IOException {
+    public void process(String idempotentKey, Account account, double amount, String summary) throws IOException {
         if (!config.enabled()) {
+            return;
+        }
+
+        long creditAmount = (long) Math.ceil(config.dollarToCreditRatio() * amount);
+
+        if (creditAmount <= 0) {
+            log.warn("Credit sync for amount <=0, amount {} creditAmount {} ratio {}",
+                    amount, creditAmount, config.dollarToCreditRatio());
             return;
         }
 
@@ -80,7 +94,7 @@ public class ClearFlaskCreditSync extends ManagedService {
                 account.getEmail(),
                 account.getName(),
                 idempotentKey,
-                amount,
+                creditAmount,
                 summary);
         String bodyStr = gson.toJson(creditRequest);
 

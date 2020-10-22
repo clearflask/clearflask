@@ -27,11 +27,7 @@ import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.TenantApi;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.Invoice;
-import org.killbill.billing.client.model.gen.InvoiceItem;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import rx.Observable;
@@ -40,11 +36,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -247,7 +239,7 @@ public class KillBillResource extends ManagedService {
             clearFlaskCreditSync.process(
                     invoice.getInvoiceId().toString(),
                     account,
-                    invoice.getAmount().longValueExact(),
+                    invoice.getAmount().doubleValue(),
                     summary);
         } catch (Exception ex) {
             log.warn("Failed to sync credit, invoiceId {} eventType {}",
