@@ -415,18 +415,18 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
       const newProject = await d.projectCreateAdmin({
         configAdmin: this.createConfig(),
       });
-    } catch(e) {
+      this.setState({ isSubmitting: false });
+      this.props.projectCreated(newProject.projectId);
+      inviteUserEmails.forEach(inviteUserEmail => d.userCreateAdmin({
+        projectId: newProject.projectId,
+        userCreateAdmin: {
+          email: inviteUserEmail,
+        },
+      }));
+    } catch (e) {
       this.setState({ isSubmitting: false });
       return;
     }
-    this.setState({ isSubmitting: false });
-    this.props.projectCreated(newProject.projectId);
-    inviteUserEmails.forEach(inviteUserEmail => d.userCreateAdmin({
-      projectId,
-      userCreateAdmin: {
-        email: inviteUserEmail,
-      },
-    }));
   }
 
   parseInvites(input?: string): string[] {

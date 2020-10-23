@@ -14,6 +14,7 @@ import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -34,7 +35,8 @@ public class ProjectStoreTest extends AbstractTest {
         install(Modules.override(
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module()
+                DynamoMapperImpl.module(),
+                Sanitizer.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

@@ -33,6 +33,12 @@ components:
         slug:
           x-clearflask-prop: { order: 4, name: 'Subdomain', description: 'Customize subdomain of your project (ie: "https://<subdomain>.clearflask.com")' }
           type: string
+          # If changed, also change in Sanitizer.java
+          minLength: 1
+          # If changed, also change in Sanitizer.java
+          maxLength: 30
+          # If changed, also change in Sanitizer.java
+          pattern: '^[A-Za-z0-9](?:[A-Za-z0-9\-]{0,28}[A-Za-z0-9])?$'
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:

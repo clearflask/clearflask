@@ -1,3 +1,4 @@
+import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -20,7 +21,10 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   spacing: {
-    margin: theme.spacing(2),
+    marginTop: theme.spacing(4),
+  },
+  description: {
+    marginTop: theme.spacing(1),
   },
   singlePanels: {
     display: 'flex',
@@ -84,7 +88,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       // ### PANELS
       if (this.props.page.panels.length > 0) {
         panelsCmpt = (
-          <div className={this.props.classes.singlePanels}>
+          <div className={classNames(this.props.classes.singlePanels, this.props.classes.spacing)}>
             {(this.props.page.panels || []).map(panel => {
               const searchKey = getSearchKey(panel.search);
               return (
@@ -147,7 +151,11 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         );
         if (board.title) {
           boardCmpt = (
-            <DividerCorner title={board.title} height='50%'>
+            <DividerCorner
+              className={this.props.classes.spacing}
+              title={board.title}
+              height='50%'
+            >
               <div className={classNames(this.props.classes.board, this.props.classes.boardInCorner)}>
                 {panels}
               </div>
@@ -155,7 +163,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           );
         } else {
           boardCmpt = (
-            <div className={this.props.classes.board}>
+            <div className={classNames(this.props.classes.board, this.props.classes.spacing)}>
               {panels}
             </div>
           );
@@ -166,30 +174,38 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.explorer) {
         const explorer = this.props.page.explorer;
         explorerCmpt = (
-          <IdeaExplorer
-            server={this.props.server}
-            explorer={explorer}
-          />
+          <div className={this.props.classes.spacing}>
+            <IdeaExplorer
+              server={this.props.server}
+              explorer={explorer}
+            />
+          </div>
         );
       }
 
-      var top;
+      var title;
+      if (this.props.page.title) {
+        title = (
+          <Typography component="h1" variant="h5" color="textPrimary">{this.props.page.title}</Typography>
+        );
+      }
+
+      var desc;
       if (this.props.page.description) {
-        top = (
-          <div className={this.props.classes.spacing}>
+        desc = (
+          <div className={this.props.classes.description}>
             <RichViewer key={this.props.page.description} initialRaw={this.props.page.description} />
           </div>
         );
       }
 
-      if (this.props.page.title) {
+      var top;
+      if (title || desc) {
         top = (
-          <DividerCorner
-            height={this.props.page.description ? 20 : 0}
-            title={this.props.page.title}
-          >
-            {top}
-          </DividerCorner>
+          <div className={this.props.classes.spacing}>
+            {title}
+            {desc}
+          </div>
         );
       }
 

@@ -168,7 +168,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
             >{msg}</Typography>
           )}
           {showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0 && (
-            <Hr length='120px'>Compare</Hr>
+            <Hr length='120px'>Prioritize</Hr>
           )}
           <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
             {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (

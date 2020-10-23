@@ -722,10 +722,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    this.getProject(request.projectId).config.config = request.configAdmin;
+    this.getProject(request.configAdmin.projectId).config.config = request.configAdmin;
     return this.returnLater({
       projectId: request.configAdmin.projectId,
-      config: this.getProject(request.projectId).config,
+      config: this.getProject(request.configAdmin.projectId).config,
     });
   }
   projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {

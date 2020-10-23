@@ -34,8 +34,10 @@ public class Sanitizer {
     private static final long POST_TITLE_MAX_LENGTH = 100;
     private static final long CONTENT_MAX_LENGTH = 10_000;
     private static final long NAME_MAX_LENGTH = 30;
+    /** If changed, also change in api-project.yaml */
     private static final long SUBDOMAIN_MAX_LENGTH = 30;
-    private static final String SUBDOMAIN_REGEX = "^[a-z0-9]+$";
+    /** If changed, also change in api-project.yaml */
+    private static final String SUBDOMAIN_REGEX = "^[A-Za-z0-9](?:[A-Za-z0-9\\-]{0,28}[A-Za-z0-9])?$";
     private static final long SEARCH_TEXT_MAX_LENGTH = 200;
 
     private final Predicate<String> subdomainPredicate;
@@ -54,40 +56,40 @@ public class Sanitizer {
     }
 
     public void accountName(String accountName) {
-        if(accountName.length() > NAME_MAX_LENGTH) {
+        if (accountName.length() > NAME_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
 
     public void userName(String userName) {
-        if(userName.length() > NAME_MAX_LENGTH) {
+        if (userName.length() > NAME_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
 
     public void content(String content) {
-        if(content.length() > CONTENT_MAX_LENGTH) {
+        if (content.length() > CONTENT_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Content is too long, must be at most " + CONTENT_MAX_LENGTH + " characters");
         }
     }
 
     public void postTitle(String postTitle) {
-        if(postTitle.length() > POST_TITLE_MAX_LENGTH) {
+        if (postTitle.length() > POST_TITLE_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Title is too long, must be at most " + POST_TITLE_MAX_LENGTH + " characters");
         }
     }
 
     public void searchText(String searchText) {
-        if(searchText.length() > SEARCH_TEXT_MAX_LENGTH) {
+        if (searchText.length() > SEARCH_TEXT_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Search text is too long, must be at most " + SEARCH_TEXT_MAX_LENGTH + " characters");
         }
     }
 
-    public void slug(String slug) {
-        if(slug.length() > SUBDOMAIN_MAX_LENGTH) {
+    public void subdomain(String slug) {
+        if (slug.length() > SUBDOMAIN_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");
         }
-        if(!subdomainPredicate.test(slug)) {
+        if (!subdomainPredicate.test(slug)) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain can only contain lowercase letters and numbers");
         }
 

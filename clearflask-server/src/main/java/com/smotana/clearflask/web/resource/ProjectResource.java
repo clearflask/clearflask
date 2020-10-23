@@ -8,8 +8,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -52,7 +50,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -229,7 +226,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
-        sanitizer.slug(configAdmin.getSlug());
+        sanitizer.subdomain(configAdmin.getSlug());
 
         String projectId = projectStore.genProjectId(configAdmin.getSlug());
         configAdmin = configAdmin.toBuilder().projectId(projectId).build();

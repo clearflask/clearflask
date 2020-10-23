@@ -57,6 +57,10 @@ interface Props {
   editorRef?: React.Ref<Editor>;
 }
 class StyledDraftJsEditor extends React.Component<Props & EditorProps & WithStyles<typeof styles, true>> {
+  componentDidCatch() {
+    this.forceUpdate();
+  }
+
   render() {
     const { editorRef, theme, classes, ...editorProps } = this.props;
     return (

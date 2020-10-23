@@ -32,6 +32,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  overrideText?: string;
   overrideTerms?: Array<Term>;
 }
 
@@ -41,7 +42,7 @@ class AcceptTerms extends React.Component<Props & WithStyles<typeof styles, true
 
     return (legalDocs && legalDocs.length > 0) ? (
       <div className={this.props.classes.legal}>
-        {'You agree to our '}
+        {this.props.overrideText || 'You agree to our '}
         <Delimited delimiter={', '} delimiterLast={' and '}>
           {legalDocs.map(doc => ( // eslint-disable-next-line react/jsx-no-target-blank
             <a key={doc.shortName} href={doc.link} target="_blank" rel="noopener nofollow" className={this.props.classes.legalLink}>{doc.shortName}</a>

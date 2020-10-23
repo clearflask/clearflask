@@ -170,30 +170,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
           {...otherInputProps as any}
           editorRef={this.editorRef}
           editorState={this.state.editorState}
-          onChange={newEditorState => {
-            var currentContent = newEditorState.getCurrentContent();
-
-            if (filteringEnabled
-              && currentContent !== this.state.editorState.getCurrentContent()
-              && newEditorState.getLastChangeType() === "insert-fragment") {
-              newEditorState = filterEditorState(draftjsFilterConfig, newEditorState) as EditorState;
-            }
-
-            const prevValue = this.state.value;
-            var newValue: string | undefined;
-            if (currentContent.hasText()) {
-              newValue = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
-            } else {
-              newValue = '';
-            }
-            this.setState({
-              editorState: newEditorState,
-              value: newValue,
-            });
-            if (prevValue !== newValue) {
-              onChange && onChange({ target: { value: newValue } });
-            }
-          }}
+          onChange={this.handleOnChange.bind(this)}
           onFocus={e => {
             otherInputProps.onFocus && otherInputProps.onFocus(e as any);
             this.setState({ isFocused: true });
@@ -205,7 +182,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
           handleKeyCommand={(command, editorState) => {
             const newEditorState = RichUtils.handleKeyCommand(editorState, command);
             if (newEditorState) {
-              this.setState({ editorState: newEditorState });
+              this.handleOnChange(newEditorState);
               return 'handled';
             }
 
@@ -248,23 +225,44 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
   }
 
   toggleInlineStyle(e, style: string) {
-    this.setState({ editorState: RichUtils.toggleInlineStyle(this.state.editorState, style) });
+    this.handleOnChange(RichUtils.toggleInlineStyle(this.state.editorState, style));
     e.preventDefault();
   }
 
   toggleBlockType(e, block: string) {
-    this.setState({ editorState: RichUtils.toggleBlockType(this.state.editorState, block) });
+    this.handleOnChange(RichUtils.toggleBlockType(this.state.editorState, block));
     e.preventDefault();
   }
 
   toggleCode(e) {
     // Clear all style since markdown doesn't support styling within code block
-    this.setState({ editorState: RichUtils.toggleCode(this.state.editorState) });
+    this.handleOnChange(RichUtils.toggleCode(this.state.editorState));
     e.preventDefault();
   }
 
-  toggleLink(link: string | null) {
-    this.setState({ editorState: RichUtils.toggleLink(this.state.editorState, this.state.editorState.getSelection(), link) });
+  handleOnChange(newEditorState) {
+    var currentContent = newEditorState.getCurrentContent();
+
+    if (filteringEnabled
+      && currentContent !== this.state.editorState.getCurrentContent()
+      && newEditorState.getLastChangeType() === "insert-fragment") {
+      newEditorState = filterEditorState(draftjsFilterConfig, newEditorState) as EditorState;
+    }
+
+    const prevValue = this.state.value;
+    var newValue: string | undefined;
+    if (currentContent.hasText()) {
+      newValue = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
+    } else {
+      newValue = '';
+    }
+    this.setState({
+      editorState: newEditorState,
+      value: newValue,
+    });
+    if (prevValue !== newValue) {
+      this.props.onChange && this.props.onChange({ target: { value: newValue } });
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
+import AcceptTerms from '../common/AcceptTerms';
 import TemplateLiquid from './comps/TemplateLiquid';
 import PoweredBy from './PoweredBy';
 
@@ -24,7 +25,10 @@ const styles = (theme: Theme) => createStyles({
     width: '85%',
     display: 'flex',
     alignItems: 'center',
-    margin: theme.spacing(1, 1, 4, 1),
+    marginTop: theme.spacing(1),
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    marginBottom: theme.spacing(4),
   },
   divider: {
     margin: theme.spacing(2, 0, 0, 0),
@@ -59,8 +63,12 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
         {footer}
         <div className={this.props.classes.footerSpacing}>
           <div className={this.props.classes.footerItems}>
-            <div className={this.props.classes.grow} />
             <PoweredBy />
+            <div className={this.props.classes.grow} />
+            <AcceptTerms
+              overrideText='See our '
+              overrideTerms={this.props.config?.users.onboarding.terms?.documents}
+            />
           </div>
         </div>
       </React.Fragment>

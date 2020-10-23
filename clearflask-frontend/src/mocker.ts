@@ -23,7 +23,6 @@ export function mock(): Promise<any> {
     templater.usersOnboardingSso(true, SSO_SECRET_KEY, `${window.location.protocol}//${window.location.host.substr(window.location.host.indexOf('.') + 1)}/login?cfr=<return_uri>`, 'ClearFlask');
     return ServerAdmin.get().dispatchAdmin()
       .then(d => d.projectCreateAdmin({
-        projectId: projectId,
         configAdmin: editor.getConfig(),
       })
         .then(project => {

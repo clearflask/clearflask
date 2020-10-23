@@ -34,7 +34,7 @@ public class InMemoryDynamoDbProvider extends ManagedService implements Provider
 
         amazonDynamoDBLocalOpt.ifPresent(AmazonDynamoDBLocal::shutdown);
     }
-    KillBillPlanStore
+
     public static Module module() {
         return new AbstractModule() {
             @Override
