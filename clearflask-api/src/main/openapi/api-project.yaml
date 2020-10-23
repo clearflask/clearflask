@@ -827,12 +827,6 @@ components:
   post:
     operationId: projectCreateAdmin
     tags: [ProjectAdmin]
-    parameters:
-      - name: projectId
-        in: query
-        required: true
-        schema:
-          type: string
     requestBody:
       required: true
       content:

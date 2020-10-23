@@ -34,23 +34,15 @@ export interface MenuProject {
 }
 
 const paddingForLevel = (offset: number = 0, path: ConfigEditor.Path = []): React.CSSProperties | undefined => {
-  const paddingLevel = path.length + offset;
+  var pathLengthWithoutGroup = 0;
+  path.forEach(l => typeof l === 'string' && pathLengthWithoutGroup++);
+  const paddingLevel = pathLengthWithoutGroup + offset;
   return paddingLevel === 0 ? undefined : { paddingLeft: paddingLevel * 10 };
 };
 
 const styles = (theme: Theme) => createStyles({
   badgeDot: {
     backgroundColor: theme.palette.text.primary,
-  },
-  childrenContainer: {
-    position: 'relative',
-  },
-  childrenPadder: {
-    marginLeft: 16,
-    height: '100%',
-    padding: '1px',
-    position: 'absolute',
-    borderRight: '1px solid rgba(224, 224, 224, 0.3)',
   },
   link: {
     color: 'currentColor',
@@ -265,12 +257,9 @@ class MenuPageGroupWithoutStyle extends Component<PropsPageGroup & WithStyles<ty
               style={padding}
               primary={this.props.pageGroup.name} />
           </ListItem>
-          <div className={this.props.classes.childrenContainer}>
-            <div className={this.props.classes.childrenPadder} style={padding} />
-            {childPages.map(childPage =>
-              <MenuPage {...menuProps} key={childPage.key} offset={1} page={childPage} />
-            )}
-          </div>
+          {childPages.map(childPage =>
+            <MenuPage {...menuProps} key={childPage.key} offset={1} page={childPage} />
+          )}
         </div>
       </Collapse>
     );

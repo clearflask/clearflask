@@ -65,6 +65,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 30, challengeAfter = 20)
     @Override
     public IdeaWithVote ideaCreate(String projectId, IdeaCreate ideaCreate) {
+        sanitizer.postTitle(ideaCreate.getTitle());
+        sanitizer.content(ideaCreate.getDescription());
+
         UserModel user = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
@@ -106,6 +109,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin) {
+        sanitizer.postTitle(ideaCreateAdmin.getTitle());
+        sanitizer.content(ideaCreateAdmin.getDescription());
+
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt).get();
         UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
@@ -167,6 +173,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaWithVoteSearchResponse ideaSearch(String projectId, IdeaSearch ideaSearch, String cursor) {
+        sanitizer.searchText(ideaSearch.getSearchText());
+
         Optional<UserModel> userOpt = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
@@ -199,6 +207,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaSearchResponse ideaSearchAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin, String cursor) {
+        sanitizer.searchText(ideaSearchAdmin.getSearchText());
+
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 ideaSearchAdmin,
@@ -220,6 +230,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdate(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
+        sanitizer.postTitle(ideaUpdate.getTitle());
+        sanitizer.content(ideaUpdate.getDescription());
+
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdate).getIdea().toIdea();
     }
 
@@ -227,6 +240,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
+        sanitizer.postTitle(ideaUpdateAdmin.getTitle());
+        sanitizer.content(ideaUpdateAdmin.getDescription());
+
         ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
         Optional<UserModel> userOpt = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
@@ -267,6 +283,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteBulkAdmin(String projectId, IdeaSearchAdmin ideaSearchAdmin) {
+        sanitizer.searchText(ideaSearchAdmin.getSearchText());
+
         SearchResponse searchResponse = null;
         do {
             searchResponse = ideaStore.searchIdeas(

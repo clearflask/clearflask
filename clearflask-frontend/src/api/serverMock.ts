@@ -724,7 +724,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
     this.getProject(request.projectId).config.config = request.configAdmin;
     return this.returnLater({
-      projectId: request.projectId,
+      projectId: request.configAdmin.projectId,
       config: this.getProject(request.projectId).config,
     });
   }

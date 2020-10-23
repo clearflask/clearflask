@@ -272,7 +272,7 @@ public class KillBillSync extends ManagedService {
                 props.putAll(actualProps);
                 props.putAll(expectedProps);
                 String propsStr = gson.toJson(props);
-                log.info("Setting perTenantConfiguration {}", propsStr);
+                log.info("Setting perTenantConfiguration {} from {}", props, actualProps);
                 kbTenantProvider.get().uploadPerTenantConfiguration(propsStr, KillBillUtil.roDefault());
             }
         }
@@ -337,13 +337,13 @@ public class KillBillSync extends ManagedService {
             ImmutableMap<String, ReportConfigurationJson> reportsMap = reports.stream().collect(ImmutableMap.toImmutableMap(
                     r -> r.getReportName(), r -> r));
             for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
-                if (report.equals(reportsMap.get(report.getReportName()))) {
+                Optional<ReportConfigurationJson> oldReportOpt = Optional.ofNullable(reportsMap.get(report.getReportName()));
+                if (oldReportOpt.isPresent() && report.equals(oldReportOpt.get())) {
                     log.info("Skipping analytics plugin report {}, already exists", report);
                     continue;
                 }
-                boolean oldReportExists = reportsMap.containsKey(report.getReportName());
-                log.info("{} analytics plugin report {}", oldReportExists ? "Updating" : "Creating", report);
-                kbClientProvider.get().doPost("/plugins/killbill-analytics/reports" + (oldReportExists ? "?shouldUpdate=true" : ""), report, KillBillUtil.roBuilder()
+                log.info("Setting analytics plugin report {} old report {}", report, oldReportOpt);
+                kbClientProvider.get().doPost("/plugins/killbill-analytics/reports" + (oldReportOpt.isPresent() ? "?shouldUpdate=true" : ""), report, KillBillUtil.roBuilder()
                         .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
             }
@@ -351,24 +351,31 @@ public class KillBillSync extends ManagedService {
 
         if (config.uploadInvoiceTemplate()) {
             String invoiceTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/invoice-template.html"), Charsets.UTF_8);
+            String invoiceTemplateHtmlOld = kbInvoiceProvider.get().getInvoiceTemplate(KillBillUtil.roDefault());
+            if(invoiceTemplateHtml.equals(invoiceTemplateHtmlOld)) {
+                log.info("Skipping invoice template, already exists");
+            } else {
+                log.info("Uploading invoice template {} old template {}",
+                        invoiceTemplateHtml, invoiceTemplateHtmlOld);
             kbInvoiceProvider.get().uploadInvoiceTemplate(
                     invoiceTemplateHtml,
                     true,
                     KillBillUtil.roDefault());
+            }
         }
 
         if (config.uploadOverdue()) {
             Overdue overdueCurrent = kbOverdueProvider.get().getOverdueConfigJson(KillBillUtil.roDefault());
-            if (!OVERDUE.equals(overdueCurrent)) {
-                log.info("Uploading overdue file since server has differences");
-                log.debug("Server: {} expected {}", overdueCurrent, OVERDUE);
+            if (OVERDUE.equals(overdueCurrent)) {
+                log.info("Skipping overdue file, already the same");
+            } else {
+                log.info("Uploading overdue file {} old {}", OVERDUE, overdueCurrent);
                 // This original API uses followLocation option that throws:
                 // > JsonParseException: Unexpected character ('<' (code 60))
                 // kbOverdueProvider.get().uploadOverdueConfigJson(OVERDUE, KillBillUtil.roDefault());
                 kbClientProvider.get().doPost("/1.0/kb/overdue", OVERDUE, KillBillUtil.roBuilder()
                         .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
-
             }
         }
 
@@ -384,7 +391,9 @@ public class KillBillSync extends ManagedService {
                 Document doc = docBuilder.parse(new ByteArrayInputStream(catalogStr.getBytes(Charsets.UTF_8)));
                 String effectiveDateStr = effectiveDateXPath.evaluate(doc);
                 DateTime effectiveDate = new DateTime(effectiveDateStr);
-                if (!catalogVersions.contains(effectiveDate)) {
+                if (catalogVersions.contains(effectiveDate)) {
+                    log.info("Skipping catalog file {} effectiveDate {}, already exists", fileName, effectiveDateStr);
+                } else {
                     log.info("Uploading catalog file {} effectiveDate {}", fileName, effectiveDateStr);
                     kbCatalogProvider.get().uploadCatalogXml(catalogStr, KillBillUtil.roDefault());
                 }
@@ -397,8 +406,11 @@ public class KillBillSync extends ManagedService {
         Optional<String> currentValueOpt = Optional.ofNullable(userKeyValue != null && userKeyValue.getValues() != null && !userKeyValue.getValues().isEmpty()
                 ? userKeyValue.getValues().get(0) : null);
         if (value.equals(currentValueOpt.orElse(null))) {
+            log.info("Skipping user key value {}, already set", key);
             return;
         }
+        log.info("Setting user key value {} to {} from {}, already set",
+                key, value, currentValueOpt);
         if (currentValueOpt.isPresent()) {
             kbTenantProvider.get().deleteUserKeyValue(key, KillBillUtil.roDefault());
         }

@@ -103,6 +103,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100, challengeAfter = 3)
     @Override
     public void forgotPassword(String projectId, ForgotPassword forgotPassword) {
+        sanitizer.email(forgotPassword.getEmail());
+
         Optional<Project> projectOpt = projectStore.getProject(projectId, true);
         if (!projectOpt.isPresent()) return;
 
@@ -159,6 +161,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
+        if(!Strings.isNullOrEmpty(userCreate.getName())) {
+            sanitizer.userName(userCreate.getName());
+        }
+        if(!Strings.isNullOrEmpty(userCreate.getEmail())) {
+            sanitizer.email(userCreate.getEmail());
+        }
+
         Project project = projectStore.getProject(projectId, true).get();
         Optional<EmailSignup> emailSignupOpt = Optional.ofNullable(project.getVersionedConfigAdmin()
                 .getConfig()
@@ -258,6 +267,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
+        if(!Strings.isNullOrEmpty(userCreateAdmin.getName())) {
+            sanitizer.userName(userCreateAdmin.getName());
+        }
+        if(!Strings.isNullOrEmpty(userCreateAdmin.getEmail())) {
+            sanitizer.email(userCreateAdmin.getEmail());
+        }
+
         String userId = userStore.genUserId();
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
@@ -321,6 +337,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteBulkAdmin(String projectId, UserSearchAdmin userSearchAdmin) {
+        sanitizer.searchText(userSearchAdmin.getSearchText());
+
         UserStore.SearchUsersResponse searchResponse = null;
         do {
             searchResponse = userStore.searchUsers(
@@ -337,6 +355,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
     public UserMeWithBalance userLogin(String projectId, UserLogin userLogin) {
+        sanitizer.email(userLogin.getEmail());
+
         Optional<UserModel> userOpt = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.EMAIL, userLogin.getEmail());
         if (!userOpt.isPresent()) {
             log.info("User login with non-existent email {}", userLogin.getEmail());
@@ -406,8 +426,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1, challengeAfter = 20)
     @Override
     public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
-        // TODO Sanity check userUpdate also pass cannot be set by sso user
-        if (userUpdate.getEmail() != null) {
+        sanitizer.userName(userUpdate.getName());
+        sanitizer.email(userUpdate.getEmail());
+
+        if (!Strings.isNullOrEmpty(userUpdate.getEmail())) {
             UserModel user = userStore.getUser(projectId, userId).get();
             if (!Strings.isNullOrEmpty(user.getEmail())
                     && (user.getEmailLastUpdated() == null || user.getEmailLastUpdated().plus(config.sendOnEmailChangedEmailIfLastChangeGreaterThan()).isBefore(Instant.now()))) {
@@ -423,7 +445,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userUpdateAdmin(String projectId, String userId, UserUpdateAdmin userUpdateAdmin) {
-        // TODO Sanity check userUpdateAdmin
+        sanitizer.userName(userUpdateAdmin.getName());
+        sanitizer.email(userUpdateAdmin.getEmail());
+
         if (userUpdateAdmin.getTransactionCreate() != null) {
             TransactionModel transaction = voteStore.balanceAdjustTransaction(
                     projectId,
@@ -452,6 +476,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {
+        sanitizer.searchText(userSearchAdmin.getSearchText());
+
         SearchUsersResponse searchUsersResponse = userStore.searchUsers(
                 projectId,
                 userSearchAdmin,

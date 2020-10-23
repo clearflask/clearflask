@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
+import { PostTitleMaxLength } from '../../app/comps/IdeaExplorer';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 
@@ -151,6 +152,9 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         placeholder='Title'
                         value={this.state.newItemTitle || ''}
                         onChange={e => this.setState({ newItemTitle: e.target.value })}
+                        inputProps={{
+                          maxLength: PostTitleMaxLength,
+                        }}
                       />
                       <RichEditor
                         disabled={this.state.isSubmitting}

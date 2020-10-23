@@ -25,6 +25,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -74,6 +75,8 @@ public class DynamoProjectStore implements ProjectStore {
     private DynamoMapper dynamoMapper;
     @Inject
     private Gson gson;
+    @Inject
+    private Sanitizer sanitizer;
 
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
@@ -197,6 +200,7 @@ public class DynamoProjectStore implements ProjectStore {
         String slug = versionedConfigAdmin.getConfig().getSlug();
         boolean updateSlug = !slug.equals(slugPrevious);
         if (updateSlug) {
+            sanitizer.slug(slug);
             if (LogUtil.rateLimitAllowLog("projectStore-slugChange")) {
                 log.info("Project {} changing slug from {} to {}", projectId, slugPrevious, slug);
             }

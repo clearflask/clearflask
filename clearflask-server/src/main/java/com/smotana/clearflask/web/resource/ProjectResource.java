@@ -64,15 +64,8 @@ import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_
 @Path(Application.RESOURCE_VERSION)
 public class ProjectResource extends AbstractResource implements ProjectApi, ProjectAdminApi {
 
-    public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill", innerType = String.class)
-        Set<String> reservedProjectIds();
-    }
-
     @Context
     private HttpHeaders headers;
-    @Inject
-    private Config config;
     @Inject
     private UserResource.Config userResourceConfig;
     @Inject
@@ -235,11 +228,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
-    public NewProjectResult projectCreateAdmin(String projectId, ConfigAdmin configAdmin) {
-        // TODO sanity check, projectId alphanumeric lowercase
-        if (this.config.reservedProjectIds().contains(projectId)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + projectId + "' is a reserved name");
-        }
+    public NewProjectResult projectCreateAdmin(ConfigAdmin configAdmin) {
+        sanitizer.slug(configAdmin.getSlug());
+
+        String projectId = projectStore.genProjectId(configAdmin.getSlug());
+        configAdmin = configAdmin.toBuilder().projectId(projectId).build();
+
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         Project project = projectStore.createProject(account.getAccountId(), projectId, new VersionedConfigAdmin(configAdmin, "new"));
@@ -280,7 +274,6 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             @Override
             protected void configure() {
                 bind(ProjectResource.class);
-                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

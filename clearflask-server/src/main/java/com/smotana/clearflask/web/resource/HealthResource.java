@@ -27,14 +27,4 @@ public class HealthResource {
     public String health() {
         return "ok";
     }
-
-    @GET
-    @Path("error")
-    @Consumes(MediaType.WILDCARD)
-    @Produces(MediaType.TEXT_PLAIN)
-    public String error() {
-        InternalServerErrorException ex = new InternalServerErrorException("Testing internal error");
-        log.error("Testing internal error", ex);
-        throw ex;
-    }
 }

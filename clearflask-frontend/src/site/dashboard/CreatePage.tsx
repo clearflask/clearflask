@@ -159,7 +159,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   onChange={() => this.setStateAndPreview({ templateBlog: !this.state.templateBlog })}
                 /> */}
               </Grid>
-              <Typography variant='caption'>You can add additional templates later.</Typography>
+              <Typography variant='caption'>You can customize and add additional templates later.</Typography>
               <Box display='flex' className={this.props.classes.item}>
                 <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
               </Box>
@@ -290,7 +290,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                   demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
                 />
               </Box>
-              <Typography variant='caption'>You can adjust this in more detail later.</Typography>
+              <Typography variant='caption'>You can customize with more detail later.</Typography>
               <Box display='flex' className={this.props.classes.item}>
                 <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
               </Box>
@@ -407,28 +407,26 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
     this.setState(stateUpdate, this.updatePreview.bind(this));
   }
 
-  onCreate() {
-    const projectId = this.state.infoSlug!;
+  async onCreate() {
     const inviteUserEmails = this.parseInvites(this.state.inviteSpecificPeople);
     this.setState({ isSubmitting: true });
-    ServerAdmin.get().dispatchAdmin().then(d => d
-      .projectCreateAdmin({
-        projectId,
+    try {
+      const d = await ServerAdmin.get().dispatchAdmin();
+      const newProject = await d.projectCreateAdmin({
         configAdmin: this.createConfig(),
-      })
-      .then(newProject => {
-        this.setState({ isSubmitting: false });
-        this.props.projectCreated(newProject.projectId)
-      })
-      .then(() => Promise.all(inviteUserEmails.map(inviteUserEmail => d.userCreateAdmin({
-        projectId,
-        userCreateAdmin: {
-          email: inviteUserEmail,
-        },
-      }))))
-      .catch(e => {
-        this.setState({ isSubmitting: false });
-      }));
+      });
+    } catch(e) {
+      this.setState({ isSubmitting: false });
+      return;
+    }
+    this.setState({ isSubmitting: false });
+    this.props.projectCreated(newProject.projectId);
+    inviteUserEmails.forEach(inviteUserEmail => d.userCreateAdmin({
+      projectId,
+      userCreateAdmin: {
+        email: inviteUserEmail,
+      },
+    }));
   }
 
   parseInvites(input?: string): string[] {

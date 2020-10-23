@@ -24,6 +24,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.NotImplementedException;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -54,6 +55,8 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Limit(requiredPermits = 1)
     @Override
     public void creditIncome(String projectId, @Valid CreditIncome creditIncome) {
+        sanitizer.email(creditIncome.getEmail());
+
         UserModel user = userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.SSO_GUID, creditIncome.getGuid())
                 .orElseGet(() -> userStore.ssoCreateOrGet(
                         projectId,

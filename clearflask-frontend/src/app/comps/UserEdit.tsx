@@ -96,36 +96,39 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             </Grid>
             <Grid item xs={12} className={this.props.classes.row}>
               <TextField
-                disabled={this.state.isSubmitting}
+                disabled={this.state.isSubmitting || !!this.props.user.isSso}
                 label='Email'
                 fullWidth
+                helperText={!!this.props.user.isSso ? 'Cannot change when using Single Sign-On' : undefined}
                 value={this.state.email === undefined ? this.props.user.email : this.state.email}
                 onChange={e => this.setState({ email: e.target.value })}
               />
             </Grid>
-            <Grid item xs={12} className={this.props.classes.row}>
-              <TextField
-                disabled={this.state.isSubmitting}
-                label='Set password'
-                type={this.state.revealPassword ? 'text' : 'password'}
-                fullWidth
-                value={this.state.password === undefined ? '' : this.state.password}
-                onChange={e => this.setState({ password: e.target.value })}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton
-                        aria-label='Toggle password visibility'
-                        onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                        disabled={this.state.isSubmitting}
-                      >
-                        {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+            {!this.props.user.isSso && (
+              <Grid item xs={12} className={this.props.classes.row}>
+                <TextField
+                  disabled={this.state.isSubmitting}
+                  label='Set password'
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  fullWidth
+                  value={this.state.password === undefined ? '' : this.state.password}
+                  onChange={e => this.setState({ password: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                          disabled={this.state.isSubmitting}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            )}
             <Grid item xs={12}>
               <FormControlLabel
                 className={this.props.classes.row}

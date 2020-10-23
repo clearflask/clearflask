@@ -20,6 +20,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -56,6 +57,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 50)
     @Override
     public CommentWithVote commentCreate(String projectId, String ideaId, CommentCreate create) {
+        sanitizer.content(create.getContent());
+
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.FORBIDDEN, "User not found"));
         Project project = projectStore.getProject(projectId, true).get();
@@ -111,6 +114,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 1, challengeAfter = 100)
     @Override
     public Comment commentUpdate(String projectId, String ideaId, String commentId, CommentUpdate update) {
+        sanitizer.content(update.getContent());
+
         return commentStore.updateComment(projectId, ideaId, commentId, Instant.now(), update)
                 .getCommentModel().toComment();
     }
@@ -152,6 +157,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public CommentSearchResponse commentSearchAdmin(String projectId, @Valid CommentSearchAdmin commentSearchAdmin, String cursor) {
+        sanitizer.searchText(commentSearchAdmin.getSearchText());
+
         CommentStore.SearchCommentsResponse response = commentStore.searchComments(
                 projectId,
                 commentSearchAdmin,

@@ -201,7 +201,7 @@ const styles = (theme: Theme) => createStyles({
   expression: {
     filter: theme.expressionGrayscale ? `grayscale(${theme.expressionGrayscale}%)` : undefined,
     lineHeight: 1.15,
-    fontSize: 16,
+    fontSize: '1em',
     display: 'inline-block',
     width: 16,
     height: 16,

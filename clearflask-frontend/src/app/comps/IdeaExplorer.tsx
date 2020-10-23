@@ -34,6 +34,9 @@ import TagSelect from './TagSelect';
 //   QueryParamConfig,
 // } from 'use-query-params';
 
+/** If changed, also change in Sanitizer.java */
+export const PostTitleMaxLength = 100
+
 const styles = (theme: Theme) => createStyles({
   content: {
   },
@@ -255,6 +258,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               />
             </InputAdornment>
           ),
+        }}
+        inputProps={{
+          maxLength: PostTitleMaxLength,
         }}
       />
     );

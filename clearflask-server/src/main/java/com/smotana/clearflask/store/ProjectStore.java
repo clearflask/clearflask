@@ -18,6 +18,10 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 
 public interface ProjectStore {
 
+    default String genProjectId(String slug) {
+        return IdUtil.contentUnique(slug);
+    }
+
     default String genConfigVersion() {
         return IdUtil.randomAscId();
     }

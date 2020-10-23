@@ -3,8 +3,10 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.annotations.VisibleForTesting;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,6 +31,8 @@ public abstract class AbstractResource {
     @VisibleForTesting
     @Context
     SecurityContext securityContext;
+    @Inject
+    protected Sanitizer sanitizer;
 
     protected Optional<ExtendedPrincipal> getExtendedPrincipal() {
         if (securityContext.getUserPrincipal() == null) {

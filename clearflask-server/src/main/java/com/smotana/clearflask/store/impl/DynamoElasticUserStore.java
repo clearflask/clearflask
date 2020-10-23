@@ -379,6 +379,10 @@ public class DynamoElasticUserStore implements UserStore {
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
         UserModel user = getUser(projectId, userId).get();
+        if(!Strings.isNullOrEmpty(updates.getPassword()) && user.getIsMod() == Boolean.TRUE) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change password when using Single Sign-On");
+        }
+
         UserModel.UserModelBuilder userUpdatedBuilder = user.toBuilder();
 
         HashMap<String, String> nameMap = Maps.newHashMap();

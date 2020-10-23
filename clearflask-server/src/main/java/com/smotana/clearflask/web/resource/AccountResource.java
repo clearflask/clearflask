@@ -43,6 +43,7 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
@@ -150,6 +151,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public AccountAdmin accountLoginAdmin(AccountLogin credentials) {
+        sanitizer.email(credentials.getEmail());
+
         Optional<Account> accountOpt = accountStore.getAccountByEmail(credentials.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", credentials.getEmail());
@@ -197,6 +200,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
+        sanitizer.email(signup.getEmail());
+        sanitizer.accountName(signup.getName());
+
         String accountId = accountStore.genAccountId();
         Plan plan = planStore.getPublicPlans().getPlans().stream()
                 .filter(p -> p.getPlanid().equals(signup.getPlanid()))
@@ -248,6 +254,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = null;
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
+            sanitizer.accountName(accountUpdateAdmin.getName());
             account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName()).getAccount();
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
@@ -257,6 +264,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updatePassword(accountSession.getAccountId(), accountUpdateAdmin.getPassword(), accountSession.getSessionId());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
+            sanitizer.email(accountUpdateAdmin.getEmail());
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
         if (accountUpdateAdmin.getPaymentToken() != null) {
@@ -415,6 +423,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AccountAdmin accountLoginAsSuperAdmin(AccountLoginAs accountLoginAs) {
+        sanitizer.email(accountLoginAs.getEmail());
+
         Optional<Account> accountOpt = accountStore.getAccountByEmail(accountLoginAs.getEmail());
         if (!accountOpt.isPresent()) {
             log.info("Account login with non-existent email {}", accountLoginAs.getEmail());

@@ -31,7 +31,6 @@ export async function getProject(
   template && template(templater);
   const d = await server.dispatchAdmin();
   const projectCreateResult = await d.projectCreateAdmin({
-    projectId: projectId,
     configAdmin: editor.getConfig(),
   });
   server.subscribeToChanges(editor);
