@@ -1,7 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
@@ -12,8 +12,14 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.api.model.ConfigGetAllResult;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.ConfigAndBindAllResult;
+import com.smotana.clearflask.api.model.ConfigAndBindAllResultByProjectId;
+import com.smotana.clearflask.api.model.ConfigAndBindResult;
+import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
+import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -41,6 +47,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Optional;
@@ -61,6 +69,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Set<String> reservedProjectIds();
     }
 
+    @Context
+    private HttpHeaders headers;
     @Inject
     private Config config;
     @Inject
@@ -191,15 +201,18 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                             .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
 
-        for (Project project : projects) {
-            AuthenticationFilter.authenticateUserCookie(
-                    userStore,
-                    requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId));
-        }
+        ImmutableMap<String, ConfigAndBindAllResultByProjectId> byProjectId = projects.stream().collect(ImmutableMap.toImmutableMap(
+                Project::getProjectId,
+                project -> new ConfigAndBindAllResultByProjectId(
+                        project.getVersionedConfigAdmin(),
+                        Optional.ofNullable(headers.getCookies().get(USER_AUTH_COOKIE_NAME_PREFIX + project.getProjectId()))
+                                .flatMap(cookie -> AuthenticationFilter.authenticateUserCookie(userStore, cookie))
+                                .map(UserStore.UserSession::getUserId)
+                                .flatMap(userId -> userStore.getUser(project.getProjectId(), userId))
+                                .map(UserStore.UserModel::toUserMeWithBalance)
+                                .orElse(null))));
 
-        return new ConfigGetAllResult(projects.stream()
-                .map(Project::getVersionedConfigAdmin)
-                .collect(ImmutableList.toImmutableList()));
+        return new ConfigAndBindAllResult(byProjectId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
