@@ -80,7 +80,7 @@ public class Sanitizer {
     }
 
     public void searchText(String searchText) {
-        if (searchText.length() > SEARCH_TEXT_MAX_LENGTH) {
+        if (searchText != null && searchText.length() > SEARCH_TEXT_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Search text is too long, must be at most " + SEARCH_TEXT_MAX_LENGTH + " characters");
         }
     }

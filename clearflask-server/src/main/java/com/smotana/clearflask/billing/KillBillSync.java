@@ -95,6 +95,7 @@ public class KillBillSync extends ManagedService {
                     .setIsBlockChanges(false)
                     .setIsClearState(false)
                     .setIsDisableEntitlement(false)
+                    .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.NONE)
                     .setAutoReevaluationIntervalDays(20));
     /**
      * Source: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
@@ -352,15 +353,15 @@ public class KillBillSync extends ManagedService {
         if (config.uploadInvoiceTemplate()) {
             String invoiceTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("killbill/invoice-template.html"), Charsets.UTF_8);
             String invoiceTemplateHtmlOld = kbInvoiceProvider.get().getInvoiceTemplate(KillBillUtil.roDefault());
-            if(invoiceTemplateHtml.equals(invoiceTemplateHtmlOld)) {
+            if (invoiceTemplateHtml.equals(invoiceTemplateHtmlOld)) {
                 log.info("Skipping invoice template, already exists");
             } else {
                 log.info("Uploading invoice template {} old template {}",
                         invoiceTemplateHtml, invoiceTemplateHtmlOld);
-            kbInvoiceProvider.get().uploadInvoiceTemplate(
-                    invoiceTemplateHtml,
-                    true,
-                    KillBillUtil.roDefault());
+                kbInvoiceProvider.get().uploadInvoiceTemplate(
+                        invoiceTemplateHtml,
+                        true,
+                        KillBillUtil.roDefault());
             }
         }
 

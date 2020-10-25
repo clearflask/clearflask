@@ -63,7 +63,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
@@ -132,6 +132,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         if (config.createIndexOnStartup()) {
             boolean exists = elastic.indices().exists(new GetIndexRequest(ACCOUNT_INDEX), RequestOptions.DEFAULT);
             if (!exists) {
+                log.info("Creating account index");
                 elastic.indices().create(new CreateIndexRequest(ACCOUNT_INDEX).mapping(gson.toJson(ImmutableMap.of(
                         "dynamic", "false",
                         "properties", ImmutableMap.builder()
@@ -213,13 +214,11 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
-
-        queryBuilder.must(QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
+        MultiMatchQueryBuilder queryBuilder = QueryBuilders.multiMatchQuery(accountSearchSuperAdmin.getSearchText(),
                 "email", "name")
                 .field("email", 2f)
                 .fuzziness("AUTO")
-                .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
+                .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL);
         log.trace("Account search query: {}", queryBuilder);
         ElasticUtil.SearchResponseWithCursor searchResponseWithCursor = elasticUtil.searchWithCursor(
                 new SearchRequest(ACCOUNT_INDEX)
