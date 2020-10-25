@@ -159,6 +159,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         return Optional.ofNullable(availablePlans.get(planId));
     }
 
+    /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException {
         switch (planId) {

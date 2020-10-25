@@ -17,9 +17,16 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.core.push.message.*;
+import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAdminInvite;
+import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
+import com.smotana.clearflask.core.push.message.OnCreditChange;
+import com.smotana.clearflask.core.push.message.OnEmailChanged;
+import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
+import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
@@ -91,6 +98,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private UserStore userStore;
     @Inject
     private OnCommentReply onCommentReply;
+    @Inject
+    private OnTrialEnded onTrialEnded;
     @Inject
     private OnCreditChange onCreditChange;
     @Inject
@@ -339,6 +348,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             try {
                 emailService.send(onForgotPassword.email(configAdmin, user, link, authToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(accountEmail));
+
+            try {
+                emailService.send(onTrialEnded.email(link, accountId, accountEmail, hasPaymentMethod));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

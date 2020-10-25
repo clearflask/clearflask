@@ -63,6 +63,7 @@ class WelcomePage extends Component<Props & WithStyles<typeof styles, true>> {
           <Button
             className={this.props.classes.button}
             component={Link}
+            color='primary'
             to='/dashboard/create'
           >
             Create

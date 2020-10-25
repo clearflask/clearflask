@@ -44,6 +44,7 @@ import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -87,7 +88,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +142,8 @@ public class DynamoElasticCommentStore implements CommentStore {
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     private RestHighLevelClient elastic;
     @Inject
@@ -299,17 +301,13 @@ public class DynamoElasticCommentStore implements CommentStore {
         if (commentIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
                 .withPrimaryKeys(commentIds.stream()
                         .map(commentId -> commentSchema.primaryKey(ImmutableMap.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId,
                                 "commentId", commentId)))
-                        .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                        .toArray(PrimaryKey[]::new))))
                 .map(i -> commentSchema.fromItem(i))
                 .collect(ImmutableMap.toImmutableMap(
                         CommentModel::getCommentId,
@@ -407,17 +405,13 @@ public class DynamoElasticCommentStore implements CommentStore {
                 return new SearchCommentsResponse(ImmutableList.of(), Optional.empty());
             }
 
-            ImmutableList<CommentModel> comments = dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
+            ImmutableList<CommentModel> comments = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(commentSchema.tableName())
                     .withPrimaryKeys(Arrays.stream(hits)
                             .map(hit -> commentSchema.primaryKey(ImmutableMap.of(
                                     "projectId", projectId,
                                     "ideaId", hit.getSourceAsMap().get("ideaId"),
                                     "commentId", hit.getId())))
-                            .toArray(PrimaryKey[]::new)))
-                    .getTableItems()
-                    .values()
-                    .stream()
-                    .flatMap(Collection::stream)
+                            .toArray(PrimaryKey[]::new))))
                     .map(i -> commentSchema.fromItem(i))
                     .collect(ImmutableList.toImmutableList());
 
@@ -651,7 +645,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                     "projectId", projectId,
                                     "commentId", commentId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         SettableFuture<BulkByScrollResponse> indexingFuture = SettableFuture.create();
@@ -684,7 +678,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                     "projectId", projectId,
                                     "commentId", comment.getCommentId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete idea index

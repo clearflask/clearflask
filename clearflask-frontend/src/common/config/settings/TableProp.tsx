@@ -34,6 +34,7 @@ interface Props {
   helperText?: React.ReactNode;
   errorMsg?: string;
   pageClicked: (path: ConfigEditor.Path) => void;
+  requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
 }
 
 class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
@@ -221,7 +222,14 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
   renderDataCell(prop: ConfigEditor.Page | ConfigEditor.PageGroup | ConfigEditor.Property) {
     return (
       <TableCell key={prop.key} align='center' size='small'>
-        <Property isInsideMuiTable bare key={prop.key} prop={prop} pageClicked={this.props.pageClicked} />
+        <Property
+          isInsideMuiTable
+          bare
+          key={prop.key}
+          prop={prop}
+          pageClicked={this.props.pageClicked}
+          requiresUpgrade={this.props.requiresUpgrade}
+        />
       </TableCell>
     );
   }

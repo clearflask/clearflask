@@ -89,8 +89,8 @@ public class EmailServiceImpl implements EmailService {
 
         if (!rateLimiter.tryAcquire()) {
             if (LogUtil.rateLimitAllowLog("emailpush-ratelimited")) {
-                log.warn("Email service self rate limited, projectId {} toAddress {} subject {}",
-                        email.getProjectId(), email.getToAddress(), email.getSubject());
+                log.warn("Email service self rate limited, project/account id {} toAddress {} subject {}",
+                        email.getProjectOrAccountId(), email.getToAddress(), email.getSubject());
             }
             return;
         }
@@ -101,7 +101,7 @@ public class EmailServiceImpl implements EmailService {
                     .withDestination(new Destination()
                             .withToAddresses(email.getToAddress()))
                     .withFromEmailAddress(config.fromEmailLocalPart() + "@" + configApp.domain())
-                    .withEmailTags(new MessageTag().withName("projectId").withValue(email.getProjectId()),
+                    .withEmailTags(new MessageTag().withName("id").withValue(email.getProjectOrAccountId()),
                             new MessageTag().withName("type").withValue(email.getTypeTag()))
                     .withContent(new EmailContent().withSimple(new Message()
                             .withSubject(new Content()
@@ -116,8 +116,8 @@ public class EmailServiceImpl implements EmailService {
                                             .withData(email.getContentText()))))));
         } catch (TooManyRequestsException | SendingPausedException | LimitExceededException ex) {
             if (LogUtil.rateLimitAllowLog("emailpush-toomanyreqs")) {
-                log.warn("Email service limited, projectId {} toAddress {} subject {}",
-                        email.getProjectId(), email.getToAddress(), email.getSubject(), ex);
+                log.warn("Email service limited, project/account id {} toAddress {} subject {}",
+                        email.getProjectOrAccountId(), email.getToAddress(), email.getSubject(), ex);
             }
             return;
         } catch (AccountSuspendedException ex) {
@@ -136,8 +136,8 @@ public class EmailServiceImpl implements EmailService {
             }
             return;
         }
-        log.trace("Email sent to {} projectId {} message id {} subject {}",
-                email.getToAddress(), email.getProjectId(), result.getMessageId(), email.getSubject());
+        log.trace("Email sent to {} project/account id {} message id {} subject {}",
+                email.getToAddress(), email.getProjectOrAccountId(), result.getMessageId(), email.getSubject());
     }
 
     public static Module module() {

@@ -46,6 +46,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionAndFundPrevious;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -86,7 +87,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +124,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     private RestHighLevelClient elastic;
     @Inject
@@ -268,15 +270,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public ImmutableMap<String, IdeaModel> getIdeas(String projectId, ImmutableCollection<String> ideaIds) {
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(ideaSchema.tableName()).withPrimaryKeys(ideaIds.stream()
                 .map(ideaId -> ideaSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "ideaId", ideaId)))
-                .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                .toArray(PrimaryKey[]::new))))
                 .map(ideaSchema::fromItem)
                 .collect(ImmutableMap.toImmutableMap(
                         IdeaModel::getIdeaId,
@@ -821,12 +819,12 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public ListenableFuture<BulkResponse> deleteIdeas(String projectId, ImmutableCollection<String> ideaIds) {
-        dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
+        dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(new TableWriteItems(ideaSchema.tableName())
                 .withPrimaryKeysToDelete(ideaIds.stream()
                         .map(ideaId -> ideaSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "ideaId", ideaId)))
-                        .toArray(PrimaryKey[]::new)));
+                        .toArray(PrimaryKey[]::new))));
 
         SettableFuture<BulkResponse> indexingFuture = SettableFuture.create();
         elastic.bulkAsync(new BulkRequest()
@@ -862,7 +860,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                     "ideaId", ideaId,
                                     "projectId", projectId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete idea index

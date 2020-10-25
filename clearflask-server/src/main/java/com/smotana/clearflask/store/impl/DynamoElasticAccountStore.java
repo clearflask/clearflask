@@ -1,11 +1,26 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.spec.*;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
+import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +41,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -56,7 +72,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -93,6 +108,8 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     private Gson gson;
     @Inject
@@ -216,15 +233,11 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             return new SearchAccountsResponse(ImmutableList.of(), ImmutableList.of(), Optional.empty());
         }
 
-        ImmutableList<Account> accounts = dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
+        ImmutableList<Account> accounts = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
                 .withPrimaryKeys(Arrays.stream(hits)
                         .map(hit -> accountSchema.primaryKey(ImmutableMap.of(
                                 "accountId", hit.getId())))
-                        .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                        .toArray(PrimaryKey[]::new))))
                 .map(i -> accountSchema.fromItem(i))
                 .collect(ImmutableList.toImmutableList());
 
@@ -537,7 +550,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                             .map(sessionId -> sessionBySessionIdSchema.primaryKey(Map.of(
                                     "sessionId", sessionId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

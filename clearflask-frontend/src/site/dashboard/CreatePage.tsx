@@ -3,12 +3,14 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import DataMock from '../../api/dataMock';
-import ServerAdmin, { DemoUpdateDelay } from '../../api/serverAdmin';
+import ServerAdmin, { DemoUpdateDelay, ReduxStateAdmin } from '../../api/serverAdmin';
 import ServerMock from '../../api/serverMock';
 import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateOptions, createTemplateOptionsDefault } from '../../common/config/configTemplater';
+import { RestrictedProperties, UpgradeAlert } from '../../common/config/settings/UpgradeWrapper';
 import { Device } from '../../common/DeviceContainer';
 import SubmitButton from '../../common/SubmitButton';
 import debounce from '../../common/util/debounce';
@@ -65,19 +67,19 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
   },
 });
-
 interface Props {
   previewProject: Project;
   projectCreated: (projectId: string) => void;
 }
-
+interface ConnectProps {
+  accountPlanId?: string;
+}
 interface State extends CreateTemplateOptions {
   step: number;
   isSubmitting?: boolean;
   inviteSpecificPeople?: string;
 }
-
-class CreatePage extends Component<Props & WithStyles<typeof styles, true>, State> {
+class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updatePreview: () => void;
   onboardingDemoRef: React.RefObject<any> = React.createRef();
 
@@ -103,10 +105,18 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
   }
 
   render() {
+    const visibilityRequiresUpgrade = this.props.accountPlanId && RestrictedProperties[this.props.accountPlanId]?.some(restrictedPath =>
+      ConfigEditor.pathEquals(restrictedPath, ['users', 'onboarding', 'visibility']))
+    const ssoRequiresUpgrade = this.props.accountPlanId && RestrictedProperties[this.props.accountPlanId]?.some(restrictedPath =>
+      ConfigEditor.pathEquals(restrictedPath, ['users', 'onboarding', 'notificationMethods', 'sso']))
+    const upgradeRequired = !!visibilityRequiresUpgrade && !!this.state.projectPrivate
+      || !!ssoRequiresUpgrade && !!this.state.ssoAllowed;
+
     const supportButtonGroupVal: string[] = [];
     this.state.fundingAllowed && supportButtonGroupVal.push('funding');
     this.state.votingAllowed && supportButtonGroupVal.push('voting');
     this.state.expressionAllowed && supportButtonGroupVal.push('expression');
+
     return (
       <React.Fragment>
         <Typography variant='h4' component='h1'>Create a new project</Typography>
@@ -197,6 +207,9 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                     <Typography variant='caption' display='block'>Restricted access</Typography>
                   </ToggleButton>
                 </ToggleButtonGroup>
+                <Collapse in={upgradeRequired} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
+                  <UpgradeAlert />
+                </Collapse>
                 <Collapse in={!!this.state.projectPrivate} classes={{ wrapperInner: this.props.classes.onboardOptions }}>
                   <FormControlLabel
                     label={this.checkboxLabel('Single Sign-On', 'Allow users to authenticate seamlessly between your service and ClearFlask')}
@@ -366,7 +379,7 @@ class CreatePage extends Component<Props & WithStyles<typeof styles, true>, Stat
                 />
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
-                  disabled={!this.state.infoName || !this.state.infoSlug}
+                  disabled={!this.state.infoName || !this.state.infoSlug || upgradeRequired}
                   onClick={() => this.onCreate()} color='primary'>Create</SubmitButton>
               </Box>
             </StepContent>
@@ -470,4 +483,8 @@ const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCar
   </Grid>
 ))
 
-export default withStyles(styles, { withTheme: true })(CreatePage);
+export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
+  return {
+    accountPlanId: state.account.account.account?.plan.planid,
+  };
+})(withStyles(styles, { withTheme: true })(CreatePage));

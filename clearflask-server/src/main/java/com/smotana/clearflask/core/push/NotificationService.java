@@ -18,6 +18,8 @@ public interface NotificationService {
 
     void onForgotPassword(ConfigAdmin configAdmin, UserModel user);
 
+    void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
+
     void onAdminInvite(ConfigAdmin configAdmin, UserModel user);
 
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);

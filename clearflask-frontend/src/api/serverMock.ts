@@ -171,7 +171,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
-      plan: AvailablePlans['standard-monthly'],
+      plan: AvailablePlans[request.accountSignupAdmin.planid],
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,

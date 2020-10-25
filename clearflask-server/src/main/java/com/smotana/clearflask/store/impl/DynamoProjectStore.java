@@ -36,6 +36,7 @@ import com.smotana.clearflask.api.model.Expression;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -50,7 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -90,6 +90,8 @@ public class DynamoProjectStore implements ProjectStore {
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     private Gson gson;
     @Inject
@@ -157,16 +159,12 @@ public class DynamoProjectStore implements ProjectStore {
         if (projectIds.isEmpty()) {
             return ImmutableSet.of();
         }
-        ImmutableSet<Project> projects = dynamoDoc.batchGetItem(new BatchGetItemSpec()
+        ImmutableSet<Project> projects = dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new BatchGetItemSpec()
                 .withTableKeyAndAttributes(new TableKeysAndAttributes(projectSchema.tableName())
                         .withConsistentRead(!useCache)
                         .withPrimaryKeys(projectIds.stream()
                                 .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
-                                .toArray(PrimaryKey[]::new))))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                                .toArray(PrimaryKey[]::new)))))
                 .map(projectSchema::fromItem)
                 .map(ProjectImpl::new)
                 .collect(ImmutableSet.toImmutableSet());
@@ -308,7 +306,7 @@ public class DynamoProjectStore implements ProjectStore {
                             .map(slug -> slugSchema.primaryKey(Map.of(
                                     "slug", slug)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

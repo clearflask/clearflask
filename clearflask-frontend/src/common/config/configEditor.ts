@@ -333,6 +333,9 @@ export const parsePath = (pathStr: string | undefined, delimiter: string | RegEx
       return isNaN(pNum) ? pStr : pNum;
     });
 }
+export const pathEquals = (l: Path, r: Path) => {
+  return l.length === r.length && l.every((val, index) => val === r[index]);
+}
 
 export interface Editor {
 

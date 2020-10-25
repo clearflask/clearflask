@@ -13,6 +13,7 @@ import RichEditor from '../../RichEditor';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
+import UpgradeWrapper from './UpgradeWrapper';
 
 interface Props {
   key: string;
@@ -21,6 +22,7 @@ interface Props {
   width?: string
   pageClicked: (path: ConfigEditor.Path) => void;
   isInsideMuiTable?: boolean;
+  requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
 }
 
 export default class Property extends Component<Props> {
@@ -375,6 +377,7 @@ export default class Property extends Component<Props> {
               label={!this.props.bare && name}
               helperText={!this.props.bare && prop.description}
               pageClicked={this.props.pageClicked}
+              requiresUpgrade={this.props.requiresUpgrade}
             />
           );
         }
@@ -465,11 +468,26 @@ export default class Property extends Component<Props> {
         throw Error(`Unknown property type ${prop['type']}`);
     }
 
-    return propertySetter
-      ? (
-        <div style={{ marginTop: this.props.bare ? undefined : marginTop + 'px' }}>
+    if (!propertySetter) {
+      return null;
+    }
+
+    propertySetter = (
+      <div style={{ marginTop: this.props.bare ? undefined : marginTop + 'px' }}>
+        {propertySetter}
+      </div>
+    );
+
+    if (!!this.props.requiresUpgrade && this.props.requiresUpgrade(this.props.prop.path)) {
+      propertySetter = (
+        <UpgradeWrapper
+          propertyPath={this.props.prop.path}
+        >
           {propertySetter}
-        </div>
-      ) : null;
+        </UpgradeWrapper>
+      );
+    }
+
+    return propertySetter;
   }
 }

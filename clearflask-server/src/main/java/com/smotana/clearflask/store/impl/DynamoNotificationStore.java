@@ -25,6 +25,7 @@ import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.NotificationStore;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.Extern;
@@ -52,6 +53,8 @@ public class DynamoNotificationStore implements NotificationStore {
     private AmazonDynamoDB dynamo;
     @Inject
     private DynamoDB dynamoDoc;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     private DynamoMapper dynamoMapper;
     @Inject
@@ -139,7 +142,7 @@ public class DynamoNotificationStore implements NotificationStore {
                                     "projectId", projectId,
                                     "notificationId", notificationId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 

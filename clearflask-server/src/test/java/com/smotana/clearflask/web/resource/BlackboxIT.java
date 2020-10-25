@@ -46,6 +46,7 @@ import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
+import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -120,6 +121,8 @@ public class BlackboxIT extends AbstractIT {
     @Inject
     private Gson gson;
 
+    private long userNumber = 0;
+
     @Override
     protected void configure() {
         super.configure();
@@ -146,6 +149,7 @@ public class BlackboxIT extends AbstractIT {
                 OnCreditChange.module(),
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
+                OnTrialEnded.module(),
                 OnForgotPassword.module(),
                 OnAdminInvite.module(),
                 OnEmailChanged.module(),
@@ -253,9 +257,10 @@ public class BlackboxIT extends AbstractIT {
     }
 
     private UserMeWithBalance addActiveUser(String projectId, ConfigAdmin configAdmin) throws Exception {
+        long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
-                .name("john-" + IdUtil.randomId())
-                .email("john-" + IdUtil.randomId() + "@example.com")
+                .name("john-" + newUserNumber)
+                .email("john-" + newUserNumber + "@example.com")
                 .build())
                 .getUser();
         IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()

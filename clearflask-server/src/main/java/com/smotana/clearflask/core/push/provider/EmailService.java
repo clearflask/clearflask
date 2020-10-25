@@ -22,7 +22,7 @@ public interface EmailService {
         @NonNull
         private final String contentText;
         @NonNull
-        private final String projectId;
+        private final String projectOrAccountId;
         @NonNull
         private final String typeTag;
     }

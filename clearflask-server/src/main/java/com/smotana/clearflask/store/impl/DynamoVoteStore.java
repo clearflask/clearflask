@@ -31,6 +31,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.store.VoteStore;
+import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
@@ -42,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +72,8 @@ public class DynamoVoteStore implements VoteStore {
     private DynamoDB dynamoDoc;
     @Inject
     private DynamoMapper dynamoMapper;
+    @Inject
+    private DynamoUtil dynamoUtil;
     @Inject
     @Named("cursor")
     private ServerSecret serverSecretCursor;
@@ -129,16 +131,12 @@ public class DynamoVoteStore implements VoteStore {
         if (targetIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(voteSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(voteSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
                 .map(targetId -> voteSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
-                .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                .toArray(PrimaryKey[]::new))))
                 .map(voteSchemaByUser::fromItem)
                 .filter(v -> v.getVote() != VoteValue.None.getValue())
                 .collect(ImmutableMap.toImmutableMap(
@@ -264,16 +262,12 @@ public class DynamoVoteStore implements VoteStore {
         if (targetIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(expressSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(expressSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
                 .map(targetId -> expressSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
-                .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                .toArray(PrimaryKey[]::new))))
                 .map(expressSchemaByUser::fromItem)
                 .filter(e -> !e.getExpressions().isEmpty())
                 .collect(ImmutableMap.toImmutableMap(
@@ -421,16 +415,12 @@ public class DynamoVoteStore implements VoteStore {
         if (targetIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return dynamoDoc.batchGetItem(new TableKeysAndAttributes(fundSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
+        return dynamoUtil.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(fundSchemaByUser.tableName()).withPrimaryKeys(targetIds.stream()
                 .map(targetId -> fundSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
                         "projectId", projectId,
                         "targetId", targetId)))
-                .toArray(PrimaryKey[]::new)))
-                .getTableItems()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
+                .toArray(PrimaryKey[]::new))))
                 .map(fundSchemaByUser::fromItem)
                 .filter(f -> f.getFundAmount() != 0L)
                 .collect(ImmutableMap.toImmutableMap(
@@ -557,7 +547,7 @@ public class DynamoVoteStore implements VoteStore {
                                     "projectId", projectId,
                                     "targetId", vote.getTargetId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete express
@@ -580,7 +570,7 @@ public class DynamoVoteStore implements VoteStore {
                                     "projectId", projectId,
                                     "targetId", express.getTargetId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete fund
@@ -603,7 +593,7 @@ public class DynamoVoteStore implements VoteStore {
                                     "projectId", projectId,
                                     "targetId", fund.getTargetId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
 
         // Delete transactions
@@ -626,7 +616,7 @@ public class DynamoVoteStore implements VoteStore {
                                     "projectId", projectId,
                                     "transactionId", transaction.getTransactionId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
-                    dynamoDoc.batchWriteItem(tableWriteItems);
+                    dynamoUtil.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 
