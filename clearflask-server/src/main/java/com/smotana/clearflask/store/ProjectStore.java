@@ -69,6 +69,9 @@ public interface ProjectStore {
         String version;
 
         @NonNull
+        Long schemaVersion;
+
+        @NonNull
         String configJson;
     }
 

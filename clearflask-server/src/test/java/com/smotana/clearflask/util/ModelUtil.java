@@ -1,7 +1,25 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableList;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.AccountFields;
+import com.smotana.clearflask.api.model.AnonymousSignup;
+import com.smotana.clearflask.api.model.Category;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Content;
+import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.Flow;
+import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.Layout;
+import com.smotana.clearflask.api.model.NotificationMethods;
+import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.Palette;
+import com.smotana.clearflask.api.model.Style;
+import com.smotana.clearflask.api.model.Support;
+import com.smotana.clearflask.api.model.Tagging;
+import com.smotana.clearflask.api.model.Typography;
+import com.smotana.clearflask.api.model.Users;
+import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.Workflow;
 
 public class ModelUtil {
 
@@ -11,6 +29,7 @@ public class ModelUtil {
 
     public static VersionedConfigAdmin createEmptyConfig(String projectId) {
         return new VersionedConfigAdmin(new ConfigAdmin(
+                2L,
                 projectId,
                 null,
                 projectId,
@@ -41,6 +60,7 @@ public class ModelUtil {
                                         new AnonymousSignup(false),
                                         true,
                                         new EmailSignup(
+                                                EmailSignup.ModeEnum.SIGNUPANDLOGIN,
                                                 EmailSignup.PasswordEnum.NONE,
                                                 EmailSignup.VerificationEnum.NONE,
                                                 null),

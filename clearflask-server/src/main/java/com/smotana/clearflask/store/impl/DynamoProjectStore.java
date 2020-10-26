@@ -40,6 +40,7 @@ import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
+import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -53,6 +54,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -96,6 +98,8 @@ public class DynamoProjectStore implements ProjectStore {
     private Gson gson;
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private ConfigSchemaUpgrader configSchemaUpgrader;
 
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
@@ -149,7 +153,7 @@ public class DynamoProjectStore implements ProjectStore {
                 .getItem(new GetItemSpec()
                         .withPrimaryKey(projectSchema
                                 .primaryKey(Map.of("projectId", projectId))))))
-                .map(ProjectImpl::new);
+                .map(this::getProjectWithUpgrade);
         projectCache.put(projectId, projectOpt);
         return projectOpt;
     }
@@ -166,7 +170,7 @@ public class DynamoProjectStore implements ProjectStore {
                                 .map(projectId -> projectSchema.primaryKey(Map.of("projectId", projectId)))
                                 .toArray(PrimaryKey[]::new)))))
                 .map(projectSchema::fromItem)
-                .map(ProjectImpl::new)
+                .map(this::getProjectWithUpgrade)
                 .collect(ImmutableSet.toImmutableSet());
         projects.forEach(project -> projectCache.put(project.getProjectId(), Optional.of(project)));
         return projects;
@@ -182,6 +186,7 @@ public class DynamoProjectStore implements ProjectStore {
                 accountId,
                 projectId,
                 versionedConfigAdmin.getVersion(),
+                versionedConfigAdmin.getConfig().getSchemaVersion(),
                 gson.toJson(versionedConfigAdmin.getConfig()));
         try {
             dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
@@ -234,6 +239,7 @@ public class DynamoProjectStore implements ProjectStore {
                         project.getAccountId(),
                         projectId,
                         versionedConfigAdmin.getVersion(),
+                        versionedConfigAdmin.getConfig().getSchemaVersion(),
                         gson.toJson(versionedConfigAdmin.getConfig()))));
         previousVersionOpt.ifPresent(previousVersion -> putItemSpec
                 .withConditionExpression("version = :previousVersion")
@@ -310,6 +316,30 @@ public class DynamoProjectStore implements ProjectStore {
                 });
     }
 
+    private Project getProjectWithUpgrade(ProjectModel projectModel) {
+        Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(
+                projectModel.getSchemaVersion() == null ? OptionalLong.empty() : OptionalLong.of(projectModel.getSchemaVersion()),
+                projectModel.getConfigJson());
+
+        if (configUpgradedOpt.isPresent()) {
+            projectModel = projectModel.toBuilder()
+                    .configJson(configUpgradedOpt.get())
+                    .build();
+
+            try {
+                projectSchema.table().putItem(new PutItemSpec()
+                        .withItem(projectSchema.toItem(projectModel))
+                        .withConditionExpression("version = :version")
+                        .withValueMap(Map.of(":version", projectModel.getVersion())));
+            } catch (ConditionalCheckFailedException ex) {
+                log.warn("Writing upgraded project failed, will let someone else upgrade it later", ex);
+            }
+            projectCache.invalidate(projectModel.getProjectId());
+        }
+
+        return new ProjectImpl(projectModel);
+    }
+
     @EqualsAndHashCode(of = {"accountId", "projectId", "version"})
     @ToString(of = {"accountId", "projectId", "version"})
     private class ProjectImpl implements Project {
@@ -336,7 +366,7 @@ public class DynamoProjectStore implements ProjectStore {
                             category -> category.getSupport().getExpress().getLimitEmojiSet().stream()
                                     .collect(ImmutableMap.toImmutableMap(
                                             Expression::getDisplay,
-                                            e -> e.getWeight().doubleValue()))));
+                                            Expression::getWeight))));
             this.categories = this.versionedConfig.getConfig().getContent().getCategories().stream()
                     .collect(ImmutableMap.toImmutableMap(
                             Category::getCategoryId,
