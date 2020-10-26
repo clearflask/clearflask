@@ -85,6 +85,7 @@ import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
@@ -205,7 +206,7 @@ public class BlackboxIT extends AbstractIT {
     }
 
     @Before
-    public void setupTest() {
+    public void setupTest() throws Exception {
         accountResource.securityContext = mockExtendedSecurityContext;
         projectResource.securityContext = mockExtendedSecurityContext;
         userResource.securityContext = mockExtendedSecurityContext;
@@ -222,9 +223,9 @@ public class BlackboxIT extends AbstractIT {
                 "password",
                 "growth-monthly"));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
-        String projectId = "sermyproject";
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
-                ModelUtil.createEmptyConfig(projectId).getConfig());
+                ModelUtil.createEmptyConfig("sermyproject").getConfig());
+        String projectId = newProjectResult.getProjectId();
         addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .paymentToken(AccountUpdateAdminPaymentToken.builder()
@@ -232,22 +233,22 @@ public class BlackboxIT extends AbstractIT {
                         .token("token")
                         .build())
                 .build());
-        sleepAndRefreshStatus(accountId, 16L);
+        refreshStatus(accountId);
         for (int x = 0; x < PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES; x++) {
             UserMeWithBalance userAdded = addActiveUser(projectId, newProjectResult.getConfig().getConfig());
             log.info("Added user {}", userAdded.getName());
         }
         // Need to wait until killBilling has processed usage recording
         TestUtil.retry(() -> assertEquals(SubscriptionStatus.ACTIVE, accountResource.accountBillingAdmin().getSubscriptionStatus()));
-        sleepAndRefreshStatus(accountId, 2L);
+        refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)
                 .build());
-        sleepAndRefreshStatus(accountId, 2L);
+        refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(false)
                 .build());
-        sleepAndRefreshStatus(accountId, 34L);
+        refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .planid("standard-monthly")
                 .build());
@@ -281,8 +282,18 @@ public class BlackboxIT extends AbstractIT {
         return user;
     }
 
-    private void sleepAndRefreshStatus(String accountId, long sleepInDays) throws KillBillClientException {
+    private void kbClockReset() throws KillBillClientException {
+        LocalDate today = LocalDate.now();
+        kbClient.doPut("/1.0/kb/test/clock?requestedDate=" + today, "", KillBillUtil.roDefault());
+        log.info("Reset clock to {}", today);
+    }
+
+    private void kbClockSleep(long sleepInDays)  throws KillBillClientException {
         kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
+        log.info("Slept for {} days", sleepInDays);
+    }
+
+    private void refreshStatus(String accountId) throws KillBillClientException {
         UUID accountIdKb = billing.getAccount(accountId).getAccountId();
         killBillResource.webhook(gson.toJson(new KillBillResource.Event(
                 ExtBusEventType.SUBSCRIPTION_CHANGE,
@@ -290,7 +301,7 @@ public class BlackboxIT extends AbstractIT {
                 accountIdKb,
                 accountIdKb,
                 null)));
-        log.info("Slept for {} days, account state {}", sleepInDays, accountStore.getAccountByAccountId(accountId).get().getStatus());
+        log.info("Account status {}", accountStore.getAccountByAccountId(accountId).get().getStatus());
     }
 
     void dumpDynamoTable() {

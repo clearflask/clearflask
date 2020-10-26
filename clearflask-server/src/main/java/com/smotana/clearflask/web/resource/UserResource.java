@@ -9,23 +9,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
-import com.smotana.clearflask.api.model.EmailSignup;
-import com.smotana.clearflask.api.model.ForgotPassword;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserCreateAdmin;
-import com.smotana.clearflask.api.model.UserCreateResponse;
-import com.smotana.clearflask.api.model.UserLogin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -57,6 +41,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -213,9 +198,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
 
         long balance = 0;
-        CreditsCreditOnSignup creditOnSignup = project.getVersionedConfigAdmin().getConfig().getUsers().getCredits().getCreditOnSignup();
-        if (creditOnSignup != null && creditOnSignup.getAmount() > 0L) {
-            balance = creditOnSignup.getAmount();
+        Optional<CreditsCreditOnSignup> creditOnSignupOpt = Optional.ofNullable(project
+                .getVersionedConfigAdmin()
+                .getConfig()
+                .getUsers()
+                .getCredits())
+                .map(Credits::getCreditOnSignup);
+        if (creditOnSignupOpt.isPresent() && creditOnSignupOpt.get().getAmount() > 0L) {
+            balance = creditOnSignupOpt.get().getAmount();
         }
 
         // Now we're ready to create the user
@@ -255,8 +245,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             voteStore.balanceAdjustTransaction(
                     user.getProjectId(),
                     user.getUserId(),
-                    creditOnSignup.getAmount(),
-                    creditOnSignup.getSummary() == null ? "Sign-up credit" : creditOnSignup.getSummary(),
+                    balance,
+                    creditOnSignupOpt.map(CreditsCreditOnSignup::getSummary).orElse("Sign-up credit"),
                     Optional.of("signup-credit"));
         }
 

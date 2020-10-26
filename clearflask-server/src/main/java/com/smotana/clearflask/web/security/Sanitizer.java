@@ -68,7 +68,7 @@ public class Sanitizer {
     }
 
     public void content(String content) {
-        if (content.length() > CONTENT_MAX_LENGTH) {
+        if (content != null && content.length() > CONTENT_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Content is too long, must be at most " + CONTENT_MAX_LENGTH + " characters");
         }
     }

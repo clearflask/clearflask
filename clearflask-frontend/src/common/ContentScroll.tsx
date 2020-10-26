@@ -1,5 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { fade } from '@material-ui/core/styles/colorManipulator';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import React from 'react';
 
 const styles = (theme: Theme) => createStyles({
@@ -21,7 +22,7 @@ interface Props {
 
 const radialSize = 15;
 
-export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): React.CSSProperties => {
+export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): CSSProperties => {
   var startHor;
   var startVer;
   var endHor;
@@ -76,6 +77,11 @@ export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center,
     /* Hide scrollbars */
     scrollbarWidth: 'none', // Firefox
     msOverflowStyle: 'none', //IE 10+
+    '&::-webkit-scrollbar': {
+      width: 0,
+      height: 0,
+      background: 'transparent',
+    },
   };
 };
 
