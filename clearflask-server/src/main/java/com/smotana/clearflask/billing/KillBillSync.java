@@ -17,6 +17,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.billing.ReportConfigurationJson.ReportConfigurationJsonList;
 import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.text.StrBuilder;
@@ -334,9 +335,9 @@ public class KillBillSync extends ManagedService {
         if (config.uploadAnalyticsReports()) {
             // Undocumented API to retrieve all reports rather than making a call for each report
             // https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/java/org/killbill/billing/plugin/analytics/http/ReportsResource.java
-            List<ReportConfigurationJson> reports = (List<ReportConfigurationJson>) kbClientProvider.get().doGet("/plugins/killbill-analytics/reports", List.class, KillBillUtil.roDefault());
+            ReportConfigurationJsonList reports = kbClientProvider.get().doGet("/plugins/killbill-analytics/reports", ReportConfigurationJsonList.class, KillBillUtil.roDefault());
             ImmutableMap<String, ReportConfigurationJson> reportsMap = reports.stream().collect(ImmutableMap.toImmutableMap(
-                    r -> r.getReportName(), r -> r));
+                    ReportConfigurationJson::getReportName, r -> r));
             for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
                 Optional<ReportConfigurationJson> oldReportOpt = Optional.ofNullable(reportsMap.get(report.getReportName()));
                 if (oldReportOpt.isPresent() && report.equals(oldReportOpt.get())) {

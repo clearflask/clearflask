@@ -19,6 +19,10 @@ run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 10
 _run-dev-frontend: npm-run-dev-frontend nginx-run
 
+run-it-services:
+	@$(MAKE) _run-dev -j 10
+_run-dev: dynamo-run elastic-run
+
 npm-run-dev-frontend:
 	cd clearflask-frontend && npm start
 

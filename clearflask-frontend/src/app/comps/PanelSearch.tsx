@@ -4,6 +4,7 @@ import FilterIcon from '@material-ui/icons/SearchRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { components } from 'react-select';
 import { ActionMeta } from 'react-select/lib/types';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
@@ -129,7 +130,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
                 Object.keys(tagColumns)
                   .forEach(t => addColumn(t, tagColumns[t]));
                 return (
-                  <div {...menuProps} className={this.props.classes.menuContainer}>
+                  <components.MenuList {...menuProps} className={this.props.classes.menuContainer}>
                     {newSearch ? newSearch : (
                       <MenuItem component="div" disabled>
                         Type to search
@@ -140,7 +141,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
                     }}>
                       {menuItems}
                     </div>
-                  </div>
+                  </components.MenuList>
                 );
               },
             }}

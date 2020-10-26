@@ -69,6 +69,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
@@ -675,6 +676,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getStartDate(),
                     LocalDate.now().plusDays(1),
                     KillBillUtil.roDefault());
+            log.trace("Account id {} usage {}", subscription.getAccountId(), usage);
             long activeUsers = usage.getRolledUpUnits().stream()
                     .filter(r -> ACTIVE_USER_UNIT_NAME.equals(r.getUnitType()))
                     .mapToLong(RolledUpUnit::getAmount)

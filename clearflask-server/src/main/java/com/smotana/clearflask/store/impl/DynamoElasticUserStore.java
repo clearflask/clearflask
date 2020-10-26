@@ -45,6 +45,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -397,15 +398,7 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdateAdmin updatesAdmin) {
-        return updateUser(projectId, userId, new UserUpdate(
-                updatesAdmin.getName(),
-                updatesAdmin.getEmail(),
-                updatesAdmin.getPassword(),
-                updatesAdmin.getEmailNotify(),
-                updatesAdmin.getIosPush() == Boolean.FALSE ? "" : null,
-                updatesAdmin.getAndroidPush() == Boolean.FALSE ? "" : null,
-                updatesAdmin.getBrowserPush() == Boolean.FALSE ? "" : null
-        ));
+        return updateUser(projectId, userId, updatesAdmin, null, null, null);
     }
 
     @FunctionalInterface
@@ -415,6 +408,28 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
+        return updateUser(projectId, userId, new UserUpdateAdmin(
+                updates.getName(),
+                updates.getEmail(),
+                updates.getPassword(),
+                updates.getEmailNotify(),
+                null,
+                null,
+                null,
+                null,
+                null),
+                updates.getIosPushToken(),
+                updates.getAndroidPushToken(),
+                updates.getBrowserPushToken());
+    }
+
+    private UserAndIndexingFuture<UpdateResponse> updateUser(
+            String projectId,
+            String userId,
+            UserUpdateAdmin updates,
+            String iosPushToken,
+            String androidPushToken,
+            String browserPushToken) {
         UserModel user = getUser(projectId, userId).get();
         if (!Strings.isNullOrEmpty(updates.getPassword()) && user.getIsMod() == Boolean.TRUE) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change password when using Single Sign-On");
@@ -499,38 +514,54 @@ public class DynamoElasticUserStore implements UserStore {
             setUpdates.add("#emailNotify = :emailNotify");
             userUpdatedBuilder.emailNotify(updates.getEmailNotify());
         }
-        if (updates.getIosPushToken() != null) {
+        if(updates.getIosPush() == Boolean.FALSE) iosPushToken = "";
+        if (iosPushToken != null) {
             nameMap.put("#iosPushToken", "iosPushToken");
-            if (updates.getIosPushToken().isEmpty()) {
+            if (iosPushToken.isEmpty()) {
                 removeUpdates.add("#iosPushToken");
             } else {
-                valMap.put(":iosPushToken", userSchema.toAttrValue("iosPushToken", updates.getIosPushToken()));
+                valMap.put(":iosPushToken", userSchema.toAttrValue("iosPushToken", iosPushToken));
                 setUpdates.add("#iosPushToken = :iosPushToken");
             }
-            updateIdentifier.apply(IdentifierType.IOS_PUSH, user.getIosPushToken(), updates.getIosPushToken());
-            userUpdatedBuilder.iosPushToken(updates.getIosPushToken());
+            updateIdentifier.apply(IdentifierType.IOS_PUSH, user.getIosPushToken(), iosPushToken);
+            userUpdatedBuilder.iosPushToken(iosPushToken);
         }
-        if (updates.getAndroidPushToken() != null) {
+        if(updates.getAndroidPush() == Boolean.FALSE) androidPushToken = "";
+        if (androidPushToken != null) {
             nameMap.put("#androidPushToken", "androidPushToken");
-            if (updates.getAndroidPushToken().isEmpty()) {
+            if (androidPushToken.isEmpty()) {
                 removeUpdates.add("#androidPushToken");
             } else {
-                valMap.put(":androidPushToken", userSchema.toAttrValue("androidPushToken", updates.getAndroidPushToken()));
+                valMap.put(":androidPushToken", userSchema.toAttrValue("androidPushToken", androidPushToken));
                 setUpdates.add("#androidPushToken = :androidPushToken");
             }
-            updateIdentifier.apply(IdentifierType.ANDROID_PUSH, user.getAndroidPushToken(), updates.getAndroidPushToken());
-            userUpdatedBuilder.androidPushToken(updates.getAndroidPushToken());
+            updateIdentifier.apply(IdentifierType.ANDROID_PUSH, user.getAndroidPushToken(), androidPushToken);
+            userUpdatedBuilder.androidPushToken(androidPushToken);
         }
-        if (updates.getBrowserPushToken() != null) {
+        if(updates.getBrowserPush() == Boolean.FALSE) browserPushToken = "";
+        if (browserPushToken != null) {
             nameMap.put("#browserPushToken", "browserPushToken");
-            if (updates.getBrowserPushToken().isEmpty()) {
+            if (browserPushToken.isEmpty()) {
                 removeUpdates.add("#browserPushToken");
             } else {
-                valMap.put(":browserPushToken", userSchema.toAttrValue("browserPushToken", updates.getBrowserPushToken()));
+                valMap.put(":browserPushToken", userSchema.toAttrValue("browserPushToken", browserPushToken));
                 setUpdates.add("#browserPushToken = :browserPushToken");
             }
-            updateIdentifier.apply(IdentifierType.BROWSER_PUSH, user.getBrowserPushToken(), updates.getBrowserPushToken());
-            userUpdatedBuilder.browserPushToken(updates.getBrowserPushToken());
+            updateIdentifier.apply(IdentifierType.BROWSER_PUSH, user.getBrowserPushToken(), browserPushToken);
+            userUpdatedBuilder.browserPushToken(browserPushToken);
+        }
+        if(updates.getIsMod() != null) {
+            nameMap.put("#isMod", "isMod");
+            if (updates.getIsMod() == Boolean.FALSE) {
+                removeUpdates.add("#isMod");
+            } else {
+                valMap.put(":isMod", userSchema.toAttrValue("isMod", true));
+                setUpdates.add("#isMod = :isMod");
+            }
+            userUpdatedBuilder.isMod(updates.getIsMod());
+            indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
+            // TODO update all sessions that user is mod instead of revoking
+            revokeSessions(projectId,userId, Optional.empty());
         }
         if (updateAuthTokenValidityStart) {
             Instant authTokenValidityStart = Instant.now();

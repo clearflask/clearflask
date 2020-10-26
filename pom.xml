@@ -66,6 +66,8 @@
                         <parallel>classesAndMethods</parallel>
                         <threadCount>1</threadCount>
                         <perCoreThreadCount>true</perCoreThreadCount>
+                        <trimStackTrace>false</trimStackTrace>
+                        <useFile>false</useFile>
                     </configuration>
                 </plugin>
                 <plugin>

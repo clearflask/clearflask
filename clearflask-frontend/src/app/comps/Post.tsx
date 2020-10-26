@@ -975,7 +975,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const showMoreButton: boolean = !limitEmojiSet || summaryItems.length !== expressionsExpressed.length + expressionsUnused.length;
 
     return (
-      <div style={{ display: 'flex' }}>
+      <div key='renderExpression' style={{ display: 'flex' }}>
         <ClosablePopper
           style={{
             width: limitEmojiSet ? 'max-content' : 'min-content',
@@ -1010,7 +1010,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             opacity={0.3}
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
             }}
           >
             {summaryItems}
