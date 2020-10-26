@@ -341,7 +341,7 @@ public class KillBillSync extends ManagedService {
             for (ReportConfigurationJson report : DEFAULT_ANALYTICS_REPORTS) {
                 Optional<ReportConfigurationJson> oldReportOpt = Optional.ofNullable(reportsMap.get(report.getReportName()));
                 if (oldReportOpt.isPresent() && report.equals(oldReportOpt.get())) {
-                    log.info("Skipping analytics plugin report {}, already exists", report);
+                    log.info("Skipping analytics plugin report {}, already exists", report.getReportName());
                     continue;
                 }
                 log.info("Setting analytics plugin report {} old report {}", report, oldReportOpt);

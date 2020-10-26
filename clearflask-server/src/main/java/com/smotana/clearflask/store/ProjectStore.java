@@ -68,7 +68,6 @@ public interface ProjectStore {
         @NonNull
         String version;
 
-        @NonNull
         Long schemaVersion;
 
         @NonNull

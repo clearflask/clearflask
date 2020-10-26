@@ -142,24 +142,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
-        Optional<String> pathParamUserIdOpt = getPathParameter(requestContext, "userId");
         Optional<String> headerAccountId = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID);
         Optional<String> headerAccountToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID);
 
-        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {} userIdParam {}",
-                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt, pathParamUserIdOpt);
+        log.trace("hasRole role {} accountId {} userSession {} projectIdParam {}",
+                role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt);
 
         if (pathParamProjectIdOpt.isPresent() && userSession.isPresent()
                 && !userSession.get().getProjectId().equals(pathParamProjectIdOpt.get())) {
             log.warn("Potential attack attempt, projectId {} in path param mismatches user {} session projectId {} for method {}",
                     pathParamProjectIdOpt.get(), userSession.get().getUserId(), userSession.get().getProjectId(), requestContext.getMethod());
-            return false;
-        }
-
-        if (pathParamUserIdOpt.isPresent() && userSession.isPresent()
-                && !userSession.get().getUserId().equals(pathParamUserIdOpt.get())) {
-            log.warn("Potential attack attempt, userId {} in path param mismatches user session {} for method {}",
-                    pathParamUserIdOpt.get(), userSession.get().getUserId(), requestContext.getMethod());
             return false;
         }
 
