@@ -194,18 +194,18 @@ export default class ServerAdmin {
         },
       };
       this.projects[projectId] = project;
-    }
 
-    // Simulate config get and bind
-    const configGetAndUserBindAction: Client.configGetAndUserBindActionFulfilled = {
-      type: Client.configGetAndUserBindActionStatus.Fulfilled,
-      meta: { action: Client.Action.configGetAndUserBind, request: { projectId, configGetAndUserBind: {} } },
-      payload: {
-        config: versionedConfig,
-        user: loggedInUser,
-      },
-    };
-    project.server.getStore().dispatch(configGetAndUserBindAction);
+      // Simulate config get and bind
+      const configGetAndUserBindAction: Client.configGetAndUserBindActionFulfilled = {
+        type: Client.configGetAndUserBindActionStatus.Fulfilled,
+        meta: { action: Client.Action.configGetAndUserBind, request: { projectId, configGetAndUserBind: {} } },
+        payload: {
+          config: versionedConfig,
+          user: loggedInUser,
+        },
+      };
+      project.server.getStore().dispatch(configGetAndUserBindAction);
+    }
 
     return project;
   }

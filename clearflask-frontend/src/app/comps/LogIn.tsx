@@ -175,7 +175,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       const showEmailInput = selectedNotificationType === NotificationType.Email;
       const emailValid = this.isEmailValid(this.state.email);
       const emailAllowedDomain = this.isAllowedDomain(this.state.email);
-      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None;
+      const showDisplayNameInput = onboarding && signupAllowed && onboarding.accountFields.displayName !== Client.AccountFieldsDisplayNameEnum.None && selectedNotificationType !== NotificationType.SSO;
       const isDisplayNameRequired = onboarding && onboarding.accountFields.displayName === Client.AccountFieldsDisplayNameEnum.Required;
       const showAccountFields = !isLogin && (showEmailInput || showDisplayNameInput);
       const showPasswordInput = onboarding && onboarding.notificationMethods.email && onboarding.notificationMethods.email.password !== Client.EmailSignupPasswordEnum.None;
@@ -467,8 +467,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   }
                 }}
               >Continue</SubmitButton>
-            ) : ( !!this.props.onClose ? (
-                <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
+            ) : (!!this.props.onClose ? (
+              <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
             ) : null)}
           </DialogActions>
           <Dialog
