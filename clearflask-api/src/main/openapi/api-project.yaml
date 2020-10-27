@@ -698,9 +698,6 @@ components:
         - search
         - display
       properties:
-        title:
-          x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above content'}
-          type: string
         search:
           $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
         display:
@@ -713,6 +710,9 @@ components:
           required:
             - hideIfEmpty
           properties:
+            title:
+              x-clearflask-prop: { order: 1, name: 'Title', description: 'Title to display above content'}
+              type: string
             hideIfEmpty:
               x-clearflask-prop: { order: 2, name: 'Hide if empty', description: 'If this panel has no results, it will be hidden', defaultValue: false}
               type: boolean

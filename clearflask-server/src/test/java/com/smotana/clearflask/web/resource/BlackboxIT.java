@@ -86,6 +86,8 @@ import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
@@ -283,7 +285,7 @@ public class BlackboxIT extends AbstractIT {
     }
 
     private void kbClockReset() throws KillBillClientException {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
         kbClient.doPut("/1.0/kb/test/clock?requestedDate=" + today, "", KillBillUtil.roDefault());
         log.info("Reset clock to {}", today);
     }

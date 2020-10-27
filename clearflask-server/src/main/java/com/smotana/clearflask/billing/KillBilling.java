@@ -30,6 +30,8 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
@@ -63,6 +65,7 @@ import org.killbill.billing.util.api.AuditLevel;
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.Period;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
@@ -610,7 +613,7 @@ public class KillBilling extends ManagedService implements Billing {
                                     subscription.getBillingStartDate().getYear(),
                                     subscription.getBillingStartDate().getMonthOfYear(),
                                     subscription.getBillingStartDate().getDayOfMonth()),
-                            java.time.LocalDate.now()).getDays()
+                            java.time.LocalDate.now(ZoneOffset.UTC)).getDays()
                             / subscription.getBillingPeriod().getPeriod().getDays();
                 }
                 String periodId = subscription.getSubscriptionId() + ";" + periodNum;
@@ -635,7 +638,7 @@ public class KillBilling extends ManagedService implements Billing {
                         ImmutableList.of(new UnitUsageRecord(
                                 ACTIVE_USER_UNIT_NAME,
                                 ImmutableList.of(new UsageRecord(
-                                        LocalDate.now(),
+                                        LocalDate.now(DateTimeZone.UTC),
                                         1L))))), KillBillUtil.roDefault());
 
                 if (isTrial) {
@@ -674,7 +677,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getSubscriptionId(),
                     ACTIVE_USER_UNIT_NAME,
                     subscription.getStartDate(),
-                    LocalDate.now().plusDays(1),
+                    LocalDate.now(DateTimeZone.UTC).plusDays(1),
                     KillBillUtil.roDefault());
             log.trace("Account id {} usage {}", subscription.getAccountId(), usage);
             long activeUsers = usage.getRolledUpUnits().stream()

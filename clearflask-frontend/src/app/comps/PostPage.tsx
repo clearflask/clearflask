@@ -18,6 +18,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props extends WithStyles<typeof styles, true> {
   server: Server;
   postId: string;
+  PostProps?: React.ComponentProps<typeof Post>;
   // connect
   postStatus: Status;
   post?: Client.Idea;
@@ -37,7 +38,7 @@ class PostPage extends Component<Props> {
       return (<ErrorPage msg='Oops, not found' />);
     }
 
-    return (<Post server={this.props.server} idea={this.props.post} variant='page' />);
+    return (<Post server={this.props.server} idea={this.props.post} variant='page' {...this.props.PostProps} />);
   }
 }
 

@@ -58,7 +58,6 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '100vw',
   },
 });
-
 interface Props {
   createSize?: number;
   searchSize?: number;
@@ -69,11 +68,9 @@ interface Props {
   search?: React.ReactNode;
   content: React.ReactNode;
 }
-
 interface State {
   hasExpanded?: boolean;
 }
-
 class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
 
   constructor(props) {

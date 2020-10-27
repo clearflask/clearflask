@@ -35,7 +35,9 @@ export interface Props {
   direction: Direction
   maxHeight?: string | number,
   onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
   forceDisablePostExpand?: boolean;
+  suppressPanel?: boolean;
 }
 interface ConnectProps {
   configver?: string;
@@ -84,6 +86,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               expandable
               forceDisablePostExpand={this.props.forceDisablePostExpand}
               onClickPost={this.props.onClickPost}
+              onUserClick={this.props.onUserClick}
               display={display}
               variant='list'
             />
@@ -91,9 +94,9 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         break;
     }
-    return (
+    return this.props.suppressPanel ? content : (
       <Panel
-        title={this.props.panel.title}
+        title={this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}
       >

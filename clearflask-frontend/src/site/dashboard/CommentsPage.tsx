@@ -23,33 +23,9 @@ const styles = (theme: Theme) => createStyles({
     // (Un)comment these to align with corner
     marginBottom: -1,
   },
-  addIcon: {
-    cursor: 'text',
-    height: '24px',
-    fontSize: '24px',
-    color: theme.palette.text.secondary,
-  },
   nothing: {
     margin: theme.spacing(4),
     color: theme.palette.text.secondary,
-  },
-  createFormFields: {
-    display: 'flex',
-    flexDirection: 'column',
-    // (Un)comment these to align with corner
-    marginTop: theme.spacing(1),
-    marginRight: theme.spacing(2),
-  },
-  createFormField: {
-    margin: theme.spacing(1),
-    width: 'auto',
-    flexGrow: 1,
-  },
-  createField: {
-    minWidth: 100,
-    // (Un)comment these to align with corner
-    marginBottom: -1,
-    marginRight: theme.spacing(3),
   },
   resultContainer: {
     margin: theme.spacing(2),
@@ -67,13 +43,14 @@ const styles = (theme: Theme) => createStyles({
     whiteSpace: 'nowrap',
   },
   searchIcon: {
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.hint,
   },
 });
 
 interface Props {
   server: Server;
   onCommentClick: (postId: string, commentId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   loggedInUser?: Client.User;
@@ -133,6 +110,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                         key={comment.commentId}
                         server={this.props.server}
                         onCommentClick={!!this.props.onCommentClick ? () => this.props.onCommentClick(comment.ideaId, comment.commentId) : undefined}
+                        onAuthorClick={this.props.onUserClick}
                         comment={comment}
                         loggedInUser={this.props.loggedInUser}
                         logIn={() => {
