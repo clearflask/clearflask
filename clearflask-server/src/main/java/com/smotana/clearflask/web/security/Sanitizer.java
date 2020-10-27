@@ -48,6 +48,9 @@ public class Sanitizer {
     }
 
     public void email(String email) {
+        if (email == null) {
+            return;
+        }
         try {
             new InternetAddress(email).validate();
         } catch (AddressException ex) {
@@ -56,13 +59,13 @@ public class Sanitizer {
     }
 
     public void accountName(String accountName) {
-        if (accountName.length() > NAME_MAX_LENGTH) {
+        if (accountName != null && accountName.length() > NAME_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
 
     public void userName(String userName) {
-        if (userName.length() > NAME_MAX_LENGTH) {
+        if (userName != null && userName.length() > NAME_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
     }
@@ -74,7 +77,7 @@ public class Sanitizer {
     }
 
     public void postTitle(String postTitle) {
-        if (postTitle.length() > POST_TITLE_MAX_LENGTH) {
+        if (postTitle != null && postTitle.length() > POST_TITLE_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Title is too long, must be at most " + POST_TITLE_MAX_LENGTH + " characters");
         }
     }

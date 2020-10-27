@@ -124,7 +124,7 @@ public class BlackboxIT extends AbstractIT {
     @Inject
     private Gson gson;
 
-    private long userNumber = 0;
+    private long userNumber = 0L;
 
     @Override
     protected void configure() {

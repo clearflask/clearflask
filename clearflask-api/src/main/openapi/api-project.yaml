@@ -5,6 +5,7 @@ components:
       description: Config properties visible both to client app and admins.
       type: object
       required:
+        - schemaVersion
         - test
         - projectId
         - name
@@ -14,6 +15,13 @@ components:
         - style
         - users
       properties:
+        # Update schema version during breaking changes like adding required fields
+        # or editing existing fields. Don't forget to write upgrade path in ConfigSchemaUpgrader.java
+        schemaVersion:
+          x-clearflask-hide: true
+          x-clearflask-prop: { defaultValue: 2 }
+          type: integer
+          format: int64
         # TODO remove test page
         # test:
         #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
@@ -166,9 +174,14 @@ components:
               type: object
               title: EmailSignup
               required:
-                - password
-                - verification
+              - mode
+              - password
+              - verification
               properties:
+                mode:
+                  x-clearflask-prop: { order: 1, name: 'Allow Signups', enumNames: ['Login Only', 'Signups & Login'], defaultValue: 'SignupAndLogin', description: 'Allows you to only allow login for existing users if you plan on creating user accounts yourself.' }
+                  type: string
+                  enum: [LoginOnly, SignupAndLogin]
                 password:
                   x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
                   type: string

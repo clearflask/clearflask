@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Client from '../../api/client';
-import { cssBlurry, ReduxState, Server, StateSettings } from '../../api/server';
+import { cssBlurry, ReduxState, Server, StateSettings, Status } from '../../api/server';
 import ClosablePopper from '../../common/ClosablePopper';
 import EmojiPicker from '../../common/EmojiPicker';
 import GradientFade from '../../common/GradientFade';
@@ -1188,7 +1188,9 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     const voteStatus = state.votes.statusByIdeaId[ownProps.idea.ideaId];
     if (voteStatus === undefined) {
       // Don't refresh votes if inside a panel which will refresh votes for us
-      if (ownProps.variant === 'page') {
+      if (ownProps.variant === 'page'
+        && state.users.loggedIn.status === Status.FULFILLED
+        && state.users.loggedIn.user) {
         ownProps.server.dispatch().ideaVoteGetOwn({
           projectId: state.projectId,
           ideaIds: [ownProps.idea.ideaId],

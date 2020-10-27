@@ -1,7 +1,13 @@
 package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;
-import com.amazonaws.services.simpleemailv2.model.*;
+import com.amazonaws.services.simpleemailv2.model.Body;
+import com.amazonaws.services.simpleemailv2.model.Content;
+import com.amazonaws.services.simpleemailv2.model.Destination;
+import com.amazonaws.services.simpleemailv2.model.EmailContent;
+import com.amazonaws.services.simpleemailv2.model.Message;
+import com.amazonaws.services.simpleemailv2.model.MessageTag;
+import com.amazonaws.services.simpleemailv2.model.SendEmailRequest;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -94,7 +100,9 @@ public class SupportResource extends AbstractResource implements SupportApi {
     }
 
     private Optional<String> generateReplyTo(SupportMessage supportMessage) {
-        return Optional.ofNullable(supportMessage.getContent().get(CONTACT_FIELD));
+        Optional<String> replyToOpt = Optional.ofNullable(supportMessage.getContent().get(CONTACT_FIELD));
+        replyToOpt.ifPresent(sanitizer::email);
+        return replyToOpt;
     }
 
     private String generateSubject(SupportMessage supportMessage) {
