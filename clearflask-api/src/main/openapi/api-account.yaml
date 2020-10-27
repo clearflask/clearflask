@@ -262,7 +262,7 @@ components:
             properties:
               date:
                 type: string
-                format: date-time
+                format: date
               status:
                 type: string
               amount:

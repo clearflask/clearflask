@@ -70,6 +70,8 @@ public class KillBillSync extends ManagedService {
     public static final String CATALOG_PREFIX = "killbill/";
     public static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
+            // TODO So far we only added pretty names to everything, not worth it to upgrade just yet
+            // .add("catalog002.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
@@ -388,15 +390,16 @@ public class KillBillSync extends ManagedService {
                     .newXPath()
                     .compile("//catalog/effectiveDate/text()");
             DateTimes catalogVersions = kbCatalogProvider.get().getCatalogVersions(null, KillBillUtil.roDefault());
+            log.trace("Uploaded catalog versions: {}", catalogVersions);
             for (String fileName : CATALOG_FILENAMES) {
                 String catalogStr = Resources.toString(Thread.currentThread().getContextClassLoader().getResource(CATALOG_PREFIX + fileName), Charsets.UTF_8);
                 Document doc = docBuilder.parse(new ByteArrayInputStream(catalogStr.getBytes(Charsets.UTF_8)));
                 String effectiveDateStr = effectiveDateXPath.evaluate(doc);
                 DateTime effectiveDate = new DateTime(effectiveDateStr);
-                if (catalogVersions.contains(effectiveDate)) {
-                    log.info("Skipping catalog file {} effectiveDate {}, already exists", fileName, effectiveDateStr);
+                if (catalogVersions.stream().anyMatch(effectiveDate::isEqual)) {
+                    log.info("Skipping catalog file {} effectiveDate {}, already exists", fileName, effectiveDate);
                 } else {
-                    log.info("Uploading catalog file {} effectiveDate {}", fileName, effectiveDateStr);
+                    log.info("Uploading catalog file {} effectiveDate {}", fileName, effectiveDate);
                     kbCatalogProvider.get().uploadCatalogXml(catalogStr, KillBillUtil.roDefault());
                 }
             }

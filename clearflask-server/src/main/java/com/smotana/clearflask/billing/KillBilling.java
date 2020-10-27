@@ -30,9 +30,6 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
@@ -72,7 +69,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
@@ -467,7 +463,10 @@ public class KillBilling extends ManagedService implements Billing {
                             description = "Unspecified";
                         }
                         return new InvoiceItem(
-                                i.getInvoiceDate().toDate().toInstant(),
+                                java.time.LocalDate.of(
+                                        i.getInvoiceDate().getYear(),
+                                        i.getInvoiceDate().getMonthOfYear(),
+                                        i.getInvoiceDate().getDayOfMonth()),
                                 status,
                                 i.getAmount().doubleValue(),
                                 description,
@@ -638,7 +637,7 @@ public class KillBilling extends ManagedService implements Billing {
                         ImmutableList.of(new UnitUsageRecord(
                                 ACTIVE_USER_UNIT_NAME,
                                 ImmutableList.of(new UsageRecord(
-                                        LocalDate.now(DateTimeZone.UTC),
+                                        org.joda.time.LocalDate.now(org.joda.time.DateTimeZone.UTC),
                                         1L))))), KillBillUtil.roDefault());
 
                 if (isTrial) {
@@ -646,8 +645,18 @@ public class KillBilling extends ManagedService implements Billing {
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
                         log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {}",
                                 activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
-                        endTrial(accountId);
+                        subscription = endTrial(accountId);
+
+                        // Update Account status
+                        SubscriptionStatus newStatus = getEntitlementStatus(getAccount(accountId), subscription);
                         AccountStore.Account account = accountStore.getAccountByAccountId(accountId).get();
+                        if (!account.getStatus().equals(newStatus)) {
+                            log.info("Account id {} status change {} -> {}, reason: Trial ended",
+                                    account.getAccountId(), account.getStatus(), newStatus);
+                            account = accountStore.updateStatus(account.getAccountId(), newStatus).getAccount();
+                        }
+
+                        // Notify by email
                         Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(accountId);
                         notificationService.onTrialEnded(accountId, account.getEmail(), paymentOpt.isPresent());
                     } else {
@@ -677,7 +686,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getSubscriptionId(),
                     ACTIVE_USER_UNIT_NAME,
                     subscription.getStartDate(),
-                    LocalDate.now(DateTimeZone.UTC).plusDays(1),
+                    org.joda.time.LocalDate.now(org.joda.time.DateTimeZone.UTC).plusDays(1),
                     KillBillUtil.roDefault());
             log.trace("Account id {} usage {}", subscription.getAccountId(), usage);
             long activeUsers = usage.getRolledUpUnits().stream()

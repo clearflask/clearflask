@@ -189,6 +189,7 @@ export interface PageGroup extends Setting<PageGroupType, true | undefined>, xCf
 
 interface PropertyBase<T extends PageType | PageGroupType | PropertyType, R> extends Setting<T, R>, xCfProp {
   name: string;
+  hide: boolean;
 }
 export enum PropertyType {
   String = 'string',
@@ -818,9 +819,7 @@ export class EditorImpl implements Editor {
       Object.keys(propsSchema).forEach(propName => {
         const propPath = [...path, propName];
         const propSchema = this.getSubSchema([propName], propsSchema);
-        if (propSchema[OpenApiTags.Hide]) {
-          // Nothing to do, hidden
-        } else if (propSchema[OpenApiTags.Page]) {
+        if (propSchema[OpenApiTags.Page]) {
           const childPage = this.getPage(
             propPath,
             depth === ResolveDepth.Shallow ? ResolveDepth.None : depth,
@@ -1165,6 +1164,7 @@ export class EditorImpl implements Editor {
     const base = {
       key: randomUuid(),
       name: pathStr,
+      hide: !!propSchema[OpenApiTags.Hide],
       ...xProp,
       type: 'unknown', // Will be overriden by subclass
       path: path,
@@ -1618,9 +1618,6 @@ export class EditorImpl implements Editor {
             const requiredProps = propSchema.required || [];
             Object.keys(childPropsSchema).forEach(propName => {
               const objectPropSchema = this.getSubSchema([propName], childPropsSchema);
-              if (objectPropSchema[OpenApiTags.Hide]) {
-                return;
-              }
               childProperties!.push(this.getProperty(
                 [...path, propName],
                 requiredProps.includes(propName),

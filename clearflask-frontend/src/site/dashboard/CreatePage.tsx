@@ -330,7 +330,9 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                     var name: string | undefined = undefined;
                     if (nameMatch && nameMatch[2]) {
                       slug = nameMatch[2].toLowerCase();
-                      name = slug.charAt(0).toUpperCase() + slug.slice(1);
+                      if (slug) {
+                        name = slug.charAt(0).toUpperCase() + slug.slice(1);
+                      }
                     }
                     const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
                     var logo: string | undefined = undefined;

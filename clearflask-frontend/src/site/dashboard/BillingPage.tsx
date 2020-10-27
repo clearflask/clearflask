@@ -506,7 +506,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <TableBody>
               {invoicesItems.map((invoiceItem, index) => (
                 <TableRow key={index}>
-                  <TableCell key='due'><Typography><TimeAgo date={invoiceItem.date} /></Typography></TableCell>
+                  <TableCell key='due'><Typography>invoiceItem.date</Typography></TableCell>
                   <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
                   <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
                   <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
