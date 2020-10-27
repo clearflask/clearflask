@@ -1,4 +1,4 @@
-import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp, Typography } from '@material-ui/core';
+import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -12,22 +12,17 @@ const styles = (theme: Theme) => createStyles({
       gridTemplateColumns: 'auto 1fr',
       gridTemplateRows: 'auto 1fr',
       gridTemplateAreas:
-        "'ti ti'"
-        + "'t t'"
+        "'t t'"
         + " 'cc r'",
     },
     [theme.breakpoints.down('xs')]: {
       gridTemplateColumns: 'auto',
       gridTemplateRows: 'auto auto auto',
       gridTemplateAreas:
-        "'ti'"
-        + "'t'"
+        "'t'"
         + " 'cc'"
         + " 'r'",
     },
-  },
-  titleArea: {
-    gridArea: 'ti',
   },
   top: {
     gridArea: 't',
@@ -62,13 +57,8 @@ const styles = (theme: Theme) => createStyles({
     transition: theme.transitions.create(['max-width', 'width'], { duration: theme.explorerExpandTimeout }),
     maxWidth: '100vw',
   },
-  title: {
-    margin: theme.spacing(1),
-    color: theme.palette.text.secondary,
-  },
 });
 interface Props {
-  title?: string;
   createSize?: number;
   searchSize?: number;
   createShown?: boolean;
@@ -124,13 +114,6 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
     );
     return (
       <div className={this.props.classes.explorer}>
-        <div className={this.props.classes.titleArea}>
-          {this.props.title && (
-            <Typography variant='body1' className={classNames(this.props.classes.title)}>
-              {this.props.title}
-            </Typography>
-          )}
-        </div>
         <div className={this.props.classes.top}>
           {this.props.createVisible && (
             <div className={this.props.classes.createVisible} style={{

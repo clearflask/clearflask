@@ -271,7 +271,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
-          title={this.props.explorer.title}
           createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
           createLabel={createLabel}

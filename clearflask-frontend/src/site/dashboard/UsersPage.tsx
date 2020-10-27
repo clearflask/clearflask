@@ -39,7 +39,7 @@ const styles = (theme: Theme) => createStyles({
     cursor: 'text',
     height: '24px',
     fontSize: '24px',
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.hint,
   },
   nothing: {
     margin: theme.spacing(4),
@@ -76,7 +76,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1),
   },
   searchIcon: {
-    color: theme.palette.text.secondary,
+    color: theme.palette.text.hint,
   },
 });
 

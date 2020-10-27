@@ -96,7 +96,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     }
     return this.props.suppressPanel ? content : (
       <Panel
-        title={this.props.panel.title}
+        title={this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}
       >
