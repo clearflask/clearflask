@@ -3,16 +3,14 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
-import ErrorPage from './ErrorPage';
 import setTitle from '../common/util/titleUtil';
+import ErrorPage from './ErrorPage';
 
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
 }
 interface ConnectProps {
-  configver?: string;
-  config?: Client.Config;
   userMe?: Client.UserMe;
 }
 class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {

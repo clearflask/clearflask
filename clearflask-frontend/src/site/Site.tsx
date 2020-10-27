@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
+import SsoSuccessDemoPage from '../app/SsoSuccessDemoPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import setTitle from '../common/util/titleUtil';
@@ -210,7 +211,11 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               setTitle('Sign up');
               return (<TrialSignupPage {...props} />);
             }} />
-            <Route exact path={'/(terms|terms-of-service)'} render={props => {
+            <Route exact path={'/sso'} render={props => {
+              setTitle('Single sign-on');
+              return (<SsoSuccessDemoPage {...props} />);
+            }} />
+            <Route exact path={'/(tos|terms|terms-of-service)'} render={props => {
               setTitle('Terms of Service');
               return (<LegalPage type='terms' />);
             }} />
