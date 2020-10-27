@@ -30,6 +30,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.Currency;
@@ -637,7 +638,7 @@ public class KillBilling extends ManagedService implements Billing {
                         ImmutableList.of(new UnitUsageRecord(
                                 ACTIVE_USER_UNIT_NAME,
                                 ImmutableList.of(new UsageRecord(
-                                        LocalDate.now(ZoneOffset.UTC),
+                                        LocalDate.now(DateTimeZone.UTC),
                                         1L))))), KillBillUtil.roDefault());
 
                 if (isTrial) {
