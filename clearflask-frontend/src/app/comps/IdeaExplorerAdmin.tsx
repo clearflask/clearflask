@@ -43,6 +43,8 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   server: Server;
+  onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -156,6 +158,8 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
           searchOverride={searchOverride}
           server={this.props.server}
           displayDefaults={displayDefaults}
+          onClickPost={this.props.onClickPost}
+          onUserClick={this.props.onUserClick}
         />
       </DividerCorner>
     );

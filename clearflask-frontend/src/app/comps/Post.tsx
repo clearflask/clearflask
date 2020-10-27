@@ -367,6 +367,7 @@ interface Props {
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;
   onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   configver?: string;
@@ -477,6 +478,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.renderExpression(variant),
     ].filter(notEmpty);
     const rightSide = [
+      this.renderAuthor(variant),
       this.renderCategory(variant),
       ...(this.renderTags(variant) || []),
       this.renderCommentCount(variant),
@@ -509,11 +511,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
 
     return (
       <Typography key='author' className={this.props.classes.author} variant='caption'>
-        <UserDisplay user={{
-          userId: this.props.idea.authorUserId,
-          name: this.props.idea.authorName,
-          isMod: this.props.idea.authorIsMod
-        }} />
+        <UserDisplay
+          onClick={this.props.onUserClick}
+          user={{
+            userId: this.props.idea.authorUserId,
+            name: this.props.idea.authorName,
+            isMod: this.props.idea.authorIsMod
+          }}
+        />
       </Typography>
     );
   }
@@ -582,6 +587,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
             parentCommentId={undefined}
             newCommentsAllowed={commentsAllowed}
             loggedInUser={this.props.loggedInUser}
+            onAuthorClick={this.props.onUserClick ? (commentId, userId) => this.props.onUserClick && this.props.onUserClick(userId) : undefined}
           />
         )}
         {commentsAllowed && (
@@ -1069,11 +1075,14 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
               {variant === 'list' ? (
                 <ModStar name={this.props.idea.responseAuthorName} isMod />
               ) : (
-                  <UserDisplay user={{
-                    userId: this.props.idea.responseAuthorUserId,
-                    name: this.props.idea.responseAuthorName,
-                    isMod: true
-                  }} />
+                  <UserDisplay
+                    onClick={this.props.onUserClick}
+                    user={{
+                      userId: this.props.idea.responseAuthorUserId,
+                      name: this.props.idea.responseAuthorName,
+                      isMod: true
+                    }}
+                  />
                 )}
               :&nbsp;&nbsp;
             </React.Fragment>

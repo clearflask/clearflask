@@ -208,7 +208,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <IdeaExplorerAdmin server={activeProject.server} />
+            <IdeaExplorerAdmin
+              server={activeProject.server}
+              onClickPost={postId => this.pageClicked('post', [postId])}
+              onUserClick={userId => this.pageClicked('user', [userId])}
+            />
           </Provider>
         );
         crumbs = [{ name: 'Home', slug: activePath }];
@@ -299,6 +303,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             <CommentsPage
               server={activeProject.server}
               onCommentClick={(postId, commentId) => this.pageClicked('post', [postId])}
+              onUserClick={userId => this.pageClicked('user', [userId])}
             />
           </Provider>
         );
@@ -446,14 +451,33 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       switch (this.state.quickView?.type) {
         case 'post':
           const postId = this.state.quickView.id;
+          previewBarInfo = (
+            <div className={this.props.classes.previewBarText}>
+              Preview post as&nbsp;
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <UserDisplayMe variant='text' />
+              </Provider>
+            </div>
+          );
           preview = (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-              <PostPage key={postId} server={activeProject.server} postId={postId} />
+              <PostPage key={postId} server={activeProject.server} postId={postId}
+                PostProps={{
+                  onUserClick: userId => this.pageClicked('user', [userId]),
+                }}/>
             </Provider>
           );
           break;
         case 'user':
           const userId = this.state.quickView.id;
+          previewBarInfo = (
+            <div className={this.props.classes.previewBarText}>
+              Preview user as&nbsp;
+              <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
+                <UserDisplayMe variant='text' />
+              </Provider>
+            </div>
+          );
           preview = (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserPage key={userId} server={activeProject.server} userId={userId} />

@@ -172,6 +172,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             forceDisablePostExpand={true}
             server={this.props.server}
             onClickPost={this.props.onClickPost}
+            suppressPanel
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
@@ -198,6 +199,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             forceDisablePostExpand={this.props.forceDisablePostExpand}
             onClickPost={this.props.onClickPost}
             panel={this.props.explorer}
+            suppressPanel
             displayDefaults={{
               titleTruncateLines: 1,
               descriptionTruncateLines: 2,
@@ -269,6 +271,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
+          title={this.props.explorer.title}
           createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
           createLabel={createLabel}

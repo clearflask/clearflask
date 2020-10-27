@@ -74,6 +74,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   onCommentClick: (postId: string, commentId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   loggedInUser?: Client.User;
@@ -133,6 +134,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                         key={comment.commentId}
                         server={this.props.server}
                         onCommentClick={!!this.props.onCommentClick ? () => this.props.onCommentClick(comment.ideaId, comment.commentId) : undefined}
+                        onAuthorClick={this.props.onUserClick}
                         comment={comment}
                         loggedInUser={this.props.loggedInUser}
                         logIn={() => {

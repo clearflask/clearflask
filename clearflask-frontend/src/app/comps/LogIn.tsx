@@ -138,7 +138,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           || (!notifOpts.has(NotificationType.Android) && !notifOpts.has(NotificationType.Ios) && !notifOpts.has(NotificationType.Browser)))) {
         notifOpts.add(NotificationType.Silent)
       }
-      if (onboarding.notificationMethods.email && onboarding.notificationMethods.email.mode == Client.EmailSignupModeEnum.SignupAndLogin) {
+      if (onboarding.notificationMethods.email && onboarding.notificationMethods.email.mode === Client.EmailSignupModeEnum.SignupAndLogin) {
         notifOpts.add(NotificationType.Email);
       }
       if (onboarding.notificationMethods.sso) {
