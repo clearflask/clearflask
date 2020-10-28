@@ -22,17 +22,15 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2),
   },
 });
-
 interface Props {
   server: Server;
 }
-
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   userMe?: Client.UserMe;
+  suppressSetTitle?: boolean,
 }
-
 interface State {
   deleteDialogOpen?: boolean;
   displayName?: string;
@@ -41,12 +39,13 @@ interface State {
   revealPassword?: boolean;
   signoutWarnNoEmail?: boolean;
 }
-
 class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   state: State = {};
 
   render() {
-    setTitle('Account', true);
+    if (!this.props.suppressSetTitle) {
+      setTitle('Account', true);
+    }
 
     if (!this.props.userMe) {
       return (<ErrorPage msg='You need to log in to see your account details' variant='info' />);
@@ -475,6 +474,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     userMe: state.users.loggedIn.user,
+    suppressSetTitle: state.settings.suppressSetTitle,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withSnackbar(AccountPage)));

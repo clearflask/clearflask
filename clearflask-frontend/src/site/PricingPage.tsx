@@ -20,8 +20,8 @@ import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 export const TrialInfoText = 'No time-limit Trial up to 10 MAU.'
 
 /** If changed, also update PlanStore.java */
-const StopTrialAfterActiveUsersReaches = 10;
-const EstimatedPercUsersBecomeActive = 0.02;
+export const StopTrialAfterActiveUsersReaches = 10;
+export const EstimatedPercUsersBecomeActive = 0.02;
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {

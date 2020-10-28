@@ -62,7 +62,8 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
         mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
           statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
         })),
-        props.projectId);
+        props.projectId,
+        { suppressSetTitle: true });
       server = project.server;
     } else {
       server = new Server(props.projectId);

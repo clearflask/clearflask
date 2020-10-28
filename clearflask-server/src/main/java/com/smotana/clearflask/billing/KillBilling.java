@@ -2,6 +2,8 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -244,11 +246,12 @@ public class KillBilling extends ManagedService implements Billing {
         boolean hasOverdueBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
         boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
+        Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent());
         if ((hasOverdueBalance && isOverdueCancelled)
                 || EntitlementState.BLOCKED.equals(subscription.getState())
                 || overdueState.isBlockChanges() == Boolean.TRUE) {
             status = SubscriptionStatus.BLOCKED;
-        } else if (!hasOverdueBalance && (isOverdueCancelled || isOverdueUnpaid)) {
+        } else if (!hasOverdueBalance && (isOverdueUnpaid || isOverdueCancelled || !hasPaymentMethod.get())) {
             status = SubscriptionStatus.TRIALEXPIRED;
         } else if (hasOverdueBalance && isOverdueUnpaid) {
             status = SubscriptionStatus.ACTIVEPAYMENTRETRY;
@@ -266,11 +269,13 @@ public class KillBilling extends ManagedService implements Billing {
             status = SubscriptionStatus.ACTIVE;
         } else {
             status = SubscriptionStatus.BLOCKED;
-            log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}",
-                    status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState);
+            log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
+                    status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get());
         }
-        log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}",
-                status, account, subscription, overdueState);
+        if (log.isTraceEnabled()) {
+            log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
+                    status, account, subscription, overdueState, hasPaymentMethod.get());
+        }
         return status;
     }
 
@@ -517,8 +522,12 @@ public class KillBilling extends ManagedService implements Billing {
     @Extern
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId) {
+        UUID accountIdKb = getAccount(accountId).getAccountId();
+        return getDefaultPaymentMethodDetails(accountIdKb);
+    }
+
+    private Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb) {
         try {
-            UUID accountIdKb = getAccount(accountId).getAccountId();
             PaymentMethods paymentMethods = kbAccount.getPaymentMethodsForAccount(
                     accountIdKb,
                     true,
@@ -572,7 +581,7 @@ public class KillBilling extends ManagedService implements Billing {
                         cardExpiryMonth);
             });
         } catch (KillBillClientException ex) {
-            log.warn("Failed to get payment method details from KillBill for accountId {}", accountId, ex);
+            log.warn("Failed to get payment method details from KillBill for accountIdKb {}", accountIdKb, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch payment method", ex);
         }

@@ -39,10 +39,11 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
 
   constructor(props) {
     super(props);
-    this.settings = props.containerPortal ? {
+    this.settings = {
+      ...(props.containerPortal ? { demoPortalContainer: this.containerRef } : {}),
+      suppressSetTitle: true,
       ...props.settings,
-      demoPortalContainer: this.containerRef,
-    } : props.settings;
+    };
     this.projectPromise = props.demoProject || getProject(props.template, props.mock, undefined, this.settings);
   }
 

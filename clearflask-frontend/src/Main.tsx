@@ -15,7 +15,6 @@ import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
-import setTitle from './common/util/titleUtil';
 import { vh } from './common/util/vhUtil';
 
 const notistackRef = React.createRef<ProviderContext>();
@@ -71,8 +70,6 @@ class Main extends Component {
       });
       ReactGA.pageview(window.location.pathname + window.location.search);
     }
-
-    setTitle();
   }
 
   render() {

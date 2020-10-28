@@ -193,6 +193,7 @@ interface updateSettingsAction {
   payload: Partial<StateSettings>;
 }
 export interface StateSettings {
+  suppressSetTitle?: boolean;
   demoUserIsInteracting?: boolean;
   demoPortalContainer?: React.RefObject<any>;
   demoFlashPostVotingControls?: boolean;

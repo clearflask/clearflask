@@ -24,6 +24,7 @@ import CreditCard from '../../common/CreditCard';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { isTracking } from '../../common/util/detectEnv';
+import { StopTrialAfterActiveUsersReaches } from '../PricingPage';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 
@@ -161,7 +162,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       case Admin.SubscriptionStatus.ActiveTrial:
         if (this.props.accountBilling?.payment) {
           paymentTitle = 'Automatic renewal is active';
-          paymentDesc = 'Your first payment will be automatically billed at the end of the trial period.';
+          paymentDesc = `Your first payment will be automatically billed at the end of the trial period when you reach ${StopTrialAfterActiveUsersReaches} MAU.`;
           cardState = 'active';
           showSetPayment = true;
           setPaymentTitle = 'Update payment method';
@@ -178,16 +179,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           cardState = 'warn';
           showSetPayment = true;
           setPaymentTitle = 'Add payment method';
+          planTitle = 'Your plan is active until your trial expires';
           if (this.props.accountBilling?.billingPeriodEnd) {
-            planTitle = (
+            planDesc = (
               <React.Fragment>
-                Your plan is active until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+                You have full access to your ${this.props.account.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
               </React.Fragment>
             );
           } else {
-            planTitle = 'Your plan is active until your trial expires';
+            planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires when you reach ${StopTrialAfterActiveUsersReaches} MAU. Add a payment method to continue using our service beyond the trial period.`;
           }
-          planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires. Add a payment method to continue using our service beyond the trial period.`;
           if (hasAvailablePlansToSwitch) {
             showPlanChange = true;
           }
@@ -195,7 +196,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         break;
       case Admin.SubscriptionStatus.ActivePaymentRetry:
         paymentTitle = 'Automatic renewal is having issues with your payment method';
-        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may cancel your service if unsuccessful.';
+        paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may block your service if we are unsuccessful.';
         cardState = 'error';
         showSetPayment = true;
         setPaymentTitle = 'Update payment method';
@@ -228,7 +229,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         cardState = 'error';
         showSetPayment = true;
         setPaymentTitle = 'Add payment method';
-        planTitle = 'Your plan trial has expired';
+        planTitle = 'Your trial plan has expired';
         planDesc = `To continue your access to your ${this.props.account.plan.title} plan, please add a payment method.`;
         break;
       case Admin.SubscriptionStatus.Blocked:
@@ -506,7 +507,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <TableBody>
               {invoicesItems.map((invoiceItem, index) => (
                 <TableRow key={index}>
-                  <TableCell key='due'><Typography>invoiceItem.date</Typography></TableCell>
+                  <TableCell key='due'><Typography>{new Date(invoiceItem.date).toLocaleDateString()}</Typography></TableCell>
                   <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
                   <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
                   <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>

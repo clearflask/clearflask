@@ -2,6 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import ServerAdmin from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -16,6 +17,8 @@ class InvoicePage extends Component<Props & WithStyles<typeof styles, true>, Sta
   state: State = {};
   constructor(props) {
     super(props);
+
+    setTitle(`Invoice #${props.invoiceNumber}`);
 
     ServerAdmin.get().dispatchAdmin().then(d => d.invoiceHtmlGetAdmin({
       invoiceNumber: props.invoiceNumber,

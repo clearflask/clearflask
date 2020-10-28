@@ -59,12 +59,15 @@ interface ConnectProps {
   config?: Client.Config;
   pageNotFound: boolean;
   page?: Client.Page;
+  suppressSetTitle?: boolean,
 }
 class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
     if (this.props.pageNotFound) {
-      setTitle("Page not found", true);
+      if (!this.props.suppressSetTitle) {
+        setTitle("Page not found", true);
+      }
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
@@ -79,7 +82,9 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         />
       );
     } else if (this.props.page) {
-      setTitle(this.props.page.name, true);
+      if (!this.props.suppressSetTitle) {
+        setTitle(this.props.page.name, true);
+      }
 
       var panelsCmpt;
       var boardCmpt;
@@ -233,6 +238,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     pageNotFound: false,
     page: undefined,
+    suppressSetTitle: state.settings.suppressSetTitle,
   };
 
   if (state.conf.status === Status.FULFILLED && state.conf.conf) {

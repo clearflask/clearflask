@@ -2,7 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { ReduxState, Server, Status } from '../../api/server';
+import { ReduxState, Server, StateSettings, Status } from '../../api/server';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import setTitle from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
@@ -14,27 +14,31 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
   },
 });
-
-interface Props extends WithStyles<typeof styles, true> {
+interface Props {
   server: Server;
   postId: string;
-  PostProps?: React.ComponentProps<typeof Post>;
-  // connect
+  PostProps?: Partial<React.ComponentProps<typeof Post>>;
+}
+interface ConnectProps {
   postStatus: Status;
   post?: Client.Idea;
+  suppressSetTitle?: boolean,
 }
-
-class PostPage extends Component<Props> {
+class PostPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if (this.props.post) {
+    if (this.props.post && !this.props.suppressSetTitle) {
       setTitle(truncateWithElipsis(25, this.props.post.title), true);
     }
 
     if (this.props.postStatus === Status.REJECTED) {
-      setTitle("Failed to load");
+      if (!this.props.suppressSetTitle) {
+        setTitle("Failed to load");
+      }
       return (<ErrorPage msg='Oops, failed to load' />);
     } else if (this.props.postStatus === Status.FULFILLED && this.props.post === undefined) {
-      setTitle("Not found");
+      if (!this.props.suppressSetTitle) {
+        setTitle("Not found");
+      }
       return (<ErrorPage msg='Oops, not found' />);
     }
 
@@ -42,10 +46,11 @@ class PostPage extends Component<Props> {
   }
 }
 
-export default connect<any, any, any, any>((state: ReduxState, ownProps: Props) => {
-  var newProps: { postStatus: Status; post?: Client.Idea; } = {
+export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props) => {
+  var newProps: ConnectProps = {
     postStatus: Status.PENDING,
     post: undefined,
+    suppressSetTitle: state.settings.suppressSetTitle,
   };
 
   const byId = state.ideas.byId[ownProps.postId];

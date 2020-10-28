@@ -226,7 +226,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           expiryMonth: 7,
           expiryYear: 2032,
         },
-      billingPeriodEnd,
+      billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       billingPeriodMau: 341,
       availablePlans: Object.values(AvailablePlans),
       invoices: {
