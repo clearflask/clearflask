@@ -66,7 +66,7 @@ public class UserStoreIT extends AbstractIT {
     public void testUser() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "john",
@@ -135,7 +135,7 @@ public class UserStoreIT extends AbstractIT {
         String projectId = IdUtil.randomId();
         UserModel user1 = new UserModel(
                 projectId,
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "john",
@@ -155,7 +155,7 @@ public class UserStoreIT extends AbstractIT {
                 null);
         UserModel user2 = new UserModel(
                 projectId,
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "matt",
@@ -175,7 +175,7 @@ public class UserStoreIT extends AbstractIT {
                 null);
         UserModel user3 = new UserModel(
                 projectId,
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "Bobby",
@@ -232,7 +232,7 @@ public class UserStoreIT extends AbstractIT {
     public void testUserToken() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "john",
@@ -268,7 +268,7 @@ public class UserStoreIT extends AbstractIT {
     public void testUserSession() throws Exception {
         UserModel user = new UserModel(
                 IdUtil.randomId(),
-                store.genUserId(),
+                store.genUserId(Optional.empty()),
                 null,
                 false,
                 "john",

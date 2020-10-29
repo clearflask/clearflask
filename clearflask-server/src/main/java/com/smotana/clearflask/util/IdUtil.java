@@ -20,9 +20,21 @@ public class IdUtil {
     }
 
     public static String contentUnique(String content) {
-        return String.format("%1.3s-%s",
-                StringUtils.left(content, 50).trim().replaceAll("[^0-9a-z]+", "-"),
-                RandomStringUtils.randomAlphanumeric(5))
+        String contentPart = StringUtils.left(content, 50)
+                .replaceAll("[^0-9a-z ]+", "")
+                .replaceAll(" +", "-")
+                .trim();
+        int randomChars;
+        if (contentPart.length() < 5) {
+            randomChars = 8;
+        } else if (contentPart.length() < 10) {
+            randomChars = 5;
+        } else if (contentPart.length() < 15) {
+            randomChars = 4;
+        } else {
+            randomChars = 3;
+        }
+        return (contentPart + '-' + RandomStringUtils.randomAlphanumeric(randomChars))
                 .toLowerCase();
     }
 

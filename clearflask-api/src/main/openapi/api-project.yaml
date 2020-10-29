@@ -778,12 +778,12 @@ components:
         version:
           type: string
 
-/project/{projectId}/config:
+/slug/{slug}/config:
   post:
     operationId: configGetAndUserBind
     tags: [Project]
     parameters:
-    - name: projectId
+    - name: slug
       in: path
       required: true
       schema:

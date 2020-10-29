@@ -444,9 +444,9 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     this.props.server.dispatch().userCreate({
                       projectId: this.props.server.getProjectId(),
                       userCreate: {
-                        name: this.state.displayName,
-                        email: this.state.email,
-                        password: this.state.pass ? saltHashPassword(this.state.pass) : undefined,
+                        name: showDisplayNameInput ? this.state.displayName : undefined,
+                        email: showEmailInput ? this.state.email : undefined,
+                        password: (showPasswordInput && this.state.pass) ? saltHashPassword(this.state.pass) : undefined,
                         iosPushToken: selectedNotificationType === NotificationType.Ios ? this.state.notificationDataIos : undefined,
                         androidPushToken: selectedNotificationType === NotificationType.Android ? this.state.notificationDataAndroid : undefined,
                         browserPushToken: selectedNotificationType === NotificationType.Browser ? this.state.notificationDataBrowser : undefined,

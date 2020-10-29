@@ -25,8 +25,8 @@ import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.
 
 public interface UserStore {
 
-    default String genUserId() {
-        return IdUtil.randomId();
+    default String genUserId(Optional<String> nameOpt) {
+        return nameOpt.map(IdUtil::contentUnique).orElseGet(IdUtil::randomId);
     }
 
     ListenableFuture<CreateIndexResponse> createIndex(String projectId);

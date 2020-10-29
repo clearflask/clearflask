@@ -3,11 +3,30 @@
  *   long decayPeriodInMillis
  *   long timeInMillis
  *   Map<String, Object> extraUpdates
+ *   Map<String, Object> extraArrayAdditions
+ *   Map<String, Object> extraArrayDeletions
  */
 
 if(params.extraUpdates != null) {
     for (entry in params.extraUpdates.entrySet()) {
         ctx._source[entry.getKey()] = entry.getValue();
+    }
+}
+
+if(params.extraArrayDeletions != null) {
+    for (entry in params.extraArrayDeletions.entrySet()) {
+        if(ctx._source[entry.getKey()] != null) {
+            ctx._source[entry.getKey()].removeAll(Collections.singleton(entry.getValue());
+        }
+    }
+}
+
+if(params.extraArrayAdditions != null) {
+    for (entry in params.extraArrayAdditions.entrySet()) {
+        if(ctx._source[entry.getKey()] == null) {
+            ctx._source[entry.getKey()] = new ArrayList();
+        }
+        ctx._source[entry.getKey()].add(entry.getValue());
     }
 }
 

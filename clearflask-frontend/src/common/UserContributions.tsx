@@ -8,9 +8,8 @@ import PanelComment from '../app/comps/PanelComment';
 import PanelPost from '../app/comps/PanelPost';
 
 const styles = (theme: Theme) => createStyles({
-  panels: {
-    display: 'flex',
-    flexDirection: 'column',
+  panel: {
+    marginTop: theme.spacing(4),
   },
 });
 interface Props {
@@ -29,8 +28,9 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
       filterAuthorId: this.props.userId,
     };
     return (
-      <div className={this.props.classes.panels}>
+      <React.Fragment>
         <PanelPost
+          className={this.props.classes.panel}
           key={getSearchKey(postsPanel.search)}
           direction={Direction.Horizontal}
           panel={postsPanel}
@@ -51,6 +51,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
           }}
         />
         <PanelComment
+          className={this.props.classes.panel}
           key={getCommentSearchKey(commentSearch)}
           title='Recent comments'
           server={this.props.server}
@@ -58,7 +59,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
           direction={Direction.Horizontal}
           hideAuthor
         />
-      </div>
+      </React.Fragment>
     );
   }
 }

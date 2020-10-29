@@ -209,7 +209,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
 
         // Now we're ready to create the user
-        String userId = userStore.genUserId();
+        String userId = userStore.genUserId(Optional.ofNullable(Strings.emptyToNull(userCreate.getName())));
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreate.getPassword())) {
             passwordHashed = Optional.of(passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userCreate.getPassword(), userId));
@@ -264,7 +264,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             sanitizer.email(userCreateAdmin.getEmail());
         }
 
-        String userId = userStore.genUserId();
+        String userId = userStore.genUserId(Optional.ofNullable(Strings.emptyToNull(userCreateAdmin.getName())));
         Optional<String> passwordHashed = Optional.empty();
         if (!Strings.isNullOrEmpty(userCreateAdmin.getPassword())) {
             if (userCreateAdmin.getSsoGuid() != null) {

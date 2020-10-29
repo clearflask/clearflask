@@ -131,7 +131,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         return Stream.concat(
                 ImmutableMap.of(
                         "ip", IpUtil.getRemoteIp(request, env),
-                        "loggedInAccountEmail", accountSessionOpt.map(AccountSession::getEmail)
+                        "loggedInAccountEmail", accountSessionOpt.map(AccountSession::getEmail).orElse("None")
                 ).entrySet().stream(),
                 supportMessage.getContent().entrySet().stream())
                 .map(pair -> Strings.nullToEmpty(pair.getKey()) + ": " + Strings.nullToEmpty(pair.getValue()))

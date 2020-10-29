@@ -33,6 +33,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className?: string;
   server: Server;
   title?: React.ReactNode;
   search: Client.CommentSearch;
@@ -103,6 +104,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <React.Fragment>
         <Panel
+          className={this.props.className}
           title={this.props.title}
           direction={this.props.direction}
           maxHeight={this.props.maxHeight}

@@ -574,7 +574,11 @@ public class DynamoElasticUserStore implements UserStore {
         String updateExpression = (setUpdates.isEmpty() ? "" : "SET " + String.join(", ", setUpdates))
                 + (removeUpdates.isEmpty() ? "" : " REMOVE " + String.join(", ", removeUpdates));
         nameMap.put("#partitionKey", userSchema.partitionKeyName());
-        log.info("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
+        if(Strings.isNullOrEmpty(updateExpression)) {
+            // Nothing to update
+            return new UserAndIndexingFuture<>(user, Futures.immediateFuture(null));
+        }
+        log.trace("updateUser with expression: {} {} {}", updateExpression, nameMap, valMap);
 
         Update update = new Update()
                 .withTableName(userSchema.tableName())
@@ -853,7 +857,7 @@ public class DynamoElasticUserStore implements UserStore {
         if (!userOpt.isPresent()) {
             userOpt = Optional.of(createUser(new UserModel(
                     projectId,
-                    genUserId(),
+                    genUserId(nameOpt),
                     guid,
                     null,
                     nameOpt.orElse(null),

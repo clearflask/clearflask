@@ -195,6 +195,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 "type", "double"))
                         .put("fundGoal", ImmutableMap.of(
                                 "type", "double"))
+                        .put("fundersCount", ImmutableMap.of(
+                                "type", "long"))
                         .put("funderUserIds", ImmutableMap.of(
                                 "type", "keyword"))
                         .put("voteValue", ImmutableMap.of(
@@ -338,8 +340,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
             checkArgument(requestorUserIdOpt.isPresent());
-            query.must(QueryBuilders.termQuery("authorUserId", requestorUserIdOpt.get()));
-            // TODO how to check for activeness??
+            query.must(QueryBuilders.termQuery("funderUserIds", requestorUserIdOpt.get()));
+            // TODO how to check for activeness?? (Figure out which content and states allow funding and filter here)
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
@@ -726,17 +728,14 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         valMap.put(":fundDiff", fundDiff);
         setUpdates.add("#funded = if_not_exists(#funded, :zero) + :fundDiff");
 
-        boolean funderUserIdsChanged = false;
         if (!hasFundedBefore && resultingFundAmount != 0L) {
             nameMap.put("#fundersCount", "fundersCount");
             valMap.put(":one", 1);
             setUpdates.add("#fundersCount = if_not_exists(#fundersCount, :zero) + :one");
-            funderUserIdsChanged = true;
-        } else if (resultingFundAmount == 0L) {
+        } else if (hasFundedBefore && resultingFundAmount == 0L) {
             nameMap.put("#fundersCount", "fundersCount");
             valMap.put(":one", 1);
             setUpdates.add("#fundersCount = if_not_exists(#fundersCount, :zero) - :one");
-            funderUserIdsChanged = true;
         }
 
         String updateExpression = "SET " + String.join(", ", setUpdates);
@@ -751,17 +750,25 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withUpdateExpression(updateExpression))
                 .getItem());
 
+        ImmutableMap.Builder<String, Object> scriptParamsBuilder = ImmutableMap.builder();
+        scriptParamsBuilder.put("decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS);
+        scriptParamsBuilder.put("timeInMillis", System.currentTimeMillis());
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("funded", orNull(idea.getFunded()));
-        if (funderUserIdsChanged) {
+        if (!hasFundedBefore && resultingFundAmount != 0L) {
             indexUpdates.put("fundersCount", idea.getFundersCount());
+            scriptParamsBuilder.put("extraArrayAdditions",
+                    ImmutableMap.of("funderUserIds", userId));
+        } else if (hasFundedBefore && resultingFundAmount == 0L) {
+            indexUpdates.put("fundersCount", idea.getFundersCount());
+            scriptParamsBuilder.put("extraArrayDeletions",
+                    ImmutableMap.of("funderUserIds", userId));
         }
+        scriptParamsBuilder.put("extraUpdates", indexUpdates);
+
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId), idea.getIdeaId())
-                        .script(ElasticScript.EXP_DECAY.toScript(ImmutableMap.of(
-                                "decayPeriodInMillis", EXP_DECAY_PERIOD_MILLIS,
-                                "timeInMillis", System.currentTimeMillis(),
-                                "extraUpdates", indexUpdates)))
+                        .script(ElasticScript.EXP_DECAY.toScript(scriptParamsBuilder.build()))
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
         return new IdeaTransactionAndIndexingFuture(
