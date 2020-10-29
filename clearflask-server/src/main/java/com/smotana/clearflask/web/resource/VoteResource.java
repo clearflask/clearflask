@@ -163,7 +163,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
             if (expressing == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expressions not allowed");
             }
-            if (expressing.getLimitEmojiSet().stream().noneMatch(e -> e.getDisplay().equals(voteUpdate.getExpressions().getExpression()))) {
+            if (expressing.getLimitEmojiSet() != null && expressing.getLimitEmojiSet().stream().noneMatch(e -> e.getDisplay().equals(voteUpdate.getExpressions().getExpression()))) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expression not allowed");
             }
 

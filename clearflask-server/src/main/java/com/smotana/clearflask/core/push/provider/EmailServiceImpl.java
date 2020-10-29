@@ -18,6 +18,7 @@ import com.amazonaws.services.simpleemailv2.model.SendEmailResult;
 import com.amazonaws.services.simpleemailv2.model.SendingPausedException;
 import com.amazonaws.services.simpleemailv2.model.TooManyRequestsException;
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
@@ -43,6 +44,9 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue("noreply")
         String fromEmailLocalPart();
+
+        @DefaultValue("ClearFlask")
+        String emailDisplayName();
 
         @DefaultValue("0.1")
         double rateLimitPerSecond();
@@ -95,12 +99,18 @@ public class EmailServiceImpl implements EmailService {
             return;
         }
 
+        String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
+        String emailDisplayName = config.emailDisplayName();
+        if(!Strings.isNullOrEmpty(emailDisplayName)) {
+            fromEmailAddress = emailDisplayName + " <" + fromEmailAddress + ">";
+        }
+
         SendEmailResult result;
         try {
             result = ses.sendEmail(new SendEmailRequest()
                     .withDestination(new Destination()
                             .withToAddresses(email.getToAddress()))
-                    .withFromEmailAddress(config.fromEmailLocalPart() + "@" + configApp.domain())
+                    .withFromEmailAddress(fromEmailAddress)
                     .withEmailTags(new MessageTag().withName("id").withValue(email.getProjectOrAccountId()),
                             new MessageTag().withName("type").withValue(email.getTypeTag()))
                     .withContent(new EmailContent().withSimple(new Message()

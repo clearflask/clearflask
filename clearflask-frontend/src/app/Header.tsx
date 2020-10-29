@@ -89,6 +89,7 @@ const styles = (theme: Theme) => createStyles({
   },
   logoImg: {
     maxHeight: '48px',
+    width: 'auto',
     padding: theme.spacing(1),
   },
   logoText: {

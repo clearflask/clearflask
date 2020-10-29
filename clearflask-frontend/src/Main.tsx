@@ -83,8 +83,8 @@ class Main extends Component {
       <MuiThemeProvider theme={theme}>
         <MuiSnackbarProvider notistackRef={notistackRef}>
           <CssBaseline />
-          <ServerErrorNotifier server={ServerAdmin.get()} />
-          <CaptchaChallenger server={ServerAdmin.get()} />
+          <ServerErrorNotifier />
+          <CaptchaChallenger />
           <div style={{
             minHeight: vh(100),
             display: 'flex',

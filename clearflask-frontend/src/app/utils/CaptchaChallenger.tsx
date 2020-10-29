@@ -1,26 +1,19 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import React, { Component } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
-
-export interface Props {
-  server: Server | ServerAdmin;
-}
+import { Server, Unsubscribe } from '../../api/server';
 
 interface State {
   solved?: ((solution: string) => void);
   sitekey?: string;
 }
-
-export default class CaptchaChallenger extends Component<Props, State> {
+export default class CaptchaChallenger extends Component<{}, State> {
   state: State = {};
   recaptchaRef: React.RefObject<ReCAPTCHA> = React.createRef();
+  unsubscribe?: Unsubscribe;
 
-  constructor(props) {
-    super(props);
-
-    props.server.subscribeChallenger((challengeStr: string) => new Promise((resolve, reject) => {
+  componentDidMount() {
+    this.unsubscribe = Server._subscribeChallenger((challengeStr: string) => new Promise((resolve, reject) => {
       console.log('Server challenge: ' + challengeStr);
       var challenge = JSON.parse(challengeStr);
       if (challenge.version !== 'RECAPTCHA_V2' || !challenge.challenge) {
@@ -32,6 +25,10 @@ export default class CaptchaChallenger extends Component<Props, State> {
         sitekey: challenge.challenge,
       });
     }));
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
   }
 
   render() {

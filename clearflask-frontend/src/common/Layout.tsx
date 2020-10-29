@@ -111,6 +111,15 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
     };
   }
 
+  static getDerivedStateFromProps(props: React.ComponentProps<typeof Layout>, state: State): Partial<State> | null {
+    // Clear mobile preview if navigated to a page that doesn't have mobile preview
+    // So if you click back to a page that does, the preview is not open already
+    if (!props.preview && !!state.mobilePreviewOpen) {
+      return { mobilePreviewOpen: undefined };
+    }
+    return null;
+  }
+
   render() {
     const previewBar = (this.props.previewBar || this.props.previewBarInfo) && (
       <React.Fragment>

@@ -36,7 +36,7 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
-import PricingPage from './PricingPage';
+import PricingPage, { TrialInfoText } from './PricingPage';
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -177,10 +177,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
         buttonTitle='Get started'
         buttonLink='/signup'
         buttonRemark={(
-          <div>
-            <div>Free trial up to 10 users.</div>
-            <div>No time-limit. No credit card.</div>
-          </div>
+          <TrialInfoText />
         )}
       />
     );

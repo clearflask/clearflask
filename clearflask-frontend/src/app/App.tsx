@@ -124,8 +124,8 @@ class App extends Component<Props> {
           }}
         >
           <PushNotificationListener server={this.server} />
-          <ServerErrorNotifier server={this.server} />
-          <CaptchaChallenger server={this.server} />
+          <ServerErrorNotifier />
+          <CaptchaChallenger />
           <div
             key={appRootId}
             id={appRootId}

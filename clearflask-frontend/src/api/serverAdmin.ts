@@ -9,8 +9,6 @@ import { Server, Status } from './server';
 import ServerMock from './serverMock';
 
 export const DemoUpdateDelay = 300;
-type ErrorSubscribers = ((msg: string, isUserFacing: boolean) => void)[];
-type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 
 export interface Project {
   projectId: string;
@@ -31,14 +29,12 @@ export default class ServerAdmin {
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
   readonly store: Store<ReduxStateAdmin, Admin.Actions>;
-  readonly errorSubscribers: ErrorSubscribers = [];
-  challengeSubscriber?: ChallengeSubscriber;
 
   constructor(apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
     this.apiOverride = apiOverride;
     const dispatchers = Server.getDispatchers(
-      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber),
+      msg => Server._dispatch(msg, this.store),
       apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
@@ -87,76 +83,12 @@ export default class ServerAdmin {
     return Object.values(this.projects).map(p => p.server);
   }
 
-  subscribeToErrors(subscriber: ((msg: string, isUserFacing: boolean) => void)) {
-    this.errorSubscribers.push(subscriber);
-  }
-
-  subscribeChallenger(subscriber: ChallengeSubscriber) {
-    this.challengeSubscriber = subscriber;
-  }
-
   dispatch(projectId?: string): Client.Dispatcher {
     return projectId === undefined ? this.dispatcherClient : this.projects[projectId].server.dispatch();
   }
 
   dispatchAdmin(projectId?: string): Promise<Admin.Dispatcher> {
     return projectId === undefined ? this.dispatcherAdmin : this.projects[projectId].server.dispatchAdmin();
-  }
-
-  static async _dispatch(msg: any, store: Store<any, any>, errorSubscribers: ErrorSubscribers, challengeSubscriber?: ChallengeSubscriber): Promise<any> {
-    try {
-      var result = await store.dispatch(msg);
-    } catch (response) {
-      console.log("Dispatch error: ", msg, response);
-      console.trace();
-      try {
-        if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
-          if (!challengeSubscriber) {
-            errorSubscribers.forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
-            throw response;
-          }
-          var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
-          if (solution) {
-            return msg.meta.retry({ 'x-cf-solution': solution });
-          }
-        }
-        var errorMsg: string = '';
-        var isUserFacing = false;
-        if (response && response.json) {
-          try {
-            var body = await response.json();
-            if (body && body.userFacingMessage) {
-              errorMsg = body.userFacingMessage;
-              isUserFacing = true;
-            }
-          } catch (err) {
-          }
-        }
-        var action = msg && msg.meta && msg.meta.action || 'unknown action';
-        if (errorMsg && isUserFacing) {
-        } else if (response.status && response.status === 403) {
-          errorMsg = `Action not allowed, please refresh and try again`;
-          isUserFacing = true;
-        } else if (response.status && response.status === 501) {
-          errorMsg = `This feature is not yet available`;
-          isUserFacing = true;
-        } else if (response.status && response.status >= 100 && response.status < 300) {
-          errorMsg = `${response.status} failed ${action}`;
-        } else if (response.status && response.status >= 300 && response.status < 600) {
-          errorMsg = `${response.status} failed ${action}`;
-          isUserFacing = true;
-        } else {
-          errorMsg = `Connection failure processing ${action}`;
-          isUserFacing = true;
-        }
-        errorSubscribers.forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
-      } catch (err) {
-        console.log("Error dispatching error: ", err);
-        errorSubscribers.forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", true));
-      }
-      throw response;
-    }
-    return result.value;
   }
 
   getOrCreateProject(versionedConfig: Client.VersionedConfig, loggedInUser?: Client.UserMeWithBalance): Project {

@@ -57,6 +57,7 @@ export default class Templater {
   demo(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
     this.createTemplate({
       infoName: 'Sandbox App',
+      infoLogo: '/favicon.ico',
       ...opts,
     });
     this._get<ConfigEditor.StringProperty>(['name']).set('Sandbox App');

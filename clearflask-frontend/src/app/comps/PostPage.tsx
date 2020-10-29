@@ -2,7 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { ReduxState, Server, StateSettings, Status } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import setTitle from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';

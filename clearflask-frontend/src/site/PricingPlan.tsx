@@ -56,6 +56,7 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'center',
     margin: theme.spacing(0, 1, 1),
+    textAlign: 'center',
   },
   reallyBlurry: {
     color: 'transparent',
@@ -76,7 +77,7 @@ interface Props {
   actionTo?: LocationDescriptor;
   actionOnClick?: () => void;
   hidePerks?: boolean;
-  remark?: string;
+  remark?: React.ReactNode;
 }
 
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {

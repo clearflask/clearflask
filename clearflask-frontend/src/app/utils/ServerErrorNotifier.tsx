@@ -1,27 +1,36 @@
 import { IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
-import { useSnackbar } from 'notistack';
-import React from 'react';
-import { Server } from '../../api/server';
-import ServerAdmin from '../../api/serverAdmin';
+import { withSnackbar, WithSnackbarProps } from 'notistack';
+import React, { Component } from 'react';
+import { Server, Unsubscribe } from '../../api/server';
 
-const ServerErrorNotifier = (props: ({ server: Server | ServerAdmin })) => {
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-  props.server.subscribeToErrors((errorMsg, isUserFacing) => {
-    console.log("Server error:", errorMsg);
-    if (isUserFacing) {
-      enqueueSnackbar(errorMsg, {
-        variant: 'error',
-        preventDuplicate: false,
-        action: (key) => (
-          <IconButton aria-label="Close" color="inherit" onClick={() => closeSnackbar(key)}>
-            <CloseIcon fontSize='small' />
-          </IconButton>
-        ),
-      });
-    }
-  })
-  return null;
-};
+class ServerErrorNotifier extends Component<WithSnackbarProps> {
+  unsubscribe?: Unsubscribe;
 
-export default ServerErrorNotifier;
+  componentDidMount() {
+    this.unsubscribe = Server._subscribeToErrors((errorMsg, isUserFacing) => {
+      console.log("Server error:", errorMsg);
+      if (isUserFacing) {
+        this.props.enqueueSnackbar(errorMsg, {
+          variant: 'error',
+          preventDuplicate: false,
+          action: (key) => (
+            <IconButton aria-label="Close" color="inherit" onClick={() => this.props.closeSnackbar(key)}>
+              <CloseIcon fontSize='small' />
+            </IconButton>
+          ),
+        });
+      }
+    }, 'ServerErrorNotifier');
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe && this.unsubscribe();
+  }
+
+  render() {
+    return null;
+  }
+}
+
+export default withSnackbar(ServerErrorNotifier);

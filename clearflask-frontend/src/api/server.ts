@@ -7,8 +7,15 @@ import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
 import * as Client from './client';
-import ServerAdmin from './serverAdmin';
 import ServerMock from './serverMock';
+
+export type Unsubscribe = () => void;
+export type ErrorSubscriber = ((errorMsg: string, isUserFacing: boolean) => void);
+export type ErrorSubscribers = {[subscriberId: string]: ErrorSubscriber};
+export const errorSubscribers: ErrorSubscribers = {}
+export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
+export type ChallengeSubscribers = {[subscriberId: string]: ChallengeSubscriber};
+export const challengeSubscribers: ChallengeSubscribers = {}
 
 export enum Status {
   PENDING = 'PENDING',
@@ -23,8 +30,6 @@ export class Server {
   readonly mockServer: ServerMock | undefined;
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
-  readonly errorSubscribers: ((errorMsg: string, isUserFacing: boolean) => void)[] = [];
-  challengeSubscriber?: ((challenge: string) => Promise<string | undefined>);
 
   constructor(projectId: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
@@ -44,10 +49,67 @@ export class Server {
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
-      msg => ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber),
+      msg => Server._dispatch(msg, this.store),
       apiOverride);
     this.dispatcherClient = dispatchers.client;
     this.dispatcherAdmin = dispatchers.adminPromise;
+  }
+
+  static async _dispatch(msg: any, store: Store<any, any>): Promise<any> {
+    try {
+      var result = await store.dispatch(msg);
+    } catch (response) {
+      console.log("Dispatch error: ", msg, response);
+      console.trace();
+      try {
+        if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
+          const challengeSubscriber = Object.values(challengeSubscribers)[0];
+          if (!challengeSubscriber) {
+            Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
+            throw response;
+          }
+          var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
+          if (solution) {
+            return msg.meta.retry({ 'x-cf-solution': solution });
+          }
+        }
+        var errorMsg: string = '';
+        var isUserFacing = false;
+        if (response && response.json) {
+          try {
+            var body = await response.json();
+            if (body && body.userFacingMessage) {
+              errorMsg = body.userFacingMessage;
+              isUserFacing = true;
+            }
+          } catch (err) {
+          }
+        }
+        var action = msg && msg.meta && msg.meta.action || 'unknown action';
+        if (errorMsg && isUserFacing) {
+        } else if (response.status && response.status === 403) {
+          errorMsg = `Action not allowed, please refresh and try again`;
+          isUserFacing = true;
+        } else if (response.status && response.status === 501) {
+          errorMsg = `This feature is not yet available`;
+          isUserFacing = true;
+        } else if (response.status && response.status >= 100 && response.status < 300) {
+          errorMsg = `${response.status} failed ${action}`;
+        } else if (response.status && response.status >= 300 && response.status < 600) {
+          errorMsg = `${response.status} failed ${action}`;
+          isUserFacing = true;
+        } else {
+          errorMsg = `Connection failure processing ${action}`;
+          isUserFacing = true;
+        }
+        Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
+      } catch (err) {
+        console.log("Error dispatching error: ", err);
+        Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", true));
+      }
+      throw response;
+    }
+    return result.value;
   }
 
   static getDispatchers(
@@ -120,12 +182,16 @@ export class Server {
     }
   }
 
-  subscribeToErrors(subscriber: ((errorMsg: string, isUserFacing: boolean) => void)) {
-    this.errorSubscribers.push(subscriber);
+  static _subscribeToErrors(subscriber: ((errorMsg: string, isUserFacing: boolean) => void), subscriberId: string = randomUuid()): Unsubscribe | undefined {
+    if(!!errorSubscribers[subscriberId]) return;
+    errorSubscribers[subscriberId] = subscriber;
+    return () => delete errorSubscribers[subscriberId];
   }
 
-  subscribeChallenger(subscriber: ((challenge: string) => Promise<string | undefined>)) {
-    this.challengeSubscriber = subscriber;
+  static _subscribeChallenger(subscriber: ((challenge: string) => Promise<string | undefined>)): Unsubscribe {
+    const subscriberId = randomUuid();
+    challengeSubscribers[subscriberId] = subscriber;
+    return () => delete challengeSubscribers[subscriberId];
   }
 
   overrideConfig(config: Admin.ConfigAdmin): void {
@@ -139,7 +205,7 @@ export class Server {
       },
       payload: { config: config, version: randomUuid() },
     };
-    ServerAdmin._dispatch(msg, this.store, this.errorSubscribers, this.challengeSubscriber);
+    Server._dispatch(msg, this.store);
   }
 }
 

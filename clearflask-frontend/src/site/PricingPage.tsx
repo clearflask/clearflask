@@ -17,7 +17,12 @@ import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
-export const TrialInfoText = 'No time-limit Trial up to 10 MAU.'
+export const TrialInfoText = () => (
+  <div>
+    <div>Free trial up to 10 users.</div>
+    <div>No time-limit. No credit card.</div>
+  </div>
+);
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
@@ -129,7 +134,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
           <div className={this.props.classes.header}>
             <div>
               <Typography component="h2" variant="h2" color="textPrimary">Pricing</Typography>
-              <Typography component="div" variant="h6" color="textSecondary">Only pay for users that provide value.</Typography>
+              <Typography component="div" variant="h6" color="textSecondary">Only pay for users that actively provide value.</Typography>
             </div>
             <Container maxWidth='md'>
               <img
@@ -160,7 +165,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                     selected={this.state.highlightedPlanid === plan.planid
                       || this.state.callForQuote && !plan.pricing}
                     actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    remark={plan.pricing ? TrialInfoText : 'Tell us what you\'re looking for'}
+                    remark={plan.pricing ? (<TrialInfoText />) : 'Tell us what you\'re looking for'}
                     actionOnClick={() => {
                       if (isTracking()) {
                         ReactGA.event({

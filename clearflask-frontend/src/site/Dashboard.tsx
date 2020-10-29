@@ -41,6 +41,7 @@ import UsersPage from './dashboard/UsersPage';
 import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
+const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 /** If changed, also change in ClearFlaskCreditSync.java */
 const ClearFlaskProjectId = 'clearflask';
 
@@ -180,6 +181,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       createLabel,
     ];
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
+    if(!selectedLabel) {
+      const selectedProjectIdFromLocalStorage = localStorage.getItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY);
+      selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromLocalStorage);
+    }
     var activeProjectId: string | undefined = selectedLabel?.value;
     if (activePath === 'create') {
       selectedLabel = createLabel;
@@ -358,6 +363,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <CreatePage
             previewProject={this.createProject}
             projectCreated={(projectId) => {
+              localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
               this.setState({ selectedProjectId: projectId },
                 () => this.pageClicked('created'));
             }}
@@ -558,6 +564,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 if (labels[0].value === '__CREATE__') {
                   this.pageClicked('create');
                 } else {
+                  localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, labels[0].value);
                   this.setState({ selectedProjectId: labels[0].value });
                 }
               }
