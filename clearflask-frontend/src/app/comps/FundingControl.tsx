@@ -397,19 +397,19 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     balance: state.credits.myBalance.balance || 0,
     settings: state.settings,
     updateVote: (ideaId: string, ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       ideaId: ideaId,
       ideaVoteUpdate: ideaVoteUpdate,
     }),
     callOnMount: () => {
       if (dispatchIdeaGetOnIdeaId) {
         ownProps.server.dispatch().ideaGet({
-          projectId: state.projectId,
+          projectId: state.projectId!,
           ideaId: dispatchIdeaGetOnIdeaId,
         });
       }
       ownProps.server.dispatch().ideaSearch({
-        projectId: state.projectId,
+        projectId: state.projectId!,
         ideaSearch: search,
       });
     },
@@ -435,7 +435,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     if (bySearch.cursor) {
       newProps.loadMore = () => {
         ownProps.server.dispatch().ideaSearch({
-          projectId: state.projectId,
+          projectId: state.projectId!,
           ideaSearch: search,
           cursor: bySearch.cursor,
         });

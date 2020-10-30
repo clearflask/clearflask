@@ -31,7 +31,7 @@ export class Server {
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
 
-  constructor(projectId: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
+  constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
@@ -133,9 +133,9 @@ export class Server {
     };
   }
 
-  static initialState(projectId: string, settings?: StateSettings): any {
+  static initialState(projectId?: string, settings?: StateSettings): any {
     const state: ReduxState = {
-      projectId: projectId,
+      projectId: projectId || stateProjectIdDefault,
       settings: settings || stateSettingsDefault,
       conf: stateConfDefault,
       ideas: stateIdeasDefault,
@@ -150,7 +150,7 @@ export class Server {
   }
 
   getProjectId(): string {
-    return this.store.getState().projectId;
+    return this.store.getState().projectId!;
   }
 
   getStore(): Store<ReduxState, AllActions> {
@@ -237,7 +237,8 @@ export const getTransactionSearchKey = (search: Client.TransactionSearch): strin
   ].join('-');
 }
 
-function reducerProjectId(projectId: string = 'unknown', action: AllActions): string {
+const stateProjectIdDefault = null;
+function reducerProjectId(projectId: string | null = stateProjectIdDefault, action: AllActions): string | null {
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
       return action.payload.config.projectId || projectId;
@@ -806,6 +807,30 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
             }, {}),
         }
       };
+    case Admin.userUpdateAdminActionStatus.Pending:
+    case Client.userGetActionStatus.Pending:
+    case Admin.userGetAdminActionStatus.Pending:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.userId]: {
+            status: Status.PENDING,
+          }
+        }
+      };
+    case Admin.userUpdateAdminActionStatus.Rejected:
+    case Client.userGetActionStatus.Rejected:
+    case Admin.userGetAdminActionStatus.Rejected:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.meta.request.userId]: {
+            status: Status.REJECTED,
+          }
+        }
+      };
     case Admin.userUpdateAdminActionStatus.Fulfilled:
     case Client.userGetActionStatus.Fulfilled:
     case Admin.userGetAdminActionStatus.Fulfilled:
@@ -813,7 +838,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
         ...state,
         byId: {
           ...state.byId,
-          [action.payload.userId]: {
+          [action.meta.request.userId]: {
             user: action.payload,
             status: Status.FULFILLED,
           }
@@ -1409,7 +1434,7 @@ function reducerNotifications(state: StateNotifications = stateNotificationsDefa
 }
 
 export interface ReduxState {
-  projectId: string;
+  projectId: string | null;
   settings: StateSettings;
   conf: StateConf;
   ideas: StateIdeas;

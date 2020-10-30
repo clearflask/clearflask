@@ -495,10 +495,10 @@ class DataMock {
   }
 
   mockItems(userMe?: Admin.UserMeWithBalance, ideaPerTypeCount: number = 4): Promise<any> {
-    return ServerMock.get().configGetAdmin({ projectId: this.projectId })
-      .then((versionedConfig: Admin.VersionedConfigAdmin) => {
+    return this.getConfig()
+      .then(config => {
         const promises: Promise<any>[] = [];
-        versionedConfig.config.content.categories.forEach((category: Admin.Category) => {
+        config.content.categories.forEach((category: Admin.Category) => {
           [undefined, ...category.workflow.statuses].forEach((status: Admin.IdeaStatus | undefined) => {
             var n = ideaPerTypeCount;
             while (n-- > 0) {

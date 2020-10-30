@@ -1201,7 +1201,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         && state.users.loggedIn.status === Status.FULFILLED
         && state.users.loggedIn.user) {
         ownProps.server.dispatch().ideaVoteGetOwn({
-          projectId: state.projectId,
+          projectId: state.projectId!,
           ideaIds: [ownProps.idea.ideaId],
         });
       }
@@ -1213,7 +1213,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
   return {
     configver: state.conf.ver, // force rerender on config change
-    projectId: state.projectId,
+    projectId: state.projectId!,
     settings: state.settings,
     vote,
     expression,
@@ -1225,7 +1225,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     maxFundAmountSeen: state.ideas.maxFundAmountSeen,
     loggedInUser: state.users.loggedIn.user,
     updateVote: (ideaVoteUpdate: Client.IdeaVoteUpdate): Promise<Client.IdeaVoteUpdateResponse> => ownProps.server.dispatch().ideaVoteUpdate({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       ideaId: ownProps.idea!.ideaId,
       ideaVoteUpdate,
     }),

@@ -120,7 +120,7 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
     });
     if (state.users.loggedIn.status === Status.FULFILLED && missingVotesByCommentIds.length > 0) {
       ownProps.server.dispatch().commentVoteGetOwn({
-        projectId: state.projectId,
+        projectId: state.projectId!,
         commentIds: missingVotesByCommentIds,
       });
     }
@@ -130,7 +130,7 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
     comments: comments,
     settings: state.settings,
     loadMore: (): Promise<Client.IdeaCommentSearchResponse> => ownProps.server.dispatch().ideaCommentSearch({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       ideaId: ownProps.ideaId,
       ideaCommentSearch: {
         parentCommentId: ownProps.parentCommentId,

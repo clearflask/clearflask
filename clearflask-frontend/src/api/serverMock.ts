@@ -453,7 +453,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
-    if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
+    const project = this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project not found');
     if (request.configGetAndUserBind.ssoToken) {
       var token;
       try {
@@ -462,12 +463,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         console.log('Failed parsing ssoToken', er);
       }
       if (token && token['email']) {
-        const user = this.getProject(request.projectId).users.find(user => user.email === token['email']);
+        const user = project.users.find(user => user.email === token['email']);
         if (user) {
-          this.getProject(request.projectId).loggedInUser = user;
+          project.loggedInUser = user;
         } else {
           await this.userCreate({
-            projectId: request.projectId,
+            projectId: project.config.config.projectId,
             userCreate: {
               email: token['email'],
               name: token['name'],
@@ -479,12 +480,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         }
       }
     }
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    const loggedInUser = project.loggedInUser;
     return this.returnLater({
-      config: this.getProject(request.projectId).config,
+      config: project.config,
       user: loggedInUser ? {
         ...loggedInUser,
-        balance: this.getProject(request.projectId).balances[loggedInUser.userId] || 0,
+        balance: project.balances[loggedInUser.userId] || 0,
       } : undefined,
     });
   }
@@ -722,10 +723,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    this.getProject(request.configAdmin.projectId).config.config = request.configAdmin;
+    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0,3)}`;
+    request.configAdmin.projectId = projectId;
+    this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({
-      projectId: request.configAdmin.projectId,
-      config: this.getProject(request.configAdmin.projectId).config,
+      projectId,
+      config: this.getProject(projectId).config,
     });
   }
   projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {
@@ -1035,6 +1038,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.db[projectId] = project;
     }
     return project;
+  }
+
+  getProjectBySlug(slug: string) {
+    return Object.values(this.db).find(p => p.config.config.slug === slug);
   }
 
   deleteProject(projectId: string) {

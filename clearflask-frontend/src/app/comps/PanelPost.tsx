@@ -124,7 +124,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const bySearch = state.ideas.bySearch[searchKey];
   if (!bySearch) {
     ownProps.server.dispatch().ideaSearch({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       ideaSearch: newProps.searchMerged,
     });
   } else {
@@ -142,7 +142,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       && state.users.loggedIn.user
       && missingVotesByIdeaIds.length > 0) {
       ownProps.server.dispatch().ideaVoteGetOwn({
-        projectId: state.projectId,
+        projectId: state.projectId!,
         ideaIds: missingVotesByIdeaIds,
       });
     }

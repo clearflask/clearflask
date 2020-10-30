@@ -18,29 +18,31 @@ export interface Project {
 export async function getProject(
   template: ((templater: Templater) => void) | undefined = undefined,
   mock: ((mocker: DataMock, config: Admin.ConfigAdmin) => Promise<any>) | undefined = undefined,
-  projectId: string = `Demo${randomUuid().substring(0, 5)}`,
   settings?: StateSettings,
 ): Promise<Project> {
   await new Promise(resolve => setTimeout(resolve, 1));
-  const server = new Server(projectId, settings, ServerMock.get());
+  const server = new Server(undefined, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
-  editor.getProperty<ConfigEditor.StringProperty>(['projectId']).set(projectId);
-  editor.getProperty<ConfigEditor.StringProperty>(['name']).set(projectId);
-  editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(projectId);
+  const slug = `demo${randomUuid().substring(0, 5)}`;
+  editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);
   const templater = Templater.get(editor);
   template && template(templater);
   const d = await server.dispatchAdmin();
   const projectCreateResult = await d.projectCreateAdmin({
     configAdmin: editor.getConfig(),
   });
+  const projectId = projectCreateResult.config.config.projectId
   server.subscribeToChanges(editor);
   await d.configSetAdmin({
-    projectId: projectId,
+    projectId,
     versionLast: projectCreateResult.config.version,
     configAdmin: editor.getConfig(),
   });
   mock && await mock(DataMock.get(projectId), editor.getConfig());
-  await server.dispatch().configGetAndUserBind({ projectId: projectId, configGetAndUserBind: {} });
+  await server.dispatch().configGetAndUserBind({
+    slug,
+    configGetAndUserBind: {},
+  });
   const project = { server, templater, editor };
   return project;
 }
@@ -72,7 +74,7 @@ export default class DemoApp extends Component<Props> {
             )}
             <App
               {...props}
-              projectId={this.props.server.getProjectId()}
+              slug={this.props.server.getStore().getState().conf.conf?.slug!}
               supressCssBaseline
               isInsideContainer
               serverOverride={this.props.server}

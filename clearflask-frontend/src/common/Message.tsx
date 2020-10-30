@@ -10,7 +10,14 @@ interface Props {
 class Message extends Component<Props> {
   render() {
     return (
-      <Alert style={this.props.innerStyle} severity={this.props.variant}>
+      <Alert
+        variant='outlined'
+        style={{
+          margin: 'auto',
+          ...this.props.innerStyle,
+        }}
+        severity={this.props.variant}
+      >
         {this.props.message}
       </Alert>
     );

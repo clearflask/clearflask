@@ -100,8 +100,8 @@ paths:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1vote~1comments'
   /project/{projectId}/idea/{ideaId}/vote/comment/{commentId}:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1comment~1{commentId}'
-  /project/{projectId}/config:
-    $ref: 'api-project.yaml#/~1project~1{projectId}~1config'
+  /slug/{slug}/config:
+    $ref: 'api-project.yaml#/~1slug~1{slug}~1config'
   /project/{projectId}/notificationsearch:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationsearch'
   /project/{projectId}/notificationclear:

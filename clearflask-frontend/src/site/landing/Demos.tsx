@@ -40,7 +40,7 @@ class Demo extends Component<Props & Omit<BlockProps, 'demo' | 'controls'> & Wit
 
   constructor(props) {
     super(props);
-    this.projectPromises = Promise.all(props.demos.map(i => getProject(i.template, i.mock, undefined, i.settings)));
+    this.projectPromises = Promise.all(props.demos.map(i => getProject(i.template, i.mock, i.settings)));
   }
 
   componentWillUnmount() {

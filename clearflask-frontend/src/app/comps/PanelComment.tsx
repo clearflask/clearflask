@@ -141,7 +141,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const bySearch = state.comments.bySearch[searchKey];
   if (!bySearch) {
     ownProps.server.dispatch().commentSearch({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       commentSearch: ownProps.search,
     });
   } else {

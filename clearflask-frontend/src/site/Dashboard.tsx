@@ -353,7 +353,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       case 'create':
         setTitle('Create - Dashboard');
         if (!this.createProjectPromise) {
-          this.createProjectPromise = getProject(undefined, undefined, 'create-preview', { suppressSetTitle: true });
+          this.createProjectPromise = getProject(undefined, undefined, { suppressSetTitle: true });
           this.createProjectPromise.then(project => {
             this.createProject = project;
             this.forceUpdate();

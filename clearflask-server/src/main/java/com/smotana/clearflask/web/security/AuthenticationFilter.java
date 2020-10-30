@@ -68,11 +68,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private ExtendedSecurityContext authenticate(ContainerRequestContext requestContext) throws IOException {
-        Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
         Optional<AccountSession> superAdminSessionOpt = authenticateSuperAdmin(requestContext);
         Optional<AccountSession> accountSessionOpt = authenticateAccount(requestContext)
                 .or(() -> superAdminSessionOpt);
-        Optional<UserSession> userSessionOpt = pathParamProjectIdOpt.flatMap(projectId -> authenticateUser(projectId, requestContext));
+        Optional<UserSession> userSessionOpt = getPathParameter(requestContext, "projectId")
+                .or(() -> getPathParameter(requestContext, "slug")
+                    .flatMap(slug -> projectStore.getProjectBySlug(slug, true)
+                            .map(Project::getProjectId)))
+                .flatMap(projectId -> authenticateUser(projectId, requestContext));
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),
                 accountSessionOpt,

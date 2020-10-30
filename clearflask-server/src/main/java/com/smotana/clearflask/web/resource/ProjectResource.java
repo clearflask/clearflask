@@ -85,12 +85,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public ConfigAndBindResult configGetAndUserBind(String projectId, ConfigGetAndUserBind configGetAndUserBind) {
-        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, true)
-                .or(() -> projectStore.getProject(projectId, true));
+    public ConfigAndBindResult configGetAndUserBind(String slug, ConfigGetAndUserBind configGetAndUserBind) {
+        Optional<Project> projectOpt = projectStore.getProjectBySlug(slug, true);
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
+        String projectId = projectOpt.get().getProjectId();
         Optional<UserStore.UserSession> userSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt);
         Optional<UserStore.UserModel> userOpt = userSessionOpt
                 .map(UserStore.UserSession::getUserId)
@@ -165,8 +165,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configGetAdmin(String projectId) {
-        Optional<Project> projectOpt = projectStore.getProjectBySlug(projectId, false)
-                .or(() -> projectStore.getProject(projectId, false));
+        Optional<Project> projectOpt = projectStore.getProject(projectId, false);
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }

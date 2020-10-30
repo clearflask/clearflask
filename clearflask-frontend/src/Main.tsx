@@ -109,13 +109,13 @@ class Main extends Component {
                     <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
                       <PostStatus
                         {...props}
-                        projectId={subdomain}
+                        slug={subdomain}
                         postId={props.match.params['postId'] || ''}
                       />
                     )} />
                   ), (
                     <Route key='app' path="/" render={props => (
-                      <App projectId={subdomain} {...props} />
+                      <App slug={subdomain} {...props} />
                     )} />
                   )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (

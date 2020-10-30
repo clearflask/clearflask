@@ -44,7 +44,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
       suppressSetTitle: true,
       ...props.settings,
     };
-    this.projectPromise = props.demoProject || getProject(props.template, props.mock, undefined, this.settings);
+    this.projectPromise = props.demoProject || getProject(props.template, props.mock, this.settings);
   }
 
   componentWillUnmount() {

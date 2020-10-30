@@ -168,7 +168,10 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   if (!state.conf.conf && !state.conf.status) {
-    ownProps.server.dispatch().configGetAndUserBind({ projectId: ownProps.server.getProjectId(), configGetAndUserBind: {} });
+    ownProps.server.dispatch().configGetAndUserBind({
+      slug: ownProps.server.getStore().getState().conf.conf?.slug!,
+      configGetAndUserBind: {}
+    });
   }
   return {
     configver: state.conf.ver, // force rerender on config change

@@ -38,7 +38,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
-  projectId: string;
+  slug: string;
   postId: string;
 }
 interface State {
@@ -62,15 +62,14 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
         mock => mock.mockFakeIdeaWithComments(props.postId, config => ({
           statusId: config.content.categories[0]?.workflow.statuses[3]?.statusId,
         })),
-        props.projectId,
         { suppressSetTitle: true });
       server = project.server;
     } else {
-      server = new Server(props.projectId);
+      server = new Server();
     }
 
     const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
-      projectId: props.projectId,
+      slug: props.slug,
       configGetAndUserBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,
@@ -78,7 +77,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     }));
 
     const postPromise = server.dispatch().ideaGet({
-      projectId: props.projectId,
+      projectId: server.getProjectId(),
       ideaId: props.postId,
     });
 

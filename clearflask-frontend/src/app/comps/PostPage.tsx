@@ -56,7 +56,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   const byId = state.ideas.byId[ownProps.postId];
   if (!byId) {
     ownProps.server.dispatch().ideaGet({
-      projectId: state.projectId,
+      projectId: state.projectId!,
       ideaId: ownProps.postId,
     });
   } else {
