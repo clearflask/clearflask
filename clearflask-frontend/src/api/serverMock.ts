@@ -1114,6 +1114,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   async rateLimitLater(captcha?: boolean, userFacingMessage?: string): Promise<any> {
     console.log('Server THROW: rateLimit captcha:', captcha);
+    console.trace();
     await this.waitLatency();
     var headers = new Map<string, string>();
     if (captcha) {

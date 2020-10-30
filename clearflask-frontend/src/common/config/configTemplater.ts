@@ -65,7 +65,6 @@ export default class Templater {
   }
 
   createTemplate(opts: CreateTemplateOptions = createTemplateOptionsDefault) {
-    if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['projectId']).set(opts.infoSlug);
     this._get<ConfigEditor.StringProperty>(['name']).set(opts.infoName || 'My App');
     if (!!opts.infoSlug) this._get<ConfigEditor.StringProperty>(['slug']).set(opts.infoSlug);
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);

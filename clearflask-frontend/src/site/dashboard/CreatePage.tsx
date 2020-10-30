@@ -404,6 +404,10 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
     const editor = new ConfigEditor.EditorImpl();
     const templater = Templater.get(editor);
     templater.createTemplate(this.state);
+    editor.getProperty<ConfigEditor.StringProperty>(['projectId'])
+      .set(this.props.previewProject.server.getProjectId());
+    editor.getProperty<ConfigEditor.StringProperty>(['slug'])
+      .set(this.props.previewProject.server.getStore().getState().conf.conf?.slug!);
     return editor.getConfig();
   }
 
