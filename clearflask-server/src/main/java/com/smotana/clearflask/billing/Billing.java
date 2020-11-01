@@ -33,7 +33,7 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
-    SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription);
+    SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription, Optional<SubscriptionStatus> previousStatus);
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 

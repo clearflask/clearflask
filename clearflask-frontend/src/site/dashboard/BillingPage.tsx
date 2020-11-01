@@ -199,7 +199,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         paymentDesc = 'We are having issues charging your payment method. We will retry your payment method again soon and we may block your service if we are unsuccessful.';
         cardState = 'error';
         showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
+        if (this.props.accountBilling?.payment) {
+          setPaymentTitle = 'Update payment method';
+        } else {
+          setPaymentTitle = 'Add payment method';
+        }
         showCancelSubscription = true;
         planTitle = 'Your plan is active';
         planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before you can change your plan.`;

@@ -27,7 +27,11 @@ import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.TenantApi;
-import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.Invoice;
+import org.killbill.billing.client.model.gen.InvoiceItem;
+import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.TenantKeyValue;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import rx.Observable;
@@ -36,7 +40,11 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -183,7 +191,7 @@ public class KillBillResource extends ManagedService {
 
         boolean changesMade = false;
 
-        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, kbSubscription);
+        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, kbSubscription, accountOpt.map(AccountStore.Account::getStatus));
         if (!accountOpt.get().getStatus().equals(newStatus)) {
             log.info("Account id {} status change {} -> {}, reason: KillBill event {}",
                     accountId, accountOpt.get().getStatus(), newStatus, event.getEventType());

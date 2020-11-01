@@ -2,7 +2,6 @@ package com.smotana.clearflask.billing;
 
 
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +31,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTimeZone;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
@@ -63,6 +63,7 @@ import org.killbill.billing.util.api.AuditLevel;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -70,8 +71,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.smotana.clearflask.api.model.SubscriptionStatus.*;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 @Slf4j
@@ -233,7 +236,7 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Override
-    public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription) {
+    public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription, Optional<SubscriptionStatus> previousStatus) {
         OverdueState overdueState = null;
         try {
             overdueState = kbAccount.getOverdueAccount(account.getAccountId(), KillBillUtil.roDefault());
@@ -246,29 +249,36 @@ public class KillBilling extends ManagedService implements Billing {
         boolean hasOverdueBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
         boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
-        Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent());
-        if ((hasOverdueBalance && isOverdueCancelled)
+        Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent())::get;
+
+
+        // ACTIVETRIAL.equals(previousStatus.orElse(null))
+        if (isOverdueCancelled
                 || EntitlementState.BLOCKED.equals(subscription.getState())
                 || overdueState.isBlockChanges() == Boolean.TRUE) {
-            status = SubscriptionStatus.BLOCKED;
-        } else if (hasOverdueBalance && isOverdueUnpaid) {
-            status = SubscriptionStatus.ACTIVEPAYMENTRETRY;
+            status = BLOCKED;
+        } else if (ACTIVETRIAL.equals(previousStatus.orElse(null))
+                && (hasOverdueBalance || isOverdueUnpaid)) {
+            status = TRIALEXPIRED;
+        } else if (hasOverdueBalance || isOverdueUnpaid) {
+            status = ACTIVEPAYMENTRETRY;
+
         } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
-            status = SubscriptionStatus.ACTIVETRIAL;
+            status = ACTIVETRIAL;
         } else if (!hasOverdueBalance && (isOverdueUnpaid || isOverdueCancelled || !hasPaymentMethod.get())) {
-            status = SubscriptionStatus.TRIALEXPIRED;
+            status = TRIALEXPIRED;
         } else if (EntitlementState.PENDING.equals(subscription.getState())) {
-            status = SubscriptionStatus.PENDING;
+            status = PENDING;
         } else if (EntitlementState.CANCELLED.equals(subscription.getState())
                 || EntitlementState.EXPIRED.equals(subscription.getState())) {
-            status = SubscriptionStatus.CANCELLED;
+            status = CANCELLED;
         } else if (EntitlementState.ACTIVE.equals(subscription.getState())
                 && subscription.getCancelledDate() != null) {
-            status = SubscriptionStatus.ACTIVENORENEWAL;
+            status = ACTIVENORENEWAL;
         } else if (EntitlementState.ACTIVE.equals(subscription.getState())) {
-            status = SubscriptionStatus.ACTIVE;
+            status = ACTIVE;
         } else {
-            status = SubscriptionStatus.BLOCKED;
+            status = BLOCKED;
             log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
                     status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get());
         }
@@ -468,7 +478,7 @@ public class KillBilling extends ManagedService implements Billing {
                             description = "Unspecified";
                         }
                         return new InvoiceItem(
-                                java.time.LocalDate.of(
+                                LocalDate.of(
                                         i.getInvoiceDate().getYear(),
                                         i.getInvoiceDate().getMonthOfYear(),
                                         i.getInvoiceDate().getDayOfMonth()),
@@ -617,11 +627,11 @@ public class KillBilling extends ManagedService implements Billing {
                     isTrial = true;
                 } else {
                     periodNum = Period.between(
-                            java.time.LocalDate.of(
+                            LocalDate.of(
                                     subscription.getBillingStartDate().getYear(),
                                     subscription.getBillingStartDate().getMonthOfYear(),
                                     subscription.getBillingStartDate().getDayOfMonth()),
-                            java.time.LocalDate.now(ZoneOffset.UTC)).getDays()
+                            LocalDate.now(ZoneOffset.UTC)).getDays()
                             / subscription.getBillingPeriod().getPeriod().getDays();
                 }
                 String periodId = subscription.getSubscriptionId() + ";" + periodNum;
@@ -646,7 +656,7 @@ public class KillBilling extends ManagedService implements Billing {
                         ImmutableList.of(new UnitUsageRecord(
                                 ACTIVE_USER_UNIT_NAME,
                                 ImmutableList.of(new UsageRecord(
-                                        org.joda.time.LocalDate.now(org.joda.time.DateTimeZone.UTC),
+                                        org.joda.time.LocalDate.now(DateTimeZone.UTC),
                                         1L))))), KillBillUtil.roDefault());
 
                 if (isTrial) {
@@ -657,8 +667,8 @@ public class KillBilling extends ManagedService implements Billing {
                         subscription = endTrial(accountId);
 
                         // Update Account status
-                        SubscriptionStatus newStatus = getEntitlementStatus(getAccount(accountId), subscription);
                         AccountStore.Account account = accountStore.getAccountByAccountId(accountId).get();
+                        SubscriptionStatus newStatus = getEntitlementStatus(getAccount(accountId), subscription, Optional.of(account.getStatus()));
                         if (!account.getStatus().equals(newStatus)) {
                             log.info("Account id {} status change {} -> {}, reason: Trial ended",
                                     account.getAccountId(), account.getStatus(), newStatus);
@@ -695,7 +705,7 @@ public class KillBilling extends ManagedService implements Billing {
                     subscription.getSubscriptionId(),
                     ACTIVE_USER_UNIT_NAME,
                     subscription.getStartDate(),
-                    org.joda.time.LocalDate.now(org.joda.time.DateTimeZone.UTC).plusDays(1),
+                    org.joda.time.LocalDate.now(DateTimeZone.UTC).plusDays(1),
                     KillBillUtil.roDefault());
             log.trace("Account id {} usage {}", subscription.getAccountId(), usage);
             long activeUsers = usage.getRolledUpUnits().stream()

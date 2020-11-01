@@ -217,7 +217,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getEmail(),
                 signup.getName(),
                 plan.getPlanid());
-        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
+        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription(), Optional.empty());
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
@@ -288,12 +288,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             } else {
                 subscription = billing.undoPendingCancel(accountSession.getAccountId());
             }
-            SubscriptionStatus newStatus = billing.getEntitlementStatus(
-                    billing.getAccount(accountSession.getAccountId()),
-                    subscription);
-            log.info("Account id {} status change {} -> {}, reason: user requested {}",
-                    accountSession.getAccountId(), account.getStatus(), newStatus, accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel");
-            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
+            SubscriptionStatus newStatus = billing.getEntitlementStatus(billing.getAccount(accountSession.getAccountId()), subscription, Optional.of(account.getStatus()));
+            if (!account.getStatus().equals(newStatus)) {
+                log.info("Account id {} status change {} -> {}, reason: user requested {}",
+                        accountSession.getAccountId(), account.getStatus(), newStatus, accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel");
+                account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
+            }
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
             String newPlanid = accountUpdateAdmin.getPlanid();
@@ -365,7 +365,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
-        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, subscription);
+        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, subscription, Optional.of(account.getStatus()));
         if (!account.getStatus().equals(newStatus)) {
             log.warn("Account id {} status change {} -> {}, reason: Status was found mismatched",
                     accountSession.getAccountId(), account.getStatus(), newStatus);
