@@ -7,23 +7,23 @@
  *   Map<String, Object> extraArrayDeletions
  */
 
-if(params.extraUpdates != null) {
+if (params.extraUpdates != null) {
     for (entry in params.extraUpdates.entrySet()) {
         ctx._source[entry.getKey()] = entry.getValue();
     }
 }
 
-if(params.extraArrayDeletions != null) {
+if (params.extraArrayDeletions != null) {
     for (entry in params.extraArrayDeletions.entrySet()) {
-        if(ctx._source[entry.getKey()] != null) {
-            ctx._source[entry.getKey()].removeAll(Collections.singleton(entry.getValue());
+        if (ctx._source[entry.getKey()] != null) {
+            ctx._source[entry.getKey()].removeAll(Collections.singleton(entry.getValue()));
         }
     }
 }
 
-if(params.extraArrayAdditions != null) {
+if (params.extraArrayAdditions != null) {
     for (entry in params.extraArrayAdditions.entrySet()) {
-        if(ctx._source[entry.getKey()] == null) {
+        if (ctx._source[entry.getKey()] == null) {
             ctx._source[entry.getKey()] = new ArrayList();
         }
         ctx._source[entry.getKey()].add(entry.getValue());

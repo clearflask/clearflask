@@ -3,7 +3,7 @@ import * as Admin from '../../api/admin';
 
 var wasShown = false;
 const SubscriptionStatusNotifier = (props: {
-  account:Admin.AccountAdmin
+  account: Admin.AccountAdmin
 }) => {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -29,7 +29,7 @@ const SubscriptionStatusNotifier = (props: {
       content = 'Your plan will soon start';
       break;
     case Admin.SubscriptionStatus.TrialExpired:
-      variant = 'error';
+      variant = 'warning';
       content = 'Your trial is expired, correct your billing';
       break;
     case Admin.SubscriptionStatus.Blocked:
@@ -42,7 +42,7 @@ const SubscriptionStatusNotifier = (props: {
       break;
   }
 
-  if(content) {
+  if (content) {
     enqueueSnackbar(content, {
       variant,
       preventDuplicate: true,

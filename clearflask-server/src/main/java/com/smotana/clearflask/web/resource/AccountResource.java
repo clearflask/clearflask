@@ -43,7 +43,6 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
-import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
@@ -413,7 +412,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 newStatus,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
-                billingPeriodMau <= 0 ? null : billingPeriodMau,
+                (billingPeriodMau == null || billingPeriodMau <= 0) ? null : billingPeriodMau,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,

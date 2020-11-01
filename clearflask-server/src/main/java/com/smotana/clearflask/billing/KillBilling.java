@@ -251,12 +251,12 @@ public class KillBilling extends ManagedService implements Billing {
                 || EntitlementState.BLOCKED.equals(subscription.getState())
                 || overdueState.isBlockChanges() == Boolean.TRUE) {
             status = SubscriptionStatus.BLOCKED;
-        } else if (!hasOverdueBalance && (isOverdueUnpaid || isOverdueCancelled || !hasPaymentMethod.get())) {
-            status = SubscriptionStatus.TRIALEXPIRED;
         } else if (hasOverdueBalance && isOverdueUnpaid) {
             status = SubscriptionStatus.ACTIVEPAYMENTRETRY;
         } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
             status = SubscriptionStatus.ACTIVETRIAL;
+        } else if (!hasOverdueBalance && (isOverdueUnpaid || isOverdueCancelled || !hasPaymentMethod.get())) {
+            status = SubscriptionStatus.TRIALEXPIRED;
         } else if (EntitlementState.PENDING.equals(subscription.getState())) {
             status = SubscriptionStatus.PENDING;
         } else if (EntitlementState.CANCELLED.equals(subscription.getState())

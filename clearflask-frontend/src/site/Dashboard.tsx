@@ -181,7 +181,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       createLabel,
     ];
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
-    if(!selectedLabel) {
+    if (!selectedLabel) {
       const selectedProjectIdFromLocalStorage = localStorage.getItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY);
       selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromLocalStorage);
     }
@@ -364,8 +364,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             previewProject={this.createProject}
             projectCreated={(projectId) => {
               localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, projectId);
-              this.setState({ selectedProjectId: projectId },
-                () => this.pageClicked('created'));
+              this.pageClicked('created');
+              this.setState({ selectedProjectId: projectId });
             }}
           />
         );
@@ -450,6 +450,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       page = (
         <ErrorPage msg='Oops, you have to create a project first' />
       );
+      this.props.history.push('/dashboard/welcome');
     }
 
     const quickViewEnabled = this.isQuickViewEnabled();
@@ -470,7 +471,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               <PostPage key={postId} server={activeProject.server} postId={postId}
                 PostProps={{
                   onUserClick: userId => this.pageClicked('user', [userId]),
-                }}/>
+                }} />
             </Provider>
           );
           break;

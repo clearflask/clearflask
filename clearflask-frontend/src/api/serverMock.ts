@@ -723,7 +723,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(this.getProject(request.projectId).config);
   }
   projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
-    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0,3)}`;
+    const projectId = `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
     request.configAdmin.projectId = projectId;
     this.getProject(projectId).config.config = request.configAdmin;
     return this.returnLater({
@@ -1102,6 +1102,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   async throwLater(httpStatus: number, userFacingMessage?: string): Promise<any> {
     console.log('Server THROW:', httpStatus, userFacingMessage);
+    console.trace();
     await this.waitLatency();
     // eslint-disable-next-line no-throw-literal
     throw {

@@ -143,8 +143,10 @@ public class IdeaStoreIT extends AbstractIT {
         // Idea Search
         assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()
                 .build(), Optional.empty(), Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()
-                .fundedByMeAndActive(true)
+        assertEquals(ImmutableList.of(), store.searchIdeas(projectId, IdeaSearch.builder().fundedByMeAndActive(true)
+                .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
+        store.fundIdea(projectId, idea1.getIdeaId(), userId1, 5L, "asd", "dsa");
+        assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder().fundedByMeAndActive(true)
                 .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
 
         // Idea Search Admin

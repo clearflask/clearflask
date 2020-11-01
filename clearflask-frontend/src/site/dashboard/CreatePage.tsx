@@ -1,5 +1,6 @@
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Checkbox, Collapse, FormControlLabel, Grid, Link, Step, StepContent, StepLabel, Stepper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import WarningIcon from '@material-ui/icons/ReportProblemOutlined';
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -65,6 +66,9 @@ const styles = (theme: Theme) => createStyles({
   },
   flexBreak: {
     width: '100%',
+  },
+  warningIcon: {
+    color: theme.palette.warning.main,
   },
 });
 interface Props {
@@ -176,7 +180,9 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
             </StepContent>
           </Step>
           <Step key='onboarding' completed={false}>
-            <StepLabel>
+            <StepLabel StepIconProps={upgradeRequired ? {
+              icon: (<WarningIcon color='inherit' className={this.props.classes.warningIcon} />),
+            } : undefined}>
               <Link onClick={() => !this.state.isSubmitting && this.setState({ step: 1 })} className={this.props.classes.link}>
                 Onboarding
                </Link>
@@ -404,10 +410,6 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
     const editor = new ConfigEditor.EditorImpl();
     const templater = Templater.get(editor);
     templater.createTemplate(this.state);
-    editor.getProperty<ConfigEditor.StringProperty>(['projectId'])
-      .set(this.props.previewProject.server.getProjectId());
-    editor.getProperty<ConfigEditor.StringProperty>(['slug'])
-      .set(this.props.previewProject.server.getStore().getState().conf.conf?.slug!);
     return editor.getConfig();
   }
 
