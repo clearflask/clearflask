@@ -636,8 +636,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 items={[
                   { type: 'item', slug: '', name: 'Home' } as MenuItem,
                   { type: 'item', slug: 'posts', name: 'Posts', offset: 1 } as MenuItem,
-                  { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
                   { type: 'item', slug: 'users', name: 'Users', offset: 1 } as MenuItem,
+                  { type: 'item', slug: 'comments', name: 'Comments', offset: 1 } as MenuItem,
                   activeProject ? {
                     type: 'project',
                     name: 'Project Settings',

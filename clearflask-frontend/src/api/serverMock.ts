@@ -400,6 +400,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({ ...idea, vote: vote || {} });
   }
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaWithVoteSearchResponse> {
+    var searchText;
+    if (!!request.ideaSearch.similarToIdeaId) {
+      const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaSearch.similarToIdeaId);
+      if (!idea) return this.throwLater(404, 'Idea not found');
+      searchText = idea.title.split(' ')[0] || '';
+    } else {
+      searchText = request.ideaSearch.searchText;
+    }
     const allIdeas: Admin.Idea[] = this.getProject(request.projectId).ideas;
     const ideas: Admin.Idea[] = request.ideaSearch.fundedByMeAndActive
       ? this.getProject(request.projectId).votes
@@ -427,9 +435,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(idea => request.ideaSearch.filterStatusIds === undefined
         || request.ideaSearch.filterStatusIds.length === 0
         || (idea.statusId && request.ideaSearch.filterStatusIds.includes(idea.statusId)))
-      .filter(idea => request.ideaSearch.searchText === undefined
-        || idea.title.indexOf(request.ideaSearch.searchText) >= 0
-        || (idea.description || '').indexOf(request.ideaSearch.searchText) >= 0)
+      .filter(idea => searchText === undefined
+        || idea.title.indexOf(searchText) >= 0
+        || (idea.description || '').indexOf(searchText) >= 0)
       .map(idea => {
         const loggedInUser = this.getProject(request.projectId).loggedInUser;
         const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;

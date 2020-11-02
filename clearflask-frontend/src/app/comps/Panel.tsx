@@ -25,6 +25,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   className?: string;
+  innerClassName?: string;
   direction: Direction;
   title?: React.ReactNode;
   maxHeight?: string | number,
@@ -44,6 +45,7 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
       content = (
         <DividerCorner
           className={this.props.className}
+          innerClassName={this.props.innerClassName}
           title={this.props.title}
           width={this.props.direction === Direction.Vertical ? '90%' : undefined}
           height={this.props.direction === Direction.Horizontal ? '90%' : undefined}

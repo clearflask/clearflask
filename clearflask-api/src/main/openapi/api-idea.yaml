@@ -45,6 +45,9 @@ components:
           maximum: 50
           type: integer
           format: int64
+        similarToIdeaId:
+          x-clearflask-hide: true
+          type: string
     IdeaSearchAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'

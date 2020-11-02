@@ -59,6 +59,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  className?: string;
   createSize?: number;
   searchSize?: number;
   createShown?: boolean;
@@ -84,16 +85,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
     const expandDirectionHorizontal = !this.props.width || isWidthUp('sm', this.props.width, true);
-    var results = (
-      <Fade
-        in={!expandInMotion}
-        mountOnEnter
-        unmountOnExit
-        timeout={30}
-      >
-        {this.props.content}
-      </Fade>
-    );
+    var results = this.props.content;
     if (!!this.props.search || !!this.props.createVisible) {
       results = (
         <DividerCorner
@@ -113,7 +105,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
       </div>
     );
     return (
-      <div className={this.props.classes.explorer}>
+      <div className={classNames(this.props.classes.explorer, this.props.className)}>
         <div className={this.props.classes.top}>
           {this.props.createVisible && (
             <div className={this.props.classes.createVisible} style={{

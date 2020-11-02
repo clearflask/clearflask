@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { getCommentSearchKey, ReduxState, Server, Status } from '../../api/server';
+import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import notEmpty from '../../common/util/arrayUtil';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
@@ -137,7 +137,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     loggedInUser: state.users.loggedIn.user,
   };
 
-  const searchKey = getCommentSearchKey(ownProps.search);
+  const searchKey = getSearchKey(ownProps.search);
   const bySearch = state.comments.bySearch[searchKey];
   if (!bySearch) {
     ownProps.server.dispatch().commentSearch({

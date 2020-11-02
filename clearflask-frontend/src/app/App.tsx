@@ -195,6 +195,7 @@ class App extends Component<Props, State> {
                 <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
                   <BasePage showFooter={!props.match.params['embed']}>
                     <PostPage
+                      key={'postpage=' + props.match.params['postId']}
                       postId={props.match.params['postId'] || ''}
                       server={server}
                     />

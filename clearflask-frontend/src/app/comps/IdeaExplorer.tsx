@@ -39,6 +39,8 @@ export const PostTitleMaxLength = 100
 
 const styles = (theme: Theme) => createStyles({
   content: {
+    paddingTop: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
   },
   createFormFields: {
     display: 'flex',
@@ -75,6 +77,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string;
   server: Server;
   explorer: Client.PageExplorer;
   forceDisablePostExpand?: boolean;
@@ -156,7 +159,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     );
     const createLabel = (
       <Typography variant='overline' className={this.props.classes.caption}>
-        Similar:
+        Similar
       </Typography>
     );
     var content;
@@ -271,6 +274,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
+          className={this.props.className}
           createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
           createLabel={createLabel}

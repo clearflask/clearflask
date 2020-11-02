@@ -1,17 +1,27 @@
+import { Fade, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { ReduxState, Server, Status } from '../../api/server';
+import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import setTitle from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
+import { Direction } from './Panel';
+import PanelPost from './PanelPost';
 import Post from './Post';
 
 const styles = (theme: Theme) => createStyles({
   container: {
-    margin: theme.spacing(1),
     display: 'flex',
+    flexWrap: 'wrap',
+  },
+  grow: {
+    flexGrow: 1,
+  },
+  similar: {
+    margin: theme.spacing(2),
+    flexBasis: 0,
   },
 });
 interface Props {
@@ -24,7 +34,7 @@ interface ConnectProps {
   post?: Client.Idea;
   suppressSetTitle?: boolean,
 }
-class PostPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>> {
   render() {
     if (this.props.post && !this.props.suppressSetTitle) {
       setTitle(truncateWithElipsis(25, this.props.post.title), true);
@@ -42,7 +52,55 @@ class PostPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       return (<ErrorPage msg='Oops, not found' />);
     }
 
-    return (<Post server={this.props.server} idea={this.props.post} variant='page' {...this.props.PostProps} />);
+    const post = (
+      <Post
+        key='post'
+        server={this.props.server}
+        idea={this.props.post}
+        variant='page'
+        {...this.props.PostProps}
+      />
+    );
+
+    const similar = (this.props.width && isWidthUp('md', this.props.width, true)) && (
+      <React.Fragment>
+        <div className={this.props.classes.grow} />
+        <PanelPost
+          className={this.props.classes.similar}
+          direction={Direction.Vertical}
+          panel={{
+            hideIfEmpty: true,
+            title: 'SIMILAR',
+            search: {
+              similarToIdeaId: this.props.postId,
+              limit: 5,
+            },
+            display: {
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 2,
+              responseTruncateLines: 0,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            },
+          }}
+          server={this.props.server}
+        />
+      </React.Fragment>
+    );
+
+    return (
+      <div className={this.props.classes.container}>
+        {post}
+        {similar}
+      </div>
+    );
   }
 }
 
@@ -65,4 +123,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(PostPage));
+})(withStyles(styles, { withTheme: true })(withWidth()(PostPage)));

@@ -442,7 +442,7 @@ class DataMock {
         // browserPushToken: 'fake-browser-push-token',
         ...{
           emailVerification: 'token',
-          isMod,
+          // isMod,
           userId: 'me',
         },
       }

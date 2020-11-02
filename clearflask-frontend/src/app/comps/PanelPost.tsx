@@ -22,13 +22,18 @@ interface SearchResult {
 
 const styles = (theme: Theme) => createStyles({
   nothing: {
-    margin: theme.spacing(4),
+    padding: theme.spacing(4),
     color: theme.palette.text.secondary,
+    margin: theme.spacing(1),
+    boxSizing: 'border-box',
+    width: 600,
+    display: 'inline-block',
   },
 });
 
 export interface Props {
   className?: string;
+  innerClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
   displayDefaults?: Client.PostDisplay;
@@ -98,6 +103,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
     return this.props.suppressPanel ? content : (
       <Panel
         className={this.props.className}
+        innerClassName={this.props.innerClassName}
         title={this.props.panel['title']}
         direction={this.props.direction}
         maxHeight={this.props.maxHeight}

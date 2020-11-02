@@ -39,6 +39,8 @@ const styles = (theme: Theme) => createStyles({
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
+    paddingTop: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
   },
   boardInCorner: {
     paddingLeft: theme.spacing(2),
@@ -47,6 +49,10 @@ const styles = (theme: Theme) => createStyles({
     flex: '1 1 100px',
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
+  },
+  explorer: {
+    width: 'max-content',
+    margin: 'auto',
   },
 });
 
@@ -181,6 +187,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         explorerCmpt = (
           <div className={this.props.classes.spacing}>
             <IdeaExplorer
+              className={this.props.classes.explorer}
               server={this.props.server}
               explorer={explorer}
             />

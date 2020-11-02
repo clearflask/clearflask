@@ -16,11 +16,13 @@ import notEmpty from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
 import CommentEdit, { CommentDelete } from './CommentEdit';
+import { MaxContentWidth } from './Post';
 import VotingControl from './VotingControl';
 
 const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(2, 2, 2, 0),
+    maxWidth: MaxContentWidth,
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: '1fr auto',

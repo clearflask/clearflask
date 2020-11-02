@@ -2,7 +2,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Client from '../api/client';
-import { getCommentSearchKey, getSearchKey, Server } from '../api/server';
+import { getSearchKey, Server } from '../api/server';
 import { Direction } from '../app/comps/Panel';
 import PanelComment from '../app/comps/PanelComment';
 import PanelPost from '../app/comps/PanelPost';
@@ -52,7 +52,7 @@ class UserContributions extends React.Component<Props & RouteComponentProps & Wi
         />
         <PanelComment
           className={this.props.classes.panel}
-          key={getCommentSearchKey(commentSearch)}
+          key={getSearchKey(commentSearch)}
           title='Recent comments'
           server={this.props.server}
           search={commentSearch}

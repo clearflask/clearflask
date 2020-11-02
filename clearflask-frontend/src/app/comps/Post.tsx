@@ -40,17 +40,19 @@ import PostEdit from './PostEdit';
 import VotingControl from './VotingControl';
 
 export type PostVariant = 'list' | 'page';
+export const MaxContentWidth = 600;
 
 const styles = (theme: Theme) => createStyles({
   comment: {
     margin: theme.spacing(1),
   },
   outer: {
-    minWidth: 'auto',
+    minWidth: 300,
     margin: theme.spacing(0.5),
   },
   post: {
     display: 'grid',
+    maxWidth: MaxContentWidth,
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: 'auto 1fr',
     gridTemplateAreas:

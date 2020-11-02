@@ -28,7 +28,8 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
   },
   resultContainer: {
-    margin: theme.spacing(2),
+    paddingTop: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
   },
   userProperties: {
     margin: theme.spacing(2),

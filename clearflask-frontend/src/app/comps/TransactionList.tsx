@@ -6,7 +6,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
-import { getTransactionSearchKey, ReduxState, Server } from '../../api/server';
+import { getSearchKey, ReduxState, Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import { contentScrollApplyStyles } from '../../common/ContentScroll';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -115,7 +115,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     filterCreatedStart: ownProps.filterCreatedStart,
     filterCreatedEnd: ownProps.filterCreatedEnd,
   };
-  const searchKey: string = getTransactionSearchKey(search);
+  const searchKey: string = getSearchKey(search);
   var getNextTransactions;
   if (userId && (state.credits.transactionSearch.status === undefined || state.credits.transactionSearch.searchKey !== searchKey)) {
     ownProps.server.dispatch().transactionSearch({

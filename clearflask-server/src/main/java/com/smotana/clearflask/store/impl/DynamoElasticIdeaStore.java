@@ -76,9 +76,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -296,6 +295,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                         ideaSearch.getSearchText(),
                         ideaSearch.getFundedByMeAndActive(),
                         ideaSearch.getLimit(),
+                        ideaSearch.getSimilarToIdeaId(),
                         null,
                         null,
                         null,
@@ -342,6 +342,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             checkArgument(requestorUserIdOpt.isPresent());
             query.must(QueryBuilders.termQuery("funderUserIds", requestorUserIdOpt.get()));
             // TODO how to check for activeness?? (Figure out which content and states allow funding and filter here)
+        }
+
+        if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
+             query.must(QueryBuilders.moreLikeThisQuery(
+                     new String[]{"title", "description"},
+                     null,
+                     new Item[]{new Item(null, ideaSearchAdmin.getSimilarToIdeaId())}));
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {

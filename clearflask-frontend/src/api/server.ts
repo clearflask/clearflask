@@ -209,32 +209,11 @@ export class Server {
   }
 }
 
-export const getSearchKey = (search: Client.IdeaSearch): string => {
-  return [
-    (search.filterCategoryIds || []).join('.'),
-    (search.filterStatusIds || []).join('.'),
-    (search.filterTagIds || []).join('.'),
-    search.limit || -1,
-    search.sortBy,
-    search.searchText || '',
-    search.fundedByMeAndActive ? 't' : 'f',
-  ].join('-');
-}
-
-export const getCommentSearchKey = (search: Client.CommentSearch): string => {
-  return [
-    search.filterAuthorId,
-  ].join('-');
-}
-
-export const getTransactionSearchKey = (search: Client.TransactionSearch): string => {
-  return [
-    (search.filterTransactionTypes || []).join('.'),
-    search.filterAmountMin || -1,
-    search.filterAmountMax || -1,
-    search.filterCreatedStart || '',
-    search.filterCreatedEnd || '',
-  ].join('-');
+export const getSearchKey = (search: Client.IdeaSearch | Client.CommentSearch | Client.TransactionSearch): string => {
+  const keys = Object.keys(search);
+  // Consistently return the same key by sorting by keys
+  keys.sort();
+  return JSON.stringify(keys.map(key => key + '=' + search[key]));
 }
 
 const stateProjectIdDefault = null;
@@ -716,7 +695,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         },
       };
     case Client.commentSearchActionStatus.Pending:
-      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      searchKey = getSearchKey(action.meta.request.commentSearch);
       return {
         ...state,
         bySearch: {
@@ -728,7 +707,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         }
       };
     case Client.commentSearchActionStatus.Rejected:
-      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      searchKey = getSearchKey(action.meta.request.commentSearch);
       return {
         ...state,
         bySearch: {
@@ -740,7 +719,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         }
       };
     case Client.commentSearchActionStatus.Fulfilled:
-      searchKey = getCommentSearchKey(action.meta.request.commentSearch);
+      searchKey = getSearchKey(action.meta.request.commentSearch);
       return {
         ...state,
         byId: {
@@ -1276,7 +1255,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         transactionSearch: {
           ...state.transactionSearch,
           status: Status.PENDING,
-          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
+          searchKey: getSearchKey(action.meta.request.transactionSearch),
         },
       };
     case Client.transactionSearchActionStatus.Rejected:
@@ -1285,7 +1264,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         transactionSearch: {
           ...state.transactionSearch,
           status: Status.REJECTED,
-          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
+          searchKey: getSearchKey(action.meta.request.transactionSearch),
         },
       };
     case Client.transactionSearchActionStatus.Fulfilled:
@@ -1293,7 +1272,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
         ...state,
         transactionSearch: {
           status: Status.FULFILLED,
-          searchKey: getTransactionSearchKey(action.meta.request.transactionSearch),
+          searchKey: getSearchKey(action.meta.request.transactionSearch),
           transactions: (action.meta.request.cursor !== undefined && action.meta.request.cursor === state.transactionSearch.cursor)
             ? [ // Append results
               ...(state.transactionSearch.transactions || []),
