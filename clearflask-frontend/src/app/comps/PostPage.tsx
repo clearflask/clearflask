@@ -28,6 +28,7 @@ interface Props {
   server: Server;
   postId: string;
   PostProps?: Partial<React.ComponentProps<typeof Post>>;
+  suppressSimilar?: boolean;
 }
 interface ConnectProps {
   postStatus: Status;
@@ -62,7 +63,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
       />
     );
 
-    const similar = (this.props.width && isWidthUp('md', this.props.width, true)) && (
+    const similar = (!this.props.suppressSimilar && this.props.width && isWidthUp('md', this.props.width, true)) && (
       <React.Fragment>
         <div className={this.props.classes.grow} />
         <PanelPost

@@ -276,7 +276,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         const postId = activeSubPath && activeSubPath[0] as string || '';
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <PostPage key={postId} server={activeProject.server} postId={postId} />
+            <PostPage key={postId} server={activeProject.server} postId={postId} suppressSimilar />
           </Provider>
         );
         crumbs = [{ name: 'Posts', slug: 'posts' }];

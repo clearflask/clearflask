@@ -141,6 +141,9 @@ const styles = (theme: Theme) => createStyles({
     textTransform: 'unset',
   },
   demo: {
+    width: '100%',
+    maxWidth: 1025,
+    margin: 'auto',
     marginBottom: theme.spacing(24),
   },
 });
@@ -188,7 +191,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
       ...createTemplateOptionsDefault,
     };
     return (
-      <Container maxWidth='md' className={this.props.classes.demo}>
+      <div className={this.props.classes.demo}>
         <Demo
           noSpacing
           type='demoOnly'
@@ -204,7 +207,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             ],
           }}
         />
-      </Container>
+      </div>
     );
   }
 
