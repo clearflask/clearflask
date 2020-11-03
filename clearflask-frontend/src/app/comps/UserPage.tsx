@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableRow } from '@material-ui/core';
+import { Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -25,6 +25,9 @@ const styles = (theme: Theme) => createStyles({
   },
   userViewTableCell: {
     borderBottom: 'none',
+  },
+  overview: {
+    marginTop: theme.spacing(3),
   },
 });
 interface Props {
@@ -67,7 +70,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       }
       user = this.state.userAdmin;
       userStatus = this.state.userAdminStatus;
-      if (this.state.userAdmin) {
+      if (this.state.userAdmin && this.props.credits) {
         overview = (
           <UserEdit
             server={this.props.server}
@@ -89,7 +92,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       userStatus = this.props.userStatus;
       if (this.props.user) {
         overview = (
-          <DividerCorner title='User info'>
+          <DividerCorner title='Info' className={this.props.classes.overview}>
             <Table className={this.props.classes.userViewTable}>
               <TableBody>
                 <TableRow>
@@ -117,6 +120,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
           status={userStatus}
           error={userStatus === Status.REJECTED ? 'Person not found' : undefined}
         >
+          <Typography component="h1" variant="h5" color="textPrimary">User profile</Typography>
           {overview}
           {user?.userId && (
             <UserContributions

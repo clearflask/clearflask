@@ -76,8 +76,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -107,6 +109,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
          */
         @DefaultValue("false")
         boolean elasticForceRefresh();
+
+        @DefaultValue("true")
+        boolean enableSimilarToIdea();
     }
 
     private static final String IDEA_INDEX = "idea";
@@ -345,10 +350,16 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
-             query.must(QueryBuilders.moreLikeThisQuery(
-                     new String[]{"title", "description"},
-                     null,
-                     new Item[]{new Item(null, ideaSearchAdmin.getSimilarToIdeaId())}));
+            if (!config.enableSimilarToIdea()) {
+                return new SearchResponse(ImmutableList.of(), Optional.empty());
+            }
+            query.must(QueryBuilders.moreLikeThisQuery(
+                    new String[]{"title", "description"},
+                    null,
+                    new Item[]{new Item(null, ideaSearchAdmin.getSimilarToIdeaId())})
+                    .minTermFreq(1)
+                    .minDocFreq(1)
+                    .maxQueryTerms(10));
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {

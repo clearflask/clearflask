@@ -21,6 +21,9 @@ const styles = (theme: Theme) => createStyles({
   item: {
     margin: theme.spacing(2),
   },
+  section: {
+    marginTop: theme.spacing(3),
+  },
 });
 interface Props {
   server: Server;
@@ -62,7 +65,8 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     return (
       <div className={this.props.classes.page}>
-        <DividerCorner title='Account'>
+        <Typography component="h1" variant="h5" color="textPrimary">Your profile</Typography>
+        <DividerCorner title='Account' className={this.props.classes.section}>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
             <Grid item xs={12} sm={6}>
@@ -196,14 +200,14 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     Please add an email before signing out or delete your account instead.
                   </Alert>
                 </Collapse>
-                )}
+              )}
             </Typography></Grid>
             <Grid item xs={12} sm={6}>
               <Button
                 disabled={!!isOnlyPush && !!this.state.signoutWarnNoEmail}
                 onClick={() => {
-                  if(isOnlyPush){
-                    this.setState({signoutWarnNoEmail: true});
+                  if (isOnlyPush) {
+                    this.setState({ signoutWarnNoEmail: true });
                   } else {
                     this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })
                   }
@@ -236,7 +240,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Grid>
           </Grid>
         </DividerCorner>
-        <DividerCorner title='Notifications'>
+        <DividerCorner title='Notifications' className={this.props.classes.section}>
           {browserPushControl && (
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Browser desktop messages</Typography></Grid>

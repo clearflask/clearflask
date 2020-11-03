@@ -1,9 +1,9 @@
-import { Fade, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
+import { isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import setTitle from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
@@ -71,7 +71,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
           direction={Direction.Vertical}
           panel={{
             hideIfEmpty: true,
-            title: 'SIMILAR',
+            title: 'Similar',
             search: {
               similarToIdeaId: this.props.postId,
               limit: 5,

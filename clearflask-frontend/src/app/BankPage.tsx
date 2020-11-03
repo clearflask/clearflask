@@ -5,11 +5,11 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import CreditView from '../common/config/CreditView';
+import setTitle from '../common/util/titleUtil';
 import FundingControl from './comps/FundingControl';
 import TransactionList from './comps/TransactionList';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
-import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   page: {
@@ -22,6 +22,9 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'flex-star',
+  },
+  section: {
+    marginTop: theme.spacing(3),
   },
 });
 interface Props {
@@ -45,8 +48,9 @@ class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles
     }
     return (
       <div className={this.props.classes.page}>
+        <Typography component="h1" variant="h5" color="textPrimary">Credit management</Typography>
         <div className={this.props.classes.balanceAndFundingContainer}>
-          <DividerCorner title='Balance'>
+          <DividerCorner title='Balance' className={this.props.classes.section}>
             {this.props.balance !== undefined && this.props.credits && (
               <Typography className={this.props.classes.spacing} variant='subtitle1' component='div'>
                 <CreditView val={this.props.balance} credits={this.props.credits} />
@@ -54,7 +58,7 @@ class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles
             )}
           </DividerCorner>
           <div className={this.props.classes.spacing} />
-          <DividerCorner title='Funding'>
+          <DividerCorner title='Funded' className={this.props.classes.section}>
             <FundingControl server={this.props.server} className={this.props.classes.spacing} />
           </DividerCorner>
         </div>

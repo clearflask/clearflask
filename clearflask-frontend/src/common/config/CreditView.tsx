@@ -34,7 +34,7 @@ class CreditView extends Component<Props> {
 
 /** If changed, also change CreditViewUtil.java */
 export const creditGetFormat = (val: number, credits: Client.Credits): Client.CreditFormatterEntry | undefined => {
-  if(!credits.formats) return;
+  if (!credits?.formats) return;
   const valAbs = Math.abs(val);
   return credits.formats.find(format => {
     if (format.greaterOrEqual !== undefined && valAbs < format.greaterOrEqual) {

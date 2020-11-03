@@ -4,6 +4,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import * as Admin from '../../api/admin';
+import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
 import SubmitButton from '../../common/SubmitButton';
@@ -24,7 +25,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   user: Admin.UserAdmin;
-  credits: Admin.Credits;
+  credits: Client.Credits;
   isMe: boolean;
   isInsideDialog?: boolean;
   onUpdated: (user: Admin.UserAdmin) => void;

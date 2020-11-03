@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 10
-_run-dev: killbill-run tomcat-run-dev nginx-run dynamo-run elastic-run
+_run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run elastic-run kibana-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 10
@@ -21,7 +21,7 @@ _run-dev-frontend: npm-run-dev-frontend nginx-run
 
 run-it-services:
 	@$(MAKE) _run-dev -j 10
-_run-dev: dynamo-run elastic-run
+_run-dev: elastic-run killbill-run
 
 npm-run-dev-frontend:
 	cd clearflask-frontend && npm start
@@ -53,6 +53,13 @@ elastic-run:
 	-e "discovery.type=single-node" \
 	docker.elastic.co/elasticsearch/elasticsearch:7.4.2
 
+kibana-run:
+	docker run --rm --name clearflask-kibana \
+	-p 5601:5601 \
+	-e "ELASTICSEARCH_URL=http://host.docker.internal:9200" \
+	-e "ELASTICSEARCH_HOSTS=http://host.docker.internal:9200" \
+	docker.elastic.co/kibana/kibana:7.4.2
+
 dynamo-run:
 	docker run --rm --name clearflask-dynamo \
 	-p 7000:8000 \
@@ -60,7 +67,7 @@ dynamo-run:
 
 killbill-run:
 	@$(MAKE) _killbill-run -j 10
-_killbill-run: killbill-engine-run killbill-kaui-run killbill-db-run
+_killbill-run: killbill-engine-run killbill-db-run
 
 killbill-engine-run:
 	docker run --rm --name clearflask-killbill-engine \
@@ -78,7 +85,7 @@ killbill-engine-run:
 	-p 8082:8080 \
 	killbill/killbill:0.22.10
 
-killbill-kaui-run:
+kaui-run:
 	docker run --rm --name clearflask-killbill-kaui \
 	-e KAUI_CONFIG_DAO_URL=jdbc:mysql://host.docker.internal:8306/kaui \
 	-e KAUI_CONFIG_DAO_USER=root \
