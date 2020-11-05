@@ -20,7 +20,7 @@ interface Props {
   backgroundColor?: string;
 }
 
-const radialSize = 15;
+export const RadialSize = 15;
 
 export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center, isVertical: boolean = false, backgroundColor: string = theme.palette.background.default): CSSProperties => {
   var startHor;
@@ -65,7 +65,7 @@ export const contentScrollApplyStyles = (theme: Theme, side: Side = Side.Center,
         break;
     }
   }
-  const ellipseShape = isVertical ? `50% ${radialSize / radialMultiplier}px` : `${radialSize / radialMultiplier}px 50%`;
+  const ellipseShape = isVertical ? `50% ${RadialSize / radialMultiplier}px` : `${RadialSize / radialMultiplier}px 50%`;
   return {
     background: `radial-gradient(ellipse ${ellipseShape} at ${startHor} ${startVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`
       + `radial-gradient(ellipse ${ellipseShape} at ${endHor} ${endVer}, ${backgroundColor} ${100 * radialMultiplier}%, rgba(0,0,0,0) ${200 * radialMultiplier}%),`

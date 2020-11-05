@@ -248,7 +248,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           </DialogActions>
         </Dialog>
         <Dialog
-          open={!!this.state.deleteDialogOpen}
+          open={!!this.state.deleteDialogOpen && !!this.props.open}
           onClose={() => this.setState({ deleteDialogOpen: false })}
         >
           <DialogTitle>Delete Post</DialogTitle>
@@ -272,7 +272,10 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     ideaId: this.props.idea.ideaId,
                   }))
                   .then(() => {
-                    this.setState({ isSubmitting: false });
+                    this.setState({
+                      isSubmitting: false,
+                      deleteDialogOpen: false,
+                    });
                     this.props.onClose();
                   })
                   .catch(e => this.setState({ isSubmitting: false }))

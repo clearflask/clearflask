@@ -940,7 +940,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       } else {
         expressionDiff = { action: Client.IdeaVoteUpdateExpressionsActionEnum.Add, expression: display };
       }
-      this.props.updateVote({ expressions: expressionDiff })
+      this.props.updateVote({ expressions: expressionDiff });
+      if (this.state.expressionExpanded
+        && !!this.props.category?.support.express?.limitEmojiPerIdea) {
+        this.setState({ expressionExpanded: false });
+      }
     };
 
     const limitEmojiSet = this.props.category.support.express.limitEmojiSet

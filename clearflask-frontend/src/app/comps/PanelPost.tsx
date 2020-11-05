@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
+import notEmpty from '../../common/util/arrayUtil';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import Panel from './Panel';
@@ -16,7 +17,7 @@ export enum Direction {
 
 interface SearchResult {
   status: Status;
-  ideas: (Client.Idea | undefined)[];
+  ideas: Client.Idea[];
   cursor: string | undefined,
 }
 
@@ -86,7 +87,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           }
           content = this.props.searchResult.ideas.map(idea => (
             <Post
-              key={idea && idea.ideaId}
+              key={idea.ideaId}
               server={this.props.server}
               idea={idea}
               expandable
@@ -138,12 +139,11 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     newProps.searchResult.status = bySearch.status;
     newProps.searchResult.cursor = bySearch.cursor;
     newProps.searchResult.ideas = (bySearch.ideaIds || []).map(ideaId => {
-      if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
       const idea = state.ideas.byId[ideaId];
-      return (idea && idea.status === Status.FULFILLED)
-        ? idea.idea
-        : undefined;
-    });
+      if (!idea || idea.status !== Status.FULFILLED) return undefined;
+      if (state.votes.statusByIdeaId[ideaId] === undefined) missingVotesByIdeaIds.push(ideaId);
+      return idea.idea;
+    }).filter(notEmpty);
     if (state.users.loggedIn.status === Status.FULFILLED
       && state.users.loggedIn.user
       && missingVotesByIdeaIds.length > 0) {

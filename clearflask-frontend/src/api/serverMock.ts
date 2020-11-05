@@ -677,7 +677,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    const ideaIdIndex = this.getProject(request.projectId).ideas.findIndex(idea => idea.ideaId === request.ideaId);
+    if (ideaIdIndex) {
+      this.getProject(request.projectId).ideas.splice(ideaIdIndex, 1);
+    }
+    return this.returnLater();
   }
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
     throw new Error("Method not implemented.");
@@ -839,6 +843,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.getProject(request.projectId).transactions.push(balanceUpdateTransaction);
       this.getProject(request.projectId).balances[request.userId] = balance;
     }
+    if (request.userUpdateAdmin.isMod !== undefined) {
+      user.isMod = request.userUpdateAdmin.isMod;
+    };
     return this.returnLater({
       ...user,
       balance,

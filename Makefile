@@ -24,7 +24,7 @@ run-it-services:
 _run-dev: elastic-run killbill-run
 
 npm-run-dev-frontend:
-	cd clearflask-frontend && npm start
+	cd clearflask-frontend && node/node_modules/npm/bin/npm-cli.js start
 
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT

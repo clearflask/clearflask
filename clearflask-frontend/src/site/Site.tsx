@@ -1,4 +1,4 @@
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Slide, Toolbar, useScrollTrigger } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
@@ -18,6 +18,9 @@ import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
 
 const styles = (theme: Theme) => createStyles({
+  appBar: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
   toolbar: {
     display: 'flex',
     alignItems: 'center',
@@ -32,7 +35,7 @@ const styles = (theme: Theme) => createStyles({
   },
   page: {
     minHeight: vh(100),
-    PaddingBottom: theme.spacing(6),
+    paddingBottom: theme.spacing(6),
   },
   appBarSpacer: theme.mixins.toolbar,
   bottomBar: {
@@ -89,6 +92,7 @@ interface MenuButton {
   type: 'button';
   title: string;
   path: string;
+  scrollTo?: string;
 }
 
 interface State {
@@ -101,15 +105,19 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
   render() {
-    const menuItemsLeft: Array<MenuButton | MenuDropdown> = [];
+    const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
+      { type: 'button', path: '/', scrollTo: 'collect', title: 'Collect' },
+      { type: 'button', path: '/', scrollTo: 'prioritize', title: 'Prioritize' },
+      { type: 'button', path: '/', scrollTo: 'engage', title: 'Engage' },
+      { type: 'button', path: '/', scrollTo: 'pricing', title: 'Pricing' },
+    ];
     const menuItemsRight: Array<MenuButton | MenuDropdown> = [
       { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
       { type: 'button', path: '/dashboard', title: 'Log in' },
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
-        {/* <HideOnScroll> */}
-        <AppBar position='absolute' color='inherit' elevation={0} variant='elevation'>
+        <AppBar position='fixed' color='inherit' elevation={0} variant='elevation' className={this.props.classes.appBar}>
           <Container maxWidth='md' disableGutters>
             <Toolbar className={this.props.classes.toolbar}>
               <Hidden smUp implementation='css'>
@@ -195,9 +203,8 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
             </Toolbar>
           </Container>
         </AppBar>
-        {/* </HideOnScroll> */}
+        <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
-          <div className={this.props.classes.appBarSpacer} />
           <MuiAnimatedSwitch>
             <Route exact path={'/login'} render={props => {
               setTitle('Login');
@@ -263,14 +270,5 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
     );
   }
 }
-
-// function HideOnScroll(props) {
-//   const trigger = useScrollTrigger();
-//   return (
-//     <Slide appear={false} direction="down" in={!trigger}>
-//       {props.children}
-//     </Slide>
-//   );
-// }
 
 export default withStyles(styles, { withTheme: true })(Site);

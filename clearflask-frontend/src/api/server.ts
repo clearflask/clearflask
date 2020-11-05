@@ -372,6 +372,13 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         },
         maxFundAmountSeen: Math.max(action.payload.funded || 0, state.maxFundAmountSeen),
       };
+    case Client.ideaDeleteActionStatus.Fulfilled:
+    case Admin.ideaDeleteAdminActionStatus.Fulfilled:
+      const { [action.meta.request.ideaId]: removedIdea, ...byIdWithoutDeleted } = state.byId;
+      return {
+        ...state,
+        byId: byIdWithoutDeleted,
+      };
     case Admin.ideaUpdateAdminActionStatus.Fulfilled:
     case Client.ideaUpdateActionStatus.Fulfilled:
       return {
@@ -820,8 +827,17 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           [action.meta.request.userId]: {
             user: action.payload,
             status: Status.FULFILLED,
-          }
-        }
+          },
+        },
+        ...(state.loggedIn.user?.userId === action.payload.userId ? {
+          loggedIn: {
+            ...state.loggedIn,
+            user: {
+              ...state.loggedIn.user,
+              ...action.payload,
+            },
+          },
+        } : {}),
       };
     case Client.userBindActionStatus.Fulfilled:
     case Client.configGetAndUserBindActionStatus.Fulfilled:

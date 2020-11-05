@@ -45,7 +45,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
       if (!this.props.suppressSetTitle) {
         setTitle("Failed to load");
       }
-      return (<ErrorPage msg='Oops, failed to load' />);
+      return (<ErrorPage msg='Oops, not found' />);
     } else if (this.props.postStatus === Status.FULFILLED && this.props.post === undefined) {
       if (!this.props.suppressSetTitle) {
         setTitle("Not found");

@@ -540,12 +540,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               }
             }}
             onValueChange={(labels, action) => {
-              if (labels.length === 1) {
+              const email = labels[0]?.value;
+              if (email && this.props.account?.email !== email) {
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
                   accountLoginAs: {
-                    email: labels[0].value,
+                    email,
                   },
-                }));
+                }))
+                .then(() => !!this.state.quickView && this.setState({ quickView: undefined }));
               }
             }}
           />
@@ -566,7 +568,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                   this.pageClicked('create');
                 } else {
                   localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, labels[0].value);
-                  this.setState({ selectedProjectId: labels[0].value });
+                  this.setState({
+                    selectedProjectId: labels[0].value,
+                    quickView: undefined,
+                  });
                 }
               }
             }}
