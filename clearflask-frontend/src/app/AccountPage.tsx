@@ -59,9 +59,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     // const iosPushControl = this.renderMobilePushControl(MobileNotificationDevice.Ios);
     const emailControl = this.renderEmailControl();
 
-    const isOnlyPush = (this.props.userMe.iosPush || this.props.userMe.androidPush || this.props.userMe.browserPush)
-      && !this.props.userMe.email
-      && !this.props.userMe.isSso
+    const isPushOrAnon = !this.props.userMe.email && !this.props.userMe.isSso;
 
     return (
       <div className={this.props.classes.page}>
@@ -191,7 +189,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>
               Sign out of your account
-              {!!isOnlyPush && (
+              {!!isPushOrAnon && (
                 <Collapse in={!!this.state.signoutWarnNoEmail}>
                   <Alert
                     variant='outlined'
@@ -204,9 +202,9 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Typography></Grid>
             <Grid item xs={12} sm={6}>
               <Button
-                disabled={!!isOnlyPush && !!this.state.signoutWarnNoEmail}
+                disabled={!!isPushOrAnon && !!this.state.signoutWarnNoEmail}
                 onClick={() => {
-                  if (isOnlyPush) {
+                  if (isPushOrAnon) {
                     this.setState({ signoutWarnNoEmail: true });
                   } else {
                     this.props.server.dispatch().userLogout({ projectId: this.props.server.getProjectId() })

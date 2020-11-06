@@ -29,11 +29,16 @@ const importFailed = e => {
     persist: true,
   });
 };
-const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app" */).then(importSuccess).catch(importFailed));
-const Dashboard = React.lazy(() => import('./site/Dashboard'/* webpackChunkName: "dashboard" */).then(importSuccess).catch(importFailed));
-const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(importSuccess).catch(importFailed));
-const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(importSuccess).catch(importFailed));
-const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(importSuccess).catch(importFailed));
+const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app", webpackPrefetch: true */)
+  .then(importSuccess).catch(importFailed));
+const Dashboard = React.lazy(() => import('./site/Dashboard' /* webpackChunkName: "dashboard" */)
+  .then(importSuccess).catch(importFailed));
+const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */)
+  .then(importSuccess).catch(importFailed));
+const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */)
+  .then(importSuccess).catch(importFailed));
+const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */)
+  .then(importSuccess).catch(importFailed));
 
 const theme: Theme = createMuiTheme({
   palette: {

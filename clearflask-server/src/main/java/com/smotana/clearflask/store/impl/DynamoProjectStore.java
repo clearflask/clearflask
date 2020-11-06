@@ -228,12 +228,12 @@ public class DynamoProjectStore implements ProjectStore {
                 slugSchema.table().putItem(new PutItemSpec()
                         .withItem(slugSchema.toItem(new SlugModel(slug, projectId, null)))
                         // Allow changing your mind and rollback slug if slug still exists part of migration
-                        .withConditionExpression("attribute_not_exists(#partitionKey) or (attribute_exists(#partitionKey) and #projectId = :projectId)")
+                        .withConditionExpression("attribute_not_exists(#partitionKey) OR (attribute_exists(#partitionKey) AND #projectId = :projectId)")
                         .withNameMap(Map.of(
                                 "#partitionKey", slugSchema.partitionKeyName(),
                                 "#projectId", "projectId"))
                         .withValueMap(Map.of(
-                                ":projectId", projectId)));
+                                ":projectId", slugSchema.toAttrValue("projectId", projectId))));
                 slugCache.invalidate(slug);
             } catch (ConditionalCheckFailedException ex) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);

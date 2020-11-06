@@ -12,15 +12,15 @@ build-server-no-test:
 	cd clearflask-server && mvn install -DskipTests
 
 run-dev:
-	@$(MAKE) _run-dev -j 10
+	@$(MAKE) _run-dev -j 50
 _run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run elastic-run kibana-run
 
 run-dev-frontend:
-	@$(MAKE) _run-dev-frontend -j 10
+	@$(MAKE) _run-dev-frontend -j 50
 _run-dev-frontend: npm-run-dev-frontend nginx-run
 
 run-it-services:
-	@$(MAKE) _run-dev -j 10
+	@$(MAKE) _run-dev -j 50
 _run-dev: elastic-run killbill-run
 
 npm-run-dev-frontend:
@@ -66,7 +66,7 @@ dynamo-run:
 	amazon/dynamodb-local
 
 killbill-run:
-	@$(MAKE) _killbill-run -j 10
+	@$(MAKE) _killbill-run -j 50
 _killbill-run: killbill-engine-run killbill-db-run
 
 killbill-engine-run:

@@ -9,7 +9,7 @@ import SsoSuccessDemoPage from '../app/SsoSuccessDemoPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
-import setTitle, { SetTitle } from '../common/util/titleUtil';
+import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import ContactPage from './ContactPage';
 import { Project } from './DemoApp';

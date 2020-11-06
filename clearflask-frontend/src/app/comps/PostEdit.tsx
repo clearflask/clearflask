@@ -20,7 +20,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   server: Server;
   category: Client.Category;
-  credits: Client.Credits;
+  credits?: Client.Credits;
   loggedInUser?: Client.User;
   idea: Client.Idea;
   open?: boolean;
@@ -119,7 +119,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       />
                     </Grid>
                   )}
-                  {!!this.props.category.support.fund && (
+                  {!!this.props.category.support.fund && this.props.credits && (
                     <Grid item xs={12} className={this.props.classes.row}>
                       <TextField
                         disabled={this.state.isSubmitting}

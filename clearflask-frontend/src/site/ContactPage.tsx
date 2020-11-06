@@ -1,10 +1,9 @@
 import { Box, Button, CardActions, CardHeader, Checkbox, Container, FormControlLabel, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import { History } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { match, Route, RouteComponentProps, withRouter } from 'react-router';
+import { Route, RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';

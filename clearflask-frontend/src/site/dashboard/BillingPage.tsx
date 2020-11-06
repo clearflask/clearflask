@@ -234,7 +234,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         showSetPayment = true;
         setPaymentTitle = 'Add payment method';
         planTitle = 'Your trial plan has expired';
-        planDesc = `To continue your access to your ${this.props.account.plan.title} plan, please add a payment method.`;
+        planDesc = `To continue using your ${this.props.account.plan.title} plan, please add a payment method.`;
         break;
       case Admin.SubscriptionStatus.Blocked:
         paymentTitle = 'Payments are blocked';

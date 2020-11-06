@@ -486,10 +486,13 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       this.renderCommentCount(variant),
       this.renderCreatedDatetime(variant),
     ].filter(notEmpty);
+    // Only show edit button if something else is shown too in list variant
+    if (variant === 'page' || leftSide.length + rightSide.length > 0) {
+      const edit = this.renderEdit(variant);
+      if (edit) rightSide.push(edit);
+    }
+
     if (leftSide.length + rightSide.length === 0) return null;
-    // Only show edit button if something else is shown too
-    const edit = this.renderEdit(variant);
-    if(edit) rightSide.push(edit);
 
     return (
       <div className={this.props.classes.bottomBar}>
@@ -618,7 +621,6 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const isAuthor = this.props.idea && this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId;
     if (!this.props.idea
       || !this.props.category
-      || !this.props.credits
       || (!isMod && !isAuthor)) return null;
 
     const labelEdit = isAuthor

@@ -183,7 +183,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                 .put("email", account.getEmail())
                                 .put("status", account.getStatus())
                                 .put("planid", account.getPlanid())
-                                .put("created", account.getCreated())
+                                .put("created", account.getCreated().getEpochSecond())
                                 .put("projectIds", orNull(account.getProjectIds()))
                                 .build()), XContentType.JSON),
                 RequestOptions.DEFAULT,

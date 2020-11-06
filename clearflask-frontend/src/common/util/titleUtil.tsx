@@ -1,5 +1,4 @@
 import { detectEnv, isProd } from "./detectEnv"
-import React from 'react';
 
 const defaultText = 'ClearFlask: Product Feedback Solution' // NOTE: If changed, change index.html title too
 const titleSuffix = ' | ClearFlask: Product Feedback Solution'

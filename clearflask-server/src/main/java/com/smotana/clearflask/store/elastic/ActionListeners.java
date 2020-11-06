@@ -1,10 +1,13 @@
 package com.smotana.clearflask.store.elastic;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.smotana.clearflask.util.LogUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.ActionListener;
 
 import java.util.function.Consumer;
 
+@Slf4j
 public class ActionListeners {
 
     private ActionListeners() {
@@ -21,6 +24,9 @@ public class ActionListeners {
 
             @Override
             public void onFailure(Exception ex) {
+                if (LogUtil.rateLimitAllowLog("actionListeners-failure")) {
+                    log.warn("Unknown Elasticsearch failure", ex);
+                }
                 settableFuture.setException(ex);
             }
         };

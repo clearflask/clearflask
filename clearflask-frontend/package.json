@@ -73,14 +73,16 @@
     "redux": "4.0.5",
     "redux-promise-middleware": "6.1.2",
     "redux-thunk": "2.3.0",
+    "source-map-explorer": "2.5.0",
     "typescript": "3.7.5",
     "use-query-params": "1.1.6"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "analyze": "GENERATE_SOURCEMAP=true react-scripts build && source-map-explorer 'build/static/js/*.js'"
   },
   "eslintConfig": {
     "extends": "react-app",

@@ -25,6 +25,7 @@ import MobileNotification, { Device } from '../../common/notification/mobileNoti
 import WebNotification from '../../common/notification/webNotification';
 import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
 import { BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY } from '../App';
 import DigitsInput from '../utils/DigitsInput';
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
@@ -583,9 +584,22 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     if (this.storageListener) return;
     this.storageListener = (ev: StorageEvent) => {
       if (ev.key !== BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY) return;
-      this.props.server.dispatch().userBind({
-        projectId: this.props.server.getProjectId(),
-      });
+      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+        this.props.server.dispatch().userCreate({
+          projectId: this.props.server.getProjectId(),
+          userCreate: {
+            email: 'mock@email.com',
+            name: 'Mock User',
+            ...{
+              isSso: true,
+            },
+          },
+        });
+      } else {
+        this.props.server.dispatch().userBind({
+          projectId: this.props.server.getProjectId(),
+        });
+      }
     }
     window.addEventListener('storage', this.storageListener);
   }

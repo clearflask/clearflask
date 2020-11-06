@@ -381,12 +381,35 @@ public class KillBilling extends ManagedService implements Billing {
     public Subscription changePlan(String accountId, String planId) {
         try {
             UUID accountIdKb = getAccount(accountId).getAccountId();
+            Subscription subscription = getSubscription(accountId);
+
+            // Even though we are using START_OF_SUBSCRIPTION changeAlignment
+            // we are manually transitioning from TRIAL to EVERGREEN.
+            // So changing plans here, we need to override the correct phase,
+            // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
+            PhaseType newPhase;
+            switch(subscription.getPhaseType()) {
+                case TRIAL:
+                    newPhase = PhaseType.TRIAL;
+                    break;
+                default:
+                case DISCOUNT:
+                case FIXEDTERM:
+                    log.warn("Changing plan from {} phase, not sure how to align, account id {}",
+                            subscription.getPhaseType(), subscription.getAccountId());
+                    newPhase = subscription.getPhaseType();
+                case EVERGREEN:
+                    newPhase = PhaseType.EVERGREEN;
+                    break;
+            }
+
             kbSubscription.changeSubscriptionPlan(
-                    getSubscription(accountId).getSubscriptionId(),
+                    subscription.getSubscriptionId(),
                     new Subscription()
                             .setExternalKey(accountId)
                             .setAccountId(accountIdKb)
-                            .setPlanName(planId),
+                            .setPlanName(planId)
+                            .setPhaseType(newPhase),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),

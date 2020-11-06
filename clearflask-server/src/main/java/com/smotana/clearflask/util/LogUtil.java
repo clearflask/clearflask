@@ -28,7 +28,7 @@ public class LogUtil {
         boolean allowed = logRateLimiters.getUnchecked(identifier).tryAcquire();
         if (!allowed) {
             if (rateLimitingInfoLog.tryAcquire()) {
-                log.info("Rate limiting log lines for {}", identifier);
+                log.warn("Rate limiting log lines for {}", identifier);
             }
         }
         return allowed;

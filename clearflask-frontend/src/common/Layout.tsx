@@ -6,6 +6,7 @@ import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
+import classNames from 'classnames';
 
 const MENU_WIDTH = '180px';
 const styles = (theme: Theme) => createStyles({
@@ -24,6 +25,7 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.up('sm')]: {
       left: MENU_WIDTH,
     },
+    zIndex: theme.zIndex.drawer - 1,
   },
   barBottom: {
     flex: '1 0',
@@ -36,6 +38,9 @@ const styles = (theme: Theme) => createStyles({
   },
   drawerPaper: {
     width: MENU_WIDTH,
+  },
+  menuPaper: {
+    zIndex: theme.zIndex.drawer + 1,
   },
   previewPaper: {
     overflowY: 'scroll' as 'scroll',
@@ -182,10 +187,11 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
                 open={this.state.mobileMenuOpen}
                 onClose={this.handleDrawerToggle.bind(this)}
                 classes={{
-                  paper: this.props.classes.drawerPaper,
+                  paper: classNames(this.props.classes.menuPaper, this.props.classes.drawerPaper),
                 }}
                 ModalProps={{
-                  container: () => this.containerRef.current!
+                  container: () => this.containerRef.current!,
+                  keepMounted: true,
                 }}
               >
                 <div className={this.props.classes.toolbar} />
@@ -238,14 +244,15 @@ class Layout extends Component<Props & WithStyles<typeof styles, true>, State> {
               )}
             </Drawer>
           </div>
-          {this.props.preview && (
+          {preview && (
             <React.Fragment>
               <Hidden smDown implementation='css'>
                 <div style={{ width: this.state.previewWidth }}>&nbsp;</div>
               </Hidden>
               <Hidden mdUp implementation='css'>
                 <Drawer
-                  variant="temporary"
+                  variant='persistent'
+                  SlideProps={{ mountOnEnter: true }}
                   anchor='right'
                   open={this.state.mobilePreviewOpen}
                   onClose={this.handleDrawerToggle.bind(this)}

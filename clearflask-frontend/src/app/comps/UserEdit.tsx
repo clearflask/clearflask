@@ -199,7 +199,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 disabled={this.state.isSubmitting}
-                label='Balance adjustment'
+                label='Balance'
                 value={this.state.balanceAdjustment || ''}
                 error={balanceAdjustmentHasError}
                 helperText={balanceAdjustmentHasError ? 'Invalid number' : (
@@ -215,7 +215,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
-                label='Reason for adjustment'
+                label='Reason'
                 value={this.state.balanceDescription || ''}
                 onChange={e => this.setState({ balanceDescription: e.target.value })}
               />
