@@ -1,4 +1,5 @@
 import { detectEnv, isProd } from "./detectEnv"
+import React from 'react';
 
 const defaultText = 'ClearFlask: Product Feedback Solution' // NOTE: If changed, change index.html title too
 const titleSuffix = ' | ClearFlask: Product Feedback Solution'
@@ -17,5 +18,10 @@ function setTitle(text?: string, forceShort?: boolean) {
   }
   document.title = title;
 }
+
+export const SetTitle = (props: { title?: string, forceShort?: boolean }) => {
+  setTitle(props.title, props.forceShort);
+  return null;
+};
 
 export default setTitle;

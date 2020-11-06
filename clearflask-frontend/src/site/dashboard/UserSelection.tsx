@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import { ReduxState, Server, Status } from '../../api/server';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
+import UserDisplay from '../../common/UserDisplay';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
 const styles = (theme: Theme) => createStyles({
@@ -134,7 +135,8 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 
   static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
     const userLabel: Label = {
-      label: `${user.name || 'anonymous'} ${user.email || ''}`,
+      label: (<UserDisplay user={user} variant='text' suppressTypography />),
+      // label: `${user.name || 'anonymous'} ${user.email || ''}`,
       value: user.userId,
     };
     return userLabel;

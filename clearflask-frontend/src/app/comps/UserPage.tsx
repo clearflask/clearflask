@@ -73,6 +73,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       if (this.state.userAdmin && this.props.credits) {
         overview = (
           <UserEdit
+            className={this.props.classes.overview}
             server={this.props.server}
             user={this.state.userAdmin}
             credits={this.props.credits}

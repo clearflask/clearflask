@@ -46,19 +46,26 @@ class ScrollAnchor extends Component<Props & RouteComponentProps> {
   constructor(props) {
     super(props);
 
-    if (this.props.scrollOnNavigate || !!this.props.scrollOnStateName) {
+    if (this.props.scrollOnNavigate || !!this.props.scrollOnStateName || this.props.scrollOnAnchorTag) {
       this.unlisten = this.props.history.listen((location, action) => {
-        if (action !== 'PUSH') {
-          return;
-        }
-        if (this.props.scrollOnNavigate
-          && !location.state?.[SCROLL_TO_STATE_KEY]
-          && !this.props.location?.hash) {
+        if (action !== 'POP'
+          && !!this.props.scrollOnStateName
+          && this.props.scrollOnStateName === location.state?.[SCROLL_TO_STATE_KEY]) {
           this.scrollNow();
           return;
         }
-        if (!!this.props.scrollOnStateName
-          && this.props.scrollOnStateName === location.state?.[SCROLL_TO_STATE_KEY]) {
+
+        if (action !== 'POP'
+          && this.props.scrollOnAnchorTag
+          && location?.hash.substr(1) === this.props.scrollOnAnchorTag) {
+          this.scrollNow();
+          return;
+        }
+
+        if (action === 'PUSH'
+          && this.props.scrollOnNavigate
+          && !location.state?.[SCROLL_TO_STATE_KEY]
+          && !location?.hash) {
           this.scrollNow();
           return;
         }

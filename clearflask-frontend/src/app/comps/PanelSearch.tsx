@@ -45,6 +45,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   style?: React.CSSProperties;
   className?: string;
+  placeholder?: string;
   server: Server;
   search?: Partial<Client.IdeaSearch>;
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
@@ -77,7 +78,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
       <InViewObserver ref={this.inViewObserverRef}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
           <SelectionPicker
-            placeholder='Search'
+            placeholder={this.props.placeholder || 'Search'}
             value={controls.values}
             menuIsOpen={this.state.menuIsOpen}
             inputValue={this.state.searchValue || ''}

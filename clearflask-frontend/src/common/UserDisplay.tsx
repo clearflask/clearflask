@@ -20,6 +20,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  variant?: 'button' | 'text';
   user: {
     userId: string;
     name?: string;
@@ -27,14 +28,23 @@ interface Props {
   } | Client.User;
   onClick?: (userId: string) => void;
   disabled?: boolean;
+  suppressTypography?: boolean;
 }
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
-    const user = (
-      <Typography variant='caption'>
-        <ModStar name={DisplayUserName(this.props.user)} isMod={this.props.user.isMod} />
-      </Typography>
+    var user = (
+      <ModStar name={DisplayUserName(this.props.user)} isMod={this.props.user.isMod} />
     );
+    if(!this.props.suppressTypography) {
+      user = (
+        <Typography variant='caption'>
+          {user}
+        </Typography>
+      );
+    }
+    if(this.props.variant === 'text') {
+      return user;
+    }
     return this.props.onClick ? (
       <Button
         key={`user-${this.props.user.userId}`}

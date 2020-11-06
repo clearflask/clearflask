@@ -485,10 +485,11 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       ...(this.renderTags(variant) || []),
       this.renderCommentCount(variant),
       this.renderCreatedDatetime(variant),
-      this.renderEdit(variant),
     ].filter(notEmpty);
-
     if (leftSide.length + rightSide.length === 0) return null;
+    // Only show edit button if something else is shown too
+    const edit = this.renderEdit(variant);
+    if(edit) rightSide.push(edit);
 
     return (
       <div className={this.props.classes.bottomBar}>

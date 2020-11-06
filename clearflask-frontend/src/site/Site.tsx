@@ -8,12 +8,14 @@ import ErrorPage from '../app/ErrorPage';
 import SsoSuccessDemoPage from '../app/SsoSuccessDemoPage';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import setTitle from '../common/util/titleUtil';
+import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
+import setTitle, { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import ContactPage from './ContactPage';
 import { Project } from './DemoApp';
 import LandingPage from './LandingPage';
 import LegalPage from './LegalPage';
+import PricingPage from './PricingPage';
 import SigninPage from './SigninPage';
 import TrialSignupPage from './TrialSignupPage';
 
@@ -80,7 +82,12 @@ const styles = (theme: Theme) => createStyles({
   },
   menuButton: {
     textTransform: 'unset',
-  }
+  },
+  menuItemsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
 });
 
 interface MenuDropdown {
@@ -92,6 +99,7 @@ interface MenuButton {
   type: 'button';
   title: string;
   path: string;
+  scrollState?: string;
 }
 
 interface State {
@@ -105,14 +113,15 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
 
   render() {
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
-      { type: 'button', path: '/#collect', title: 'Collect' },
-      { type: 'button', path: '/#prioritize', title: 'Prioritize' },
-      { type: 'button', path: '/#engage', title: 'Engage' },
-      { type: 'button', path: '/#pricing', title: 'Pricing' },
+      { type: 'button', path: '/', scrollState: 'collect', title: 'Collect' },
+      { type: 'button', path: '/', scrollState: 'prioritize', title: 'Prioritize' },
+      { type: 'button', path: '/', scrollState: 'engage', title: 'Engage' },
+      { type: 'button', path: '/', scrollState: 'customize', title: 'Customize' },
     ];
     const menuItemsRight: Array<MenuButton | MenuDropdown> = [
       { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
-      { type: 'button', path: '/dashboard', title: 'Log in' },
+      { type: 'button', path: '/pricing', title: 'Pricing' },
+      { type: 'button', path: '/dashboard', title: 'Dashboard' },
     ];
     return (
       <div className={this.props.classes.growAndFlex}>
@@ -137,7 +146,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                     <MenuItem
                       key={menuItem.path}
                       component={Link as any}
-                      to={menuItem.path}
+                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
                       onClick={() => this.setState({ menuOpen: false })}
                     >{menuItem.title}</MenuItem>
                   ) : [(
@@ -165,39 +174,43 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                 ClearFlask
               </Link>
               <Hidden xsDown implementation='css'>
-                {menuItemsLeft.map(menuItem => menuItem.type === 'button' ? (
-                  <Button
-                    key={menuItem.path}
-                    className={this.props.classes.menuButton}
-                    component={Link}
-                    to={menuItem.path}
-                  >{menuItem.title}</Button>
-                ) : (
-                    <DropdownButton
-                      key={menuItem.title}
-                      buttonClassName={this.props.classes.menuButton}
-                      label={menuItem.title}
-                      links={menuItem.items}
-                    />
-                  ))}
+                <div className={this.props.classes.menuItemsContainer}>
+                  {menuItemsLeft.map(menuItem => menuItem.type === 'button' ? (
+                    <Button
+                      key={menuItem.path}
+                      className={this.props.classes.menuButton}
+                      component={Link}
+                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
+                    >{menuItem.title}</Button>
+                  ) : (
+                      <DropdownButton
+                        key={menuItem.title}
+                        buttonClassName={this.props.classes.menuButton}
+                        label={menuItem.title}
+                        links={menuItem.items}
+                      />
+                    ))}
+                </div>
               </Hidden>
               <div className={this.props.classes.grow} />
               <Hidden xsDown implementation='css'>
-                {menuItemsRight.map(menuItem => menuItem.type === 'button' ? (
-                  <Button
-                    key={menuItem.path}
-                    className={this.props.classes.menuButton}
-                    component={Link}
-                    to={menuItem.path}
-                  >{menuItem.title}</Button>
-                ) : (
-                    <DropdownButton
-                      key={menuItem.title}
-                      buttonClassName={this.props.classes.menuButton}
-                      label={menuItem.title}
-                      links={menuItem.items}
-                    />
-                  ))}
+                <div className={this.props.classes.menuItemsContainer}>
+                  {menuItemsRight.map(menuItem => menuItem.type === 'button' ? (
+                    <Button
+                      key={menuItem.path}
+                      className={this.props.classes.menuButton}
+                      component={Link}
+                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
+                    >{menuItem.title}</Button>
+                  ) : (
+                      <DropdownButton
+                        key={menuItem.title}
+                        buttonClassName={this.props.classes.menuButton}
+                        label={menuItem.title}
+                        links={menuItem.items}
+                      />
+                    ))}
+                </div>
               </Hidden>
             </Toolbar>
           </Container>
@@ -205,38 +218,42 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
           <MuiAnimatedSwitch>
-            <Route exact path={'/login'} render={props => {
-              setTitle('Login');
-              return (<SigninPage {...props} />);
-            }} />
-            <Route path={'/contact'} render={props => {
-              setTitle('Contact');
-              return (<ContactPage {...props} />);
-            }} />
-            <Route exact path={'/signup'} render={props => {
-              setTitle('Sign up');
-              return (<TrialSignupPage {...props} />);
-            }} />
-            <Route exact path={'/sso'} render={props => {
-              setTitle('Single sign-on');
-              return (<SsoSuccessDemoPage {...props} />);
-            }} />
-            <Route exact path={'/(tos|terms|terms-of-service)'} render={props => {
-              setTitle('Terms of Service');
-              return (<LegalPage type='terms' />);
-            }} />
-            <Route exact path={'/(privacy|policy|privacy-policy)'} render={props => {
-              setTitle('Privacy Policy');
-              return (<LegalPage type='privacy' />);
-            }} />
-            <Route exact path={`/`} component={props => {
-              setTitle();
-              return (<LandingPage />);
-            }} />
-            <Route component={props => {
-              setTitle("Page not found");
-              return (<ErrorPage msg='Page not found' variant='error' />);
-            }} />
+          <Route exact path='/login'>
+              <SetTitle title='Login' />
+              <SigninPage />
+            </Route>
+            <Route path='/contact'>
+              <SetTitle title='Contact' />
+              <ContactPage />
+            </Route>
+            <Route exact path='/pricing'>
+              <SetTitle title='Pricing' />
+              <PricingPage />
+            </Route>
+            <Route exact path='/signup'>
+              <SetTitle title='Sign up' />
+              <TrialSignupPage />
+            </Route>
+            <Route exact path='/sso'>
+              <SetTitle title='Single sign-on' />
+              <SsoSuccessDemoPage />
+            </Route>
+            <Route exact path='/(tos|terms|terms-of-service)'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='terms' />
+            </Route>
+            <Route exact path='/(privacy|policy|privacy-policy)'>
+              <SetTitle title='Terms of Service' />
+              <LegalPage type='privacy' />
+            </Route>
+            <Route exact path='/'>
+              <SetTitle />
+              <LandingPage />
+            </Route>
+            <Route>
+              <SetTitle title='Page not found' />
+              <ErrorPage msg='Page not found' variant='error' />
+            </Route>
           </MuiAnimatedSwitch>
         </div>
         <div className={this.props.classes.bottomBar}>

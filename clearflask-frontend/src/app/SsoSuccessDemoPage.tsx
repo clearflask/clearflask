@@ -1,6 +1,6 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import { RouteComponentProps } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router';
 import { SSO_TOKEN_PARAM_NAME } from './App';
 import ErrorPage from './ErrorPage';
 
@@ -20,4 +20,4 @@ class SsoSuccessDemoPage extends Component<Props & RouteComponentProps & WithSty
   }
 }
 
-export default withStyles(styles, { withTheme: true })(SsoSuccessDemoPage);
+export default withStyles(styles, { withTheme: true })(withRouter(SsoSuccessDemoPage));

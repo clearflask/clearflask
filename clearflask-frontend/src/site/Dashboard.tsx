@@ -201,12 +201,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     var previewBar;
     var previewBarInfo;
     var crumbs: { name: string, slug: string }[] | undefined;
-    var showProjectSelect: boolean = false;
+    var allowProjectUserSelect: boolean = false;
     var showCreateProjectWarning: boolean = false;
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -244,7 +244,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'posts':
         setTitle('Posts - Dashboard');
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -268,7 +268,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'post':
         // Page title set by PostPage
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -283,7 +283,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'user':
         // Page title set by UserPage
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -298,7 +298,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'comments':
         setTitle('Comments');
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -316,7 +316,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'users':
         setTitle('Users - Dashboard');
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           showCreateProjectWarning = true;
           break;
@@ -379,7 +379,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         );
         break;
       case 'settings':
-        showProjectSelect = true;
+        allowProjectUserSelect = true;
         if (!activeProject) {
           setTitle('Settings - Dashboard');
           showCreateProjectWarning = true;
@@ -460,7 +460,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           const postId = this.state.quickView.id;
           previewBarInfo = (
             <div className={this.props.classes.previewBarText}>
-              Preview post as&nbsp;
+              Viewing post as&nbsp;
               <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                 <UserDisplayMe variant='text' />
               </Provider>
@@ -479,7 +479,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           const userId = this.state.quickView.id;
           previewBarInfo = (
             <div className={this.props.classes.previewBarText}>
-              Preview user as&nbsp;
+              Viewing user profile as&nbsp;
               <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
                 <UserDisplayMe variant='text' />
               </Provider>
@@ -552,32 +552,34 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             }}
           />
         )}
-        <Collapse in={!!showProjectSelect}>
-          <SelectionPicker
-            className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
-            value={[selectedLabel]}
-            overrideComponents={{ DropdownIndicator: null }}
-            options={projectOptions}
-            helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
-            inputMinWidth={150}
-            isMulti={false}
-            bare={false}
-            onValueChange={(labels, action) => {
-              if (labels.length === 1) {
-                if (labels[0].value === '__CREATE__') {
-                  this.pageClicked('create');
-                } else {
-                  localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, labels[0].value);
-                  this.setState({
-                    selectedProjectId: labels[0].value,
-                    quickView: undefined,
-                  });
+        {projects.length > 1 && (
+          <Collapse in={!!allowProjectUserSelect}>
+            <SelectionPicker
+              className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
+              value={[selectedLabel]}
+              overrideComponents={{ DropdownIndicator: null }}
+              options={projectOptions}
+              helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
+              inputMinWidth={150}
+              isMulti={false}
+              bare={false}
+              onValueChange={(labels, action) => {
+                if (labels.length === 1) {
+                  if (labels[0].value === '__CREATE__') {
+                    this.pageClicked('create');
+                  } else {
+                    localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, labels[0].value);
+                    this.setState({
+                      selectedProjectId: labels[0].value,
+                      quickView: undefined,
+                    });
+                  }
                 }
-              }
-            }}
-          />
-        </Collapse>
-        <Collapse in={!!showProjectSelect}>
+              }}
+            />
+          </Collapse>
+        )}
+        <Collapse in={!!allowProjectUserSelect}>
           {activeProject && (
             <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
               <UserSelection

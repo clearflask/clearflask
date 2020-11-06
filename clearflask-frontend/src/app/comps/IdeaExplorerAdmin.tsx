@@ -36,8 +36,7 @@ const styles = (theme: Theme) => createStyles({
     marginBottom: -20,
   },
   controls: {
-    display: 'flex',
-    justifyContent: 'center',
+    maxWidth: 600,
   },
 });
 
@@ -88,19 +87,6 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
       };
     return (
       <div className={this.props.classes.container}>
-        <div className={this.props.classes.controls}>
-          <PanelSearch
-            className={this.props.classes.search}
-            server={this.props.server}
-            search={this.state.search}
-            minWidth={200}
-            onSearchChanged={search => this.setState({ search: search })}
-            explorer={{
-              search: {},
-              display: {},
-              allowSearch: { enableSort: false, enableSearchText: false, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-            }}
-          />
           {/* <FormControlLabel
             className={this.props.classes.expandSwitchLabel}
             control={(
@@ -113,27 +99,46 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
             )}
             label={this.state.expanded ? 'Expanded' : 'Collapsed'}
           /> */}
+        
+        <div className={this.props.classes.controls}>
+          <PanelSearch
+            className={this.props.classes.search}
+            server={this.props.server}
+            search={this.state.search}
+            placeholder='Filter'
+            onSearchChanged={search => this.setState({ search: search })}
+            explorer={{
+              search: {},
+              display: {},
+              allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+            }}
+          />
         </div>
-        <div className={this.props.classes.board}>
-          {this.renderPanel('Trending', {
-            search: {
-              ...this.state.search,
-              sortBy: Client.IdeaSearchSortByEnum.Trending,
-            }, display
-          })}
-          {this.renderPanel('New', {
-            search: {
-              ...this.state.search,
-              sortBy: Client.IdeaSearchSortByEnum.New,
-            }, display
-          })}
-          {this.renderPanel('Top', {
-            search: {
-              ...this.state.search,
-              sortBy: Client.IdeaSearchSortByEnum.Top,
-            }, display
-          })}
-        </div>
+        <DividerCorner
+          height='50%'
+          width={116}
+        >
+          <div className={this.props.classes.board}>
+            {this.renderPanel('Trending', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.Trending,
+              }, display
+            })}
+            {this.renderPanel('New', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.New,
+              }, display
+            })}
+            {this.renderPanel('Top', {
+              search: {
+                ...this.state.search,
+                sortBy: Client.IdeaSearchSortByEnum.Top,
+              }, display
+            })}
+          </div>
+        </DividerCorner>
       </div>
     );
   }

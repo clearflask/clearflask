@@ -11,6 +11,7 @@ import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import DividerCorner from '../utils/DividerCorner';
+import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -23,6 +24,7 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  className?: string;
   server: Server;
   user: Admin.UserAdmin;
   credits: Client.Credits;
@@ -309,12 +311,12 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     );
 
     editForm = this.props.isInsideDialog ? (
-      <React.Fragment>
+      <div className={this.props.className}>
         <DialogTitle>Edit user</DialogTitle>
         {editForm}
-      </React.Fragment>
+      </div>
     ) : (
-        <DividerCorner title='Edit User' className={this.props.classes.dividerCorner}>
+        <DividerCorner title='Edit User' className={classNames(this.props.className, this.props.classes.dividerCorner)}>
           {editForm}
         </DividerCorner>
       );

@@ -5,7 +5,7 @@ import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
-import { NavLink, Redirect, RouteComponentProps } from 'react-router-dom';
+import { NavLink, Redirect, RouteComponentProps, withRouter } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -234,4 +234,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     accountStatus: state.account.account.status,
     plans: state.plans.plans.plans,
   };
-})(withStyles(styles, { withTheme: true })(SignupPage));
+})(withStyles(styles, { withTheme: true })(withRouter(SignupPage)));

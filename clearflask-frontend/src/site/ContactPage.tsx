@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import { History } from 'history';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { match, Route } from 'react-router';
+import { match, Route, RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
@@ -121,8 +121,6 @@ const forms: ContactForm[] = [
 ];
 
 interface Props {
-  history: History;
-  match: match;
 }
 interface ConnectProps {
   accountEmail?: string;
@@ -131,7 +129,7 @@ interface State {
   isSubmitting?: boolean;
   // Also includes dynamic fields not covered by this interface
 }
-class ContactPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class ContactPage extends Component<Props & RouteComponentProps & ConnectProps & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
     super(props);
@@ -336,4 +334,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     accountEmail: state.account.account.account?.email,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(ContactPage));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(ContactPage)));

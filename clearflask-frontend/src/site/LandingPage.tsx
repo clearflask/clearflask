@@ -299,7 +299,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCollectFeedback() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnAnchorTag='collect' positionVertical='start' />
+        <ScrollAnchor scrollOnStateName='collect' positionVertical='start' />
         <Demo
           variant='heading-main'
           title='Ask your customers what they need'
@@ -395,7 +395,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderPrioritization() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnAnchorTag='prioritize' positionVertical='start' />
+        <ScrollAnchor scrollOnStateName='prioritize' positionVertical='start' />
         <Demo
           variant='heading-main'
           title='Give your most-valuable customers a proportionate voice'
@@ -562,13 +562,14 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderEngagement() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnAnchorTag='engage' positionVertical='start' />
+        <ScrollAnchor scrollOnStateName='engage' positionVertical='start' />
         <Demo
           title='Build a community around your product'
           description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
           variant='heading-main'
           alignItems='baseline'
           initialSubPath='/embed/demo'
+          demoFixedHeight={520}
           imagePath='/img/landing/community.svg'
           imageLocation='above'
           // scale={0.7}
@@ -656,6 +657,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCustomize() {
     return (
       <React.Fragment>
+        <ScrollAnchor scrollOnStateName='customize' positionVertical='start' />
         <Block
           title='Make it your own'
           imagePath='/img/landing/customize.svg'
@@ -799,7 +801,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderPricing() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnAnchorTag='pricing' positionVertical='start' />
+        <ScrollAnchor scrollOnStateName='pricing' positionVertical='start' />
         <PricingPage />
       </React.Fragment>
     );

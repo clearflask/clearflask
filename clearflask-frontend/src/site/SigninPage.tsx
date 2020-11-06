@@ -4,7 +4,7 @@ import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Redirect, RouteComponentProps } from 'react-router';
+import { Redirect, RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
@@ -155,4 +155,4 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     cfJwt: state.account.account.account?.cfJwt,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(SigninPage));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(SigninPage)));
