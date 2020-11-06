@@ -299,7 +299,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderCollectFeedback() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnStateName='collect' positionVertical='start' />
+        <ScrollAnchor scrollOnAnchorTag='collect' positionVertical='start' />
         <Demo
           variant='heading-main'
           title='Ask your customers what they need'
@@ -395,7 +395,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderPrioritization() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnStateName='prioritize' positionVertical='start' />
+        <ScrollAnchor scrollOnAnchorTag='prioritize' positionVertical='start' />
         <Demo
           variant='heading-main'
           title='Give your most-valuable customers a proportionate voice'
@@ -562,7 +562,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderEngagement() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnStateName='engage' positionVertical='start' />
+        <ScrollAnchor scrollOnAnchorTag='engage' positionVertical='start' />
         <Demo
           title='Build a community around your product'
           description='Whether you are starting out or have a product on the market, keep your users updated at every step. Let them be involved in your decision making and shape your product.'
@@ -799,7 +799,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderPricing() {
     return (
       <React.Fragment>
-        <ScrollAnchor scrollOnStateName='pricing' positionVertical='start' />
+        <ScrollAnchor scrollOnAnchorTag='pricing' positionVertical='start' />
         <PricingPage />
       </React.Fragment>
     );

@@ -1,4 +1,4 @@
-import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Slide, Toolbar, useScrollTrigger } from '@material-ui/core';
+import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component } from 'react';
@@ -92,7 +92,6 @@ interface MenuButton {
   type: 'button';
   title: string;
   path: string;
-  scrollTo?: string;
 }
 
 interface State {
@@ -106,10 +105,10 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
 
   render() {
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
-      { type: 'button', path: '/', scrollTo: 'collect', title: 'Collect' },
-      { type: 'button', path: '/', scrollTo: 'prioritize', title: 'Prioritize' },
-      { type: 'button', path: '/', scrollTo: 'engage', title: 'Engage' },
-      { type: 'button', path: '/', scrollTo: 'pricing', title: 'Pricing' },
+      { type: 'button', path: '/#collect', title: 'Collect' },
+      { type: 'button', path: '/#prioritize', title: 'Prioritize' },
+      { type: 'button', path: '/#engage', title: 'Engage' },
+      { type: 'button', path: '/#pricing', title: 'Pricing' },
     ];
     const menuItemsRight: Array<MenuButton | MenuDropdown> = [
       { type: 'button', path: '/contact/demo', title: 'Schedule a demo' },
