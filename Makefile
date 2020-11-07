@@ -13,7 +13,7 @@ build-server-no-test:
 
 run-dev:
 	@$(MAKE) _run-dev -j 50
-_run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run elastic-run kibana-run
+_run-dev: killbill-run kaui-run tomcat-run-dev nginx-run dynamo-run ses-run elastic-run kibana-run
 
 run-dev-frontend:
 	@$(MAKE) _run-dev-frontend -j 50
@@ -64,6 +64,11 @@ dynamo-run:
 	docker run --rm --name clearflask-dynamo \
 	-p 7000:8000 \
 	amazon/dynamodb-local
+
+ses-run:
+	docker run --rm --name clearflask-ses \
+	-p 9001:9001 \
+	jdelibas/aws-ses-local
 
 killbill-run:
 	@$(MAKE) _killbill-run -j 50

@@ -83,6 +83,7 @@ interface Props {
 interface ConnectProps {
   accountStatus?: Status;
   account?: AdminClient.AccountAdmin;
+  isSuperAdmin: boolean;
   configsStatus?: Status;
   bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
@@ -524,7 +525,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     const isSelectProjectUserInMenu = !quickViewEnabled;
     const selectProjectUser = (
       <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
-        {!!this.props.account?.isSuperAdmin && (
+        {!!this.props.isSuperAdmin && (
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
@@ -547,7 +548,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                     email,
                   },
                 }))
-                .then(() => !!this.state.quickView && this.setState({ quickView: undefined }));
+                  .then(() => !!this.state.quickView && this.setState({ quickView: undefined }));
               }
             }}
           />
@@ -735,6 +736,7 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
     account: state.account.account.account,
+    isSuperAdmin: state.account.isSuperAdmin,
     configsStatus: state.configs.configs.status,
     bindByProjectId: state.configs.configs.byProjectId,
   };

@@ -12,7 +12,7 @@
 
     <units>
         <!-- If changed, also change unit name in KillBilling.java -->
-        <unit prettyName="ActiveUsers" name="active-user"/>
+        <unit prettyName="Active Users" name="active-user"/>
     </units>
 
     <products>
@@ -78,10 +78,10 @@
     </rules>
 
     <plans>
-        <plan name="growth-monthly">
+        <plan name="growth-monthly" prettyName="Growth Plan">
             <product>growth</product>
             <initialPhases>
-                <phase type="TRIAL">
+                <phase type="TRIAL" prettyName="Trial">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
                         <unit>MONTHS</unit>
@@ -97,7 +97,7 @@
                     </fixed>
                 </phase>
             </initialPhases>
-            <finalPhase type="EVERGREEN">
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
                 <duration>
                     <unit>UNLIMITED</unit>
                 </duration>
@@ -150,10 +150,10 @@
                 </usages>
             </finalPhase>
         </plan>
-        <plan name="standard-monthly">
+        <plan name="standard-monthly" prettyName="Standard Plan">
             <product>standard</product>
             <initialPhases>
-                <phase type="TRIAL">
+                <phase type="TRIAL" prettyName="Trial">
                     <duration>
                         <!-- Trial is terminated based on PlanStore.java:STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES -->
                         <unit>MONTHS</unit>
@@ -169,7 +169,7 @@
                     </fixed>
                 </phase>
             </initialPhases>
-            <finalPhase type="EVERGREEN">
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
                 <duration>
                     <unit>UNLIMITED</unit>
                 </duration>
@@ -222,10 +222,10 @@
                 </usages>
             </finalPhase>
         </plan>
-        <plan name="flat-yearly">
+        <plan name="flat-yearly" prettyName="Flat Plan">
             <product>flat</product>
             <initialPhases>
-                <phase type="TRIAL">
+                <phase type="TRIAL" prettyName="Trial">
                     <duration>
                         <unit>DAYS</unit>
                         <number>14</number>
@@ -240,7 +240,7 @@
                     </fixed>
                 </phase>
             </initialPhases>
-            <finalPhase type="EVERGREEN">
+            <finalPhase type="EVERGREEN" prettyName="Annual Billing">
                 <duration>
                     <unit>UNLIMITED</unit>
                 </duration>
@@ -258,7 +258,7 @@
     </plans>
 
     <priceLists>
-        <defaultPriceList name="DEFAULT">
+        <defaultPriceList name="DEFAULT" prettyName="Default">
             <plans>
                 <plan>growth-monthly</plan>
                 <plan>standard-monthly</plan>

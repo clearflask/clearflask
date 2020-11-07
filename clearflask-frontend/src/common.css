@@ -6,9 +6,6 @@ html {
   color: #333;
   -webkit-font-smoothing: antialiased;
   height: 100%;
-  /* Prevent scrollbar from moving centered content around; use scrollbar-gutter when it comes out */
-  min-width: 100vw;
-  overflow-x: hidden;
 }
 
 a {
