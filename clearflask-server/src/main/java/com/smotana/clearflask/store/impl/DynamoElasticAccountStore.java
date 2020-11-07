@@ -225,7 +225,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         .source(new SearchSourceBuilder()
                                 .fetchSource(false)
                                 .query(queryBuilder)),
-                cursorOpt, ImmutableList.of("name"), Optional.empty(), useAccurateCursor, pageSizeOpt, configSearch, ImmutableSet.of());
+                cursorOpt, ImmutableList.of(), Optional.empty(), useAccurateCursor, pageSizeOpt, configSearch, ImmutableSet.of());
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         if (hits.length == 0) {

@@ -233,7 +233,7 @@ public class DynamoProjectStore implements ProjectStore {
                                 "#partitionKey", slugSchema.partitionKeyName(),
                                 "#projectId", "projectId"))
                         .withValueMap(Map.of(
-                                ":projectId", slugSchema.toAttrValue("projectId", projectId))));
+                                ":projectId", projectId)));
                 slugCache.invalidate(slug);
             } catch (ConditionalCheckFailedException ex) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
@@ -255,7 +255,7 @@ public class DynamoProjectStore implements ProjectStore {
             // Undo creating slug just now
             slugSchema.table()
                     .deleteItem(new DeleteItemSpec()
-                            .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
+                            .withConditionExpression("attribute_exists(#partitionKey) AND #projectId = :projectId")
                             .withNameMap(Map.of(
                                     "#partitionKey", slugSchema.partitionKeyName(),
                                     "#projectId", "projectId"))
@@ -270,7 +270,7 @@ public class DynamoProjectStore implements ProjectStore {
             try {
                 slugSchema.table()
                         .putItem(new PutItemSpec()
-                                .withConditionExpression("attribute_exists(#partitionKey) and #projectId = :projectId")
+                                .withConditionExpression("attribute_exists(#partitionKey) AND #projectId = :projectId")
                                 .withNameMap(Map.of(
                                         "#partitionKey", slugSchema.partitionKeyName(),
                                         "#projectId", "projectId"))
@@ -282,7 +282,7 @@ public class DynamoProjectStore implements ProjectStore {
                                         Instant.now().plus(config.slugExpireAfterMigration()).getEpochSecond()))));
                 slugCache.invalidate(slugPrevious);
             } catch (ConditionalCheckFailedException ex) {
-                log.warn("Updating slug, but previous slug already doesn't exist?", ex);
+                log.warn("Updating slug, but previous slug already doesn't exist? {}", slugPrevious, ex);
             }
         }
         projectCache.invalidate(projectId);

@@ -65,9 +65,11 @@ public interface ProjectStore {
         @NonNull
         String projectId;
 
+        /** Config version mainly used to make sure we don't overwrite each other's changes */
         @NonNull
         String version;
 
+        /** Schema version mainly used for automatic upgrades */
         Long schemaVersion;
 
         @NonNull
