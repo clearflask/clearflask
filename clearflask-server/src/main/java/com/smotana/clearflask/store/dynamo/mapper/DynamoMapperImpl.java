@@ -1,11 +1,31 @@
 package com.smotana.clearflask.store.dynamo.mapper;
 
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BillingMode;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
+import com.amazonaws.services.dynamodbv2.model.Projection;
+import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -15,15 +35,33 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.*;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionMarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.CollectionUnMarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.MarshallerItem;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerAttrVal;
+import com.smotana.clearflask.store.dynamo.mapper.DynamoConvertersProxy.UnMarshallerItem;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.ArrayUtils;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -177,40 +215,6 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 ? table.getIndex(tableName)
                 : null;
 
-        Map<String, Function<Item, Object>> keyFromItemToVal = Maps.newHashMap();
-        Map<String, Function<Map<String, AttributeValue>, Object>> keyFromAttrMapToVal = Maps.newHashMap();
-        for (Field field : objClazz.getDeclaredFields()) {
-            for (DynamoTable dt : dynamoTables) {
-                String fieldName = field.getName();
-                Arrays.stream(dt.rangeKeys()).anyMatch(fieldName::equals);
-                int partitionKeyIndex = ArrayUtils.indexOf(dt.partitionKeys(), fieldName);
-                int rangeKeyIndex = ArrayUtils.indexOf(dt.rangeKeys(), fieldName);
-                if (partitionKeyIndex == -1 && rangeKeyIndex == -1) {
-                    continue;
-                }
-
-                Class<?> fieldClazz = field.getType();
-                String dtKeyName;
-                int dtKeyIndex;
-                if (partitionKeyIndex != -1 &&
-                        (rangeKeyIndex == -1 || dt.partitionKeys().length <= dt.rangeKeys().length)) {
-                    dtKeyName = getPartitionKeyName(dt.type(), dt.indexNumber());
-                    dtKeyIndex = partitionKeyIndex;
-                } else {
-                    dtKeyName = getRangeKeyName(dt.type(), dt.indexNumber());
-                    dtKeyIndex = rangeKeyIndex + 1; // +1 for rangePrefix
-                }
-                keyFromItemToVal.put(fieldName, (item) -> GsonProvider.GSON.fromJson(
-                        StringSerdeUtil.unMergeString(checkNotNull(item.getString(dtKeyName),
-                                "Key %s is missing trying to retrieve %s for %s", dtKeyName, fieldName, fieldClazz))
-                                [dtKeyIndex], fieldClazz));
-                keyFromAttrMapToVal.put(fieldName, (attrMap) -> GsonProvider.GSON.fromJson(
-                        StringSerdeUtil.unMergeString(checkNotNull(attrMap.get(dtKeyName),
-                                "Key %s is missing trying to retrieve %s for %s", dtKeyName, fieldName, fieldClazz)
-                                .getS())[dtKeyIndex], fieldClazz));
-            }
-        }
-
         ImmutableMap.Builder<String, MarshallerItem> fieldMarshallersBuilder = ImmutableMap.builder();
         ImmutableMap.Builder<String, UnMarshallerItem> fieldUnMarshallersBuilder = ImmutableMap.builder();
         ImmutableMap.Builder<String, MarshallerAttrVal> fieldAttrMarshallersBuilder = ImmutableMap.builder();
@@ -243,27 +247,19 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
             // fromItem
             UnMarshallerItem unMarshallerItem = findUnMarshallerItem(collectionClazz, fieldClazz);
-            if (keyFromItemToVal.containsKey(fieldName)) {
-                fromItemToCtorArgsListBuilder.add(keyFromItemToVal.get(fieldName));
-            } else {
-                fromItemToCtorArgsListBuilder.add((item) ->
-                        (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
-                                ? null
-                                : unMarshallerItem.unmarshall(fieldName, item));
-            }
+            fromItemToCtorArgsListBuilder.add((item) ->
+                    (!collectionClazz.isPresent() && (!item.isPresent(fieldName) || item.isNull(fieldName)))
+                            ? null
+                            : unMarshallerItem.unmarshall(fieldName, item));
 
             // fromAttrMap
             UnMarshallerAttrVal unMarshallerAttrVal = findUnMarshallerAttrVal(collectionClazz, fieldClazz);
-            if (keyFromAttrMapToVal.containsKey(fieldName)) {
-                fromAttrMapToCtorArgsListBuilder.add(keyFromAttrMapToVal.get(fieldName));
-            } else {
-                fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
-                    AttributeValue attrVal = attrMap.get(fieldName);
-                    return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
-                            ? null
-                            : unMarshallerAttrVal.unmarshall(attrVal);
-                });
-            }
+            fromAttrMapToCtorArgsListBuilder.add((attrMap) -> {
+                AttributeValue attrVal = attrMap.get(fieldName);
+                return (!collectionClazz.isPresent() && (attrVal == null || attrVal.getNULL() == Boolean.TRUE))
+                        ? null
+                        : unMarshallerAttrVal.unmarshall(attrVal);
+            });
 
             boolean isSet = Set.class.isAssignableFrom(field.getType());
 
@@ -281,41 +277,37 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
 
             // toItem
             MarshallerItem marshallerItem = findMarshallerItem(collectionClazz, fieldClazz);
-            if (!keyFromItemToVal.containsKey(fieldName)) {
-                toItemArgsBuilder.add((item, object) -> {
-                    Object val = objToFieldVal.apply(object);
-                    if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                        log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                        " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                                fieldName, object.getClass().getSimpleName());
-                    }
-                    if (val == null) {
-                        return; // Omit null
-                    }
-                    marshallerItem.marshall(val, fieldName, item);
-                });
-            }
+            toItemArgsBuilder.add((item, object) -> {
+                Object val = objToFieldVal.apply(object);
+                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                            fieldName, object.getClass().getSimpleName());
+                }
+                if (val == null) {
+                    return; // Omit null
+                }
+                marshallerItem.marshall(val, fieldName, item);
+            });
 
             // toAttrVal
             MarshallerAttrVal marshallerAttrVal = findMarshallerAttrVal(collectionClazz, fieldClazz);
-            if (!keyFromAttrMapToVal.containsKey(fieldName)) {
-                toAttrMapArgsBuilder.add((mapBuilder, object) -> {
-                    Object val = objToFieldVal.apply(object);
-                    if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
-                        log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
-                                        " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
-                                fieldName, object.getClass().getSimpleName());
-                    }
-                    if (val == null) {
-                        return; // Omit null
-                    }
-                    AttributeValue valMarsh = marshallerAttrVal.marshall(val);
-                    if (valMarsh == null) {
-                        return; // Omit null
-                    }
-                    mapBuilder.put(fieldName, valMarsh);
-                });
-            }
+            toAttrMapArgsBuilder.add((mapBuilder, object) -> {
+                Object val = objToFieldVal.apply(object);
+                if (isSet && val == null && LogUtil.rateLimitAllowLog("dynamomapper-set-missing-nonnull")) {
+                    log.warn("Field {} in class {} missing @NonNull. All sets are required to be non null since" +
+                                    " empty set is not allowed by DynamoDB and there is no distinction between null and empty set.",
+                            fieldName, object.getClass().getSimpleName());
+                }
+                if (val == null) {
+                    return; // Omit null
+                }
+                AttributeValue valMarsh = marshallerAttrVal.marshall(val);
+                if (valMarsh == null) {
+                    return; // Omit null
+                }
+                mapBuilder.put(fieldName, valMarsh);
+            });
 
             // toDynamoValue fromDynamoValue
             fieldMarshallersBuilder.put(fieldName, marshallerItem);
@@ -342,7 +334,7 @@ public class DynamoMapperImpl extends ManagedService implements DynamoMapper {
                 .map(u -> u.apply(attrMap))
                 .toArray();
 
-        // toItem toAttrVal other keys
+        // toItem toAttrVal keys
         ImmutableMap<String, Function<T, Object>> objToFieldVals = objToFieldValsBuilder.build();
         ImmutableMap.Builder<String, Function<T, String>> toItemOtherKeysMapperBuilder = ImmutableMap.builder();
         for (DynamoTable dt : dynamoTables) {
