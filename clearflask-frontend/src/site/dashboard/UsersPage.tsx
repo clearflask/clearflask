@@ -124,16 +124,16 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
       <div className={this.props.classes.page}>
         <ToggleButtonGroup
           {...{ size: 'small' }}
-          value={this.state.modsOnly ? 'moderators' : 'users'}
+          value={this.state.modsOnly ? 'moderators' : 'all'}
           exclusive
           onChange={(e, val) => {
-            if (val === 'users') this.setState({ modsOnly: false });
+            if (val === 'all') this.setState({ modsOnly: false });
             if (val === 'moderators') this.setState({ modsOnly: true });
             this.updateSearchText(this.state.searchText);
           }}
         >
-          <ToggleButton value={'users'}>Users</ToggleButton>
-          <ToggleButton value={'moderators'}>Moderators</ToggleButton>
+          <ToggleButton value={'all'}>All</ToggleButton>
+          <ToggleButton value={'moderators'}>Mods</ToggleButton>
         </ToggleButtonGroup>
         <ExplorerTemplate
           createSize={expand ? 250 : 116}
@@ -375,7 +375,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
         userSearchAdmin: {
-          isMod: !!this.state.modsOnly,
+          isMod: !!this.state.modsOnly || undefined,
           searchText: `${name || ''} ${email || ''}`.trim(),
         },
       }))

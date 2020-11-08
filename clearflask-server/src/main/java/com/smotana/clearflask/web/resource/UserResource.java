@@ -9,7 +9,24 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Credits;
+import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
+import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.ForgotPassword;
+import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBindResponse;
+import com.smotana.clearflask.api.model.UserCreate;
+import com.smotana.clearflask.api.model.UserCreateAdmin;
+import com.smotana.clearflask.api.model.UserCreateResponse;
+import com.smotana.clearflask.api.model.UserLogin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserSearchResponse;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -41,7 +58,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -146,10 +162,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
-        if(!Strings.isNullOrEmpty(userCreate.getName())) {
+        if (!Strings.isNullOrEmpty(userCreate.getName())) {
             sanitizer.userName(userCreate.getName());
         }
-        if(!Strings.isNullOrEmpty(userCreate.getEmail())) {
+        if (!Strings.isNullOrEmpty(userCreate.getEmail())) {
             sanitizer.email(userCreate.getEmail());
         }
 
@@ -257,10 +273,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userCreateAdmin(String projectId, UserCreateAdmin userCreateAdmin) {
-        if(!Strings.isNullOrEmpty(userCreateAdmin.getName())) {
+        if (!Strings.isNullOrEmpty(userCreateAdmin.getName())) {
             sanitizer.userName(userCreateAdmin.getName());
         }
-        if(!Strings.isNullOrEmpty(userCreateAdmin.getEmail())) {
+        if (!Strings.isNullOrEmpty(userCreateAdmin.getEmail())) {
             sanitizer.email(userCreateAdmin.getEmail());
         }
 
@@ -419,15 +435,30 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         sanitizer.userName(userUpdate.getName());
         sanitizer.email(userUpdate.getEmail());
 
+        UserModel user = userStore.getUser(projectId, userId).get();
+
+        if (!Strings.isNullOrEmpty(user.getSsoGuid())) {
+            if (!Strings.isNullOrEmpty(userUpdate.getEmail())) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change email when using Single Sign-On");
+            }
+            if (!Strings.isNullOrEmpty(userUpdate.getName())) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change name when using Single Sign-On");
+            }
+            if (!Strings.isNullOrEmpty(userUpdate.getPassword())) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot set a password when using Single Sign-On");
+            }
+        }
+
         if (!Strings.isNullOrEmpty(userUpdate.getEmail())) {
-            UserModel user = userStore.getUser(projectId, userId).get();
             if (!Strings.isNullOrEmpty(user.getEmail())
                     && (user.getEmailLastUpdated() == null || user.getEmailLastUpdated().plus(config.sendOnEmailChangedEmailIfLastChangeGreaterThan()).isBefore(Instant.now()))) {
                 ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
                 notificationService.onEmailChanged(configAdmin, user, user.getEmail());
             }
         }
-        UserModel user = userStore.updateUser(projectId, userId, userUpdate).getUser();
+
+        user = userStore.updateUser(projectId, userId, userUpdate).getUser();
+
         return user.toUserMe();
     }
 

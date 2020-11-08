@@ -1,4 +1,4 @@
-import { Badge, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Typography } from '@material-ui/core';
+import { Badge, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -68,71 +68,87 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Display name</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <Badge
-                color='secondary'
-                invisible={!!this.props.userMe.name}
-                variant='dot'
-              >
-                <TextField
-                  id='displayName'
-                  value={this.state.displayName === undefined
-                    ? (this.props.userMe.name || '')
-                    : (this.state.displayName || '')}
-                  onChange={e => this.setState({ displayName: e.target.value })}
-                />
-              </Badge>
-              <Button aria-label="Save" color='primary' style={{
-                visibility:
-                  !this.state.displayName
-                    || this.state.displayName === this.props.userMe.name
-                    ? 'hidden' : undefined
-              }} onClick={() => {
-                if (!this.state.displayName
-                  || !this.props.userMe
-                  || this.state.displayName === this.props.userMe.name) {
-                  return;
-                }
-                this.props.server.dispatch().userUpdate({
-                  projectId: this.props.server.getProjectId(),
-                  userId: this.props.userMe.userId,
-                  userUpdate: { name: this.state.displayName },
-                });
-              }}>Save</Button>
+              {!!this.props.userMe.isSso ? (
+                <Tooltip title="Cannot change when using Single Sign-On" placement='top-start'>
+                  <Typography>{this.props.userMe.name || 'None'}</Typography>
+                </Tooltip>
+              ) : (
+                  <React.Fragment>
+                    <Badge
+                      color='secondary'
+                      invisible={!!this.props.userMe.name}
+                      variant='dot'
+                    >
+                      <TextField
+                        id='displayName'
+                        value={this.state.displayName === undefined
+                          ? (this.props.userMe.name || '')
+                          : (this.state.displayName || '')}
+                        onChange={e => this.setState({ displayName: e.target.value })}
+                      />
+                    </Badge>
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.displayName
+                          || this.state.displayName === this.props.userMe.name
+                          ? 'hidden' : undefined
+                    }} onClick={() => {
+                      if (!this.state.displayName
+                        || !this.props.userMe
+                        || this.state.displayName === this.props.userMe.name) {
+                        return;
+                      }
+                      this.props.server.dispatch().userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: this.props.userMe.userId,
+                        userUpdate: { name: this.state.displayName },
+                      });
+                    }}>Save</Button>
+                  </React.Fragment>
+                )}
             </Grid>
           </Grid>
           <Grid container alignItems='baseline' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>Email</Typography></Grid>
             <Grid item xs={12} sm={6}>
-              <Badge
-                color='secondary'
-                invisible={!!this.props.userMe.email}
-                variant='dot'
-              >
-                <TextField
-                  id='email'
-                  value={this.state.email === undefined
-                    ? (this.props.userMe.email || '')
-                    : (this.state.email || '')}
-                  onChange={e => this.setState({ email: e.target.value })}
-                />
-              </Badge>
-              <Button aria-label="Save" color='primary' style={{
-                visibility:
-                  !this.state.email
-                    || this.state.email === this.props.userMe.email
-                    ? 'hidden' : undefined
-              }} onClick={() => {
-                if (!this.state.email
-                  || !this.props.userMe
-                  || this.state.email === this.props.userMe.email) {
-                  return;
-                }
-                this.props.server.dispatch().userUpdate({
-                  projectId: this.props.server.getProjectId(),
-                  userId: this.props.userMe.userId,
-                  userUpdate: { email: this.state.email },
-                });
-              }}>Save</Button>
+              {!!this.props.userMe.isSso ? (
+                <Tooltip title="Cannot change when using Single Sign-On" placement='top-start'>
+                  <Typography>{this.props.userMe.email || 'None'}</Typography>
+                </Tooltip>
+              ) : (
+                  <React.Fragment>
+                    <Badge
+                      color='secondary'
+                      invisible={!!this.props.userMe.email}
+                      variant='dot'
+                    >
+                      <TextField
+                        id='email'
+                        value={this.state.email === undefined
+                          ? (this.props.userMe.email || '')
+                          : (this.state.email || '')}
+                        onChange={e => this.setState({ email: e.target.value })}
+                      />
+                    </Badge>
+                    <Button aria-label="Save" color='primary' style={{
+                      visibility:
+                        !this.state.email
+                          || this.state.email === this.props.userMe.email
+                          ? 'hidden' : undefined
+                    }} onClick={() => {
+                      if (!this.state.email
+                        || !this.props.userMe
+                        || this.state.email === this.props.userMe.email) {
+                        return;
+                      }
+                      this.props.server.dispatch().userUpdate({
+                        projectId: this.props.server.getProjectId(),
+                        userId: this.props.userMe.userId,
+                        userUpdate: { email: this.state.email },
+                      });
+                    }}>Save</Button>
+                  </React.Fragment>
+                )}
             </Grid>
           </Grid>
           {!this.props.userMe.isSso && (
@@ -290,7 +306,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       switch (browserPushStatus) {
         case WebNotificationStatus.Unsupported:
           browserPushControlDisabled = true;
-          browserPushLabel = 'Not supported by your current browser';
+          browserPushLabel = 'Not supported by your browser';
           break;
         case WebNotificationStatus.Denied:
           browserPushControlDisabled = true;

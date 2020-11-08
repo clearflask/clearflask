@@ -160,6 +160,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
     );
   }
 
+  // TODO Use the redux state here instead of react state
   search(text?: string, cursor?: string) {
     this.props.server.dispatchAdmin()
       .then(d => d.commentSearchAdmin({
@@ -179,6 +180,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
 }
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, ownProps: Props): ConnectProps => {
+  // TODO Use the redux state here instead of react state
   const connectProps: ConnectProps = {
     loggedInUser: state.users.loggedIn.user,
   };

@@ -1,4 +1,5 @@
 import { Typography } from '@material-ui/core';
+import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
@@ -11,6 +12,8 @@ import { RestrictedProperties } from './UpgradeWrapper';
 
 const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'/* webpackChunkName: "workflowPreview" */));
 
+const styles = (theme: Theme) => createStyles({
+});
 interface Props {
   key: string;
   page: ConfigEditor.Page;
@@ -20,7 +23,7 @@ interface Props {
 interface ConnectProps {
   accountPlanId?: string;
 }
-class Page extends Component<Props & ConnectProps> {
+class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   unsubscribe?: () => void;
 
   componentDidMount() {
@@ -77,4 +80,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   return {
     accountPlanId: state.account.account.account?.plan.planid,
   };
-})(Page);
+})(withStyles(styles, { withTheme: true })(Page));

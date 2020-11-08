@@ -45,7 +45,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -409,15 +408,15 @@ public class DynamoElasticUserStore implements UserStore {
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUser(String projectId, String userId, UserUpdate updates) {
         return updateUser(projectId, userId, new UserUpdateAdmin(
-                updates.getName(),
-                updates.getEmail(),
-                updates.getPassword(),
-                updates.getEmailNotify(),
-                null,
-                null,
-                null,
-                null,
-                null),
+                        updates.getName(),
+                        updates.getEmail(),
+                        updates.getPassword(),
+                        updates.getEmailNotify(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null),
                 updates.getIosPushToken(),
                 updates.getAndroidPushToken(),
                 updates.getBrowserPushToken());
@@ -514,7 +513,7 @@ public class DynamoElasticUserStore implements UserStore {
             setUpdates.add("#emailNotify = :emailNotify");
             userUpdatedBuilder.emailNotify(updates.getEmailNotify());
         }
-        if(updates.getIosPush() == Boolean.FALSE) iosPushToken = "";
+        if (updates.getIosPush() == Boolean.FALSE) iosPushToken = "";
         if (iosPushToken != null) {
             nameMap.put("#iosPushToken", "iosPushToken");
             if (iosPushToken.isEmpty()) {
@@ -526,7 +525,7 @@ public class DynamoElasticUserStore implements UserStore {
             updateIdentifier.apply(IdentifierType.IOS_PUSH, user.getIosPushToken(), iosPushToken);
             userUpdatedBuilder.iosPushToken(iosPushToken);
         }
-        if(updates.getAndroidPush() == Boolean.FALSE) androidPushToken = "";
+        if (updates.getAndroidPush() == Boolean.FALSE) androidPushToken = "";
         if (androidPushToken != null) {
             nameMap.put("#androidPushToken", "androidPushToken");
             if (androidPushToken.isEmpty()) {
@@ -538,7 +537,7 @@ public class DynamoElasticUserStore implements UserStore {
             updateIdentifier.apply(IdentifierType.ANDROID_PUSH, user.getAndroidPushToken(), androidPushToken);
             userUpdatedBuilder.androidPushToken(androidPushToken);
         }
-        if(updates.getBrowserPush() == Boolean.FALSE) browserPushToken = "";
+        if (updates.getBrowserPush() == Boolean.FALSE) browserPushToken = "";
         if (browserPushToken != null) {
             nameMap.put("#browserPushToken", "browserPushToken");
             if (browserPushToken.isEmpty()) {
@@ -550,7 +549,7 @@ public class DynamoElasticUserStore implements UserStore {
             updateIdentifier.apply(IdentifierType.BROWSER_PUSH, user.getBrowserPushToken(), browserPushToken);
             userUpdatedBuilder.browserPushToken(browserPushToken);
         }
-        if(updates.getIsMod() != null) {
+        if (updates.getIsMod() != null) {
             nameMap.put("#isMod", "isMod");
             if (updates.getIsMod() == Boolean.FALSE) {
                 removeUpdates.add("#isMod");
@@ -561,7 +560,7 @@ public class DynamoElasticUserStore implements UserStore {
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
             // TODO update all sessions that user is mod instead of revoking
-            revokeSessions(projectId,userId, Optional.empty());
+            revokeSessions(projectId, userId, Optional.empty());
         }
         if (updateAuthTokenValidityStart) {
             Instant authTokenValidityStart = Instant.now();
@@ -574,7 +573,7 @@ public class DynamoElasticUserStore implements UserStore {
         String updateExpression = (setUpdates.isEmpty() ? "" : "SET " + String.join(", ", setUpdates))
                 + (removeUpdates.isEmpty() ? "" : " REMOVE " + String.join(", ", removeUpdates));
         nameMap.put("#partitionKey", userSchema.partitionKeyName());
-        if(Strings.isNullOrEmpty(updateExpression)) {
+        if (Strings.isNullOrEmpty(updateExpression)) {
             // Nothing to update
             return new UserAndIndexingFuture<>(user, Futures.immediateFuture(null));
         }
@@ -667,13 +666,29 @@ public class DynamoElasticUserStore implements UserStore {
         if (bloomFilterUpdated) {
             attrUpdates.add(new AttributeUpdate("fundBloom").put(BloomFilters.toByteArray(bloomFilter)));
         }
-        UserModel userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+
+        UpdateItemSpec updateItemSpec = new UpdateItemSpec()
                 .withPrimaryKey(userSchema.primaryKey(Map.of(
                         "projectId", projectId,
                         "userId", userId)))
                 .withAttributeUpdate(attrUpdates)
-                .withReturnValues(ReturnValue.ALL_NEW))
-                .getItem());
+                .withReturnValues(ReturnValue.ALL_NEW);
+        if (balanceDiff < 0L) {
+            updateItemSpec.withConditionExpression("#balance >= :balanceDiff")
+                    .withNameMap(Map.of("#balance", "balance"))
+                    .withValueMap(Map.of(":balanceDiff", -balanceDiff));
+        }
+
+        UserModel userModel;
+        try {
+            userModel = userSchema.fromItem(userSchema.table().updateItem(updateItemSpec).getItem());
+        } catch (ConditionalCheckFailedException ex) {
+            if (LogUtil.rateLimitAllowLog("userStore-negativeBalanceWarn")) {
+                log.warn("Attempted to set balance below zero, projectId {} userId {} balanceDiff {} ideaIdOpt {}",
+                        projectId, userId, balanceDiff, ideaIdOpt, ex);
+            }
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not enough credits");
+        }
 
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(USER_INDEX, projectId), userModel.getUserId())

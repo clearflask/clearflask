@@ -11,10 +11,10 @@ import ServerMock from './serverMock';
 
 export type Unsubscribe = () => void;
 export type ErrorSubscriber = ((errorMsg: string, isUserFacing: boolean) => void);
-export type ErrorSubscribers = {[subscriberId: string]: ErrorSubscriber};
+export type ErrorSubscribers = { [subscriberId: string]: ErrorSubscriber };
 export const errorSubscribers: ErrorSubscribers = {}
 export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
-export type ChallengeSubscribers = {[subscriberId: string]: ChallengeSubscriber};
+export type ChallengeSubscribers = { [subscriberId: string]: ChallengeSubscriber };
 export const challengeSubscribers: ChallengeSubscribers = {}
 
 export enum Status {
@@ -183,7 +183,7 @@ export class Server {
   }
 
   static _subscribeToErrors(subscriber: ((errorMsg: string, isUserFacing: boolean) => void), subscriberId: string = randomUuid()): Unsubscribe | undefined {
-    if(!!errorSubscribers[subscriberId]) return;
+    if (!!errorSubscribers[subscriberId]) return;
     errorSubscribers[subscriberId] = subscriber;
     return () => delete errorSubscribers[subscriberId];
   }
@@ -209,7 +209,7 @@ export class Server {
   }
 }
 
-export const getSearchKey = (search: Client.IdeaSearch | Client.CommentSearch | Client.TransactionSearch): string => {
+export const getSearchKey = (search: object): string => {
   const keys = Object.keys(search);
   // Consistently return the same key by sorting by keys
   keys.sort();
@@ -576,11 +576,19 @@ export interface StateComments {
       cursor?: string,
     }
   };
+  bySearchAdmin: {
+    [searchKey: string]: {
+      status: Status,
+      commentIds?: string[],
+      cursor?: string,
+    }
+  };
 }
 const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
   bySearch: {},
+  bySearchAdmin: {},
 };
 function reducerComments(state: StateComments = stateCommentsDefault, action: AllActions): StateComments {
   var searchKey;
@@ -747,6 +755,60 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
             commentIds: (action.meta.request.cursor !== undefined && state.bySearch[searchKey] && action.meta.request.cursor === state.bySearch[searchKey].cursor)
               ? [ // Append results to existing comment ids
                 ...(state.bySearch[searchKey].commentIds || []),
+                ...action.payload.results.map(comment => comment.commentId),
+              ] : ( // Replace results if cursor doesn't match
+                action.payload.results.map(comment => comment.commentId)
+              ),
+            cursor: action.payload.cursor,
+          }
+        },
+      };
+    case Admin.commentSearchAdminActionStatus.Pending:
+      searchKey = getSearchKey(action.meta.request.commentSearchAdmin);
+      return {
+        ...state,
+        bySearchAdmin: {
+          ...state.bySearchAdmin,
+          [searchKey]: {
+            ...state.bySearchAdmin[searchKey],
+            status: Status.PENDING,
+          }
+        }
+      };
+    case Admin.commentSearchAdminActionStatus.Rejected:
+      searchKey = getSearchKey(action.meta.request.commentSearchAdmin);
+      return {
+        ...state,
+        bySearchAdmin: {
+          ...state.bySearchAdmin,
+          [searchKey]: {
+            ...state.bySearchAdmin[searchKey],
+            status: Status.REJECTED,
+          }
+        }
+      };
+    case Admin.commentSearchAdminActionStatus.Fulfilled:
+      searchKey = getSearchKey(action.meta.request.commentSearchAdmin);
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          ...action.payload.results.reduce(
+            (commentsById, comment) => {
+              commentsById[comment.commentId] = {
+                comment,
+                status: Status.FULFILLED,
+              };
+              return commentsById;
+            }, {}),
+        },
+        bySearchAdmin: {
+          ...state.bySearchAdmin,
+          [searchKey]: {
+            status: Status.FULFILLED,
+            commentIds: (action.meta.request.cursor !== undefined && state.bySearchAdmin[searchKey] && action.meta.request.cursor === state.bySearchAdmin[searchKey].cursor)
+              ? [ // Append results to existing comment ids
+                ...(state.bySearchAdmin[searchKey].commentIds || []),
                 ...action.payload.results.map(comment => comment.commentId),
               ] : ( // Replace results if cursor doesn't match
                 action.payload.results.map(comment => comment.commentId)
@@ -1214,11 +1276,13 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
         } : {}),
       };
     case Client.ideaCommentSearchActionStatus.Fulfilled:
+    case Admin.commentSearchAdminActionStatus.Fulfilled:
+      const results = (action.payload.results as Client.CommentWithVote[]);
       return {
         ...state,
         statusByCommentId: {
           ...state.statusByCommentId,
-          ...action.payload.results.reduce(
+          ...results.reduce(
             (byCommentId, comment) => {
               byCommentId[comment.commentId] = Status.FULFILLED;
               return byCommentId;
@@ -1226,7 +1290,7 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
         },
         votesByCommentId: {
           ...state.votesByCommentId,
-          ...action.payload.results.reduce(
+          ...results.reduce(
             (votesByCommentId, comment) => {
               if (comment.vote) votesByCommentId[comment.commentId] = comment.vote;
               return votesByCommentId;

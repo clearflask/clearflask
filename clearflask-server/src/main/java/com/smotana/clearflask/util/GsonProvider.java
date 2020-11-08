@@ -18,6 +18,7 @@ import com.google.inject.Singleton;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Singleton
 public class GsonProvider implements Provider<Gson> {
@@ -27,6 +28,7 @@ public class GsonProvider implements Provider<Gson> {
             .registerTypeAdapterFactory(ImmutableAdapterFactory.forGuava())
             .registerTypeAdapterFactory(new GsonNonNullAdapterFactory())
             .registerTypeAdapter(Instant.class, new InstantTypeConverter())
+            .registerTypeAdapter(LocalDate.class, new LocalDateTypeConverter())
             .registerTypeAdapter(ExplicitNull.class, ExplicitNull.get())
             .create();
 
@@ -45,6 +47,19 @@ public class GsonProvider implements Provider<Gson> {
         @Override
         public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return Instant.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalDateTypeConverter
+            implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+        @Override
+        public JsonElement serialize(LocalDate src, Type srcType, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
+        }
+
+        @Override
+        public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalDate.parse(json.getAsString());
         }
     }
 

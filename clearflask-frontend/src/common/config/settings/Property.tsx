@@ -44,6 +44,13 @@ export default class Property extends Component<Props> {
     var marginTop = 30;
     var propertySetter;
     var shrink = (prop.value !== undefined && prop.value !== '') ? true : undefined;
+
+    if (prop.type !== ConfigEditor.PageGroupType
+      && prop.type !== ConfigEditor.PageType
+      && prop.hide) {
+      return null;
+    }
+
     OUTER: switch (prop.type) {
       case ConfigEditor.PropertyType.Number:
       case ConfigEditor.PropertyType.Integer:
@@ -386,6 +393,7 @@ export default class Property extends Component<Props> {
         const subProps = (
           <Collapse in={prop.value} style={{ marginLeft: '30px' }}>
             {prop.childProperties && prop.childProperties
+              .filter(childProp => !childProp.hide)
               .filter(childProp => childProp.subType !== ConfigEditor.PropSubType.Id)
               .map(childProp => (
                 <Property {...this.props} bare={false} key={childProp.key} prop={childProp} />

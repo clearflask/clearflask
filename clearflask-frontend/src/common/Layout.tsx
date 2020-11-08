@@ -4,9 +4,9 @@ import InfoIcon from '@material-ui/icons/InfoOutlined';
 import MenuIcon from '@material-ui/icons/Menu';
 import PreviewOnIcon from '@material-ui/icons/Visibility';
 import PreviewOffIcon from '@material-ui/icons/VisibilityOff';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as ConfigEditor from './config/configEditor';
-import classNames from 'classnames';
 
 const MENU_WIDTH = '180px';
 const styles = (theme: Theme) => createStyles({
@@ -25,7 +25,7 @@ const styles = (theme: Theme) => createStyles({
     [theme.breakpoints.up('sm')]: {
       left: MENU_WIDTH,
     },
-    zIndex: theme.zIndex.drawer - 1,
+    zIndex: 1, // Allow other things like Color picker to overlap this
   },
   barBottom: {
     flex: '1 0',

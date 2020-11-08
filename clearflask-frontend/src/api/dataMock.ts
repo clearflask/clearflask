@@ -438,8 +438,7 @@ class DataMock {
         name: 'John Doe',
         email: 'john.doe@example.com',
         password: 'password',
-        iosPushToken: 'fake-ios-push-token',
-        // browserPushToken: 'fake-browser-push-token',
+        browserPushToken: 'fake-browser-push-token',
         ...{
           emailVerification: 'token',
           isMod,

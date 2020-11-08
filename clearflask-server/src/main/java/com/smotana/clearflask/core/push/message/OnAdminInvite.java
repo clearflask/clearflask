@@ -25,7 +25,7 @@ public class OnAdminInvite {
         @DefaultValue("You are invited as a moderator of __project_name__")
         String subjectTemplate();
 
-        @DefaultValue("You have been invited to join the __project_name__ project as a Moderator. Click the link below to setup your account.")
+        @DefaultValue("You have been invited to join the __project_name__ project as a Moderator. Click the link below to check it out.")
         String contentTemplate();
     }
 

@@ -3,10 +3,10 @@ import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } fro
 import React, { Component, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
-import RichEditor from '../../common/RichEditor';
-import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import SubmitButton from '../../common/SubmitButton';
 import ModAction from '../../common/ModAction';
+import RichEditor from '../../common/RichEditor';
+import SubmitButton from '../../common/SubmitButton';
+import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -92,6 +92,10 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           asAdmin={false}
           open={this.state.deleteDialogOpen}
           onClose={() => this.setState({ deleteDialogOpen: false })}
+          onDelete={() => {
+            this.setState({ deleteDialogOpen: false });
+            this.props.onClose();
+          }}
         />
       </React.Fragment>
     );
@@ -104,6 +108,7 @@ export const CommentDelete = withTheme((props: {
   asAdmin: boolean
   open?: boolean;
   onClose: () => void;
+  onDelete: () => void;
 } & WithTheme) => {
   const [isSubmitting, setSubmitting] = useState(false);
   return (
@@ -135,12 +140,12 @@ export const CommentDelete = withTheme((props: {
               }))
               .then(() => {
                 setSubmitting(false);
-                props.onClose();
+                props.onDelete();
               })
               .catch(e => setSubmitting(false))
-            }}>
-              {props.asAdmin ? (<ModAction label='Delete' />) : 'Delete'}
-            </SubmitButton>
+          }}>
+          {props.asAdmin ? (<ModAction label='Delete' />) : 'Delete'}
+        </SubmitButton>
       </DialogActions>
     </Dialog>
   )

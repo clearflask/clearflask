@@ -334,7 +334,8 @@ public class DynamoProjectStore implements ProjectStore {
             try {
                 projectSchema.table().putItem(new PutItemSpec()
                         .withItem(projectSchema.toItem(projectModel))
-                        .withConditionExpression("version = :version")
+                        .withConditionExpression("#version = :version")
+                        .withNameMap(Map.of("#version", "version"))
                         .withValueMap(Map.of(":version", projectModel.getVersion())));
             } catch (ConditionalCheckFailedException ex) {
                 log.warn("Writing upgraded project failed, will let someone else upgrade it later", ex);
