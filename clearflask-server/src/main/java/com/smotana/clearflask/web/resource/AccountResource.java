@@ -217,7 +217,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getEmail(),
                 signup.getName(),
                 plan.getPlanid());
-        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription(), Optional.empty());
+        SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
 
         // Create account locally
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, signup.getPassword(), signup.getEmail());
@@ -266,9 +266,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             sanitizer.email(accountUpdateAdmin.getEmail());
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
-        if (accountUpdateAdmin.getDeletePaymentMethod() == Boolean.TRUE) {
-            billing.deletePaymentMethod(accountSession.getAccountId());
-        } if (accountUpdateAdmin.getPaymentToken() != null) {
+        if (accountUpdateAdmin.getPaymentToken() != null) {
             Optional<Gateway> gatewayOpt = Arrays.stream(Gateway.values())
                     .filter(g -> g.getPluginName().equals(accountUpdateAdmin.getPaymentToken().getType()))
                     .findAny();
@@ -280,25 +278,27 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
         }
-        if (accountUpdateAdmin.getCancelEndOfTerm() != null) {
+        if (accountUpdateAdmin.getCancelEndOfTerm() == Boolean.TRUE) {
             if (account == null) {
                 account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
             }
-            if(account.getStatus() == SubscriptionStatus.ACTIVETRIAL) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot cancel a trial, delete your account instead");
+            Subscription subscription = billing.cancelSubscription(accountSession.getAccountId());
+            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+                    account.getStatus(),
+                    billing.getAccount(accountSession.getAccountId()),
+                    subscription,
+                    "user requested cancel");
+        }
+        if (accountUpdateAdmin.getResume() == Boolean.TRUE) {
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
             }
-            Subscription subscription;
-            if (accountUpdateAdmin.getCancelEndOfTerm()) {
-                subscription = billing.cancelSubscription(accountSession.getAccountId());
-            } else {
-                subscription = billing.undoPendingCancel(accountSession.getAccountId());
-            }
-            SubscriptionStatus newStatus = billing.getEntitlementStatus(billing.getAccount(accountSession.getAccountId()), subscription, Optional.of(account.getStatus()));
-            if (!account.getStatus().equals(newStatus)) {
-                log.info("Account id {} status change {} -> {}, reason: user requested {}",
-                        accountSession.getAccountId(), account.getStatus(), newStatus, accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel");
-                account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
-            }
+            Subscription subscription = billing.resumeSubscription(accountSession.getAccountId());
+            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+                    account.getStatus(),
+                    billing.getAccount(accountSession.getAccountId()),
+                    subscription,
+                    "user requested" + (accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel"));
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
             String newPlanid = accountUpdateAdmin.getPlanid();
@@ -370,12 +370,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
-        SubscriptionStatus newStatus = billing.getEntitlementStatus(kbAccount, subscription, Optional.of(account.getStatus()));
-        if (!account.getStatus().equals(newStatus)) {
-            log.warn("Account id {} status change {} -> {}, reason: Status was found mismatched",
-                    accountSession.getAccountId(), account.getStatus(), newStatus);
-            account = accountStore.updateStatus(accountSession.getAccountId(), newStatus).getAccount();
-        }
+        SubscriptionStatus status = billing.updateAndGetEntitlementStatus(account.getStatus(), kbAccount, subscription, "Get account billing");
 
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
         Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
@@ -396,7 +391,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         });
 
         Long billingPeriodMau = null;
-        if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(account.getStatus())) {
+        if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(status)) {
             billingPeriodMau = billing.getUsageCurrentPeriod(accountSession.getAccountId());
         }
 
@@ -414,7 +409,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValueExact();
 
         return new AccountBilling(
-                newStatus,
+                status,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,
                 (billingPeriodMau == null || billingPeriodMau <= 0) ? null : billingPeriodMau,

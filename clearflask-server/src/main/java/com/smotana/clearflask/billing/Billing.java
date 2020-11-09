@@ -33,21 +33,19 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
-    SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription, Optional<SubscriptionStatus> previousStatus);
+    SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription);
+
+    SubscriptionStatus updateAndGetEntitlementStatus(SubscriptionStatus currentStatus, Account account, Subscription subscription, String reason);
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
-    void deletePaymentMethod(String accountId);
-
     Subscription cancelSubscription(String accountId);
 
-    Subscription undoPendingCancel(String accountId);
+    Subscription resumeSubscription(String accountId);
 
     Subscription endTrial(String accountId);
 
     Subscription changePlan(String accountId, String planId);
-
-    Subscription activateSubscription(String accountId, String planId);
 
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 

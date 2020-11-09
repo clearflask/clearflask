@@ -37,7 +37,12 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.*;
+import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.api.gen.CatalogApi;
+import org.killbill.billing.client.api.gen.InvoiceApi;
+import org.killbill.billing.client.api.gen.PaymentMethodApi;
+import org.killbill.billing.client.api.gen.SubscriptionApi;
+import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.Account;
@@ -76,6 +81,7 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 @Slf4j
 @Singleton
 public class KillBilling extends ManagedService implements Billing {
+
     /**
      * If changed, also change in catalogXXX.xml
      */
@@ -233,8 +239,61 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    /**
+     * Note: Any changes to the logic needs to be updated here and properly tested.
+     *
+     * Preview below state diagram with https://www.planttext.com/
+     *
+     * [*] --> ActiveTrial
+     *
+     * ActiveTrial : - Phase is TRIAL
+     * ActiveTrial --> Active : Reach MAU limit (With payment)
+     * ActiveTrial --> NoPaymentMethod : Reach MAU limit (Without payment)
+     * ActiveTrial --> ActiveTrial : Add payment
+     * ActiveTrial --> ActiveTrial : Change plan
+     * ActiveTrial --> [*] : Delete account
+     *
+     * Active : - Subscription active
+     * Active : - No outstanding balance
+     * Active : - Not overdue
+     * Active --> ActivePaymentRetry : Outstanding balance
+     * Active --> ActiveNoRenewal : Cancel subscription
+     * Active --> Active : Update payment
+     * Active --> Active : Change plan
+     * Active --> [*] : Delete account
+     *
+     * Blocked : - Not TRIAL phase
+     * Blocked : - Phase is BLOCKED
+     * Blocked :   or Overdue cancelled
+     * Blocked --> [*] : Delete account
+     *
+     * Cancelled : Subscription is cancelled
+     * Cancelled --> Active : User resumes
+     * Cancelled --> Active : Update payment method
+     * Cancelled --> [*] : Delete account
+     *
+     * ActiveNoRenewal : Subscription pending cancel
+     * ActiveNoRenewal --> Active : User resumes
+     * ActiveNoRenewal --> Cancelled : Expires
+     * ActiveNoRenewal --> Active : Update payment method
+     * ActiveNoRenewal --> [*] : Delete account
+     *
+     * NoPaymentMethod : - No payment method
+     * NoPaymentMethod : - Outstanding balance
+     * NoPaymentMethod : - Not overdue cancelled
+     * NoPaymentMethod --> Active : Add payment
+     * NoPaymentMethod --> [*] : Delete account
+     *
+     * ActivePaymentRetry : - Has payment method
+     * ActivePaymentRetry : - Outstanding balance
+     * ActivePaymentRetry : - Overdue unpaid
+     * ActivePaymentRetry : - Not overdue cancelled
+     * ActivePaymentRetry --> Blocked : Overdue Cancelled
+     * ActivePaymentRetry --> Active : Update payment method
+     * ActivePaymentRetry --> [*] : Delete account
+     */
     @Override
-    public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription, Optional<SubscriptionStatus> previousStatus) {
+    public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription) {
         OverdueState overdueState = null;
         try {
             overdueState = kbAccount.getOverdueAccount(account.getAccountId(), KillBillUtil.roDefault());
@@ -244,37 +303,39 @@ public class KillBilling extends ManagedService implements Billing {
         }
         // TODO All of this needs to be verified
         final SubscriptionStatus status;
-        boolean hasOverdueBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
+        boolean isTrial = PhaseType.TRIAL.equals(subscription.getPhaseType());
+        boolean hasOutstandingBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
         boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
         Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent())::get;
 
-
-        // ACTIVETRIAL.equals(previousStatus.orElse(null))
-        if (isOverdueCancelled
-                || EntitlementState.BLOCKED.equals(subscription.getState())
-                || overdueState.isBlockChanges() == Boolean.TRUE) {
+        if (!isTrial
+                && (EntitlementState.BLOCKED.equals(subscription.getState())
+                || isOverdueCancelled)) {
             status = BLOCKED;
-        } else if (ACTIVETRIAL.equals(previousStatus.orElse(null))
-                && (hasOverdueBalance || isOverdueUnpaid)) {
-            status = TRIALEXPIRED;
-        } else if (hasOverdueBalance || isOverdueUnpaid) {
-            status = ACTIVEPAYMENTRETRY;
-
-        } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
+        } else if (EntitlementState.CANCELLED.equals(subscription.getState())) {
+            status = CANCELLED;
+        } else if (isTrial) {
             status = ACTIVETRIAL;
-        } else if (!hasOverdueBalance && (isOverdueUnpaid || isOverdueCancelled || !hasPaymentMethod.get())) {
-            status = TRIALEXPIRED;
-        } else if (EntitlementState.PENDING.equals(subscription.getState())) {
-            status = PENDING;
+        } else if (subscription.getState() == EntitlementState.ACTIVE
+                && !hasOutstandingBalance
+                && !isOverdueUnpaid
+                && !isOverdueCancelled) {
+            status = ACTIVE;
         } else if (EntitlementState.CANCELLED.equals(subscription.getState())
-                || EntitlementState.EXPIRED.equals(subscription.getState())) {
+                && subscription.getCancelledDate() != null) {
             status = CANCELLED;
         } else if (EntitlementState.ACTIVE.equals(subscription.getState())
                 && subscription.getCancelledDate() != null) {
             status = ACTIVENORENEWAL;
-        } else if (EntitlementState.ACTIVE.equals(subscription.getState())) {
-            status = ACTIVE;
+        } else if (hasPaymentMethod.get()
+                && hasOutstandingBalance
+                && !isOverdueUnpaid) {
+            status = ACTIVEPAYMENTRETRY;
+        } else if (!hasPaymentMethod.get()
+                && hasOutstandingBalance
+                && !isOverdueCancelled) {
+            status = NOPAYMENTMETHOD;
         } else {
             status = BLOCKED;
             log.error("Could not determine subscription status, forcing {} for subsc id {} account id {} ext key {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
@@ -288,19 +349,25 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Override
+    public SubscriptionStatus updateAndGetEntitlementStatus(SubscriptionStatus currentStatus, Account account, Subscription subscription, String reason) {
+        SubscriptionStatus newStatus = getEntitlementStatus(account, subscription);
+        if (!newStatus.equals(currentStatus)) {
+            log.info("Subscription status change {} -> {}, reason: {}, for {}",
+                    currentStatus, newStatus, account.getExternalKey(), reason);
+            accountStore.updateStatus(account.getExternalKey(), newStatus);
+        }
+        return newStatus;
+    }
+
+    @Override
     public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
             Account accountInKb = getAccount(accountId);
-            // First delete existing payment method
-            if(accountInKb.getPaymentMethodId() != null) {
-                kbPaymentMethod.deletePaymentMethod(
-                        accountInKb.getPaymentMethodId(),
-                        false,
-                        true,
-                        null,
-                        KillBillUtil.roDefault());
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, getSubscription(accountId), "Update payment token");
+            if (status == BLOCKED) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to update payment token");
             }
-            // Add new payment method
+
             kbAccount.createPaymentMethod(
                     accountInKb.getAccountId(),
                     new PaymentMethod(
@@ -322,31 +389,20 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
-    @Override
-    public void deletePaymentMethod(String accountId) {
-        try {
-            Account accountInKb = getAccount(accountId);
-            if(accountInKb.getPaymentMethodId() == null) {
-                return;
-            }
-            kbPaymentMethod.deletePaymentMethod(
-                    accountInKb.getPaymentMethodId(),
-                    false,
-                    true,
-                    null,
-                    KillBillUtil.roDefault());
-        } catch (KillBillClientException ex) {
-            log.warn("Failed to delete default KillBill payment method for account id {}",accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete payment method", ex);
-        }
-    }
-
     @Extern
     @Override
     public Subscription cancelSubscription(String accountId) {
         try {
+            Account accountInKb = getAccount(accountId);
+            Subscription subscriptionInKb = getSubscription(accountId);
+
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Cancel subscription");
+            if (status != ACTIVE) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to cancel, delete account instead");
+            }
+
             kbSubscription.cancelSubscriptionPlan(
-                    getSubscription(accountId).getSubscriptionId(),
+                    subscriptionInKb.getSubscriptionId(),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
@@ -364,16 +420,41 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Extern
     @Override
-    public Subscription undoPendingCancel(String accountId) {
+    public Subscription resumeSubscription(String accountId) {
         try {
-            kbSubscription.uncancelSubscriptionPlan(
-                    getSubscription(accountId).getSubscriptionId(),
-                    null,
-                    KillBillUtil.roDefault());
+            Account accountInKb = getAccount(accountId);
+            Subscription subscriptionInKb = getSubscription(accountId);
+
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Resume subscription");
+            if (status != ACTIVENORENEWAL && status != CANCELLED) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to resume subscription");
+            }
+
+            if (subscriptionInKb.getState() == EntitlementState.ACTIVE
+                    && subscriptionInKb.getCancelledDate() != null) {
+                kbSubscription.uncancelSubscriptionPlan(
+                        subscriptionInKb.getSubscriptionId(),
+                        null,
+                        KillBillUtil.roDefault());
+            } else {
+                return kbSubscription.createSubscription(
+                        new Subscription()
+                                .setExternalKey(accountId)
+                                .setAccountId(subscriptionInKb.getAccountId()),
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                        null,
+                        KillBillUtil.roDefault());
+            }
+
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
-            log.warn("Failed to unCancel KillBill subscription for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to un-cancel subscription", ex);
+            log.warn("Failed to resume KillBill subscription for account id {}", accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to resume subscription", ex);
         }
     }
 
@@ -407,15 +488,20 @@ public class KillBilling extends ManagedService implements Billing {
     @Override
     public Subscription changePlan(String accountId, String planId) {
         try {
-            UUID accountIdKb = getAccount(accountId).getAccountId();
-            Subscription subscription = getSubscription(accountId);
+            Account accountInKb = getAccount(accountId);
+            Subscription subscriptionInKb = getSubscription(accountId);
+
+            SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
+            if (status != ACTIVETRIAL && status != ACTIVE) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to change plan");
+            }
 
             // Even though we are using START_OF_SUBSCRIPTION changeAlignment
             // we are manually transitioning from TRIAL to EVERGREEN.
             // So changing plans here, we need to override the correct phase,
             // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
             PhaseType newPhase;
-            switch(subscription.getPhaseType()) {
+            switch (subscriptionInKb.getPhaseType()) {
                 case TRIAL:
                     newPhase = PhaseType.TRIAL;
                     break;
@@ -423,18 +509,18 @@ public class KillBilling extends ManagedService implements Billing {
                 case DISCOUNT:
                 case FIXEDTERM:
                     log.warn("Changing plan from {} phase, not sure how to align, account id {}",
-                            subscription.getPhaseType(), subscription.getAccountId());
-                    newPhase = subscription.getPhaseType();
+                            subscriptionInKb.getPhaseType(), subscriptionInKb.getAccountId());
+                    newPhase = subscriptionInKb.getPhaseType();
                 case EVERGREEN:
                     newPhase = PhaseType.EVERGREEN;
                     break;
             }
 
             kbSubscription.changeSubscriptionPlan(
-                    subscription.getSubscriptionId(),
+                    subscriptionInKb.getSubscriptionId(),
                     new Subscription()
                             .setExternalKey(accountId)
-                            .setAccountId(accountIdKb)
+                            .setAccountId(accountInKb.getAccountId())
                             .setPlanName(planId)
                             .setPhaseType(newPhase),
                     null,
@@ -447,43 +533,6 @@ public class KillBilling extends ManagedService implements Billing {
         } catch (KillBillClientException ex) {
             log.warn("Failed to change KillBill plan account id {} planId {}", accountId, planId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
-        }
-    }
-
-    @Extern
-    @Override
-    public Subscription activateSubscription(String accountId, String planId) {
-        try {
-            Subscription oldSubscription = getSubscription(accountId);
-            switch (oldSubscription.getState()) {
-                default:
-                case PENDING:
-                case ACTIVE:
-                case BLOCKED:
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
-                            "Previous subscription still active, cannot start a new subscription");
-                case EXPIRED:
-                case CANCELLED:
-                    break;
-            }
-
-            return kbSubscription.createSubscription(
-                    new Subscription()
-                            .setExternalKey(accountId)
-                            .setAccountId(oldSubscription.getAccountId())
-                            .setPlanName(planId),
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
-                    null,
-                    KillBillUtil.roDefault());
-        } catch (KillBillClientException ex) {
-            log.warn("Failed to activate KillBill Subscription for accountId {} planId {}", accountId, planId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Failed to activate subscription", ex);
         }
     }
 
@@ -718,12 +767,7 @@ public class KillBilling extends ManagedService implements Billing {
 
                         // Update Account status
                         AccountStore.Account account = accountStore.getAccountByAccountId(accountId).get();
-                        SubscriptionStatus newStatus = getEntitlementStatus(getAccount(accountId), subscription, Optional.of(account.getStatus()));
-                        if (!account.getStatus().equals(newStatus)) {
-                            log.info("Account id {} status change {} -> {}, reason: Trial ended",
-                                    account.getAccountId(), account.getStatus(), newStatus);
-                            account = accountStore.updateStatus(account.getAccountId(), newStatus).getAccount();
-                        }
+                        SubscriptionStatus newStatus = updateAndGetEntitlementStatus(account.getStatus(), getAccount(accountId), subscription, "Trial ended");
 
                         // Notify by email
                         Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(accountId);

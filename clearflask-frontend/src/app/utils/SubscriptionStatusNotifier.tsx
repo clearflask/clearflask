@@ -18,19 +18,15 @@ const SubscriptionStatusNotifier = (props: {
       break;
     case Admin.SubscriptionStatus.ActivePaymentRetry:
       variant = 'warning';
-      content = 'Please correct your billing';
+      content = 'We cannot process your payment';
       break;
     case Admin.SubscriptionStatus.ActiveNoRenewal:
       variant = 'warning';
       content = 'Your account will soon expire';
       break;
-    case Admin.SubscriptionStatus.Pending:
-      variant = 'info';
-      content = 'Your plan will soon start';
-      break;
-    case Admin.SubscriptionStatus.TrialExpired:
+    case Admin.SubscriptionStatus.NoPaymentMethod:
       variant = 'warning';
-      content = 'Your trial is expired, correct your billing';
+      content = 'Please add a payment method';
       break;
     case Admin.SubscriptionStatus.Blocked:
       variant = 'error';

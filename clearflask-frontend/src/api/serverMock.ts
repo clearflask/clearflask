@@ -205,8 +205,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.email) this.account.email = request.accountUpdateAdmin.email;
     if (request.accountUpdateAdmin.password) this.accountPass = request.accountUpdateAdmin.password;
     if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
-    if (request.accountUpdateAdmin.cancelEndOfTerm !== undefined) this.account.subscriptionStatus = request.accountUpdateAdmin.cancelEndOfTerm
-      ? Admin.SubscriptionStatus.ActiveNoRenewal : Admin.SubscriptionStatus.Active;
+    if (!!request.accountUpdateAdmin.cancelEndOfTerm) this.account.subscriptionStatus = Admin.SubscriptionStatus.ActiveNoRenewal;
+    if (!!request.accountUpdateAdmin.resume) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
     if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
     if (request.accountUpdateAdmin.apiKey) this.account.hasApiKey = true;
     return this.returnLater(this.account);
@@ -220,7 +220,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
-        || this.account.subscriptionStatus === Admin.SubscriptionStatus.TrialExpired) ? undefined : {
+        || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {
           brand: 'mastercard',
           last4: "4242",
           expiryMonth: 7,

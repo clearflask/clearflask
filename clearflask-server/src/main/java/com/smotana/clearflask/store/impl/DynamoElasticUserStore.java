@@ -655,33 +655,45 @@ public class DynamoElasticUserStore implements UserStore {
 
     @Override
     public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt) {
+        HashMap<String, String> nameMap = Maps.newHashMap();
+        HashMap<String, Object> valMap = Maps.newHashMap();
+        List<String> conditions = Lists.newArrayList();
+        List<String> setUpdates = Lists.newArrayList();
+
+        nameMap.put("#balance", "balance");
+        valMap.put(":balanceDiff", balanceDiff);
+        valMap.put(":zero", 0L);
+
+        setUpdates.add("#balance = if_not_exists(#balance, :zero) + :balanceDiff");
+
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
         boolean bloomFilterUpdated = ideaIdOpt.map(bloomFilter::put).orElse(false);
-
-        List<AttributeUpdate> attrUpdates = Lists.newArrayList();
-        attrUpdates.add(new AttributeUpdate("balance").addNumeric(balanceDiff));
         if (bloomFilterUpdated) {
-            attrUpdates.add(new AttributeUpdate("fundBloom").put(BloomFilters.toByteArray(bloomFilter)));
+            nameMap.put("#fundBloom", "fundBloom");
+            valMap.put(":fundBloom", BloomFilters.toByteArray(bloomFilter));
+            setUpdates.add("#fundBloom = :fundBloom");
         }
 
-        UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-                .withPrimaryKey(userSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "userId", userId)))
-                .withAttributeUpdate(attrUpdates)
-                .withReturnValues(ReturnValue.ALL_NEW);
+        Optional<String> conditionExpressionOpt = Optional.empty();
         if (balanceDiff < 0L) {
-            updateItemSpec.withConditionExpression("#balance >= :balanceDiff")
-                    .withNameMap(Map.of("#balance", "balance"))
-                    .withValueMap(Map.of(":balanceDiff", -balanceDiff));
+            conditionExpressionOpt = Optional.of("#balance + :balanceDiff >= :zero");
         }
 
         UserModel userModel;
         try {
-            userModel = userSchema.fromItem(userSchema.table().updateItem(updateItemSpec).getItem());
+            userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(userSchema.primaryKey(Map.of(
+                            "projectId", projectId,
+                            "userId", userId)))
+                    .withUpdateExpression("SET " + String.join(", ", setUpdates))
+                    .withConditionExpression(conditionExpressionOpt.orElse(null))
+                    .withNameMap(nameMap)
+                    .withValueMap(valMap)
+                    .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
         } catch (ConditionalCheckFailedException ex) {
             if (LogUtil.rateLimitAllowLog("userStore-negativeBalanceWarn")) {
                 log.warn("Attempted to set balance below zero, projectId {} userId {} balanceDiff {} ideaIdOpt {}",

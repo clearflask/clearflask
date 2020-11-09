@@ -499,14 +499,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     switch (this.props.account.subscriptionStatus) {
       case AdminClient.SubscriptionStatus.ActivePaymentRetry:
       case AdminClient.SubscriptionStatus.ActiveNoRenewal:
-      case AdminClient.SubscriptionStatus.TrialExpired:
+      case AdminClient.SubscriptionStatus.NoPaymentMethod:
       case AdminClient.SubscriptionStatus.Blocked:
       case AdminClient.SubscriptionStatus.Cancelled:
         billingHasNotification = true;
         break;
       default:
       case AdminClient.SubscriptionStatus.ActiveTrial:
-      case AdminClient.SubscriptionStatus.Pending:
       case AdminClient.SubscriptionStatus.Active:
         break;
     }
