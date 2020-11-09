@@ -309,7 +309,7 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                   demo={project => (<OnboardingDemo defaultDevice={Device.Desktop} innerRef={this.onboardingDemoRef} server={project.server} />)}
                 />
               </Box>
-              <Typography variant='caption'>You can customize with more detail later.</Typography>
+              <Typography variant='caption'>You can customize in more detail later.</Typography>
               <Box display='flex' className={this.props.classes.item}>
                 <Button onClick={() => this.setState({ step: this.state.step + 1 })} color='primary'>Next</Button>
               </Box>

@@ -20,6 +20,7 @@ interface Props {
   loggedInUser?: Client.User;
   open?: boolean;
   onClose: () => void;
+  onUpdated?: () => void;
 }
 interface State {
   deleteDialogOpen?: boolean;
@@ -81,6 +82,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
                     content: undefined,
                   });
                   this.props.onClose();
+                  this.props.onUpdated && this.props.onUpdated();
                 })
                 .catch(e => this.setState({ isSubmitting: false }))
             }}>Publish</SubmitButton>
@@ -95,6 +97,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           onDelete={() => {
             this.setState({ deleteDialogOpen: false });
             this.props.onClose();
+            this.props.onUpdated && this.props.onUpdated();
           }}
         />
       </React.Fragment>

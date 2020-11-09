@@ -124,6 +124,7 @@ class CommentsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                             });
                           }
                         }}
+                        onUpdated={() => this.search(this.state.searchText)}
                       />
                     ))}
                     {!!this.state.searchCursor && (

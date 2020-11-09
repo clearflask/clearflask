@@ -181,6 +181,8 @@ components:
           type: string
         renewAutomatically:
           type: boolean
+        deletePaymentMethod:
+          type: boolean
         paymentToken:
           type: object
           required:

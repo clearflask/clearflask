@@ -37,6 +37,8 @@ public interface Billing {
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
+    void deletePaymentMethod(String accountId);
+
     Subscription cancelSubscription(String accountId);
 
     Subscription undoPendingCancel(String accountId);

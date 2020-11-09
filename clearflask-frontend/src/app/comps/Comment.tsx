@@ -102,6 +102,7 @@ interface Props {
   truncateLines?: number;
   hideAuthor?: boolean;
   onAuthorClick?: (userId: string) => void;
+  onUpdated?: () => void;
 }
 interface State {
   editExpanded?: boolean;
@@ -264,6 +265,10 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
             asAdmin={true}
             open={this.state.adminDeleteExpanded}
             onClose={() => this.setState({ adminDeleteExpanded: false })}
+            onDelete={() => {
+              this.setState({ adminDeleteExpanded: false });
+              this.props.onUpdated && this.props.onUpdated();
+            }}
           />
         )}
       </React.Fragment>
@@ -289,6 +294,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
             loggedInUser={this.props.loggedInUser}
             open={this.state.editExpanded}
             onClose={() => this.setState({ editExpanded: false })}
+            onUpdated={this.props.onUpdated}
           />
         )}
       </React.Fragment>

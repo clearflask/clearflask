@@ -27,7 +27,7 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
     margin: theme.spacing(1),
     boxSizing: 'border-box',
-    width: 600,
+    width: 200,
     display: 'inline-block',
   },
 });

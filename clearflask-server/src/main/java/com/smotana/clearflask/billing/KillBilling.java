@@ -37,11 +37,7 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.AccountApi;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.SubscriptionApi;
-import org.killbill.billing.client.api.gen.UsageApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.Account;
@@ -116,6 +112,8 @@ public class KillBilling extends ManagedService implements Billing {
     private UsageApi kbUsage;
     @Inject
     private KillBillHttpClient kbClient;
+    @Inject
+    private PaymentMethodApi kbPaymentMethod;
     @Inject
     private AccountStore accountStore;
     @Inject
@@ -292,13 +290,23 @@ public class KillBilling extends ManagedService implements Billing {
     @Override
     public void updatePaymentToken(String accountId, Gateway gateway, String paymentToken) {
         try {
-            UUID accountIdKb = getAccount(accountId).getAccountId();
+            Account accountInKb = getAccount(accountId);
+            // First delete existing payment method
+            if(accountInKb.getPaymentMethodId() != null) {
+                kbPaymentMethod.deletePaymentMethod(
+                        accountInKb.getPaymentMethodId(),
+                        false,
+                        true,
+                        null,
+                        KillBillUtil.roDefault());
+            }
+            // Add new payment method
             kbAccount.createPaymentMethod(
-                    accountIdKb,
+                    accountInKb.getAccountId(),
                     new PaymentMethod(
                             null,
                             null,
-                            accountIdKb,
+                            accountInKb.getAccountId(),
                             true,
                             gateway.getPluginName(),
                             new PaymentMethodPluginDetail(),
@@ -311,6 +319,25 @@ public class KillBilling extends ManagedService implements Billing {
         } catch (KillBillClientException ex) {
             log.warn("Failed to update KillBill payment token for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method", ex);
+        }
+    }
+
+    @Override
+    public void deletePaymentMethod(String accountId) {
+        try {
+            Account accountInKb = getAccount(accountId);
+            if(accountInKb.getPaymentMethodId() == null) {
+                return;
+            }
+            kbPaymentMethod.deletePaymentMethod(
+                    accountInKb.getPaymentMethodId(),
+                    false,
+                    true,
+                    null,
+                    KillBillUtil.roDefault());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to delete default KillBill payment method for account id {}",accountId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete payment method", ex);
         }
     }
 

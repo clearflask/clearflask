@@ -266,7 +266,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             sanitizer.email(accountUpdateAdmin.getEmail());
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
-        if (accountUpdateAdmin.getPaymentToken() != null) {
+        if (accountUpdateAdmin.getDeletePaymentMethod() == Boolean.TRUE) {
+            billing.deletePaymentMethod(accountSession.getAccountId());
+        } if (accountUpdateAdmin.getPaymentToken() != null) {
             Optional<Gateway> gatewayOpt = Arrays.stream(Gateway.values())
                     .filter(g -> g.getPluginName().equals(accountUpdateAdmin.getPaymentToken().getType()))
                     .findAny();
@@ -281,6 +283,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (accountUpdateAdmin.getCancelEndOfTerm() != null) {
             if (account == null) {
                 account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            if(account.getStatus() == SubscriptionStatus.ACTIVETRIAL) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot cancel a trial, delete your account instead");
             }
             Subscription subscription;
             if (accountUpdateAdmin.getCancelEndOfTerm()) {

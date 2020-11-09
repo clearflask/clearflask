@@ -100,6 +100,7 @@ interface State {
   stripePaymentFilled?: boolean;
   stripePaymentError?: string;
   showCancelSubscription?: boolean;
+  showDeletePaymentMethod?: boolean;
   showResumePlan?: boolean;
   showPlanChange?: boolean;
   invoices?: Admin.InvoiceItem[];
@@ -143,7 +144,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       .filter(p => p.planid !== this.props.account?.plan.planid)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
-    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showDeletePaymentMethod, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
         paymentTitle = 'Automatic renewal is active';
@@ -166,7 +167,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           cardState = 'active';
           showSetPayment = true;
           setPaymentTitle = 'Update payment method';
-          showCancelSubscription = true;
           planTitle = 'Your plan is active';
           planDesc = `You have full access to your ${this.props.account.plan.title} plan.`;
           if (hasAvailablePlansToSwitch) {
@@ -292,6 +292,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
         break;
     }
+    if (this.props.accountBilling?.payment && !showCancelSubscription) {
+      showDeletePaymentMethod = true;
+    }
     switch (cardState) {
       case 'active':
         cardStateIcon = (<ActiveIcon color='primary' />);
@@ -378,7 +381,18 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   disabled={this.state.showCancelSubscription}
+                  style={{ color: this.props.theme.palette.error.main }}
                   onClick={() => this.setState({ showCancelSubscription: true })}
+                >
+                  Cancel payments
+                </SubmitButton>
+              )}
+              {showDeletePaymentMethod && (
+                <SubmitButton
+                  isSubmitting={this.state.isSubmitting}
+                  disabled={this.state.showDeletePaymentMethod}
+                  style={{ color: this.props.theme.palette.error.main }}
+                  onClick={() => this.setState({ showDeletePaymentMethod: true })}
                 >
                   Cancel payments
                 </SubmitButton>
@@ -387,6 +401,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   disabled={this.state.showResumePlan}
+                  color='primary'
                   onClick={() => this.setState({ showResumePlan: true })}
                 >
                   Resume payments
@@ -403,7 +418,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <ElementsConsumer>
             {({ elements, stripe }) => (
               <React.Fragment>
-                <DialogTitle>Add payment method</DialogTitle>
+                <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
                 <DialogContent className={this.props.classes.center}>
                   <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
                   <Collapse in={!!this.state.stripePaymentError}>
@@ -433,7 +448,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         >
           <DialogTitle>Stop subscription</DialogTitle>
           <DialogContent className={this.props.classes.center}>
-            <DialogContentText>Stops automatic renewal of subscription. You will continue to </DialogContentText>
+            <DialogContentText>Stop automatic billing of your subscription. Any ongoing subscription will continue to work until it expires.</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
@@ -441,7 +456,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </Button>
             <SubmitButton
               isSubmitting={this.state.isSubmitting}
-              color='primary'
+              style={{ color: this.props.theme.palette.error.main }}
               onClick={() => {
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
@@ -453,6 +468,35 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   .catch(er => this.setState({ isSubmitting: false }));
               }}
             >Stop subscription</SubmitButton>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={!!this.state.showDeletePaymentMethod}
+          keepMounted
+          onClose={() => this.setState({ showDeletePaymentMethod: undefined })}
+        >
+          <DialogTitle>Delete payment method</DialogTitle>
+          <DialogContent className={this.props.classes.center}>
+            <DialogContentText>Removes your credit card payment method on file.</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => this.setState({ showDeletePaymentMethod: undefined })}>
+              Cancel
+            </Button>
+            <SubmitButton
+              isSubmitting={this.state.isSubmitting}
+              style={{ color: this.props.theme.palette.error.main }}
+              onClick={() => {
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    deletePaymentMethod: true,
+                  },
+                }).then(() => d.accountBillingAdmin()))
+                  .then(() => this.setState({ isSubmitting: false, showDeletePaymentMethod: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+            >Delete</SubmitButton>
           </DialogActions>
         </Dialog>
         <Dialog
