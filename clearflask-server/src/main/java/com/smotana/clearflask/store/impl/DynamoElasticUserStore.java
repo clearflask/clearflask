@@ -80,6 +80,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -385,14 +386,22 @@ public class DynamoElasticUserStore implements UserStore {
 
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         if (hits.length == 0) {
-            return new SearchUsersResponse(ImmutableList.of(), Optional.empty());
+            return new SearchUsersResponse(
+                    ImmutableList.of(),
+                    Optional.empty(),
+                    0L,
+                    false);
         }
 
         ImmutableList<String> userIds = Arrays.stream(hits)
                 .map(SearchHit::getId)
                 .collect(ImmutableList.toImmutableList());
 
-        return new SearchUsersResponse(userIds, searchResponseWithCursor.getCursorOpt());
+        return new SearchUsersResponse(
+                userIds,
+                searchResponseWithCursor.getCursorOpt(),
+                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
+                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
     }
 
     @Override

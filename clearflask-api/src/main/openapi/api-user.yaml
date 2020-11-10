@@ -377,7 +377,7 @@ components:
               title: UserSearchResponse
               type: object
               required:
-                - results
+              - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -385,6 +385,8 @@ components:
                   type: array
                   items:
                     $ref: 'api-user.yaml#/components/schemas/UserAdmin'
+                hits:
+                  $ref: 'api-idea.yaml#/components/schemas/Hits'
 /project/{projectId}/admin/user:
   post:
     operationId: userCreateAdmin

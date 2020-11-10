@@ -1074,11 +1074,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return Math.ceil(order + seconds / 45000);
   }
 
-  filterCursor<T>(data: T[], limit: number, cursor?: string): { results: T[], cursor?: string } {
+  filterCursor<T>(data: T[], limit: number, cursor?: string): { results: T[], cursor?: string, hits?: Client.Hits } {
     var currentCursor = cursor ? parseInt(cursor) : 0;
     return {
       results: data.slice(currentCursor, Math.min(data.length, currentCursor + limit)),
       cursor: (data.length >= currentCursor + limit) ? currentCursor + limit + '' : undefined,
+      hits: {
+        value: data.length,
+      },
     };
   }
 

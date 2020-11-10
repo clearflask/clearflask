@@ -59,6 +59,7 @@ import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -351,7 +352,11 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
             if (!config.enableSimilarToIdea()) {
-                return new SearchResponse(ImmutableList.of(), Optional.empty());
+                return new SearchResponse(
+                        ImmutableList.of(),
+                        Optional.empty(),
+                        0L,
+                        false);
             }
             query.must(QueryBuilders.moreLikeThisQuery(
                     new String[]{"title", "description"},
@@ -415,14 +420,22 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         SearchHit[] hits = searchResponseWithCursor.getSearchResponse().getHits().getHits();
         log.trace("searchIdeas hitsSize {} query {}", hits.length, ideaSearchAdmin);
         if (hits.length == 0) {
-            return new SearchResponse(ImmutableList.of(), Optional.empty());
+            return new SearchResponse(
+                    ImmutableList.of(),
+                    Optional.empty(),
+                    0L,
+                    false);
         }
 
         ImmutableList<String> ideaIds = Arrays.stream(hits)
                 .map(SearchHit::getId)
                 .collect(ImmutableList.toImmutableList());
 
-        return new SearchResponse(ideaIds, searchResponseWithCursor.getCursorOpt());
+        return new SearchResponse(
+                ideaIds,
+                searchResponseWithCursor.getCursorOpt(),
+                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().value,
+                searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
     }
 
     @Override

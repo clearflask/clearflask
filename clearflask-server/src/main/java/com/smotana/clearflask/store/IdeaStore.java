@@ -77,6 +77,8 @@ public interface IdeaStore {
     class SearchResponse {
         ImmutableList<String> ideaIds;
         Optional<String> cursorOpt;
+        long totalHits;
+        boolean totalHitsGte;
     }
 
     @Value

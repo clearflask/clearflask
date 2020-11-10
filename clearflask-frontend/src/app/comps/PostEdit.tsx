@@ -122,6 +122,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   {!!this.props.category.support.fund && this.props.credits && (
                     <Grid item xs={12} className={this.props.classes.row}>
                       <TextField
+                        variant='outlined'
                         disabled={this.state.isSubmitting}
                         label='Funding Goal'
                         fullWidth
@@ -146,6 +147,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               )}
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
+                  variant='outlined'
                   disabled={this.state.isSubmitting}
                   label='Title'
                   fullWidth
@@ -155,6 +157,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               </Grid>
               <Grid item xs={12} className={this.props.classes.row}>
                 <RichEditor
+                  variant='outlined'
                   disabled={this.state.isSubmitting}
                   label='Description'
                   fullWidth
@@ -169,6 +172,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
                     <RichEditor
+                      variant='outlined'
                       disabled={this.state.isSubmitting}
                       label='Response'
                       fullWidth

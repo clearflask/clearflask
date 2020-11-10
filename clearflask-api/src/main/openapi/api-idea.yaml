@@ -204,6 +204,16 @@ components:
             suppressNotifications:
               description: Suppresses notifications if status or response was changed
               type: boolean
+    Hits:
+      type: object
+      required:
+      - value
+      properties:
+        value:
+          type: integer
+          format: int64
+        isGte:
+          type: boolean
 
 /project/{projectId}/ideasearch:
   post:
@@ -232,6 +242,8 @@ components:
             schema:
               title: IdeaWithVoteSearchResponse
               type: object
+              required:
+              - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -239,8 +251,8 @@ components:
                   type: array
                   items:
                     $ref: 'api-idea.yaml#/components/schemas/IdeaWithVote'
-              required:
-                - results
+                hits:
+                  $ref: 'api-idea.yaml#/components/schemas/Hits'
 
 /project/{projectId}/idea:
   post:
@@ -361,6 +373,8 @@ components:
             schema:
               title: IdeaSearchResponse
               type: object
+              required:
+              - results
               properties:
                 cursor:
                   $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -368,8 +382,8 @@ components:
                   type: array
                   items:
                     $ref: 'api-idea.yaml#/components/schemas/Idea'
-              required:
-                - results
+                hits:
+                  $ref: 'api-idea.yaml#/components/schemas/Hits'
 /project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin

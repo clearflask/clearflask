@@ -91,6 +91,8 @@ public interface UserStore {
     class SearchUsersResponse {
         ImmutableList<String> userIds;
         Optional<String> cursorOpt;
+        long totalHits;
+        boolean totalHitsGte;
     }
 
     @Value

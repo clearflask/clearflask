@@ -10,19 +10,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Idea;
-import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaCreateAdmin;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearchResponse;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaWithVote;
-import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -200,7 +188,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 userOpt.map(UserModel::getUserId),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
         if (searchResponse.getIdeaIds().isEmpty()) {
-            return new IdeaWithVoteSearchResponse(null, ImmutableList.of());
+            return new IdeaWithVoteSearchResponse(
+                    null,
+                    ImmutableList.of(),
+                    null);
         }
 
         ImmutableMap<String, IdeaModel> ideasById = ideaStore.getIdeas(projectId, searchResponse.getIdeaIds());
@@ -215,7 +206,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 userOpt.map(user -> addVotes(user, ideaModels))
                         .orElseGet(() -> ideaModels.stream()
                                 .map(ideaModel -> ideaModel.toIdeaWithVote(new IdeaVote(null, null, null)))
-                                .collect(ImmutableList.toImmutableList())));
+                                .collect(ImmutableList.toImmutableList())),
+                new Hits(
+                        searchResponse.getTotalHits(),
+                        searchResponse.isTotalHitsGte() ? true : null));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -238,7 +232,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         .map(ideasById::get)
                         .filter(Objects::nonNull)
                         .map(IdeaModel::toIdea)
-                        .collect(ImmutableList.toImmutableList()));
+                        .collect(ImmutableList.toImmutableList()),
+                new Hits(
+                        searchResponse.getTotalHits(),
+                        searchResponse.isTotalHitsGte() ? true : null));
     }
 
     @RolesAllowed({Role.IDEA_OWNER})

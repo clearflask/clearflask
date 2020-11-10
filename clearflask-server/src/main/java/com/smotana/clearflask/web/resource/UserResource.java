@@ -9,24 +9,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Credits;
-import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
-import com.smotana.clearflask.api.model.EmailSignup;
-import com.smotana.clearflask.api.model.ForgotPassword;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.UserCreate;
-import com.smotana.clearflask.api.model.UserCreateAdmin;
-import com.smotana.clearflask.api.model.UserCreateResponse;
-import com.smotana.clearflask.api.model.UserLogin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserSearchResponse;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -519,7 +502,10 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                         .map(usersById::get)
                         .filter(Objects::nonNull)
                         .map(UserModel::toUserAdmin)
-                        .collect(ImmutableList.toImmutableList()));
+                        .collect(ImmutableList.toImmutableList()),
+                new Hits(
+                        searchUsersResponse.getTotalHits(),
+                        searchUsersResponse.isTotalHitsGte() ? true : null));
     }
 
     public static Module module() {

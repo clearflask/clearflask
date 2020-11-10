@@ -1,4 +1,4 @@
-import { Collapse, InputProps, StandardTextFieldProps, TextField } from '@material-ui/core';
+import { Collapse, InputProps, TextField, TextFieldProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CodeIcon from "@material-ui/icons/Code";
 import BoldIcon from "@material-ui/icons/FormatBold";
@@ -39,7 +39,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1, 0.5, 0.5),
   },
 });
-class RichEditor extends React.Component<StandardTextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
+class RichEditor extends React.Component<TextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
   render() {
     var shrink = (this.props.value !== undefined && this.props.value !== '') ? true : undefined;
     return (

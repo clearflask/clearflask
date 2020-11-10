@@ -76,6 +76,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <Grid container alignItems='baseline'>
             <Grid item xs={12} className={this.props.classes.row}>
               <TextField
+                variant='outlined'
                 disabled={this.state.isSubmitting}
                 label='Name'
                 fullWidth
@@ -99,6 +100,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             </Grid>
             <Grid item xs={12} className={this.props.classes.row}>
               <TextField
+                variant='outlined'
                 disabled={this.state.isSubmitting || !!this.props.user.isSso}
                 label='Email'
                 fullWidth
@@ -110,6 +112,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             {!this.props.user.isSso && (
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
+                  variant='outlined'
                   disabled={this.state.isSubmitting}
                   label='Set password'
                   type={this.state.revealPassword ? 'text' : 'password'}
@@ -198,6 +201,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             )}
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
+                variant='outlined'
                 disabled={this.state.isSubmitting}
                 label='Balance'
                 value={this.state.balanceAdjustment || ''}
@@ -214,6 +218,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             </Grid>
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
+                variant='outlined'
                 disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
                 label='Reason'
                 value={this.state.balanceDescription || ''}

@@ -295,6 +295,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
                     {showDisplayNameInput && (
                       <TextField
+                        variant='outlined'
                         fullWidth
                         required={isDisplayNameRequired}
                         value={this.state.displayName || ''}
@@ -310,6 +311,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     <Collapse in={showEmailInput} unmountOnExit>
                       <div>
                         <TextField
+                          variant='outlined'
                           fullWidth
                           required
                           value={this.state.email || ''}
@@ -325,6 +327,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         />
                         {showPasswordInput && (
                           <TextField
+                            variant='outlined'
                             fullWidth
                             required={isPasswordRequired}
                             value={this.state.pass || ''}
@@ -366,6 +369,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 <ListSubheader className={this.props.classes.noWrap} component="div">Login</ListSubheader>
                 <div>
                   <TextField
+                    variant='outlined'
                     fullWidth
                     required
                     value={this.state.email || ''}
@@ -379,6 +383,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={this.state.isSubmitting}
                   />
                   <TextField
+                    variant='outlined'
                     fullWidth
                     value={this.state.pass || ''}
                     onChange={e => this.setState({ pass: e.target.value })}
