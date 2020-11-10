@@ -1,301 +1,131 @@
-import { FormHelperText, Grow } from '@material-ui/core';
-import Chip from '@material-ui/core/Chip';
-import { ListProps } from '@material-ui/core/List';
-import MenuItem from '@material-ui/core/MenuItem';
-import Paper from '@material-ui/core/Paper';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
-import DropdownIcon from '@material-ui/icons/ArrowDropDown';
-import DeleteIcon from '@material-ui/icons/CloseRounded';
+import { Autocomplete, createFilterOptions } from '@material-ui/lab';
 import React, { Component } from 'react';
-import Select from 'react-select';
-import { components, SelectComponents } from 'react-select/lib/components';
-import CreatableSelect, { Props as SelectProps } from 'react-select/lib/Creatable';
-import { ActionMeta, InputActionMeta } from 'react-select/lib/types';
 
-const styles = (theme: Theme) => createStyles({
-  dropdownIcon: {
-    cursor: 'pointer',
-    height: '24px',
-    fontSize: '24px',
-    color: theme.palette.text.secondary,
-  },
-  deleteIcon: {
-    cursor: 'pointer',
-    height: '19px',
-    fontSize: '19px',
-    color: theme.palette.text.primary,
-    marginTop: '1px',
-  },
-  chip: {
-    height: 22,
-    marginTop: 1,
-    margin: '1px 2px 4px 2px',
-  },
-});
-
-/** Label type used by react-select */
+// TODO filterString
 export interface Label {
   label: string | React.ReactNode;
+  filterString?: string;
   value: string;
 }
 
 export type ColorLookup = { [value: string]: string; }
 
-interface Props extends ListProps, WithStyles<typeof styles, true> {
-  classes; // conflict
+const styles = (theme: Theme) => createStyles({
+});
+interface Props {
+  value: Label[];
+  options: Label[];
+  onValueChange: (labels: Label[]) => void;
+  onValueCreate?: (name: string) => void;
   className?: string;
+  TextFieldProps?: React.ComponentProps<typeof TextField>;
+  inputValue?: string;
+  menuIsOpen?: boolean;
+  menuOnChange?: (open: boolean) => void;
+  onInputChange?: (newValue: string, reason: 'input' | 'reset' | 'clear') => void;
+  noOptionsMessage?: string;
+  disabled?: boolean;
+  showClearWithOneValue?: boolean;
+  isMulti?: boolean;
+
+  // Below props are for backwarss compatibility, use TextFieldProps instead
   label?: string;
   helperText?: string;
   placeholder?: string;
-  placeholderWrapper?: (placeholder: string) => React.ReactNode;
   errorMsg?: string;
-  value?: Label[];
-  inputValue?: string;
-  menuIsOpen?: boolean;
-  options: Label[];
-  noOptionsMessage?: string;
-  colorLookup?: ColorLookup;
-  disabled?: boolean;
-  isMulti?: boolean;
-  showClearWithOneValue?: boolean;
-  bare?: boolean;
+  inputClassName?: string;
   width?: number | string;
   inputMinWidth?: string | number;
-  overrideComponents?: Partial<SelectComponents<Label>>;
+
+  // TODO Needs replacement below
+  // placeholderWrapper?: (placeholder: string) => React.ReactNode;
+  // overrideComponents?: Partial<SelectComponents<Label>>;
+
+  // TODO below
+  colorLookup?: ColorLookup;
+  bare?: boolean;
   formatCreateLabel?: (input: string) => string;
-  onInputChange?: (newValue: string, actionMeta: InputActionMeta) => void;
-  onValueChange: (labels: Label[], action: ActionMeta) => void;
-  onValueCreate?: (name: string) => void;
 }
 
-class SelectionPicker extends Component<Props> {
+class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>> {
+  readonly const filterOptions = createFilterOptions({
+    matchFrom: 'any',
+    ignoreCase: true,
+    ignoreAccents: true,
+    trim: true,
+    stringify: (option: Label) => option.filterString || option.value,
+  });
+
   render() {
-    const selectComponentProps: SelectProps<Label> = {
-      options: this.props.options || [],
-      openOnFocus: true,
-      menuIsOpen: this.props.menuIsOpen,
-      components: {
-        IndicatorSeparator: () => null,
-        Control,
-        Input,
-        Menu,
-        MultiValue,
-        NoOptionsMessage,
-        Option,
-        Placeholder,
-        SingleValue,
-        ValueContainer,
-        DropdownIndicator,
-        ClearIndicator,
-        ...this.props.overrideComponents,
-      },
-      commonProps: this.props,
-      value: this.props.value || [],
-      onChange: (value, action) => {
-        if (this.props.isMulti) {
-          this.props.onValueChange((value || []) as Label[], action);
-        } else {
-          this.props.onValueChange((value ? [value] : []) as Label[], action);
-        }
-      },
-      inputValue: this.props.inputValue,
-      onInputChange: !!this.props.onInputChange ? (newValue, actionMeta) => {
-        this.props.onInputChange!(newValue, actionMeta);
-        // Prevent returning any value here as it updates inputValue without documentation
-      } : undefined,
-      placeholder: this.props.placeholder || '',
-      isMulti: !!this.props.isMulti,
-      isClearable: true,
-      error: !!this.props.errorMsg,
-      onCreateOption: this.props.onValueCreate,
-      formatCreateLabel: this.props.onValueCreate ? this.props.formatCreateLabel : undefined,
-    };
     return (
-      <div className={this.props.className}>
-        {this.props.onValueCreate
-          ? (<CreatableSelect<Label> {...selectComponentProps} />)
-          : (<Select<Label> {...selectComponentProps} />)}
-        {(!this.props.bare && this.props.helperText || this.props.errorMsg) && (<FormHelperText style={{ minWidth: this.props.inputMinWidth, width: this.props.width }} error={!!this.props.errorMsg}>{this.props.errorMsg || this.props.helperText}</FormHelperText>)}
-      </div>
+      <Autocomplete
+        value={this.props.isMulti ? (this.props.value) : (this.props.value.length > 0 ? this.props.value[0] : null)}
+        onChange={(e, val, reason) => {
+          if (reason === 'create-option') {
+            this.props.onValueCreate && this.props.onValueCreate(val.inputValue);
+          } else if (reason === 'clear') {
+            this.props.onValueChange([]);
+          } else if (reason === 'select-option' || reason === 'remove-option') {
+            this.props.onValueChange(this.props.isMulti ? val : [val]);
+          }
+        }}
+        filterSelectedOptions
+        filterOptions={(options, params) => {
+          const filtered = filter(options, params);
+
+          // Suggest the creation of a new value
+          if (params.inputValue !== '') {
+            filtered.push({
+              inputValue: params.inputValue,
+              title: `Add "${params.inputValue}"`,
+            });
+          }
+
+          return filtered;
+        }}
+        options={this.props.options}
+        getOptionSelected={(option, value) => option.value === value.value}
+        inputValue={this.props.inputValue}
+        onInputChange={this.props.onInputChange ? (e, val, reason) => this.props.onInputChange && this.props.onInputChange(val, reason) : undefined}
+        className={this.props.className}
+        noOptionsText={this.props.noOptionsMessage}
+        disabled={this.props.disabled}
+        multiple={!!this.props.isMulti}
+        freeSolo
+        open={this.props.menuIsOpen}
+        disableClearable={!this.props.showClearWithOneValue}
+        clearOnEscape={this.props.showClearWithOneValue}
+        onOpen={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(true) : undefined}
+        onClose={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(false) : undefined}
+        renderInput={(params) => (
+          <TextField
+            label={this.props.label}
+            helperText={this.props.errorMsg || this.props.helperText}
+            placeholder={this.props.placeholder}
+            error={!!this.props.errorMsg}
+            {...this.props.TextFieldProps}
+            classes={{
+              root: this.props.inputClassName,
+              ...this.props.TextFieldProps?.classes,
+            }}
+            {...params}
+            inputProps={{
+              ...params.inputProps,
+              ...this.props.TextFieldProps?.inputProps,
+              style: {
+                minWidth: this.props.inputMinWidth,
+                width: this.props.width,
+                ...params.inputProps ? ['style'],
+                ...this.props.TextFieldProps?.inputProps?.style,
+              },
+            }}
+          />
+        )}
+      />
     );
   }
-}
-
-const NoOptionsMessage = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <Typography color="textSecondary" {...props.innerProps} style={{
-      padding: `${10}px ${10 * 2}px`,
-    }}>
-      {outerProps.noOptionsMessage || props.children}
-    </Typography>
-  );
-}
-
-const Input = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <div style={{
-      minWidth: '20px',
-    }}>
-      <components.Input {...props} isDisabled={outerProps.disabled} />
-    </div>
-  );
-}
-
-const inputComponent = ({ inputRef, ...props }) => {
-  return <div ref={inputRef} {...props} />;
-}
-
-const Control = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <TextField
-      style={{
-        verticalAlign: 'baseline',
-        width: outerProps.width,
-      }}
-      InputProps={{
-        inputComponent: inputComponent as any,
-        inputProps: {
-          style: {
-            display: 'flex',
-            minWidth: outerProps.inputMinWidth,
-            width: outerProps.width,
-            paddingBottom: 3,
-            paddingTop: 0,
-            height: 'unset',
-          },
-          inputRef: props.innerRef,
-          children: props.children,
-          ...props.innerProps,
-        },
-      }}
-      label={!outerProps.bare && outerProps.label}
-      disabled={outerProps.disabled}
-      InputLabelProps={{
-        style: {
-          marginTop: '1px',
-        },
-        // TODO When placeholder is set, this never shrinks
-        shrink: (((outerProps.value !== undefined && outerProps.value.length !== 0) || (outerProps.inputValue !== undefined && outerProps.inputValue !== ''))
-          || outerProps.placeholder) ? true : undefined,
-      }}
-      error={!!outerProps.errorMsg}
-    />
-  );
-}
-
-const Option = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <MenuItem
-      buttonRef={props.innerRef}
-      selected={props.isFocused}
-      component="div"
-      style={{
-        fontWeight: props.isSelected ? 500 : 400,
-        color: outerProps.colorLookup ? outerProps.colorLookup[props.data.value] : undefined,
-      }}
-      {...props.innerProps}
-    >
-      {props.children}
-    </MenuItem>
-  );
-}
-
-const DropdownIndicator = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <DropdownIcon fontSize='inherit' className={outerProps.classes.dropdownIcon} />
-  );
-}
-
-const ClearIndicator = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  const { innerProps: { ref, ...restInnerProps } } = props;
-  return !outerProps.value || outerProps.value.length <= (outerProps.showClearWithOneValue ? 0 : 1) ? null : (
-    <DeleteIcon {...restInnerProps} fontSize='inherit' className={outerProps.classes.deleteIcon} />
-  );
-}
-
-const Placeholder = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  var inner = props.children;
-  if (outerProps.placeholderWrapper) {
-    inner = outerProps.placeholderWrapper(inner);
-  }
-  return (
-    <Typography color="textSecondary" {...props.innerProps} style={{
-      position: 'absolute',
-      left: 2,
-      fontSize: 16,
-      opacity: 0.42,
-      color: outerProps.theme.palette.text.primary,
-    }}>
-      {inner}
-    </Typography>
-  );
-}
-
-const SingleValue = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <Typography {...props.innerProps} style={{
-      fontSize: 16,
-      color: outerProps.colorLookup ? outerProps.colorLookup[props.data.value] : undefined,
-    }}>
-      {props.children}
-    </Typography>
-  );
-}
-
-const ValueContainer = (props) => {
-  return (
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      flex: 1,
-      alignItems: 'center',
-      overflow: 'hidden',
-    }}>
-      {props.children}
-    </div>
-  );
-}
-
-const MultiValue = (props) => {
-  const outerProps: Props = props.selectProps.commonProps;
-  return (
-    <Chip
-      variant='outlined'
-      className={outerProps.classes.chip}
-      tabIndex={-1}
-      label={props.children}
-      onDelete={props.removeProps.onClick}
-      deleteIcon={<DeleteIcon {...props.removeProps} className={outerProps.classes.deleteIcon} />}
-      style={outerProps.colorLookup ? { color: outerProps.colorLookup[props.data.value] } : undefined}
-    />
-  );
-}
-
-const Menu = (props) => {
-  return (
-    <Grow appear in style={{ transformOrigin: '0 0 0' }}>
-      <Paper elevation={2} square {...props.innerProps} style={{
-        position: 'absolute',
-        zIndex: 1,
-        marginTop: 0,
-        left: 0,
-        right: 0,
-        width: 'fit-content',
-      }}>
-        {props.children}
-      </Paper>
-    </Grow>
-  );
 }
 
 export default withStyles(styles, { withTheme: true })(SelectionPicker);

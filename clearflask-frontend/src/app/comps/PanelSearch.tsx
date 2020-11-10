@@ -39,7 +39,12 @@ const styles = (theme: Theme) => createStyles({
   },
   filterIcon: {
     color: theme.palette.text.hint,
-  }
+  },
+  input: {
+    '&::before': {
+      borderBottom: '1px solid rgba(0, 0, 0, 0)',
+    }
+  },
 });
 
 interface Props {
@@ -81,12 +86,14 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             placeholder={this.props.placeholder || 'Search'}
             value={controls.values}
             menuIsOpen={this.state.menuIsOpen}
+            menuOnChange={open => this.setState({ menuIsOpen: open })}
             inputValue={this.state.searchValue || ''}
             onInputChange={(newValue, actionMeta) => this.setState({ searchValue: newValue })}
             options={controls.options}
             colorLookup={controls.colorLookup}
             isMulti={true}
             inputMinWidth={this.props.minWidth || '100px'}
+            inputClassName={this.props.classes.input}
             onValueChange={this.onValueChange.bind(this)}
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             formatCreateLabel={inputValue => `Search '${inputValue}'`}

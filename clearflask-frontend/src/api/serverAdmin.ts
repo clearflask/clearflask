@@ -177,6 +177,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
   switch (action.type) {
     case Admin.accountSignupAdminActionStatus.Pending:
     case Admin.accountLoginAdminActionStatus.Pending:
+    case Admin.accountLoginAsSuperAdminActionStatus.Pending:
       return {
         ...state,
         account: {
@@ -186,6 +187,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
       };
     case Admin.accountSignupAdminActionStatus.Rejected:
     case Admin.accountLoginAdminActionStatus.Rejected:
+    case Admin.accountLoginAsSuperAdminActionStatus.Rejected:
       return {
         ...state,
         account: {
@@ -250,6 +252,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
       return stateAccountDefault;
+    case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
     case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return {
         ...stateAccountDefault,
@@ -367,6 +370,7 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
     case Admin.accountDeleteAdminActionStatus.Fulfilled:
+    case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
       return stateConfigsDefault;
     default:
       return state;

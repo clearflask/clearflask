@@ -1,9 +1,9 @@
-import { Collapse, Fade, withWidth, WithWidthProps, isWidthUp } from '@material-ui/core';
+import { Collapse, Fade, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import DividerCorner from '../utils/DividerCorner';
-import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   explorer: {
@@ -39,11 +39,13 @@ const styles = (theme: Theme) => createStyles({
   createLabel: {
     flexGrow: 1,
   },
+  flexGrow: {
+    flexGrow: 1,
+  },
   createLabelVertical: {
     marginTop: theme.spacing(2),
   },
   searchAndCreateLabelContainer: {
-    flexGrow: 1,
     display: 'flex',
     flexDirection: 'column',
   },
@@ -91,9 +93,11 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
         <DividerCorner
           isExplorer
           width={this.props.createShown ? 80 : (
-            (this.props.createSize || 0) + (this.props.searchSize || 0) + 20
+            (this.props.createSize || 0) + 20
           )}
           height={this.props.createShown ? 180 : 20}
+          widthRight={!!this.props.searchSize ? (this.props.createShown ? 0 : this.props.searchSize + 20) : undefined}
+          heightRight={!!this.props.search ? (this.props.createShown ? 0 : 20) : undefined}
         >
           {results}
         </DividerCorner>
@@ -115,6 +119,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
               {this.props.createVisible}
             </div>
           )}
+          <div className={this.props.classes.flexGrow} />
           <div className={this.props.classes.searchAndCreateLabelContainer}>
             {expandDirectionHorizontal && this.props.createLabel && (
               <Collapse in={!!this.state.hasExpanded && !expandInMotion}>

@@ -8,6 +8,7 @@ const styles = (theme: Theme) => createStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   title: {
     margin: theme.spacing(1),
@@ -22,8 +23,21 @@ const styles = (theme: Theme) => createStyles({
   heightTransition: {
     transition: (props: Props) => theme.transitions.create('height', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },
-  widthTransition: {
+  titleContainer: {
+    display: 'inline-block',
     transition: (props: Props) => theme.transitions.create('min-width', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
+  },
+  titles: {
+    display: 'flex',
+    width: '100%',
+  },
+  flexGrow: {
+    flexGrow: 1,
+  },
+  contentContainer: {
+    display: 'flex',
+    width: '100%',
+    flexDirection: 'row',
   },
 });
 
@@ -34,45 +48,60 @@ interface Props {
   header?: React.ReactNode;
   width?: string | number;
   height?: string | number;
-  rtl?: boolean;
+  titleRight?: string | React.ReactNode;
+  headerRight?: React.ReactNode;
+  widthRight?: string | number;
+  heightRight?: string | number;
   isExplorer?: boolean
 }
 
 class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
+    const rightPresent = (this.props.heightRight !== undefined || this.props.widthRight !== undefined || !!this.props.headerRight || !!this.props.titleRight);
     return (
-      <div className={classNames(this.props.className, this.props.classes.container)} style={{
-        alignItems: this.props.rtl ? 'flex-end' : 'flex-start',
-      }}>
-        <div className={this.props.classes.widthTransition} style={{
-          minWidth: this.props.width !== undefined ? this.props.width : '24px',
-          display: 'inline-block',
-        }}>
-          {this.props.title !== undefined ? (
-            <Typography variant='body1' className={this.props.classes.title}>
-              {this.props.title}
-            </Typography>
-          ) : null}
-          {this.props.header}
-          <Divider />
-        </div>
-        <div style={{
-          display: 'flex',
-          width: '100%',
-          flexDirection: this.props.rtl ? 'row-reverse' : 'row',
-        }}>
-          <div style={{
-            display: 'flex',
+      <div className={classNames(this.props.className, this.props.classes.container)}>
+        <div className={this.props.classes.titles}>
+          <div className={this.props.classes.titleContainer} style={{
+            minWidth: this.props.width !== undefined ? this.props.width : '24px',
           }}>
-            <DividerVertical
-              className={this.props.classes.heightTransition}
-              style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
-            />
+            {this.props.title !== undefined ? (
+              <Typography variant='body1' className={this.props.classes.title}>
+                {this.props.title}
+              </Typography>
+            ) : null}
+            {this.props.header}
+            <Divider />
           </div>
-          <div style={{ width: '100%' }} className={this.props.innerClassName}>
+          <div className={this.props.classes.flexGrow} />
+          {rightPresent && (
+            <div className={this.props.classes.titleContainer} style={{
+              minWidth: this.props.widthRight !== undefined ? this.props.widthRight : '24px',
+            }}>
+              {this.props.titleRight !== undefined ? (
+                <Typography variant='body1' className={this.props.classes.title}>
+                  {this.props.titleRight}
+                </Typography>
+              ) : null}
+              {this.props.headerRight}
+              <Divider />
+            </div>
+          )}
+        </div>
+        <div className={this.props.classes.contentContainer}>
+          <DividerVertical
+            className={this.props.classes.heightTransition}
+            style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
+          />
+          <div className={classNames(this.props.innerClassName, this.props.classes.flexGrow)}>
             {this.props.children}
           </div>
+          {rightPresent && (
+            <DividerVertical
+              className={this.props.classes.heightTransition}
+              style={{ height: this.props.heightRight !== undefined ? this.props.heightRight : '24px' }}
+            />
+          )}
         </div>
       </div>
     );
