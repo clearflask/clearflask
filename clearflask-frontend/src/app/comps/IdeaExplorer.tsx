@@ -326,7 +326,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           <UserSelection
             server={this.props.server}
             placeholder='Author'
-            placeholderWrapper={placeholder => (<ModAction label={placeholder} />)}
             errorMsg='Select author'
             width='100%'
             className={this.props.classes.createFormField}

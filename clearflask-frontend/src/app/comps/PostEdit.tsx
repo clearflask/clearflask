@@ -8,7 +8,7 @@ import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
+import SelectionPicker, { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
 
 const styles = (theme: Theme) => createStyles({
@@ -60,18 +60,19 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     ].filter(notEmpty).join(' and ') || undefined;
     const nextStatusValues: Label[] = [];
     const nextStatusOptions: Label[] = [];
-    const nextStatusColorLookup: ColorLookup = {};
     if (isModLoggedIn) {
       const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
       const nextStatusIds: Set<string> | undefined = new Set(status?.nextStatusIds);
       if (nextStatusIds && nextStatusIds.size > 0) {
         const nextStatuses: Client.IdeaStatus[] | undefined = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds.has(s.statusId)) : undefined;
         nextStatuses && nextStatuses.forEach(s => {
-          const label = { label: s.name, value: s.statusId };
+          const label: Label = {
+            label: s.name,
+            filterString: s.name,
+            value: s.statusId,
+            color: s.color,
+          };
           nextStatusOptions.push(label);
-          if (s.color) {
-            nextStatusColorLookup[s.statusId] = s.color;
-          }
           if (this.state.statusId === s.statusId) {
             nextStatusValues.push(label);
           }
@@ -102,8 +103,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         showClearWithOneValue
                         value={nextStatusValues}
                         options={nextStatusOptions}
-                        colorLookup={nextStatusColorLookup}
-                        onValueChange={(labels, action) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}
+                        onValueChange={(labels) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}
                       />
                     </Grid>
                   )}

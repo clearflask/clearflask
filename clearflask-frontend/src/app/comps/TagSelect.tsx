@@ -2,14 +2,14 @@ import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
-import SelectionPicker, { ColorLookup, Label } from './SelectionPicker';
+import SelectionPicker, { Label } from './SelectionPicker';
 
 interface TagSelection {
   values: Label[];
   options: Label[];
   mandatoryTagIds: string[];
-  colorLookup: ColorLookup;
   error?: string;
+  group: boolean;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -58,7 +58,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
         disabled={this.props.disabled}
         value={tagSelection.values}
         options={tagSelection.options}
-        colorLookup={tagSelection.colorLookup}
+        group={tagSelection.group}
         helperText=' ' // Keep it aligned
         errorMsg={tagSelection.error}
         isMulti={true}
@@ -103,11 +103,12 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
   }
 
   getTagSelection(category: Client.Category): TagSelection {
+    const moreThanOneTag = category.tagging.tagGroups.length > 1;
     const tagSelection: TagSelection = {
       values: [],
       options: [],
       mandatoryTagIds: this.props.mandatoryTagIds || [],
-      colorLookup: {},
+      group: moreThanOneTag,
     };
     const mandatoryTagIds = new Set(this.props.mandatoryTagIds);
 
@@ -123,11 +124,11 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
           .forEach(tag => {
             const label: Label = {
               label: tag.name,
+              filterString: tag.name,
               value: `${tagGroup.tagGroupId}:${tag.tagId}`,
+              groupBy: moreThanOneTag ? tagGroup.name : undefined,
+              color: tag.color,
             };
-            if (tag.color) {
-              tagSelection.colorLookup[label.value] = tag.color;
-            }
             tagSelection.options.push(label);
             if (this.props.tagIds && this.props.tagIds.includes(tag.tagId)) {
               selectedCount++;

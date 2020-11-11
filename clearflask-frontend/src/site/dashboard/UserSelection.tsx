@@ -23,7 +23,6 @@ interface Props {
   allowCreate?: boolean;
   allowClear?: boolean;
   placeholder?: string;
-  placeholderWrapper?: (placeholder: string) => React.ReactNode;
   helperText?: string;
   errorMsg?: string;
   width?: string | number;
@@ -88,7 +87,6 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
       <SelectionPicker
         className={this.props.className}
         placeholder={this.props.placeholder}
-        placeholderWrapper={this.props.placeholderWrapper}
         helperText={this.props.helperText}
         noOptionsMessage='Type to search'
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
