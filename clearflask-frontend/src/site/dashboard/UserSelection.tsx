@@ -96,21 +96,13 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         width={this.props.width}
         inputMinWidth={this.props.inputMinWidth}
         disabled={this.props.disabled}
-        onInputChange={(newValue, actionMeta) => {
-          if (actionMeta.action === 'input-change') {
+        onInputChange={(newValue, reason) => {
+          if (reason === 'input') {
             this.searchUsers(newValue);
           }
         }}
-        onValueChange={(labels, action) => {
-          var selectedLabel;
-          if ((action.action === 'set-value' || action.action === 'select-option')
-            && labels.length === 1) {
-            selectedLabel = labels[0];
-          } else if (action.action === 'clear' || action.action === 'remove-value' || action.action === 'deselect-option') {
-            selectedLabel = undefined;
-          } else {
-            return;
-          }
+        onValueChange={(labels) => {
+          var selectedLabel: Label | undefined = labels[0];
           this.setState({ selectedUserLabel: selectedLabel })
           this.props.onChange && this.props.onChange(selectedLabel);
         }}

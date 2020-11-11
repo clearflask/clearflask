@@ -74,20 +74,17 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
         disabled={!this.props.server || isSubmitting}
         className={this.props.classes.picker}
         value={[selectedUserLabel]}
-        overrideComponents={{ DropdownIndicator: null }}
+        overrideDropdownIcon={null}
         options={options}
         inputMinWidth='100px'
-        isMulti={false}
-        bare={false}
-        onInputChange={(newValue: string, actionMeta: InputActionMeta) => {
-          this.searchUser(newValue);
-        }}
-        onValueChange={(labels, action) => {
-          if (labels.length === 1 && this.props.server) {
+        onInputChange={newValue => this.searchUser(newValue)}
+        onValueChange={labels => {
+          const selectedUserId = labels[0]?.value;
+          if (selectedUserId && this.props.server) {
             const projectId = this.props.server.getProjectId();
             this.props.server && this.props.server.dispatchAdmin().then(d => d.userLoginAdmin({
               projectId,
-              userId: labels[0].value,
+              userId: selectedUserId,
             }));
           }
         }}

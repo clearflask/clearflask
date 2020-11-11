@@ -48,6 +48,7 @@ class HorizontalPanels extends Component<Props & WithStyles<typeof styles, true>
         }}
       >
         {React.Children.map(this.props.children, (content, index) => {
+          if (!content) return null;
           var contentClass: string | undefined = undefined;
           if (!isHorizontal) {
             if (index === 0) {

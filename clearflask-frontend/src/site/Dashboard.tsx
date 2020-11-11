@@ -172,14 +172,10 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         </span>
       ), value: '__NONE__'
     };
-    const createLabel = {
-      label: '+ Create', value: '__CREATE__'
-    };
     const projectOptions = [
       ...(projects.length > 0
         ? projects.map(p => ({ label: p.editor.getConfig().name, value: p.projectId }))
         : [noProjectLabel]),
-      createLabel,
     ];
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
     if (!selectedLabel) {
@@ -188,7 +184,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
     var activeProjectId: string | undefined = selectedLabel?.value;
     if (activePath === 'create') {
-      selectedLabel = createLabel;
+      selectedLabel = noProjectLabel;
     } else if (!selectedLabel && projects.length > 0) {
       selectedLabel = { label: projects[0].editor.getConfig().name, value: projects[0].projectId };
       activeProjectId = projects[0].projectId;
@@ -528,18 +524,16 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <SelectionPicker
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
-            overrideComponents={{ DropdownIndicator: null }}
+            overrideDropdownIcon={null}
             options={accountOptions}
             helperText={isSelectProjectUserInMenu && 'Current account' || undefined}
             inputMinWidth={150}
-            isMulti={false}
-            bare={false}
-            onInputChange={(newValue, actionMeta) => {
-              if (actionMeta.action === 'input-change') {
+            onInputChange={(newValue, reason) => {
+              if (reason === 'input') {
                 this.searchAccounts(newValue);
               }
             }}
-            onValueChange={(labels, action) => {
+            onValueChange={labels => {
               const email = labels[0]?.value;
               if (email && this.props.account?.email !== email) {
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
@@ -557,23 +551,18 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             <SelectionPicker
               className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
               value={[selectedLabel]}
-              overrideComponents={{ DropdownIndicator: null }}
+              overrideDropdownIcon={null}
               options={projectOptions}
               helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
               inputMinWidth={150}
-              isMulti={false}
-              bare={false}
-              onValueChange={(labels, action) => {
-                if (labels.length === 1) {
-                  if (labels[0].value === '__CREATE__') {
-                    this.pageClicked('create');
-                  } else {
-                    localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, labels[0].value);
-                    this.setState({
-                      selectedProjectId: labels[0].value,
-                      quickView: undefined,
-                    });
-                  }
+              onValueChange={labels => {
+                const selectedProjectId = labels[0]?.value;
+                if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
+                  localStorage.setItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY, selectedProjectId);
+                  this.setState({
+                    selectedProjectId,
+                    quickView: undefined,
+                  });
                 }
               }}
             />

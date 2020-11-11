@@ -1,4 +1,3 @@
-import { Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import * as Client from '../../api/client';
@@ -66,38 +65,39 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
         onValueChange={labels => this.props.onChange(
           [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]
         )}
-        overrideComponents={{
-          MenuList: (menuProps) => {
-            const tagGroups: { [tagGroupId: string]: React.ReactNode[] } = {};
-            const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-            children.forEach((child: any) => {
-              if (!child.props.data) {
-                // child is "No option(s)" text, ignore
-              } else {
-                const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
-                if (!tagGroups[tagGroupId]) tagGroups[tagGroupId] = [];
-                tagGroups[tagGroupId].push(child);
-              }
-            });
-            const menuItems = Object.keys(tagGroups).map(tagGroupId => (
-              <div className={this.props.classes.menuItem}>
-                <Typography variant='overline'>{this.props.category.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
-                {tagGroups[tagGroupId]}
-              </div>
-            ));
-            return (
-              <div {...menuProps} className={this.props.classes.menuContainer}>
-                <div style={{
-                  MozColumns: `150px`,
-                  WebkitColumns: `150px`,
-                  columns: `150px`,
-                }}>
-                  {menuItems}
-                </div>
-              </div>
-            );
-          },
-        }}
+        // TODO merge into SelectionPicker
+        // overrideComponents={{
+        //   MenuList: (menuProps) => {
+        //     const tagGroups: { [tagGroupId: string]: React.ReactNode[] } = {};
+        //     const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
+        //     children.forEach((child: any) => {
+        //       if (!child.props.data) {
+        //         // child is "No option(s)" text, ignore
+        //       } else {
+        //         const tagGroupId = child.props.data.value.substr(0, child.props.data.value.indexOf(':'));
+        //         if (!tagGroups[tagGroupId]) tagGroups[tagGroupId] = [];
+        //         tagGroups[tagGroupId].push(child);
+        //       }
+        //     });
+        //     const menuItems = Object.keys(tagGroups).map(tagGroupId => (
+        //       <div className={this.props.classes.menuItem}>
+        //         <Typography variant='overline'>{this.props.category.tagging.tagGroups.find(g => g.tagGroupId === tagGroupId)!.name}</Typography>
+        //         {tagGroups[tagGroupId]}
+        //       </div>
+        //     ));
+        //     return (
+        //       <div {...menuProps} className={this.props.classes.menuContainer}>
+        //         <div style={{
+        //           MozColumns: `150px`,
+        //           WebkitColumns: `150px`,
+        //           columns: `150px`,
+        //         }}>
+        //           {menuItems}
+        //         </div>
+        //       </div>
+        //     );
+        //   },
+        // }}
       />
     );
   }

@@ -6,7 +6,7 @@ import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import ColorPicker from 'material-ui-color-picker';
 import React, { Component } from 'react';
-import SelectionPicker, { ColorLookup, Label } from '../../../app/comps/SelectionPicker';
+import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import EmojiPicker from '../../EmojiPicker';
 import Overlay from '../../Overlay';
 import RichEditor from '../../RichEditor';
@@ -361,17 +361,16 @@ export default class Property extends Component<Props> {
           });
           propertySetter = (
             <SelectionPicker
-              label={prop.name}
-              helperText={prop.description}
+              label={this.props.bare ? undefined : prop.name}
+              helperText={this.props.bare ? undefined : prop.description}
               placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
               errorMsg={prop.errorMsg}
               value={values}
               options={options}
               isMulti={true}
-              bare={this.props.bare}
               width={this.props.width}
               inputMinWidth={Property.inputMinWidth}
-              onValueChange={(labels, action) => prop
+              onValueChange={labels => prop
                 .setRaw(labels.map(label => label.value))}
             />
           );
@@ -428,7 +427,7 @@ export default class Property extends Component<Props> {
         break;
       case ConfigEditor.PropertyType.Link:
       case ConfigEditor.PropertyType.LinkMulti:
-        const onValueChange = (labels, action) => {
+        const onValueChange = labels => {
           if (prop.type === ConfigEditor.PropertyType.LinkMulti) {
             prop.set(new Set<string>(labels.map(o => o.value)));
           } else {
@@ -438,11 +437,14 @@ export default class Property extends Component<Props> {
         const onValueCreate = prop.allowCreate ? prop.create.bind(this) : undefined;
         const values: Label[] = [];
         const options: Label[] = [];
-        const colorLookup: ColorLookup = {};
         prop.getOptions()
           .forEach(o => {
-            options.push({ label: o.name, value: o.id });
-            if (o!.color) colorLookup[o!.id] = o!.color;
+            options.push({
+              label: o.name,
+              filterString: o.name,
+              value: o.id,
+              color: o.color,
+            });
           });
         if (prop.value !== undefined) {
           (prop.type === ConfigEditor.PropertyType.Link
@@ -450,21 +452,23 @@ export default class Property extends Component<Props> {
               .filter(o => o !== undefined)
             : prop.getOptions().filter(o => (prop.value as Set<string>).has(o.id)))
             .forEach(o => {
-              values.push({ label: o!.name, value: o!.id });
+              values.push({
+                label: o!.name,
+                value: o!.id,
+                color: o!.color,
+              });
             })
         }
         propertySetter = (
           <SelectionPicker
             showClearWithOneValue={!prop.required}
-            label={prop.name}
-            helperText={prop.description}
+            label={this.props.bare ? undefined : prop.name}
+            helperText={this.props.bare ? undefined : prop.description}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             errorMsg={prop.errorMsg}
             value={values}
-            colorLookup={colorLookup}
             options={options}
             isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
-            bare={this.props.bare}
             width={this.props.width}
             inputMinWidth={Property.inputMinWidth}
             onValueChange={onValueChange}

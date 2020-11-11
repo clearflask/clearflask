@@ -252,7 +252,6 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountLogoutAdminActionStatus.Rejected:
     case Admin.accountLogoutAdminActionStatus.Fulfilled:
       return stateAccountDefault;
-    case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
     case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return {
         ...stateAccountDefault,

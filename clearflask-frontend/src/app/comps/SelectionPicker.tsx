@@ -1,4 +1,4 @@
-import { ListSubheader, Typography } from '@material-ui/core';
+import { Chip, ListSubheader, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import { Autocomplete, AutocompleteRenderGroupParams, createFilterOptions } from '@material-ui/lab';
@@ -37,12 +37,14 @@ interface Props {
   onInputChange?: (newValue: string, reason: 'input' | 'reset' | 'clear') => void;
   noOptionsMessage?: string;
   disabled?: boolean;
+  // TODO this needs to be reworked
   showClearWithOneValue?: boolean;
   isMulti?: boolean;
   group?: boolean;
   formatCreateLabel?: (input: string) => string;
   loading?: boolean;
   overrideDropdownIcon?: React.ReactNode;
+  limitTags?: number;
 
   // Below props are for backwards compatibility, use TextFieldProps instead
   label?: string;
@@ -52,11 +54,6 @@ interface Props {
   inputClassName?: string;
   width?: number | string;
   inputMinWidth?: string | number;
-
-  // TODO Needs replacement below
-  // overrideComponents?: Partial<SelectComponents<Label>>;
-  // colorLookup?: ColorLookup;
-  // bare?: boolean;
 }
 class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>> {
 
@@ -91,10 +88,12 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
           return filtered;
         }}
         options={this.props.options}
+        getOptionLabel={option => option.value}
         getOptionSelected={(option, value) => option.value === value.value}
         inputValue={this.props.inputValue}
         onInputChange={this.props.onInputChange ? (e, val, reason) => this.props.onInputChange && this.props.onInputChange(val, reason) : undefined}
         className={this.props.className}
+        limitTags={this.props.limitTags}
         noOptionsText={this.props.noOptionsMessage}
         disabled={this.props.disabled}
         groupBy={this.props.group ? (label: Label) => label.groupBy || label.value[0] : undefined}
@@ -107,14 +106,30 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
         renderOption={(option: Label) => (
           <Typography noWrap style={{
             color: option.color
-          }}>{option}</Typography>
+          }}>{option.label}</Typography>
         )}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip
+              variant='outlined'
+              label={option.label}
+              size='small'
+              {...getTagProps({ index })}
+            />
+          ))
+        }
         freeSolo
         open={this.props.menuIsOpen}
-        disableClearable={!this.props.showClearWithOneValue}
+        // disableClearable={!this.props.showClearWithOneValue}
         clearOnEscape={this.props.showClearWithOneValue}
         onOpen={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(true) : undefined}
         onClose={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(false) : undefined}
+        ChipProps={{
+          variant: 'outlined',
+        }}
+        classes={{
+          // TODO hide dropdown icon when overrideDropdownIcon is true
+        }}
         renderInput={(params) => (
           <TextField
             label={this.props.label}
@@ -136,7 +151,8 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
                     <Loading showImmediately />
                   )}
                   {this.props.TextFieldProps?.InputProps?.endAdornment}
-                  {this.props.overrideDropdownIcon || params.InputProps.endAdornment}
+                  {params.InputProps.endAdornment}
+                  {this.props.overrideDropdownIcon}
                 </React.Fragment>
               ),
             }}

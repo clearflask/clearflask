@@ -15,7 +15,6 @@ export enum FilterType {
   Tag = 'tag',
   Status = 'status',
 }
-const FilterTypes = new Set(Object.values(FilterType));
 
 const styles = (theme: Theme) => createStyles({
   container: {
@@ -93,6 +92,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             onValueChange={this.onValueChange.bind(this)}
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
+            limitTags={1}
             overrideDropdownIcon={(
               <FilterIcon fontSize='inherit' className={this.props.classes.filterIcon} />
             )}
