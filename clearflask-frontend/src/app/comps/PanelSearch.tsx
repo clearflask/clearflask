@@ -1,5 +1,5 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import FilterIcon from '@material-ui/icons/SearchRounded';
+import FilterIcon from '@material-ui/icons/TuneSharp';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
@@ -37,7 +37,7 @@ const styles = (theme: Theme) => createStyles({
   },
   input: {
     '&::before': {
-      borderBottom: '1px solid rgba(0, 0, 0, 0)',
+      borderBottomColor: theme.palette.divider,
     }
   },
 });
@@ -93,6 +93,14 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
             limitTags={1}
+            TextFieldProps={{
+              InputProps: {
+                classes: {
+                  root: this.props.classes.input,
+                },
+              }
+            }}
+            dropdownIconDontFlip
             overrideDropdownIcon={(
               <FilterIcon fontSize='inherit' className={this.props.classes.filterIcon} />
             )}
