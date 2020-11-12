@@ -26,7 +26,7 @@ interface Props {
   helperText?: string;
   errorMsg?: string;
   width?: string | number;
-  inputMinWidth?: string | number;
+  minWidth?: string | number;
   alwaysOverrideWithLoggedInUser?: boolean;
 }
 interface ConnectProps {
@@ -92,9 +92,9 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
         options={options}
-        showClearWithOneValue={this.props.allowClear}
+        disableClearable={!this.props.allowClear}
         width={this.props.width}
-        inputMinWidth={this.props.inputMinWidth}
+        minWidth={this.props.minWidth}
         disabled={this.props.disabled}
         onInputChange={(newValue, reason) => {
           if (reason === 'input') {

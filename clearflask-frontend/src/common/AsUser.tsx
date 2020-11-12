@@ -76,7 +76,7 @@ class AsUser extends React.Component<Props & ConnectProps & WithStyles<typeof st
         value={[selectedUserLabel]}
         overrideDropdownIcon={null}
         options={options}
-        inputMinWidth='100px'
+        minWidth='100px'
         onInputChange={newValue => this.searchUser(newValue)}
         onValueChange={labels => {
           const selectedUserId = labels[0]?.value;

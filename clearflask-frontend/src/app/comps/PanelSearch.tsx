@@ -1,3 +1,4 @@
+import { InputAdornment, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/TuneSharp';
 import React, { Component } from 'react';
@@ -40,6 +41,12 @@ const styles = (theme: Theme) => createStyles({
       borderBottomColor: theme.palette.divider,
     }
   },
+  optionSelected: {
+    fontWeight: 'bold',
+  },
+  popperPaper: {
+    width: 130,
+  },
 });
 
 interface Props {
@@ -51,6 +58,7 @@ interface Props {
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
   minWidth?: string | number;
+  maxWidth?: string | number;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -80,30 +88,40 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
           <SelectionPicker
             placeholder={this.props.placeholder || 'Search'}
             value={controls.values}
-            menuIsOpen={this.state.menuIsOpen}
+            menuIsOpen={!!this.state.menuIsOpen}
             menuOnChange={open => this.setState({ menuIsOpen: open })}
             inputValue={this.state.searchValue || ''}
-            onInputChange={(newValue, actionMeta) => this.setState({ searchValue: newValue })}
+            onInputChange={(newValue, reason) => {
+              console.log('DEBUG',newValue, reason);
+              this.setState({ searchValue: newValue });
+            }}
             options={controls.options}
-            isMulti={true}
+            isMulti
             group
-            inputMinWidth={this.props.minWidth || '100px'}
-            inputClassName={this.props.classes.input}
-            onValueChange={this.onValueChange.bind(this)}
+            inputMinWidth={60}
+            minWidth={this.props.minWidth || 120}
+            maxWidth={this.props.maxWidth || 400}
+            autocompleteClasses={{
+              input: this.props.classes.input,
+              inputRoot: this.props.classes.input,
+              paper: this.props.classes.popperPaper,
+            }}
+            disableCloseOnSelect
+            onValueChange={labels => {
+              console.log('debug', labels);
+              this.onValueChange(labels)
+              // this.onValueChange.bind(this)
+            }}
             onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
             formatCreateLabel={inputValue => `Search '${inputValue}'`}
             limitTags={1}
-            TextFieldProps={{
-              InputProps: {
-                classes: {
-                  root: this.props.classes.input,
-                },
-              }
-            }}
             dropdownIconDontFlip
             overrideDropdownIcon={(
-              <FilterIcon fontSize='inherit' className={this.props.classes.filterIcon} />
+              <FilterIcon fontSize='small' className={this.props.classes.filterIcon} />
             )}
+            renderOption={(option, selected) => selected ? (
+              <span className={this.props.classes.optionSelected}>{option.label}</span>
+            ) : option.label}
           // TODO merge into SelectionPicker
           // overrideComponents={{
           //   DropdownIndicator: (dropdownIndicatorProps) => (

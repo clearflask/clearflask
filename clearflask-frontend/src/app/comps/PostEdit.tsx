@@ -100,7 +100,6 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         disabled={this.state.isSubmitting}
                         width='100%'
                         label='Status'
-                        showClearWithOneValue
                         value={nextStatusValues}
                         options={nextStatusOptions}
                         onValueChange={(labels) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}

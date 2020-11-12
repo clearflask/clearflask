@@ -522,12 +522,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       <div className={isSelectProjectUserInMenu ? undefined : this.props.classes.projectUserSelectorsHeader}>
         {!!this.props.isSuperAdmin && (
           <SelectionPicker
+            disableClearable
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
             overrideDropdownIcon={null}
             options={accountOptions}
             helperText={isSelectProjectUserInMenu && 'Current account' || undefined}
-            inputMinWidth={150}
+            minWidth={150}
             onInputChange={(newValue, reason) => {
               if (reason === 'input') {
                 this.searchAccounts(newValue);
@@ -549,12 +550,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         {projects.length > 1 && (
           <Collapse in={!!allowProjectUserSelect}>
             <SelectionPicker
+              disableClearable
               className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
               value={[selectedLabel]}
               overrideDropdownIcon={null}
               options={projectOptions}
               helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
-              inputMinWidth={150}
+              minWidth={150}
               onValueChange={labels => {
                 const selectedProjectId = labels[0]?.value;
                 if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
@@ -579,7 +581,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 alwaysOverrideWithLoggedInUser
                 helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
                 placeholder='Anonymous'
-                inputMinWidth={150}
+                minWidth={150}
                 onChange={userLabel => {
                   if (activeProject) {
                     const projectId = activeProject.projectId

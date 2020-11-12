@@ -369,7 +369,7 @@ export default class Property extends Component<Props> {
               options={options}
               isMulti={true}
               width={this.props.width}
-              inputMinWidth={Property.inputMinWidth}
+              minWidth={Property.inputMinWidth}
               onValueChange={labels => prop
                 .setRaw(labels.map(label => label.value))}
             />
@@ -461,7 +461,7 @@ export default class Property extends Component<Props> {
         }
         propertySetter = (
           <SelectionPicker
-            showClearWithOneValue={!prop.required}
+            disableClearable={prop.required}
             label={this.props.bare ? undefined : prop.name}
             helperText={this.props.bare ? undefined : prop.description}
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
@@ -470,7 +470,7 @@ export default class Property extends Component<Props> {
             options={options}
             isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
             width={this.props.width}
-            inputMinWidth={Property.inputMinWidth}
+            minWidth={Property.inputMinWidth}
             onValueChange={onValueChange}
             onValueCreate={onValueCreate}
           />
