@@ -8,7 +8,7 @@ import notEmpty from '../../common/util/arrayUtil';
 import ErrorMsg from '../ErrorMsg';
 import Loading from '../utils/Loading';
 import Panel from './Panel';
-import Post from './Post';
+import Post, { MaxContentWidth } from './Post';
 
 export enum Direction {
   Horizontal,
@@ -27,7 +27,8 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
     margin: theme.spacing(1),
     boxSizing: 'border-box',
-    width: 200,
+    width: '100%',
+    maxWidth: MaxContentWidth,
     display: 'inline-block',
   },
 });

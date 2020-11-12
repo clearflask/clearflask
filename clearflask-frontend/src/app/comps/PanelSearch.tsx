@@ -1,4 +1,4 @@
-import { InputAdornment, Typography } from '@material-ui/core';
+import { debounce } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/TuneSharp';
 import React, { Component } from 'react';
@@ -6,6 +6,8 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings } from '../../api/server';
 import InViewObserver from '../../common/InViewObserver';
+import { SearchTypeDebounceTime } from '../../common/util/debounce';
+import minmax from '../../common/util/mathutil';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import SelectionPicker, { Label } from './SelectionPicker';
 
@@ -37,15 +39,9 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   input: {
-    '&::before': {
-      borderBottomColor: theme.palette.divider,
-    }
   },
   optionSelected: {
     fontWeight: 'bold',
-  },
-  popperPaper: {
-    width: 130,
   },
 });
 
@@ -71,6 +67,15 @@ interface State {
 class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   _isMounted: boolean = false;
+  readonly updateSearchText = debounce(
+    (searchText?: string) => {
+      if (!this.isFilterControllable(FilterType.Search)) return;
+      this.props.onSearchChanged({
+        ...this.props.search,
+        searchText: searchText,
+      });
+    },
+    SearchTypeDebounceTime);
   readonly inViewObserverRef = React.createRef<InViewObserver>();
 
   componentDidMount() {
@@ -82,6 +87,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
 
   render() {
     const controls = this.getControls();
+    const isSearchable = this.isFilterControllable(FilterType.Search);
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
@@ -92,33 +98,32 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             menuOnChange={open => this.setState({ menuIsOpen: open })}
             inputValue={this.state.searchValue || ''}
             onInputChange={(newValue, reason) => {
-              console.log('DEBUG',newValue, reason);
               this.setState({ searchValue: newValue });
+              if (isSearchable) {
+                this.updateSearchText(newValue);
+              }
             }}
             options={controls.options}
             isMulti
             group
-            inputMinWidth={60}
-            minWidth={this.props.minWidth || 120}
+            inputMinWidth={50}
+            minWidth={this.props.minWidth || 100}
             maxWidth={this.props.maxWidth || 400}
             autocompleteClasses={{
               input: this.props.classes.input,
               inputRoot: this.props.classes.input,
-              paper: this.props.classes.popperPaper,
             }}
             disableCloseOnSelect
-            onValueChange={labels => {
-              console.log('debug', labels);
-              this.onValueChange(labels)
-              // this.onValueChange.bind(this)
-            }}
-            onValueCreate={this.isFilterControllable(FilterType.Search) ? this.onValueCreate.bind(this) : undefined}
-            formatCreateLabel={inputValue => `Search '${inputValue}'`}
+            onValueChange={labels => this.onValueChange(labels)}
+            formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
             limitTags={1}
             dropdownIconDontFlip
             overrideDropdownIcon={(
               <FilterIcon fontSize='small' className={this.props.classes.filterIcon} />
             )}
+            popupColumnCount={minmax(1, controls.groups, 3)}
+            popupColumnWidth={140}
+            PopperProps={{ placement: 'bottom-end' }}
             renderOption={(option, selected) => selected ? (
               <span className={this.props.classes.optionSelected}>{option.label}</span>
             ) : option.label}
@@ -215,19 +220,12 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
     this.props.onSearchChanged(partialSearch);
   }
 
-  onValueCreate(searchText: string) {
-    if (!this.isFilterControllable(FilterType.Search)) return;
-    this.props.onSearchChanged({
-      ...this.props.search,
-      searchText: searchText
-    });
-  }
-
-  getControls(): { values: Label[], options: Label[], permanent: Label[] } {
+  getControls(): { values: Label[], options: Label[], permanent: Label[], groups: number } {
     const controls = {
       values: [] as Label[],
       options: [] as Label[],
       permanent: [] as Label[],
+      groups: 0
     };
 
     if (!this.props.config) return controls;
@@ -237,6 +235,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
       const label: Label = this.getLabel(FilterType.Sort, this.props.explorer.search.sortBy!, this.props.explorer.search.sortBy!);
       controls.permanent.push(label);
     } else {
+      controls.groups++;
       Object.keys(Client.IdeaSearchSortByEnum).forEach(sortBy => {
         const label: Label = this.getLabel(FilterType.Sort, sortBy, sortBy);
         controls.options.push(label);
@@ -257,10 +256,12 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         controls.permanent.push(label);
       });
     } else {
+      var hasAny = false;
       if (!this.props.search || !this.props.search.filterCategoryIds || this.props.search.filterCategoryIds.length === 0) {
         searchableCategories = this.props.config.content.categories;
       }
       this.props.config.content.categories.forEach(category => {
+        hasAny = true;
         const label: Label = this.getLabel(FilterType.Category, category.categoryId, category.name, category.color);
         controls.options.push(label);
         if (this.props.search && this.props.search.filterCategoryIds && this.props.search.filterCategoryIds.includes(category.categoryId)) {
@@ -268,6 +269,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
           searchableCategories.push(category);
         }
       });
+      if (hasAny) controls.groups++;
     }
 
     // status
@@ -281,8 +283,10 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         })
       });
     } else {
+      var hasAny = false;
       searchableCategories.forEach(category => {
         category.workflow.statuses.forEach(status => {
+          hasAny = true;
           const label: Label = this.getLabel(FilterType.Status, status.statusId, status.name, status.color);
           controls.options.push(label);
           if (this.props.search && this.props.search.filterStatusIds && this.props.search.filterStatusIds.includes(status.statusId)) {
@@ -290,6 +294,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
           }
         })
       });
+      if (hasAny) controls.groups++;
     }
 
     // tag
@@ -303,6 +308,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         })
       });
     } else {
+      var hasAny = false;
       const filterTagIds = new Set(this.props.explorer.search.filterTagIds);
       searchableCategories.forEach(category => {
         category.tagging.tagGroups.forEach(tagGroup => {
@@ -317,6 +323,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             if (permanent) {
               controls.permanent.push(label);
             } else {
+              hasAny = true;
               controls.options.push(label);
               if (this.props.search && this.props.search.filterTagIds && this.props.search.filterTagIds.includes(tag.tagId)) {
                 controls.values.push(label);
@@ -325,17 +332,10 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
           })
         })
       });
+      if (hasAny) controls.groups++;
     }
 
-    // search
-    if (!this.isFilterControllable(FilterType.Search)) {
-      const label: Label = this.getLabel(FilterType.Search, this.props.explorer.search.searchText!, this.props.explorer.search.searchText!);
-      controls.permanent.push(label);
-    } else if (this.props.search && this.props.search.searchText !== undefined) {
-      const label: Label = this.getLabel(FilterType.Search, this.props.search.searchText, this.props.search.searchText);
-      controls.options.push(label);
-      controls.values.push(label);
-    }
+    // search is not added as a chip
 
     return controls;
   }

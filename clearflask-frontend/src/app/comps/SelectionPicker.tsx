@@ -1,11 +1,11 @@
-import { Chip, Fade, IconButton, ListSubheader, Typography, Zoom } from '@material-ui/core';
+import { Chip, Fade, Popper, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import { Autocomplete, AutocompleteClassKey, AutocompleteRenderGroupParams, createFilterOptions } from '@material-ui/lab';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import Loading from '../utils/Loading';
-import classNames from 'classnames';
-import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 
 const filterOptions = createFilterOptions({
   matchFrom: 'any',
@@ -22,6 +22,7 @@ export interface Label {
   value: string;
   groupBy?: string;
   color?: string;
+  disabled?: boolean;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -41,6 +42,26 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
   },
+  menuHeader: {
+    margin: theme.spacing(2, 1),
+  },
+  popper: {
+    width: (props: Props) => props.popupColumnCount ? `${(props.popupColumnWidth || 130) * props.popupColumnCount}px!important` : undefined,
+  },
+  popperListbox: {
+    columnCount: (props: Props) => props.popupColumnCount,
+    columnFill: 'balance',
+    columnGap: 0,
+    maxHeight: 'unset',
+  },
+  group: {
+    webkitColumnBreakInside: 'avoid',
+    pageBreakInside: 'avoid',
+    breakInside: 'avoid',
+  },
+  header: {
+    columnSpan: 'all',
+  },
 });
 interface Props {
   value: Label[];
@@ -58,6 +79,7 @@ interface Props {
   disableClearable?: boolean;
   isMulti?: boolean;
   group?: boolean;
+  formatHeader?: (input: string) => React.ReactNode;
   formatCreateLabel?: (input: string) => string;
   loading?: boolean;
   dropdownIconDontFlip?: boolean;
@@ -70,6 +92,9 @@ interface Props {
   filterSelectedOptions?: boolean;
   disableCloseOnSelect?: boolean;
   autocompleteClasses?: Partial<ClassNameMap<AutocompleteClassKey>>;
+  popupColumnCount?: number;
+  popupColumnWidth?: number;
+  PopperProps?: Partial<React.ComponentProps<typeof Popper>>;
 
   // Below props are for backwards compatibility, use TextFieldProps instead
   label?: string;
@@ -103,20 +128,33 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
           const filtered = filterOptions(options, params);
 
           // Suggest the creation of a new value
-          if (params.inputValue !== '') {
-            filtered.push({
+          if (!!this.props.onValueCreate && params.inputValue !== '') {
+            filtered.unshift({
               label: this.props.formatCreateLabel
                 ? this.props.formatCreateLabel(params.inputValue)
                 : `Add "${params.inputValue}"`,
               value: params.inputValue,
-              groupBy: ' ', // Don't show a group
+              groupBy: '__EMPTY__',
             });
+          }
+
+          // Header
+          if (!!this.props.formatHeader) {
+            const header = this.props.formatHeader(params.inputValue);
+            if (header) {
+              filtered.unshift({
+                label: header,
+                value: '__HEADER__',
+                groupBy: '__EMPTY__',
+                disabled: true,
+              });
+            }
           }
 
           return filtered;
         }}
         popupIcon={this.props.overrideDropdownIcon}
-        forcePopupIcon={false}
+        forcePopupIcon={!!this.props.overrideDropdownIcon || 'auto'}
         options={this.props.options}
         getOptionLabel={option => option.filterString || option.value}
         getOptionSelected={(option, value) => option.value === value.value}
@@ -130,22 +168,29 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
         noOptionsText={this.props.noOptionsMessage}
         loading={this.props.loading}
         disabled={this.props.disabled}
+        getOptionDisabled={option => !!option.disabled}
         groupBy={this.props.group ? (label: Label) => label.groupBy || label.value[0] : undefined}
-        renderGroup={this.props.group ? (params: AutocompleteRenderGroupParams) => [
-          <div key={params.key}>
-            {params.group}
-          </div>,
-          params.children,
-        ] : undefined}
+        renderGroup={this.props.group ? (params: AutocompleteRenderGroupParams) => (
+          <div className={classNames(this.props.classes.group, params.group === '__EMPTY__' && this.props.classes.header)}>
+            {params.group && params.group !== '__EMPTY__' && (
+              <Typography key={params.key} variant='overline' className={this.props.classes.menuHeader}>{params.group}</Typography>
+            )}
+            {params.children}
+          </div>
+        ) : undefined}
         handleHomeEndKeys
         openOnFocus
-        debug
         renderOption={(option: Label, { selected }) => (
-          <Typography noWrap style={{
-            fontWeight: selected ? 'bold' : undefined,
-            color: option.color,
-          }}>
-            {this.props.renderOption ? this.props.renderOption(option, selected) : option.label}
+          <Typography
+            noWrap
+            style={{
+              fontWeight: selected ? 'bold' : undefined,
+              color: option.color,
+            }}
+          >
+            {(option.value !== '__HEADER__' && this.props.renderOption)
+              ? this.props.renderOption(option, selected)
+              : option.label}
           </Typography>
         )}
         renderTags={(value, getTagProps) =>
@@ -172,12 +217,15 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
           endAdornment: classNames(this.props.classes.endAdornment, this.props.autocompleteClasses?.endAdornment),
           input: classNames(this.props.classes.input, this.props.autocompleteClasses?.input),
           inputRoot: classNames(this.props.classes.inputRoot, this.props.autocompleteClasses?.inputRoot),
+          popper: classNames(this.props.classes.popper, this.props.autocompleteClasses?.popper),
+          listbox: classNames(this.props.classes.popperListbox, this.props.autocompleteClasses?.listbox),
         }}
         style={{
           minWidth: this.props.minWidth,
           maxWidth: this.props.maxWidth,
           width: this.props.width,
         }}
+        PopperComponent={getSelectionPopper(this.props.PopperProps)}
         renderInput={(params) => (
           <TextField
             label={this.props.label}
@@ -217,5 +265,12 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>>
     );
   }
 }
+
+const getSelectionPopper = (propsOverride?: Partial<React.ComponentProps<typeof Popper>>) => (props: React.ComponentProps<typeof Popper>) => (
+  <Popper
+    {...props}
+    {...propsOverride}
+  />
+);
 
 export default withStyles(styles, { withTheme: true })(SelectionPicker);

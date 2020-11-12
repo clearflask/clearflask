@@ -26,6 +26,8 @@ const styles = (theme: Theme) => createStyles({
   nothing: {
     margin: theme.spacing(4),
     color: theme.palette.text.secondary,
+    width: '100%',
+    maxWidth: 350,
   },
   comment: {
     minWidth: 200,

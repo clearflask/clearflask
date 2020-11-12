@@ -96,7 +96,7 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
             (this.props.createSize || 0) + 20
           )}
           height={this.props.createShown ? 180 : 20}
-          widthRight={!!this.props.searchSize ? (this.props.createShown ? 0 : this.props.searchSize + 20) : undefined}
+          widthRight={this.props.searchSize !== undefined ? (this.props.createShown ? 0 : this.props.searchSize) : undefined}
           heightRight={!!this.props.search ? (this.props.createShown ? 0 : 20) : undefined}
         >
           {results}

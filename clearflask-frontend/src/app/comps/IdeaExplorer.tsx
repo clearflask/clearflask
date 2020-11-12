@@ -65,14 +65,11 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   panelSearch: {
-    // (Un)comment these to align with corner
     marginBottom: -1,
   },
   createField: {
     minWidth: 100,
-    // (Un)comment these to align with corner
     marginBottom: -1,
-    marginRight: theme.spacing(3),
   },
 });
 
