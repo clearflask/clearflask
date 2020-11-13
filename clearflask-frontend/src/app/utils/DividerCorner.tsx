@@ -48,10 +48,12 @@ interface Props {
   header?: React.ReactNode;
   width?: string | number;
   height?: string | number;
+  maxHeight?: string | number;
   titleRight?: string | React.ReactNode;
   headerRight?: React.ReactNode;
   widthRight?: string | number;
   heightRight?: string | number;
+  maxHeightRight?: string | number;
   isExplorer?: boolean
 }
 
@@ -96,7 +98,10 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
             <div style={{ display: 'flex' }}>
               <DividerVertical
                 className={this.props.classes.heightTransition}
-                style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
+                style={{
+                  height: this.props.height !== undefined ? this.props.height : '24px',
+                  maxHeight: this.props.maxHeight,
+                }}
               />
             </div>
           )}
@@ -107,7 +112,10 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
             <div style={{ display: 'flex' }}>
               <DividerVertical
                 className={this.props.classes.heightTransition}
-                style={{ height: this.props.heightRight !== undefined ? this.props.heightRight : '24px' }}
+                style={{
+                  height: this.props.heightRight !== undefined ? this.props.heightRight : '24px',
+                  maxHeight: this.props.maxHeightRight,
+                }}
               />
             </div>
           )}

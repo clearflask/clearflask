@@ -282,7 +282,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           createLabel={createLabel}
           createVisible={createVisible}
           createCollapsible={createCollapsible}
-          searchSize={this.props.explorer.allowSearch ? 100 : undefined}
+          searchSize={this.props.explorer.allowSearch ? 120 : undefined}
           search={search}
           content={content}
         />

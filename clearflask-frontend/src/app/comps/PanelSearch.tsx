@@ -35,7 +35,10 @@ const styles = (theme: Theme) => createStyles({
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
   },
-  input: {
+  inputRoot: {
+    '&::before': {
+      borderBottomColor: 'transparent',
+    },
   },
 });
 
@@ -47,8 +50,7 @@ interface Props {
   search?: Partial<Client.IdeaSearch>;
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
-  minWidth?: string | number;
-  maxWidth?: string | number;
+  width?: string | number;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -101,11 +103,9 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             isMulti
             group
             isInExplorer
-            minWidth={this.props.minWidth || 100}
-            maxWidth={this.props.maxWidth || 150}
+            width={this.props.width || 100}
             autocompleteClasses={{
-              input: this.props.classes.input,
-              inputRoot: this.props.classes.input,
+              inputRoot: this.props.classes.inputRoot,
             }}
             showTags={false}
             disableFilter
@@ -115,63 +115,6 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             dropdownIcon={FilterIcon}
             popupColumnCount={minmax(1, controls.groups, 3)}
             PopperProps={{ placement: 'bottom-end' }}
-          // TODO merge into SelectionPicker
-          // overrideComponents={{
-          //   DropdownIndicator: (dropdownIndicatorProps) => (
-          //     <FilterIcon fontSize='inherit' className={classNames(dropdownIndicatorProps.selectProps.commonProps.classes.dropdownIcon, this.props.classes.filterIcon)} />
-          //   ),
-          //   MenuList: (menuProps) => {
-          //     var newSearch: React.ReactNode | undefined;
-          //     const tagColumns: any = {};
-          //     const baseColumns: any = {};
-          //     const children = Array.isArray(menuProps.children) ? menuProps.children : [menuProps.children];
-          //     children.forEach((child: any) => {
-          //       if (!child.props.data) {
-          //         // child is "No option(s)" text, ignore
-          //       } else if (child.props.data.__isNew__) {
-          //         newSearch = child; // child is "Search '...'" option
-          //       } else {
-          //         const type = this.getType(child.props.data);
-          //         const columns = FilterTypes.has(type as any) ? baseColumns : tagColumns;
-          //         if (!columns[type]) columns[type] = [];
-          //         columns[type].push(child);
-          //       }
-          //     });
-          //     const menuItems: React.ReactNode[] = [];
-          //     const addColumn = (title, content) => menuItems.push((
-          //       <div className={this.props.classes.menuItem}>
-          //         <Typography variant='overline'>{title}</Typography>
-          //         {content ? content : (
-          //           <MenuItem component="div" disabled>
-          //             No option
-          //           </MenuItem>
-          //         )}
-          //       </div>
-          //     ));
-          //     Object.values(FilterType)
-          //       .filter(t => this.isFilterControllable(t)
-          //         && t !== FilterType.Search
-          //         && t !== FilterType.Tag
-          //         && baseColumns[t])
-          //       .forEach(t => addColumn(t, baseColumns[t]));
-          //     Object.keys(tagColumns)
-          //       .forEach(t => addColumn(t, tagColumns[t]));
-          //     return (
-          //       <components.MenuList {...menuProps} className={this.props.classes.menuContainer}>
-          //         {newSearch ? newSearch : (
-          //           <MenuItem component="div" disabled>
-          //             Type to search
-          //           </MenuItem>
-          //         )}
-          //         <div style={{
-          //           columnWidth: '150px',
-          //         }}>
-          //           {menuItems}
-          //         </div>
-          //       </components.MenuList>
-          //     );
-          //   },
-          // }}
           />
         </div>
       </InViewObserver>

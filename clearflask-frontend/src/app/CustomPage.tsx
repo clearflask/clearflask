@@ -39,7 +39,6 @@ const styles = (theme: Theme) => createStyles({
     transition: theme.transitions.create('flex', {
       duration: theme.transitions.duration.shortest,
     }),
-    paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
   },
   boardInCorner: {
@@ -47,7 +46,7 @@ const styles = (theme: Theme) => createStyles({
   },
   boardPanel: {
     flex: '1 1 100px',
-    paddingTop: theme.spacing(2),
+    paddingTop: theme.spacing(3),
     paddingLeft: theme.spacing(2),
   },
   explorer: {
@@ -164,7 +163,8 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
             <DividerCorner
               className={this.props.classes.spacing}
               title={board.title}
-              height='50%'
+              height='100%'
+              maxHeight={120}
             >
               <div className={classNames(this.props.classes.board, this.props.classes.boardInCorner)}>
                 {panels}
