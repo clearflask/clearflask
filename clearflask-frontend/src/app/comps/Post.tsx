@@ -1051,7 +1051,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <Typography variant='subtitle1' component={'span'} className={`${this.props.classes.title} ${variant === 'page' ? this.props.classes.titlePage : this.props.classes.titleList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.titleTruncateLines !== undefined && this.props.display.titleTruncateLines > 0
-          ? (<TruncateEllipsis lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
+          ? (<TruncateEllipsis ellipsis='…' lines={this.props.display.titleTruncateLines}><div>{this.props.idea.title}</div></TruncateEllipsis>)
           : this.props.idea.title}
       </Typography>
     );

@@ -33,6 +33,7 @@ interface Props {
   label?: React.ReactNode;
   helperText?: React.ReactNode;
   errorMsg?: string;
+  width?: string
   pageClicked: (path: ConfigEditor.Path) => void;
   requiresUpgrade?: (propertyPath: ConfigEditor.Path) => boolean;
 }
@@ -136,15 +137,23 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
     if (this.props.data.required) {
       return (
         <div>
-          {label}
-          {helperText}
+          <div style={{
+            width: this.props.width,
+            minWidth: Property.inputMinWidth,
+          }}>
+            {label}
+            {helperText}
+          </div>
           {content}
         </div>
       );
     } else {
       return (
         <div>
-          <div>
+          <div style={{
+            width: this.props.width,
+            minWidth: Property.inputMinWidth,
+          }}>
             {label}
             <FormControlLabel
               control={(

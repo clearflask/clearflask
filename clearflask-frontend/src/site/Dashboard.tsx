@@ -175,36 +175,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       }
     });
 
-    const noProjectLabel = {
-      label: (
-        <span className={this.props.classes.selectProjectLabel}>
-          Select project
-        </span>
-      ), value: '__NONE__'
-    };
-    const projectOptions: Label[] = [
-      ...(projects.length > 0
-        ? projects.map(p => ({
-          label: p.editor.getConfig().name,
-          filterString: p.editor.getConfig().name,
-          value: p.projectId
-        }))
-        : [noProjectLabel]),
-    ];
+    const projectOptions: Label[] = projects.map(p => ({
+      label: p.editor.getConfig().name,
+      filterString: p.editor.getConfig().name,
+      value: p.projectId
+    }));
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
     if (!selectedLabel) {
       const selectedProjectIdFromLocalStorage = localStorage.getItem(SELECTED_PROJECT_ID_LOCALSTORAGE_KEY);
       selectedLabel = projectOptions.find(o => o.value === selectedProjectIdFromLocalStorage);
     }
-    var activeProjectId: string | undefined = selectedLabel?.value;
     if (activePath === 'create') {
-      selectedLabel = noProjectLabel;
+      selectedLabel = undefined;
     } else if (!selectedLabel && projects.length > 0) {
       selectedLabel = { label: projects[0].editor.getConfig().name, value: projects[0].projectId };
-      activeProjectId = projects[0].projectId;
-    } else if (!selectedLabel) {
-      selectedLabel = noProjectLabel;
     }
+    const activeProjectId: string | undefined = selectedLabel?.value;
     const activeProject = projects.find(p => p.projectId === activeProjectId);
 
     var page;
@@ -540,11 +526,12 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             disableClearable
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
-            dropdownIcon={null}
+            forceDropdownIcon={false}
             options={accountOptions}
             helperText={isSelectProjectUserInMenu && 'Current account' || undefined}
-            minWidth={100}
+            minWidth={50}
             maxWidth={150}
+            inputMinWidth={0}
             showTags
             bareTags
             disableFilter
@@ -579,12 +566,16 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             <SelectionPicker
               disableClearable
               className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
-              value={[selectedLabel]}
-              dropdownIcon={null}
+              value={selectedLabel ? [selectedLabel] : []}
+              forceDropdownIcon={false}
               options={projectOptions}
               helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
-              minWidth={100}
+              showTags
+              bareTags
+              disableInput
+              minWidth={50}
               maxWidth={150}
+              clearOnBlur
               onValueChange={labels => {
                 const selectedProjectId = labels[0]?.value;
                 if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
@@ -609,7 +600,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 alwaysOverrideWithLoggedInUser
                 helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
                 placeholder='Anonymous'
-                minWidth={100}
+                minWidth={50}
                 maxWidth={150}
                 onChange={userLabel => {
                   if (activeProject) {

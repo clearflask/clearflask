@@ -69,6 +69,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
               prop={child}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={propertyRequiresUpgrade}
+              width='350px'
             />
           ))}
       </div>

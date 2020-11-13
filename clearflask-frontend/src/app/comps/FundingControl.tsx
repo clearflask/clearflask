@@ -174,7 +174,7 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
             {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
               <div key={idea.ideaId} className={this.props.classes.separatorMargin}>
                 <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
-                  <Truncate lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
+                  <Truncate ellipsis='…' lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
                   {!showFirstIdea && (
                     <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`, this.props.location)}>
                       View

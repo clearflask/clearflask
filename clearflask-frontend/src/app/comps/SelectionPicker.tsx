@@ -67,6 +67,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2, 1.5),
   },
   popper: {
+    minWidth: (props: Props) => props.maxWidth,
     width: (props: Props) => props.popupColumnCount ? `${(props.popupColumnWidth || 130) * props.popupColumnCount}px!important` : undefined,
   },
   popperListbox: {
@@ -98,10 +99,12 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   isMulti?: boolean;
+  disableInput?: boolean;
   value: Label[];
   options: Label[];
   onValueChange: (labels: Label[]) => void;
   onValueCreate?: (name: string) => void;
+  showCreateAtTop?: boolean;
   className?: string;
   TextFieldProps?: React.ComponentProps<typeof TextField>;
   inputValue?: string;
@@ -121,6 +124,7 @@ interface Props {
   formatCreateLabel?: (input: string) => string;
   loading?: boolean;
   alwaysWrapChipsInput?: boolean;
+  forceDropdownIcon?: boolean;
   dropdownIcon?: OverridableComponent<SvgIconTypeMap> | null;
   limitTags?: number;
   isInExplorer?: boolean;
@@ -153,7 +157,8 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
       if (reason === 'reset') return; // Prevent setting text value in textfield
       if (this.props.onInputChange) {
         this.props.onInputChange(val, reason);
-      } else {
+      }
+      if (this.props.inputValue === undefined) {
         this.setState({ inputValue: val });
       }
     };
@@ -183,7 +188,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
     ));
     return (
       <Autocomplete<LabelInternal, boolean, boolean, boolean>
-        freeSolo
+        freeSolo={!this.props.disableInput}
         autoHighlight
         multiple={!!this.props.isMulti}
         value={this.props.isMulti ? this.props.value : (this.props.value[0] || null)}
@@ -219,14 +224,19 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
 
           // Suggest the creation of a new value
           if (!!this.props.onValueCreate && params.inputValue !== '') {
-            filtered.unshift({
+            const createLabel = {
               label: this.props.formatCreateLabel
                 ? this.props.formatCreateLabel(params.inputValue)
                 : `Add "${params.inputValue}"`,
               value: params.inputValue,
               groupBy: '__EMPTY__',
               isCreateOption: true,
-            });
+            };
+            if (this.props.showCreateAtTop) {
+              filtered.unshift(createLabel);
+            } else {
+              filtered.push(createLabel);
+            }
           }
 
           // Header
@@ -252,6 +262,15 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
             });
           }
 
+          if (this.props.noOptionsMessage && filtered.length === 0) {
+            filtered.push({
+              label: this.props.noOptionsMessage,
+              value: '__HEADER__',
+              groupBy: '__HEADER__',
+              disabled: true,
+            });
+          }
+
           return filtered;
         }}
         popupIcon={DropdownIcon === null ? null : (
@@ -263,17 +282,16 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
               : this.props.classes.dropdownIconWithoutTags}
           />
         )}
-        forcePopupIcon={!!this.props.dropdownIcon || 'auto'}
+        forcePopupIcon={this.props.forceDropdownIcon !== undefined ? this.props.forceDropdownIcon : (!!this.props.dropdownIcon || 'auto')}
         options={this.props.options}
         getOptionLabel={option => option.filterString || option.value}
         getOptionSelected={(option, value) => option.value === value.value}
         inputValue={this.props.inputValue !== undefined
           ? this.props.inputValue
-          : this.state.inputValue}
+          : (this.state.inputValue || '')}
         onInputChange={onInputChange}
         className={this.props.className}
         limitTags={this.props.limitTags}
-        noOptionsText={this.props.noOptionsMessage}
         disabled={this.props.disabled}
         getOptionDisabled={option => !!option.disabled}
         groupBy={this.props.group ? (label: Label) => label.groupBy || label.value[0] : undefined}
@@ -310,7 +328,7 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
         )}
         renderTags={renderTags}
         open={this.props.menuIsOpen}
-        disableClearable={this.props.disableClearable}
+        disableClearable={this.props.disableClearable || this.props.value.length === 0}
         onOpen={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(true) : undefined}
         onClose={this.props.menuOnChange ? () => this.props.menuOnChange && this.props.menuOnChange(false) : undefined}
         classes={{
@@ -342,8 +360,8 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
                 ? undefined
                 : this.props.placeholder}
               error={!!this.props.errorMsg}
-              {...this.props.TextFieldProps}
               {...params}
+              {...this.props.TextFieldProps}
               InputLabelProps={{
                 ...params.InputLabelProps,
                 ...this.props.TextFieldProps?.InputLabelProps,
@@ -352,13 +370,16 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
                 ...params.inputProps,
                 ...this.props.TextFieldProps?.inputProps,
                 style: {
-                  minWidth: this.props.inputMinWidth === undefined ? 50 : this.props.inputMinWidth,
+                  minWidth: this.props.inputMinWidth === undefined
+                    ? (this.props.disableInput ? 0 : 50)
+                    : this.props.inputMinWidth,
                   ...this.props.TextFieldProps?.inputProps?.style,
                 },
               }}
               InputProps={{
                 ...params.InputProps,
                 ...this.props.TextFieldProps?.InputProps,
+                readOnly: this.props.disableInput || this.props.TextFieldProps?.InputProps?.readOnly,
                 startAdornment: (
                   <React.Fragment>
                     {this.props.TextFieldProps?.InputProps?.endAdornment || null}
@@ -391,6 +412,7 @@ const getSelectionPopper = (propsOverride?: Partial<React.ComponentProps<typeof 
   <Popper
     {...props}
     disablePortal
+    placement='bottom-start'
     {...propsOverride}
   />
 );

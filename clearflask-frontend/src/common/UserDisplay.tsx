@@ -7,9 +7,16 @@ import * as Client from '../api/client';
 import ModStar from './ModStar';
 import { preserveEmbed } from './util/historyUtil';
 
-export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe) => !!user
-  ? user['name'] || user['email'] || user['userId']?.substring(0, 5) || 'Nameless'
-  : 'Anonymous';
+export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, maxChars: number = -1) => {
+  if (!user) {
+    return 'Anonymous';
+  }
+  var displayName = user['name'] || user['email'] || user['userId']?.substring(0, 5) || 'Nameless';
+  if (maxChars > 0 && displayName.length > maxChars) {
+    displayName = displayName.substring(0, maxChars - 1) + '…';
+  }
+  return displayName;
+};
 
 const styles = (theme: Theme) => createStyles({
   button: {
@@ -21,6 +28,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   variant?: 'button' | 'text';
+  maxChars?: number;
   user: {
     userId: string;
     name?: string;
@@ -33,16 +41,16 @@ interface Props {
 class UserDisplay extends React.Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
     var user = (
-      <ModStar name={DisplayUserName(this.props.user)} isMod={this.props.user.isMod} />
+      <ModStar name={DisplayUserName(this.props.user, this.props.maxChars)} isMod={this.props.user.isMod} />
     );
-    if(!this.props.suppressTypography) {
+    if (!this.props.suppressTypography) {
       user = (
-        <Typography variant='caption'>
+        <Typography noWrap variant='caption'>
           {user}
         </Typography>
       );
     }
-    if(this.props.variant === 'text') {
+    if (this.props.variant === 'text') {
       return user;
     }
     return this.props.onClick ? (

@@ -99,7 +99,6 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         className={this.props.className}
         placeholder={this.props.placeholder}
         helperText={this.props.helperText}
-        noOptionsMessage='Type to search'
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
         options={options}
@@ -152,7 +151,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
 
   static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
     const userLabel: Label = {
-      label: (<UserDisplay user={user} variant='text' suppressTypography />),
+      label: (<UserDisplay user={user} variant='text' suppressTypography maxChars={15} />),
       filterString: `${user.name || 'Anonymous'} ${user.email || ''}`,
       value: user.userId,
     };

@@ -13,7 +13,7 @@ import TagSelect from './TagSelect';
 
 const styles = (theme: Theme) => createStyles({
   row: {
-    margin: theme.spacing(2),
+    padding: theme.spacing(2),
   }
 });
 
@@ -43,7 +43,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
 
   render() {
     const isModLoggedIn = this.props.server.isModLoggedIn();
-    const fundGoalHasError = this.state.fundGoal !== undefined && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
+    const fundGoalHasError = !!this.state.fundGoal && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || +this.state.fundGoal <= 0 || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
     const canSubmit = (
       this.state.tagIdsHasError !== true
       && !fundGoalHasError
@@ -92,58 +92,6 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
           <DialogTitle>Edit post</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
-              {isModLoggedIn && (
-                <React.Fragment>
-                  {(nextStatusOptions && nextStatusOptions.length > 0) && (
-                    <Grid item xs={12} className={this.props.classes.row}>
-                      <SelectionPicker
-                        disabled={this.state.isSubmitting}
-                        width='100%'
-                        label='Status'
-                        value={nextStatusValues}
-                        options={nextStatusOptions}
-                        onValueChange={(labels) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}
-                      />
-                    </Grid>
-                  )}
-                  {this.props.category.tagging.tags.length > 0 && (
-                    <Grid item xs={12} className={this.props.classes.row}>
-                      <TagSelect
-                        label='Tags'
-                        disabled={this.state.isSubmitting}
-                        category={this.props.category}
-                        tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
-                        onChange={tagIds => this.setState({ tagIds: tagIds })}
-                        onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
-                      />
-                    </Grid>
-                  )}
-                  {!!this.props.category.support.fund && this.props.credits && (
-                    <Grid item xs={12} className={this.props.classes.row}>
-                      <TextField
-                        variant='outlined'
-                        disabled={this.state.isSubmitting}
-                        label='Funding Goal'
-                        fullWidth
-                        value={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : this.state.fundGoal}
-                        type='number'
-                        inputProps={{
-                          step: 1,
-                        }}
-                        error={fundGoalHasError}
-                        helperText={fundGoalHasError ? 'Invalid value' : (
-                          (this.state.fundGoal === undefined && this.props.idea.fundGoal === undefined) ? undefined : (
-                            <CreditView
-                              val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : +this.state.fundGoal}
-                              credits={this.props.credits}
-                            />
-                          ))}
-                        onChange={e => this.setState({ fundGoal: e.target.value })}
-                      />
-                    </Grid>
-                  )}
-                </React.Fragment>
-              )}
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
                   variant='outlined'
@@ -182,6 +130,61 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       rowsMax={3}
                     />
                   </Grid>
+                  {(nextStatusOptions && nextStatusOptions.length > 0) && (
+                    <Grid item xs={12} sm={4} className={this.props.classes.row}>
+                      <SelectionPicker
+                        TextFieldProps={{
+                          variant: 'outlined',
+                        }}
+                        disabled={this.state.isSubmitting}
+                        width='100%'
+                        label='Transition Status'
+                        showTags
+                        bareTags
+                        disableInput
+                        value={nextStatusValues}
+                        options={nextStatusOptions}
+                        onValueChange={(labels) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}
+                      />
+                    </Grid>
+                  )}
+                  {this.props.category.tagging.tags.length > 0 && (
+                    <Grid item xs={12} sm={8} className={this.props.classes.row}>
+                      <TagSelect
+                        variant='outlined'
+                        label='Tags'
+                        disabled={this.state.isSubmitting}
+                        category={this.props.category}
+                        tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
+                        onChange={tagIds => this.setState({ tagIds: tagIds })}
+                        onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
+                      />
+                    </Grid>
+                  )}
+                  {!!this.props.category.support.fund && this.props.credits && (
+                    <Grid item xs={12} className={this.props.classes.row}>
+                      <TextField
+                        variant='outlined'
+                        disabled={this.state.isSubmitting}
+                        label='Funding Goal'
+                        fullWidth
+                        value={this.state.fundGoal === undefined ? this.props.idea.fundGoal || '' : this.state.fundGoal}
+                        type='number'
+                        inputProps={{
+                          step: 1,
+                        }}
+                        error={fundGoalHasError}
+                        helperText={fundGoalHasError ? 'Invalid value' : (
+                          ((this.state.fundGoal !== undefined && this.state.fundGoal !== '') || this.props.idea.fundGoal !== undefined) ? (
+                            <CreditView
+                              val={this.state.fundGoal === undefined ? this.props.idea.fundGoal || 0 : +this.state.fundGoal}
+                              credits={this.props.credits}
+                            />
+                          ) : undefined)}
+                        onChange={e => this.setState({ fundGoal: e.target.value })}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
@@ -221,7 +224,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     response: this.state.response,
                     statusId: this.state.statusId,
                     tagIds: this.state.tagIds,
-                    fundGoal: this.state.fundGoal === undefined ? undefined : +this.state.fundGoal,
+                    fundGoal: !this.state.fundGoal ? undefined : +this.state.fundGoal,
                     suppressNotifications: this.state.suppressNotifications,
                   },
                 }))

@@ -242,6 +242,10 @@ export default class Property extends Component<Props> {
                     />
                   )}
                   label={description}
+                  style={{
+                    width: this.props.width,
+                    minWidth: Property.inputMinWidth,
+                  }}
                 />
               </div>
               <Collapse in={prop.value}>
@@ -279,6 +283,10 @@ export default class Property extends Component<Props> {
                       ? (prop.trueLabel || 'Enabled')
                       : (prop.falseLabel || 'Disabled')}
                   </FormHelperText>)}
+                  style={{
+                    width: this.props.width,
+                    minWidth: Property.inputMinWidth,
+                  }}
                 />
               </div>
             </div>
@@ -368,7 +376,7 @@ export default class Property extends Component<Props> {
               value={values}
               options={options}
               isMulti={true}
-              width={this.props.width}
+              width={this.props.width || 'max-content'}
               minWidth={Property.inputMinWidth}
               onValueChange={labels => prop
                 .setRaw(labels.map(label => label.value))}
@@ -382,6 +390,7 @@ export default class Property extends Component<Props> {
               errorMsg={prop.errorMsg}
               label={!this.props.bare && name}
               helperText={!this.props.bare && prop.description}
+              width={this.props.width}
               pageClicked={this.props.pageClicked}
               requiresUpgrade={this.props.requiresUpgrade}
             />
@@ -411,7 +420,11 @@ export default class Property extends Component<Props> {
                 />
               )}
               label={!this.props.bare && (<FormHelperText style={{ minWidth: Property.inputMinWidth, width: this.props.width }} error={!!prop.errorMsg}>{!!prop.value ? 'Enabled' : 'Disabled'}</FormHelperText>)}
-              style={{ marginBottom: '-10px' }}
+              style={{
+                marginBottom: '-10px',
+                width: this.props.width,
+                minWidth: Property.inputMinWidth,
+              }}
             />
           </div>
         );
@@ -468,8 +481,10 @@ export default class Property extends Component<Props> {
             errorMsg={prop.errorMsg}
             value={values}
             options={options}
+            showTags
+            bareTags={prop.type === ConfigEditor.PropertyType.Link}
             isMulti={prop.type === ConfigEditor.PropertyType.LinkMulti}
-            width={this.props.width}
+            width={this.props.width || 'max-content'}
             minWidth={Property.inputMinWidth}
             onValueChange={onValueChange}
             onValueCreate={onValueCreate}

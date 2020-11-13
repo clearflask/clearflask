@@ -14,6 +14,7 @@ import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
+import { MaxContentWidth } from '../../app/comps/Post';
 import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
@@ -43,6 +44,8 @@ const styles = (theme: Theme) => createStyles({
   nothing: {
     margin: theme.spacing(4),
     color: theme.palette.text.secondary,
+    width: MaxContentWidth,
+    maxWidth: '100%',
   },
   createFormFields: {
     display: 'flex',
@@ -67,12 +70,17 @@ const styles = (theme: Theme) => createStyles({
   },
   userProperties: {
     margin: theme.spacing(2),
+    width: MaxContentWidth,
+    maxWidth: '100%',
   },
   key: {
     margin: theme.spacing(1),
   },
   value: {
     margin: theme.spacing(1),
+  },
+  maxSize: {
+    maxWidth: 200,
   },
 });
 
@@ -269,8 +277,8 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                                 <MoreIcon />
                               </IconButton>
                             </TableCell>
-                            <TableCell><Typography>{user.name}</Typography></TableCell>
-                            <TableCell><Typography>{user.email}</Typography></TableCell>
+                            <TableCell><Typography noWrap className={this.props.classes.maxSize}>{user.name}</Typography></TableCell>
+                            <TableCell><Typography noWrap className={this.props.classes.maxSize}>{user.email}</Typography></TableCell>
                             {this.props.showBalance && (
                               <TableCell><Typography>
                                 {!!user.balance && (<CreditView
