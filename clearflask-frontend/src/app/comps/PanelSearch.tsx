@@ -35,13 +35,7 @@ const styles = (theme: Theme) => createStyles({
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
   },
-  filterIcon: {
-    color: theme.palette.text.hint,
-  },
   input: {
-  },
-  optionSelected: {
-    fontWeight: 'bold',
   },
 });
 
@@ -92,7 +86,6 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
       <InViewObserver ref={this.inViewObserverRef}>
         <div className={`${this.props.classes.container} ${this.props.className || ''}`} style={this.props.style}>
           <SelectionPicker
-            placeholder={this.props.placeholder || 'Search'}
             value={controls.values}
             menuIsOpen={!!this.state.menuIsOpen}
             menuOnChange={open => this.setState({ menuIsOpen: open })}
@@ -103,30 +96,25 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
                 this.updateSearchText(newValue);
               }
             }}
+            placeholder={this.props.placeholder || 'Search'}
             options={controls.options}
             isMulti
             group
-            inputMinWidth={50}
+            isInExplorer
             minWidth={this.props.minWidth || 100}
-            maxWidth={this.props.maxWidth || 400}
+            maxWidth={this.props.maxWidth || 150}
             autocompleteClasses={{
               input: this.props.classes.input,
               inputRoot: this.props.classes.input,
             }}
+            showTags={false}
+            disableFilter
             disableCloseOnSelect
             onValueChange={labels => this.onValueChange(labels)}
             formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
-            limitTags={1}
-            dropdownIconDontFlip
-            overrideDropdownIcon={(
-              <FilterIcon fontSize='small' className={this.props.classes.filterIcon} />
-            )}
+            dropdownIcon={FilterIcon}
             popupColumnCount={minmax(1, controls.groups, 3)}
-            popupColumnWidth={140}
             PopperProps={{ placement: 'bottom-end' }}
-            renderOption={(option, selected) => selected ? (
-              <span className={this.props.classes.optionSelected}>{option.label}</span>
-            ) : option.label}
           // TODO merge into SelectionPicker
           // overrideComponents={{
           //   DropdownIndicator: (dropdownIndicatorProps) => (
@@ -245,6 +233,8 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
       });
     }
 
+    var hasAny;
+
     // category
     var searchableCategories: Client.Category[] = [];
     if (!this.isFilterControllable(FilterType.Category)) {
@@ -256,7 +246,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         controls.permanent.push(label);
       });
     } else {
-      var hasAny = false;
+      hasAny = false;
       if (!this.props.search || !this.props.search.filterCategoryIds || this.props.search.filterCategoryIds.length === 0) {
         searchableCategories = this.props.config.content.categories;
       }
@@ -283,7 +273,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         })
       });
     } else {
-      var hasAny = false;
+      hasAny = false;
       searchableCategories.forEach(category => {
         category.workflow.statuses.forEach(status => {
           hasAny = true;
@@ -308,7 +298,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
         })
       });
     } else {
-      var hasAny = false;
+      hasAny = false;
       const filterTagIds = new Set(this.props.explorer.search.filterTagIds);
       searchableCategories.forEach(category => {
         category.tagging.tagGroups.forEach(tagGroup => {

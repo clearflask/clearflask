@@ -1,4 +1,4 @@
-import { Button, Dialog, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
+import { Button, Checkbox, Dialog, FormControlLabel, IconButton, InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import AndroidIcon from '@material-ui/icons/Android';
@@ -7,16 +7,14 @@ import EmailIcon from '@material-ui/icons/Email';
 import MoreIcon from '@material-ui/icons/MoreHoriz';
 import NotificationsOffIcon from '@material-ui/icons/NotificationsOff';
 import FilterIcon from '@material-ui/icons/SearchRounded';
-import VisibilityIcon from '@material-ui/icons/Visibility';
-import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import BrowserIcon from '@material-ui/icons/Web';
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
+import SelectionPicker, { Label } from '../../app/comps/SelectionPicker';
 import UserEdit from '../../app/comps/UserEdit';
 import Loader from '../../app/utils/Loader';
 import CreditView from '../../common/config/CreditView';
@@ -28,6 +26,7 @@ const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
+    width: 'max-content',
   },
   searchInput: {
     margin: theme.spacing(1),
@@ -75,9 +74,6 @@ const styles = (theme: Theme) => createStyles({
   value: {
     margin: theme.spacing(1),
   },
-  searchIcon: {
-    color: theme.palette.text.hint,
-  },
 });
 
 interface Props {
@@ -94,7 +90,7 @@ interface State {
   editExpandedForUserId?: string;
   newUserName?: string;
   newUserEmail?: string;
-  newUserPassword?: string;
+  newUserIsMod?: boolean;
   revealPassword?: boolean;
   newUserBalance?: number
   newUserIsSubmitting?: boolean;
@@ -103,7 +99,7 @@ interface State {
   searchText?: string;
   searchResult?: Admin.UserAdmin[];
   searchCursor?: string;
-  modsOnly?: boolean;
+  searchOptions?: Partial<Admin.UserSearchAdmin>;
 }
 class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
@@ -120,21 +116,10 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
     const expand = !!this.state.createRefFocused || !!this.state.newUserName;
     const enableSubmit = !!this.state.newUserName;
 
+    const searchOptions = this.searchToLabels(this.state.searchOptions);
+
     return (
       <div className={this.props.classes.page}>
-        <ToggleButtonGroup
-          {...{ size: 'small' }}
-          value={this.state.modsOnly ? 'moderators' : 'all'}
-          exclusive
-          onChange={(e, val) => {
-            if (val === 'all') this.setState({ modsOnly: false });
-            if (val === 'moderators') this.setState({ modsOnly: true });
-            this.updateSearchText(this.state.searchText);
-          }}
-        >
-          <ToggleButton value={'all'}>All</ToggleButton>
-          <ToggleButton value={'moderators'}>Mods</ToggleButton>
-        </ToggleButtonGroup>
         <ExplorerTemplate
           createSize={expand ? 250 : 116}
           createShown={expand}
@@ -142,7 +127,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
             <TextField
               disabled={this.state.newUserIsSubmitting}
               className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-              label={this.state.modsOnly ? 'Invite' : 'Add'}
+              label='Add'
               placeholder='Name'
               value={this.state.newUserName || ''}
               onChange={e => {
@@ -176,28 +161,18 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                   this.updateSearchText(this.state.newUserName, e.target.value);
                 }}
               />
-              {!this.state.modsOnly && (
-                <TextField
-                  disabled={this.state.newUserIsSubmitting}
-                  className={this.props.classes.createFormField}
-                  placeholder='Password'
-                  value={this.state.newUserPassword || ''}
-                  onChange={e => this.setState({ newUserPassword: e.target.value })}
-                  type={this.state.revealPassword ? 'text' : 'password'}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          aria-label='Toggle password visibility'
-                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                        >
-                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              )}
+              <FormControlLabel
+                label='Moderator'
+                disabled={this.state.newUserIsSubmitting}
+                className={this.props.classes.createFormField}
+                control={(
+                  <Checkbox
+                    color='primary'
+                    checked={!!this.state.newUserIsMod}
+                    onChange={e => this.setState({ newUserIsMod: !this.state.newUserIsMod })}
+                  />
+                )}
+              />
               <SubmitButton
                 isSubmitting={this.state.newUserIsSubmitting}
                 disabled={!enableSubmit}
@@ -210,21 +185,22 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
                     userCreateAdmin: {
                       name: this.state.newUserName,
                       email: this.state.newUserEmail,
-                      password: this.state.newUserPassword,
                       balance: this.state.newUserBalance,
-                      isMod: this.state.modsOnly,
+                      isMod: this.state.newUserIsMod,
                     },
-                  })).then(user => this.setState({
-                    createRefFocused: false,
-                    newUserName: undefined,
-                    newUserEmail: undefined,
-                    newUserPassword: undefined,
-                    revealPassword: undefined,
-                    newUserBalance: undefined,
-                    newUserIsSubmitting: false,
-                    searchInput: undefined,
-                    searchResult: [user],
-                  })).catch(e => this.setState({
+                  })).then(user => {
+                    this.setState({
+                      createRefFocused: false,
+                      newUserName: undefined,
+                      newUserEmail: undefined,
+                      revealPassword: undefined,
+                      newUserBalance: undefined,
+                      newUserIsSubmitting: false,
+                      searchInput: undefined,
+                      searchResult: [user],
+                    });
+                    this.props.onUserClick(user.userId);
+                  }).catch(e => this.setState({
                     newUserIsSubmitting: false,
                   }));
                 }}
@@ -238,24 +214,32 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
           )}
           searchSize={searchWidth}
           search={expand ? undefined : (
-            <TextField
+            <SelectionPicker
               className={this.props.classes.searchInput}
               placeholder='Search'
-              value={this.state.searchInput || ''}
-              onChange={e => {
+              options={searchOptions.options}
+              isMulti
+              group
+              isInExplorer
+              minWidth={100}
+              maxWidth={200}
+              showTags={false}
+              disableFilter
+              disableCloseOnSelect
+              value={searchOptions.selected}
+              formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
+              popupColumnCount={3}
+              PopperProps={{ placement: 'bottom-end' }}
+              onValueChange={labels => this.setState({ searchOptions: this.labelsToSearch(labels) })}
+              inputValue={this.state.searchInput || ''}
+              onInputChange={newValue => {
                 this.setState({
-                  searchInput: e.target.value,
-                  searchText: e.target.value,
+                  searchInput: newValue,
+                  searchText: newValue,
                 });
-                this.updateSearchText(e.target.value);
+                this.updateSearchText(newValue);
               }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <FilterIcon color='inherit' className={this.props.classes.searchIcon} />
-                  </InputAdornment>
-                ),
-              }}
+              dropdownIcon={FilterIcon}
             />
           )}
           content={(
@@ -375,7 +359,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
         projectId: this.props.server.getProjectId(),
         cursor: cursor,
         userSearchAdmin: {
-          isMod: !!this.state.modsOnly || undefined,
+          ...this.state.searchOptions,
           searchText: `${name || ''} ${email || ''}`.trim(),
         },
       }))
@@ -385,6 +369,74 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
           : result.results,
         searchCursor: result.cursor,
       }));
+  }
+
+
+  searchToLabels(search?: Partial<Admin.UserSearchAdmin>): { options: Label[], selected: Label[] } {
+    const result = {
+      options: [] as Label[],
+      selected: [] as Label[],
+    };
+
+    const modOnly: Label = {
+      groupBy: 'Filter',
+      label: 'Moderators',
+      value: 'Mods',
+    };
+    result.options.push(modOnly);
+    if (search?.isMod) result.selected.push(modOnly);
+
+    const sortCreated: Label = {
+      groupBy: 'Sort',
+      label: 'Created',
+      value: Admin.UserSearchAdminSortByEnum.Created,
+    }
+    result.options.push(sortCreated);
+    if (search?.sortBy === Admin.UserSearchAdminSortByEnum.Created) result.selected.push(sortCreated);
+
+    const sortFundsAvailable: Label = {
+      groupBy: 'Sort',
+      label: 'Balance',
+      value: Admin.UserSearchAdminSortByEnum.FundsAvailable,
+    }
+    result.options.push(sortFundsAvailable);
+    if (search?.sortBy === Admin.UserSearchAdminSortByEnum.FundsAvailable) result.selected.push(sortFundsAvailable);
+
+    const orderAsc: Label = {
+      groupBy: 'Order',
+      label: 'Ascending',
+      value: Admin.UserSearchAdminSortOrderEnum.Asc,
+    }
+    result.options.push(orderAsc);
+    if (search?.sortOrder === Admin.UserSearchAdminSortOrderEnum.Asc) result.selected.push(orderAsc);
+
+    const orderDesc: Label = {
+      groupBy: 'Order',
+      label: 'Descending',
+      value: Admin.UserSearchAdminSortOrderEnum.Desc,
+    }
+    result.options.push(orderDesc);
+    if (search?.sortOrder === Admin.UserSearchAdminSortOrderEnum.Desc) result.selected.push(orderDesc);
+
+    return result;
+  }
+
+  labelsToSearch(labels: Label[]): Partial<Admin.UserSearchAdmin> {
+    const search: Partial<Admin.UserSearchAdmin> = {};
+    labels.forEach(label => {
+      if (label.groupBy === 'Filter') {
+        if (label.value === 'Mods') search.isMod = true;
+      }
+      if (label.groupBy === 'Sort') {
+        if (label.value === Admin.UserSearchAdminSortByEnum.Created) search.sortBy = Admin.UserSearchAdminSortByEnum.Created;
+        if (label.value === Admin.UserSearchAdminSortByEnum.FundsAvailable) search.sortBy = Admin.UserSearchAdminSortByEnum.FundsAvailable;
+      }
+      if (label.groupBy === 'Order') {
+        if (label.value === Admin.UserSearchAdminSortOrderEnum.Asc) search.sortOrder = Admin.UserSearchAdminSortOrderEnum.Asc;
+        if (label.value === Admin.UserSearchAdminSortOrderEnum.Desc) search.sortOrder = Admin.UserSearchAdminSortOrderEnum.Desc;
+      }
+    });
+    return search;
   }
 }
 

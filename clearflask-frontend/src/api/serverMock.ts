@@ -2,6 +2,7 @@ import jsonwebtoken from 'jsonwebtoken';
 import * as ConfigEditor from '../common/config/configEditor';
 import WebNotification from '../common/notification/webNotification';
 import notEmpty from '../common/util/arrayUtil';
+import { isProd } from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import * as Admin from './admin';
@@ -1112,14 +1113,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return t;
   }
 
-  async returnLater<T>(returnValue: T | undefined = undefined): Promise<T> {
+  async returnLater<T>(returnValue: T | undefined = undefined, additionalLatency?: number): Promise<T> {
     // if (!isProd()) console.log('Server SEND:', returnValue);
+    if (additionalLatency) await this.wait(additionalLatency);
     await this.waitLatency();
     return returnValue === undefined ? undefined : JSON.parse(JSON.stringify(returnValue));
   }
 
   async throwLater(httpStatus: number, userFacingMessage?: string): Promise<any> {
-    console.log('Server THROW:', httpStatus, userFacingMessage);
+    if (!isProd()) console.log('Server THROW:', httpStatus, userFacingMessage);
     console.trace();
     await this.waitLatency();
     // eslint-disable-next-line no-throw-literal
@@ -1132,7 +1134,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   async rateLimitLater(captcha?: boolean, userFacingMessage?: string): Promise<any> {
-    console.log('Server THROW: rateLimit captcha:', captcha);
+    if (!isProd()) console.log('Server THROW: rateLimit captcha:', captcha);
     console.trace();
     await this.waitLatency();
     var headers = new Map<string, string>();
@@ -1155,8 +1157,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
   async waitLatency(): Promise<void> {
     if (this.hasLatency) {
-      await new Promise(resolve => setTimeout(resolve, this.BASE_LATENCY + this.BASE_LATENCY * Math.random()));
+      await this.wait(this.BASE_LATENCY + this.BASE_LATENCY * Math.random());
     }
+  }
+
+  async wait(latency: number): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, latency));
   }
 
   generateId(): string {

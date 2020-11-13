@@ -58,21 +58,24 @@ interface Props {
 class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
+    const leftPresent = (this.props.height !== undefined || this.props.width !== undefined || !!this.props.header || !!this.props.title);
     const rightPresent = (this.props.heightRight !== undefined || this.props.widthRight !== undefined || !!this.props.headerRight || !!this.props.titleRight);
     return (
       <div className={classNames(this.props.className, this.props.classes.container)}>
         <div className={this.props.classes.titles}>
-          <div className={this.props.classes.titleContainer} style={{
-            minWidth: this.props.width !== undefined ? this.props.width : '24px',
-          }}>
-            {this.props.title !== undefined ? (
-              <Typography variant='body1' className={this.props.classes.title}>
-                {this.props.title}
-              </Typography>
-            ) : null}
-            {this.props.header}
-            <Divider />
-          </div>
+          {leftPresent && (
+            <div className={this.props.classes.titleContainer} style={{
+              minWidth: this.props.width !== undefined ? this.props.width : '24px',
+            }}>
+              {this.props.title !== undefined ? (
+                <Typography variant='body1' className={this.props.classes.title}>
+                  {this.props.title}
+                </Typography>
+              ) : null}
+              {this.props.header}
+              <Divider />
+            </div>
+          )}
           <div className={this.props.classes.flexGrow} />
           {rightPresent && (
             <div className={this.props.classes.titleContainer} style={{
@@ -89,18 +92,24 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
           )}
         </div>
         <div className={this.props.classes.contentContainer}>
-          <DividerVertical
-            className={this.props.classes.heightTransition}
-            style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
-          />
+          {leftPresent && (
+            <div style={{ display: 'flex' }}>
+              <DividerVertical
+                className={this.props.classes.heightTransition}
+                style={{ height: this.props.height !== undefined ? this.props.height : '24px' }}
+              />
+            </div>
+          )}
           <div className={classNames(this.props.innerClassName, this.props.classes.flexGrow)}>
             {this.props.children}
           </div>
           {rightPresent && (
-            <DividerVertical
-              className={this.props.classes.heightTransition}
-              style={{ height: this.props.heightRight !== undefined ? this.props.heightRight : '24px' }}
-            />
+            <div style={{ display: 'flex' }}>
+              <DividerVertical
+                className={this.props.classes.heightTransition}
+                style={{ height: this.props.heightRight !== undefined ? this.props.heightRight : '24px' }}
+              />
+            </div>
           )}
         </div>
       </div>

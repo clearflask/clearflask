@@ -25,10 +25,10 @@ const styles = (theme: Theme) => createStyles({
   nothing: {
     padding: theme.spacing(4),
     color: theme.palette.text.secondary,
-    margin: theme.spacing(1),
+    margin: theme.spacing(0.5),
     boxSizing: 'border-box',
-    width: '100%',
-    maxWidth: MaxContentWidth,
+    width: MaxContentWidth,
+    maxWidth: '100%',
     display: 'inline-block',
   },
 });

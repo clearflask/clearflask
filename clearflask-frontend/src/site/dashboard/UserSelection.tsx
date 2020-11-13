@@ -27,6 +27,7 @@ interface Props {
   errorMsg?: string;
   width?: string | number;
   minWidth?: string | number;
+  maxWidth?: string | number;
   alwaysOverrideWithLoggedInUser?: boolean;
 }
 interface ConnectProps {
@@ -34,8 +35,10 @@ interface ConnectProps {
   loggedInUserLabel?: Label;
 }
 interface State {
+  input?: string;
   selectedUserLabel?: Label;
   options?: Label[];
+  searching?: string;
 }
 
 class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
@@ -45,8 +48,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     super(props);
     const selectedUserLabel = props.loggedInUserLabel;
     this.state = { selectedUserLabel };
-    if (selectedUserLabel && this.props.onChange) this.props.onChange(selectedUserLabel);
-    this.searchUsers = debounce(
+    const searchDebounced = debounce(
       (newValue: string) => this.props.server.dispatchAdmin()
         .then(d => d.userSearchAdmin({
           projectId: this.props.server.getProjectId(),
@@ -54,9 +56,18 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         }))
         .then(results => {
           const userLabels = results.results.map(UserSelection.mapUserToLabel);
-          this.setState({ options: userLabels });
+          this.setState({
+            options: userLabels,
+            ...(this.state.searching === newValue ? { searching: undefined } : {}),
+          });
+        }).catch(e => {
+          if (this.state.searching === newValue) this.setState({ searching: undefined });
         })
       , SearchTypeDebounceTime);
+    this.searchUsers = newValue => {
+      this.setState({ searching: newValue });
+      searchDebounced(newValue);
+    }
   }
 
   render() {
@@ -71,7 +82,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
       options.push(this.state.selectedUserLabel);
     }
 
-    if (!!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
+    if (!this.state.input && !!this.props.alwaysOverrideWithLoggedInUser && !!this.props.loggedInUserLabel && !seenUserIds.has(this.props.loggedInUserLabel.value)) {
       seenUserIds.add(this.props.loggedInUserLabel.value);
       options.push(this.props.loggedInUserLabel);
     }
@@ -92,11 +103,27 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
         value={selectedUserLabel ? [selectedUserLabel] : []}
         options={options}
+        loading={this.state.searching !== undefined}
         disableClearable={!this.props.allowClear}
+        showTags
+        bareTags
+        disableFilter
+        inputMinWidth={0}
         width={this.props.width}
         minWidth={this.props.minWidth}
+        maxWidth={this.props.maxWidth}
         disabled={this.props.disabled}
+        clearOnBlur
+        inputValue={this.state.input || ''}
+        onFocus={() => {
+          if (this.state.options === undefined
+            && this.state.searching === undefined
+            && this.state.input === undefined) {
+            this.searchUsers('');
+          }
+        }}
         onInputChange={(newValue, reason) => {
+          this.setState({ input: newValue });
           if (reason === 'input') {
             this.searchUsers(newValue);
           }
@@ -106,7 +133,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
           this.setState({ selectedUserLabel: selectedLabel })
           this.props.onChange && this.props.onChange(selectedLabel);
         }}
-        formatCreateLabel={this.props.allowCreate ? inputValue => `Create '${inputValue}'` : undefined}
+        formatCreateLabel={this.props.allowCreate ? inputValue => `Add user '${inputValue}'` : undefined}
         onValueCreate={this.props.allowCreate ? name => {
           this.props.server.dispatchAdmin()
             .then(d => d.userCreateAdmin({
@@ -126,7 +153,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
   static mapUserToLabel(user: Admin.UserAdmin | Admin.UserMe): Label {
     const userLabel: Label = {
       label: (<UserDisplay user={user} variant='text' suppressTypography />),
-      // label: `${user.name || 'anonymous'} ${user.email || ''}`,
+      filterString: `${user.name || 'Anonymous'} ${user.email || ''}`,
       value: user.userId,
     };
     return userLabel;

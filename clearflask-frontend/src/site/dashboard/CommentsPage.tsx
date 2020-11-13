@@ -9,6 +9,7 @@ import { ReduxState, Server } from '../../api/server';
 import Comment from '../../app/comps/Comment';
 import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import LogIn from '../../app/comps/LogIn';
+import { MaxContentWidth } from '../../app/comps/Post';
 import Loader from '../../app/utils/Loader';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
@@ -16,20 +17,26 @@ const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
+    width: 'max-content',
   },
   searchInput: {
     margin: theme.spacing(1),
     width: searchWidth,
+    maxWidth: '100%',
     // (Un)comment these to align with corner
     marginBottom: -1,
   },
   nothing: {
-    margin: theme.spacing(4),
+    padding: theme.spacing(4),
     color: theme.palette.text.secondary,
+    width: MaxContentWidth,
+    maxWidth: '100%',
   },
   resultContainer: {
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
+    width: MaxContentWidth,
+    maxWidth: '100%',
   },
   userProperties: {
     margin: theme.spacing(2),

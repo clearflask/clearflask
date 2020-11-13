@@ -14,7 +14,8 @@ import PanelSearch from './PanelSearch';
 const styles = (theme: Theme) => createStyles({
   container: {
     display: 'inline-block',
-    width: 'auto',
+    maxWidth: 1024,
+    width: 'max-content',
   },
   board: {
     display: 'flex',
@@ -34,9 +35,6 @@ const styles = (theme: Theme) => createStyles({
   expandSwitchLabel: {
     color: theme.palette.text.secondary,
     marginBottom: -20,
-  },
-  controls: {
-    maxWidth: 600,
   },
 });
 
@@ -87,36 +85,22 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
       };
     return (
       <div className={this.props.classes.container}>
-          {/* <FormControlLabel
-            className={this.props.classes.expandSwitchLabel}
-            control={(
-              <Switch
-                className={this.props.classes.expandSwitch}
-                checked={!!this.state.expanded}
-                onChange={(e, checked) => this.setState({ expanded: !this.state.expanded })}
-                color='primary'
-              />
-            )}
-            label={this.state.expanded ? 'Expanded' : 'Collapsed'}
-          /> */}
-        
-        <div className={this.props.classes.controls}>
-          <PanelSearch
-            className={this.props.classes.search}
-            server={this.props.server}
-            search={this.state.search}
-            placeholder='Filter'
-            onSearchChanged={search => this.setState({ search: search })}
-            explorer={{
-              search: {},
-              display: {},
-              allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
-            }}
-          />
-        </div>
         <DividerCorner
-          height='50%'
-          width={116}
+          widthRight={116}
+          headerRight={(
+            <PanelSearch
+              className={this.props.classes.search}
+              server={this.props.server}
+              search={this.state.search}
+              placeholder='Filter'
+              onSearchChanged={search => this.setState({ search: search })}
+              explorer={{
+                search: {},
+                display: {},
+                allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true },
+              }}
+            />
+          )}
         >
           <div className={this.props.classes.board}>
             {this.renderPanel('Trending', {

@@ -51,7 +51,6 @@ const styles = (theme: Theme) => createStyles({
     paddingLeft: theme.spacing(2),
   },
   explorer: {
-    width: 'max-content',
     margin: 'auto',
   },
 });

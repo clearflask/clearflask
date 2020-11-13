@@ -22,7 +22,7 @@ interface Props {
 class Delimited extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
-    const { classes, ...dividerProps } = this.props;
+    const { classes, theme, ...dividerProps } = this.props;
     return (
       <Divider
         {...dividerProps}

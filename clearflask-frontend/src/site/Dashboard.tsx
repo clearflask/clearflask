@@ -97,6 +97,7 @@ interface State {
     id: string;
   }
   accountSearch?: AdminClient.Account[];
+  accountSearching?: string;
 }
 class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   unsubscribes: { [projectId: string]: () => void } = {};
@@ -129,13 +130,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         currentPagePath: [],
       };
     }
-    this.searchAccounts = debounce(
+    const searchAccountsDebounced = debounce(
       (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
         accountSearchSuperAdmin: {
           searchText: newValue,
         },
-      })).then(result => this.setState({ accountSearch: result.results }))
+      })).then(result => this.setState({
+        accountSearch: result.results,
+        ...(this.state.accountSearching === newValue ? { accountSearching: undefined } : {}),
+      })).catch(e => {
+        if (this.state.accountSearching === newValue) this.setState({ accountSearching: undefined });
+      })
       , SearchTypeDebounceTime);
+    this.searchAccounts = newValue => {
+      this.setState({ accountSearching: newValue });
+      searchAccountsDebounced(newValue);
+    }
   }
 
   componentWillUnmount() {
@@ -172,9 +182,13 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         </span>
       ), value: '__NONE__'
     };
-    const projectOptions = [
+    const projectOptions: Label[] = [
       ...(projects.length > 0
-        ? projects.map(p => ({ label: p.editor.getConfig().name, value: p.projectId }))
+        ? projects.map(p => ({
+          label: p.editor.getConfig().name,
+          filterString: p.editor.getConfig().name,
+          value: p.projectId
+        }))
         : [noProjectLabel]),
     ];
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
@@ -507,13 +521,14 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
     }
 
     const seenAccountEmails: Set<string> = new Set();
-    const curAccountLabel: Label = { label: this.props.account.name, value: this.props.account.email };
+    const curAccountLabel: Label = Dashboard.accountToLabel(this.props.account);
     const accountOptions = [curAccountLabel];
     seenAccountEmails.add(this.props.account.email)
     this.state.accountSearch && this.state.accountSearch.forEach(account => {
       if (!seenAccountEmails.has(account.email)) {
+        const label = Dashboard.accountToLabel(account);
         seenAccountEmails.add(account.email);
-        accountOptions.push({ label: account.name, value: account.email });
+        accountOptions.push(label);
       }
     });
 
@@ -525,10 +540,22 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             disableClearable
             className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
             value={[curAccountLabel]}
-            overrideDropdownIcon={null}
+            dropdownIcon={null}
             options={accountOptions}
             helperText={isSelectProjectUserInMenu && 'Current account' || undefined}
-            minWidth={150}
+            minWidth={100}
+            maxWidth={150}
+            showTags
+            bareTags
+            disableFilter
+            loading={this.state.accountSearching !== undefined}
+            noOptionsMessage='No accounts'
+            onFocus={() => {
+              if (this.state.accountSearch === undefined
+                && this.state.accountSearching === undefined) {
+                this.searchAccounts('');
+              }
+            }}
             onInputChange={(newValue, reason) => {
               if (reason === 'input') {
                 this.searchAccounts(newValue);
@@ -553,10 +580,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
               disableClearable
               className={isSelectProjectUserInMenu ? this.props.classes.projectUserSelectorMenu : this.props.classes.projectUserSelectorHeader}
               value={[selectedLabel]}
-              overrideDropdownIcon={null}
+              dropdownIcon={null}
               options={projectOptions}
               helperText={isSelectProjectUserInMenu && 'Current project' || undefined}
-              minWidth={150}
+              minWidth={100}
+              maxWidth={150}
               onValueChange={labels => {
                 const selectedProjectId = labels[0]?.value;
                 if (selectedProjectId && this.state.selectedProjectId !== selectedProjectId) {
@@ -581,7 +609,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                 alwaysOverrideWithLoggedInUser
                 helperText={isSelectProjectUserInMenu && 'Current user' || undefined}
                 placeholder='Anonymous'
-                minWidth={150}
+                minWidth={100}
+                maxWidth={150}
                 onChange={userLabel => {
                   if (activeProject) {
                     const projectId = activeProject.projectId
@@ -589,8 +618,17 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                       activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
                         projectId,
                         userId: userLabel.value,
+                      })).then(userMe => this.setState({
+                        quickView: {
+                          id: userMe.userId,
+                          type: 'user',
+                        },
                       }));
                     } else {
+                      if (this.state.quickView?.type === 'user'
+                        && this.state.quickView.id === activeProject.server.getStore().getState().users.loggedIn.user?.userId) {
+                        this.setState({ quickView: undefined });
+                      }
                       activeProject.server.dispatch().userLogout({
                         projectId,
                       });
@@ -719,8 +757,15 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   isQuickViewEnabled() {
     return this.props.width && isWidthUp('md', this.props.width, true);
   }
-}
 
+  static accountToLabel(account: AdminClient.Account): Label {
+    return {
+      label: account.name,
+      filterString: `${account.name} ${account.email}`,
+      value: account.email
+    };
+  }
+}
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {

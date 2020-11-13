@@ -16,7 +16,7 @@ const styles = (theme: Theme) => createStyles({
         + " 'cc r'",
     },
     [theme.breakpoints.down('xs')]: {
-      gridTemplateColumns: 'auto',
+      gridTemplateColumns: '100%',
       gridTemplateRows: 'auto auto auto',
       gridTemplateAreas:
         "'t'"
@@ -92,10 +92,14 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
       results = (
         <DividerCorner
           isExplorer
-          width={this.props.createShown ? 80 : (
-            (this.props.createSize || 0) + 20
-          )}
-          height={this.props.createShown ? 180 : 20}
+          width={!this.props.createVisible
+            ? 0
+            : (this.props.createShown
+              ? 80
+              : (this.props.createSize || 0))}
+          height={!this.props.createVisible
+            ? 0
+            : (this.props.createShown ? 180 : 20)}
           widthRight={this.props.searchSize !== undefined ? (this.props.createShown ? 0 : this.props.searchSize) : undefined}
           heightRight={!!this.props.search ? (this.props.createShown ? 0 : 20) : undefined}
         >
@@ -119,13 +123,13 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
               {this.props.createVisible}
             </div>
           )}
+          {expandDirectionHorizontal && this.props.createLabel && (
+            <Collapse in={!!this.state.hasExpanded && !expandInMotion}>
+              {labelContainer}
+            </Collapse>
+          )}
           <div className={this.props.classes.flexGrow} />
           <div className={this.props.classes.searchAndCreateLabelContainer}>
-            {expandDirectionHorizontal && this.props.createLabel && (
-              <Collapse in={!!this.state.hasExpanded && !expandInMotion}>
-                {labelContainer}
-              </Collapse>
-            )}
             {this.props.search && (
               <Collapse in={!this.state.hasExpanded && !expandInMotion}>
                 <div className={this.props.classes.search}>

@@ -1,6 +1,7 @@
 import { FormControl, FormHelperText, InputAdornment, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -38,6 +39,10 @@ import TagSelect from './TagSelect';
 export const PostTitleMaxLength = 100
 
 const styles = (theme: Theme) => createStyles({
+  root: {
+    width: 'max-content',
+    maxWidth: '100%',
+  },
   content: {
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
@@ -271,7 +276,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     return (
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
-          className={this.props.className}
+          className={classNames(this.props.className, this.props.classes.root)}
           createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
           createShown={createShown}
           createLabel={createLabel}
