@@ -267,7 +267,7 @@ export interface StateSettings {
   demoMenuAnimate?: Array<{
     path: string;
   }>;
-  demoDisableExpand?: boolean;
+  demoDisableExplorerExpanded?: boolean;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {

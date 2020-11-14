@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 
 const styles = (theme: Theme) => createStyles({
   wrapper: {
+    display: 'inline-block',
     position: 'relative',
   },
   progress: {
@@ -18,6 +19,7 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
+  wrapperClassName?: string;
   isSubmitting?: boolean;
 }
 interface State {
@@ -34,10 +36,10 @@ class SubmitButton extends Component<Props & React.ComponentPropsWithoutRef<type
   }
 
   render() {
-    const { classes, isSubmitting, ...buttonProps } = this.props;
+    const { classes, isSubmitting, wrapperClassName, ...buttonProps } = this.props;
     return (
       <div
-        className={classes.wrapper}
+        className={classNames(classes.wrapper, wrapperClassName)}
       >
         <Button
           {...buttonProps}

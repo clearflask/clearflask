@@ -95,6 +95,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
                   variant='outlined'
+                  size='small'
                   disabled={this.state.isSubmitting}
                   label='Title'
                   fullWidth
@@ -105,6 +106,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               <Grid item xs={12} className={this.props.classes.row}>
                 <RichEditor
                   variant='outlined'
+                  size='small'
                   disabled={this.state.isSubmitting}
                   label='Description'
                   fullWidth
@@ -120,6 +122,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   <Grid item xs={12} className={this.props.classes.row}>
                     <RichEditor
                       variant='outlined'
+                      size='small'
                       disabled={this.state.isSubmitting}
                       label='Response'
                       fullWidth
@@ -135,10 +138,11 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       <SelectionPicker
                         TextFieldProps={{
                           variant: 'outlined',
+                          size: 'small',
                         }}
                         disabled={this.state.isSubmitting}
                         width='100%'
-                        label='Transition Status'
+                        label='New Status'
                         showTags
                         bareTags
                         disableInput
@@ -152,6 +156,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     <Grid item xs={12} sm={8} className={this.props.classes.row}>
                       <TagSelect
                         variant='outlined'
+                        size='small'
                         label='Tags'
                         disabled={this.state.isSubmitting}
                         category={this.props.category}
@@ -165,6 +170,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                     <Grid item xs={12} className={this.props.classes.row}>
                       <TextField
                         variant='outlined'
+                        size='small'
                         disabled={this.state.isSubmitting}
                         label='Funding Goal'
                         fullWidth

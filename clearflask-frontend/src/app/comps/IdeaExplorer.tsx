@@ -1,6 +1,7 @@
-import { FormControl, FormHelperText, InputAdornment, MenuItem, Select, TextField, Typography, withWidth, WithWidth } from '@material-ui/core';
+import { FormControl, FormHelperText, Grid, InputLabel, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import AddIcon from '@material-ui/icons/Add';
+/** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
+import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -8,6 +9,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
+import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
@@ -48,33 +50,43 @@ const styles = (theme: Theme) => createStyles({
     paddingLeft: theme.spacing(2),
   },
   createFormFields: {
-    display: 'flex',
-    flexDirection: 'column',
     // (Un)comment these to align with corner
-    marginTop: theme.spacing(1),
-    marginRight: theme.spacing(2),
+    paddingTop: theme.spacing(1),
+    paddingRight: theme.spacing(2),
   },
   createFormField: {
     margin: theme.spacing(1),
-    width: 'auto',
-    flexGrow: 1,
+    width: '100%',
+  },
+  createGridItem: {
+    padding: theme.spacing(0, 1),
   },
   caption: {
     margin: theme.spacing(1),
     color: theme.palette.text.secondary,
   },
   addIcon: {
-    cursor: 'text',
-    height: '24px',
-    fontSize: '24px',
-    color: theme.palette.text.hint,
+    marginLeft: theme.spacing(0.5),
+  },
+  addIconButton: {
+    padding: 2,
+    marginRight: -2,
   },
   panelSearch: {
     marginBottom: -1,
   },
-  createField: {
+  createButton: {
+    padding: theme.spacing(1.5, 0, 0.5),
+    margin: '0 auto -1px',
+    color: theme.palette.text.hint,
     minWidth: 100,
-    marginBottom: -1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+  },
+  createButtonClickable: {
+    cursor: 'pointer',
+    ...(tabHoverApplyStyles(theme)),
   },
 });
 
@@ -92,7 +104,7 @@ interface ConnectProps {
   settings: StateSettings;
 }
 interface State {
-  createRefFocused?: boolean;
+  createOpen?: boolean;
   newItemTitle?: string;
   newItemDescription?: string;
   newItemAuthorLabel?: Label;
@@ -103,7 +115,6 @@ interface State {
   newItemIsSubmitting?: boolean;
   search?: Partial<Client.IdeaSearch>;
   logInOpen?: boolean;
-  createFormHasExpanded?: boolean;
 }
 // class QueryState {
 //   search: QueryParamConfig<Partial<Client.IdeaSearch>> = {
@@ -111,7 +122,7 @@ interface State {
 //     decode: () => ;
 //   };
 // }
-class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
+class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
@@ -122,7 +133,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     super(props);
     this.state = {};
     this.updateSearchText = debounce(
-      (title?: string, descRaw?: string) => this.setState({
+      (title?: string, descRaw?: string) => !!title && !!descRaw && this.setState({
         newItemSearchText:
           `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`
       }),
@@ -145,9 +156,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   render() {
-    const createShown = (!!this.state.createRefFocused)
-      || !!this.state.newItemTitle
-      || !!this.state.newItemDescription;
+    const createShown = !!this.state.createOpen
+      || (!this.props.settings.demoDisableExplorerExpanded && this.props.width && isWidthUp('md', this.props.width));
+    const similarShown = createShown && (!!this.state.newItemTitle || !!this.state.newItemDescription);
 
     const search = this.props.explorer.allowSearch && (
       <PanelSearch
@@ -159,13 +170,13 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         explorer={this.props.explorer}
       />
     );
-    const createLabel = (
+    const similarLabel = (
       <Typography variant='overline' className={this.props.classes.caption}>
         Similar
       </Typography>
     );
     var content;
-    if (createShown) {
+    if (similarShown) {
       const searchOverride = this.state.newItemSearchText ? { searchText: this.state.newItemSearchText } : undefined;
       content = (
         <div className={this.props.classes.content}>
@@ -223,20 +234,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     }
 
     const createVisible = !!this.props.explorer.allowCreate && (
-      <TextField
-        disabled={this.state.newItemIsSubmitting}
-        className={`${this.props.classes.createFormField} ${this.props.classes.createField}`}
-        placeholder={createShown
-          ? (this.props.explorer.allowCreate.actionTitleLong || this.props.explorer.allowCreate.actionTitle || 'Add new post')
-          : (this.props.explorer.allowCreate.actionTitle || 'Add')}
-        value={this.state.newItemTitle || ''}
-        onChange={e => {
-          if (this.state.newItemTitle === e.target.value) {
-            return;
-          }
-          this.updateSearchText(e.target.value, this.state.newItemDescription);
+      <div
+        className={classNames(this.props.classes.createButton, !createShown && this.props.classes.createButtonClickable)}
+        onClick={createShown ? undefined : e => {
           this.setState({
-            newItemTitle: e.target.value,
+            createOpen: !this.state.createOpen,
             ...(this.state.newItemChosenCategoryId === undefined
               ? {
                 newItemChosenCategoryId: (this.state.search && this.state.search.filterCategoryIds && this.state.search.filterCategoryIds.length > 0)
@@ -251,25 +253,20 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 ...(this.state.search && this.state.search.filterTagIds || []),
                 ...(this.props.explorer.search.filterTagIds || [])])]
             } : {}),
-          })
+          });
+          this.createInputRef.current?.focus();
         }}
-        InputProps={{
-          inputRef: this.createInputRef,
-          onBlur: () => this.setState({ createRefFocused: false }),
-          onFocus: () => this.setState({ createRefFocused: true }),
-          endAdornment: (
-            <InputAdornment position="end">
-              <AddIcon
-                className={this.props.classes.addIcon}
-                onClick={() => this.createInputRef.current?.focus()}
-              />
-            </InputAdornment>
-          ),
-        }}
-        inputProps={{
-          maxLength: PostTitleMaxLength,
-        }}
-      />
+      >
+        <Typography noWrap>
+          {createShown
+            ? (this.props.explorer.allowCreate.actionTitleLong || this.props.explorer.allowCreate.actionTitle || 'Add new post')
+            : (this.props.explorer.allowCreate.actionTitle || 'Add')}
+        </Typography>
+        <AddIcon
+          fontSize='small'
+          className={this.props.classes.addIcon}
+        />
+      </div>
     );
     const createCollapsible = !!this.props.explorer.allowCreate && this.renderCreate();
 
@@ -277,9 +274,10 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       <InViewObserver ref={this.inViewObserverRef}>
         <ExplorerTemplate
           className={classNames(this.props.className, this.props.classes.root)}
-          createSize={this.props.explorer.allowCreate ? (createShown ? 300 : 116) : 0}
+          createSize={this.props.explorer.allowCreate ? (createShown ? 260 : 116) : 0}
           createShown={createShown}
-          createLabel={createLabel}
+          similarShown={similarShown}
+          similarLabel={similarLabel}
           createVisible={createVisible}
           createCollapsible={createCollapsible}
           searchSize={this.props.explorer.allowSearch ? 120 : undefined}
@@ -305,48 +303,67 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
     const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
     return (
-      <div className={this.props.classes.createFormFields}>
-        <RichEditor
-          id='createDescription'
-          disabled={this.state.newItemIsSubmitting}
-          className={this.props.classes.createFormField}
-          placeholder='Description'
-          value={this.state.newItemDescription || ''}
-          onChange={e => {
-            if (this.state.newItemDescription === e.target.value
-              || (!this.state.newItemDescription && !e.target.value)) {
-              return;
-            }
-            this.updateSearchText(this.state.newItemTitle, e.target.value);
-            this.setState({ newItemDescription: e.target.value })
-          }}
-          multiline
-          rows={1}
-          rowsMax={5}
-        />
-        {this.props.server.isModLoggedIn() && (
-          <UserSelection
-            server={this.props.server}
-            placeholder='Author'
-            errorMsg='Select author'
-            width='100%'
-            className={this.props.classes.createFormField}
+      <Grid container alignItems='flex-start' className={this.props.classes.createFormFields}>
+        <Grid item xs={12} className={this.props.classes.createGridItem}>
+          <TextField
+            variant='outlined'
+            size='small'
+            id='createTitle'
             disabled={this.state.newItemIsSubmitting}
-            onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
-            allowCreate
+            className={this.props.classes.createFormField}
+            label='Title'
+            value={this.state.newItemTitle || ''}
+            onChange={e => {
+              if (this.state.newItemTitle === e.target.value) {
+                return;
+              }
+              this.updateSearchText(e.target.value, this.state.newItemDescription);
+              this.setState({ newItemTitle: e.target.value })
+            }}
+            InputProps={{
+              inputRef: this.createInputRef,
+            }}
+            inputProps={{
+              maxLength: PostTitleMaxLength,
+            }}
           />
-        )}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'flex-end',
-        }}>
-          {categoryOptions.length > 1 && (
+        </Grid>
+        <Grid item xs={12} className={this.props.classes.createGridItem}>
+          <RichEditor
+            variant='outlined'
+            size='small'
+            id='createDescription'
+            multiline
+            disabled={this.state.newItemIsSubmitting}
+            className={this.props.classes.createFormField}
+            label='Details'
+            value={this.state.newItemDescription || ''}
+            onChange={e => {
+              if (this.state.newItemDescription === e.target.value
+                || (!this.state.newItemDescription && !e.target.value)) {
+                return;
+              }
+              this.updateSearchText(this.state.newItemTitle, e.target.value);
+              this.setState({ newItemDescription: e.target.value })
+            }}
+            InputProps={{
+              style: {
+                minHeight: 76,
+              },
+            }}
+          />
+        </Grid>
+        {categoryOptions.length > 1 && (
+          <Grid item xs={12} className={this.props.classes.createGridItem}>
             <FormControl
+              variant='outlined'
+              size='small'
               className={this.props.classes.createFormField}
               error={!selectedCategory}
             >
+              <InputLabel error={!selectedCategory}>Category</InputLabel>
               <Select
+                label='Category'
                 disabled={this.state.newItemIsSubmitting}
                 value={selectedCategory ? selectedCategory.categoryId : ''}
                 onChange={e => this.setState({ newItemChosenCategoryId: e.target.value as string })}
@@ -359,47 +376,71 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                   </MenuItem>
                 ))}
               </Select>
-              <FormHelperText>
-                {!selectedCategory ? 'Choose a category' : ' '}
-              </FormHelperText>
+              {!selectedCategory && (
+                <FormHelperText error>Choose a category</FormHelperText>
+              )}
             </FormControl>
-          )}
-          {selectedCategory && (
+          </Grid>
+        )}
+        {selectedCategory && (
+          <Grid item xs={12} className={this.props.classes.createGridItem}>
             <div className={this.props.classes.createFormField}>
               <TagSelect
-                placeholder='Tags'
+                variant='outlined'
+                size='small'
+                label='Tags'
                 category={selectedCategory}
                 tagIds={this.state.newItemChosenTagIds}
                 onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
                 onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
                 disabled={this.state.newItemIsSubmitting}
                 mandatoryTagIds={mandatoryTagIds}
+                SelectionPickerProps={{
+                  limitTags: 1,
+                }}
               />
             </div>
-          )}
-        </div>
-        <SubmitButton
-          color='primary'
-          isSubmitting={this.state.newItemIsSubmitting}
-          disabled={!enableSubmit || this.state.newItemIsSubmitting}
-          onClick={e => enableSubmit && this.createClickSubmit(mandatoryTagIds)}
-          style={{
-            alignSelf: 'flex-end',
-          }}
-        >
-          Submit
-        </SubmitButton>
-        <LogIn
-          actionTitle='Get notified of replies'
-          server={this.props.server}
-          open={this.state.logInOpen}
-          onClose={() => this.setState({ logInOpen: false })}
-          onLoggedInAndClose={() => {
-            this.setState({ logInOpen: false });
-            this.createSubmit(mandatoryTagIds)
-          }}
-        />
-      </div>
+          </Grid>
+        )}
+        {this.props.server.isModLoggedIn() && (
+          <Grid item xs={12} className={this.props.classes.createGridItem}>
+            <UserSelection
+              variant='outlined'
+              size='small'
+              server={this.props.server}
+              label='As user'
+              errorMsg='Select author'
+              width='100%'
+              className={this.props.classes.createFormField}
+              disabled={this.state.newItemIsSubmitting}
+              onChange={selectedUserLabel => this.setState({ newItemAuthorLabel: selectedUserLabel })}
+              allowCreate
+            />
+          </Grid>
+        )}
+        <Grid item xs={12} container justify='flex-end' className={this.props.classes.createGridItem}>
+          <Grid item xs={4}>
+            <SubmitButton
+              color='primary'
+              isSubmitting={this.state.newItemIsSubmitting}
+              disabled={!enableSubmit || this.state.newItemIsSubmitting}
+              onClick={e => enableSubmit && this.createClickSubmit(mandatoryTagIds)}
+            >
+              Submit
+            </SubmitButton>
+            <LogIn
+              actionTitle='Get notified of replies'
+              server={this.props.server}
+              open={this.state.logInOpen}
+              onClose={() => this.setState({ logInOpen: false })}
+              onLoggedInAndClose={() => {
+                this.setState({ logInOpen: false });
+                this.createSubmit(mandatoryTagIds)
+              }}
+            />
+          </Grid>
+        </Grid>
+      </Grid>
     );
   }
 
@@ -467,9 +508,14 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     if (await animate({ sleepInMs: 1000 })) return;
 
     for (; ;) {
-      if (searchTerm) {
-        if (await animate({ setState: { newItemSearchText: searchTerm } })) return;
-      }
+      if (await animate({
+        setState: {
+          createOpen: true,
+          ...(searchTerm ? { newItemSearchText: searchTerm } : {})
+        }
+      })) return;
+
+      if (await animate({ sleepInMs: 500 })) return;
 
       for (var i = 0; i < title.length; i++) {
         const character = title[i];
@@ -508,6 +554,8 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           setState: { newItemTitle: this.state.newItemTitle.substr(0, this.state.newItemTitle.length - 1) },
         })) return;
       }
+
+      if (await animate({ setState: { createOpen: false } })) return;
 
       if (await animate({ sleepInMs: 1500 })) return;
     }

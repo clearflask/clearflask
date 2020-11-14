@@ -44,7 +44,6 @@ class DataMock {
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 5) : undefined,
         (postCategory.workflow.statuses.find(s => s.name.match(/Funding/))
           || postCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
-        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user2,
@@ -55,7 +54,6 @@ class DataMock {
         opts.votingAllowed ? 7 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 5) : undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/Planned/))!.statusId,
-        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user3,
@@ -65,7 +63,6 @@ class DataMock {
         opts.votingAllowed ? 4 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 4) : undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/Under review/))!.statusId,
-        [postCategory.tagging.tags.find(s => s.name.match(/Idea/))!.tagId],
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user4,
@@ -76,7 +73,6 @@ class DataMock {
         opts.votingAllowed ? 2 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 2) : undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/In progress/))!.statusId,
-        [postCategory.tagging.tags.find(s => s.name.match(/Bug/))!.tagId],
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user1,
@@ -86,7 +82,6 @@ class DataMock {
         opts.votingAllowed ? 1 : undefined,
         undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/Completed/))!.statusId,
-        [postCategory.tagging.tags.find(s => s.name.match(/Bug/))!.tagId],
       );
     }
     // if (opts.templateBlog) {
@@ -466,13 +461,13 @@ class DataMock {
     user: Admin.UserAdmin,
     title: string,
     description: string,
-    response: string | undefined,
-    funded: number | undefined,
-    fundGoal: number | undefined,
-    voteValue: number | undefined,
-    expressions: { [key: string]: number; } | undefined,
-    statusId: string | undefined,
-    tagIds: string[] | undefined,
+    response?: string,
+    funded?: number,
+    fundGoal?: number,
+    voteValue?: number,
+    expressions?: { [key: string]: number; },
+    statusId?: string,
+    tagIds?: string[],
   ): Promise<Admin.Idea> {
     return ServerMock.get().ideaCreateAdmin({
       projectId: projectId,

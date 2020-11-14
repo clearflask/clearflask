@@ -315,11 +315,23 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           initialSubPath='/embed/demo'
           template={templater => templater.demoExplorer({
             allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
-            allowSearch: { enableSort: false, enableSearchText: true, enableSearchByCategory: false, enableSearchByStatus: false, enableSearchByTag: false },
+            display: {
+              titleTruncateLines: 1,
+              descriptionTruncateLines: 2,
+              showCommentCount: false,
+              showCategoryName: false,
+              showCreated: false,
+              showAuthor: false,
+              showStatus: false,
+              showTags: false,
+              showVoting: false,
+              showFunding: false,
+              showExpression: false,
+            },
           }, undefined, undefined, { descriptionTruncateLines: 2 }, { limit: 2 })}
           mock={mocker => mocker.demoFeedbackType()}
           settings={{
-            demoDisableExpand: true,
+            demoDisableExplorerExpanded: true,
             // demoBlurryShadow: true,
             demoCreateAnimate: {
               title: 'Add Dark Mode',

@@ -47,6 +47,8 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
             <Grid container alignItems='baseline'>
               <Grid item xs={12} className={this.props.classes.row}>
                 <RichEditor
+                  variant='outlined'
+                  size='small'
                   disabled={this.state.isSubmitting}
                   label='Content'
                   fullWidth

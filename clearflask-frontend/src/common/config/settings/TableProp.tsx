@@ -240,13 +240,14 @@ class TableProp extends Component<Props & WithStyles<typeof styles, true>> {
           prop={prop}
           pageClicked={this.props.pageClicked}
           requiresUpgrade={this.props.requiresUpgrade}
+          width='100%'
         />
       </TableCell>
     );
   }
   renderHeaderCell(key: string | number, name?: string, description?: string) {
     return (
-      <TableCell key={key} align='center' style={{ fontWeight: 'normal' }} size='small'>
+      <TableCell key={key} align='center' style={{ fontWeight: 'normal', width: this.props.width }} size='small'>
         {name && (<InputLabel shrink={false}>{name}</InputLabel>)}
         {description && (<FormHelperText>{description}</FormHelperText>)}
       </TableCell>

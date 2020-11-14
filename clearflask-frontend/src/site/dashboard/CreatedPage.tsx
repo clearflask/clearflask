@@ -21,9 +21,11 @@ const styles = (theme: Theme) => createStyles({
   },
   field: {
     margin: theme.spacing(1, 2),
+    width: '100%',
   },
   button: {
     margin: theme.spacing(1, 2),
+    alignSelf: 'flex-end'
   },
   projectLink: {
     margin: theme.spacing(2),
@@ -37,6 +39,12 @@ const styles = (theme: Theme) => createStyles({
     flexGrow: 1,
     display: 'flex',
     flexDirection: 'column',
+  },
+  form: {
+    maxWidth: 300,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   image: {
     padding: theme.spacing(4),
@@ -101,96 +109,108 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Step completed={isLoggedIn} {...expandedProp(!isLoggedIn)}>
                   <StepLabel>Add yourself as a moderator</StepLabel>
                   <StepContent>
-                    <TextField
-                      disabled={this.state.isSubmitting}
-                      className={this.props.classes.field}
-                      placeholder='Name'
-                      value={this.state.newModName || ''}
-                      onChange={e => this.setState({ newModName: e.target.value })}
-                    />
-                    <TextField
-                      disabled={this.state.isSubmitting}
-                      className={this.props.classes.field}
-                      placeholder='Email'
-                      value={this.state.newModEmail || ''}
-                      onChange={e => this.setState({ newModEmail: e.target.value })}
-                    />
-                    <SubmitButton
-                      className={this.props.classes.button}
-                      color='primary'
-                      isSubmitting={this.state.isSubmitting}
-                      onClick={e => {
-                        this.setState({ isSubmitting: true });
-                        this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
-                          projectId: this.props.server.getProjectId(),
-                          userCreateAdmin: {
-                            name: this.state.newModName,
-                            email: this.state.newModEmail,
-                            isMod: true,
-                          },
-                        })
-                          .then(user => d.userLoginAdmin({
+                    <div className={this.props.classes.form}>
+                      <TextField
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        className={this.props.classes.field}
+                        placeholder='Name'
+                        value={this.state.newModName || ''}
+                        onChange={e => this.setState({ newModName: e.target.value })}
+                      />
+                      <TextField
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        className={this.props.classes.field}
+                        placeholder='Email'
+                        value={this.state.newModEmail || ''}
+                        onChange={e => this.setState({ newModEmail: e.target.value })}
+                      />
+                      <SubmitButton
+                        wrapperClassName={this.props.classes.button}
+                        color='primary'
+                        isSubmitting={this.state.isSubmitting}
+                        onClick={e => {
+                          this.setState({ isSubmitting: true });
+                          this.props.server.dispatchAdmin().then(d => d.userCreateAdmin({
                             projectId: this.props.server.getProjectId(),
-                            userId: user.userId,
-                          }))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            activeStep: 1,
-                          }))
-                          .catch(() => this.setState({ isSubmitting: false })));
-                      }}
-                    >Add</SubmitButton>
+                            userCreateAdmin: {
+                              name: this.state.newModName,
+                              email: this.state.newModEmail,
+                              isMod: true,
+                            },
+                          })
+                            .then(user => d.userLoginAdmin({
+                              projectId: this.props.server.getProjectId(),
+                              userId: user.userId,
+                            }))
+                            .then(() => this.setState({
+                              isSubmitting: false,
+                              activeStep: 1,
+                            }))
+                            .catch(() => this.setState({ isSubmitting: false })));
+                        }}
+                      >Add</SubmitButton>
+                    </div>
                   </StepContent>
                 </Step>
                 {!!this.props.ideaCategoryId && (
                   <Step completed={!!this.state.newItemSubmitted} {...expandedProp(!this.state.newItemSubmitted)}>
                     <StepLabel>Create your first post</StepLabel>
                     <StepContent>
-                      <TextField
-                        disabled={this.state.isSubmitting}
-                        className={this.props.classes.field}
-                        placeholder='Title'
-                        value={this.state.newItemTitle || ''}
-                        onChange={e => this.setState({ newItemTitle: e.target.value })}
-                        inputProps={{
-                          maxLength: PostTitleMaxLength,
-                        }}
-                      />
-                      <RichEditor
-                        disabled={this.state.isSubmitting}
-                        className={this.props.classes.field}
-                        placeholder='Description'
-                        value={this.state.newItemDescription || ''}
-                        onChange={e => this.setState({ newItemDescription: e.target.value })}
-                        multiline
-                        rows={1}
-                        rowsMax={5}
-                      />
-                      <SubmitButton
-                        className={this.props.classes.button}
-                        color='primary'
-                        isSubmitting={this.state.isSubmitting}
-                        disabled={!isLoggedIn || !this.state.newItemTitle}
-                        onClick={e => {
-                          this.setState({ isSubmitting: true });
-                          this.props.server.dispatch().ideaCreate({
-                            projectId: this.props.server.getProjectId(),
-                            ideaCreate: {
-                              authorUserId: this.props.loggedInUser!.userId,
-                              title: this.state.newItemTitle!,
-                              description: this.state.newItemDescription,
-                              categoryId: this.props.ideaCategoryId!,
-                              tagIds: [],
-                            },
-                          })
-                            .then(() => this.setState({
-                              isSubmitting: false,
-                              newItemSubmitted: true,
-                              activeStep: 2,
-                            }))
-                            .catch(() => this.setState({ isSubmitting: false }));
-                        }}
-                      >Post</SubmitButton>
+                      <div className={this.props.classes.form}>
+                        <TextField
+                          variant='outlined'
+                          size='small'
+                          disabled={this.state.isSubmitting}
+                          className={this.props.classes.field}
+                          placeholder='Title'
+                          value={this.state.newItemTitle || ''}
+                          onChange={e => this.setState({ newItemTitle: e.target.value })}
+                          inputProps={{
+                            maxLength: PostTitleMaxLength,
+                          }}
+                        />
+                        <RichEditor
+                          variant='outlined'
+                          size='small'
+                          disabled={this.state.isSubmitting}
+                          className={this.props.classes.field}
+                          placeholder='Description'
+                          value={this.state.newItemDescription || ''}
+                          onChange={e => this.setState({ newItemDescription: e.target.value })}
+                          multiline
+                          rows={1}
+                          rowsMax={5}
+                        />
+                        <SubmitButton
+                          wrapperClassName={this.props.classes.button}
+                          color='primary'
+                          isSubmitting={this.state.isSubmitting}
+                          disabled={!isLoggedIn || !this.state.newItemTitle}
+                          onClick={e => {
+                            this.setState({ isSubmitting: true });
+                            this.props.server.dispatch().ideaCreate({
+                              projectId: this.props.server.getProjectId(),
+                              ideaCreate: {
+                                authorUserId: this.props.loggedInUser!.userId,
+                                title: this.state.newItemTitle!,
+                                description: this.state.newItemDescription,
+                                categoryId: this.props.ideaCategoryId!,
+                                tagIds: [],
+                              },
+                            })
+                              .then(() => this.setState({
+                                isSubmitting: false,
+                                newItemSubmitted: true,
+                                activeStep: 2,
+                              }))
+                              .catch(() => this.setState({ isSubmitting: false }));
+                          }}
+                        >Post</SubmitButton>
+                      </div>
                     </StepContent>
                   </Step>
                 )}

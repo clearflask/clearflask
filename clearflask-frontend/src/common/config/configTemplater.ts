@@ -352,7 +352,6 @@ export default class Templater {
     }));
     const postCategoryIndex = categories.getChildPages().length - 1;
     const postStatuses = this.workflowFeatures(postCategoryIndex, withFunding, withStandaloneFunding);
-    this.taggingIdeaBug(postCategoryIndex);
 
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);

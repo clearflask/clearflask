@@ -17,11 +17,14 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   className?: string;
+  variant?: 'outlined' | 'filled' | 'standard',
+  size?: 'small' | 'medium',
   disabled?: boolean;
   server: Server;
   onChange?: (userLabel?: Label) => void;
   allowCreate?: boolean;
   allowClear?: boolean;
+  label?: string;
   placeholder?: string;
   helperText?: string;
   errorMsg?: string;
@@ -97,6 +100,7 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
     return (
       <SelectionPicker
         className={this.props.className}
+        label={this.props.label}
         placeholder={this.props.placeholder}
         helperText={this.props.helperText}
         errorMsg={!selectedUserLabel && this.props.errorMsg || undefined}
@@ -114,6 +118,10 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         disabled={this.props.disabled}
         clearOnBlur
         inputValue={this.state.input || ''}
+        TextFieldProps={{
+          variant: this.props.variant,
+          size: this.props.size,
+        }}
         onFocus={() => {
           if (this.state.options === undefined
             && this.state.searching === undefined

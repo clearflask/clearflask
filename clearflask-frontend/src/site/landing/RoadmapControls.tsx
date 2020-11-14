@@ -17,7 +17,7 @@ interface Props {
 }
 
 interface State {
-  type: 'development' | 'funding' | 'custom';
+  type: 'development' | 'funding' | 'design';
 }
 
 class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof styles, true>, State> {
@@ -40,7 +40,7 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
               this.setState({ type: val });
               this.props.templater.demoBoardPreset('funding');
               break;
-            case 'custom':
+            case 'design':
               this.setState({ type: val });
               this.props.templater.demoBoardPreset('design');
               break;
@@ -48,8 +48,8 @@ class PrioritizationControlsCredits extends Component<Props & WithStyles<typeof 
         }}
       >
         <FormControlLabel value='development' control={<Radio color='primary' />} label='Development' />
-        <FormControlLabel value='funding' control={<Radio color='primary' />} label='Crowd-funding' />
-        <FormControlLabel value='custom' control={<Radio color='primary' />} label="Custom" />
+        <FormControlLabel value='funding' control={<Radio color='primary' />} label='Custom' />
+        {/* <FormControlLabel value='design' control={<Radio color='primary' />} label="Design" /> */}
       </RadioGroup>
     );
   }

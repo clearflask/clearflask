@@ -57,20 +57,6 @@ const styles = (theme: Theme) => createStyles({
       padding: '6px 24px',
     },
     ...(tabHoverApplyStyles(theme)),
-    '&::before': {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      pointerEvents: 'none',
-      content: '"\\00a0"',
-      borderRadius: '1px',
-      borderBottom: `1px solid rgba(0, 0, 0, 0)`,
-      transition: 'border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-    },
-    '&:hover::before': {
-      borderBottom: '2px solid rgba(0, 0, 0, 0.87)',
-    },
   },
   tabsFlexContainer: {
     alignItems: 'center',

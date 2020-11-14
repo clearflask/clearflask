@@ -25,11 +25,12 @@ const styles = (theme: Theme) => createStyles({
   },
   titleContainer: {
     display: 'inline-block',
-    transition: (props: Props) => theme.transitions.create('min-width', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
+    transition: (props: Props) => theme.transitions.create('width', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },
   titles: {
     display: 'flex',
     width: '100%',
+    alignItems: 'flex-end',
   },
   flexGrow: {
     flexGrow: 1,
@@ -67,7 +68,9 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
         <div className={this.props.classes.titles}>
           {leftPresent && (
             <div className={this.props.classes.titleContainer} style={{
-              minWidth: this.props.width !== undefined ? this.props.width : '24px',
+              width: this.props.width !== undefined
+                ? this.props.width
+                : (this.props.title || this.props.header) ? undefined : '24px',
             }}>
               {this.props.title !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>
@@ -81,7 +84,9 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
           <div className={this.props.classes.flexGrow} />
           {rightPresent && (
             <div className={this.props.classes.titleContainer} style={{
-              minWidth: this.props.widthRight !== undefined ? this.props.widthRight : '24px',
+              width: this.props.widthRight !== undefined
+                ? this.props.widthRight
+                : (this.props.titleRight || this.props.headerRight) ? undefined : '24px',
             }}>
               {this.props.titleRight !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>

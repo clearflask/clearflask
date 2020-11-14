@@ -88,6 +88,8 @@ export default class Property extends Component<Props> {
                       error: !!prop.errorMsg,
                     }}
                     TextFieldProps={{
+                      variant: 'outlined',
+                      size: 'small',
                       InputProps: {
                         readOnly: true,
                         inputProps: {
@@ -151,6 +153,8 @@ export default class Property extends Component<Props> {
           ? RichEditor : TextField;
         propertySetter = (
           <TextFieldCmpt
+            variant='outlined'
+            size='small'
             id={prop.pathStr}
             label={!this.props.bare && name}
             value={prop.value || ''}
@@ -315,6 +319,8 @@ export default class Property extends Component<Props> {
         shrink = !!(prop.value !== undefined && currentItem && currentItem.name);
         propertySetter = (
           <FormControl
+            variant='outlined'
+            size='small'
             style={{
               minWidth: Property.inputMinWidth,
               width: this.props.width,
@@ -322,6 +328,7 @@ export default class Property extends Component<Props> {
           >
             {!this.props.bare && (<InputLabel error={!!prop.errorMsg} shrink={shrink}>{name}</InputLabel>)}
             <Select
+              label={!this.props.bare ? name : undefined}
               value={prop.value !== undefined && currentItem.value ? currentItem.value : ''}
               onChange={e => {
                 if (prop.type === ConfigEditor.PropertyType.Boolean) {
@@ -369,6 +376,10 @@ export default class Property extends Component<Props> {
           });
           propertySetter = (
             <SelectionPicker
+              TextFieldProps={{
+                variant: 'outlined',
+                size: 'small',
+              }}
               label={this.props.bare ? undefined : prop.name}
               helperText={this.props.bare ? undefined : prop.description}
               placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
@@ -474,6 +485,10 @@ export default class Property extends Component<Props> {
         }
         propertySetter = (
           <SelectionPicker
+            TextFieldProps={{
+              variant: 'outlined',
+              size: 'small',
+            }}
             disableClearable={prop.required}
             label={this.props.bare ? undefined : prop.name}
             helperText={this.props.bare ? undefined : prop.description}

@@ -35,8 +35,13 @@ const styles = (theme: Theme) => createStyles({
     height: 'initial',
     padding: theme.spacing(0.5),
   },
+  toggleButtonGroups: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
   toggleButtonGroup: {
-    margin: theme.spacing(1, 0.5, 0.5),
+    margin: theme.spacing(1, 0.25, 0.5),
   },
 });
 class RichEditor extends React.Component<TextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
@@ -189,8 +194,8 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
             return 'not-handled';
           }}
         />
-        <Collapse in={this.state.isFocused || this.state.editorState.getCurrentContent().hasText()}>
-          <div>
+        <Collapse in={this.state.isFocused}>
+          <div className={this.props.classes.toggleButtonGroups}>
             <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
               {this.renderToggleButton(BoldIcon, curStyle.contains('BOLD'), e => this.toggleInlineStyle(e, 'BOLD'))}
               {this.renderToggleButton(ItalicIcon, curStyle.contains('ITALIC'), e => this.toggleInlineStyle(e, 'ITALIC'))}

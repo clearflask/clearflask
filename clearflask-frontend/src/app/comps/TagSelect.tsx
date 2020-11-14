@@ -26,6 +26,7 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
   variant?: 'outlined' | 'filled' | 'standard',
+  size?: 'small' | 'medium',
   label?: string;
   placeholder?: string;
   category: Client.Category;
@@ -34,6 +35,7 @@ interface Props {
   onErrorChange: (hasError: boolean) => void;
   disabled?: boolean;
   mandatoryTagIds?: string[];
+  SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
 
 class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
@@ -55,6 +57,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
       <SelectionPicker
         TextFieldProps={{
           variant: this.props.variant,
+          size: this.props.size,
         }}
         label={this.props.label}
         placeholder={this.props.placeholder}
@@ -70,6 +73,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
         onValueChange={labels => this.props.onChange(
           [...new Set(labels.map(label => label.value.substr(label.value.indexOf(':') + 1)))]
         )}
+        {...this.props.SelectionPickerProps}
       />
     );
   }

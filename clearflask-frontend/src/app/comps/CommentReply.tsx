@@ -50,6 +50,8 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
     return (
       <div className={`${this.props.classes.addCommentForm} ${this.props.className || ''}`}>
         <RichEditor
+          variant='outlined'
+          size='small'
           id='createComment'
           className={this.props.classes.addCommentField}
           label='Comment'

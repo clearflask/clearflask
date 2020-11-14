@@ -1,4 +1,4 @@
-import { debounce } from '@material-ui/core';
+import { debounce, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import FilterIcon from '@material-ui/icons/TuneSharp';
 import React, { Component } from 'react';
@@ -50,7 +50,6 @@ interface Props {
   search?: Partial<Client.IdeaSearch>;
   onSearchChanged: (search: Partial<Client.IdeaSearch>) => void;
   explorer: Client.PageExplorer;
-  width?: string | number;
 }
 interface ConnectProps {
   config?: Client.Config;
@@ -60,7 +59,7 @@ interface State {
   searchValue?: string;
   menuIsOpen?: boolean;
 }
-class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
   state: State = {};
   _isMounted: boolean = false;
   readonly updateSearchText = debounce(
@@ -103,7 +102,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             isMulti
             group
             isInExplorer
-            width={this.props.width || 100}
+            width={100}
             autocompleteClasses={{
               inputRoot: this.props.classes.inputRoot,
             }}
@@ -113,7 +112,10 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             onValueChange={labels => this.onValueChange(labels)}
             formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
             dropdownIcon={FilterIcon}
-            popupColumnCount={minmax(1, controls.groups, 3)}
+            popupColumnCount={minmax(
+              1,
+              controls.groups,
+              !this.props.width || isWidthUp('sm', this.props.width, true) ? 3 : 2)}
             PopperProps={{ placement: 'bottom-end' }}
           />
         </div>
@@ -349,4 +351,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(PanelSearch));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth()(PanelSearch)));

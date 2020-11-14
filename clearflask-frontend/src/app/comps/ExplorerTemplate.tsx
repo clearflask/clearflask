@@ -1,4 +1,4 @@
-import { Collapse, Fade, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
+import { Collapse, isWidthUp, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -36,16 +36,16 @@ const styles = (theme: Theme) => createStyles({
   search: {
     flexGrow: 1,
   },
-  createLabel: {
+  similarLabel: {
     flexGrow: 1,
   },
   flexGrow: {
     flexGrow: 1,
   },
-  createLabelVertical: {
-    marginTop: theme.spacing(2),
+  createCollapsibleVertical: {
+    marginBottom: theme.spacing(2),
   },
-  searchAndCreateLabelContainer: {
+  searchContainer: {
     display: 'flex',
     flexDirection: 'column',
   },
@@ -65,7 +65,8 @@ interface Props {
   createSize?: number;
   searchSize?: number;
   createShown?: boolean;
-  createLabel?: React.ReactNode;
+  similarShown?: boolean;
+  similarLabel?: React.ReactNode;
   createVisible?: React.ReactNode;
   createCollapsible?: React.ReactNode;
   search?: React.ReactNode;
@@ -87,7 +88,61 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   render() {
     const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
     const expandDirectionHorizontal = !this.props.width || isWidthUp('sm', this.props.width, true);
+
+    const labelContainer = (
+      <Collapse in={this.props.similarShown}>
+        <div className={this.props.classes.similarLabel}>
+          {this.props.similarLabel}
+        </div>
+      </Collapse>
+    );
+    const createVisible = !!this.props.createVisible && (
+      <div className={this.props.classes.createVisible} style={{
+        minWidth: this.props.createSize,
+        width: this.props.createSize,
+      }}>
+        {this.props.createVisible}
+      </div>
+    );
+    const createCollapsible = !!this.props.createCollapsible && (
+      <div
+        className={this.props.classes.createCollapsible}
+        style={{
+          width: this.props.createShown ? this.props.createSize : '0px',
+          maxWidth: this.props.createShown ? this.props.createSize : '0px',
+        }}
+      >
+        <Collapse
+          in={this.props.createShown || false}
+          mountOnEnter
+          unmountOnExit
+          onEntered={() => this.setState({ hasExpanded: true })}
+          onExited={() => this.setState({ hasExpanded: false })}
+          timeout={this.props.theme.explorerExpandTimeout}
+          style={{
+            minWidth: '120px',
+          }}
+        >
+          <div className={classNames(!expandDirectionHorizontal && this.props.classes.createCollapsibleVertical)}>
+            {this.props.createCollapsible}
+          </div>
+          {!expandDirectionHorizontal && this.props.similarLabel && labelContainer}
+        </Collapse>
+      </div>
+    );
+
+    const search = !!this.props.search && (
+      <Collapse in={!this.props.similarShown}>
+        <div className={this.props.classes.searchContainer}>
+          <div className={this.props.classes.search}>
+            {this.props.search}
+          </div>
+        </div>
+      </Collapse>
+    );
+
     var results = this.props.content;
+
     if (!!this.props.search || !!this.props.createVisible) {
       results = (
         <DividerCorner
@@ -95,78 +150,34 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
           width={!this.props.createVisible
             ? 0
             : (this.props.createShown
-              ? 80
+              ? (this.props.similarShown ? 80 : 50)
               : (this.props.createSize || 0))}
           height={!this.props.createVisible
             ? 0
-            : (this.props.createShown ? 180 : 20)}
-          widthRight={this.props.searchSize !== undefined ? (this.props.createShown ? 0 : this.props.searchSize) : undefined}
-          heightRight={!!this.props.search ? (this.props.createShown ? 0 : 20) : undefined}
+            : (this.props.createShown ? 180 : 50)}
+          widthRight={this.props.searchSize !== undefined ? (this.props.similarShown ? 0 : this.props.searchSize) : undefined}
+          heightRight={!!this.props.search ? (this.props.similarShown ? 0 : 50) : undefined}
+          header={!!expandDirectionHorizontal ? undefined : (
+            <React.Fragment>
+              {createVisible}
+              {createCollapsible}
+            </React.Fragment>
+          )}
+          headerRight={!!expandDirectionHorizontal ? undefined : search}
         >
           {results}
         </DividerCorner>
       );
     }
-    const labelContainer = (
-      <div className={classNames(this.props.classes.createLabel, !expandDirectionHorizontal && this.props.classes.createLabelVertical)}>
-        {this.props.createLabel}
-      </div>
-    );
     return (
       <div className={classNames(this.props.classes.explorer, this.props.className)}>
         <div className={this.props.classes.top}>
-          {this.props.createVisible && (
-            <div className={this.props.classes.createVisible} style={{
-              minWidth: this.props.createSize,
-              width: this.props.createSize,
-            }}>
-              {this.props.createVisible}
-            </div>
-          )}
-          {expandDirectionHorizontal && this.props.createLabel && (
-            <Collapse in={!!this.state.hasExpanded && !expandInMotion}>
-              {labelContainer}
-            </Collapse>
-          )}
+          {!!expandDirectionHorizontal && createVisible}
+          {expandDirectionHorizontal && this.props.similarLabel && labelContainer}
           <div className={this.props.classes.flexGrow} />
-          <div className={this.props.classes.searchAndCreateLabelContainer}>
-            {this.props.search && (
-              <Collapse in={!this.state.hasExpanded && !expandInMotion}>
-                <div className={this.props.classes.search}>
-                  {this.props.search}
-                </div>
-              </Collapse>
-            )}
-          </div>
+          {!!expandDirectionHorizontal && search}
         </div>
-        {this.props.createCollapsible && (
-          <div
-            className={this.props.classes.createCollapsible}
-            style={{
-              width: this.props.createShown ? this.props.createSize : '0px',
-              maxWidth: this.props.createShown ? this.props.createSize : '0px',
-            }}
-          >
-            <Collapse
-              in={this.props.createShown || false}
-              mountOnEnter
-              unmountOnExit
-              onEntered={() => this.setState({ hasExpanded: true })}
-              onExited={() => this.setState({ hasExpanded: false })}
-              timeout={this.props.theme.explorerExpandTimeout}
-              style={{
-                minWidth: '120px',
-              }}
-            >
-              {this.props.createCollapsible}
-              {!expandDirectionHorizontal && this.props.createLabel && (
-                <Fade in={!!this.state.hasExpanded && !expandInMotion}>
-                  {labelContainer}
-                </Fade>
-              )}
-            </Collapse>
-          </div>
-        )}
+        {!!expandDirectionHorizontal && createCollapsible}
         <div className={this.props.classes.results}>
           {results}
         </div>

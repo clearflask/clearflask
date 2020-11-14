@@ -296,6 +296,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     {showDisplayNameInput && (
                       <TextField
                         variant='outlined'
+                        size='small'
                         fullWidth
                         required={isDisplayNameRequired}
                         value={this.state.displayName || ''}
@@ -312,6 +313,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       <div>
                         <TextField
                           variant='outlined'
+                          size='small'
                           fullWidth
                           required
                           value={this.state.email || ''}
@@ -328,6 +330,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                         {showPasswordInput && (
                           <TextField
                             variant='outlined'
+                            size='small'
                             fullWidth
                             required={isPasswordRequired}
                             value={this.state.pass || ''}
@@ -370,6 +373,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                 <div>
                   <TextField
                     variant='outlined'
+                    size='small'
                     fullWidth
                     required
                     value={this.state.email || ''}
@@ -384,6 +388,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   />
                   <TextField
                     variant='outlined'
+                    size='small'
                     fullWidth
                     value={this.state.pass || ''}
                     onChange={e => this.setState({ pass: e.target.value })}

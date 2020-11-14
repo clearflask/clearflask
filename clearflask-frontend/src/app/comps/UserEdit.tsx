@@ -2,6 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -11,7 +12,6 @@ import SubmitButton from '../../common/SubmitButton';
 import { saltHashPassword } from '../../common/util/auth';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import DividerCorner from '../utils/DividerCorner';
-import classNames from 'classnames';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -77,6 +77,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={12} className={this.props.classes.row}>
               <TextField
                 variant='outlined'
+                size='small'
                 disabled={this.state.isSubmitting}
                 label='Name'
                 fullWidth
@@ -101,6 +102,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={12} className={this.props.classes.row}>
               <TextField
                 variant='outlined'
+                size='small'
                 disabled={this.state.isSubmitting || !!this.props.user.isSso}
                 label='Email'
                 fullWidth
@@ -113,6 +115,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
               <Grid item xs={12} className={this.props.classes.row}>
                 <TextField
                   variant='outlined'
+                  size='small'
                   disabled={this.state.isSubmitting}
                   label='Set password'
                   type={this.state.revealPassword ? 'text' : 'password'}
@@ -202,6 +205,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 variant='outlined'
+                size='small'
                 disabled={this.state.isSubmitting}
                 label='Balance'
                 value={this.state.balanceAdjustment || ''}
@@ -219,6 +223,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
             <Grid item xs={6} className={this.props.classes.row}>
               <TextField
                 variant='outlined'
+                size='small'
                 disabled={this.state.isSubmitting || !this.state.balanceAdjustment}
                 label='Reason'
                 value={this.state.balanceDescription || ''}

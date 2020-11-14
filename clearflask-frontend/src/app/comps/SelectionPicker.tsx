@@ -43,8 +43,14 @@ const styles = (theme: Theme) => createStyles({
   },
   endAdornment: {
     position: 'unset',
+    display: 'flex',
+    justifyContent: 'end',
+    // Grow, but not as much as the input className
+    flex: '1 0 auto',
   },
   input: {
+    // Grow, faster then the endAdornment
+    flex: '100000 0 auto',
     // Add 4px on left here to separate from chips, see inputRoot className
     padding: '6px 0 6px 4px!important',
   },
@@ -217,7 +223,9 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
         disableCloseOnSelect={this.props.disableCloseOnSelect}
         filterSelectedOptions={true}
         filterOptions={(options, params) => {
-          var filtered = options;
+          // Sometimes autocomplete decides to pre-filter, so use options from props
+          var filtered: LabelInternal[] = [...this.props.options];
+
           if (!this.props.disableFilter) {
             filtered = filterOptions(options, params);
           }
