@@ -41,6 +41,10 @@ for DIR in "${SOURCE_DIR}"/*/; do
     echo "drop table if exists stripe_hpp_requests;" >>${TARGET}
     echo "drop table if exists stripe_responses;" >>${TARGET}
     echo "drop table if exists stripe_payment_methods;" >>${TARGET}
+  elif [[ ${NAME} == "payment-test-plugin" ]]; then
+    echo "drop table if exists testpayment_hpp_requests;" >>${TARGET}
+    echo "drop table if exists testpayment_responses;" >>${TARGET}
+    echo "drop table if exists testpayment_payment_methods;" >>${TARGET}
   elif [[ ${NAME} == "analytics-plugin" ]]; then
     echo "drop table if exists report_accounts_summary;" >>${TARGET}
     echo "drop table if exists report_active_by_product_term_monthly;" >>${TARGET}

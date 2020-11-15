@@ -439,7 +439,7 @@ public class DynamoElasticUserStore implements UserStore {
             String androidPushToken,
             String browserPushToken) {
         UserModel user = getUser(projectId, userId).get();
-        if (!Strings.isNullOrEmpty(updates.getPassword()) && user.getIsMod() == Boolean.TRUE) {
+        if (!Strings.isNullOrEmpty(updates.getPassword()) && !Strings.isNullOrEmpty(user.getSsoGuid())) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot change password when using Single Sign-On");
         }
 

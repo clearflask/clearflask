@@ -37,6 +37,7 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -266,6 +267,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             sanitizer.email(accountUpdateAdmin.getEmail());
             account = accountStore.updateEmail(accountSession.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
+        boolean alsoResume = false;
         if (accountUpdateAdmin.getPaymentToken() != null) {
             Optional<Gateway> gatewayOpt = Arrays.stream(Gateway.values())
                     .filter(g -> g.getPluginName().equals(accountUpdateAdmin.getPaymentToken().getType()))
@@ -277,6 +279,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid payment gateway");
             }
             billing.updatePaymentToken(accountSession.getAccountId(), gatewayOpt.get(), accountUpdateAdmin.getPaymentToken().getToken());
+
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            if (account.getStatus() == SubscriptionStatus.ACTIVENORENEWAL) {
+                alsoResume = true;
+            }
         }
         if (accountUpdateAdmin.getCancelEndOfTerm() == Boolean.TRUE) {
             if (account == null) {
@@ -289,7 +298,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     subscription,
                     "user requested cancel");
         }
-        if (accountUpdateAdmin.getResume() == Boolean.TRUE) {
+        if (accountUpdateAdmin.getResume() == Boolean.TRUE || alsoResume) {
             if (account == null) {
                 account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
             }
@@ -298,7 +307,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     account.getStatus(),
                     billing.getAccount(accountSession.getAccountId()),
                     subscription,
-                    "user requested" + (accountUpdateAdmin.getCancelEndOfTerm() ? "cancel" : "uncancel"));
+                    alsoResume ? "user requested update payment and resume" : "user requested resume");
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
             String newPlanid = accountUpdateAdmin.getPlanid();
@@ -320,8 +329,16 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     .map(Optional::get)
                     .forEach(project -> planStore.verifyConfigMeetsPlanRestrictions(newPlanid, project.getVersionedConfigAdmin().getConfig()));
 
-            billing.changePlan(accountSession.getAccountId(), newPlanid);
-            account = accountStore.setPlan(accountSession.getAccountId(), newPlanid).getAccount();
+            Subscription subscription = billing.changePlan(accountSession.getAccountId(), newPlanid);
+            // Only update account if plan was changed immediately, as oppose to end of term
+            if (newPlanid.equals(subscription.getPlanName())) {
+                account = accountStore.setPlan(accountSession.getAccountId(), newPlanid).getAccount();
+            } else if (!newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
+                if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
+                    log.warn("Plan change to {} doesnt seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
+                            newPlanid, accountSession.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
+                }
+            }
         }
         return (account == null
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
@@ -359,7 +376,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         account.getProjectIds().forEach(projectResource::projectDeleteAdmin);
         accountStore.deleteAccount(accountSession.getAccountId());
-        billing.cancelSubscription(account.getAccountId());
+        billing.closeAccount(account.getAccountId());
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -370,25 +387,30 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
+
+        // Sync entitlement status
         SubscriptionStatus status = billing.updateAndGetEntitlementStatus(account.getStatus(), kbAccount, subscription, "Get account billing");
+        if (!account.getStatus().equals(status)) {
+            account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+        }
+
+        // Sync plan id
+        if (!subscription.getPlanName().equals(account.getPlanid())) {
+            log.info("Account billing caused accountId {} plan change {} -> {}",
+                    account.getAccountId(), account.getPlanid(), subscription.getPlanName());
+            account = accountStore.setPlan(account.getAccountId(), subscription.getPlanName()).getAccount();
+        }
+
 
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
         Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
         Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(accountSession.getAccountId());
 
-        Optional<AccountBillingPayment> accountBillingPayment = paymentMethodDetails.flatMap(p -> {
-            if (!p.getCardLast4().isPresent()
-                    || !p.getCardExpiryMonth().isPresent()
-                    || !p.getCardExpiryYear().isPresent()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(new AccountBillingPayment(
-                        p.getCardBrand().orElse(null),
-                        p.getCardLast4().get(),
-                        p.getCardExpiryMonth().get(),
-                        p.getCardExpiryYear().get()));
-            }
-        });
+        Optional<AccountBillingPayment> accountBillingPayment = paymentMethodDetails.map(p -> new AccountBillingPayment(
+                p.getCardBrand().orElse(null),
+                p.getCardLast4().orElse("****"),
+                p.getCardExpiryMonth().orElse(1L),
+                p.getCardExpiryYear().orElse(99L)));
 
         Long billingPeriodMau = null;
         if (Billing.SUBSCRIPTION_STATUS_ACTIVE_ENUMS.contains(status)) {
@@ -408,6 +430,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         long accountReceivable = kbAccount.getAccountBalance() == null ? 0L : kbAccount.getAccountBalance().longValueExact();
         long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValueExact();
 
+        Optional<Plan> endOfTermChangeToPlan = billing.getEndOfTermChangeToPlanId(subscription)
+                .flatMap(planStore::getPlan);
+
         return new AccountBilling(
                 status,
                 accountBillingPayment.orElse(null),
@@ -416,7 +441,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,
-                accountPayable);
+                accountPayable,
+                endOfTermChangeToPlan.orElse(null));
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

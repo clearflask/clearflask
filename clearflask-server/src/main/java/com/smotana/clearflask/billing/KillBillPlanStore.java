@@ -142,7 +142,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
         Subscription subscription = billing.getSubscription(accountId);
-        switch (subscription.getPlanName()) {
+        String planToChangeFrom = billing.getEndOfTermChangeToPlanId(subscription)
+                .orElse(subscription.getPlanName());
+        switch (planToChangeFrom) {
             case "growth-monthly":
             case "standard-monthly":
                 return ImmutableSet.of(

@@ -1,221 +1,23 @@
 package com.smotana.clearflask.web.resource;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ControllableSleepingStopwatch;
-import com.google.common.util.concurrent.GuavaRateLimiters;
-import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.name.Names;
-import com.google.inject.util.Modules;
-import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.TestUtil;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
-import com.smotana.clearflask.api.model.CommentCreate;
-import com.smotana.clearflask.api.model.CommentVoteUpdate;
-import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
-import com.smotana.clearflask.api.model.CommentWithVote;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaVoteUpdate;
-import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
-import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
-import com.smotana.clearflask.billing.KillBillPlanStore;
-import com.smotana.clearflask.billing.KillBillSync;
-import com.smotana.clearflask.billing.KillBillUtil;
-import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.PlanStore;
-import com.smotana.clearflask.core.ClearFlaskCreditSync;
-import com.smotana.clearflask.core.push.NotificationServiceImpl;
-import com.smotana.clearflask.core.push.message.EmailTemplates;
-import com.smotana.clearflask.core.push.message.EmailVerify;
-import com.smotana.clearflask.core.push.message.OnAdminInvite;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
-import com.smotana.clearflask.core.push.message.OnCreditChange;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
-import com.smotana.clearflask.core.push.message.OnTrialEnded;
-import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
-import com.smotana.clearflask.core.push.provider.MockEmailService;
-import com.smotana.clearflask.security.ClearFlaskSso;
-import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
-import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
-import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
-import com.smotana.clearflask.store.impl.DynamoNotificationStore;
-import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
-import com.smotana.clearflask.store.impl.DynamoVoteStore;
-import com.smotana.clearflask.store.impl.ResourceLegalStore;
-import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.ElasticUtil;
-import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
-import com.smotana.clearflask.util.ServerSecretTest;
-import com.smotana.clearflask.util.StringableSecretKey;
-import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.security.MockAuthCookie;
-import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
-import com.smotana.clearflask.web.security.Sanitizer;
-import com.smotana.clearflask.web.security.SuperAdminPredicate;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
 import org.junit.Test;
-import org.killbill.billing.ObjectType;
-import org.killbill.billing.client.KillBillClientException;
-import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.util.UUID;
-
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
-import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
-public class BlackboxIT extends AbstractIT {
-
-    @Inject
-    private ProjectResource projectResource;
-    @Inject
-    private AccountResource accountResource;
-    @Inject
-    private UserResource userResource;
-    @Inject
-    private IdeaResource ideaResource;
-    @Inject
-    private CommentResource commentResource;
-    @Inject
-    private VoteResource voteResource;
-    @Inject
-    private KillBillResource killBillResource;
-    @Inject
-    private MockExtendedSecurityContext mockExtendedSecurityContext;
-    @Inject
-    private AmazonDynamoDB dynamo;
-    @Inject
-    private DynamoMapper dynamoMapper;
-    @Inject
-    private AccountStore accountStore;
-    @Inject
-    private Billing billing;
-    @Inject
-    private Gson gson;
-
-    private long userNumber = 0L;
-
-    @Override
-    protected void configure() {
-        super.configure();
-
-        ControllableSleepingStopwatch controllableSleepingStopwatch = new ControllableSleepingStopwatch();
-        install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
-        bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
-
-        install(Modules.override(
-                Application.module(),
-                MockExtendedSecurityContext.module(),
-                ClearFlaskSso.module(),
-                AccountResource.module(),
-                ProjectResource.module(),
-                UserResource.module(),
-                ClearFlaskCreditSync.module(),
-                KillBillResource.module(),
-                KillBillSync.module(),
-                KillBilling.module(),
-                InMemoryDynamoDbProvider.module(),
-                DynamoMapperImpl.module(),
-                NotificationServiceImpl.module(),
-                EmailTemplates.module(),
-                OnCreditChange.module(),
-                OnCommentReply.module(),
-                OnStatusOrResponseChange.module(),
-                OnTrialEnded.module(),
-                OnForgotPassword.module(),
-                OnAdminInvite.module(),
-                OnEmailChanged.module(),
-                EmailVerify.module(),
-                MockBrowserPushService.module(),
-                MockEmailService.module(),
-                LocalRateLimiter.module(),
-                ResourceLegalStore.module(),
-                KillBillPlanStore.module(),
-                SuperAdminPredicate.module(),
-                DynamoElasticCommentStore.module(),
-                DynamoElasticAccountStore.module(),
-                DynamoNotificationStore.module(),
-                DynamoElasticIdeaStore.module(),
-                DynamoProjectStore.module(),
-                DynamoElasticUserStore.module(),
-                DynamoTokenVerifyStore.module(),
-                DynamoVoteStore.module(),
-                MockAuthCookie.module(),
-                ElasticUtil.module(),
-                Sanitizer.module(),
-                DefaultServerSecret.module(Names.named("cursor"))
-        ).with(new AbstractModule() {
-            @Override
-            protected void configure() {
-                install(ConfigSystem.overrideModule(Application.Config.class, om -> {
-                    om.override(om.id().domain()).withValue("localhost:8080");
-                }));
-                install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
-                    om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
-                }));
-                install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
-                    om.override(om.id().elasticForceRefresh()).withValue(true);
-                }));
-                install(ConfigSystem.overrideModule(ClearFlaskSso.Config.class, om -> {
-                    om.override(om.id().secretKey()).withValue("7c383beb-b3c2-4893-86ab-917d44202b8d");
-                }));
-                StringableSecretKey privKey = new StringableSecretKey(Keys.secretKeyFor(HS512));
-                log.trace("Using generated priv key: {}", privKey);
-                install(ConfigSystem.overrideModule(DynamoElasticUserStore.Config.class, om -> {
-                    om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
-                    om.override(om.id().elasticForceRefresh()).withValue(true);
-                }));
-                install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
-                    om.override(om.id().createTenant()).withValue(true);
-                    om.override(om.id().uploadAnalyticsReports()).withValue(true);
-                }));
-                install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
-                    om.override(om.id().registerWebhookOnStartup()).withValue(false);
-                }));
-            }
-        }));
-    }
-
-    @Before
-    public void setupTest() throws Exception {
-        accountResource.securityContext = mockExtendedSecurityContext;
-        projectResource.securityContext = mockExtendedSecurityContext;
-        userResource.securityContext = mockExtendedSecurityContext;
-        ideaResource.securityContext = mockExtendedSecurityContext;
-        commentResource.securityContext = mockExtendedSecurityContext;
-        voteResource.securityContext = mockExtendedSecurityContext;
-    }
+public class BlackboxIT extends AbstractBlackboxIT {
 
     @Test(timeout = 300_000L)
     public void test() throws Exception {
@@ -257,62 +59,5 @@ public class BlackboxIT extends AbstractIT {
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();
         dumpDynamoTable();
-    }
-
-    private UserMeWithBalance addActiveUser(String projectId, ConfigAdmin configAdmin) throws Exception {
-        long newUserNumber = userNumber++;
-        UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
-                .name("john-" + newUserNumber)
-                .email("john-" + newUserNumber + "@example.com")
-                .build())
-                .getUser();
-        IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
-                .authorUserId(user.getUserId())
-                .title("Add dark mode " + IdUtil.randomId())
-                .categoryId(configAdmin.getContent().getCategories().get(0).getCategoryId())
-                .tagIds(ImmutableList.of())
-                .build());
-        IdeaVoteUpdateResponse idea1vote1 = voteResource.ideaVoteUpdate(projectId, idea1.getIdeaId(), IdeaVoteUpdate.builder()
-                .vote(VoteOption.UPVOTE)
-                .build());
-        CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
-                .content(textToMockDraftjs("I like this " + IdUtil.randomId()))
-                .build());
-        CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
-                .vote(VoteOption.DOWNVOTE)
-                .build());
-        return user;
-    }
-
-    private void kbClockReset() throws KillBillClientException {
-        LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        kbClient.doPut("/1.0/kb/test/clock?requestedDate=" + today, "", KillBillUtil.roDefault());
-        log.info("Reset clock to {}", today);
-    }
-
-    private void kbClockSleep(long sleepInDays)  throws KillBillClientException {
-        kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
-        log.info("Slept for {} days", sleepInDays);
-    }
-
-    private void refreshStatus(String accountId) throws KillBillClientException {
-        UUID accountIdKb = billing.getAccount(accountId).getAccountId();
-        killBillResource.webhook(gson.toJson(new KillBillResource.Event(
-                ExtBusEventType.SUBSCRIPTION_CHANGE,
-                ObjectType.ACCOUNT,
-                accountIdKb,
-                accountIdKb,
-                null)));
-        log.info("Account status {}", accountStore.getAccountByAccountId(accountId).get().getStatus());
-    }
-
-    void dumpDynamoTable() {
-        log.info("DynamoScan starting");
-        String tableName = dynamoMapper.parseTableSchema(ProjectStore.ProjectModel.class).tableName();
-        dynamo.scan(new ScanRequest()
-                .withTableName(tableName))
-                .getItems()
-                .forEach(item -> log.info("DynamoScan: {}", item));
-        log.info("DynamoScan finished");
     }
 }

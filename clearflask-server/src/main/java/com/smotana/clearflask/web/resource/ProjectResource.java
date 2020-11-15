@@ -37,6 +37,7 @@ import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrinc
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import javax.annotation.security.PermitAll;
@@ -252,14 +253,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     public void projectDeleteAdmin(String projectId) {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         try {
-            accountStore.removeProject(accountSession.getAccountId(), projectId).getIndexingFuture().get();
+            ListenableFuture<UpdateResponse> projectFuture = accountStore.removeProject(accountSession.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
             ListenableFuture<AcknowledgedResponse> userFuture = userStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> ideaFuture = ideaStore.deleteAllForProject(projectId);
             ListenableFuture<AcknowledgedResponse> commentFuture = commentStore.deleteAllForProject(projectId);
             voteStore.deleteAllForProject(projectId);
-
-            Futures.allAsList(userFuture, ideaFuture, commentFuture).get(1, TimeUnit.MINUTES);
         } catch (Throwable th) {
             log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);

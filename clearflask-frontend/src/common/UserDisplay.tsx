@@ -11,7 +11,16 @@ export const DisplayUserName = (user?: Partial<Client.User> | Client.UserMe, max
   if (!user) {
     return 'Anonymous';
   }
-  var displayName = user['name'] || user['email'] || user['userId']?.substring(0, 5) || 'Nameless';
+  var displayName = user['name'];
+  if (!displayName && user['email']) {
+    displayName = user['email'];
+  }
+  if (!displayName && user['userId']) {
+    displayName = 'Anon' + user['userId'].substring(0, 5);
+  }
+  if (!displayName) {
+    displayName = 'Nameless';
+  }
   if (maxChars > 0 && displayName.length > maxChars) {
     displayName = displayName.substring(0, maxChars - 1) + '…';
   }

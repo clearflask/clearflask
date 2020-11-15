@@ -2,25 +2,42 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Comment;
+import com.smotana.clearflask.api.model.CommentCreate;
+import com.smotana.clearflask.api.model.CommentSearch;
+import com.smotana.clearflask.api.model.CommentSearchAdmin;
+import com.smotana.clearflask.api.model.CommentSearchResponse;
+import com.smotana.clearflask.api.model.CommentUpdate;
+import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.IdeaCommentSearch;
+import com.smotana.clearflask.api.model.IdeaCommentSearchResponse;
+import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.CommentStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
+import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
-import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -153,7 +170,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 .getCommentModel().toComment();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 1)
     @Override
     public CommentSearchResponse commentSearchAdmin(String projectId, @Valid CommentSearchAdmin commentSearchAdmin, String cursor) {

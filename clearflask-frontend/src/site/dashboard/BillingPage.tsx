@@ -85,6 +85,9 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'center',
   },
+  sectionSpacing: {
+    marginTop: theme.spacing(2),
+  },
 });
 interface Props {
 }
@@ -143,7 +146,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       .filter(p => p.planid !== this.props.account?.plan.planid)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
-    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
         paymentTitle = 'Automatic renewal is active';
@@ -205,7 +208,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         }
         showCancelSubscription = true;
         planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payments. Please resolve all issues before you can change your plan.`;
+        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payment. Please resolve it before you can change your plan.`;
         break;
       case Admin.SubscriptionStatus.ActiveNoRenewal:
         paymentTitle = 'Automatic renewal is inactive';
@@ -256,6 +259,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planTitle = 'Your plan is cancelled';
         planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
         break;
+    }
+    if (this.props.accountBilling?.endOfTermChangeToPlan) {
+      endOfTermChangeToPlanTitle = `Pending plan change to ${this.props.accountBilling.endOfTermChangeToPlan.title}`;
+      endOfTermChangeToPlanDesc = `Your requested change of plans to ${this.props.accountBilling.endOfTermChangeToPlan.title} plan will take effect at the end of the term.`;
     }
     switch (cardState) {
       case 'active':
@@ -532,6 +539,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           <div className={this.props.classes.actionContainer}>
             <Typography variant='h6' component='div'>{planTitle}</Typography>
             <Typography>{planDesc}</Typography>
+            {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
+              <React.Fragment>
+                <Typography variant='h6' component='div' className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
+                <Typography>{endOfTermChangeToPlanDesc}</Typography>
+              </React.Fragment>
+            )}
             {showPlanChange && (
               <div className={this.props.classes.sectionButtons}>
                 <Button

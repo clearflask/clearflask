@@ -137,7 +137,10 @@ class UserSelection extends Component<Props & ConnectProps & WithStyles<typeof s
         }}
         onValueChange={(labels) => {
           var selectedLabel: Label | undefined = labels[0];
-          this.setState({ selectedUserLabel: selectedLabel })
+          this.setState({
+            selectedUserLabel: selectedLabel,
+            input: undefined,
+          })
           this.props.onChange && this.props.onChange(selectedLabel);
         }}
         formatCreateLabel={this.props.allowCreate ? inputValue => `Add user '${inputValue}'` : undefined}

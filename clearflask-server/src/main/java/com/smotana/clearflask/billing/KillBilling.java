@@ -32,6 +32,7 @@ import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
+import org.killbill.billing.catalog.api.BillingActionPolicy;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.KillBillClientException;
@@ -46,6 +47,7 @@ import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Invoice;
 import org.killbill.billing.client.model.gen.OverdueState;
 import org.killbill.billing.client.model.gen.PaymentMethod;
@@ -58,7 +60,9 @@ import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
 import org.killbill.billing.client.model.gen.UnitUsageRecord;
 import org.killbill.billing.client.model.gen.UsageRecord;
+import org.killbill.billing.entitlement.api.Entitlement;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
+import org.killbill.billing.entitlement.api.SubscriptionEventType;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.util.api.AuditLevel;
 
@@ -88,7 +92,7 @@ public class KillBilling extends ManagedService implements Billing {
     private static final String ACTIVE_USER_UNIT_NAME = "active-user";
 
     public interface Config {
-        @DefaultValue("30000")
+        @DefaultValue("60000")
         long callTimeoutInMillis();
 
         @DefaultValue("true")
@@ -239,6 +243,14 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    @Override
+    public Optional<String> getEndOfTermChangeToPlanId(Subscription subscription) {
+        return subscription.getEvents().stream()
+                .filter(e -> SubscriptionEventType.CHANGE.equals(e.getEventType()))
+                .findFirst()
+                .map(EventSubscription::getPlan);
+    }
+
     /**
      * Note: Any changes to the logic needs to be updated here and properly tested.
      *
@@ -318,6 +330,7 @@ public class KillBilling extends ManagedService implements Billing {
         } else if (isTrial) {
             status = ACTIVETRIAL;
         } else if (subscription.getState() == EntitlementState.ACTIVE
+                && subscription.getCancelledDate() == null
                 && !hasOutstandingBalance
                 && !isOverdueUnpaid
                 && !isOverdueCancelled) {
@@ -353,7 +366,7 @@ public class KillBilling extends ManagedService implements Billing {
         SubscriptionStatus newStatus = getEntitlementStatus(account, subscription);
         if (!newStatus.equals(currentStatus)) {
             log.info("Subscription status change {} -> {}, reason: {}, for {}",
-                    currentStatus, newStatus, account.getExternalKey(), reason);
+                    currentStatus, newStatus, reason, account.getExternalKey());
             accountStore.updateStatus(account.getExternalKey(), newStatus);
         }
         return newStatus;
@@ -406,8 +419,8 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
-                    null,
-                    null,
+                    Entitlement.EntitlementActionPolicy.END_OF_TERM,
+                    BillingActionPolicy.END_OF_TERM,
                     null,
                     ImmutableMap.of(),
                     KillBillUtil.roDefault());
@@ -440,7 +453,8 @@ public class KillBilling extends ManagedService implements Billing {
                 return kbSubscription.createSubscription(
                         new Subscription()
                                 .setExternalKey(accountId)
-                                .setAccountId(subscriptionInKb.getAccountId()),
+                                .setAccountId(subscriptionInKb.getAccountId())
+                                .setPlanName(subscriptionInKb.getPlanName()),
                         null,
                         null,
                         true,
@@ -460,12 +474,12 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Extern
     @Override
-    public Subscription endTrial(String accountId) {
+    public boolean endTrial(String accountId) {
         try {
             Subscription subscription = getSubscription(accountId);
             if (!PhaseType.TRIAL.equals(subscription.getPhaseType())) {
                 log.debug("Trying to end trial when already ended for account {}", accountId);
-                return subscription;
+                return false;
             }
             subscription.setPhaseType(PhaseType.EVERGREEN);
             kbSubscription.changeSubscriptionPlan(
@@ -474,14 +488,22 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
-                    null,
+                    BillingActionPolicy.IMMEDIATE,
                     null,
                     KillBillUtil.roDefault());
-            return getSubscription(accountId);
         } catch (KillBillClientException ex) {
-            log.warn("Failed to end KillBill plan trial for account id {}", accountId, ex);
-            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
+            log.error("Failed to end KillBill plan trial for account id {}", accountId, ex);
         }
+
+        // Update Account status
+        AccountStore.Account account = accountStore.getAccountByAccountId(accountId).get();
+        SubscriptionStatus newStatus = updateAndGetEntitlementStatus(account.getStatus(), getAccount(accountId), getSubscription(accountId), "Trial ended");
+
+        // Notify by email
+        Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(accountId);
+        notificationService.onTrialEnded(accountId, account.getEmail(), paymentOpt.isPresent());
+
+        return true;
     }
 
     @Extern
@@ -497,7 +519,7 @@ public class KillBilling extends ManagedService implements Billing {
             }
 
             // Even though we are using START_OF_SUBSCRIPTION changeAlignment
-            // we are manually transitioning from TRIAL to EVERGREEN.
+            // we manually transition from TRIAL to EVERGREEN.
             // So changing plans here, we need to override the correct phase,
             // otherwise we may end up going from OLD PLAN EVERGREEN -> NEW PLAN TRIAL
             PhaseType newPhase;
@@ -508,9 +530,12 @@ public class KillBilling extends ManagedService implements Billing {
                 default:
                 case DISCOUNT:
                 case FIXEDTERM:
-                    log.warn("Changing plan from {} phase, not sure how to align, account id {}",
-                            subscriptionInKb.getPhaseType(), subscriptionInKb.getAccountId());
+                    if (LogUtil.rateLimitAllowLog("killbilling-change-plan-unknown-phase-align")) {
+                        log.warn("Changing plan from {} phase, not sure how to align, account id {}",
+                                subscriptionInKb.getPhaseType(), subscriptionInKb.getAccountId());
+                    }
                     newPhase = subscriptionInKb.getPhaseType();
+                    break;
                 case EVERGREEN:
                     newPhase = PhaseType.EVERGREEN;
                     break;
@@ -644,6 +669,7 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     null,
                     KillBillUtil.roDefault());
+            log.trace("Payment methods for kbAccountId {}: {}", accountIdKb, paymentMethods);
             Optional<PaymentMethod> defaultPaymentMethodOpt;
             do {
                 defaultPaymentMethodOpt = paymentMethods.stream()
@@ -763,15 +789,7 @@ public class KillBilling extends ManagedService implements Billing {
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
                         log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {}",
                                 activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
-                        subscription = endTrial(accountId);
-
-                        // Update Account status
-                        AccountStore.Account account = accountStore.getAccountByAccountId(accountId).get();
-                        SubscriptionStatus newStatus = updateAndGetEntitlementStatus(account.getStatus(), getAccount(accountId), subscription, "Trial ended");
-
-                        // Notify by email
-                        Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(accountId);
-                        notificationService.onTrialEnded(accountId, account.getEmail(), paymentOpt.isPresent());
+                        endTrial(accountId);
                     } else {
                         log.trace("Account trial has yet to reach limit of active users {}/{}, accountId {}",
                                 activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
@@ -791,6 +809,25 @@ public class KillBilling extends ManagedService implements Billing {
     @Override
     public long getUsageCurrentPeriod(String accountId) {
         return getUsageCurrentPeriod(getSubscription(accountId));
+    }
+
+    @Extern
+    @Override
+    public void closeAccount(String accountId) {
+        UUID accountIdKb = getAccount(accountId).getAccountId();
+        try {
+            kbAccount.closeAccount(
+                    accountIdKb,
+                    true,
+                    true,
+                    false,
+                    true,
+                    KillBillUtil.roDefault());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to close KillBill accountIdKb {}", accountIdKb, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to close account", ex);
+        }
     }
 
     private long getUsageCurrentPeriod(Subscription subscription) {

@@ -242,6 +242,8 @@ components:
         accountPayable:
           type: integer
           format: int64
+        endOfTermChangeToPlan:
+          $ref: 'api-account.yaml#/components/schemas/Plan'
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object

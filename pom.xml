@@ -35,8 +35,8 @@
         <yarn.version>v1.10.1</yarn.version>
         <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
         <projectlombok.version>1.18.4</projectlombok.version>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
     </properties>
 
     <modules>
@@ -409,6 +409,12 @@
                 <groupId>org.kill-bill.billing.plugin</groupId>
                 <artifactId>killbill-plugin-api-notification</artifactId>
                 <version>0.26.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>payment-test-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-payment-test-plugin -->
+                <version>7.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>

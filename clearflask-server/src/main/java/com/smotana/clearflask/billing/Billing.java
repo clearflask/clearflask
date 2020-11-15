@@ -15,6 +15,7 @@ import org.killbill.billing.client.model.gen.Subscription;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 public interface Billing {
@@ -33,6 +34,8 @@ public interface Billing {
 
     Subscription getSubscription(String accountId);
 
+    Optional<String> getEndOfTermChangeToPlanId(Subscription subscription);
+
     SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription);
 
     SubscriptionStatus updateAndGetEntitlementStatus(SubscriptionStatus currentStatus, Account account, Subscription subscription, String reason);
@@ -43,7 +46,7 @@ public interface Billing {
 
     Subscription resumeSubscription(String accountId);
 
-    Subscription endTrial(String accountId);
+    boolean endTrial(String accountId);
 
     Subscription changePlan(String accountId, String planId);
 
@@ -58,6 +61,8 @@ public interface Billing {
     ListenableFuture<Void> recordUsage(UsageType type, String accountId, String projectId, String userId);
 
     long getUsageCurrentPeriod(String accountId);
+
+    void closeAccount(String accountId);
 
     @Value
     class AccountWithSubscription {
@@ -77,6 +82,7 @@ public interface Billing {
 
     enum Gateway {
         STRIPE(STRIPE_PLUGIN_NAME, true),
+        PAYMENT_TEST(PAYMENT_TEST_PLUGIN_NAME, false),
         EXTERNAL("__EXTERNAL_PAYMENT__", false),
         OTHER("unknown", false);
 

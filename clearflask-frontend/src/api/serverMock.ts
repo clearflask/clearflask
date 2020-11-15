@@ -242,6 +242,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
       accountReceivable: 75,
       accountPayable: 0,
+      endOfTermChangeToPlan: Object.values(AvailablePlans).find(p => p.planid !== this.account!.plan.planid),
     });
   }
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
