@@ -46,8 +46,6 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '100%',
   },
   content: {
-    paddingTop: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
   },
   createFormFields: {
     // (Un)comment these to align with corner

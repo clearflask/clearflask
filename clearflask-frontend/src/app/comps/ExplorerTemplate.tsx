@@ -86,7 +86,6 @@ class ExplorerTemplate extends Component<Props & WithStyles<typeof styles, true>
   }
 
   render() {
-    const expandInMotion = (this.props.createShown || false) !== (this.state.hasExpanded || false);
     const expandDirectionHorizontal = !this.props.width || isWidthUp('sm', this.props.width, true);
 
     const labelContainer = (

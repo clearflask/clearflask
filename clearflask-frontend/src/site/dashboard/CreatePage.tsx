@@ -467,7 +467,7 @@ interface TemplateCardProps {
 }
 
 const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCardProps & WithStyles<typeof styles, true>) => (
-  <Grid item key='feedback' xs={12} sm={6} md={12} lg={4}>
+  <Grid item key='feedback' xs={12} sm={6} md={9} lg={5}>
     <Card elevation={0} className={classNames(props.classes.box, props.checked && props.classes.boxSelected, props.disabled && props.classes.disabled)}>
       <CardHeader
         title={props.title}

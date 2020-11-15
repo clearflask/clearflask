@@ -92,6 +92,9 @@ class AppThemeProvider extends Component<Props> {
           } : {}),
         },
         props: {
+          MuiWithWidth: {
+            noSSR: true,
+          },
           MuiDialog: {
             container: () => document.getElementById(this.props.appRootId)!,
             ...(this.props.isInsideContainer ? {

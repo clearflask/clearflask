@@ -1,4 +1,4 @@
-import { Button, Collapse, isWidthUp, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Button, Collapse, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
@@ -29,6 +29,7 @@ import UserDisplayMe from '../common/UserDisplayMe';
 import notEmpty from '../common/util/arrayUtil';
 import debounce, { SearchTypeDebounceTime } from '../common/util/debounce';
 import { isProd } from '../common/util/detectEnv';
+import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';
 import setTitle from '../common/util/titleUtil';
 import ContactPage from './ContactPage';
 import BillingPage from './dashboard/BillingPage';
@@ -99,7 +100,7 @@ interface State {
   accountSearch?: AdminClient.Account[];
   accountSearching?: string;
 }
-class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps, State> {
+class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true> & WithMediaQuery, State> {
   unsubscribes: { [projectId: string]: () => void } = {};
   createProjectPromise: Promise<Project> | undefined = undefined;
   createProject: Project | undefined = undefined;
@@ -746,7 +747,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   isQuickViewEnabled() {
-    return this.props.width && isWidthUp('md', this.props.width, true);
+    return this.props.mediaQuery;
   }
 
   static accountToLabel(account: AdminClient.Account): Label {
@@ -767,4 +768,4 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
     bindByProjectId: state.configs.configs.byProjectId,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth()(Dashboard)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withMediaQuery(theme => theme.breakpoints.up('md'))(Dashboard)));

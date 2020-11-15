@@ -76,7 +76,7 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 'o',
   },
   votingControl: {
-    margin: theme.spacing(0, 0, 0, 1),
+    margin: theme.spacing(0, 0, 0, 0.5),
   },
   title: {
     lineHeight: 'unset',
