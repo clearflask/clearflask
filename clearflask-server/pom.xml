@@ -414,7 +414,6 @@
                             <alias>killbill-db</alias>
                             <name>killbill/mariadb:0.22</name>
                             <run>
-                                <autoRemove>true</autoRemove>
                                 <volumes>
                                     <bind>
                                         <volume>
@@ -436,13 +435,13 @@
                                     <prefix>killbill-db:</prefix>
                                     <color>cyan</color>
                                 </log>
+                                <stopMode>kill</stopMode>
                             </run>
                         </image>
                         <image>
                             <alias>killbill-engine</alias>
                             <name>killbill/killbill:0.22.10</name>
                             <run>
-                                <autoRemove>true</autoRemove>
                                 <links>
                                     <link>killbill-db</link>
                                 </links>
@@ -488,6 +487,7 @@
                                     <prefix>killbill-engine:</prefix>
                                     <color>cyan</color>
                                 </log>
+                                <stopMode>kill</stopMode>
                             </run>
                         </image>
                     </images>

@@ -246,7 +246,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected AccountAndProject getTrialAccount(String planid) throws Exception {
         AccountAdmin accountAdmin = accountResource.accountSignupAdmin(new AccountSignupAdmin(
                 "smotana",
-                "unittest@clearflask.com",
+                IdUtil.randomId(5) + "unittest@clearflask.com",
                 "password",
                 planid));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();

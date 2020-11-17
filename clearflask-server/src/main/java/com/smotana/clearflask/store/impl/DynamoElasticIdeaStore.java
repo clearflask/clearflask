@@ -337,6 +337,9 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                             "Sorting by '" + ideaSearchAdmin.getSortBy() + "' not supported");
             }
+        } else if (Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
+            sortFields = ImmutableList.of("funded", "voteValue", "expressionsValue");
+            sortOrderOpt = Optional.of(SortOrder.DESC);
         } else {
             sortFields = ImmutableList.of();
             sortOrderOpt = Optional.empty();

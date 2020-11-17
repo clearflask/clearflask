@@ -141,7 +141,7 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea3).get();
 
         // Idea Search
-        assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()
+        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()
                 .build(), Optional.empty(), Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(), store.searchIdeas(projectId, IdeaSearch.builder().fundedByMeAndActive(true)
                 .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
@@ -150,7 +150,7 @@ public class IdeaStoreIT extends AbstractIT {
                 .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
 
         // Idea Search Admin
-        assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterCategoryIds(ImmutableList.of(idea2.getCategoryId()))
@@ -158,7 +158,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterStatusIds(ImmutableList.of(idea2.getStatusId(), idea3.getStatusId()))
                 .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterTagIds(ImmutableList.of(idea1.getTagIds().iterator().next(), idea2.getTagIds().iterator().next()))
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
@@ -173,7 +173,8 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterCreatedStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
                 .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+                .sortBy(IdeaSearchAdmin.SortByEnum.NEW)
                 .filterCreatedEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
@@ -183,7 +184,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterLastActivityStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
                 .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea1.getIdeaId(), idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
+        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
                 .filterLastActivityEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
                 .build(), false, Optional.empty()).getIdeaIds());
         assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
