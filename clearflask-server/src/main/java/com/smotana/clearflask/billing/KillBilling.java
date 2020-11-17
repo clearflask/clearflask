@@ -645,8 +645,7 @@ public class KillBilling extends ManagedService implements Billing {
                                 status,
                                 i.getAmount().doubleValue(),
                                 description,
-                                // KillBill API returns string although it's always a number
-                                Long.parseLong(i.getInvoiceNumber()));
+                                i.getInvoiceId().toString());
                     })
                     .collect(ImmutableList.toImmutableList());
 
@@ -663,17 +662,17 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Extern
     @Override
-    public String getInvoiceHtml(String accountId, long invoiceNumber) {
+    public String getInvoiceHtml(String accountId, UUID invoiceId) {
         try {
-            Invoice invoice = kbInvoice.getInvoiceByNumber((int) invoiceNumber, KillBillUtil.roDefault());
+            Invoice invoice = kbInvoice.getInvoice(invoiceId, KillBillUtil.roDefault());
             if (invoice == null) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
             UUID accountIdKb = getAccount(accountId).getAccountId();
             if (!invoice.getAccountId().equals(accountIdKb)) {
-                log.warn("Requested HTML for invoiceNumber {} with account ext id {} id {} belonging to different account id {}",
-                        invoiceNumber, accountId, accountIdKb, invoice.getAccountId());
+                log.warn("Requested HTML for invoiceId {} with account ext id {} id {} belonging to different account id {}",
+                        invoiceId, accountId, accountIdKb, invoice.getAccountId());
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
@@ -683,7 +682,7 @@ public class KillBilling extends ManagedService implements Billing {
             }
             return kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
-            log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceNumber {}", accountId, invoiceNumber, ex);
+            log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch invoice", ex);
         }

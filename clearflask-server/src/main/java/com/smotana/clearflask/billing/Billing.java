@@ -52,7 +52,7 @@ public interface Billing {
 
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
-    String getInvoiceHtml(String accountId, long invoiceNumber);
+    String getInvoiceHtml(String accountId, UUID invoiceId);
 
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
 

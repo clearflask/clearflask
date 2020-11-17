@@ -240,9 +240,7 @@ public class KillBillResource extends ManagedService {
         Optional<String> planNameOpt = invoice.getItems().stream()
                 .map(InvoiceItem::getPrettyPlanName)
                 .findAny();
-        String summary = "Credit for Invoice #"
-                + invoice.getInvoiceNumber()
-                + planNameOpt.map(n -> " with " + n + " plan").orElse("");
+        String summary = planNameOpt.map(n -> "Credit for " + n + " plan").orElse("Credit for payment");
 
         try {
             clearFlaskCreditSync.process(

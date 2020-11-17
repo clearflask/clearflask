@@ -60,6 +60,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Singleton
@@ -349,12 +350,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
-    public InvoiceHtmlResponse invoiceHtmlGetAdmin(Long invoiceNumber) {
-        if (invoiceNumber == null) {
+    public InvoiceHtmlResponse invoiceHtmlGetAdmin(String invoiceIdStr) {
+        if (invoiceIdStr == null) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
+        }
+        UUID invoiceId;
+        try {
+            invoiceId = UUID.fromString(invoiceIdStr);
+        } catch (IllegalArgumentException ex) {
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Invalid invoice number");
         }
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
-        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceNumber);
+        String invoiceHtml = billing.getInvoiceHtml(accountSession.getAccountId(), invoiceId);
         return new InvoiceHtmlResponse(invoiceHtml);
     }
 

@@ -237,7 +237,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           status: 'paid',
           amount: 300,
           description: "Enterprise plan monthly",
-          invoiceNumber: 1,
+          invoiceId: '1',
         }],
       },
       accountReceivable: 75,
@@ -255,12 +255,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         status: 'paid',
         amount: 300,
         description: 'Enterprise plan monthly',
-        invoiceNumber: 1,
+        invoiceId: '1',
       }],
     });
   }
   invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
-    if (request.invoiceNumber === 1) {
+    if (request.invoiceId === '1') {
       return this.returnLater({
         invoiceHtml: "This is an invoice <b>test</b>",
       });

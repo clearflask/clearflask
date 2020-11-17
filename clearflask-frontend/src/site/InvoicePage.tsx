@@ -7,7 +7,7 @@ import setTitle from '../common/util/titleUtil';
 const styles = (theme: Theme) => createStyles({
 });
 interface Props {
-  invoiceNumber: number;
+  invoiceId: number;
 }
 interface State {
   invoiceHtml?: string;
@@ -18,10 +18,10 @@ class InvoicePage extends Component<Props & WithStyles<typeof styles, true>, Sta
   constructor(props) {
     super(props);
 
-    setTitle(`Invoice #${props.invoiceNumber}`);
+    setTitle(`Invoice`);
 
     ServerAdmin.get().dispatchAdmin().then(d => d.invoiceHtmlGetAdmin({
-      invoiceNumber: props.invoiceNumber,
+      invoiceId: props.invoiceId,
     })).then(r => this.setState({
       invoiceHtml: r.invoiceHtml,
     })).catch(e => this.setState({

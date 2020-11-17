@@ -1,8 +1,11 @@
 package com.smotana.clearflask.web.resource;
 
+import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
@@ -12,6 +15,15 @@ public class BillingIT extends AbstractBlackboxIT {
         AccountAndProject accountAndProject = getTrialAccount();
         accountAndProject = reachTrialLimit(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.NOPAYMENTMETHOD);
+
+        AccountBilling accountBilling = accountResource.accountBillingAdmin();
+        log.info("Account billing #1:\n{}", accountBilling);
+        assertEquals(2, accountBilling.getInvoices().getResults().size());
+
+        String invoice1 = accountResource.invoiceHtmlGetAdmin(accountBilling.getInvoices().getResults().get(0).getInvoiceId()).getInvoiceHtml();
+        log.info("Invoice #1:\n{}", invoice1);
+        String invoice2 = accountResource.invoiceHtmlGetAdmin(accountBilling.getInvoices().getResults().get(1).getInvoiceId()).getInvoiceHtml();
+        log.info("Invoice #2:\n{}", invoice1);
 
         // TODO assert usage is done correctly here
     }

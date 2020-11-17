@@ -490,7 +490,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
                   <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
                   <TableCell key='invoiceLink'>
-                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceNumber)}>View</Button>
+                    <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -602,8 +602,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
   }
 
-  onInvoiceClick(invoiceNumber: number) {
-    window.open(`${window.location.origin}/invoice/${invoiceNumber}`, '_blank')
+  onInvoiceClick(invoiceId: string) {
+    window.open(`${window.location.origin}/invoice/${invoiceId}`, '_blank')
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe) {

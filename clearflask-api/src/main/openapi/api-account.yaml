@@ -261,7 +261,7 @@ components:
             - date
             - status
             - amount
-            - invoiceNumber
+            - invoiceId
             properties:
               date:
                 type: string
@@ -273,9 +273,8 @@ components:
                 format: double
               description:
                 type: string
-              invoiceNumber:
-                type: integer
-                format: int64
+              invoiceId:
+                type: string
 
 /support/message:
   post:
@@ -484,17 +483,16 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/Invoices'
-/admin/account/billing/invoice/{invoiceNumber}:
+/admin/account/billing/invoice/{invoiceId}:
   get:
     operationId: invoiceHtmlGetAdmin
     tags: [AccountAdmin]
     parameters:
-    - name: invoiceNumber
+    - name: invoiceId
       in: path
       required: true
       schema:
-        type: integer
-        format: int64
+        type: string
     responses:
       '200':
         content:
