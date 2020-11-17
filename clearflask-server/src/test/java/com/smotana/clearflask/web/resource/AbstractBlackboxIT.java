@@ -204,6 +204,12 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
                     om.override(om.id().createTenant()).withValue(true);
                     om.override(om.id().uploadAnalyticsReports()).withValue(true);
+                    om.override(om.id().stripePluginApiKey()).withValue("none");
+                    om.override(om.id().emailPluginHost()).withValue("host.docker.internal");
+                    om.override(om.id().emailPluginPort()).withValue(9001);
+                    om.override(om.id().emailPluginUsername()).withValue("a");
+                    om.override(om.id().emailPluginPassword()).withValue("a");
+                    om.override(om.id().emailPluginUseSsl()).withValue(false);
                 }));
                 install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
                     om.override(om.id().registerWebhookOnStartup()).withValue(false);
@@ -299,9 +305,12 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                     accountAndProject.getProject().getConfig().getConfig());
             log.info("Added user {}", userAdded.getName());
         }
-        TestUtil.retry(() -> assertTrue("Account expected to end trial, instead status is " + accountAndProject.getAccount().getSubscriptionStatus(),
-                ImmutableSet.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.NOPAYMENTMETHOD)
-                        .contains(accountResource.accountBindAdmin().getAccount().getSubscriptionStatus())));
+        TestUtil.retry(() -> {
+            SubscriptionStatus subsStatus = accountResource.accountBindAdmin().getAccount().getSubscriptionStatus();
+            assertTrue("Account expected to end trial, instead status is " + subsStatus,
+                    ImmutableSet.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.NOPAYMENTMETHOD)
+                            .contains(subsStatus));
+        });
         return accountAndProject
                 .toBuilder()
                 .account(accountResource.accountBindAdmin().getAccount())

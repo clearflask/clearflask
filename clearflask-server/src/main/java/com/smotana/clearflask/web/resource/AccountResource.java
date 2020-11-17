@@ -389,7 +389,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
 
         // Sync entitlement status
-        SubscriptionStatus status = billing.updateAndGetEntitlementStatus(account.getStatus(), kbAccount, subscription, "Get account billing");
+        SubscriptionStatus status = billing.updateAndGetEntitlementStatus(
+                account.getStatus(),
+                kbAccount,
+                subscription,
+                "Get account billing");
         if (!account.getStatus().equals(status)) {
             account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         }

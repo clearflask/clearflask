@@ -12,6 +12,8 @@ public class BillingIT extends AbstractBlackboxIT {
         AccountAndProject accountAndProject = getTrialAccount();
         accountAndProject = reachTrialLimit(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.NOPAYMENTMETHOD);
+
+        // TODO assert usage is done correctly here
     }
 
     @Test(timeout = 300_000L)

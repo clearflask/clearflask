@@ -50,7 +50,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .build());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .cancelEndOfTerm(false)
+                .resume(true)
                 .build());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()

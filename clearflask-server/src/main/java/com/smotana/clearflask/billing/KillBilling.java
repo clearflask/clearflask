@@ -35,18 +35,22 @@ import org.joda.time.DateTimeZone;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
+import org.killbill.billing.catalog.api.ProductCategory;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.client.api.gen.AccountApi;
+import org.killbill.billing.client.api.gen.BundleApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
 import org.killbill.billing.client.api.gen.PaymentMethodApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
 import org.killbill.billing.client.api.gen.UsageApi;
+import org.killbill.billing.client.model.Bundles;
 import org.killbill.billing.client.model.PaymentMethods;
 import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.Account;
+import org.killbill.billing.client.model.gen.BlockPrice;
 import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Invoice;
 import org.killbill.billing.client.model.gen.OverdueState;
@@ -70,8 +74,8 @@ import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
-import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -113,6 +117,8 @@ public class KillBilling extends ManagedService implements Billing {
     @Inject
     private AccountApi kbAccount;
     @Inject
+    private BundleApi kbBundle;
+    @Inject
     private SubscriptionApi kbSubscription;
     @Inject
     private InvoiceApi kbInvoice;
@@ -127,6 +133,8 @@ public class KillBilling extends ManagedService implements Billing {
     @Inject
     private AccountStore accountStore;
     @Inject
+    private PlanStore planStore;
+    @Inject
     private UserStore userStore;
     @Inject
     private NotificationService notificationService;
@@ -135,8 +143,8 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Override
     protected void serviceStart() throws Exception {
-        usageExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
-                .setNameFormat("KillBilling-usage").build()));
+        usageExecutor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder()
+                .setNameFormat("KillBilling-usage-%d").build()));
     }
 
     @Override
@@ -164,7 +172,7 @@ public class KillBilling extends ManagedService implements Billing {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()
-                            .setExternalKey(accountId)
+                            .setBundleExternalKey(accountId)
                             .setAccountId(account.getAccountId())
                             .setPlanName(planId),
                     null,
@@ -230,15 +238,46 @@ public class KillBilling extends ManagedService implements Billing {
     @Extern
     @Override
     public Subscription getSubscription(String accountId) {
+        return getSubscriptionByBundleExternalKey(accountId, false)
+                .or(() -> getSubscriptionByBundleExternalKey(accountId, true))
+                .or(() -> getSubscriptionByExternalKey(accountId))
+                .orElseThrow(() -> {
+                    log.warn("No subscription found for accountId {}", accountId);
+                    return new ErrorWithMessageException(
+                            Response.Status.BAD_REQUEST, "Subscription doesn't exist, contact support");
+                });
+    }
+
+    private Optional<Subscription> getSubscriptionByBundleExternalKey(String externalKey, boolean includeDeleted) {
         try {
-            Subscription subscription = kbSubscription.getSubscriptionByKey(accountId, KillBillUtil.roDefault());
-            if (subscription == null) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
-                        "Subscription doesn't exist");
-            }
-            return subscription;
+            Bundles bundles = kbBundle.getBundleByKey(
+                    externalKey,
+                    includeDeleted,
+                    null,
+                    KillBillUtil.roDefault());
+            return bundles.stream()
+                    .flatMap(bundle -> bundle.getSubscriptions().stream())
+                    .filter(subs -> ProductCategory.BASE.equals(subs.getProductCategory()))
+                    .max(Comparator
+                            .<Subscription, Boolean>comparing(subscription -> subscription.getState() != EntitlementState.CANCELLED)
+                            .thenComparing(Subscription::getBillingStartDate)
+                            .thenComparing(Subscription::getSubscriptionId));
         } catch (KillBillClientException ex) {
-            log.warn("Failed to retrieve KillBill Subscription by account id {}", accountId, ex);
+            log.warn("Failed to retrieve KillBill Subscription by bundle external key {}", externalKey, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
+        }
+    }
+
+    /**
+     * @Deprecated New subscriptions are not using externalkey anymore,
+     * bundle external keys are used instead.
+     */
+    @Deprecated
+    private Optional<Subscription> getSubscriptionByExternalKey(String externalKey) {
+        try {
+            return Optional.ofNullable(kbSubscription.getSubscriptionByKey(externalKey, KillBillUtil.roDefault()));
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to retrieve KillBill Subscription by external key {}", externalKey, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to fetch Subscription", ex);
         }
     }
@@ -315,19 +354,14 @@ public class KillBilling extends ManagedService implements Billing {
         }
         // TODO All of this needs to be verified
         final SubscriptionStatus status;
-        boolean isTrial = PhaseType.TRIAL.equals(subscription.getPhaseType());
         boolean hasOutstandingBalance = account.getAccountBalance() != null && account.getAccountBalance().compareTo(BigDecimal.ZERO) > 0;
         boolean isOverdueCancelled = KillBillSync.OVERDUE_CANCELLED_STATE_NAME.equals(overdueState.getName());
         boolean isOverdueUnpaid = KillBillSync.OVERDUE_UNPAID_STATE_NAME.equals(overdueState.getName());
         Supplier<Boolean> hasPaymentMethod = Suppliers.memoize(() -> getDefaultPaymentMethodDetails(account.getAccountId()).isPresent())::get;
 
-        if (!isTrial
-                && (EntitlementState.BLOCKED.equals(subscription.getState())
-                || isOverdueCancelled)) {
+        if (EntitlementState.BLOCKED.equals(subscription.getState()) || isOverdueCancelled) {
             status = BLOCKED;
-        } else if (EntitlementState.CANCELLED.equals(subscription.getState())) {
-            status = CANCELLED;
-        } else if (isTrial) {
+        } else if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
             status = ACTIVETRIAL;
         } else if (subscription.getState() == EntitlementState.ACTIVE
                 && subscription.getCancelledDate() == null
@@ -335,8 +369,7 @@ public class KillBilling extends ManagedService implements Billing {
                 && !isOverdueUnpaid
                 && !isOverdueCancelled) {
             status = ACTIVE;
-        } else if (EntitlementState.CANCELLED.equals(subscription.getState())
-                && subscription.getCancelledDate() != null) {
+        } else if (EntitlementState.CANCELLED.equals(subscription.getState())) {
             status = CANCELLED;
         } else if (EntitlementState.ACTIVE.equals(subscription.getState())
                 && subscription.getCancelledDate() != null) {
@@ -449,12 +482,14 @@ public class KillBilling extends ManagedService implements Billing {
                         subscriptionInKb.getSubscriptionId(),
                         null,
                         KillBillUtil.roDefault());
-            } else {
+            } else if (subscriptionInKb.getState() == EntitlementState.CANCELLED) {
                 return kbSubscription.createSubscription(
                         new Subscription()
-                                .setExternalKey(accountId)
+                                .setBundleExternalKey(accountId)
                                 .setAccountId(subscriptionInKb.getAccountId())
-                                .setPlanName(subscriptionInKb.getPlanName()),
+                                .setPlanName(subscriptionInKb.getPlanName())
+                                .setPriceOverrides(subscriptionInKb.getPriceOverrides())
+                                .setPhaseType(subscriptionInKb.getPhaseType()),
                         null,
                         null,
                         true,
@@ -515,7 +550,7 @@ public class KillBilling extends ManagedService implements Billing {
 
             SubscriptionStatus status = updateAndGetEntitlementStatus(accountStore.getAccountByAccountId(accountId).get().getStatus(), accountInKb, subscriptionInKb, "Change plan");
             if (status != ACTIVETRIAL && status != ACTIVE) {
-                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to change plan");
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to change plan with status " + status);
             }
 
             // Even though we are using START_OF_SUBSCRIPTION changeAlignment
@@ -544,7 +579,8 @@ public class KillBilling extends ManagedService implements Billing {
             kbSubscription.changeSubscriptionPlan(
                     subscriptionInKb.getSubscriptionId(),
                     new Subscription()
-                            .setExternalKey(accountId)
+                            .setSubscriptionId(subscriptionInKb.getSubscriptionId())
+                            .setBundleExternalKey(accountId)
                             .setAccountId(accountInKb.getAccountId())
                             .setPlanName(planId)
                             .setPhaseType(newPhase),
@@ -741,25 +777,35 @@ public class KillBilling extends ManagedService implements Billing {
         if (!config.usageRecordEnabled()) {
             return Futures.immediateFuture(null);
         }
-        return usageExecutor.<Void>submit(() -> {
+        return usageExecutor.submit(() -> {
             try {
                 Subscription subscription = getSubscription(accountId);
 
-                boolean isTrial = false;
-                long periodNum;
-                if (PhaseType.TRIAL.equals(subscription.getPhaseType())) {
-                    periodNum = 0;
-                    isTrial = true;
-                } else {
-                    periodNum = Period.between(
-                            LocalDate.of(
-                                    subscription.getBillingStartDate().getYear(),
-                                    subscription.getBillingStartDate().getMonthOfYear(),
-                                    subscription.getBillingStartDate().getDayOfMonth()),
-                            LocalDate.now(ZoneOffset.UTC)).getDays()
-                            / subscription.getBillingPeriod().getPeriod().getDays();
+                if (subscription.getPrices().stream()
+                        .filter(phasePrice -> PhaseType.EVERGREEN.name().equals(phasePrice.getPhaseType()))
+                        .flatMap(phasePrice -> phasePrice.getUsagePrices().stream())
+                        .flatMap(usagePrice -> usagePrice.getTierPrices().stream())
+                        .flatMap(tierPrice -> tierPrice.getBlockPrices().stream())
+                        .map(BlockPrice::getUnitName)
+                        .noneMatch(ACTIVE_USER_UNIT_NAME::equals)) {
+                    log.trace("Not recording usage since accountId {} has no {} unit pricing", subscription.getBundleExternalKey(), ACTIVE_USER_UNIT_NAME);
+                    return null;
                 }
-                String periodId = subscription.getSubscriptionId() + ";" + periodNum;
+
+                boolean isTrial = PhaseType.TRIAL.equals(subscription.getPhaseType());
+                String periodCycle;
+                if (isTrial) {
+                    periodCycle = "trial";
+                } else if (subscription.getChargedThroughDate() == null) {
+                    if (LogUtil.rateLimitAllowLog("killbilling-usage-no-charge-through-date")) {
+                        log.warn("Recording usage for non-trial subscription with no Charged Through Date, usageType {} accountId {} projectId {} userId {}",
+                                type, accountId, projectId, userId);
+                    }
+                    periodCycle = "no-ctd";
+                } else {
+                    periodCycle = subscription.getChargedThroughDate().toString();
+                }
+                String periodId = subscription.getSubscriptionId() + ";" + periodCycle;
 
                 boolean userWasActive = userStore.getAndSetUserActive(projectId, userId, periodId, Period.ofDays(subscription.getBillingPeriod().getPeriod().getDays()));
 
@@ -787,12 +833,12 @@ public class KillBilling extends ManagedService implements Billing {
                 if (isTrial) {
                     long activeUsers = getUsageCurrentPeriod(subscription);
                     if (activeUsers >= PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES) {
-                        log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {}",
-                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
+                        log.debug("Account trial ended due to reached limit of {}/{} active users, accountId {} last userId {}",
+                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId, userId);
                         endTrial(accountId);
                     } else {
-                        log.trace("Account trial has yet to reach limit of active users {}/{}, accountId {}",
-                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId);
+                        log.trace("Account trial has yet to reach limit of active users {}/{}, accountId {}, last userId {}}",
+                                activeUsers, PlanStore.STOP_TRIAL_AFTER_ACTIVE_USERS_REACHES, accountId, userId);
                     }
                 }
                 return null;

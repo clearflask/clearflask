@@ -1,7 +1,6 @@
 package com.smotana.clearflask.billing;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -54,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.smotana.clearflask.billing.KillBillClientProvider.EMAIL_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
@@ -70,8 +68,6 @@ public class KillBillSync extends ManagedService {
     public static final String CATALOG_PREFIX = "killbill/";
     public static final ImmutableList<String> CATALOG_FILENAMES = ImmutableList.<String>builder()
             .add("catalog001.xml")
-            // TODO So far we only added pretty names to everything, not worth it to upgrade just yet
-            // .add("catalog002.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
@@ -150,11 +146,14 @@ public class KillBillSync extends ManagedService {
         @DefaultValue(value = PER_TENANT_CONFIG, innerType = String.class)
         List<String> perTenantConfig();
 
-        /**
-         * If set, Stripe plugin will be configured with this API key
-         */
+        @DefaultValue("true")
+        boolean stripePluginSync();
+
         @NoDefaultValue
         String stripePluginApiKey();
+
+        @DefaultValue("ClearFlask Feedback Platform")
+        String stripePluginChargeStatementDesc();
 
         @DefaultValue("true")
         boolean emailPluginSync();
@@ -176,6 +175,9 @@ public class KillBillSync extends ManagedService {
 
         @DefaultValue("billing@clearflask.com")
         String emailPluginSender();
+
+        @DefaultValue("true")
+        boolean emailPluginUseSsl();
 
         @DefaultValue("false")
         boolean uploadAnalyticsReports();
@@ -227,10 +229,12 @@ public class KillBillSync extends ManagedService {
 
     private void sync() throws Exception {
         if (!config.enabled()) {
+            log.info("Skipping killbill sync, disabled");
             return;
         }
 
         if (synced.getAndSet(true)) {
+            log.trace("Skipping killbill sync, already synced");
             return;
         }
 
@@ -255,6 +259,8 @@ public class KillBillSync extends ManagedService {
                     throw ex;
                 }
             }
+        } else {
+            log.info("Skipping create tenant, disabled");
         }
 
         List<String> perTenantConfig = config.perTenantConfig();
@@ -279,22 +285,37 @@ public class KillBillSync extends ManagedService {
                 log.info("Setting perTenantConfiguration {} from {}", props, actualProps);
                 kbTenantProvider.get().uploadPerTenantConfiguration(propsStr, KillBillUtil.roDefault());
             }
+        } else {
+            log.info("Skipping per tenant config sync, empty config");
         }
 
         Optional<PluginInfos> pluginInfos = Optional.empty();
-        String stripePluginApiKey = config.stripePluginApiKey();
-        if (!Strings.isNullOrEmpty(stripePluginApiKey)) {
-            pluginInfos = Optional.of(kbPluginInfoProvider.get().getPluginsInfo(RequestOptions.empty()));
+
+        if (config.stripePluginSync()) {
+            if (!pluginInfos.isPresent()) {
+                pluginInfos = Optional.of(kbPluginInfoProvider.get().getPluginsInfo(RequestOptions.empty()));
+            }
             if (pluginInfos.get().stream().anyMatch(i -> STRIPE_PLUGIN_NAME.equals(i.getPluginName()))) {
                 throw new Exception("KillBill is missing plugin: " + STRIPE_PLUGIN_NAME);
             }
 
+            // Config props defined here https://github.com/killbill/killbill-stripe-plugin/blob/master/src/main/java/org/killbill/billing/plugin/stripe/StripeConfigProperties.java#L59
+            Map<String, Object> stripeProperties = Maps.newHashMap();
+            stripeProperties.put("org.killbill.billing.plugin.stripe.apiKey", config.stripePluginApiKey());
+            stripeProperties.put("org.killbill.billing.plugin.stripe.chargeDescription", config.stripePluginChargeStatementDesc().trim());
+            stripeProperties.put("org.killbill.billing.plugin.stripe.chargeStatementDescriptor", config.stripePluginChargeStatementDesc().trim());
+            String stripeExpectedConf = toPropertiesString(stripeProperties);
+
             TenantKeyValue pluginConfiguration = kbTenantProvider.get().getPluginConfiguration(STRIPE_PLUGIN_NAME, KillBillUtil.roDefault());
-            String expectedConf = "org.killbill.billing.plugin.stripe.apiKey=" + stripePluginApiKey.trim();
-            if (pluginConfiguration == null || pluginConfiguration.getValues() == null || pluginConfiguration.getValues().isEmpty() || !expectedConf.equals(pluginConfiguration.getValues().get(0).trim())) {
-                kbTenantProvider.get().uploadPluginConfiguration(STRIPE_PLUGIN_NAME, expectedConf, KillBillUtil.roDefault());
-                log.info("Updating Stripe plugin API key");
+            if (pluginConfiguration == null || pluginConfiguration.getValues() == null || pluginConfiguration.getValues().isEmpty() || !stripeExpectedConf.equals(pluginConfiguration.getValues().get(0).trim())) {
+                log.info("Updating Stripe plugin config");
+                log.trace("Stripe config expected:\n{}\nactual:\n{}", stripeExpectedConf, pluginConfiguration);
+                kbTenantProvider.get().uploadPluginConfiguration(STRIPE_PLUGIN_NAME, stripeExpectedConf, KillBillUtil.roDefault());
+            } else {
+                log.info("Skipping Stripe plugin config, already set");
             }
+        } else {
+            log.info("Skipping Stripe plugin sync, disabled");
         }
 
         if (config.emailPluginSync()) {
@@ -305,33 +326,33 @@ public class KillBillSync extends ManagedService {
                 throw new Exception("KillBill is missing plugin: " + EMAIL_PLUGIN_NAME);
             }
 
-            String expectedConf = new StrBuilder()
-                    .append("org.killbill.billing.plugin.email-notifications.defaultEvents=")
-                    .appendln(config.emailPluginEmailEvents().stream().collect(Collectors.joining(",")))
-                    .append("org.killbill.billing.plugin.email-notifications.smtp.host=")
-                    .appendln(config.emailPluginHost())
-                    .append("org.killbill.billing.plugin.email-notifications.smtp.port=")
-                    .appendln(config.emailPluginPort())
-                    .appendln("org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true")
-                    .append("org.killbill.billing.plugin.email-notifications.smtp.userName=")
-                    .appendln(config.emailPluginUsername())
-                    .append("org.killbill.billing.plugin.email-notifications.smtp.password=")
-                    .appendln(config.emailPluginPassword())
-                    .append("org.killbill.billing.plugin.email-notifications.smtp.defaultSender=")
-                    .appendln(config.emailPluginSender())
-                    .appendln("org.killbill.billing.plugin.email-notifications.smtp.useSSL=true")
-                    .appendln("org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail=true")
-                    .toString();
+            // Config props defined here https://github.com/killbill/killbill-email-notifications-plugin/blob/c1ef2e0f0a05abcbe4cb86a8b139c75c918f2863/src/main/java/org/killbill/billing/plugin/notification/setup/EmailNotificationConfiguration.java#L47
+            Map<String, Object> emailProperties = Maps.newHashMap();
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.defaultEvents", String.join(",", config.emailPluginEmailEvents()));
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.host", config.emailPluginHost());
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.port", config.emailPluginPort());
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.useAuthentication", "true");
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.userName", config.emailPluginUsername());
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.password", config.emailPluginPassword());
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.defaultSender", config.emailPluginSender());
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.useSSL", Boolean.toString(config.emailPluginUseSsl()));
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail", "true");
+            String emailExpectedConf = toPropertiesString(emailProperties);
 
             TenantKeyValue pluginConfiguration = kbTenantProvider.get().getPluginConfiguration(EMAIL_PLUGIN_NAME, KillBillUtil.roDefault());
-            if (pluginConfiguration == null || pluginConfiguration.getValues() == null || pluginConfiguration.getValues().isEmpty() || !expectedConf.equals(pluginConfiguration.getValues().get(0).trim())) {
-                log.info("Updating Email plugin conf");
-                kbTenantProvider.get().uploadPluginConfiguration(EMAIL_PLUGIN_NAME, expectedConf, KillBillUtil.roDefault());
+            if (pluginConfiguration == null || pluginConfiguration.getValues() == null || pluginConfiguration.getValues().isEmpty() || !emailExpectedConf.equals(pluginConfiguration.getValues().get(0).trim())) {
+                log.info("Updating Email plugin config");
+                log.trace("Email config expected:\n{}\nactual:\n{}", emailExpectedConf, pluginConfiguration);
+                kbTenantProvider.get().uploadPluginConfiguration(EMAIL_PLUGIN_NAME, emailExpectedConf, KillBillUtil.roDefault());
+            } else {
+                log.info("Skipping Email plugin config, already set");
             }
 
             // Default templates: https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/templates
             String emailTemplateFailedPayment = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/billing-FailedPayment.html"), Charsets.UTF_8);
             setUserKeyValueIfDifferent("killbill-email-notifications:FAILED_PAYMENT_en_US", emailTemplateFailedPayment);
+        } else {
+            log.info("Skipping Email plugin sync, disabled");
         }
 
         if (config.uploadAnalyticsReports()) {
@@ -351,6 +372,8 @@ public class KillBillSync extends ManagedService {
                         .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
             }
+        } else {
+            log.info("Skipping analytics reports sync, disabled");
         }
 
         if (config.uploadInvoiceTemplate()) {
@@ -366,6 +389,8 @@ public class KillBillSync extends ManagedService {
                         true,
                         KillBillUtil.roDefault());
             }
+        } else {
+            log.info("Skipping invoice template sync, disabled");
         }
 
         if (config.uploadOverdue()) {
@@ -381,9 +406,11 @@ public class KillBillSync extends ManagedService {
                         .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                         .build());
             }
+        } else {
+            log.info("Skipping overdue sync, disabled");
         }
 
-        if (config.uploadCatalogs() && !CATALOG_FILENAMES.isEmpty()) {
+        if (config.uploadCatalogs()) {
             DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder();
             XPathExpression effectiveDateXPath = XPathFactory.newInstance()
@@ -403,6 +430,8 @@ public class KillBillSync extends ManagedService {
                     kbCatalogProvider.get().uploadCatalogXml(catalogStr, KillBillUtil.roDefault());
                 }
             }
+        } else {
+            log.info("Skipping overdue sync, disabled");
         }
     }
 
@@ -420,6 +449,13 @@ public class KillBillSync extends ManagedService {
             kbTenantProvider.get().deleteUserKeyValue(key, KillBillUtil.roDefault());
         }
         kbTenantProvider.get().insertUserKeyValue(key, value, KillBillUtil.roDefault());
+    }
+
+    private String toPropertiesString(Map<String, Object> propsMap) {
+        StrBuilder builder = new StrBuilder()
+                .appendln("AUTOGENERATED, DO NOT EDIT");
+        propsMap.forEach((key, val) -> builder.append(key).append("=").appendln(val.toString()));
+        return builder.toString();
     }
 
     public static Module module() {

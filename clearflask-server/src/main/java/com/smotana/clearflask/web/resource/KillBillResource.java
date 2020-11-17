@@ -191,7 +191,11 @@ public class KillBillResource extends ManagedService {
 
         boolean changesMade = false;
 
-        SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(accountOpt.get().getStatus(), kbAccount, kbSubscription, "KillBill event" + event.getEventType());
+        SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+                accountOpt.get().getStatus(),
+                kbAccount,
+                kbSubscription,
+                "KillBill event" + event.getEventType());
         if (!accountOpt.get().getStatus().equals(newStatus)) {
             changesMade = true;
         }
