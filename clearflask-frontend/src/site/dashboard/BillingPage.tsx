@@ -549,7 +549,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 this.setState({ isSubmitting: true });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
                   accountUpdateAdmin: {
-                    cancelEndOfTerm: false,
+                    resume: true,
                   },
                 }).then(() => d.accountBillingAdmin({})))
                   .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
