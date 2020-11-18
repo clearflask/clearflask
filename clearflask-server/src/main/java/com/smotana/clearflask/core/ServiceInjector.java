@@ -25,6 +25,7 @@ import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
@@ -34,6 +35,7 @@ import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl;
@@ -171,6 +173,7 @@ public enum ServiceInjector {
                 install(OnAdminInvite.module());
                 install(OnEmailChanged.module());
                 install(OnTrialEnded.module());
+                install(OnPaymentFailed.module());
                 install(EmailVerify.module());
 
                 // Security
@@ -209,6 +212,7 @@ public enum ServiceInjector {
                 install(KillBillClientProvider.module());
                 install(KillBilling.module());
                 install(KillBillSync.module());
+                install(StripeClientSetup.module());
                 install(KillBillPlanStore.module());
 
                 // Other

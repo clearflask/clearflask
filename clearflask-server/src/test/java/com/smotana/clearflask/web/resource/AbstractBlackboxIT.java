@@ -39,6 +39,7 @@ import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
@@ -48,6 +49,7 @@ import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
@@ -149,6 +151,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ClearFlaskCreditSync.module(),
                 KillBillResource.module(),
                 KillBillSync.module(),
+                StripeClientSetup.module(),
                 KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
@@ -158,6 +161,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
                 OnTrialEnded.module(),
+                OnPaymentFailed.module(),
                 OnForgotPassword.module(),
                 OnAdminInvite.module(),
                 OnEmailChanged.module(),
@@ -201,10 +205,13 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                     om.override(om.id().tokenSignerPrivKey()).withValue(privKey);
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
+                install(ConfigSystem.overrideModule(StripeClientSetup.Config.class, om -> {
+                    om.override(om.id().stripeApiKey()).withValue("none");
+                    om.override(om.id().overrideBaseUrl()).withValue("http://localhost");
+                }));
                 install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
                     om.override(om.id().createTenant()).withValue(true);
                     om.override(om.id().uploadAnalyticsReports()).withValue(true);
-                    om.override(om.id().stripePluginApiKey()).withValue("none");
                     om.override(om.id().emailPluginHost()).withValue("host.docker.internal");
                     om.override(om.id().emailPluginPort()).withValue(9001);
                     om.override(om.id().emailPluginUsername()).withValue("a");
@@ -281,7 +288,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                         .token("token")
                         .build())
                 .build());
-        AccountBillingPayment paymentMethod = accountResource.accountBillingAdmin().getPayment();
+        AccountBillingPayment paymentMethod = accountResource.accountBillingAdmin(false).getPayment();
         assertNotNull(paymentMethod);
         log.trace("Added payment method {}", paymentMethod);
         return accountAndProject

@@ -16,7 +16,7 @@ public class BillingIT extends AbstractBlackboxIT {
         accountAndProject = reachTrialLimit(accountAndProject);
         assertSubscriptionStatus(SubscriptionStatus.NOPAYMENTMETHOD);
 
-        AccountBilling accountBilling = accountResource.accountBillingAdmin();
+        AccountBilling accountBilling = accountResource.accountBillingAdmin(false);
         log.info("Account billing #1:\n{}", accountBilling);
         assertEquals(2, accountBilling.getInvoices().getResults().size());
 

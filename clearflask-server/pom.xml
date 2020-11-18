@@ -206,6 +206,10 @@
         </dependency>
 
         <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-client-java</artifactId>
         </dependency>

@@ -15,6 +15,7 @@ import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBillUtil;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.util.LogUtil;
@@ -26,14 +27,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.api.gen.InvoiceApi;
+import org.killbill.billing.client.api.gen.PaymentApi;
 import org.killbill.billing.client.api.gen.TenantApi;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.Invoice;
 import org.killbill.billing.client.model.gen.InvoiceItem;
+import org.killbill.billing.client.model.gen.Payment;
+import org.killbill.billing.client.model.gen.PaymentTransaction;
 import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.TenantKeyValue;
 import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+import org.killbill.billing.notification.plugin.api.PaymentMetadata;
 import rx.Observable;
 
 import javax.inject.Inject;
@@ -112,7 +117,11 @@ public class KillBillResource extends ManagedService {
     @Inject
     private InvoiceApi kbInvoice;
     @Inject
+    private PaymentApi kbPayment;
+    @Inject
     private ClearFlaskCreditSync clearFlaskCreditSync;
+    @Inject
+    private NotificationService notificationService;
 
     private ImmutableSet<ExtBusEventType> eventsToListenForCached = ImmutableSet.of();
 
@@ -156,9 +165,6 @@ public class KillBillResource extends ManagedService {
         Event event = gson.fromJson(payload, Event.class);
 
         if (!eventsToListenForCached.contains(event.eventType)) {
-            if (config.logWhenEventIsUnnecessary() && LogUtil.rateLimitAllowLog("killbillresource-eventUnnecessary")) {
-                log.info("KillBill event {} was really unnecessary {}", event.getEventType(), event);
-            }
             return;
         }
 
@@ -184,12 +190,12 @@ public class KillBillResource extends ManagedService {
             return;
         }
 
+        boolean changesMade = false;
+
         if (ExtBusEventType.INVOICE_PAYMENT_SUCCESS.equals(event.eventType)) {
             processInvoiceCreditSync(accountOpt.get(), event);
-            return;
+            changesMade = true;
         }
-
-        boolean changesMade = false;
 
         SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
                 accountOpt.get().getStatus(),
@@ -197,6 +203,11 @@ public class KillBillResource extends ManagedService {
                 kbSubscription,
                 "KillBill event" + event.getEventType());
         if (!accountOpt.get().getStatus().equals(newStatus)) {
+            changesMade = true;
+        }
+
+        if (ExtBusEventType.PAYMENT_FAILED.equals(event.eventType)) {
+            processPaymentFailed(accountOpt.get(), event);
             changesMade = true;
         }
 
@@ -212,6 +223,42 @@ public class KillBillResource extends ManagedService {
                 log.info("KillBill event {} was unnecessary {}", event.getEventType(), event);
             }
         }
+    }
+
+    private void processPaymentFailed(AccountStore.Account account, Event event) {
+        Payment payment = null;
+        try {
+            payment = kbPayment.getPayment(
+                    event.getObjectId(),
+                    true,
+                    true,
+                    null,
+                    null,
+                    KillBillUtil.roDefault());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to fetch payment, paymentId {} eventType {}",
+                    event.objectId, event.getEventType(), ex);
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        PaymentMetadata paymentMetadata = gson.fromJson(event.metaData, PaymentMetadata.class);
+        PaymentTransaction paymentTransaction = payment.getTransactions().stream()
+                .filter(pt -> pt.getTransactionId().equals(paymentMetadata.getPaymentTransactionId()))
+                .findAny()
+                .get();
+        long amount = paymentTransaction.getAmount().longValueExact();
+        boolean requiresAction = paymentTransaction.getProperties() != null && paymentTransaction.getProperties().stream()
+                .anyMatch(pluginProperty -> "status".equals(pluginProperty.getKey())
+                        && "requires_action".equals(pluginProperty.getValue()));
+
+        Optional<Billing.PaymentMethodDetails> defaultPaymentMethodOpt = billing.getDefaultPaymentMethodDetails(account.getAccountId());
+        boolean hasPaymentMethod = defaultPaymentMethodOpt.isPresent();
+
+        notificationService.onPaymentFailed(
+                account.getAccountId(),
+                account.getEmail(),
+                amount,
+                requiresAction,
+                hasPaymentMethod);
     }
 
     private void processInvoiceCreditSync(AccountStore.Account account, Event event) {

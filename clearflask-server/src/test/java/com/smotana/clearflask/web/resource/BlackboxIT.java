@@ -43,7 +43,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
             log.info("Added user {}", userAdded.getName());
         }
         // Need to wait until killBilling has processed usage recording
-        TestUtil.retry(() -> assertEquals(SubscriptionStatus.ACTIVE, accountResource.accountBillingAdmin().getSubscriptionStatus()));
+        TestUtil.retry(() -> assertEquals(SubscriptionStatus.ACTIVE, accountResource.accountBillingAdmin(true).getSubscriptionStatus()));
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .cancelEndOfTerm(true)

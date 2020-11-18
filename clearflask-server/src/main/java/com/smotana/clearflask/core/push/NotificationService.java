@@ -20,6 +20,8 @@ public interface NotificationService {
 
     void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
 
+    void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod);
+
     void onAdminInvite(ConfigAdmin configAdmin, UserModel user);
 
     void onEmailChanged(ConfigAdmin configAdmin, UserModel user, String oldEmail);

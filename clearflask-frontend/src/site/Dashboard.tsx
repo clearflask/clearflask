@@ -32,7 +32,7 @@ import { isProd } from '../common/util/detectEnv';
 import { withMediaQuery, WithMediaQuery } from '../common/util/MediaQuery';
 import setTitle from '../common/util/titleUtil';
 import ContactPage from './ContactPage';
-import BillingPage from './dashboard/BillingPage';
+import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CommentsPage from './dashboard/CommentsPage';
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
@@ -163,6 +163,11 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
       return (<LoadingPage />);
     }
     const activePath = this.props.match.params['path'] || '';
+    if (activePath === BillingPaymentActionRedirectPath) {
+      return (
+        <BillingPaymentActionRedirect />
+      );
+    }
     const activeSubPath = ConfigEditor.parsePath(this.props.match.params['subPath'], '/');
     const projects = Object.keys(this.props.bindByProjectId)
       .map(projectId => ServerAdmin.get(this.props.forceMock)
@@ -331,7 +336,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         break;
       case 'billing':
         setTitle('Billing - Dashboard');
-        page = (<BillingPage />);
+        page = (<BillingPage stripePromise={stripePromise} />);
         crumbs = [{ name: 'Billing', slug: activePath }];
         break;
       case 'account':

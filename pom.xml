@@ -401,6 +401,11 @@
             </dependency>
 
             <dependency>
+                <groupId>com.stripe</groupId>
+                <artifactId>stripe-java</artifactId>
+                <version>20.26.0</version>
+            </dependency>
+            <dependency>
                 <groupId>org.kill-bill.billing</groupId>
                 <artifactId>killbill-client-java</artifactId>
                 <version>1.1.10</version>
@@ -440,7 +445,6 @@
                 <version>0.22.10</version>
                 <scope>test</scope>
             </dependency>
-
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
             <dependency>

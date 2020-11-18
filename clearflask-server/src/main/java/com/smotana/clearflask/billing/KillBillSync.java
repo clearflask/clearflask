@@ -149,16 +149,13 @@ public class KillBillSync extends ManagedService {
         @DefaultValue("true")
         boolean stripePluginSync();
 
-        @NoDefaultValue
-        String stripePluginApiKey();
-
-        @DefaultValue("ClearFlask Feedback Platform")
+        @DefaultValue("ClearFlask platform")
         String stripePluginChargeStatementDesc();
 
         @DefaultValue("true")
         boolean emailPluginSync();
 
-        @DefaultValue(value = "INVOICE_PAYMENT_FAILED", innerType = String.class)
+        @DefaultValue(value = "", innerType = String.class)
         List<String> emailPluginEmailEvents();
 
         @NoDefaultValue
@@ -194,6 +191,8 @@ public class KillBillSync extends ManagedService {
 
     @Inject
     private Config config;
+    @Inject
+    private StripeClientSetup.Config configStripeClient;
     @Inject
     private KillBillClientProvider.Config configClient;
     @Inject
@@ -301,9 +300,10 @@ public class KillBillSync extends ManagedService {
 
             // Config props defined here https://github.com/killbill/killbill-stripe-plugin/blob/master/src/main/java/org/killbill/billing/plugin/stripe/StripeConfigProperties.java#L59
             Map<String, Object> stripeProperties = Maps.newHashMap();
-            stripeProperties.put("org.killbill.billing.plugin.stripe.apiKey", config.stripePluginApiKey());
+            stripeProperties.put("org.killbill.billing.plugin.stripe.apiKey", configStripeClient.stripeApiKey());
             stripeProperties.put("org.killbill.billing.plugin.stripe.chargeDescription", config.stripePluginChargeStatementDesc().trim());
             stripeProperties.put("org.killbill.billing.plugin.stripe.chargeStatementDescriptor", config.stripePluginChargeStatementDesc().trim());
+            stripeProperties.put("org.killbill.billing.plugin.stripe.cancelOn3DSAuthorizationFailure", true);
             String stripeExpectedConf = toPropertiesString(stripeProperties);
 
             TenantKeyValue pluginConfiguration = kbTenantProvider.get().getPluginConfiguration(STRIPE_PLUGIN_NAME, KillBillUtil.roDefault());
@@ -328,7 +328,8 @@ public class KillBillSync extends ManagedService {
 
             // Config props defined here https://github.com/killbill/killbill-email-notifications-plugin/blob/c1ef2e0f0a05abcbe4cb86a8b139c75c918f2863/src/main/java/org/killbill/billing/plugin/notification/setup/EmailNotificationConfiguration.java#L47
             Map<String, Object> emailProperties = Maps.newHashMap();
-            emailProperties.put("org.killbill.billing.plugin.email-notifications.defaultEvents", String.join(",", config.emailPluginEmailEvents()));
+            emailProperties.put("org.killbill.billing.plugin.email-notifications.defaultEvents",
+                    config.emailPluginEmailEvents() == null ? "" : String.join(",", config.emailPluginEmailEvents()));
             emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.host", config.emailPluginHost());
             emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.port", config.emailPluginPort());
             emailProperties.put("org.killbill.billing.plugin.email-notifications.smtp.useAuthentication", "true");

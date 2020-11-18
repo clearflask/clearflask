@@ -4,6 +4,7 @@ package com.smotana.clearflask.billing;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import lombok.Value;
@@ -42,6 +43,10 @@ public interface Billing {
 
     void updatePaymentToken(String accountId, Gateway type, String paymentToken);
 
+    Optional<AccountBillingPaymentActionRequired> getActions(UUID accountIdKb);
+
+    void syncActions(String accountId);
+
     Subscription cancelSubscription(String accountId);
 
     Subscription resumeSubscription(String accountId);
@@ -55,6 +60,8 @@ public interface Billing {
     String getInvoiceHtml(String accountId, UUID invoiceId);
 
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
+
+    Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb);
 
     ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId);
 

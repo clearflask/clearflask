@@ -16,17 +16,23 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 @Slf4j
 @Singleton
-public class OnTrialEnded {
+public class OnPaymentFailed {
 
     public interface Config {
-        @DefaultValue("Trial ended")
+        @DefaultValue("Payment failure")
         String subjectTemplate();
 
-        @DefaultValue("Your trial period has ended. Your billing will start now.")
-        String contentNoActionTemplate();
+        @DefaultValue("Your payment of $__AMOUNT__ has failed. ")
+        String content();
 
-        @DefaultValue("If you enjoyed our service, please add a payment method to continue using it.")
-        String contentNoPaymentTemplate();
+        @DefaultValue("Please update your billing details")
+        String generalFailure();
+
+        @DefaultValue("You are asked for additional information from your provider")
+        String actionRequired();
+
+        @DefaultValue("Please add a payment method.")
+        String noPaymentMethod();
     }
 
     @Inject
@@ -38,11 +44,19 @@ public class OnTrialEnded {
     @Inject
     private EmailTemplates emailTemplates;
 
-    public Email email(String link, String accountId, String accountEmail, boolean hasPaymentMethod) {
+    public Email email(String link, String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod) {
         checkArgument(!Strings.isNullOrEmpty(accountEmail));
 
         String subject = config.subjectTemplate();
-        String content = hasPaymentMethod ? config.contentNoActionTemplate() : config.contentNoPaymentTemplate();
+        String content = config.content();
+        if (!hasPaymentMethod) {
+            content += config.noPaymentMethod();
+        } else if (requiresAction) {
+            content += config.actionRequired();
+        } else {
+            content += config.generalFailure();
+        }
+        content = content.replaceAll("__AMOUNT__", Long.toString(amount));
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
@@ -50,7 +64,7 @@ public class OnTrialEnded {
         templateHtml = templateHtml.replaceAll("__CONTENT__", content);
         templateText = templateText.replaceAll("__CONTENT__", content);
 
-        String buttonText = hasPaymentMethod ? "Dashboard" : "Billing";
+        String buttonText = "Billing";
         templateHtml = templateHtml.replaceAll("__BUTTON_TEXT__", buttonText);
         templateText = templateText.replaceAll("__BUTTON_TEXT__", buttonText);
 
@@ -63,7 +77,7 @@ public class OnTrialEnded {
                 templateHtml,
                 templateText,
                 accountId,
-                "TRIAL_ENDED"
+                "PAYMENT_FAILURE"
         );
     }
 
@@ -71,7 +85,7 @@ public class OnTrialEnded {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(OnTrialEnded.class).asEagerSingleton();
+                bind(OnPaymentFailed.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

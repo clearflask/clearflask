@@ -237,13 +237,22 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           status: 'paid',
           amount: 300,
           description: "Enterprise plan monthly",
-          invoiceId: '1',
+          invoiceId: 'a5423e91-2df7-4a04-b38c-9919b0c160cd',
         }],
       },
       accountReceivable: 75,
       accountPayable: 0,
       endOfTermChangeToPlan: Object.values(AvailablePlans).find(p => p.planid !== this.account!.plan.planid),
+      paymentActionRequired: {
+        actionType: 'stripe-next-action',
+        actionData: {
+          'paymentIntentClientSecret': 'client-secret',
+        }
+      },
     });
+  }
+  accountBillingSyncPaymentsAdmin(): Promise<void> {
+    return this.returnLater();
   }
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
     const invoiceDate = new Date();
@@ -255,12 +264,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         status: 'paid',
         amount: 300,
         description: 'Enterprise plan monthly',
-        invoiceId: '1',
+        invoiceId: 'a5423e91-2df7-4a04-b38c-9919b0c160cd',
       }],
     });
   }
   invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
-    if (request.invoiceId === '1') {
+    if (request.invoiceId === 'a5423e91-2df7-4a04-b38c-9919b0c160cd') {
       return this.returnLater({
         invoiceHtml: "This is an invoice <b>test</b>",
       });

@@ -64,11 +64,8 @@
 
         <init-param>
             <param-name>antiClickJackingEnabled</param-name>
-            <param-value>true</param-value>
-        </init-param>
-        <init-param>
-            <param-name>antiClickJackingOption</param-name>
-            <param-value>DENY</param-value>
+            <!-- DISABLED: We are using iframes for 3DSecure and also for embeddding feedback to other sites -->
+            <param-value>false</param-value>
         </init-param>
     </filter>
     <filter-mapping>

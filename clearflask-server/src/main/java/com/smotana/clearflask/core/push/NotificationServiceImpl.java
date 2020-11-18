@@ -24,6 +24,7 @@ import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
+import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
@@ -80,6 +81,9 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
         @DefaultValue("P7D")
         Duration autoLoginExpiry();
+
+        @DefaultValue("false")
+        boolean notifyPaymentFailedBecauseNoPaymentMethod();
     }
 
     @Inject
@@ -100,6 +104,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnCommentReply onCommentReply;
     @Inject
     private OnTrialEnded onTrialEnded;
+    @Inject
+    private OnPaymentFailed onPaymentFailed;
     @Inject
     private OnCreditChange onCreditChange;
     @Inject
@@ -361,11 +367,36 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            String link = "https://" + configApp.domain() + "/dashboard";
+            if (!hasPaymentMethod) {
+                link += "/billing";
+            }
             checkState(!Strings.isNullOrEmpty(accountEmail));
 
             try {
                 emailService.send(onTrialEnded.email(link, accountId, accountEmail, hasPaymentMethod));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        if (!hasPaymentMethod && !config.notifyPaymentFailedBecauseNoPaymentMethod()) {
+            // Only notify when has payment method, mainly to not duplicate emails right after trial ended
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(accountEmail));
+
+            try {
+                emailService.send(onPaymentFailed.email(link, accountId, accountEmail, amount, requiresAction, hasPaymentMethod));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

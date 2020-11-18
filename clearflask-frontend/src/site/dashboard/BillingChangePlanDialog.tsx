@@ -1,17 +1,17 @@
-import { Button, DialogActions, Grid, Dialog, DialogTitle, Container } from '@material-ui/core';
+import { Button, Container, Dialog, DialogActions, DialogTitle, Grid } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
+import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
+import Loader from '../../app/utils/Loader';
 import AcceptTerms from '../../common/AcceptTerms';
+import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
+import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import PlanPeriodSelect from '../PlanPeriodSelect';
 import PricingPlan from '../PricingPlan';
-import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
-import Loader from '../../app/utils/Loader';
-import { Status } from '../../api/server';
-import SubmitButton from '../../common/SubmitButton';
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -74,7 +74,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
                     selected={plan.planid === this.props.accountPlanId ? (!selectedPlanId || selectedPlanId === this.props.accountPlanId) : selectedPlanId === plan.planid}
                     actionTitle={plan.planid === this.props.accountPlanId ? 'Current plan' : (selectedPlanId === plan.planid ? 'Selected' : 'Select')}
                     actionType={plan.planid === this.props.accountPlanId ? undefined : 'radio'}
-                    actionOnClick={plan.planid === this.props.accountPlanId ? undefined : () => this.setState({planid: plan.planid})}
+                    actionOnClick={plan.planid === this.props.accountPlanId ? undefined : () => this.setState({ planid: plan.planid })}
                   />
                 </Grid>
               ))}
@@ -99,7 +99,7 @@ class BillingChangePlanDialog extends Component<Props & ConnectProps & WithMedia
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   if (state.account.billing.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin());
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
   }
   return {
     accountPlanId: state.account.account.account?.plan.planid,

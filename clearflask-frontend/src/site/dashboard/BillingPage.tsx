@@ -1,11 +1,12 @@
 
-import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import ActiveIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import WarnIcon from '@material-ui/icons/Warning';
+import { Color } from '@material-ui/lab';
 import { CardNumberElement, ElementsConsumer } from '@stripe/react-stripe-js';
-import { Stripe, StripeElements } from '@stripe/stripe-js';
+import { PaymentIntent, Stripe, StripeElements, StripeError } from '@stripe/stripe-js';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -16,11 +17,12 @@ import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
-import ErrorMsg from '../../app/ErrorMsg';
+import LoadingPage from '../../app/LoadingPage';
 import DividerCorner from '../../app/utils/DividerCorner';
 import Loader from '../../app/utils/Loader';
 import AcceptTerms from '../../common/AcceptTerms';
 import CreditCard from '../../common/CreditCard';
+import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { isTracking } from '../../common/util/detectEnv';
@@ -28,7 +30,21 @@ import { StopTrialAfterActiveUsersReaches } from '../PricingPage';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 
+/** If changed, also change in KillBilling.java */
+interface PaymentStripeAction {
+  actionType: 'stripe-next-action';
+  actionData: {
+    'paymentIntentClientSecret': string,
+  };
+}
+
+export const BillingPaymentActionRedirectPath = 'billing-redirect';
+
 const styles = (theme: Theme) => createStyles({
+  page: {
+    maxWidth: 1024,
+    width: 'max-content',
+  },
   plan: {
     margin: theme.spacing(2, 6, 2),
   },
@@ -88,8 +104,12 @@ const styles = (theme: Theme) => createStyles({
   sectionSpacing: {
     marginTop: theme.spacing(2),
   },
+  paymentActionMessage: {
+    margin: theme.spacing(4),
+  },
 });
 interface Props {
+  stripePromise: Promise<Stripe | null>;
 }
 interface ConnectProps {
   accountStatus?: Status;
@@ -107,9 +127,20 @@ interface State {
   showPlanChange?: boolean;
   invoices?: Admin.InvoiceItem[];
   invoicesCursor?: string;
+  paymentActionOpen?: boolean;
+  paymentActionUrl?: string;
+  paymentActionMessage?: string;
+  paymentActionMessageSeverity?: Color;
 }
-class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   state: State = {};
+  refreshBillingAfterPaymentClose?: boolean;
+  paymentActionMessageListener?: any;
+
+  componentWillUnmount() {
+    this.paymentActionMessageListener && window.removeEventListener('message', this.paymentActionMessageListener);
+  }
+
   render() {
     if (!this.props.account) {
       return 'Need to login to see this page';
@@ -285,6 +316,73 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       />
     );
 
+    const paymentStripeAction: PaymentStripeAction | undefined = this.props.accountBilling?.paymentActionRequired?.actionType === 'stripe-next-action'
+      ? this.props.accountBilling?.paymentActionRequired as PaymentStripeAction : undefined;
+    const paymentActionOnClose = () => {
+      this.setState({
+        paymentActionOpen: undefined,
+        paymentActionUrl: undefined,
+        paymentActionMessage: undefined,
+        paymentActionMessageSeverity: undefined,
+      });
+      if (this.refreshBillingAfterPaymentClose) {
+        ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({
+          refreshPayments: true,
+        }));
+      }
+    };
+    const paymentAction = paymentStripeAction ? (
+      <React.Fragment>
+        <Message
+          className={this.props.classes.paymentActionMessage}
+          message='One of your payments requires additional information'
+          severity='error'
+          action={(
+            <SubmitButton
+              isSubmitting={!!this.state.paymentActionOpen && !this.state.paymentActionUrl && !this.state.paymentActionMessage}
+              onClick={() => {
+                this.setState({ paymentActionOpen: true });
+                this.loadActionIframe(paymentStripeAction);
+              }}
+            >Open</SubmitButton>
+          )}
+        />
+        <Dialog
+          open={!!this.state.paymentActionOpen}
+          keepMounted
+          onClose={paymentActionOnClose}
+        >
+          {this.state.paymentActionMessage ? (
+            <React.Fragment>
+              <DialogContent>
+                <Message
+                  message={this.state.paymentActionMessage}
+                  severity={this.state.paymentActionMessageSeverity || 'info'}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={paymentActionOnClose}>Dismiss</Button>
+              </DialogActions>
+            </React.Fragment>
+          ) : (this.state.paymentActionUrl ? (
+            <iframe
+              title='Complete outstanding payment action'
+              width={this.getFrameActionWidth()}
+              height={400}
+              src={this.state.paymentActionUrl}
+            />
+          ) : (
+              <div style={{
+                minWidth: this.getFrameActionWidth(),
+                minHeight: 400,
+              }}>
+                <LoadingPage />
+              </div>
+            ))}
+        </Dialog>
+      </React.Fragment>
+    ) : undefined;
+
     const hasPayable = (this.props.accountBilling?.accountPayable || 0) > 0;
     const hasReceivable = (this.props.accountBilling?.accountReceivable || 0) > 0;
     const payment = (
@@ -367,6 +465,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </SubmitButton>
               )}
             </div>
+            {paymentAction}
           </div>
         </div>
         <Dialog
@@ -381,7 +480,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <DialogContent className={this.props.classes.center}>
                   <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
                   <Collapse in={!!this.state.stripePaymentError}>
-                    <ErrorMsg msg={this.state.stripePaymentError} />
+                    <Message message={this.state.stripePaymentError} severity='error' />
                   </Collapse>
                 </DialogContent>
                 <AcceptTerms />
@@ -422,7 +521,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   accountUpdateAdmin: {
                     cancelEndOfTerm: true,
                   },
-                }).then(() => d.accountBillingAdmin()))
+                }).then(() => d.accountBillingAdmin({})))
                   .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
                   .catch(er => this.setState({ isSubmitting: false }));
               }}
@@ -452,7 +551,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   accountUpdateAdmin: {
                     cancelEndOfTerm: false,
                   },
-                }).then(() => d.accountBillingAdmin()))
+                }).then(() => d.accountBillingAdmin({})))
                   .then(() => this.setState({ isSubmitting: false, showResumePlan: undefined }))
                   .catch(er => this.setState({ isSubmitting: false }));
               }}
@@ -584,7 +683,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               accountUpdateAdmin: {
                 planid,
               },
-            }).then(() => d.accountBillingAdmin()))
+            }).then(() => d.accountBillingAdmin({})))
               .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
               .catch(er => this.setState({ isSubmitting: false }));
           }}
@@ -595,9 +694,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     return (
       <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
-        {plan}
-        {payment}
-        {invoices}
+        <div className={this.props.classes.page}>
+          {plan}
+          {payment}
+          {invoices}
+        </div>
       </Loader>
     );
   }
@@ -652,28 +753,134 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     } catch (er) {
       this.setState({
         isSubmitting: false,
-        stripePaymentError: 'Unknown error: ' + JSON.stringify(er)
+        stripePaymentError: 'Failed to add payment',
       });
       return;
     }
 
     try {
-      await dispatcher.accountBillingAdmin();
+      await dispatcher.accountBillingAdmin({});
     } catch (er) {
       this.setState({
         isSubmitting: false,
-        stripePaymentError: 'Unknown error: ' + JSON.stringify(er)
+        stripePaymentError: 'Failed to add payment',
       });
       return;
     }
 
     this.setState({ isSubmitting: false, showAddPayment: undefined });
   }
+
+  getFrameActionWidth(): number {
+    // https://stripe.com/docs/payments/3d-secure#render-iframe
+    if (!this.props.width) return 250;
+    switch (this.props.width) {
+      case 'xs':
+        return 250;
+      case 'sm':
+        return 390;
+      case 'md':
+      case 'lg':
+      case 'xl':
+      default:
+        return 600;
+    }
+  }
+
+  async loadActionIframe(paymentStripeAction: PaymentStripeAction) {
+    var stripe: Stripe | null = null;
+    try {
+      stripe = await this.props.stripePromise;
+    } catch (e) {
+      // Handle below
+    }
+    if (!stripe) {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: 'Payment gateway unavailable',
+        paymentActionMessageSeverity: 'error',
+      })
+      return;
+    }
+
+    var result: { paymentIntent?: PaymentIntent, error?: StripeError } | undefined;
+    try {
+      result = await stripe.confirmCardPayment(
+        paymentStripeAction.actionData.paymentIntentClientSecret,
+        { return_url: `${window.location.protocol}//${window.location.host}/dashboard/${BillingPaymentActionRedirectPath}` },
+        { handleActions: false });
+    } catch (e) {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: 'Failed to load payment gateway',
+        paymentActionMessageSeverity: 'error',
+      })
+      return;
+    }
+
+    if (result.error || !result.paymentIntent) {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: result.error?.message || 'Unknown payment failure',
+        paymentActionMessageSeverity: 'error',
+      })
+      return;
+    }
+
+    if (result.paymentIntent.status === 'succeeded') {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: 'No action necessary',
+        paymentActionMessageSeverity: 'success',
+      })
+      return;
+    }
+
+    if (result.paymentIntent.status === 'canceled') {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: 'Payment already canceled',
+        paymentActionMessageSeverity: 'error',
+      })
+      return;
+    }
+
+    if (result.paymentIntent.status !== 'requires_action'
+      || !result.paymentIntent.next_action?.redirect_to_url?.url) {
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: `Unexpected payment status: ${result.paymentIntent.status}`,
+        paymentActionMessageSeverity: 'error',
+      })
+      return;
+    }
+
+    // Setup iframe message listener
+    this.paymentActionMessageListener = (ev: MessageEvent) => {
+      if (ev.origin !== window.location.origin) return;
+      if (typeof ev.data !== 'string' || ev.data !== BillingPaymentActionRedirectPath) return;
+      this.refreshBillingAfterPaymentClose = true;
+      this.setState({
+        paymentActionMessage: 'Action completed',
+        paymentActionMessageSeverity: 'info',
+      })
+    };
+    window.addEventListener('message', this.paymentActionMessageListener);
+
+    this.setState({ paymentActionUrl: result.paymentIntent.next_action.redirect_to_url.url });
+  }
 }
+
+export const BillingPaymentActionRedirect = () => {
+  window.top.postMessage(BillingPaymentActionRedirectPath, window.location.origin);
+  return (
+    <Message message='Please wait...' severity='info' />
+  );
+};
 
 export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) => {
   if (state.account.billing.status === undefined) {
-    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin());
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountBillingAdmin({}));
   }
   const connectProps: ConnectProps = {
     accountStatus: state.account.account.status,
@@ -682,4 +889,4 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     accountBilling: state.account.billing.billing,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(BillingPage)));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(BillingPage))));

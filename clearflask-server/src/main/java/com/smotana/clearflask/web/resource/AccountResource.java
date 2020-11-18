@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.PlanApi;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
+import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountLogin;
 import com.smotana.clearflask.api.model.AccountLoginAs;
@@ -389,8 +390,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
-    public AccountBilling accountBillingAdmin() {
+    public AccountBilling accountBillingAdmin(Boolean refreshPayments) {
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+
+        if (refreshPayments == Boolean.TRUE) {
+            billing.syncActions(accountSession.getAccountId());
+        }
+
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         org.killbill.billing.client.model.gen.Account kbAccount = billing.getAccount(accountSession.getAccountId());
         Subscription subscription = billing.getSubscription(accountSession.getAccountId());
@@ -444,6 +450,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Optional<Plan> endOfTermChangeToPlan = billing.getEndOfTermChangeToPlanId(subscription)
                 .flatMap(planStore::getPlan);
 
+        Optional<AccountBillingPaymentActionRequired> actions = billing.getActions(subscription.getAccountId());
+
         return new AccountBilling(
                 status,
                 accountBillingPayment.orElse(null),
@@ -453,7 +461,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 invoices,
                 accountReceivable,
                 accountPayable,
-                endOfTermChangeToPlan.orElse(null));
+                endOfTermChangeToPlan.orElse(null),
+                actions.orElse(null));
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

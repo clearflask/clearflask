@@ -19,6 +19,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
@@ -30,6 +31,8 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTimeZone;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
@@ -43,11 +46,13 @@ import org.killbill.billing.client.api.gen.AccountApi;
 import org.killbill.billing.client.api.gen.BundleApi;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.api.gen.InvoiceApi;
+import org.killbill.billing.client.api.gen.PaymentApi;
 import org.killbill.billing.client.api.gen.PaymentMethodApi;
 import org.killbill.billing.client.api.gen.SubscriptionApi;
 import org.killbill.billing.client.api.gen.UsageApi;
 import org.killbill.billing.client.model.Bundles;
 import org.killbill.billing.client.model.PaymentMethods;
+import org.killbill.billing.client.model.Payments;
 import org.killbill.billing.client.model.PlanDetails;
 import org.killbill.billing.client.model.gen.Account;
 import org.killbill.billing.client.model.gen.BlockPrice;
@@ -56,6 +61,7 @@ import org.killbill.billing.client.model.gen.Invoice;
 import org.killbill.billing.client.model.gen.OverdueState;
 import org.killbill.billing.client.model.gen.PaymentMethod;
 import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
+import org.killbill.billing.client.model.gen.PaymentTransaction;
 import org.killbill.billing.client.model.gen.PlanDetail;
 import org.killbill.billing.client.model.gen.PluginProperty;
 import org.killbill.billing.client.model.gen.RolledUpUnit;
@@ -122,6 +128,8 @@ public class KillBilling extends ManagedService implements Billing {
     private SubscriptionApi kbSubscription;
     @Inject
     private InvoiceApi kbInvoice;
+    @Inject
+    private PaymentApi kbPayment;
     @Inject
     private CatalogApi kbCatalog;
     @Inject
@@ -286,8 +294,9 @@ public class KillBilling extends ManagedService implements Billing {
     public Optional<String> getEndOfTermChangeToPlanId(Subscription subscription) {
         return subscription.getEvents().stream()
                 .filter(e -> SubscriptionEventType.CHANGE.equals(e.getEventType()))
-                .findFirst()
-                .map(EventSubscription::getPlan);
+                .map(EventSubscription::getPlan)
+                .filter(planName -> !subscription.getPlanName().equals(planName))
+                .findFirst();
     }
 
     /**
@@ -432,6 +441,75 @@ public class KillBilling extends ManagedService implements Billing {
         } catch (KillBillClientException ex) {
             log.warn("Failed to update KillBill payment token for account id {}", accountId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update payment method", ex);
+        }
+    }
+
+    @Extern
+    @Override
+    public Optional<AccountBillingPaymentActionRequired> getActions(UUID accountIdKb) {
+        try {
+            Payments payments = kbAccount.getPaymentsForAccount(
+                    accountIdKb,
+                    true,
+                    true,
+                    null,
+                    null,
+                    KillBillUtil.roDefault());
+            Optional<PaymentTransaction> transactionOpt = payments.stream()
+                    .flatMap(payment -> payment.getTransactions().stream())
+                    .filter(paymentTransaction -> paymentTransaction.getProperties() != null)
+                    .filter(paymentTransaction -> paymentTransaction.getProperties().stream()
+                            .anyMatch(pluginProperty -> "status".equals(pluginProperty.getKey())
+                                    && "requires_action".equals(pluginProperty.getValue())))
+                    .findFirst();
+            if (!transactionOpt.isPresent()) {
+                return Optional.empty();
+            }
+
+            Optional<String> paymentIntentIdOpt = transactionOpt.get().getProperties().stream()
+                    .filter(pluginProperty -> "id".equals(pluginProperty.getKey()))
+                    .map(PluginProperty::getValue)
+                    .findAny();
+            if (!paymentIntentIdOpt.isPresent()) {
+                log.warn("Payment transaction in KillBill missing payment intent id for accountIdKb {} transaction {}", accountIdKb, transactionOpt.get().getTransactionId());
+                return Optional.empty();
+            }
+
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentIdOpt.get());
+            if (!"requires_action".equals(paymentIntent.getStatus())
+                    || paymentIntent.getNextAction() == null) {
+                log.warn("Payment intent in KillBill unresolved while Stripe is resolved, triggering sync for accountIdKb {}", accountIdKb);
+                syncActions(accountIdKb);
+                return Optional.empty();
+            }
+
+            return Optional.of(getPaymentStripeAction(paymentIntent.getClientSecret()));
+        } catch (KillBillClientException | StripeException ex) {
+            log.warn("Failed to get actions from KillBill/Stripe accountId {}", accountIdKb, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to retrieve payment status", ex);
+        }
+    }
+
+    @Extern
+    @Override
+    public void syncActions(String accountId) {
+        this.syncActions(getAccount(accountId).getAccountId());
+    }
+
+    private void syncActions(UUID accountIdKb) {
+        try {
+            // Fetching intent with plugin info will trigger plugin to sync with gateway and resolve
+            // https://groups.google.com/g/killbilling-users/c/5HsAApGm81k/m/uzMcip_tAwAJ
+            kbAccount.getPaymentsForAccount(
+                    accountIdKb,
+                    true,
+                    true,
+                    null,
+                    null,
+                    KillBillUtil.roDefault());
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to retrieve payments from KillBill to sync actions for accountIdKb {}", accountIdKb, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to synchronize", ex);
         }
     }
 
@@ -695,7 +773,8 @@ public class KillBilling extends ManagedService implements Billing {
         return getDefaultPaymentMethodDetails(accountIdKb);
     }
 
-    private Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb) {
+    @Override
+    public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb) {
         try {
             PaymentMethods paymentMethods = kbAccount.getPaymentMethodsForAccount(
                     accountIdKb,
@@ -895,6 +974,13 @@ public class KillBilling extends ManagedService implements Billing {
                     "Failed to get subscription usage", ex);
         }
     }
+
+    /** If changed, also change in BillingPage.tsx */
+    private AccountBillingPaymentActionRequired getPaymentStripeAction(String paymentIntentClientSecret) {
+        return new AccountBillingPaymentActionRequired("stripe-next-action", ImmutableMap.of(
+                "paymentIntentClientSecret", paymentIntentClientSecret));
+    }
+
 
     public static Module module() {
         return new AbstractModule() {

@@ -244,6 +244,15 @@ components:
           format: int64
         endOfTermChangeToPlan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
+        paymentActionRequired:
+          type: object
+          properties:
+            actionType:
+              type: string
+            actionData:
+              type: object
+              additionalProperties:
+                type: string
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
@@ -462,6 +471,11 @@ components:
   get:
     operationId: accountBillingAdmin
     tags: [AccountAdmin]
+    parameters:
+    - name: refreshPayments
+      in: query
+      schema:
+        type: boolean
     responses:
       '200':
         content:

@@ -131,7 +131,7 @@ class Main extends Component {
                   ), (
                     <Route key='invoice' path="/invoice/:invoiceId" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
-                        <Invoice invoiceId={parseInt(props.match.params['invoiceId'])} />
+                        <Invoice invoiceId={props.match.params['invoiceId']} />
                       </Provider>
                     )} />
                   ), (
