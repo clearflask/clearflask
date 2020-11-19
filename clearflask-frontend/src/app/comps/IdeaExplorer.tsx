@@ -14,7 +14,7 @@ import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
-import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
+import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
@@ -133,9 +133,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     this.updateSearchText = debounce(
       (title?: string, descRaw?: string) => !!title && !!descRaw && this.setState({
         newItemSearchText:
-          `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`
+          `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`.slice(0, 100),
       }),
-      SearchTypeDebounceTime);
+      SimilarTypeDebounceTime);
   }
 
   componentDidMount() {
