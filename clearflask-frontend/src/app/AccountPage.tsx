@@ -81,9 +81,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     >
                       <TextField
                         id='displayName'
-                        value={this.state.displayName === undefined
-                          ? (this.props.userMe.name || '')
-                          : (this.state.displayName || '')}
+                        value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
                         onChange={e => this.setState({ displayName: e.target.value })}
                       />
                     </Badge>
@@ -124,9 +122,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     >
                       <TextField
                         id='email'
-                        value={this.state.email === undefined
-                          ? (this.props.userMe.email || '')
-                          : (this.state.email || '')}
+                        value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
                         onChange={e => this.setState({ email: e.target.value })}
                       />
                     </Badge>
@@ -162,9 +158,7 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 >
                   <TextField
                     id='password'
-                    value={this.state.password === undefined
-                      ? ('')
-                      : (this.state.password)}
+                    value={this.state.password || ''}
                     onChange={e => this.setState({ password: e.target.value })}
                     type={this.state.revealPassword ? 'text' : 'password'}
                     disabled={!this.state.email && !this.props.userMe.email}

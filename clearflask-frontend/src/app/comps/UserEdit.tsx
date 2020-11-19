@@ -81,7 +81,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 disabled={this.state.isSubmitting}
                 label='Name'
                 fullWidth
-                value={this.state.name === undefined ? this.props.user.name : this.state.name}
+                value={(this.state.name === undefined ? this.props.user.name : this.state.name) || ''}
                 onChange={e => this.setState({ name: e.target.value })}
               />
             </Grid>
@@ -107,7 +107,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 label='Email'
                 fullWidth
                 helperText={!!this.props.user.isSso ? 'Cannot change when using Single Sign-On' : undefined}
-                value={this.state.email === undefined ? this.props.user.email : this.state.email}
+                value={(this.state.email === undefined ? this.props.user.email : this.state.email) || ''}
                 onChange={e => this.setState({ email: e.target.value })}
               />
             </Grid>
@@ -120,7 +120,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   label='Set password'
                   type={this.state.revealPassword ? 'text' : 'password'}
                   fullWidth
-                  value={this.state.password === undefined ? '' : this.state.password}
+                  value={this.state.password || ''}
                   onChange={e => this.setState({ password: e.target.value })}
                   InputProps={{
                     endAdornment: (

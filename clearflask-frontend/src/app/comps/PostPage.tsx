@@ -69,6 +69,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
         <PanelPost
           className={this.props.classes.similar}
           direction={Direction.Vertical}
+          PostProps={this.props.PostProps}
           panel={{
             hideIfEmpty: true,
             title: 'Similar',

@@ -107,10 +107,10 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
   constructor(props) {
     super(props);
 
-    const value = props.value || props.defaultValue;
+    const value = props.value || props.defaultValue || '';
 
-    var recoveredEditorState: EditorState | undefined = undefined;
-    if (value !== undefined) {
+    var recoveredEditorState: EditorState | undefined;
+    if (!!value) {
       try {
         recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(value)));
         if (filteringEnabled) {
@@ -146,13 +146,13 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
     } else {
       stateValue = undefined;
     }
-    var propsValue = props.value || props.defaultValue;
+    var propsValue = props.value || props.defaultValue || undefined;
     if (propsValue === stateValue) {
       return null;
     }
 
     return {
-      editorState: propsValue === undefined
+      editorState: !propsValue
         ? EditorState.createEmpty()
         : EditorState.createWithContent(convertFromRaw(JSON.parse(propsValue as string))),
       value: propsValue,

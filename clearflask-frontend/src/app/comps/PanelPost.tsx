@@ -65,6 +65,7 @@ export interface Props {
   onUserClick?: (userId: string) => void;
   forceDisablePostExpand?: boolean;
   suppressPanel?: boolean;
+  PostProps?: Partial<React.ComponentProps<typeof Post>>;
 }
 interface ConnectProps {
   configver?: string;
@@ -121,6 +122,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               onUserClick={this.props.onUserClick}
               display={display}
               variant='list'
+              {...this.props.PostProps}
             />
           ));
         }

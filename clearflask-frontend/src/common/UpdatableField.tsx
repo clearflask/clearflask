@@ -1,11 +1,11 @@
-import { IconButton, TextField, InputAdornment } from '@material-ui/core';
+import { IconButton, InputAdornment, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import React, { Component } from 'react';
 import SubmitButton from './SubmitButton';
 import randomUuid from './util/uuid';
-import KeyRefreshIcon from '@material-ui/icons/Refresh';
 
 const styles = (theme: Theme) => createStyles({
   wrapper: {
@@ -34,9 +34,7 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
     return (
       <div className={this.props.classes.wrapper}>
         <TextField
-          value={this.state.value === undefined
-            ? this.props.value || ''
-            : this.state.value || ''}
+          value={(this.state.value === undefined ? this.props.value : this.state.value) || ''}
           onChange={e => this.setState({ value: e.target.value })}
           type={!this.props.isPassword || this.state.revealPassword ? 'text' : 'password'}
           disabled={this.state.isSubmitting}

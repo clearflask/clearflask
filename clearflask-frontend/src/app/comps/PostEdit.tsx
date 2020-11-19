@@ -61,28 +61,28 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     const nextStatusValues: Label[] = [];
     const nextStatusOptions: Label[] = [];
     if (isModLoggedIn) {
-      var nextStatusIds: Set<string> | undefined;
       const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
-      if (!!this.props.idea.statusId) {
-        nextStatusIds = new Set(status?.nextStatusIds);
+      var nextStatuses: Client.IdeaStatus[] | undefined;
+      if (!!status) {
+        var nextStatusIds = new Set(status.nextStatusIds);
+        if (nextStatusIds && nextStatusIds.size > 0) {
+          nextStatuses = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
+        }
       } else {
-        nextStatusIds = new Set(this.props.category.workflow.statuses.map(s => s.statusId));
+        nextStatuses = this.props.category.workflow.statuses;
       }
-      if (nextStatusIds && nextStatusIds.size > 0) {
-        const nextStatuses: Client.IdeaStatus[] | undefined = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
-        nextStatuses && nextStatuses.forEach(s => {
-          const label: Label = {
-            label: s.name,
-            filterString: s.name,
-            value: s.statusId,
-            color: s.color,
-          };
-          nextStatusOptions.push(label);
-          if (this.state.statusId === s.statusId) {
-            nextStatusValues.push(label);
-          }
-        });
-      }
+      nextStatuses && nextStatuses.forEach(s => {
+        const label: Label = {
+          label: s.name,
+          filterString: s.name,
+          value: s.statusId,
+          color: s.color,
+        };
+        nextStatusOptions.push(label);
+        if (this.state.statusId === s.statusId) {
+          nextStatusValues.push(label);
+        }
+      });
     }
 
     return (
@@ -104,7 +104,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   disabled={this.state.isSubmitting}
                   label='Title'
                   fullWidth
-                  value={this.state.title === undefined ? this.props.idea.title : this.state.title}
+                  value={(this.state.title === undefined ? this.props.idea.title : this.state.title) || ''}
                   onChange={e => this.setState({ title: e.target.value })}
                 />
               </Grid>
@@ -115,7 +115,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   disabled={this.state.isSubmitting}
                   label='Description'
                   fullWidth
-                  value={this.state.description === undefined ? this.props.idea.description : this.state.description}
+                  value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
                   onChange={e => this.setState({ description: e.target.value })}
                   multiline
                   rows={1}
@@ -131,7 +131,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       disabled={this.state.isSubmitting}
                       label='Response'
                       fullWidth
-                      value={this.state.response === undefined ? this.props.idea.response : this.state.response}
+                      value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
                       onChange={e => this.setState({ response: e.target.value })}
                       multiline
                       rows={1}
@@ -179,7 +179,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         disabled={this.state.isSubmitting}
                         label='Funding Goal'
                         fullWidth
-                        value={this.state.fundGoal === undefined ? this.props.idea.fundGoal || '' : this.state.fundGoal}
+                        value={(this.state.fundGoal === undefined ? this.props.idea.fundGoal : this.state.fundGoal) || ''}
                         type='number'
                         inputProps={{
                           step: 1,

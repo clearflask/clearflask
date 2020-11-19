@@ -469,7 +469,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             indexUpdates.put("title", ideaUpdateAdmin.getTitle());
         }
         if (ideaUpdateAdmin.getDescription() != null) {
-            if (ideaUpdateAdmin.getTitle().isEmpty()) {
+            if (ideaUpdateAdmin.getDescription().isEmpty()) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("description").delete());
             } else {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")

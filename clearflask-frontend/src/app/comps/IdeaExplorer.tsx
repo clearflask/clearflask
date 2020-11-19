@@ -288,17 +288,23 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     );
   }
 
+  static getDerivedStateFromProps(props: React.ComponentProps<typeof IdeaExplorer>, state: State): Partial<State> | null {
+    if (state.newItemChosenCategoryId === undefined) {
+      const categoryOptions = IdeaExplorer.getCategoryOptions(props);
+      if (categoryOptions.length > 0) {
+        return {
+          newItemChosenCategoryId: categoryOptions[0].categoryId,
+        };
+      }
+    }
+    return null;
+  }
+
   renderCreate() {
     if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
-    var categoryOptions = (this.props.explorer.search.filterCategoryIds && this.props.explorer.search.filterCategoryIds.length > 0)
-      ? this.props.config.content.categories.filter(c => this.props.explorer.search.filterCategoryIds!.includes(c.categoryId))
-      : this.props.config.content.categories;
-    if (!this.props.server.isModLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
-    if (this.state.newItemChosenCategoryId === undefined && categoryOptions.length === 1) {
-      this.setState({ newItemChosenCategoryId: categoryOptions[0].categoryId })
-    }
+    const categoryOptions = IdeaExplorer.getCategoryOptions(this.props);
     const selectedCategory = categoryOptions.find(c => c.categoryId === this.state.newItemChosenCategoryId);
     const enableSubmit = this.state.newItemTitle && this.state.newItemChosenCategoryId && !this.state.newItemTagSelectHasError;
     const mandatoryTagIds = this.props.explorer.search.filterTagIds || [];
@@ -483,8 +489,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       this.setState({
         newItemTitle: undefined,
         newItemDescription: undefined,
-        newItemChosenCategoryId: undefined,
-        newItemChosenTagIds: undefined,
         newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });
@@ -559,6 +563,14 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
 
       if (await animate({ sleepInMs: 1500 })) return;
     }
+  }
+
+  static getCategoryOptions(props: React.ComponentProps<typeof IdeaExplorer>): Client.Category[] {
+    var categoryOptions = ((props.explorer.search.filterCategoryIds && props.explorer.search.filterCategoryIds.length > 0)
+      ? props.config?.content.categories.filter(c => props.explorer.search.filterCategoryIds!.includes(c.categoryId))
+      : props.config?.content.categories) || [];
+    if (!props.server.isModLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
+    return categoryOptions;
   }
 }
 
