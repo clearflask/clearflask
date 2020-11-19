@@ -333,7 +333,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 .toUser();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void userDeleteAdmin(String projectId, String userId) {
@@ -485,7 +485,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {

@@ -1,4 +1,4 @@
-import { Typography } from '@material-ui/core';
+import { Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -31,6 +31,24 @@ const styles = (theme: Theme) => createStyles({
     maxWidth: '100%',
     display: 'inline-block',
   },
+  widthExpandMargin: {
+    margin: (props: Props & WithWidthProps) => {
+      if (!props.widthExpand) {
+        return 0;
+      }
+      switch (props.width) {
+        default:
+        case 'xs':
+          return theme.spacing(0);
+        case 'sm':
+          return theme.spacing(4);
+        case 'md':
+        case 'lg':
+        case 'xl':
+          return theme.spacing(5);
+      }
+    },
+  },
 });
 
 export interface Props {
@@ -38,6 +56,7 @@ export interface Props {
   innerClassName?: string;
   server: Server;
   panel: Client.PagePanel | Client.PagePanelWithHideIfEmpty | Client.PageExplorer;
+  widthExpand?: boolean;
   displayDefaults?: Client.PostDisplay;
   searchOverride?: Partial<Client.IdeaSearch>;
   direction: Direction
@@ -53,7 +72,7 @@ interface ConnectProps {
   searchResult: SearchResult;
   searchMerged: Client.IdeaSearch;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps> {
   render() {
     var content;
     switch (this.props.searchResult.status) {
@@ -91,6 +110,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
               key={idea.ideaId}
               server={this.props.server}
               idea={idea}
+              widthExpand={this.props.widthExpand}
               expandable
               forceDisablePostExpand={this.props.forceDisablePostExpand}
               onClickPost={this.props.onClickPost}
@@ -101,6 +121,13 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           ));
         }
         break;
+    }
+    if (this.props.widthExpand) {
+      content = (
+        <div className={this.props.classes.widthExpandMargin}>
+          {content}
+        </div>
+      );
     }
     return this.props.suppressPanel ? content : (
       <Panel
@@ -125,7 +152,10 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       ideas: [],
       cursor: undefined,
     } as SearchResult,
-    searchMerged: { ...ownProps.searchOverride, ...ownProps.panel.search },
+    searchMerged: {
+      ...ownProps.panel.search,
+      ...ownProps.searchOverride,
+    },
   };
 
   const searchKey = getSearchKey(newProps.searchMerged);
@@ -156,4 +186,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(PanelPost));
+})(withWidth()(withStyles(styles, { withTheme: true })(PanelPost)));

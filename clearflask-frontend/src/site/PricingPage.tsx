@@ -66,8 +66,8 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <React.Fragment>
         <p>
-          Trial period ends when you reach {StopTrialAfterActiveUsersReaches} MAU. Your MAU count will reset
-          and you will be asked to provide a payment option if you haven't already.
+          Trial period ends when you reach {StopTrialAfterActiveUsersReaches} MAU.
+          To continue using our service, you will be asked to provide a payment option if you haven't already.
         </p>
       </React.Fragment>
     ),

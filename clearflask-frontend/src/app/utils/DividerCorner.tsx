@@ -34,6 +34,7 @@ const styles = (theme: Theme) => createStyles({
   },
   flexGrow: {
     flexGrow: 1,
+    width: '100%',
   },
   contentContainer: {
     display: 'flex',
@@ -48,11 +49,13 @@ interface Props {
   title?: string | React.ReactNode;
   header?: React.ReactNode;
   width?: string | number;
+  maxWidth?: string | number;
   height?: string | number;
   maxHeight?: string | number;
   titleRight?: string | React.ReactNode;
   headerRight?: React.ReactNode;
   widthRight?: string | number;
+  maxWidthRight?: string | number;
   heightRight?: string | number;
   maxHeightRight?: string | number;
   isExplorer?: boolean
@@ -71,6 +74,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
               width: this.props.width !== undefined
                 ? this.props.width
                 : (this.props.title || this.props.header) ? undefined : '24px',
+              maxWidth: this.props.maxWidth,
             }}>
               {this.props.title !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>
@@ -87,6 +91,7 @@ class DividerCorner extends Component<Props & WithStyles<typeof styles, true>> {
               width: this.props.widthRight !== undefined
                 ? this.props.widthRight
                 : (this.props.titleRight || this.props.headerRight) ? undefined : '24px',
+              maxWidth: this.props.maxWidthRight,
             }}>
               {this.props.titleRight !== undefined ? (
                 <Typography variant='body1' className={this.props.classes.title}>

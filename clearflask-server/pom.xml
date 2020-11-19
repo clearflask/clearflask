@@ -439,7 +439,6 @@
                                     <prefix>killbill-db:</prefix>
                                     <color>cyan</color>
                                 </log>
-                                <stopMode>kill</stopMode>
                             </run>
                         </image>
                         <image>
@@ -491,7 +490,6 @@
                                     <prefix>killbill-engine:</prefix>
                                     <color>cyan</color>
                                 </log>
-                                <stopMode>kill</stopMode>
                             </run>
                         </image>
                     </images>

@@ -87,6 +87,7 @@ export class Server {
         }
         var action = msg && msg.meta && msg.meta.action || 'unknown action';
         if (errorMsg && isUserFacing) {
+          // errorMsg already set above
         } else if (response.status && response.status === 403) {
           errorMsg = `Action not allowed, please refresh and try again`;
           isUserFacing = true;

@@ -42,7 +42,7 @@ export const PostTitleMaxLength = 100
 
 const styles = (theme: Theme) => createStyles({
   root: {
-    width: 'max-content',
+    width: 'fit-content',
     maxWidth: '100%',
   },
   content: {
@@ -183,6 +183,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             direction={Direction.Vertical}
             panel={this.props.explorer}
             searchOverride={searchOverride}
+            widthExpand
             forceDisablePostExpand={true}
             server={this.props.server}
             onClickPost={this.props.onClickPost}
@@ -210,6 +211,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             key={getSearchKey(this.props.explorer.search)}
             server={this.props.server}
             direction={Direction.Vertical}
+            widthExpand
             forceDisablePostExpand={this.props.forceDisablePostExpand}
             onClickPost={this.props.onClickPost}
             panel={this.props.explorer}

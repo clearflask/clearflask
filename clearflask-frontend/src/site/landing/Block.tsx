@@ -55,7 +55,7 @@ const styles = (theme: Theme) => createStyles({
   },
   edgeshadow: { // from edgeType prop
     boxShadow: '0px 0px 40px 0 rgba(0,0,0,0.04)',
-    width: 'max-content',
+    width: 'fit-content',
     alignSelf: 'center',
   },
   edgeoutline: { // from edgeType prop

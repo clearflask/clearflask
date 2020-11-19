@@ -247,7 +247,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new NewProjectResult(projectId, project.getVersionedConfigAdmin());
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public void projectDeleteAdmin(String projectId) {

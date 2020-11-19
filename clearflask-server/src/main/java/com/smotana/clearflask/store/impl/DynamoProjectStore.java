@@ -33,6 +33,7 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Expression;
+import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore;
@@ -357,6 +358,7 @@ public class DynamoProjectStore implements ProjectStore {
         private final VersionedConfigAdmin versionedConfigAdmin;
         private final ImmutableMap<String, ImmutableMap<String, Double>> categoryExpressionToWeight;
         private final ImmutableMap<String, Category> categories;
+        private final ImmutableMap<String, IdeaStatus> categoryIdToStatus;
 
         private ProjectImpl(ProjectModel projectModel) {
             this.accountId = projectModel.getAccountId();

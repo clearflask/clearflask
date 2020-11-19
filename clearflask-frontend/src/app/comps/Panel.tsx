@@ -48,7 +48,9 @@ class Panel extends Component<Props & WithStyles<typeof styles, true>> {
           innerClassName={this.props.innerClassName}
           title={this.props.title}
           width={this.props.direction === Direction.Vertical ? '90%' : undefined}
+          maxWidth={this.props.direction === Direction.Vertical ? 300 : undefined}
           height={this.props.direction === Direction.Horizontal ? '90%' : undefined}
+          maxHeight={this.props.direction === Direction.Horizontal ? 300 : undefined}
         >
           {content}
         </DividerCorner>

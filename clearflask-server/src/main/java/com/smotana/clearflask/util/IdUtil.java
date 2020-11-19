@@ -21,6 +21,7 @@ public class IdUtil {
 
     public static String contentUnique(String content) {
         String contentPart = StringUtils.left(content, 50)
+                .toLowerCase()
                 .replaceAll("[^0-9a-z ]+", "")
                 .replaceAll(" +", "-")
                 .trim();

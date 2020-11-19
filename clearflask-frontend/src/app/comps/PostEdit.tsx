@@ -61,10 +61,15 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
     const nextStatusValues: Label[] = [];
     const nextStatusOptions: Label[] = [];
     if (isModLoggedIn) {
+      var nextStatusIds: Set<string> | undefined;
       const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
-      const nextStatusIds: Set<string> | undefined = new Set(status?.nextStatusIds);
+      if (!!this.props.idea.statusId) {
+        nextStatusIds = new Set(status?.nextStatusIds);
+      } else {
+        nextStatusIds = new Set(this.props.category.workflow.statuses.map(s => s.statusId));
+      }
       if (nextStatusIds && nextStatusIds.size > 0) {
-        const nextStatuses: Client.IdeaStatus[] | undefined = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds.has(s.statusId)) : undefined;
+        const nextStatuses: Client.IdeaStatus[] | undefined = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
         nextStatuses && nextStatuses.forEach(s => {
           const label: Label = {
             label: s.name,

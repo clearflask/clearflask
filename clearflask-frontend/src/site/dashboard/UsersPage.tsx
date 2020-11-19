@@ -27,7 +27,7 @@ const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
-    width: 'max-content',
+    width: 'fit-content',
   },
   searchInput: {
     margin: theme.spacing(1),

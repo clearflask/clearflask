@@ -10,7 +10,22 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Category;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Hits;
+import com.smotana.clearflask.api.model.Idea;
+import com.smotana.clearflask.api.model.IdeaCreate;
+import com.smotana.clearflask.api.model.IdeaCreateAdmin;
+import com.smotana.clearflask.api.model.IdeaSearch;
+import com.smotana.clearflask.api.model.IdeaSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaSearchResponse;
+import com.smotana.clearflask.api.model.IdeaUpdate;
+import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
+import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.Workflow;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -71,6 +86,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaCreate.getTitle());
         sanitizer.content(ideaCreate.getDescription());
 
+        Project project = projectStore.getProject(projectId, true).get();
         UserModel user = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
@@ -89,7 +105,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 ideaCreate.getCategoryId(),
-                null,
+                project.getCategory(ideaCreate.getCategoryId())
+                        .map(Category::getWorkflow)
+                        .map(Workflow::getEntryStatus)
+                        .orElse(null),
                 ImmutableSet.copyOf(ideaCreate.getTagIds()),
                 0L,
                 0L,
@@ -103,7 +122,6 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         ideaStore.createIdea(ideaModel);
         ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
-        Project project = projectStore.getProject(projectId, true).get();
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
@@ -115,6 +133,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
 
+        Project project = projectStore.getProject(projectId, true).get();
         UserModel user = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         IdeaModel ideaModel = new IdeaModel(
@@ -130,7 +149,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : user.getUserId(),
                 Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : user.getName(),
                 ideaCreateAdmin.getCategoryId(),
-                ideaCreateAdmin.getStatusId(),
+                Optional.ofNullable(ideaCreateAdmin.getStatusId())
+                        .orElseGet(() -> project.getCategory(ideaCreateAdmin.getCategoryId())
+                                .map(Category::getWorkflow)
+                                .map(Workflow::getEntryStatus)
+                                .orElse(null)),
                 ImmutableSet.copyOf(ideaCreateAdmin.getTagIds()),
                 0L,
                 0L,
@@ -144,7 +167,6 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         ideaStore.createIdea(ideaModel);
         ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
-        Project project = projectStore.getProject(projectId, true).get();
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
@@ -283,7 +305,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         commentStore.deleteCommentsForIdea(projectId, ideaId);
     }
 
-    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void ideaDeleteAdmin(String projectId, String ideaId) {

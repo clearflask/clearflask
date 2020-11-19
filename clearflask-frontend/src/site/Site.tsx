@@ -146,7 +146,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                     <MenuItem
                       key={menuItem.path}
                       component={Link as any}
-                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
+                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
                       onClick={() => this.setState({ menuOpen: false })}
                     >{menuItem.title}</MenuItem>
                   ) : [(
@@ -180,7 +180,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                       key={menuItem.path}
                       className={this.props.classes.menuButton}
                       component={Link}
-                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
+                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
                     >{menuItem.title}</Button>
                   ) : (
                       <DropdownButton
@@ -200,7 +200,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
                       key={menuItem.path}
                       className={this.props.classes.menuButton}
                       component={Link}
-                      to={{pathname: menuItem.path, state: {[SCROLL_TO_STATE_KEY]: menuItem.scrollState}}}
+                      to={{ pathname: menuItem.path, state: { [SCROLL_TO_STATE_KEY]: menuItem.scrollState } }}
                     >{menuItem.title}</Button>
                   ) : (
                       <DropdownButton
@@ -218,7 +218,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
           <MuiAnimatedSwitch>
-          <Route exact path='/login'>
+            <Route exact path='/login'>
               <SetTitle title='Login' />
               <SigninPage />
             </Route>
@@ -275,7 +275,7 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
               <Grid item xs={10} sm={4} md={3} xl={2} className={this.props.classes.growAndFlex}>
                 <div className={this.props.classes.bottomHeader}>COMPANY</div>
                 <MuiLink target="_blank" href='https://www.smotana.com' className={this.props.classes.bottomItem}>Smotana</MuiLink>
-                <MuiLink href='mailto:hi@smotana.com' className={this.props.classes.bottomItem}>hi@smotana.com</MuiLink>
+                <MuiLink href='mailto:hi@clearflask.com' className={this.props.classes.bottomItem}>hi@clearflask.com</MuiLink>
                 <div className={this.props.classes.grow} />
                 <div className={this.props.classes.bottomItem}>© ClearFlask</div>
               </Grid>

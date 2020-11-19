@@ -500,19 +500,19 @@ components:
                 x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
                 type: string
               disableFunding:
-                x-clearflask-prop: { order: 4, name: 'Freeze funding', description: 'Overrides parent settings to freeze funding during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
+                x-clearflask-prop: { order: 4, name: 'Freeze funding', description: 'Overrides parent settings to freeze funding during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
               disableVoting:
-                x-clearflask-prop: { order: 5, name: 'Freeze voting', description: 'Overrides parent settings to freeze voting during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
+                x-clearflask-prop: { order: 5, name: 'Freeze voting', description: 'Overrides parent settings to freeze voting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
               disableExpressions:
-                x-clearflask-prop: { order: 5, name: 'Freeze expressions', description: 'Overrides parent settings to freeze expressions during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
+                x-clearflask-prop: { order: 5, name: 'Freeze expressions', description: 'Overrides parent settings to freeze expressions during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
               disableIdeaEdits:
-                x-clearflask-prop: { order: 6, name: 'Freeze edits by author', description: 'Overrides parent settings to disable editing of the post during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
+                x-clearflask-prop: { order: 6, name: 'Freeze edits by author', description: 'Overrides parent settings to disable editing of the post during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
               disableComments:
-                x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Unchanged', falseLabel: 'Default' }
+                x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
     tagging:
       x-clearflask-page: { order: 6, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }

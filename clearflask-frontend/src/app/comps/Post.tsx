@@ -52,7 +52,8 @@ const styles = (theme: Theme) => createStyles({
   },
   post: {
     display: 'grid',
-    maxWidth: MaxContentWidth,
+    width: (props: Props) => props.widthExpand ? MaxContentWidth : undefined,
+    maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     gridTemplateColumns: 'auto 1fr',
     gridTemplateRows: 'auto 1fr',
     gridTemplateAreas:
@@ -359,12 +360,13 @@ interface Props {
   /**
    * If true, when post is clicked,
    * variant is switched from 'list' to 'page',
-   * url is appended with /post/<postId>
+   * url is appended wZith /post/<postId>
    * and post is expanded to full screen.
    */
   expandable?: boolean;
   forceDisablePostExpand?: boolean;
   display?: Client.PostDisplay;
+  widthExpand?: boolean;
   onClickTag?: (tagId: string) => void;
   onClickCategory?: (categoryId: string) => void;
   onClickStatus?: (statusId: string) => void;

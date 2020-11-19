@@ -15,7 +15,7 @@ const styles = (theme: Theme) => createStyles({
   container: {
     display: 'inline-block',
     maxWidth: 1024,
-    width: 'max-content',
+    width: 'fit-content',
   },
   board: {
     display: 'flex',
@@ -144,6 +144,7 @@ class IdeaExplorerAdmin extends Component<Props & ConnectProps & WithStyles<type
           maxHeight={vh(80)}
           direction={Direction.Vertical}
           panel={panel}
+          widthExpand
           searchOverride={searchOverride}
           server={this.props.server}
           displayDefaults={displayDefaults}

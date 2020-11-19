@@ -43,7 +43,7 @@ export const BillingPaymentActionRedirectPath = 'billing-redirect';
 const styles = (theme: Theme) => createStyles({
   page: {
     maxWidth: 1024,
-    width: 'max-content',
+    width: 'fit-content',
   },
   plan: {
     margin: theme.spacing(2, 6, 2),

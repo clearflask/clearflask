@@ -33,6 +33,11 @@ const styles = (theme: Theme) => createStyles({
   singlePanel: {
     minWidth: '256px',
   },
+  boardContainer: {
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    width: 'fit-content',
+  },
   board: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -45,7 +50,7 @@ const styles = (theme: Theme) => createStyles({
     paddingLeft: theme.spacing(2),
   },
   boardPanel: {
-    flex: '1 1 100px',
+    flex: '0 1 100px',
     paddingTop: theme.spacing(3),
     paddingLeft: theme.spacing(2),
   },
@@ -161,7 +166,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         if (board.title) {
           boardCmpt = (
             <DividerCorner
-              className={this.props.classes.spacing}
+              className={classNames(this.props.classes.boardContainer, this.props.classes.spacing)}
               title={board.title}
               height='100%'
               maxHeight={120}
@@ -173,7 +178,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
           );
         } else {
           boardCmpt = (
-            <div className={classNames(this.props.classes.board, this.props.classes.spacing)}>
+            <div className={classNames(this.props.classes.boardContainer, this.props.classes.board, this.props.classes.spacing)}>
               {panels}
             </div>
           );
