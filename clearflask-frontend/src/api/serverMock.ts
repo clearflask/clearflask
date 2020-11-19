@@ -461,7 +461,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           case Admin.IdeaSearchSortByEnum.New: return r.created.getTime() - l.created.getTime();
         }
       }])
-      , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor));
+      , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
     return this.ideaUpdateAdmin({

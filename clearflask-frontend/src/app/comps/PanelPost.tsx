@@ -22,7 +22,7 @@ interface SearchResult {
 }
 
 const styles = (theme: Theme) => createStyles({
-  nothing: {
+  placeholder: {
     padding: theme.spacing(4),
     color: theme.palette.text.secondary,
     margin: theme.spacing(0.5),
@@ -79,20 +79,24 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       default:
       case Status.REJECTED:
         content = (
-          <ErrorMsg msg='Failed to load' />
+          <div className={this.props.classes.placeholder}>
+            <ErrorMsg msg='Failed to load' />
+          </div>
         );
         break;
       case Status.PENDING:
         if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
         content = (
-          <Loading />
+          <div className={this.props.classes.placeholder}>
+            <Loading />
+          </div>
         );
         break;
       case Status.FULFILLED:
         if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
         if (this.props.searchResult.ideas.length === 0) {
           content = (
-            <Typography variant='overline' className={this.props.classes.nothing}>Nothing found</Typography>
+            <Typography variant='overline' className={this.props.classes.placeholder}>Nothing found</Typography>
           )
         } else {
           const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
