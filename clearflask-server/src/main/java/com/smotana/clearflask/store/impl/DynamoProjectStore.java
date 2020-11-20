@@ -239,31 +239,33 @@ public class DynamoProjectStore implements ProjectStore {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
             }
         }
-        PutItemSpec putItemSpec = new PutItemSpec()
-                .withItem(projectSchema.toItem(new ProjectModel(
-                        project.getAccountId(),
-                        projectId,
-                        versionedConfigAdmin.getVersion(),
-                        versionedConfigAdmin.getConfig().getSchemaVersion(),
-                        gson.toJson(versionedConfigAdmin.getConfig()))));
-        previousVersionOpt.ifPresent(previousVersion -> putItemSpec
-                .withConditionExpression("version = :previousVersion")
-                .withValueMap(Map.of(":previousVersion", previousVersion)));
         try {
+            PutItemSpec putItemSpec = new PutItemSpec()
+                    .withItem(projectSchema.toItem(new ProjectModel(
+                            project.getAccountId(),
+                            projectId,
+                            versionedConfigAdmin.getVersion(),
+                            versionedConfigAdmin.getConfig().getSchemaVersion(),
+                            gson.toJson(versionedConfigAdmin.getConfig()))));
+            previousVersionOpt.ifPresent(previousVersion -> putItemSpec
+                    .withConditionExpression("version = :previousVersion")
+                    .withValueMap(Map.of(":previousVersion", previousVersion)));
             projectSchema.table().putItem(putItemSpec);
         } catch (ConditionalCheckFailedException ex) {
-            // Undo creating slug just now
-            slugSchema.table()
-                    .deleteItem(new DeleteItemSpec()
-                            .withConditionExpression("attribute_exists(#partitionKey) AND #projectId = :projectId")
-                            .withNameMap(Map.of(
-                                    "#partitionKey", slugSchema.partitionKeyName(),
-                                    "#projectId", "projectId"))
-                            .withValueMap(Map.of(
-                                    ":projectId", projectId))
-                            .withPrimaryKey(slugSchema.primaryKey(ImmutableMap.of(
-                                    "slug", slug))));
-            slugCache.invalidate(slug);
+            if (updateSlug) {
+                // Undo creating slug just now
+                slugSchema.table()
+                        .deleteItem(new DeleteItemSpec()
+                                .withConditionExpression("attribute_exists(#partitionKey) AND #projectId = :projectId")
+                                .withNameMap(Map.of(
+                                        "#partitionKey", slugSchema.partitionKeyName(),
+                                        "#projectId", "projectId"))
+                                .withValueMap(Map.of(
+                                        ":projectId", projectId))
+                                .withPrimaryKey(slugSchema.primaryKey(ImmutableMap.of(
+                                        "slug", slug))));
+                slugCache.invalidate(slug);
+            }
             throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
         }
         if (updateSlug) {

@@ -23,7 +23,7 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 public class Sanitizer {
 
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback", innerType = String.class)
         Set<String> reservedSubdomains();
     }
 
@@ -35,9 +35,11 @@ public class Sanitizer {
     private static final long CONTENT_MAX_LENGTH = 10_000;
     private static final long NAME_MAX_LENGTH = 30;
     /** If changed, also change in api-project.yaml */
+    private static final long SUBDOMAIN_MIN_LENGTH = 1;
+    /** If changed, also change in api-project.yaml */
     private static final long SUBDOMAIN_MAX_LENGTH = 30;
     /** If changed, also change in api-project.yaml */
-    private static final String SUBDOMAIN_REGEX = "^[A-Za-z0-9](?:[A-Za-z0-9\\-]{0,28}[A-Za-z0-9])?$";
+    private static final String SUBDOMAIN_REGEX = "^[A-Za-z0-9](?:[A-Za-z0-9\\-]*[A-Za-z0-9])?$";
     private static final long SEARCH_TEXT_MAX_LENGTH = 200;
 
     private final Predicate<String> subdomainPredicate;
@@ -89,11 +91,14 @@ public class Sanitizer {
     }
 
     public void subdomain(String slug) {
+        if (slug.length() < SUBDOMAIN_MIN_LENGTH) {
+            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too short, must be at least " + SUBDOMAIN_MIN_LENGTH + " character(s)");
+        }
         if (slug.length() > SUBDOMAIN_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");
         }
         if (!subdomainPredicate.test(slug)) {
-            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain can only contain lowercase letters and numbers");
+            throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain can only contain lowercase letters, numbers and dashes in the middle");
         }
 
         if (config.reservedSubdomains().contains(slug)) {

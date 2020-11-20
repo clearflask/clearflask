@@ -19,7 +19,6 @@ import com.smotana.clearflask.api.SupportApi;
 import com.smotana.clearflask.api.model.SupportMessage;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.Application;
@@ -27,7 +26,6 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
@@ -86,7 +84,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAccountSessionOpt);
         String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
         String emailDisplayName = config.emailDisplayName();
-        if(!Strings.isNullOrEmpty(emailDisplayName)) {
+        if (!Strings.isNullOrEmpty(emailDisplayName)) {
             fromEmailAddress = emailDisplayName + " <" + fromEmailAddress + ">";
         }
         try {
@@ -113,7 +111,11 @@ public class SupportResource extends AbstractResource implements SupportApi {
 
     private Optional<String> generateReplyTo(SupportMessage supportMessage) {
         Optional<String> replyToOpt = Optional.ofNullable(supportMessage.getContent().get(CONTACT_FIELD));
-        replyToOpt.ifPresent(sanitizer::email);
+        try {
+            replyToOpt.ifPresent(sanitizer::email);
+        } catch (ErrorWithMessageException ex) {
+            return Optional.empty();
+        }
         return replyToOpt;
     }
 

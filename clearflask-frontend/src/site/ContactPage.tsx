@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Route, RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
+import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Message from '../common/Message';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
@@ -27,7 +28,12 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
   },
   field: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(2, 2, 0),
+  },
+  submitButton: {
+    margin: theme.spacing(1, 5),
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
   box: {
     border: '1px solid ' + theme.palette.grey[300],
@@ -78,7 +84,7 @@ const forms: ContactForm[] = [
     hideFromMainPage: true,
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
-      { attrName: 'appointment', type: 'datetime', title: 'When are you free?', required: false },
+      { attrName: 'appointment', type: 'datetime', title: 'When are you available?', required: false },
       { attrName: CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
     ],
   },
@@ -122,6 +128,7 @@ const forms: ContactForm[] = [
 interface Props {
 }
 interface ConnectProps {
+  accountStatus?: Status;
   accountEmail?: string;
 }
 interface State {
@@ -134,6 +141,11 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
     super(props);
 
     this.state = {};
+
+    if (props.accountStatus === undefined) {
+      ServerAdmin.get(props.forceMock).dispatchAdmin()
+        .then(d => d.accountBindAdmin({}));
+    }
 
     forms.forEach(form => form.imagePath && preloadImage(form.imagePath));
   }
@@ -203,6 +215,8 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                                   <DateTimePicker
                                     disablePast
                                     variant='inline'
+                                    inputVariant='outlined'
+                                    size='small'
                                     views={['date', 'hours']}
                                     ampm={false}
                                     disableToolbar
@@ -234,6 +248,8 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                           />
                         ) : (
                             <TextField
+                              variant='outlined'
+                              size='small'
                               className={this.props.classes.field}
                               disabled={this.state.isSubmitting}
                               label={field.title}
@@ -247,7 +263,8 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                             />
                           )))}
                         <SubmitButton
-                          className={this.props.classes.field}
+                          wrapperClassName={this.props.classes.submitButton}
+                          color='primary'
                           isSubmitting={this.state.isSubmitting}
                           disabled={form.fields.some(field => field.required
                             && !this.state[`field_${form.type}_${field.attrName}`]
@@ -330,6 +347,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const connectProps: ConnectProps = {
+    accountStatus: state.account.account.status,
     accountEmail: state.account.account.account?.email,
   };
   return connectProps;
