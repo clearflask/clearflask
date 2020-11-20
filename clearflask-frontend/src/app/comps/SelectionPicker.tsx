@@ -143,6 +143,7 @@ interface Props {
   popupColumnWidth?: number;
   PopperProps?: Partial<React.ComponentProps<typeof Popper>>;
   clearOnBlur?: boolean;
+  disableClearOnValueChange?: boolean;
 
   // Below props are for backwards compatibility, use TextFieldProps instead
   label?: string;
@@ -209,15 +210,18 @@ class SelectionPicker extends Component<Props & WithStyles<typeof styles, true>,
           if (createLabel) {
             reason = 'create-option';
             val = createLabel.value;
-            onInputChange(undefined, '', 'clear');
           }
 
           if (reason === 'create-option') {
             this.props.onValueCreate && this.props.onValueCreate(val as any as string);
+            onInputChange(undefined, '', 'clear');
           } else if (reason === 'clear' || reason === 'blur') {
             this.props.onValueChange([]);
           } else if (reason === 'select-option' || reason === 'remove-option') {
             this.props.onValueChange(!val ? [] : (this.props.isMulti ? val as Label[] : [val as Label]));
+            if (!this.props.disableClearOnValueChange) {
+              onInputChange(undefined, '', 'clear');
+            }
           }
         }}
         disableCloseOnSelect={this.props.disableCloseOnSelect}

@@ -33,6 +33,7 @@ const styles = (theme: Theme) => createStyles({
   content: {
     gridArea: 'c',
     alignSelf: 'end',
+    minWidth: 0,
   },
   votingControl: {
     gridArea: 'v',
@@ -49,6 +50,7 @@ const styles = (theme: Theme) => createStyles({
   },
   footer: {
     gridArea: 'f',
+    minWidth: 0,
   },
   clickable: {
     '&:hover': {

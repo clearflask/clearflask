@@ -234,6 +234,7 @@ class UsersPage extends Component<Props & WithMediaQuery & ConnectProps & WithSt
               showTags={false}
               disableFilter
               disableCloseOnSelect
+              disableClearOnValueChange
               value={searchOptions.selected}
               formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
               popupColumnCount={3}

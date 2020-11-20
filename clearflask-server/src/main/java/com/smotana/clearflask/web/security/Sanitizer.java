@@ -23,7 +23,7 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 public class Sanitizer {
 
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api", innerType = String.class)
         Set<String> reservedSubdomains();
     }
 

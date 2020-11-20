@@ -24,6 +24,7 @@ const styles = (theme: Theme) => createStyles({
     transition: (props: Props) => theme.transitions.create('height', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },
   titleContainer: {
+    flexShrink: 0,
     display: 'inline-block',
     transition: (props: Props) => theme.transitions.create('width', props.isExplorer ? { duration: theme.explorerExpandTimeout } : undefined),
   },

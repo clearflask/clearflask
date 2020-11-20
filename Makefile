@@ -128,14 +128,14 @@ deploy-war: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
 
 deploy-static: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude manifest.json
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=600" --exclude "*" --include index.html --include service-worker.js --include sw.js --include manifest.json
+	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
+	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=600" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
 
 deploy-rotate-instances:
 	aws autoscaling start-instance-refresh --auto-scaling-group-name clearflask-server
 
 deploy-cloudfront-invalidate:
-	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /manifest.json
+	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
 
 deploy-cloudfront-invalidate-all:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths "/*"

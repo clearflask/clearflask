@@ -373,7 +373,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSearchText())) {
             query.should(QueryBuilders.multiMatchQuery(ideaSearchAdmin.getSearchText(),
                     "title", "description", "response")
-                    .field("title", 3f)
+                    .field("title", 6f)
+                    .field("description", 2f)
                     .fuzziness("AUTO")
                     .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
         }

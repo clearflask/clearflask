@@ -27,8 +27,9 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.secondary,
     margin: theme.spacing(0.5),
     boxSizing: 'border-box',
-    width: MaxContentWidth,
-    maxWidth: '100%',
+    minWidth: 300,
+    width: (props: Props) => props.widthExpand ? MaxContentWidth : '100%',
+    maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
     display: 'inline-block',
   },
   widthExpandMargin: {

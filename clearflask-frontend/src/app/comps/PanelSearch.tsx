@@ -109,6 +109,7 @@ class PanelSearch extends Component<Props & ConnectProps & WithStyles<typeof sty
             showTags={false}
             disableFilter
             disableCloseOnSelect
+            disableClearOnValueChange
             onValueChange={labels => this.onValueChange(labels)}
             formatHeader={inputValue => !!inputValue ? `Searching for "${inputValue}"` : `Type to search`}
             dropdownIcon={FilterIcon}

@@ -28,8 +28,8 @@ export function mock(): Promise<any> {
           versionLast: project.config.version,
           configAdmin: editor.getConfig(),
         })
-        .then(() => DataMock.get(project.projectId).mockAll())
-        .then(() => { if (window.location.hash && window.location.hash.substring(1) === 'latency') ServerMock.get().setLatency(true) })));
+          .then(() => DataMock.get(project.projectId).mockAll())
+          .then(() => { if (window.location.hash && window.location.hash.substring(1) === 'latency') ServerMock.get().setLatency(true) })));
   } else {
     return Promise.resolve();
   }

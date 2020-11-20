@@ -56,7 +56,7 @@ components:
         users:
           $ref: 'api-project.yaml#/components/schemas/users'
     credits:
-      x-clearflask-page: { order: 2, name: 'Credit System', description: 'Enable funding using virtual credits' }
+      x-clearflask-page: { order: 2, name: 'Credit System', description: 'Enable funding using virtual credits. We highly recommend starting with one of our templates below.' }
       title: CreditFormatter
       type: object
       required:

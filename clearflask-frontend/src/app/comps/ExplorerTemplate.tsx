@@ -16,7 +16,7 @@ const styles = (theme: Theme) => createStyles({
         + " 'cc r'",
     },
     [theme.breakpoints.down('xs')]: {
-      gridTemplateColumns: '100%',
+      gridTemplateColumns: '1fr',
       gridTemplateRows: 'auto auto auto',
       gridTemplateAreas:
         "'t'"
@@ -29,9 +29,11 @@ const styles = (theme: Theme) => createStyles({
     alignSelf: 'end',
     display: 'flex',
     alignItems: 'flex-end',
+    minWidth: 0,
   },
   results: {
     gridArea: 'r',
+    minWidth: 0,
   },
   search: {
     flexGrow: 1,
@@ -58,6 +60,7 @@ const styles = (theme: Theme) => createStyles({
     gridArea: 'cc',
     transition: theme.transitions.create(['max-width', 'width'], { duration: theme.explorerExpandTimeout }),
     maxWidth: '100vw',
+    minWidth: 0,
   },
 });
 interface Props {

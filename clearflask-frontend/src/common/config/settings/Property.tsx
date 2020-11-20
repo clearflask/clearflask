@@ -163,7 +163,8 @@ export default class Property extends Component<Props> {
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
-            multiline={prop.subType === ConfigEditor.PropSubType.Multiline}
+            multiline={prop.subType === ConfigEditor.PropSubType.Multiline
+              || prop.subType === ConfigEditor.PropSubType.Rich}
             type={fieldType}
             InputLabelProps={{
               shrink: shrink,
@@ -386,7 +387,8 @@ export default class Property extends Component<Props> {
               errorMsg={prop.errorMsg}
               value={values}
               options={options}
-              isMulti={true}
+              isMulti
+              clearOnBlur
               width={this.props.width || 'max-content'}
               minWidth={Property.inputMinWidth}
               onValueChange={labels => prop

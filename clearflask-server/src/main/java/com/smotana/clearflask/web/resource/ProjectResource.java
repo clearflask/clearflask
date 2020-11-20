@@ -209,7 +209,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public VersionedConfigAdmin configSetAdmin(String projectId, ConfigAdmin configAdmin, String versionLast) {
-        sanitizer.subdomain(configAdmin.getSlug());
+        // Do not sanitize subdomain here, it will be sanitized in ProjectStore.
+        // This allows people with restricted subdomains to continue using them.
+        //
+        // Amount of times I've made this mistake and rolled it back:   2
+        //
+
         AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
         Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
         planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), configAdmin);

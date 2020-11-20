@@ -66,15 +66,18 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     margin: theme.spacing(1),
+    minWidth: 0,
   },
   postVoting: {
     gridArea: 'v',
   },
   postFunding: {
     gridArea: 'f',
+    minWidth: 0,
   },
   postComments: {
     gridArea: 'o',
+    minWidth: 0,
   },
   votingControl: {
     margin: theme.spacing(0, 0, 0, 0.5),
@@ -203,7 +206,9 @@ const styles = (theme: Theme) => createStyles({
   },
   expression: {
     filter: theme.expressionGrayscale ? `grayscale(${theme.expressionGrayscale}%)` : undefined,
-    lineHeight: 1.15,
+    // Somehow commenting this centers the expression and count.
+    // If something else becomes wonky, explore further later...
+    // lineHeight: 1.15,
     fontSize: '1em',
     display: 'inline-block',
     width: 16,
