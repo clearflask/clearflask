@@ -19,20 +19,13 @@ import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
-import com.smotana.clearflask.api.model.CommentCreate;
-import com.smotana.clearflask.api.model.CommentVoteUpdate;
-import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
-import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaVoteUpdate;
-import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
@@ -97,7 +90,6 @@ import javax.ws.rs.core.MediaType;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.*;
 
@@ -131,7 +123,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected Gson gson;
 
-    private long userNumber = 0L;
+    protected long userNumber = 0L;
 
     @Override
     protected void configure() {
@@ -331,20 +323,11 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 .email("john-" + newUserNumber + "@example.com")
                 .build())
                 .getUser();
-        IdeaWithVote idea1 = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+        IdeaWithVote idea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
                 .authorUserId(user.getUserId())
-                .title("Add dark mode " + IdUtil.randomId())
+                .title("Add dark mode")
                 .categoryId(configAdmin.getContent().getCategories().get(0).getCategoryId())
                 .tagIds(ImmutableList.of())
-                .build());
-        IdeaVoteUpdateResponse idea1vote1 = voteResource.ideaVoteUpdate(projectId, idea1.getIdeaId(), IdeaVoteUpdate.builder()
-                .vote(VoteOption.UPVOTE)
-                .build());
-        CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
-                .content(textToMockDraftjs("I like this " + IdUtil.randomId()))
-                .build());
-        CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
-                .vote(VoteOption.DOWNVOTE)
                 .build());
         return user;
     }

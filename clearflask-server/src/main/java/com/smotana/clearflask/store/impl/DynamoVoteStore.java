@@ -243,6 +243,7 @@ public class DynamoVoteStore implements VoteStore {
         valueMap.put(":expressions", expressions);
         String updateExpression = expressSchemaByUser.upsertExpression(new ExpressModel(userId, projectId, targetId, ImmutableSet.of()), nameMap, valueMap,
                 ImmutableSet.of("expressions"), (isAdd ? " ADD " : " DELETE ") + " #expressions :expressions");
+        log.trace("ExpressMulti expression: {}", updateExpression);
         return Optional.ofNullable(expressSchemaByUser.fromItem(expressSchemaByUser.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(expressSchemaByUser.primaryKey(Map.of(
                         "userId", userId,
@@ -376,6 +377,7 @@ public class DynamoVoteStore implements VoteStore {
         }
         String updateExpression = fundSchemaByUser.upsertExpression(new FundModel(userId, projectId, targetId, 0L), nameMap, valueMap,
                 ImmutableSet.of("fundAmount"), ", #fundAmount = if_not_exists(#fundAmount, :zero) + :fundDiff");
+        log.trace("Fund expression: {}", updateExpression);
         long fundAmountPrevious = Optional.ofNullable(fundSchemaByUser.fromItem(fundSchemaByUser.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(fundSchemaByUser.primaryKey(Map.of(
                         "userId", userId,

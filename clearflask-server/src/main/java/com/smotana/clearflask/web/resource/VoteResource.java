@@ -36,6 +36,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.FundModel;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
@@ -88,7 +89,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
                         .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
                 .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, voteModel -> VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
+                .map(m -> Maps.transformValues(m, voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
                 .orElse(Map.of());
 
         return new CommentVoteGetOwnResponse(votesByCommentId);
@@ -102,7 +103,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
                 .map(UserSession::getUserId).orElseThrow(BadRequestException::new);
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
 
-        VoteStore.VoteValue vote = VoteStore.VoteValue.fromVoteOption(commentVoteUpdate.getVote());
+        VoteValue vote = VoteValue.fromVoteOption(commentVoteUpdate.getVote());
         CommentModel comment = commentStore.voteComment(projectId, ideaId, commentId, userId, vote)
                 .getCommentModel();
 
@@ -126,7 +127,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
                         .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
                 .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, voteModel -> VoteStore.VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
+                .map(m -> Maps.transformValues(m, voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
                 .orElse(Map.of());
 
         Map<String, List<String>> expressionByIdeaId = Optional.ofNullable(user.getExpressBloom())
@@ -164,13 +165,21 @@ public class VoteResource extends AbstractResource implements VoteApi {
 
         Optional<VoteOption> voteOptionOpt = Optional.empty();
         if (voteUpdate.getVote() != null) {
-            idea = ideaStore.voteIdea(projectId, ideaId, userId, VoteStore.VoteValue.fromVoteOption(voteUpdate.getVote()))
+            VoteValue voteValue = VoteValue.fromVoteOption(voteUpdate.getVote());
+            if (!project.isVotingAllowed(voteValue, idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Voting not allowed");
+            }
+            idea = ideaStore.voteIdea(projectId, ideaId, userId, voteValue)
                     .getIdea();
             voteOptionOpt = Optional.of(voteUpdate.getVote());
         }
 
         Optional<ImmutableSet<String>> expressionOpt = Optional.empty();
         if (voteUpdate.getExpressions() != null) {
+            if (!project.isExpressingAllowed(idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Expressions not allowed");
+            }
+
             String categoryId = idea.getCategoryId();
             Expressing expressing = project.getCategory(categoryId)
                     .orElseThrow(BadRequestException::new)
@@ -184,12 +193,15 @@ public class VoteResource extends AbstractResource implements VoteApi {
             }
 
             IdeaAndExpressionsAndIndexingFuture result;
-            if (expressing.getLimitEmojiPerIdea() == Boolean.TRUE) {
+            boolean actionIsSetOrUnset = (voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.SET
+                    || voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.UNSET);
+            boolean actionIsSetOrAdd = (voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.SET
+                    || voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.ADD);
+            if (actionIsSetOrUnset || expressing.getLimitEmojiPerIdea() == Boolean.TRUE) {
                 result = ideaStore.expressIdeaSet(projectId, ideaId, userId,
                         e -> project.getCategoryExpressionWeight(categoryId, e),
-                        voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.ADD
-                                ? Optional.of(voteUpdate.getExpressions().getExpression()) : Optional.empty());
-            } else if (voteUpdate.getExpressions().getAction() == IdeaVoteUpdateExpressions.ActionEnum.ADD) {
+                        actionIsSetOrAdd ? Optional.of(voteUpdate.getExpressions().getExpression()) : Optional.empty());
+            } else if (actionIsSetOrAdd) {
                 result = ideaStore.expressIdeaAdd(projectId, ideaId, userId,
                         e -> project.getCategoryExpressionWeight(categoryId, e),
                         voteUpdate.getExpressions().getExpression());
@@ -206,6 +218,9 @@ public class VoteResource extends AbstractResource implements VoteApi {
         Optional<Transaction> transactionOpt = Optional.empty();
         Optional<Balance> balanceOpt = Optional.empty();
         if (voteUpdate.getFundDiff() != null && voteUpdate.getFundDiff() != 0L) {
+            if (!project.isFundingAllowed(idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Funding not allowed");
+            }
             String transactionType = TransactionType.VOTE.name().toLowerCase();
             String summary = "Funding for " + StringUtils.abbreviate(idea.getTitle(), 40);
             UserStore.UserAndIndexingFuture<UpdateResponse> updateUserBalanceResponse;
@@ -224,6 +239,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
             balanceOpt = Optional.of(updateUserBalanceResponse.getUser().toBalance());
             transactionOpt = Optional.of(fundIdeaResponse.getTransaction().toTransaction());
             fundAmountOpt = Optional.of(fundIdeaResponse.getIdeaFundAmount());
+            idea = fundIdeaResponse.getIdea();
         }
 
         billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);

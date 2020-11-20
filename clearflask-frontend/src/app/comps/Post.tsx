@@ -548,9 +548,10 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderCommentCount(variant: PostVariant) {
-    if (this.props.display && this.props.display.showCommentCount === false
+    if (this.props.display?.showCommentCount === false
       || variant === 'page'
       || !this.props.idea
+      || (this.props.display?.showCommentCount === undefined && !this.props.idea.commentCount)
       || !this.props.category
       || !this.props.category.support.comment) return null;
 

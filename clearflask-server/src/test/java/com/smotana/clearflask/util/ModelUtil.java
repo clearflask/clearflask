@@ -7,6 +7,7 @@ import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Content;
 import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Flow;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.Layout;
@@ -19,6 +20,7 @@ import com.smotana.clearflask.api.model.Tagging;
 import com.smotana.clearflask.api.model.Typography;
 import com.smotana.clearflask.api.model.Users;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.Voting;
 import com.smotana.clearflask.api.model.Workflow;
 
 public class ModelUtil {
@@ -44,7 +46,7 @@ public class ModelUtil {
                         new Workflow(null, ImmutableList.of(
                                 new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false)
                         )),
-                        new Support(false, null, null, true),
+                        new Support(true, new Voting(true), new Expressing(true, null), true),
                         new Tagging(ImmutableList.of(), ImmutableList.of())))),
                 new Style(
                         new Flow(true),

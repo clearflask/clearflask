@@ -688,16 +688,19 @@ public class DynamoElasticUserStore implements UserStore {
 
         Optional<String> conditionExpressionOpt = Optional.empty();
         if (balanceDiff < 0L) {
-            conditionExpressionOpt = Optional.of("#balance + :balanceDiff >= :zero");
+            valMap.put(":balanceDiffAbs", Math.abs(balanceDiff));
+            conditionExpressionOpt = Optional.of("#balance >= :balanceDiffAbs");
         }
 
+        String updateExpression = "SET " + String.join(", ", setUpdates);
+        log.trace("updateUserBalance expression: {}", updateExpression);
         UserModel userModel;
         try {
             userModel = userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
                     .withPrimaryKey(userSchema.primaryKey(Map.of(
                             "projectId", projectId,
                             "userId", userId)))
-                    .withUpdateExpression("SET " + String.join(", ", setUpdates))
+                    .withUpdateExpression(updateExpression)
                     .withConditionExpression(conditionExpressionOpt.orElse(null))
                     .withNameMap(nameMap)
                     .withValueMap(valMap)

@@ -2,8 +2,10 @@ package com.smotana.clearflask.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.Category;
+import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import lombok.AllArgsConstructor;
@@ -52,6 +54,14 @@ public interface ProjectStore {
         double getCategoryExpressionWeight(String categoryId, String expression);
 
         Optional<Category> getCategory(String categoryId);
+
+        Optional<IdeaStatus> getStatus(String categoryId, String statusId);
+
+        boolean isVotingAllowed(VoteValue voteValue, String categoryId, Optional<String> statusIdOpt);
+
+        boolean isExpressingAllowed(String categoryId, Optional<String> statusIdOpt);
+
+        boolean isFundingAllowed(String categoryId, Optional<String> statusIdOpt);
     }
 
     @Value

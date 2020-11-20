@@ -14,7 +14,7 @@ public class TestUtil {
 
     public static void retry(Assertable assertable) throws Exception {
         RetryerBuilder.newBuilder()
-                .withStopStrategy(StopStrategies.stopAfterDelay(10, TimeUnit.SECONDS))
+                .withStopStrategy(StopStrategies.stopAfterDelay(30, TimeUnit.SECONDS))
                 .withWaitStrategy(WaitStrategies.exponentialWait())
                 .retryIfExceptionOfType(Throwable.class)
                 .build()

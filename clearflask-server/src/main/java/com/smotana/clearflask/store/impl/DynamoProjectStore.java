@@ -32,10 +32,14 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Expression;
+import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.Voting;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DynamoUtil;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
@@ -359,6 +363,7 @@ public class DynamoProjectStore implements ProjectStore {
         private final VersionedConfigAdmin versionedConfigAdmin;
         private final ImmutableMap<String, ImmutableMap<String, Double>> categoryExpressionToWeight;
         private final ImmutableMap<String, Category> categories;
+        private final ImmutableMap<String, IdeaStatus> statuses;
 
         private ProjectImpl(ProjectModel projectModel) {
             this.accountId = projectModel.getAccountId();
@@ -379,6 +384,16 @@ public class DynamoProjectStore implements ProjectStore {
                     .collect(ImmutableMap.toImmutableMap(
                             Category::getCategoryId,
                             c -> c));
+
+            ImmutableMap.Builder<String, IdeaStatus> statusesBuilder = ImmutableMap.builder();
+            this.versionedConfig.getConfig().getContent().getCategories().forEach(category ->
+                    category.getWorkflow().getStatuses().forEach(status ->
+                            statusesBuilder.put(
+                                    getStatusLookupKey(
+                                            category.getCategoryId(),
+                                            status.getStatusId()),
+                                    status)));
+            this.statuses = statusesBuilder.build();
         }
 
         @Override
@@ -416,6 +431,80 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public Optional<Category> getCategory(String categoryId) {
             return Optional.ofNullable(categories.get(categoryId));
+        }
+
+        @Override
+        public Optional<IdeaStatus> getStatus(String categoryId, String statusId) {
+            return Optional.ofNullable(this.statuses.get(getStatusLookupKey(categoryId, statusId)));
+        }
+
+        @Override
+        public boolean isVotingAllowed(VoteValue voteValue, String categoryId, Optional<String> statusIdOpt) {
+            Optional<Voting> votingOpt = Optional.ofNullable(getCategory(categoryId)
+                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .getSupport()
+                    .getVote());
+            if (!votingOpt.isPresent()) {
+                return false;
+            } else if (voteValue == VoteValue.Upvote && votingOpt.get().getEnableDownvotes() != Boolean.TRUE) {
+                return false;
+            }
+
+            if (statusIdOpt.isPresent()) {
+                IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
+                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                if (status.getDisableVoting() == Boolean.TRUE) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isExpressingAllowed(String categoryId, Optional<String> statusIdOpt) {
+            Optional<Expressing> expressOpt = Optional.ofNullable(getCategory(categoryId)
+                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .getSupport()
+                    .getExpress());
+            if (!expressOpt.isPresent()) {
+                return false;
+            }
+
+            if (statusIdOpt.isPresent()) {
+                IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
+                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                if (status.getDisableExpressions() == Boolean.TRUE) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isFundingAllowed(String categoryId, Optional<String> statusIdOpt) {
+            boolean fundAllowed = getCategory(categoryId)
+                    .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))
+                    .getSupport()
+                    .getFund();
+            if (!fundAllowed) {
+                return false;
+            }
+
+            if (statusIdOpt.isPresent()) {
+                IdeaStatus status = getStatus(categoryId, statusIdOpt.get())
+                        .orElseThrow(() -> new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find status"));
+                if (status.getDisableFunding() == Boolean.TRUE) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private String getStatusLookupKey(String categoryId, String statusId) {
+            return categoryId + ":" + statusId;
         }
     }
 

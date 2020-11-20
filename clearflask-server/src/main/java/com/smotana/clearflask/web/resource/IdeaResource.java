@@ -121,7 +121,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableMap.of(),
                 0d);
         ideaStore.createIdea(ideaModel);
-        ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
+        if (project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()))) {
+            ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
+        }
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }
@@ -166,7 +168,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableMap.of(),
                 0d);
         ideaStore.createIdea(ideaModel);
-        ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
+
+        if (project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()))) {
+            ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
+        }
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
         return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
     }

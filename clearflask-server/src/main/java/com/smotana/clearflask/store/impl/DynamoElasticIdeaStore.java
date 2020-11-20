@@ -560,6 +560,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         String updateExpression = "SET " + String.join(", ", setUpdates);
+        log.trace("VoteIdea expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
@@ -637,11 +638,13 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         if (expressionsValueDiff != 0d) {
+            nameMap.put("#expressionsValue", "expressionsValue");
             valMap.put(":expValDiff", Math.abs(expressionsValueDiff));
-            setUpdates.add("expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionsValueDiff > 0 ? "+" : "-") + " :expValDiff");
+            setUpdates.add("#expressionsValue = if_not_exists(#expressionsValue, :zero) " + (expressionsValueDiff > 0 ? "+" : "-") + " :expValDiff");
         }
 
         String updateExpression = "SET " + String.join(", ", setUpdates);
+        log.trace("ExpressIdeaSet expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
@@ -774,6 +777,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
         }
 
         String updateExpression = "SET " + String.join(", ", setUpdates);
+        log.trace("FundIdea expression: {}", updateExpression);
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(new UpdateItemSpec()
                 .withPrimaryKey(ideaSchema.primaryKey(Map.of(
