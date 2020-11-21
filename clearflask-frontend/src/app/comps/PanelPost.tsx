@@ -1,5 +1,6 @@
 import { Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
@@ -25,7 +26,6 @@ const styles = (theme: Theme) => createStyles({
   placeholder: {
     padding: theme.spacing(4),
     color: theme.palette.text.secondary,
-    margin: theme.spacing(0.5),
     boxSizing: 'border-box',
     minWidth: 300,
     width: (props: Props) => props.widthExpand ? MaxContentWidth : '100%',
@@ -33,21 +33,14 @@ const styles = (theme: Theme) => createStyles({
     display: 'inline-block',
   },
   widthExpandMargin: {
-    margin: (props: Props & WithWidthProps) => {
-      if (!props.widthExpand) {
-        return 0;
-      }
-      switch (props.width) {
-        default:
-        case 'xs':
-          return theme.spacing(0);
-        case 'sm':
-          return theme.spacing(4);
-        case 'md':
-        case 'lg':
-        case 'xl':
-          return theme.spacing(5);
-      }
+    [theme.breakpoints.only('xs')]: {
+      margin: theme.spacing(4, 2),
+    },
+    [theme.breakpoints.only('sm')]: {
+      margin: theme.spacing(4, 2),
+    },
+    [theme.breakpoints.up('md')]: {
+      margin: theme.spacing(8, 6),
     },
   },
 });
@@ -81,7 +74,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       default:
       case Status.REJECTED:
         content = (
-          <div className={this.props.classes.placeholder}>
+          <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
             <ErrorMsg msg='Failed to load' />
           </div>
         );
@@ -89,7 +82,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       case Status.PENDING:
         if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
         content = (
-          <div className={this.props.classes.placeholder}>
+          <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
             <Loading />
           </div>
         );
@@ -113,6 +106,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           }
           content = this.props.searchResult.ideas.map(idea => (
             <Post
+              className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin)}
               key={idea.ideaId}
               server={this.props.server}
               idea={idea}
@@ -128,13 +122,6 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
           ));
         }
         break;
-    }
-    if (this.props.widthExpand) {
-      content = (
-        <div className={this.props.classes.widthExpandMargin}>
-          {content}
-        </div>
-      );
     }
     return this.props.suppressPanel ? content : (
       <Panel

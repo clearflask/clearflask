@@ -48,9 +48,9 @@ const styles = (theme: Theme) => createStyles({
   },
   outer: {
     minWidth: 300,
-    margin: theme.spacing(0.5),
   },
   post: {
+    margin: theme.spacing(0.5),
     display: 'grid',
     width: (props: Props) => props.widthExpand ? MaxContentWidth : undefined,
     maxWidth: (props: Props) => props.widthExpand ? '100%' : MaxContentWidth,
@@ -359,6 +359,7 @@ const styles = (theme: Theme) => createStyles({
   ...cssBlurry,
 });
 interface Props {
+  className?: string;
   server: Server;
   idea?: Client.Idea;
   variant: PostVariant;
@@ -440,7 +441,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     const variant = this.state.currentVariant;
 
     return (
-      <Loader className={this.props.classes.outer} loaded={!!this.props.idea}>
+      <Loader className={classNames(this.props.className, this.props.classes.outer)} loaded={!!this.props.idea}>
         <InViewObserver ref={this.inViewObserverRef}>
           <div className={this.props.classes.post}>
             <div className={this.props.classes.postVoting}>
