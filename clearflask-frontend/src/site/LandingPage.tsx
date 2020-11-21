@@ -498,7 +498,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                     Payment provider
                     &nbsp;
                     <PostStatusIframe
-                      postId='payment-provider'
+                      postId='payment-providers-integration-bgu'
                       height={14}
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />
@@ -515,7 +515,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
                     Donation Framework
                     &nbsp;
                     <PostStatusIframe
-                      postId='donation-framework'
+                      postId='donation-frameworks-integration-hvn'
                       height={14}
                       config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
                     />

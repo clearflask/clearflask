@@ -151,7 +151,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
     } else {
       const variant = 'body1';
       var content = (
-        <RichViewer key={this.props.comment.content || 'empty'} initialRaw={this.props.comment.content || ''} />
+        <RichViewer key={this.props.comment.content || 'empty'} iAgreeInputIsSanitized html={this.props.comment.content || ''} />
       );
       if (this.props.truncateLines) {
         content = (

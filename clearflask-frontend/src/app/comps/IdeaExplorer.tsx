@@ -15,7 +15,7 @@ import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
-import { rawToText, textToRaw } from '../../common/util/draftJsUtil';
+import { rawToText } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -534,7 +534,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var j = 0; j < description.length; j++) {
           if (await animate({
             sleepInMs: 10 + Math.random() * 30,
-            setState: { newItemDescription: textToRaw(description.substr(0, j + 1)) },
+            setState: { newItemDescription: description.substr(0, j + 1) },
           })) return;
         }
       }
@@ -545,7 +545,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var k = 0; k < description.length; k++) {
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: textToRaw(description.substr(0, description.length - k - 1)) },
+            setState: { newItemDescription: description.substr(0, description.length - k - 1) },
           })) return;
         }
 

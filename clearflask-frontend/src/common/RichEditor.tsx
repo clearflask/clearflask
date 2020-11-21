@@ -1,4 +1,4 @@
-import { Collapse, InputProps, TextField, TextFieldProps } from '@material-ui/core';
+import { Collapse, InputProps, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CodeIcon from "@material-ui/icons/Code";
 import BoldIcon from "@material-ui/icons/FormatBold";
@@ -9,13 +9,10 @@ import QuoteIcon from "@material-ui/icons/FormatQuote";
 import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
-import { convertFromRaw, convertToRaw, Editor, EditorState, RichUtils } from 'draft-js';
-import 'draft-js/dist/Draft.css';
-import { filterEditorState } from "draftjs-filters";
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import React from 'react';
-import { draftjsFilterConfig, filteringEnabled } from './RichViewer';
-import StyledDraftJsEditor from './StyledDraftJsEditor';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const styles = (theme: Theme) => createStyles({
   textField: {
@@ -44,9 +41,23 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(1, 0.25, 0.5),
   },
 });
-class RichEditor extends React.Component<TextFieldProps & WithStyles<typeof styles, true> & WithSnackbarProps> {
+interface PropsRichEditor {
+  iAgreeInputIsSanitized: true;
+  value: never;
+}
+interface StateRichEditor {
+  shrink?: boolean;
+}
+class RichEditor extends React.Component<Omit<PropsRichEditor & React.ComponentProps<typeof TextField>, 'value'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateRichEditor> {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      shrink: (props.defaultValue !== undefined && props.defaultValue !== ''),
+    };
+  }
+
   render() {
-    var shrink = (this.props.value !== undefined && this.props.value !== '') ? true : undefined;
     return (
       <TextField
         className={this.props.classes.textField}
@@ -62,8 +73,16 @@ class RichEditor extends React.Component<TextFieldProps & WithStyles<typeof styl
             ...this.props.InputProps?.inputProps || {},
           },
         }}
+        onChange={e => {
+          const shrink = (e.target.value !== undefined && e.target.value !== '') ? true : undefined;
+          if (this.state.shrink !== shrink) {
+            this.setState({ shrink: shrink });
+          }
+          this.props.onChange && this.props.onChange(e);
+        }}
         InputLabelProps={{
-          shrink,
+          shrink: this.state.shrink,
+          ...this.props.InputLabelProps || {},
         }}
       />
     );
@@ -75,14 +94,14 @@ interface PropsInputRef {
   blur(): void;
   value?: string;
 }
-interface PropsRichEditorInputRefWrap extends PropsDraftJs {
+interface PropsRichEditorInputRefWrap extends PropsQuill {
   /** Required by TextField */
   inputRef?: React.Ref<PropsInputRef>;
 }
 class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap & WithStyles<typeof styles, true> & WithSnackbarProps> {
   render() {
     return (
-      <RichEditorDraftJs
+      <RichEditorQuill
         ref={this.props.inputRef as any}
         {...this.props}
       />
@@ -90,46 +109,14 @@ class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap
   }
 }
 
-interface PropsDraftJs extends Omit<InputProps, 'onChange'> {
+interface PropsQuill extends Omit<InputProps, 'onChange'> {
   onChange?: (e) => void;
 }
-interface StateDraftJs {
-  editorState: EditorState;
-  value?: string;
+interface StateQuill {
   isFocused?: boolean;
-  linkPopoverOpen?: boolean;
-  linkName?: string;
-  linkUrl?: string;
 }
-class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof styles, true> & WithSnackbarProps, StateDraftJs> implements PropsInputRef {
+class RichEditorQuill extends React.Component<PropsQuill & WithStyles<typeof styles, true> & WithSnackbarProps, StateQuill> implements PropsInputRef {
   readonly editorRef: React.RefObject<Editor> = React.createRef();
-
-  constructor(props) {
-    super(props);
-
-    const value = props.value || props.defaultValue || '';
-
-    var recoveredEditorState: EditorState | undefined;
-    if (!!value) {
-      try {
-        recoveredEditorState = EditorState.createWithContent(convertFromRaw(JSON.parse(value)));
-        if (filteringEnabled) {
-          recoveredEditorState = filterEditorState(draftjsFilterConfig, recoveredEditorState) as EditorState;
-        }
-      } catch (er) {
-        props.enqueueSnackbar('Some content is corrupted and could not be displayed', {
-          variant: 'warning',
-          preventDuplicate: true,
-        });
-        console.log('ERROR: Cannot parse content:', props.defaultValue, er);
-      }
-    }
-
-    this.state = {
-      editorState: recoveredEditorState || EditorState.createEmpty(),
-      value,
-    };
-  }
 
   focus(): void {
     this.editorRef.current?.focus();
@@ -139,31 +126,8 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
     this.editorRef.current?.blur();
   }
 
-  static getDerivedStateFromProps(props: (PropsDraftJs & WithStyles<typeof styles, true> & WithSnackbarProps), state: StateDraftJs) {
-    var stateValue;
-    if (state.editorState.getCurrentContent().hasText()) {
-      stateValue = JSON.stringify(convertToRaw(state.editorState.getCurrentContent()));
-    } else {
-      stateValue = undefined;
-    }
-    var propsValue = props.value || props.defaultValue || undefined;
-    if (propsValue === stateValue) {
-      return null;
-    }
-
-    return {
-      editorState: !propsValue
-        ? EditorState.createEmpty()
-        : EditorState.createWithContent(convertFromRaw(JSON.parse(propsValue as string))),
-      value: propsValue,
-    };
-  }
-
   render() {
     const { onChange, ...otherInputProps } = this.props;
-    const curStyle = this.state.editorState.getCurrentInlineStyle();
-    const selection = this.state.editorState.getSelection();
-    const blockType = this.state.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
     return (
       <div style={{
         display: 'flex',
@@ -171,7 +135,7 @@ class RichEditorDraftJs extends React.Component<PropsDraftJs & WithStyles<typeof
         alignItems: 'stretch',
         width: '100%',
       }}>
-        <StyledDraftJsEditor
+        <ReactQuill
           {...otherInputProps as any}
           editorRef={this.editorRef}
           editorState={this.state.editorState}

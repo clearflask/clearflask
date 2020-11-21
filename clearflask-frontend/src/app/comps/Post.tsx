@@ -1074,9 +1074,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <Typography variant='body1' component={'span'} className={`${this.props.classes.description} ${variant === 'page' ? this.props.classes.descriptionPage : this.props.classes.descriptionList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
         {variant !== 'page' && this.props.display && this.props.display.descriptionTruncateLines !== undefined && this.props.display.descriptionTruncateLines > 0
           ? (<TruncateFade variant='body1' lines={this.props.display.descriptionTruncateLines}>
-            <div><RichViewer key={this.props.idea.description} initialRaw={this.props.idea.description} /></div>
+            <div><RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} /></div>
           </TruncateFade>)
-          : <RichViewer key={this.props.idea.description} initialRaw={this.props.idea.description} />}
+          : <RichViewer key={this.props.idea.description} iAgreeInputIsSanitized html={this.props.idea.description} />}
       </Typography>
     );
   }
@@ -1111,9 +1111,9 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
         <Typography variant='body1' component={'span'} className={`${this.props.classes.response} ${variant === 'page' ? this.props.classes.responsePage : this.props.classes.responseList} ${this.props.settings.demoBlurryShadow ? this.props.classes.blurry : ''}`}>
           {variant !== 'page' && this.props.display && this.props.display.responseTruncateLines !== undefined && this.props.display.responseTruncateLines > 0
             ? (<TruncateFade variant='body1' lines={this.props.display.responseTruncateLines}>
-              <div><RichViewer key={this.props.idea.response} initialRaw={this.props.idea.response} /></div>
+              <div><RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} /></div>
             </TruncateFade>)
-            : <RichViewer key={this.props.idea.response} initialRaw={this.props.idea.response} />}
+            : <RichViewer key={this.props.idea.response} iAgreeInputIsSanitized html={this.props.idea.response} />}
         </Typography>
       </div>
     );

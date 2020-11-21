@@ -1,7 +1,6 @@
 import { loremIpsum } from "lorem-ipsum";
 import { CreateTemplateOptions } from "../common/config/configTemplater";
 import { saltHashPassword } from "../common/util/auth";
-import { textToRaw } from "../common/util/draftJsUtil";
 import * as Admin from "./admin";
 import ServerMock, { SuperAdminEmail } from "./serverMock";
 
@@ -218,7 +217,7 @@ class DataMock {
       ideaCreateAdmin: {
         authorUserId: user.userId,
         title: idea.title || loremIpsum({ units: 'words', count: Math.round(Math.random() * 10 + 3) }),
-        description: idea.description ? textToRaw(idea.description) : undefined,
+        description: idea.description ? idea.description : undefined,
         categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         statusId: idea.status,
@@ -235,7 +234,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Allow changing the font size',
-          description: textToRaw('The default font size is not ideal for every user. I prefer larger text for better reading.'),
+          description: 'The default font size is not ideal for every user. I prefer larger text for better reading.',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
@@ -245,7 +244,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'View daily update summary',
-          description: textToRaw('I would like to see what changed since the previous day on the home page in an easy format without having to dig it up using the search functionality.'),
+          description: 'I would like to see what changed since the previous day on the home page in an easy format without having to dig it up using the search functionality.',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
@@ -255,7 +254,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Dark theme option',
-          description: textToRaw('Many apps are transitioning to dark theme, can you please add this option?'),
+          description: 'Many apps are transitioning to dark theme, can you please add this option?',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
@@ -265,7 +264,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Custom theme upload',
-          description: textToRaw('Branding my page with a custom made theme would increase personalization.'),
+          description: 'Branding my page with a custom made theme would increase personalization.',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
         },
@@ -321,7 +320,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Add Dark Mode',
-          description: textToRaw('To reduce eye-strain, please add a low-light option'),
+          description: 'To reduce eye-strain, please add a low-light option',
           categoryId: 'demoCategoryId', // From configTemplater.demoCategory
           tagIds: [],
           ...{ // Fake data
@@ -343,7 +342,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Support Jira Integration',
-          description: textToRaw('I would like to be able to synchronize user ideas with my Jira board'),
+          description: 'I would like to be able to synchronize user ideas with my Jira board',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
           ...{ // Fake data
@@ -372,7 +371,7 @@ class DataMock {
         ideaCreateAdmin: {
           authorUserId: user.userId,
           title: 'Customize order of options',
-          description: textToRaw('I want to be able to re-order the options we have in the main settings page.'),
+          description: 'I want to be able to re-order the options we have in the main settings page.',
           categoryId: config.content.categories[0].categoryId,
           tagIds: [],
           ...{ // Fake data
@@ -479,8 +478,8 @@ class DataMock {
         ...{ expressions: expressions },
         authorUserId: user.userId,
         title: title,
-        description: textToRaw(description),
-        response: response === undefined ? undefined : textToRaw(response),
+        description: description,
+        response: response === undefined ? undefined : response,
         categoryId: categoryId,
         tagIds: tagIds || [],
         statusId: statusId,
@@ -542,15 +541,15 @@ class DataMock {
           units: 'words',
           count: Math.round(Math.random() * 5 + 3),
         }),
-        description: textToRaw(loremIpsum({
+        description: loremIpsum({
           units: 'paragraphs',
           count: Math.round(Math.random() * 3 + 1),
-        })),
+        }),
         ...(!responseUser ? {} : {
-          response: textToRaw(loremIpsum({
+          response: loremIpsum({
             units: 'words',
             count: Math.round(Math.random() * 10 + 3),
-          })),
+          }),
           responseAuthorUserId: responseUser.userId,
           responseAuthorName: responseUser.name,
         }),
@@ -606,8 +605,8 @@ class DataMock {
       ideaCreateAdmin: {
         authorUserId: user.userId,
         title: 'Add Dark Mode',
-        description: textToRaw('To reduce eye-strain, please add a low-light option'),
-        response: textToRaw('Added to our backlog, thanks!'),
+        description: 'To reduce eye-strain, please add a low-light option',
+        response: 'Added to our backlog, thanks!',
         categoryId: config.content.categories[0].categoryId,
         statusId: config.content.categories[0].workflow.entryStatus,
         tagIds: [],
@@ -668,7 +667,7 @@ class DataMock {
         projectId: this.projectId,
         ideaId: item.ideaId,
         commentCreate: {
-          content: textToRaw(comment.content || ''),
+          content: comment.content || '',
           parentCommentId,
           ...{
             author: user,
@@ -694,7 +693,7 @@ class DataMock {
         projectId: this.projectId,
         ideaId: item.ideaId,
         commentCreate: {
-          content: textToRaw(this.mockMention(userMentionPool) + loremIpsum({
+          content: this.mockMention(userMentionPool + loremIpsum({
             units: 'sentences',
             count: Math.round(Math.random() * 3 + 1),
           })),
@@ -721,7 +720,7 @@ class DataMock {
             ideaId: item.ideaId,
             commentId: comment.commentId,
             commentUpdate: {
-              content: textToRaw(this.mockMention(userMentionPool) + loremIpsum({
+              content: this.mockMention(userMentionPool + loremIpsum({
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
               }))

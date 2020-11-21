@@ -210,7 +210,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       if (this.props.page.description) {
         desc = (
           <div className={this.props.classes.description}>
-            <RichViewer key={this.props.page.description} initialRaw={this.props.page.description} />
+            <RichViewer key={this.props.page.description} iAgreeInputIsSanitized html={this.props.page.description} />
           </div>
         );
       }
