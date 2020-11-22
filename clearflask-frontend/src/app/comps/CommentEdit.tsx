@@ -52,6 +52,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
                   disabled={this.state.isSubmitting}
                   label='Content'
                   fullWidth
+                  iAgreeInputIsSanitized
                   value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
                   onChange={e => this.setState({ content: e.target.value })}
                   multiline
@@ -81,7 +82,6 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
                 .then(idea => {
                   this.setState({
                     isSubmitting: false,
-                    content: undefined,
                   });
                   this.props.onClose();
                   this.props.onUpdated && this.props.onUpdated();

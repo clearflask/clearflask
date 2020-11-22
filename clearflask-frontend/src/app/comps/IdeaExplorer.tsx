@@ -15,7 +15,6 @@ import ModAction from '../../common/ModAction';
 import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
-import { rawToText } from '../../common/util/draftJsUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
@@ -105,6 +104,7 @@ interface State {
   createOpen?: boolean;
   newItemTitle?: string;
   newItemDescription?: string;
+  newItemDescriptionTextOnly?: string;
   newItemAuthorLabel?: Label;
   newItemChosenCategoryId?: string;
   newItemChosenTagIds?: string[];
@@ -131,9 +131,9 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     super(props);
     this.state = {};
     this.updateSearchText = debounce(
-      (title?: string, descRaw?: string) => !!title && !!descRaw && this.setState({
+      (title?: string, descTextOnly?: string) => !!title && !!descTextOnly && this.setState({
         newItemSearchText:
-          `${title || ''} ${descRaw ? rawToText(descRaw) : ''}`.slice(0, 100),
+          `${title || ''} ${descTextOnly || ''}`.slice(0, 100),
       }),
       SimilarTypeDebounceTime);
   }
@@ -323,7 +323,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
               if (this.state.newItemTitle === e.target.value) {
                 return;
               }
-              this.updateSearchText(e.target.value, this.state.newItemDescription);
+              this.updateSearchText(e.target.value, this.state.newItemDescriptionTextOnly);
               this.setState({ newItemTitle: e.target.value })
             }}
             InputProps={{
@@ -343,14 +343,20 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             disabled={this.state.newItemIsSubmitting}
             className={this.props.classes.createFormField}
             label='Details'
+            iAgreeInputIsSanitized
             value={this.state.newItemDescription || ''}
-            onChange={e => {
-              if (this.state.newItemDescription === e.target.value
-                || (!this.state.newItemDescription && !e.target.value)) {
+            onChange={(e, delta, source, editor) => {
+              const value = e.target.value;
+              if (this.state.newItemDescription === value
+                || (!this.state.newItemDescription && !value)) {
                 return;
               }
-              this.updateSearchText(this.state.newItemTitle, e.target.value);
-              this.setState({ newItemDescription: e.target.value })
+              const descriptionTextOnly = editor.getText();
+              this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
+              this.setState({
+                newItemDescription: value,
+                newItemDescriptionTextOnly: descriptionTextOnly,
+              })
             }}
             InputProps={{
               style: {
@@ -489,6 +495,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       this.setState({
         newItemTitle: undefined,
         newItemDescription: undefined,
+        newItemDescriptionTextOnly: undefined,
         newItemSearchText: undefined,
         newItemIsSubmitting: false,
       });

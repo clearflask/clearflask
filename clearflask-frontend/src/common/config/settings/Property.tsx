@@ -157,6 +157,7 @@ export default class Property extends Component<Props> {
             size='small'
             id={prop.pathStr}
             label={!this.props.bare && name}
+            iAgreeInputIsSanitized
             value={prop.value || ''}
             onChange={e => prop.set(e.target.value as never)}
             error={!!prop.errorMsg}

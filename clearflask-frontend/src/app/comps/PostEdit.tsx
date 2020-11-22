@@ -115,6 +115,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                   disabled={this.state.isSubmitting}
                   label='Description'
                   fullWidth
+                  iAgreeInputIsSanitized
                   value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
                   onChange={e => this.setState({ description: e.target.value })}
                   multiline
@@ -131,6 +132,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       disabled={this.state.isSubmitting}
                       label='Response'
                       fullWidth
+                      iAgreeInputIsSanitized
                       value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
                       onChange={e => this.setState({ response: e.target.value })}
                       multiline

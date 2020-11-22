@@ -55,6 +55,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
           id='createComment'
           className={this.props.classes.addCommentField}
           label='Comment'
+          iAgreeInputIsSanitized
           value={this.state.newCommentInput || ''}
           onChange={e => this.setState({ newCommentInput: e.target.value })}
           multiline

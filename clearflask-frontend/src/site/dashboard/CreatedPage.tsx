@@ -179,6 +179,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           disabled={this.state.isSubmitting}
                           className={this.props.classes.field}
                           placeholder='Description'
+                          iAgreeInputIsSanitized
                           value={this.state.newItemDescription || ''}
                           onChange={e => this.setState({ newItemDescription: e.target.value })}
                           multiline

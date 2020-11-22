@@ -1,4 +1,4 @@
-import { Collapse, InputProps, TextField } from '@material-ui/core';
+import { InputProps, TextField } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import CodeIcon from "@material-ui/icons/Code";
 import BoldIcon from "@material-ui/icons/FormatBold";
@@ -10,9 +10,10 @@ import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
 import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
+import Quill, { DeltaStatic, RangeStatic, Sources } from 'quill';
 import React from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill, { UnprivilegedEditor } from 'react-quill';
+import 'react-quill/dist/quill.core.css';
 
 const styles = (theme: Theme) => createStyles({
   textField: {
@@ -42,18 +43,21 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface PropsRichEditor {
+  variant: 'standard' | 'outlined' | 'filled';
+  onChange?(event: { target: { value: string } }, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor): void;
   iAgreeInputIsSanitized: true;
-  value: never;
+  inputRef?: React.Ref<ReactQuill>;
 }
 interface StateRichEditor {
-  shrink?: boolean;
+  hasText?: boolean;
+  isFocused?: boolean;
 }
-class RichEditor extends React.Component<Omit<PropsRichEditor & React.ComponentProps<typeof TextField>, 'value'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateRichEditor> {
+class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentProps<typeof TextField>, 'onChange' | 'inputRef'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateRichEditor> {
   constructor(props) {
     super(props);
 
     this.state = {
-      shrink: (props.defaultValue !== undefined && props.defaultValue !== ''),
+      hasText: (props.defaultValue !== undefined && props.defaultValue !== ''),
     };
   }
 
@@ -61,27 +65,34 @@ class RichEditor extends React.Component<Omit<PropsRichEditor & React.ComponentP
     return (
       <TextField
         className={this.props.classes.textField}
-        {...this.props}
+        {...this.props as any /** Weird issue with variant */}
         InputProps={{
           ...this.props.InputProps || {},
           inputComponent: RichEditorInputRefWrap as any,
           inputProps: {
+            ...this.props.InputProps?.inputProps || {},
             classes: this.props.classes,
             theme: this.props.theme,
             enqueueSnackbar: this.props.enqueueSnackbar,
             closeSnackbar: this.props.closeSnackbar,
-            ...this.props.InputProps?.inputProps || {},
+            onFocus: e => this.setState({ isFocused: true }),
+            onBlur: e => this.setState({ isFocused: false }),
           },
         }}
-        onChange={e => {
-          const shrink = (e.target.value !== undefined && e.target.value !== '') ? true : undefined;
-          if (this.state.shrink !== shrink) {
-            this.setState({ shrink: shrink });
+        onChange={(e) => {
+          // Unpack these from the event defined in PropsQuill
+          const delta = e.target['delta'];
+          const source = e.target['source'];
+          const editor = e.target['editor'];
+
+          const hasText = (e.target.value !== undefined && e.target.value !== '') ? true : undefined;
+          if (this.state.hasText !== hasText) {
+            this.setState({ hasText });
           }
-          this.props.onChange && this.props.onChange(e);
+          this.props.onChange && this.props.onChange(e, delta, source, editor);
         }}
         InputLabelProps={{
-          shrink: this.state.shrink,
+          shrink: this.state.hasText || this.state.isFocused || false,
           ...this.props.InputLabelProps || {},
         }}
       />
@@ -94,7 +105,7 @@ interface PropsInputRef {
   blur(): void;
   value?: string;
 }
-interface PropsRichEditorInputRefWrap extends PropsQuill {
+interface PropsRichEditorInputRefWrap extends React.ComponentProps<typeof RichEditorQuill> {
   /** Required by TextField */
   inputRef?: React.Ref<PropsInputRef>;
 }
@@ -109,14 +120,22 @@ class RichEditorInputRefWrap extends React.Component<PropsRichEditorInputRefWrap
   }
 }
 
-interface PropsQuill extends Omit<InputProps, 'onChange'> {
-  onChange?: (e) => void;
+interface PropsQuill {
+  onChange?: (e: {
+    target: {
+      value: string;
+      delta: DeltaStatic;
+      source: Sources;
+      editor: UnprivilegedEditor;
+    }
+  }) => void;
 }
 interface StateQuill {
-  isFocused?: boolean;
+  activeFormats?: string[];
 }
-class RichEditorQuill extends React.Component<PropsQuill & WithStyles<typeof styles, true> & WithSnackbarProps, StateQuill> implements PropsInputRef {
-  readonly editorRef: React.RefObject<Editor> = React.createRef();
+class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onChange'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateQuill> implements PropsInputRef {
+  state: StateQuill = {};
+  readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
 
   focus(): void {
     this.editorRef.current?.focus();
@@ -124,6 +143,19 @@ class RichEditorQuill extends React.Component<PropsQuill & WithStyles<typeof sty
 
   blur(): void {
     this.editorRef.current?.blur();
+  }
+
+  componentDidMount() {
+    const editor = this.editorRef.current!.getEditor();
+    editor.on('editor-change', (type, range) => {
+      if (type === 'selection-change') {
+        this.updateFormats(editor, range);
+      }
+    });
+    editor.on('scroll-optimize' as any, () => {
+      const [range] = editor['selection'].getRange(); // quill.getSelection triggers update
+      this.updateFormats(editor, range || undefined);
+    });
   }
 
   render() {
@@ -137,101 +169,67 @@ class RichEditorQuill extends React.Component<PropsQuill & WithStyles<typeof sty
       }}>
         <ReactQuill
           {...otherInputProps as any}
-          editorRef={this.editorRef}
-          editorState={this.state.editorState}
+          theme={false /** core theme */}
+          ref={this.editorRef}
           onChange={this.handleOnChange.bind(this)}
-          onFocus={e => {
-            otherInputProps.onFocus && otherInputProps.onFocus(e as any);
-            this.setState({ isFocused: true });
-          }}
-          onBlur={e => {
-            otherInputProps.onBlur && otherInputProps.onBlur(e as any);
-            this.setState({ isFocused: undefined });
-          }}
-          handleKeyCommand={(command, editorState) => {
-            const newEditorState = RichUtils.handleKeyCommand(editorState, command);
-            if (newEditorState) {
-              this.handleOnChange(newEditorState);
-              return 'handled';
-            }
-
-            return 'not-handled';
-          }}
         />
-        <Collapse in={this.state.isFocused}>
-          <div className={this.props.classes.toggleButtonGroups}>
-            <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
-              {this.renderToggleButton(BoldIcon, curStyle.contains('BOLD'), e => this.toggleInlineStyle(e, 'BOLD'))}
-              {this.renderToggleButton(ItalicIcon, curStyle.contains('ITALIC'), e => this.toggleInlineStyle(e, 'ITALIC'))}
-              {this.renderToggleButton(StrikethroughIcon, curStyle.contains('STRIKETHROUGH'), e => this.toggleInlineStyle(e, 'STRIKETHROUGH'))}
-              {this.renderToggleButton(UnderlineIcon, curStyle.contains('UNDERLINE'), e => this.toggleInlineStyle(e, 'UNDERLINE'))}
-            </ToggleButtonGroup>
-            <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
-              {this.renderToggleButton(QuoteIcon, blockType === 'blockquote', e => this.toggleBlockType(e, 'blockquote'))}
-              {this.renderToggleButton(CodeIcon, curStyle.contains('CODE') || blockType === 'code-block', e => this.toggleCode(e))}
-              {this.renderToggleButton(ListOrderedIcon, blockType === 'ordered-list-item', e => this.toggleBlockType(e, 'ordered-list-item'))}
-              {this.renderToggleButton(ListUnorderedIcon, blockType === 'unordered-list-item', e => this.toggleBlockType(e, 'unordered-list-item'))}
-            </ToggleButtonGroup>
-          </div>
-        </Collapse>
+        <div className={this.props.classes.toggleButtonGroups}>
+          <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
+            {this.renderToggleButton(BoldIcon, 'bold')}
+            {this.renderToggleButton(ItalicIcon, 'italic')}
+            {this.renderToggleButton(StrikethroughIcon, 'strike')}
+            {this.renderToggleButton(UnderlineIcon, 'underline')}
+          </ToggleButtonGroup>
+          <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
+            {this.renderToggleButton(QuoteIcon, 'blockquote')}
+            {this.renderToggleButton(CodeIcon, 'code')}
+            {this.renderToggleButton(ListOrderedIcon, 'ordered-list-item')}
+            {this.renderToggleButton(ListUnorderedIcon, 'unordered-list-item')}
+          </ToggleButtonGroup>
+        </div>
       </div>
     );
   }
 
-  renderToggleButton(IconCmpt, checked: boolean, toggle: (event) => void) {
+  updateFormats(editor: Quill, range?: RangeStatic) {
+    if (!range) {
+      this.setState({ activeFormats: undefined });
+    } else {
+      const newActiveFormats = Object.keys(editor.getFormat(range));
+      this.setState({ activeFormats: newActiveFormats });
+    }
+  }
+
+  renderToggleButton(IconCmpt, format: string) {
+    const isActive = this.state.activeFormats?.includes(format);
     return (
       <ToggleButton
         className={this.props.classes.toggleButton}
         value='check'
-        selected={checked}
+        selected={isActive}
         onMouseDown={e => e.preventDefault()}
-        onChange={e => toggle(e)}
-        onClick={e => toggle(e)}
+        onChange={e => this.setFormat(e, format, !isActive)}
+        onClick={e => this.setFormat(e, format, !isActive)}
       >
         <IconCmpt fontSize='inherit' />
       </ToggleButton>
     );
   }
 
-  toggleInlineStyle(e, style: string) {
-    this.handleOnChange(RichUtils.toggleInlineStyle(this.state.editorState, style));
+  setFormat(e, format: string, val: boolean) {
+    this.editorRef.current?.getEditor().format(format, val, 'user');
     e.preventDefault();
   }
 
-  toggleBlockType(e, block: string) {
-    this.handleOnChange(RichUtils.toggleBlockType(this.state.editorState, block));
-    e.preventDefault();
-  }
-
-  toggleCode(e) {
-    // Clear all style since markdown doesn't support styling within code block
-    this.handleOnChange(RichUtils.toggleCode(this.state.editorState));
-    e.preventDefault();
-  }
-
-  handleOnChange(newEditorState) {
-    var currentContent = newEditorState.getCurrentContent();
-
-    if (filteringEnabled
-      && currentContent !== this.state.editorState.getCurrentContent()
-      && newEditorState.getLastChangeType() === "insert-fragment") {
-      newEditorState = filterEditorState(draftjsFilterConfig, newEditorState) as EditorState;
-    }
-
-    const prevValue = this.state.value;
-    var newValue: string | undefined;
-    if (currentContent.hasText()) {
-      newValue = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
-    } else {
-      newValue = '';
-    }
-    this.setState({
-      editorState: newEditorState,
-      value: newValue,
+  handleOnChange(value: string, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor) {
+    this.props.onChange && this.props.onChange({
+      target: {
+        value,
+        delta,
+        source,
+        editor,
+      }
     });
-    if (prevValue !== newValue) {
-      this.props.onChange && this.props.onChange({ target: { value: newValue } });
-    }
   }
 }
 
