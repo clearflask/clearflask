@@ -164,8 +164,8 @@ export default class Property extends Component<Props> {
             placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
             helperText={prop.errorMsg || (!this.props.bare && prop.description)}
             margin='none'
-            multiline={prop.subType === ConfigEditor.PropSubType.Multiline
-              || prop.subType === ConfigEditor.PropSubType.Rich}
+            multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
+              || prop.subType === ConfigEditor.PropSubType.Rich) as any}
             type={fieldType}
             InputLabelProps={{
               shrink: shrink,
