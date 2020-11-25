@@ -549,6 +549,12 @@
                 <artifactId>byte-buddy-agent</artifactId>
                 <version>1.10.8</version>
             </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>20200713.1</version>
+            </dependency>
+
             <!-- test-only deps -->
             <dependency>
                 <groupId>junit</groupId>

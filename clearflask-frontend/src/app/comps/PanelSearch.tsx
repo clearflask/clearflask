@@ -352,4 +352,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     settings: state.settings,
   }
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withWidth()(PanelSearch)));
+}, null, null, { forwardRef: true })(withWidth()(withStyles(styles, { withTheme: true })(PanelSearch)));

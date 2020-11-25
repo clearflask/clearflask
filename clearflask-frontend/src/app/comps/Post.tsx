@@ -844,6 +844,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
       <div style={{ display: 'flex' }}>
         {fundingAllowed && (
           <ClosablePopper
+            clickAway
             open={!!this.state.fundingExpanded}
             onClose={() => this.setState({ fundingExpanded: false })}
             className={this.props.classes.fundingPopper}
@@ -1001,6 +1002,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
     return (
       <div key='renderExpression' style={{ display: 'flex' }}>
         <ClosablePopper
+          clickAway
           style={{
             width: limitEmojiSet ? 'max-content' : 'min-content',
           }}

@@ -10,33 +10,22 @@ import QuoteIcon from "@material-ui/icons/FormatQuote";
 import StrikethroughIcon from "@material-ui/icons/FormatStrikethrough";
 import UnderlineIcon from "@material-ui/icons/FormatUnderlined";
 import LinkIcon from "@material-ui/icons/Link";
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
+import MoreIcon from "@material-ui/icons/MoreHoriz";
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import { ReferenceObject } from 'popper.js';
 import Quill, { DeltaStatic, RangeStatic, Sources } from 'quill';
 import React from 'react';
 import ReactQuill, { UnprivilegedEditor } from 'react-quill';
-import 'react-quill/dist/quill.core.css';
 import ClosablePopper from './ClosablePopper';
+import { QuillViewStyle } from './RichViewer';
 
 const styles = (theme: Theme) => createStyles({
   textField: {
-    '& .DraftEditor-root': {
-      width: '100%',
-      padding: '6px 0 7px',
-    },
-    '& .public-DraftEditorPlaceholder-root': {
-      opacity: 0,
-      color: theme.palette.text.secondary,
-    },
-    '& .public-DraftEditorPlaceholder-hasFocus': {
-      opacity: 1,
-    },
   },
   toggleButton: {
     height: 'initial',
     padding: theme.spacing(0.5),
     border: 'none',
+    minWidth: 'unset',
   },
   toggleButtonGroups: {
     display: 'flex',
@@ -45,6 +34,8 @@ const styles = (theme: Theme) => createStyles({
   },
   toggleButtonGroup: {
     margin: theme.spacing(1, 0.25, 0.5),
+    display: 'flex',
+    flexWrap: 'nowrap',
   },
   editLinkContainer: {
     margin: theme.spacing(1),
@@ -52,7 +43,7 @@ const styles = (theme: Theme) => createStyles({
   editLinkContent: {
     padding: theme.spacing(0.5, 1),
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'baseline',
     '& a': {
       color: 'unset',
       borderBottom: '1px dashed',
@@ -70,6 +61,10 @@ const styles = (theme: Theme) => createStyles({
     border: 'none',
     minWidth: 'unset',
   },
+  editLinkButtonLabel: {
+    lineHeight: 'normal',
+    textTransform: 'none',
+  },
   editLinkUrlRoot: {
     margin: theme.spacing(0, 1),
   },
@@ -83,6 +78,51 @@ const styles = (theme: Theme) => createStyles({
     flexDirection: 'column',
     alignItems: 'stretch',
     width: '100%',
+  },
+  quill: {
+    '& .ql-container .ql-clipboard': {
+      left: -100000,
+      height: 1,
+      overflowY: 'hidden',
+      position: 'absolute',
+      top: '50%',
+      '& p': {
+        margin: '0',
+        padding: '0',
+      },
+    },
+    '& .ql-container': {
+      boxSizing: 'border-box',
+      height: '100%',
+      width: '100%',
+      margin: '0px',
+      position: 'relative',
+    },
+    '& ul[data-checked=true], & ul[data-checked=false]': {
+      pointerEvents: 'none'
+    },
+    '& ul[data-checked=true] > li *, & ul[data-checked=false] > li *': {
+      pointerEvents: 'all'
+    },
+    '& ul[data-checked=true] > li::before, & ul[data-checked=false] > li::before': {
+      cursor: 'pointer',
+      pointerEvents: 'all'
+    },
+    '& .ql-container .ql-tooltip': { visibility: 'hidden' },
+    '& .ql-container .ql-editor ul[data-checked] > li::before': {
+      cursor: 'pointer',
+      pointerEvents: 'all',
+    },
+    '& .ql-container.ql-disabled .ql-tooltip': { visibility: 'hidden' },
+    '& .ql-container.ql-disabled .ql-editor ul[data-checked] > li::before': {
+      cursor: 'unset',
+      pointerEvents: 'none',
+    },
+    '& .ql-container .ql-editor': {
+      cursor: 'text',
+      paddingBottom: 1, // Compensate for link border-bottom, which otherwise overflows
+      ...QuillViewStyle(theme),
+    },
   },
 });
 interface PropsRichEditor {
@@ -110,19 +150,20 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
   }
 
   render() {
+    const { onChange, theme, enqueueSnackbar, closeSnackbar, classes, iAgreeInputIsSanitized, ...TextFieldProps } = this.props;
     return (
       <TextField
         className={this.props.classes.textField}
-        {...this.props as any /** Weird issue with variant */}
+        {...TextFieldProps as any /** Weird issue with variant */}
         InputProps={{
           ...this.props.InputProps || {},
           inputComponent: RichEditorInputRefWrap as any,
           inputProps: {
             ...this.props.InputProps?.inputProps || {},
             classes: this.props.classes,
-            theme: this.props.theme,
-            enqueueSnackbar: this.props.enqueueSnackbar,
-            closeSnackbar: this.props.closeSnackbar,
+            theme: theme,
+            enqueueSnackbar: enqueueSnackbar,
+            closeSnackbar: closeSnackbar,
             onFocus: e => this.setState({ isFocused: true }),
             onBlur: e => this.setState({ isFocused: false }),
           },
@@ -182,7 +223,9 @@ interface StateQuill {
   activeFormats?: { [key: string]: any };
   editLinkShow?: RangeStatic;
   editLinkEditing?: boolean;
+  editLinkPrevValue?: string;
   editLinkValue?: string;
+  showMoreFormatting?: boolean;
 }
 class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onChange'> & WithStyles<typeof styles, true> & WithSnackbarProps, StateQuill> implements PropsInputRef {
   state: StateQuill = {};
@@ -219,25 +262,42 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       >
         <ReactQuill
           {...otherInputProps as any}
+          className={this.props.classes.quill}
           theme={false /** core theme */}
           ref={this.editorRef}
           onChange={this.handleOnChange.bind(this)}
+          formats={['bold', 'strike', 'list', 'link', 'italic', 'underline', 'blockquote', 'code-block', 'indent']}
         />
         <div className={this.props.classes.toggleButtonGroups}>
-          <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
+          <ClosablePopper
+            open={!!this.state.showMoreFormatting}
+            onClose={() => this.setState({ showMoreFormatting: false })}
+            disableCloseButton
+            clickAway
+          >
+            <div className={this.props.classes.toggleButtonGroup}>
+              {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
+              {this.renderToggleButton(StrikethroughIcon, 'strike', undefined, true)}
+              {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'bullet')}
+              {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'unchecked', ['unchecked', 'checked'])}
+              {this.renderToggleButtonLink(LinkIcon)}
+            </div>
+            <div className={this.props.classes.toggleButtonGroup}>
+              {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
+              {this.renderToggleButton(UnderlineIcon, 'underline', undefined, true)}
+              {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'ordered')}
+              {this.renderToggleButton(QuoteIcon, undefined, 'blockquote', true)}
+              {this.renderToggleButton(CodeIcon, undefined, 'code-block', true)}
+            </div>
+          </ClosablePopper>
+          <div className={this.props.classes.toggleButtonGroup}>
             {this.renderToggleButton(BoldIcon, 'bold', undefined, true)}
-            {this.renderToggleButton(ItalicIcon, 'italic', undefined, true)}
             {this.renderToggleButton(StrikethroughIcon, 'strike', undefined, true)}
-            {this.renderToggleButton(UnderlineIcon, 'underline', undefined, true)}
-            {this.renderToggleButtonLink(LinkIcon)}
-          </ToggleButtonGroup>
-          <ToggleButtonGroup className={this.props.classes.toggleButtonGroup}>
-            {this.renderToggleButton(QuoteIcon, undefined, 'blockquote', true)}
-            {this.renderToggleButton(CodeIcon, undefined, 'code-block', true)}
             {this.renderToggleButton(ListOrderedIcon, undefined, 'list', 'bullet')}
-            {this.renderToggleButton(ListUnorderedIcon, undefined, 'list', 'ordered')}
-            {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'checked')}
-          </ToggleButtonGroup>
+            {this.renderToggleButton(ListCheckIcon, undefined, 'list', 'unchecked', ['unchecked', 'checked'])}
+            {this.renderToggleButtonLink(LinkIcon)}
+            {this.renderToggleButtonCmpt(MoreIcon, false, () => this.setState({ showMoreFormatting: !this.state.showMoreFormatting }))}
+          </div>
         </div>
         {this.renderEditLinkPopper()}
       </div>
@@ -246,55 +306,60 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
 
   renderEditLinkPopper() {
     const editor = this.editorRef.current?.getEditor();
-    const url = this.state.activeFormats?.link;
-    var anchorEl: ReferenceObject | null = null;
-    if (this.state.editLinkShow) {
-      const editorRect = this.editorContainerRef.current?.getBoundingClientRect();
-      const selection = editor?.getSelection();
-      console.log('debug', selection, editorRect);
-      if (editorRect && editor && selection) {
+    var anchorElGetter;
+    if (this.state.editLinkShow && editor) {
+      anchorElGetter = () => {
+        const editorRect = this.editorContainerRef.current!.getBoundingClientRect();
+        const selection = editor.getSelection();
+        if (!selection) {
+          return;
+        }
         const bounds = { ...editor.getBounds(selection.index, selection.length) };
-        anchorEl = {
-          clientHeight: bounds.height,
-          clientWidth: bounds.width,
-          getBoundingClientRect: () => ({
-            height: bounds.height,
-            width: bounds.width,
-            bottom: editorRect.bottom - editorRect.height + bounds.bottom,
-            left: editorRect.left + bounds.left,
-            right: editorRect.right - editorRect.width + bounds.right,
-            top: editorRect.top + bounds.top,
-          }),
-        };
-        console.log('debug', anchorEl, bounds, editorRect);
+        return {
+          height: bounds.height,
+          width: bounds.width,
+          bottom: editorRect.bottom - editorRect.height + bounds.bottom,
+          left: editorRect.left + bounds.left,
+          right: editorRect.right - editorRect.width + bounds.right,
+          top: editorRect.top + bounds.top,
+        }
       }
     }
     return (
       <ClosablePopper
-        anchorEl={anchorEl}
+        anchorElGetter={anchorElGetter}
         disableCloseButton
-        lightShadow
-        placement='top'
+        arrow
+        clickAway
+        clickAwayProps={{
+          onClickAway: () => {
+            if (this.editorRef.current?.editor?.hasFocus()) return;
+            this.setState({
+              editLinkShow: undefined,
+            });
+          }
+        }}
+        placement='top-start'
         open={!!this.state.editLinkShow}
         onClose={() => this.setState({
           editLinkShow: undefined,
-          editLinkEditing: undefined,
-          editLinkValue: undefined,
         })}
         className={this.props.classes.editLinkContainer}
         classes={{
           paper: this.props.classes.editLinkContent,
         }}
       >
-        {(!url || this.state.editLinkEditing) ? (
+        {(!this.state.editLinkPrevValue || this.state.editLinkEditing) ? (
           <React.Fragment>
             <div>Enter link:</div>
             <TextField
-              variant='outlined'
+              variant='standard'
               size='small'
               margin='none'
               placeholder='https://'
-              value={(this.state.editLinkValue === undefined ? url : this.state.editLinkValue) || ''}
+              value={(this.state.editLinkValue === undefined
+                ? this.state.editLinkPrevValue
+                : this.state.editLinkValue) || ''}
               onChange={e => this.setState({ editLinkValue: e.target.value })}
               InputProps={{
                 classes: {
@@ -307,42 +372,59 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             />
             <Button
               size='small'
-              className={this.props.classes.editLinkButton}
-              disabled={this.state.editLinkValue === undefined}
+              color='primary'
+              classes={{
+                root: this.props.classes.editLinkButton,
+                label: this.props.classes.editLinkButtonLabel
+              }}
+              disabled={!this.state.editLinkValue || this.state.editLinkValue === this.state.editLinkPrevValue}
               onClick={e => {
                 if (!editor || !this.state.editLinkShow || !this.state.editLinkValue) return;
                 editor.formatText(this.state.editLinkShow, { link: this.state.editLinkValue }, 'user');
-                editor.setSelection(this.state.editLinkShow.index, this.state.editLinkShow.length, 'api');
+                editor.setSelection(this.state.editLinkShow.index, this.state.editLinkShow.length, 'user');
                 this.setState({
+                  editLinkPrevValue: this.state.editLinkValue,
                   editLinkEditing: undefined,
                   editLinkValue: undefined,
                 });
               }}
             >Save</Button>
-            <Button
-              size='small'
-              className={this.props.classes.editLinkButton}
-              onClick={e => {
-                this.setState({
-                  editLinkShow: undefined,
-                  editLinkEditing: undefined,
-                  editLinkValue: undefined,
-                })
-              }}
-            >Cancel</Button>
+            {(!!this.state.editLinkPrevValue) && (
+              <Button
+                size='small'
+                color='primary'
+                classes={{
+                  root: this.props.classes.editLinkButton,
+                  label: this.props.classes.editLinkButtonLabel
+                }}
+                onClick={e => {
+                  if (!editor || !this.state.editLinkShow) return;
+                  const editLinkShow = this.state.editLinkShow;
+                  this.setState({
+                    editLinkShow: undefined,
+                  }, () => {
+                    editor.formatText(editLinkShow, { link: undefined }, 'user');
+                  });
+                }}
+              >Remove</Button>
+            )}
           </React.Fragment>
         ) : (
             <React.Fragment>
               <div>Visit</div>
               <a
-                href={url}
+                href={this.state.editLinkPrevValue}
                 className={this.props.classes.editLinkA}
                 target="_blank"
                 rel="noreferrer noopener ugc"
-              >{url}</a>
+              >{this.state.editLinkPrevValue}</a>
               <Button
                 size='small'
-                className={this.props.classes.editLinkButton}
+                color='primary'
+                classes={{
+                  root: this.props.classes.editLinkButton,
+                  label: this.props.classes.editLinkButtonLabel
+                }}
                 onClick={e => {
                   this.setState({
                     editLinkEditing: true,
@@ -351,14 +433,16 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
               >Edit</Button>
               <Button
                 size='small'
-                className={this.props.classes.editLinkButton}
+                color='primary'
+                classes={{
+                  root: this.props.classes.editLinkButton,
+                  label: this.props.classes.editLinkButtonLabel
+                }}
                 onClick={e => {
                   if (!editor || !this.state.editLinkShow) return;
                   const editLinkShow = this.state.editLinkShow;
                   this.setState({
                     editLinkShow: undefined,
-                    editLinkEditing: undefined,
-                    editLinkValue: undefined,
                   }, () => {
                     editor.formatText(editLinkShow, { link: undefined }, 'user');
                   });
@@ -367,7 +451,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             </React.Fragment>
           )}
 
-      </ClosablePopper>
+      </ClosablePopper >
     );
   }
 
@@ -386,6 +470,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
         editor.setSelection(range, 'user');
         this.setState({
           editLinkShow: range,
+          editLinkPrevValue: this.state.activeFormats?.link,
           editLinkEditing: true,
           editLinkValue: undefined,
         });
@@ -398,8 +483,6 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
         this.setState({
           activeFormats: undefined,
           editLinkShow: undefined,
-          editLinkEditing: undefined,
-          editLinkValue: undefined,
         });
       } else {
         this.setState({ activeFormats: undefined });
@@ -408,24 +491,23 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       const newActiveFormats = editor.getFormat(range);
       const isLinkActive = !!newActiveFormats.link;
       if (isLinkActive !== !!this.state.editLinkShow) {
-        var range: RangeStatic | undefined;
+        var rangeWord: RangeStatic | undefined;
         const selection = editor.getSelection();
         if (!!selection) {
-          range = selection.length > 0
+          rangeWord = selection.length > 0
             ? selection
             : this.getWordBoundary(editor, selection.index);
         }
 
         this.setState({
           activeFormats: newActiveFormats,
-          ...((isLinkActive && !!range) ? {
-            editLinkShow: range,
+          ...((isLinkActive && !!rangeWord) ? {
+            editLinkShow: rangeWord,
+            editLinkPrevValue: newActiveFormats.link,
             editLinkEditing: undefined,
             editLinkValue: undefined,
           } : {
               editLinkShow: undefined,
-              editLinkEditing: undefined,
-              editLinkValue: undefined,
             })
         });
       } else {
@@ -434,9 +516,9 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
     }
   }
 
-  renderToggleButton(IconCmpt, format: string | undefined, formatLine: string | undefined, value) {
-    const isActiveFormat = !!this.state.activeFormats && !!format && !!this.state.activeFormats[format];
-    const isActiveFormatLine = !!this.state.activeFormats && !!formatLine && !!this.state.activeFormats[formatLine];
+  renderToggleButton(IconCmpt, format: string | undefined, formatLine: string | undefined, defaultValue: any, valueOpts: any[] = [defaultValue]) {
+    const isActiveFormat = !!this.state.activeFormats && !!format && valueOpts.includes(this.state.activeFormats[format]);
+    const isActiveFormatLine = !!this.state.activeFormats && !!formatLine && valueOpts.includes(this.state.activeFormats[formatLine]);
     const toggle = e => {
       const editor = this.editorRef.current?.getEditor();
       if (!editor) return;
@@ -445,19 +527,17 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       // Use inline formatting if we have selected text or if there is no line formatting
       if (format && (!formatLine || hasSelection)) {
         if (hasSelection || !range) {
-          editor.format(format, isActiveFormat ? undefined : value, 'user');
+          editor.format(format, isActiveFormat ? undefined : defaultValue, 'user');
         } else {
           const wordBoundaryRange = this.getWordBoundary(editor, range.index);
           if (wordBoundaryRange.length > 0) {
-            editor.formatText(wordBoundaryRange, { [format]: isActiveFormat ? undefined : value }, 'user');
+            editor.formatText(wordBoundaryRange, { [format]: isActiveFormat ? undefined : defaultValue }, 'user');
           } else {
-            editor.format(format, isActiveFormat ? undefined : value, 'user');
+            editor.format(format, isActiveFormat ? undefined : defaultValue, 'user');
           }
         }
       } else if (!!formatLine) {
-        const range = editor.getSelection();
-        if (!range) return;
-        editor.formatLine(range.index, range.length, formatLine, isActiveFormatLine ? undefined : value, 'user');
+        editor.format(formatLine, isActiveFormatLine ? undefined : defaultValue, 'user');
       }
     };
     return this.renderToggleButtonCmpt(
@@ -472,16 +552,17 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       e.preventDefault();
     };
     return (
-      <ToggleButton
+      <Button
         className={this.props.classes.toggleButton}
         value='check'
-        selected={isActive}
+        color={isActive ? 'primary' : 'inherit'}
+        style={{ color: isActive ? undefined : this.props.theme.palette.text.hint }}
         onMouseDown={e => e.preventDefault()}
         onChange={onChange}
         onClick={onChange}
       >
         <IconCmpt fontSize='inherit' />
-      </ToggleButton>
+      </Button>
     );
   }
 
@@ -509,9 +590,10 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   }
 
   handleOnChange(value: string, delta: DeltaStatic, source: Sources, editor: UnprivilegedEditor) {
+    const isEmpty = editor.getLength() === 0;
     this.props.onChange && this.props.onChange({
       target: {
-        value,
+        value: isEmpty ? '' : value,
         delta,
         source,
         editor,
