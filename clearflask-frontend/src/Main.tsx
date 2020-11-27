@@ -7,6 +7,7 @@ import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
+import { ComponentPropsOverrides } from './app/AppThemeProvider';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
 import EnvironmentNotifier from './app/utils/EnvironmentNotifier';
 import Loading from './app/utils/Loading';
@@ -56,7 +57,10 @@ const theme: Theme = createMuiTheme({
       colorDefault: {
         backgroundColor: '#fff',
       },
-    }
+    },
+  },
+  props: {
+    ...ComponentPropsOverrides,
   },
 });
 

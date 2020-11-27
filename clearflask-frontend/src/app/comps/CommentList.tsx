@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, StateSettings, Status } from '../../api/server';
+import notEmpty from '../../common/util/arrayUtil';
 import Loader from '../utils/Loader';
 import Comment from './Comment';
 import CommentReply from './CommentReply';
@@ -122,6 +123,11 @@ const CommentList = connect<ConnectProps, {}, Props, ReduxState>((state: ReduxSt
       ownProps.server.dispatch().commentVoteGetOwn({
         projectId: state.projectId!,
         commentIds: missingVotesByCommentIds,
+        myOwnCommentIds: missingVotesByCommentIds
+          .map(commentId => state.comments.byId[commentId])
+          .filter(comment => comment?.comment?.authorUserId === state.users.loggedIn.user?.userId)
+          .map(comment => comment?.comment?.commentId)
+          .filter(notEmpty),
       });
     }
   }

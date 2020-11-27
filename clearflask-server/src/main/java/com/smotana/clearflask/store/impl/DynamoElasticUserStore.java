@@ -141,6 +141,12 @@ public class DynamoElasticUserStore implements UserStore {
         long voteBloomFilterExpectedInsertions();
 
         @DefaultValue("0.001")
+        double commentVoteBloomFilterFalsePositiveProbability();
+
+        @DefaultValue("100")
+        long commentVoteBloomFilterExpectedInsertions();
+
+        @DefaultValue("0.001")
         double expressBloomFilterFalsePositiveProbability();
 
         @DefaultValue("100")
@@ -644,6 +650,25 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
+    public UserModel userCommentVoteUpdateBloom(String projectId, String userId, String commentId) {
+        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+        BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getCommentVoteBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.commentVoteBloomFilterExpectedInsertions(), config.commentVoteBloomFilterFalsePositiveProbability()));
+        boolean bloomFilterUpdated = bloomFilter.put(commentId);
+        if (!bloomFilterUpdated) {
+            return user;
+        }
+        return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(userSchema.primaryKey(Map.of(
+                        "projectId", projectId,
+                        "userId", userId)))
+                .withAttributeUpdate(new AttributeUpdate("commentVoteBloom").put(BloomFilters.toByteArray(bloomFilter)))
+                .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
     public UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId) {
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getExpressBloom())
@@ -663,7 +688,7 @@ public class DynamoElasticUserStore implements UserStore {
     }
 
     @Override
-    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt) {
+    public UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt) {
         HashMap<String, String> nameMap = Maps.newHashMap();
         HashMap<String, Object> valMap = Maps.newHashMap();
         List<String> conditions = Lists.newArrayList();
@@ -675,15 +700,17 @@ public class DynamoElasticUserStore implements UserStore {
 
         setUpdates.add("#balance = if_not_exists(#balance, :zero) + :balanceDiff");
 
-        UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
-        BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
-        boolean bloomFilterUpdated = ideaIdOpt.map(bloomFilter::put).orElse(false);
-        if (bloomFilterUpdated) {
-            nameMap.put("#fundBloom", "fundBloom");
-            valMap.put(":fundBloom", BloomFilters.toByteArray(bloomFilter));
-            setUpdates.add("#fundBloom = :fundBloom");
+        if (updateBloomWithIdeaIdOpt.isPresent()) {
+            UserModel user = getUser(projectId, userId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"));
+            BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getFundBloom())
+                    .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
+                    .orElseGet(() -> BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), config.fundBloomFilterExpectedInsertions(), config.fundBloomFilterFalsePositiveProbability()));
+            boolean bloomFilterUpdated = bloomFilter.put(updateBloomWithIdeaIdOpt.get());
+            if (bloomFilterUpdated) {
+                nameMap.put("#fundBloom", "fundBloom");
+                valMap.put(":fundBloom", BloomFilters.toByteArray(bloomFilter));
+                setUpdates.add("#fundBloom = :fundBloom");
+            }
         }
 
         Optional<String> conditionExpressionOpt = Optional.empty();
@@ -708,8 +735,8 @@ public class DynamoElasticUserStore implements UserStore {
                     .getItem());
         } catch (ConditionalCheckFailedException ex) {
             if (LogUtil.rateLimitAllowLog("userStore-negativeBalanceWarn")) {
-                log.warn("Attempted to set balance below zero, projectId {} userId {} balanceDiff {} ideaIdOpt {}",
-                        projectId, userId, balanceDiff, ideaIdOpt, ex);
+                log.warn("Attempted to set balance below zero, projectId {} userId {} balanceDiff {} updateBloomWithIdeaIdOpt {}",
+                        projectId, userId, balanceDiff, updateBloomWithIdeaIdOpt, ex);
             }
             throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not enough credits");
         }
@@ -913,6 +940,7 @@ public class DynamoElasticUserStore implements UserStore {
                     Instant.now(),
                     null,
                     null,
+                    null,
                     null))
                     .getUser());
         }
@@ -961,6 +989,12 @@ public class DynamoElasticUserStore implements UserStore {
                 .withValueMap(new ValueMap().withLong(":ttlInEpochSec", ttlInEpochSec))
                 .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
+    }
+
+    @Override
+    public void revokeSession(String sessionId) {
+        sessionByIdSchema.table().deleteItem(new DeleteItemSpec()
+                .withPrimaryKey(sessionByIdSchema.primaryKey(Map.of("sessionId", sessionId))));
     }
 
     @Override

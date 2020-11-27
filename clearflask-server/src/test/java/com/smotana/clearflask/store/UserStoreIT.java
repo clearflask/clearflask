@@ -15,7 +15,12 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.*;
+import com.smotana.clearflask.util.DefaultServerSecret;
+import com.smotana.clearflask.util.ElasticUtil;
+import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.web.security.Sanitizer;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -44,6 +49,7 @@ public class UserStoreIT extends AbstractIT {
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticUserStore.module(),
+                Sanitizer.module(),
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
@@ -81,6 +87,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,
                 null,
                 null,
                 null);
@@ -152,6 +159,7 @@ public class UserStoreIT extends AbstractIT {
                 Instant.now(),
                 null,
                 null,
+                null,
                 null);
         UserModel user2 = new UserModel(
                 projectId,
@@ -172,6 +180,7 @@ public class UserStoreIT extends AbstractIT {
                 Instant.now().minus(1, ChronoUnit.DAYS),
                 null,
                 null,
+                null,
                 null);
         UserModel user3 = new UserModel(
                 projectId,
@@ -190,6 +199,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken3",
                 "myBrowserPushToken3",
                 Instant.now().minus(2, ChronoUnit.DAYS),
+                null,
                 null,
                 null,
                 null);
@@ -249,6 +259,7 @@ public class UserStoreIT extends AbstractIT {
                 Instant.now(),
                 null,
                 null,
+                null,
                 null);
 
         store.createIndex(user.getProjectId()).get();
@@ -283,6 +294,7 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,
                 null,
                 null,
                 null);

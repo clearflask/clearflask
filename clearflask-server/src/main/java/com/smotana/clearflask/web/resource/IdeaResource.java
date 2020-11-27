@@ -121,11 +121,16 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableMap.of(),
                 0d);
         ideaStore.createIdea(ideaModel);
-        if (project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()))) {
+
+        boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
+        if (votingAllowed) {
             ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
         }
+
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
-        return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
+        return ideaModel.toIdeaWithVote(
+                IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
+                sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
@@ -169,11 +174,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 0d);
         ideaStore.createIdea(ideaModel);
 
-        if (project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()))) {
+        boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
+        if (votingAllowed) {
             ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
         }
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
-        return ideaModel.toIdeaWithVote(IdeaVote.builder().vote(VoteOption.UPVOTE).build());
+        return ideaModel.toIdeaWithVote(
+                IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
+                sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -186,7 +194,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
                 .map(ideaModel -> userOpt.map(user -> addVote(user, ideaModel))
-                        .orElseGet(() -> ideaModel.toIdeaWithVote(new IdeaVote(null, null, null))))
+                        .orElseGet(() -> ideaModel.toIdeaWithVote(
+                                IdeaVote.builder().build(),
+                                sanitizer)))
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -195,7 +205,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
-                .map(IdeaModel::toIdea)
+                .map(idea -> idea.toIdea(sanitizer))
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -232,7 +242,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 searchResponse.getCursorOpt().orElse(null),
                 userOpt.map(user -> addVotes(user, ideaModels))
                         .orElseGet(() -> ideaModels.stream()
-                                .map(ideaModel -> ideaModel.toIdeaWithVote(new IdeaVote(null, null, null)))
+                                .map(ideaModel -> ideaModel.toIdeaWithVote(
+                                        new IdeaVote(null, null, null),
+                                        sanitizer))
                                 .collect(ImmutableList.toImmutableList())),
                 new Hits(
                         searchResponse.getTotalHits(),
@@ -258,7 +270,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 searchResponse.getIdeaIds().stream()
                         .map(ideasById::get)
                         .filter(Objects::nonNull)
-                        .map(IdeaModel::toIdea)
+                        .map(idea -> idea.toIdea(sanitizer))
                         .collect(ImmutableList.toImmutableList()),
                 new Hits(
                         searchResponse.getTotalHits(),
@@ -272,7 +284,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaUpdate.getTitle());
         sanitizer.content(ideaUpdate.getDescription());
 
-        return ideaStore.updateIdea(projectId, ideaId, ideaUpdate).getIdea().toIdea();
+        return ideaStore.updateIdea(projectId, ideaId, ideaUpdate)
+                .getIdea()
+                .toIdea(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
@@ -299,7 +313,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         responseChanged);
             }
         }
-        return idea.toIdea();
+        return idea.toIdea(sanitizer);
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
@@ -340,8 +354,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     }
 
     private IdeaWithVote addVote(UserModel user, IdeaModel idea) {
+        boolean isAuthor = user.getUserId().equals(idea.getAuthorUserId());
         Optional<VoteOption> voteOptionOpt = Optional.empty();
-        if (user.getVoteBloom() != null
+        if (isAuthor
+                || user.getVoteBloom() != null
                 && BloomFilters.fromByteArray(user.getVoteBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             voteOptionOpt = Optional.ofNullable(voteStore.voteSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
@@ -349,7 +365,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     .map(voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption());
         }
         Optional<List<String>> expressionOpt = Optional.empty();
-        if (user.getExpressBloom() != null
+        if (isAuthor
+                || user.getExpressBloom() != null
                 && BloomFilters.fromByteArray(user.getExpressBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             expressionOpt = Optional.ofNullable(voteStore.expressSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
@@ -357,7 +374,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     .map(expressModel -> expressModel.getExpressions().asList());
         }
         Optional<Long> fundAmountOpt = Optional.empty();
-        if (user.getFundBloom() != null
+        if (isAuthor
+                || user.getFundBloom() != null
                 && BloomFilters.fromByteArray(user.getFundBloom(), Funnels.stringFunnel(Charsets.UTF_8))
                 .mightContain(idea.getIdeaId())) {
             fundAmountOpt = Optional.ofNullable(voteStore.fundSearch(user.getProjectId(), user.getUserId(), ImmutableSet.of(idea.getIdeaId()))
@@ -365,19 +383,20 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     .map(VoteStore.FundModel::getFundAmount);
         }
 
-        return idea.toIdeaWithVote(new IdeaVote(
-                voteOptionOpt.orElse(null),
-                expressionOpt.orElse(null),
-                fundAmountOpt.orElse(null)
-        ));
+        return idea.toIdeaWithVote(
+                new IdeaVote(
+                        voteOptionOpt.orElse(null),
+                        expressionOpt.orElse(null),
+                        fundAmountOpt.orElse(null)),
+                sanitizer);
     }
 
     private ImmutableList<IdeaWithVote> addVotes(UserModel user, ImmutableList<IdeaModel> ideas) {
         ImmutableMap<String, VoteStore.VoteModel> voteResults = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .map(bloomFilter -> ideas.stream()
+                        .filter(idea -> user.getUserId().equals(idea.getAuthorUserId()) || bloomFilter.mightContain(idea.getIdeaId()))
                         .map(IdeaModel::getIdeaId)
-                        .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
                 .map(ideaIds -> voteStore.voteSearch(user.getProjectId(), user.getUserId(), ideaIds))
                 .orElse(ImmutableMap.of());
@@ -385,8 +404,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         ImmutableMap<String, VoteStore.ExpressModel> expressResults = Optional.ofNullable(user.getExpressBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .map(bloomFilter -> ideas.stream()
+                        .filter(idea -> user.getUserId().equals(idea.getAuthorUserId()) || bloomFilter.mightContain(idea.getIdeaId()))
                         .map(IdeaModel::getIdeaId)
-                        .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
                 .map(ideaIds -> voteStore.expressSearch(user.getProjectId(), user.getUserId(), ideaIds))
                 .orElse(ImmutableMap.of());
@@ -394,8 +413,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         ImmutableMap<String, VoteStore.FundModel> fundResults = Optional.ofNullable(user.getFundBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .map(bloomFilter -> ideas.stream()
+                        .filter(idea -> user.getUserId().equals(idea.getAuthorUserId()) || bloomFilter.mightContain(idea.getIdeaId()))
                         .map(IdeaModel::getIdeaId)
-                        .filter(bloomFilter::mightContain)
                         .collect(ImmutableSet.toImmutableSet()))
                 .map(ideaIds -> voteStore.fundSearch(user.getProjectId(), user.getUserId(), ideaIds))
                 .orElse(ImmutableMap.of());
@@ -415,7 +434,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                     if (fundModel != null) {
                         voteBuilder.fundAmount(fundModel.getFundAmount());
                     }
-                    return idea.toIdeaWithVote(voteBuilder.build());
+                    return idea.toIdeaWithVote(
+                            voteBuilder.build(),
+                            sanitizer);
                 })
                 .collect(ImmutableList.toImmutableList());
     }

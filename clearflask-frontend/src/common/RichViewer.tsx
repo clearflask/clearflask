@@ -47,7 +47,7 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
   textAlign: 'left',
   whiteSpace: 'pre-wrap',
   wordWrap: 'break-word',
-  '& p, & ol, & ul, & pre, & blockquote, & h1, & h2, & h3, & h4, & h5, & h6': {
+  '& div, & ol, & ul, & pre, & blockquote, & h1, & h2, & h3, & h4, & h5, & h6': {
     margin: '0',
     padding: '0',
     counterReset:
@@ -264,15 +264,6 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
   '& .ql-align-center': { textAlign: 'center' },
   '& .ql-align-justify': { textAlign: 'justify' },
   '& .ql-align-right': { textAlign: 'right' },
-  '&.ql-blank::before': {
-    color: 'rgba(0,0,0,0.6)',
-    content: 'attr(data-placeholder)',
-    fontStyle: 'italic',
-    left: '15px',
-    pointerEvents: 'none',
-    position: 'absolute',
-    right: '15px'
-  }
 });
 
 const styles = (theme: Theme) => createStyles({

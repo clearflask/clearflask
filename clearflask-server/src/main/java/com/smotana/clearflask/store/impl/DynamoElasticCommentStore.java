@@ -271,7 +271,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("authorIsMod", orNull(comment.getAuthorIsMod()))
                                 .put("created", comment.getCreated().getEpochSecond())
                                 .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
-                                .put("content", orNull(elasticUtil.draftjsToPlaintext(comment.getContent())))
+                                .put("content", orNull(elasticUtil.richToPlaintext(comment.getContent())))
                                 .put("upvotes", comment.getUpvotes())
                                 .put("downvotes", comment.getDownvotes())
                                 .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
@@ -505,7 +505,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(ImmutableMap.of(
-                                "content", elasticUtil.draftjsToPlaintext(comment.getContent())
+                                "content", elasticUtil.richToPlaintext(comment.getContent())
                         )), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));
@@ -515,7 +515,6 @@ public class DynamoElasticCommentStore implements CommentStore {
 
     @Override
     public CommentAndIndexingFuture<UpdateResponse> voteComment(String projectId, String ideaId, String commentId, String userId, VoteValue vote) {
-        userStore.userVoteUpdateBloom(projectId, userId, ideaId);
         VoteValue votePrev = voteStore.vote(projectId, userId, commentId, vote);
         if (vote == votePrev) {
             return new CommentAndIndexingFuture<>(getComment(projectId, ideaId, commentId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Comment not found")), Futures.immediateFuture(null));
@@ -561,6 +560,10 @@ public class DynamoElasticCommentStore implements CommentStore {
                 .withReturnValues(ReturnValue.ALL_NEW)
                 .withAttributeUpdate(attrUpdatesBuilder.build()))
                 .getItem());
+
+        if (!userId.equals(comment.getAuthorUserId())) {
+            userStore.userCommentVoteUpdateBloom(projectId, userId, commentId);
+        }
 
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)

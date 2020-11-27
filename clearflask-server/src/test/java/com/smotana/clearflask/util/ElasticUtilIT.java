@@ -13,6 +13,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.ElasticUtil.ConfigSearch;
 import com.smotana.clearflask.util.ElasticUtil.PaginationType;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -60,6 +61,7 @@ public class ElasticUtilIT extends AbstractIT {
         install(Modules.override(
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
+                Sanitizer.module(),
                 GsonProvider.module(),
                 ConfigSystem.configModule(ConfigSearch.class, Names.named("ElasticUtilIT"))
         ).with(new AbstractModule() {

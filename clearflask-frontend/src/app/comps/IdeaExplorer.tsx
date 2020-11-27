@@ -4,6 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import ReactQuill from 'react-quill';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
@@ -12,7 +13,7 @@ import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/serve
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
-import RichEditor from '../../common/RichEditor';
+import RichEditor, { textToHtml } from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -123,6 +124,7 @@ interface State {
 class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   readonly panelSearchRef: React.RefObject<any> = React.createRef();
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  readonly descriptionInputRef: React.RefObject<ReactQuill> = React.createRef();
   readonly updateSearchText: (title?: string, descRaw?: string) => void;
   readonly inViewObserverRef = React.createRef<InViewObserver>();
   _isMounted: boolean = false;
@@ -339,6 +341,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             variant='outlined'
             size='small'
             id='createDescription'
+            inputRef={this.descriptionInputRef}
             multiline
             disabled={this.state.newItemIsSubmitting}
             className={this.props.classes.createFormField}
@@ -357,11 +360,6 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 newItemDescription: value,
                 newItemDescriptionTextOnly: descriptionTextOnly,
               })
-            }}
-            InputProps={{
-              style: {
-                minHeight: 76,
-              },
             }}
           />
         </Grid>
@@ -541,7 +539,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var j = 0; j < description.length; j++) {
           if (await animate({
             sleepInMs: 10 + Math.random() * 30,
-            setState: { newItemDescription: description.substr(0, j + 1) },
+            setState: { newItemDescription: textToHtml(description.substr(0, j + 1)) },
           })) return;
         }
       }
@@ -552,7 +550,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         for (var k = 0; k < description.length; k++) {
           if (await animate({
             sleepInMs: 5,
-            setState: { newItemDescription: description.substr(0, description.length - k - 1) },
+            setState: { newItemDescription: textToHtml(description.substr(0, description.length - k - 1)) },
           })) return;
         }
 

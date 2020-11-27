@@ -5,10 +5,21 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Balance;
+import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -47,9 +58,11 @@ public interface UserStore {
 
     UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId);
 
+    UserModel userCommentVoteUpdateBloom(String projectId, String userId, String commentId);
+
     UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId);
 
-    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> ideaIdOpt);
+    UserAndIndexingFuture<UpdateResponse> updateUserBalance(String projectId, String userId, long balanceDiff, Optional<String> updateBloomWithIdeaIdOpt);
 
     ListenableFuture<BulkResponse> deleteUsers(String projectId, ImmutableCollection<String> userIds);
 
@@ -78,6 +91,8 @@ public interface UserStore {
     Optional<UserSession> getSession(String sessionId);
 
     UserSession refreshSession(UserSession userSession, long ttlInEpochSec);
+
+    void revokeSession(String sessionId);
 
     void revokeSession(UserSession userSession);
 
@@ -202,6 +217,8 @@ public interface UserStore {
         byte[] fundBloom;
 
         byte[] voteBloom;
+
+        byte[] commentVoteBloom;
 
         public UserMe toUserMe() {
             return new UserMe(

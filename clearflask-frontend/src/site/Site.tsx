@@ -74,8 +74,12 @@ const styles = (theme: Theme) => createStyles({
     textDecoration: 'none',
   },
   logo: {
+    objectFit: 'contain',
     maxWidth: '48px',
     maxHeight: '48px',
+    width: 'auto',
+    height: 'auto',
+    padding: theme.spacing(1),
   },
   menuIndent: {
     marginLeft: theme.spacing(2),

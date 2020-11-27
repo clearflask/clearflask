@@ -16,10 +16,13 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexWrap: 'wrap',
   },
-  grow: {
+  post: {
     flexGrow: 1,
+    display: 'flex',
+    justifyContent: 'center',
   },
   similar: {
+    minWidth: 300,
     margin: theme.spacing(2),
     flexBasis: 0,
   },
@@ -55,6 +58,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
 
     const post = (
       <Post
+        className={this.props.classes.post}
         key='post'
         server={this.props.server}
         idea={this.props.post}
@@ -64,10 +68,8 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
     );
 
     const similar = (!this.props.suppressSimilar && this.props.width && isWidthUp('md', this.props.width, true)) && (
-      <React.Fragment>
-        <div className={this.props.classes.grow} />
+      <div className={this.props.classes.similar}>
         <PanelPost
-          className={this.props.classes.similar}
           direction={Direction.Vertical}
           PostProps={this.props.PostProps}
           panel={{
@@ -94,7 +96,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
           }}
           server={this.props.server}
         />
-      </React.Fragment>
+      </div>
     );
 
     return (

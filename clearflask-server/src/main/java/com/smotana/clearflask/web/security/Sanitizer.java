@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.security;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
@@ -8,8 +9,10 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
+import org.owasp.html.Handler;
 import org.owasp.html.HtmlChangeListener;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.HtmlSanitizer;
@@ -30,24 +33,30 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 @Slf4j
 @Singleton
 public class Sanitizer {
+    private static final PolicyFactory HtmlToPlaintextPolicyFactory = new HtmlPolicyBuilder().toFactory();
 
-    private static final Pattern ONSITE_URL = Pattern.compile(
-            "(?:[\\p{L}\\p{N}\\\\\\.\\#@\\$%\\+&;\\-_~,\\?=/!]+|\\#(\\w)+)");
-    private static final Pattern OFFSITE_URL = Pattern.compile(
-            "\\s*(?:(?:ht|f)tps?://|mailto:)[\\p{L}\\p{N}]"
-                    + "[\\p{L}\\p{N}\\p{Zs}\\.\\#@\\$%\\+&;:\\-_~,\\?=/!\\(\\)]*+\\s*");
-    private static final Predicate<String> ONSITE_OR_OFFSITE_URL = ONSITE_URL.asPredicate().or(OFFSITE_URL.asPredicate());
+    /** If changed, also change in Sanitizer.java */
     private static final PolicyFactory RichHtmlPolicyFactory = new HtmlPolicyBuilder()
             .allowAttributes("class").matching(Pattern.compile("ql-indent-[0-9]")).onElements("li")
             .allowAttributes("class").matching(false, "ql-syntax").onElements("pre")
             .allowAttributes("spellcheck").matching(false, "false").onElements("pre")
-            .allowStandardUrlProtocols()
-            .requireRelsOnLinks("noreferrer", "noopener", "ugc")
-            .allowAttributes("rel").matching(Pattern.compile("(noreferrer\\s?|noopener\\s?|ugc\\s?)*")).onElements("a")
-            .allowAttributes("href").matching(ONSITE_OR_OFFSITE_URL::test).onElements("a")
-            .allowAttributes("target").matching(false, "_blank").onElements("a")
             .allowAttributes("data-checked").matching(false, "true", "false").onElements("ul")
-            .allowElements("p", "br", "a", "strong", "s", "em", "u", "ul", "ol", "li", "pre", "blockquote")
+
+            // Links
+            .allowAttributes("href").onElements("a")
+            // If changed, also change in quill-format-link.ts
+            .allowAttributes("target").matching((String elementName, String attributeName, String value) -> "_blank").onElements("a")
+            .allowAttributes("rel").matching((String elementName, String attributeName, String value) -> "" /* Will be set by requireRelsOnLinks */).onElements("a")
+            .allowElements((elementName, attrs) -> attrs.containsAll(ImmutableSet.of("rel", "href", "target")) ? elementName : null, "a")
+            // If changed, also change in quill-format-link.ts
+            .requireRelsOnLinks("noreferrer", "noopener", "ugc")
+            // If changed, also change in quill-format-link.ts
+            .allowUrlProtocols("https", "http", "mailto", "tel")
+
+            // Migration from <p> to <div>
+            .allowElements((elementName, attrs) -> "div", "p")
+
+            .allowElements("div", "br", "a", "strong", "s", "em", "u", "ul", "ol", "li", "pre", "blockquote")
             .toFactory();
 
     public interface Config {
@@ -161,15 +170,37 @@ public class Sanitizer {
         HtmlStreamRenderer renderer = HtmlStreamRenderer.create(
                 sanitizedHtmlBuilder,
                 badHtml -> {
-                    log.warn("Invalid HTML passed for {} id {}: '{}'",
-                            identifierType, identifierId, badHtml);
+                    if (LogUtil.rateLimitAllowLog("sanitizer-html-error")) {
+                        log.warn("Error in HTML parsing for {} id {}: '{}'",
+                                identifierType, identifierId, badHtml);
+                    }
                     sanitizedHtmlBuilder.append(config.htmlSanitizerInvalidHtmlMessage());
                 });
         HtmlSanitizer.sanitize(html, RichHtmlPolicyFactory.apply(renderer, htmlChangeListener, discarded));
-        if (!discarded.isEmpty()) {
-            log.warn("HTML Policy violation(s) for {} id {}, element-attribute violations(s): {}",
-                    identifierType, identifierId, discarded);
+
+        // Migration from <p> to <div>
+        if (!discarded.isEmpty()
+                && discarded.containsKey("p")
+                && discarded.get("p").isEmpty()) {
+            discarded.remove("p");
         }
+
+        if (!discarded.isEmpty()) {
+            if (LogUtil.rateLimitAllowLog("sanitizer-html-violation")) {
+                log.warn("HTML Policy violation(s) for {} id {}, element-attribute violations(s): {}",
+                        identifierType, identifierId, discarded);
+            }
+        }
+        return sanitizedHtmlBuilder.toString();
+    }
+
+    public String richHtmlToPlaintext(String html) {
+        StringBuilder sanitizedHtmlBuilder = new StringBuilder();
+
+        HtmlStreamRenderer renderer = HtmlStreamRenderer.create(
+                sanitizedHtmlBuilder,
+                Handler.DO_NOTHING);
+        HtmlSanitizer.sanitize(html, HtmlToPlaintextPolicyFactory.apply(renderer));
         return sanitizedHtmlBuilder.toString();
     }
 

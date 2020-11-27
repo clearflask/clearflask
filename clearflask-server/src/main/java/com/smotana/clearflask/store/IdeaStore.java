@@ -5,12 +5,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Idea;
+import com.smotana.clearflask.api.model.IdeaSearch;
+import com.smotana.clearflask.api.model.IdeaSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaUpdate;
+import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -129,12 +136,12 @@ public interface IdeaStore {
         String title;
 
         /**
-         * DraftJs format.
+         * WARNING: Unsanitized HTML.
          */
         String description;
 
         /**
-         * DraftJs format.
+         * WARNING: Unsanitized HTML.
          */
         String response;
 
@@ -175,7 +182,7 @@ public interface IdeaStore {
 
         Double trendScore;
 
-        public Idea toIdea() {
+        public Idea toIdea(Sanitizer sanitizer) {
             return new Idea(
                     getIdeaId(),
                     getAuthorUserId(),
@@ -183,8 +190,8 @@ public interface IdeaStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
-                    getDescription(),
-                    getResponse(),
+                    sanitizer.richHtml(getDescription(), "idea", getIdeaId()),
+                    sanitizer.richHtml(getResponse(), "idea", getIdeaId()),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
                     getCategoryId(),
@@ -200,7 +207,7 @@ public interface IdeaStore {
                     getExpressions());
         }
 
-        public IdeaWithVote toIdeaWithVote(IdeaVote vote) {
+        public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
             return new IdeaWithVote(
                     getIdeaId(),
                     getAuthorUserId(),
@@ -208,8 +215,8 @@ public interface IdeaStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
-                    getDescription(),
-                    getResponse(),
+                    sanitizer.richHtml(getDescription(), "idea", getIdeaId()),
+                    sanitizer.richHtml(getResponse(), "idea", getIdeaId()),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
                     getCategoryId(),

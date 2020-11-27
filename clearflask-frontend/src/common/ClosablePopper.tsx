@@ -88,6 +88,7 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props extends PopperProps {
   innerClassName?: string;
+  zIndex?: number;
   onClose: () => void;
   /** Convenience method instead of anchorEl */
   anchorElGetter?: () => undefined | {
@@ -109,10 +110,22 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
   boundsLast;
 
   render() {
-    const { classes, onClose, ...popperProps } = this.props;
+    const {
+      children,
+      classes,
+      innerClassName,
+      zIndex,
+      onClose,
+      anchorElGetter,
+      disableCloseButton,
+      clickAway,
+      clickAwayProps,
+      arrow,
+      ...popperProps
+    } = this.props;
 
-    const anchorElGetter = this.props.anchorElGetter ? () => {
-      const bounds = this.props.anchorElGetter && this.props.anchorElGetter();
+    const anchorElGetterWrapped = anchorElGetter ? () => {
+      const bounds = anchorElGetter && anchorElGetter();
       if (!!bounds) {
         this.boundsLast = bounds;
       }
@@ -125,17 +138,22 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
     return (
       <React.Fragment>
         <Popper
+          style={{
+            ...(zIndex === undefined ? {} : {
+              zIndex: zIndex,
+            }),
+          }}
           placement='right-start'
           anchorEl={this.props.anchorEl !== undefined
             ? this.props.anchorEl
             : () => {
-              if (anchorElGetter) {
-                const bounds = anchorElGetter();
+              if (anchorElGetterWrapped) {
+                const bounds = anchorElGetterWrapped();
                 return {
                   clientHeight: bounds.height,
                   clientWidth: bounds.width,
                   getBoundingClientRect: () => {
-                    const boundsInner = anchorElGetter();
+                    const boundsInner = anchorElGetterWrapped();
                     return {
                       height: boundsInner.height,
                       width: boundsInner.width,
@@ -152,12 +170,12 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
             }}
           transition
           {...popperProps}
-          className={classNames(this.props.classes.popper, popperProps.className)}
+          className={classNames(classes.popper, popperProps.className)}
           modifiers={{
             preventOverflow: {
               enabled: true,
             },
-            ...(this.props.arrow ? {
+            ...(arrow ? {
               arrow: {
                 enabled: true,
                 element: this.arrowRef.current || '[x-arrow]',
@@ -169,30 +187,30 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
           {props => (
             <ClickAwayListener
               onClickAway={() => {
-                if (this.props.clickAway) {
-                  this.props.onClose();
+                if (clickAway) {
+                  onClose();
                 }
               }}
-              {...this.props.clickAwayProps}
+              {...clickAwayProps}
             >
               <Fade {...props.TransitionProps}>
-                <Paper className={this.props.classes.paper}>
-                  {this.props.arrow && (
-                    <span x-arrow='true' className={this.props.classes.arrow} ref={this.arrowRef} />
+                <Paper className={classes.paper}>
+                  {arrow && (
+                    <span x-arrow='true' className={classes.arrow} ref={this.arrowRef} />
                   )}
-                  {!this.props.disableCloseButton && (
+                  {!disableCloseButton && (
                     <IconButton
                       classes={{
-                        label: this.props.classes.closeButtonLabel,
-                        root: this.props.classes.closeButton,
+                        label: classes.closeButtonLabel,
+                        root: classes.closeButton,
                       }}
                       aria-label="Close"
-                      onClick={() => this.props.onClose()}
+                      onClick={() => onClose()}
                     >
-                      <CloseIcon className={this.props.classes.closeIcon} fontSize='inherit' />
+                      <CloseIcon className={classes.closeIcon} fontSize='inherit' />
                     </IconButton>
                   )}
-                  {this.props.children}
+                  {children}
                 </Paper>
               </Fade>
             </ClickAwayListener>

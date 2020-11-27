@@ -9,7 +9,7 @@ const styles = (theme: Theme) => createStyles({
   addCommentForm: {
     display: 'inline-flex',
     flexDirection: 'column',
-    marginLeft: theme.spacing(2),
+    margin: theme.spacing(4),
     alignItems: 'flex-end',
   },
   addCommentField: {
@@ -62,7 +62,8 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
           rowsMax={10}
           InputProps={{
             inputRef: this.inputRef,
-            onBlur: () => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(),
+            // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
+            onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
           }}
         />
         <Collapse in={!!this.state.newCommentInput}>

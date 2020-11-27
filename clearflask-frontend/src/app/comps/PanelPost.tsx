@@ -1,4 +1,4 @@
-import { Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Fade, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -40,7 +40,10 @@ const styles = (theme: Theme) => createStyles({
       margin: theme.spacing(4, 2),
     },
     [theme.breakpoints.up('md')]: {
-      margin: theme.spacing(8, 6),
+      margin: theme.spacing(6, 4),
+    },
+    '&:not(:last-child)': {
+      marginBottom: 0,
     },
   },
 });
@@ -69,6 +72,7 @@ interface ConnectProps {
 }
 class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithWidthProps> {
   render() {
+    const hideIfEmpty = !!this.props.panel['hideIfEmpty'];
     var content;
     switch (this.props.searchResult.status) {
       default:
@@ -80,7 +84,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         );
         break;
       case Status.PENDING:
-        if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty) return null;
+        if (hideIfEmpty) return null;
         content = (
           <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
             <Loading />
@@ -88,10 +92,12 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         );
         break;
       case Status.FULFILLED:
-        if ((this.props.panel as Client.PagePanelWithHideIfEmpty).hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
+        if (hideIfEmpty && this.props.searchResult.ideas.length === 0) return null;
         if (this.props.searchResult.ideas.length === 0) {
           content = (
-            <Typography variant='overline' className={this.props.classes.placeholder}>Nothing found</Typography>
+            <div className={classNames(this.props.widthExpand && this.props.classes.widthExpandMargin, this.props.classes.placeholder)}>
+              <Typography variant='overline'>Nothing found</Typography>
+            </div>
           )
         } else {
           const onlyHasOneCategory = (this.props.config && this.props.config.content.categories.length <= 1
@@ -123,7 +129,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
         }
         break;
     }
-    return this.props.suppressPanel ? content : (
+    content = this.props.suppressPanel ? content : (
       <Panel
         className={this.props.className}
         innerClassName={this.props.innerClassName}
@@ -133,6 +139,13 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
       >
         {content}
       </Panel>
+    );
+    return (
+      <Fade in={true} appear>
+        <div>
+          {content}
+        </div>
+      </Fade>
     );
   }
 }
@@ -175,6 +188,11 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
       ownProps.server.dispatch().ideaVoteGetOwn({
         projectId: state.projectId!,
         ideaIds: missingVotesByIdeaIds,
+        myOwnIdeaIds: missingVotesByIdeaIds
+          .map(ideaId => state.ideas.byId[ideaId])
+          .filter(idea => idea?.idea?.authorUserId === state.users.loggedIn.user?.userId)
+          .map(idea => idea?.idea?.ideaId)
+          .filter(notEmpty),
       });
     }
   }

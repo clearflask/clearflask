@@ -38,6 +38,7 @@ import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
@@ -89,6 +90,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private Billing billing;
     @Inject
     private AccountStore accountStore;
+    @Inject
+    private UserStore userStore;
     @Inject
     private PlanStore planStore;
     @Inject
@@ -184,18 +187,29 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Limit(requiredPermits = 1)
     @Override
     public void accountLogoutAdmin() {
-        Optional<AccountSession> accountSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt);
-        if (!accountSessionOpt.isPresent()) {
-            log.trace("Cannot logout account, already not logged in");
-            return;
+        Optional<String> accountSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).map(AccountSession::getAccountId);
+        Optional<String> superAdminSessionIdOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getSuperAdminSessionOpt).map(AccountSession::getAccountId);
+
+        log.debug("Logout session for accountId {} superAdminAccountId {}",
+                accountSessionIdOpt, superAdminSessionIdOpt);
+
+        Arrays.stream(request.getCookies())
+                .filter(c -> c.getName().startsWith(UserResource.USER_AUTH_COOKIE_NAME_PREFIX)
+                        && !Strings.isNullOrEmpty(c.getValue()))
+                .forEach(c -> {
+                    userStore.revokeSession(c.getValue());
+                    authCookie.unsetAuthCookie(response, c.getName());
+                });
+
+        accountSessionIdOpt.ifPresent(accountStore::revokeSession);
+        accountSessionIdOpt.ifPresent(superAdminSessionId ->
+                authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME));
+
+        if (!accountSessionIdOpt.equals(superAdminSessionIdOpt)) {
+            superAdminSessionIdOpt.ifPresent(accountStore::revokeSession);
         }
-
-        log.debug("Logout session for accountId {} sessionId {}",
-                accountSessionOpt.get().getAccountId(), accountSessionOpt.get().getSessionId());
-        accountStore.revokeSession(accountSessionOpt.get().getSessionId());
-
-        authCookie.unsetAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME);
-        authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME);
+        superAdminSessionIdOpt.ifPresent(superAdminSessionId ->
+                authCookie.unsetAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME));
     }
 
     @PermitAll

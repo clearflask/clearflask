@@ -446,7 +446,7 @@ public class DynamoProjectStore implements ProjectStore {
                     .getVote());
             if (!votingOpt.isPresent()) {
                 return false;
-            } else if (voteValue == VoteValue.Upvote && votingOpt.get().getEnableDownvotes() != Boolean.TRUE) {
+            } else if (voteValue == VoteValue.Downvote && votingOpt.get().getEnableDownvotes() != Boolean.TRUE) {
                 return false;
             }
 

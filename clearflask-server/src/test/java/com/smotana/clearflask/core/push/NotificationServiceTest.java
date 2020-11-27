@@ -56,7 +56,7 @@ import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.util.Optional;
 
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static nl.martijndwars.webpush.Utils.ALGORITHM;
 import static nl.martijndwars.webpush.Utils.CURVE;
 import static org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
@@ -119,7 +119,7 @@ public class NotificationServiceTest extends AbstractTest {
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .statusId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getWorkflow().getStatuses().get(0).getStatusId())
-                .response(textToMockDraftjs("My response"))
+                .response(textToSimpleHtml("My response"))
                 .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
                 .fundersCount(3L).funded(300L)
                 .votersCount(4L).voteValue(2L)
@@ -183,7 +183,7 @@ public class NotificationServiceTest extends AbstractTest {
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .statusId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getWorkflow().getStatuses().get(0).getStatusId())
-                .response(textToMockDraftjs("My response"))
+                .response(textToSimpleHtml("My response"))
                 .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
                 .fundersCount(3L).funded(300L)
                 .votersCount(4L).voteValue(2L)

@@ -4,9 +4,9 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.smotana.clearflask.api.CommentAdminApi;
 import com.smotana.clearflask.api.CommentApi;
@@ -48,6 +48,7 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -114,7 +115,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 commentModel,
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user.getUserId());
-        return commentModel.toCommentWithVote(VoteOption.UPVOTE);
+        return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -134,7 +135,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         sanitizer.content(update.getContent());
 
         return commentStore.updateComment(projectId, ideaId, commentId, Instant.now(), update)
-                .getCommentModel().toComment();
+                .getCommentModel().toComment(sanitizer);
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})
@@ -142,7 +143,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Override
     public Comment commentDelete(String projectId, String ideaId, String commentId) {
         return commentStore.markAsDeletedComment(projectId, ideaId, commentId)
-                .getCommentModel().toComment();
+                .getCommentModel().toComment(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -167,7 +168,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Override
     public Comment commentDeleteAdmin(String projectId, String ideaId, String commentId) {
         return commentStore.markAsDeletedComment(projectId, ideaId, commentId)
-                .getCommentModel().toComment();
+                .getCommentModel().toComment(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -191,18 +192,17 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableMap<String, VoteOption> voteResults = userOpt.map(UserModel::getVoteBloom)
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> comments.stream()
+        Optional<BloomFilter<CharSequence>> bloomFilterOpt = userOpt.map(UserModel::getCommentVoteBloom)
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+        Map<String, VoteOption> voteResults = Maps.transformValues(
+                voteStore.voteSearch(projectId, userOpt.get().getUserId(), comments.stream()
+                        .filter(comment -> userOpt.get().getUserId().equals(comment.getAuthorUserId())
+                                || bloomFilterOpt.isPresent() && bloomFilterOpt.get().mightContain(comment.getCommentId()))
                         .map(CommentModel::getCommentId)
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(commentIds -> voteStore.voteSearch(projectId, userOpt.get().getUserId(), commentIds))
-                .map(m -> Maps.transformValues(m, v -> VoteValue.fromValue(v.getVote()).toVoteOption()))
-                .map(ImmutableMap::copyOf)
-                .orElse(ImmutableMap.of());
+                        .collect(ImmutableSet.toImmutableSet())
+                ), v -> VoteValue.fromValue(v.getVote()).toVoteOption());
         return comments.stream()
-                .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId())))
+                .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId()), sanitizer))
                 .collect(ImmutableList.toImmutableList());
     }
 }

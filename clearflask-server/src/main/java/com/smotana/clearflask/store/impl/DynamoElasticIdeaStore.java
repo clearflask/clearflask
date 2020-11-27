@@ -242,8 +242,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("created", idea.getCreated().getEpochSecond())
                                 .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
-                                .put("description", orNull(elasticUtil.draftjsToPlaintext(idea.getDescription())))
-                                .put("response", orNull(elasticUtil.draftjsToPlaintext(idea.getResponse())))
+                                .put("description", orNull(elasticUtil.richToPlaintext(idea.getDescription())))
+                                .put("response", orNull(elasticUtil.richToPlaintext(idea.getResponse())))
                                 .put("responseAuthorUserId", orNull(idea.getResponseAuthorUserId()))
                                 .put("responseAuthorName", orNull(idea.getResponseAuthorName()))
                                 .put("categoryId", idea.getCategoryId())
@@ -476,7 +476,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
                         .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
             }
-            indexUpdates.put("description", elasticUtil.draftjsToPlaintext(ideaUpdateAdmin.getDescription()));
+            indexUpdates.put("description", elasticUtil.richToPlaintext(ideaUpdateAdmin.getDescription()));
         }
         if (ideaUpdateAdmin.getResponse() != null) {
             if (ideaUpdateAdmin.getResponse().isEmpty()) {
@@ -500,7 +500,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     indexUpdates.put("responseAuthorName", "");
                 }
             }
-            indexUpdates.put("response", elasticUtil.draftjsToPlaintext(ideaUpdateAdmin.getResponse()));
+            indexUpdates.put("response", elasticUtil.richToPlaintext(ideaUpdateAdmin.getResponse()));
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")
@@ -534,7 +534,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAndIndexingFuture voteIdea(String projectId, String ideaId, String userId, VoteValue vote) {
-        userStore.userVoteUpdateBloom(projectId, userId, ideaId);
         VoteValue votePrev = voteStore.vote(projectId, userId, ideaId, vote);
         if (vote == votePrev) {
             return new IdeaAndIndexingFuture(getIdea(projectId, ideaId).orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "Idea not found")), Futures.immediateFuture(null));
@@ -572,6 +571,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withUpdateExpression(updateExpression))
                 .getItem());
 
+        if (!userId.equals(idea.getAuthorUserId())) {
+            userStore.userVoteUpdateBloom(projectId, userId, ideaId);
+        }
+
         boolean updateTrend = false;
         Map<String, Object> indexUpdates = Maps.newHashMap();
         if (voteDiff != 0) {
@@ -602,7 +605,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAndExpressionsAndIndexingFuture expressIdeaSet(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, Optional<String> expressionOpt) {
-        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.express(projectId, userId, ideaId, expressionOpt);
         ImmutableSet<String> expressions = expressionOpt.map(ImmutableSet::of).orElse(ImmutableSet.of());
 
@@ -656,6 +658,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withUpdateExpression(updateExpression))
                 .getItem());
 
+        if (!userId.equals(idea.getAuthorUserId())) {
+            userStore.userExpressUpdateBloom(projectId, userId, ideaId);
+        }
+
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("expressions", idea.getExpressions().keySet());
         if (expressionsValueDiff != 0d) {
@@ -674,7 +680,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAndExpressionsAndIndexingFuture expressIdeaAdd(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
-        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiAdd(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (expressionsPrev.contains(expression)) {
@@ -691,6 +696,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
                 .withUpdateExpression("SET expressions.#exprAdd = if_not_exists(expressions.#exprAdd, :zero) + :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
                 .getItem());
+
+        if (!userId.equals(idea.getAuthorUserId())) {
+            userStore.userExpressUpdateBloom(projectId, userId, ideaId);
+        }
 
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("expressions", idea.getExpressions().keySet());
@@ -713,7 +722,6 @@ public class DynamoElasticIdeaStore implements IdeaStore {
 
     @Override
     public IdeaAndExpressionsAndIndexingFuture expressIdeaRemove(String projectId, String ideaId, String userId, Function<String, Double> expressionToWeightMapper, String expression) {
-        userStore.userExpressUpdateBloom(projectId, userId, ideaId);
         ImmutableSet<String> expressionsPrev = voteStore.expressMultiRemove(projectId, userId, ideaId, ImmutableSet.of(expression));
 
         if (!expressionsPrev.contains(expression)) {
@@ -730,6 +738,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 .withValueMap(Map.of(":val", Math.abs(expressionValueDiff), ":one", 1, ":zero", 0))
                 .withUpdateExpression("SET expressions.#exprRem = if_not_exists(expressions.#exprRem, :zero) - :one, expressionsValue = if_not_exists(expressionsValue, :zero) " + (expressionValueDiff > 0 ? "+" : "-") + " :val"))
                 .getItem());
+
+        if (!userId.equals(idea.getAuthorUserId())) {
+            userStore.userExpressUpdateBloom(projectId, userId, ideaId);
+        }
 
         Map<String, Object> indexUpdates = Maps.newHashMap();
         indexUpdates.put("expressions", idea.getExpressions().keySet());

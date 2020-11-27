@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -77,21 +78,19 @@ public class VoteResource extends AbstractResource implements VoteApi {
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
     @Override
-    public CommentVoteGetOwnResponse commentVoteGetOwn(String projectId, List<String> commentIds) {
+    public CommentVoteGetOwnResponse commentVoteGetOwn(String projectId, List<String> commentIds, List<String> myOwnCommentIds) {
         UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .get();
 
-        Map<String, VoteOption> votesByCommentId = Optional.ofNullable(user.getVoteBloom())
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> commentIds.stream()
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
-                .orElse(Map.of());
-
+        Optional<BloomFilter<CharSequence>> bloomFilterOpt = Optional.ofNullable(user.getCommentVoteBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+        Map<String, VoteOption> votesByCommentId = Maps.transformValues(
+                voteStore.voteSearch(projectId, user.getUserId(), commentIds.stream()
+                        .filter(commentId -> myOwnCommentIds.contains(commentId)
+                                || bloomFilterOpt.isPresent() && bloomFilterOpt.get().mightContain(commentId))
+                        .collect(ImmutableSet.toImmutableSet())), voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption());
         return new CommentVoteGetOwnResponse(votesByCommentId);
     }
 
@@ -109,44 +108,41 @@ public class VoteResource extends AbstractResource implements VoteApi {
 
         billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);
 
-        return new CommentVoteUpdateResponse(comment.toCommentWithVote(vote.toVoteOption()));
+        return new CommentVoteUpdateResponse(comment.toCommentWithVote(vote.toVoteOption(), sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
     @Override
-    public IdeaVoteGetOwnResponse ideaVoteGetOwn(String projectId, List<String> ideaIds) {
+    public IdeaVoteGetOwnResponse ideaVoteGetOwn(String projectId, List<String> ideaIds, List<String> myOwnIdeaIds) {
         UserModel user = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId))
                 .get();
 
-        Map<String, VoteOption> votesByIdeaId = Optional.ofNullable(user.getVoteBloom())
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> ideaIds.stream()
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(ids -> voteStore.voteSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption()))
-                .orElse(Map.of());
+        Optional<BloomFilter<CharSequence>> voteBloomFilterOpt = Optional.ofNullable(user.getVoteBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+        Map<String, VoteOption> votesByIdeaId = Maps.transformValues(
+                voteStore.voteSearch(projectId, user.getUserId(), ideaIds.stream()
+                        .filter(ideaId -> myOwnIdeaIds.contains(ideaId)
+                                || voteBloomFilterOpt.isPresent() && voteBloomFilterOpt.get().mightContain(ideaId))
+                        .collect(ImmutableSet.toImmutableSet())), voteModel -> VoteValue.fromValue(voteModel.getVote()).toVoteOption());
 
-        Map<String, List<String>> expressionByIdeaId = Optional.ofNullable(user.getExpressBloom())
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> ideaIds.stream()
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(ids -> voteStore.expressSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, expressModel -> (List<String>) expressModel.getExpressions().asList()))
-                .orElse(Map.of());
+        Optional<BloomFilter<CharSequence>> expressBloomFilterOpt = Optional.ofNullable(user.getExpressBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+        Map<String, List<String>> expressionByIdeaId = Maps.transformValues(
+                voteStore.expressSearch(projectId, user.getUserId(), ideaIds.stream()
+                        .filter(ideaId -> myOwnIdeaIds.contains(ideaId)
+                                || expressBloomFilterOpt.isPresent() && expressBloomFilterOpt.get().mightContain(ideaId))
+                        .collect(ImmutableSet.toImmutableSet())), expressModel -> expressModel.getExpressions().asList());
 
-        Map<String, Long> fundAmountByIdeaId = Optional.ofNullable(user.getFundBloom())
-                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
-                .map(bloomFilter -> ideaIds.stream()
-                        .filter(bloomFilter::mightContain)
-                        .collect(ImmutableSet.toImmutableSet()))
-                .map(ids -> voteStore.fundSearch(projectId, user.getUserId(), ids))
-                .map(m -> Maps.transformValues(m, FundModel::getFundAmount))
-                .orElse(Map.of());
+        Optional<BloomFilter<CharSequence>> fundBloomFilterOpt = Optional.ofNullable(user.getFundBloom())
+                .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
+        Map<String, Long> fundAmountByIdeaId = Maps.transformValues(
+                voteStore.fundSearch(projectId, user.getUserId(), ideaIds.stream()
+                        .filter(ideaId -> myOwnIdeaIds.contains(ideaId)
+                                || fundBloomFilterOpt.isPresent() && fundBloomFilterOpt.get().mightContain(ideaId))
+                        .collect(ImmutableSet.toImmutableSet())), FundModel::getFundAmount);
 
         return new IdeaVoteGetOwnResponse(
                 votesByIdeaId,
@@ -221,20 +217,22 @@ public class VoteResource extends AbstractResource implements VoteApi {
             if (!project.isFundingAllowed(idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Funding not allowed");
             }
+            boolean isIdeaAuthor = userId.equals(idea.getAuthorUserId());
+            Optional<String> updateBloomWithIdeaIdOpt = isIdeaAuthor ? Optional.empty() : Optional.of(ideaId);
             String transactionType = TransactionType.VOTE.name().toLowerCase();
             String summary = "Funding for " + StringUtils.abbreviate(idea.getTitle(), 40);
             UserStore.UserAndIndexingFuture<UpdateResponse> updateUserBalanceResponse;
             IdeaTransactionAndIndexingFuture fundIdeaResponse;
             if (voteUpdate.getFundDiff() > 0) {
                 // For funding, first take from user, then give to idea
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), Optional.of(ideaId));
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), updateBloomWithIdeaIdOpt);
                 // Note: here is a critical time when funds have been taken but not yet given
                 fundIdeaResponse = ideaStore.fundIdea(projectId, ideaId, userId, voteUpdate.getFundDiff(), transactionType, summary);
             } else {
                 // For *RE*funding, first take from idea, then give to user
                 fundIdeaResponse = ideaStore.fundIdea(projectId, ideaId, userId, voteUpdate.getFundDiff(), transactionType, summary);
                 // Note: here is a critical time when funds have been taken but not yet given
-                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), Optional.of(ideaId));
+                updateUserBalanceResponse = userStore.updateUserBalance(projectId, userId, -voteUpdate.getFundDiff(), updateBloomWithIdeaIdOpt);
             }
             balanceOpt = Optional.of(updateUserBalanceResponse.getUser().toBalance());
             transactionOpt = Optional.of(fundIdeaResponse.getTransaction().toTransaction());
@@ -249,7 +247,7 @@ public class VoteResource extends AbstractResource implements VoteApi {
                         voteOptionOpt.orElse(null),
                         expressionOpt.map(ImmutableList::copyOf).orElse(null),
                         fundAmountOpt.orElse(null)),
-                idea.toIdea(),
+                idea.toIdea(sanitizer),
                 balanceOpt.orElse(null),
                 transactionOpt.orElse(null));
     }

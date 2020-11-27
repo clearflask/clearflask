@@ -24,13 +24,14 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.*;
 
 @Slf4j
@@ -53,6 +54,7 @@ public class CommentStoreIT extends AbstractIT {
                 DynamoElasticCommentStore.module(),
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
+                Sanitizer.module(),
                 ElasticUtil.module(),
                 DynamoElasticIdeaStore.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
@@ -114,7 +116,7 @@ public class CommentStoreIT extends AbstractIT {
         CommentModel c = createRandomComment(projectId, ideaId, ImmutableList.of());
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
-        c = c.toBuilder().content(textToMockDraftjs("newContent")).build();
+        c = c.toBuilder().content(textToSimpleHtml("newContent")).build();
         store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContent())).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
@@ -209,7 +211,7 @@ public class CommentStoreIT extends AbstractIT {
                 false,
                 Instant.now(),
                 null,
-                textToMockDraftjs(IdUtil.randomId()),
+                textToSimpleHtml(IdUtil.randomId()),
                 0,
                 0);
     }
@@ -223,8 +225,8 @@ public class CommentStoreIT extends AbstractIT {
                 false,
                 Instant.now(),
                 "title",
-                textToMockDraftjs("description"),
-                textToMockDraftjs("response"),
+                textToSimpleHtml("description"),
+                textToSimpleHtml("response"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 IdUtil.randomId(),

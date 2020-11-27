@@ -68,6 +68,15 @@ components:
         type: array
         items:
           type: string
+    # For optimizations only, own ideas are not present in bloom filter
+    # Need to specify them here in order to fetch votes
+    - name: myOwnIdeaIds
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: string
     responses:
       '200':
         content:
@@ -151,6 +160,15 @@ components:
       schema:
         type: string
     - name: commentIds
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: string
+    # For optimizations only, own comments are not present in bloom filter
+    # Need to specify them here in order to fetch votes
+    - name: myOwnCommentIds
       in: query
       required: true
       schema:

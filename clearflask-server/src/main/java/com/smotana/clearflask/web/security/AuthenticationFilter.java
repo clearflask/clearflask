@@ -73,8 +73,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 .or(() -> superAdminSessionOpt);
         Optional<UserSession> userSessionOpt = getPathParameter(requestContext, "projectId")
                 .or(() -> getPathParameter(requestContext, "slug")
-                    .flatMap(slug -> projectStore.getProjectBySlug(slug, true)
-                            .map(Project::getProjectId)))
+                        .flatMap(slug -> projectStore.getProjectBySlug(slug, true)
+                                .map(Project::getProjectId)))
                 .flatMap(projectId -> authenticateUser(projectId, requestContext));
         return ExtendedSecurityContext.create(
                 IpUtil.getRemoteIp(request, env),

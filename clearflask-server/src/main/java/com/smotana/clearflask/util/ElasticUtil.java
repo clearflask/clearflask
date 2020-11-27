@@ -1,12 +1,10 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -14,8 +12,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.elastic.ActionListeners;
-import com.smotana.clearflask.web.ErrorWithMessageException;
-import lombok.NonNull;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.ClearScrollRequest;
@@ -29,12 +26,9 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE_STR;
@@ -90,6 +84,8 @@ public class ElasticUtil {
     private Gson gson;
     @Inject
     private RestHighLevelClient elastic;
+    @Inject
+    protected Sanitizer sanitizer;
 
     public String getIndexName(String indexName, String projectId) {
         return indexName + "-" + projectId;
@@ -199,22 +195,8 @@ public class ElasticUtil {
                 cursorOptNew.map(serverSecretCursor::encryptString));
     }
 
-    public String draftjsToPlaintext(String draftjsJson) {
-        if (Strings.isNullOrEmpty(draftjsJson)) {
-            return null;
-        }
-        SimplifiedDraftjsFormat draftjs;
-        try {
-            draftjs = gson.fromJson(draftjsJson, SimplifiedDraftjsFormat.class);
-        } catch (JsonSyntaxException ex) {
-            if (LogUtil.rateLimitAllowLog("elasticUtil-jsonParseFailed")) {
-                log.warn("Failed to parse invalid DraftJs format: {}", draftjsJson, ex);
-            }
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Submitted content is corrupted", ex);
-        }
-        return Arrays.stream(draftjs.blocks)
-                .map(SimplifiedDraftjsFormat.SimplifiedRawDraftContentBlock::getText)
-                .collect(Collectors.joining(" "));
+    public String richToPlaintext(String html) {
+        return sanitizer.richHtmlToPlaintext(html);
     }
 
     private PaginationType choosePaginationType(
@@ -231,18 +213,6 @@ public class ElasticUtil {
             // The alternative is to use score with 'search after', but it is not recommended
             // as the score may differ between shards.
             return PaginationType.FROM;
-        }
-    }
-
-    @Value
-    private static class SimplifiedDraftjsFormat {
-        @NonNull
-        private final SimplifiedRawDraftContentBlock[] blocks;
-
-        @Value
-        private static class SimplifiedRawDraftContentBlock {
-            @NonNull
-            private final String text;
         }
     }
 

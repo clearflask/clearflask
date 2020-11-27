@@ -9,11 +9,7 @@ import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 
 const styles = (theme: Theme) => createStyles({
-  row: {
-    margin: theme.spacing(2),
-  }
 });
-
 interface Props {
   server: Server;
   comment: Client.CommentWithVote;
@@ -45,7 +41,7 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           <DialogTitle>Edit</DialogTitle>
           <DialogContent>
             <Grid container alignItems='baseline'>
-              <Grid item xs={12} className={this.props.classes.row}>
+              <Grid item xs={12}>
                 <RichEditor
                   variant='outlined'
                   size='small'

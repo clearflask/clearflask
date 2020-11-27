@@ -302,6 +302,7 @@ const styles = (theme: Theme) => createStyles({
     width: 400,
   },
   addCommentButton: {
+    margin: theme.spacing(4),
     color: theme.palette.text.secondary,
   },
   nothing: {
@@ -1223,6 +1224,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         ownProps.server.dispatch().ideaVoteGetOwn({
           projectId: state.projectId!,
           ideaIds: [ownProps.idea.ideaId],
+          myOwnIdeaIds: ownProps.idea.authorUserId === state.users.loggedIn.user?.userId
+            ? [ownProps.idea.ideaId] : [],
         });
       }
     } else {

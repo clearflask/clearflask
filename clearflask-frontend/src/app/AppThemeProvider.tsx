@@ -2,6 +2,7 @@ import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import { ThemeOptions } from '@material-ui/core/styles/createMuiTheme';
+import { ComponentsProps } from '@material-ui/core/styles/props';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
@@ -20,6 +21,15 @@ declare module '@material-ui/core/styles/createMuiTheme' {
   interface ThemeOptions extends ThemeCustomProps { }
 }
 
+export const ComponentPropsOverrides: ComponentsProps = {
+  MuiModal: {
+    disableEnforceFocus: true,
+  },
+  MuiWithWidth: {
+    noSSR: true,
+  },
+};
+
 interface Props {
   containerStyle?: React.CSSProperties,
   supressCssBaseline?: boolean;
@@ -29,7 +39,6 @@ interface Props {
   // connect
   config?: Client.Config;
 }
-
 class AppThemeProvider extends Component<Props> {
   render() {
     var expressionGrayscale: number | undefined = undefined;
@@ -92,15 +101,12 @@ class AppThemeProvider extends Component<Props> {
           } : {}),
         },
         props: {
-          MuiWithWidth: {
-            noSSR: true,
-          },
+          ...ComponentPropsOverrides,
           MuiDialog: {
             container: () => document.getElementById(this.props.appRootId)!,
             ...(this.props.isInsideContainer ? {
               style: { position: 'absolute' },
               BackdropProps: { style: { position: 'absolute' } },
-              disableEnforceFocus: true,
             } : {}),
           },
           MuiButtonBase: {

@@ -23,6 +23,7 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.VoteStore.VoteValue.*;
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -52,6 +53,7 @@ public class IdeaStoreIT extends AbstractIT {
                 DynamoElasticIdeaStore.module(),
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
+                Sanitizer.module(),
                 ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
@@ -80,7 +82,7 @@ public class IdeaStoreIT extends AbstractIT {
         assertEquals(Optional.of(idea2), store.getIdea(projectId, idea2.getIdeaId()));
         assertEquals(ImmutableSet.of(idea2, idea), ImmutableSet.copyOf(store.getIdeas(projectId, ImmutableList.of(idea2.getIdeaId(), idea.getIdeaId())).values()));
 
-        IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description(textToMockDraftjs("newDescription")).build();
+        IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description(textToSimpleHtml("newDescription")).build();
         store.updateIdea(projectId, idea.getIdeaId(), IdeaUpdate.builder()
                 .title(ideaUpdated.getTitle())
                 .description(ideaUpdated.getDescription())
@@ -89,14 +91,14 @@ public class IdeaStoreIT extends AbstractIT {
 
         IdeaModel idea2Updated = idea2.toBuilder()
                 .title("newTitle")
-                .response(textToMockDraftjs("newDescription"))
+                .response(textToSimpleHtml("newDescription"))
                 .responseAuthorName(moderator.getName())
                 .responseAuthorUserId(moderator.getUserId())
                 .fundGoal(10L)
                 .build();
         store.updateIdea(projectId, idea2.getIdeaId(), IdeaUpdateAdmin.builder()
                 .title(idea2Updated.getTitle())
-                .response(textToMockDraftjs("newDescription"))
+                .response(textToSimpleHtml("newDescription"))
                 .fundGoal(idea2Updated.getFundGoal())
                 .build(), Optional.of(moderator)).getIndexingFuture().get();
         assertEquals(Optional.of(idea2Updated), store.getIdea(projectId, idea2Updated.getIdeaId()));

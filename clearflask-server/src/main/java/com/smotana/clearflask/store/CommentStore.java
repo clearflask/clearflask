@@ -5,10 +5,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Comment;
+import com.smotana.clearflask.api.model.CommentSearchAdmin;
+import com.smotana.clearflask.api.model.CommentUpdate;
+import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -123,7 +128,9 @@ public interface CommentStore {
         Instant edited;
 
         /**
-         * DraftJs format. If null, comment is deleted.
+         * WARNING:Unsanitized HTML.
+         *
+         * If null, comment is deleted.
          */
         String content;
 
@@ -133,7 +140,7 @@ public interface CommentStore {
         @NonNull
         int downvotes;
 
-        public Comment toComment() {
+        public Comment toComment(Sanitizer sanitizer) {
             return new Comment(
                     getIdeaId(),
                     getCommentId(),
@@ -144,11 +151,11 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
-                    getContent(),
+                    sanitizer.richHtml(getContent(), "comment", getCommentId()),
                     (long) (getUpvotes() - getDownvotes()));
         }
 
-        public CommentWithVote toCommentWithVote(VoteOption vote) {
+        public CommentWithVote toCommentWithVote(VoteOption vote, Sanitizer sanitizer) {
             return new CommentWithVote(
                     getIdeaId(),
                     getCommentId(),
@@ -159,7 +166,7 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
-                    getContent(),
+                    sanitizer.richHtml(getContent(), "comment", getCommentId()),
                     (long) (getUpvotes() - getDownvotes()),
                     vote);
         }

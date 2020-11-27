@@ -8,11 +8,14 @@ import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
 import com.smotana.clearflask.api.model.CommentCreate;
+import com.smotana.clearflask.api.model.CommentVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.CommentVoteUpdate;
 import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
 import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
+import com.smotana.clearflask.api.model.IdeaVote;
+import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
@@ -31,7 +34,9 @@ import com.smotana.clearflask.util.ModelUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import static com.smotana.clearflask.testutil.DraftjsUtil.textToMockDraftjs;
+import java.util.stream.Stream;
+
+import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
 
 @Slf4j
@@ -79,6 +84,114 @@ public class BlackboxIT extends AbstractBlackboxIT {
         dumpDynamoTable();
     }
 
+    @Test(timeout = 300_000L)
+    public void testVotingBloomFilters() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+
+        UserMeWithBalance you = userResource.userCreate(projectId, UserCreate.builder()
+                .name("you").build()).getUser();
+        IdeaWithVote ideaYours = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(you.getUserId())
+                .title("Add dark mode again")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+        CommentWithVote ideaYoursCommentYours = commentResource.commentCreate(
+                projectId,
+                ideaYours.getIdeaId(),
+                CommentCreate.builder().content("ideaYoursCommentYours").build());
+
+        UserMeWithBalance me = userResource.userCreate(projectId, UserCreate.builder()
+                .name("me").build()).getUser();
+        userResource.userUpdateAdmin(projectId, me.getUserId(), UserUpdateAdmin.builder()
+                .transactionCreate(TransactionCreateAdmin.builder()
+                        .amount(300L)
+                        .build())
+                .build());
+        IdeaWithVote ideaMine = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(me.getUserId())
+                .title("Add dark mode")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+        CommentWithVote ideaYoursCommentMine = commentResource.commentCreate(
+                projectId,
+                ideaYours.getIdeaId(),
+                CommentCreate.builder().content("ideaYoursCommentMine").build());
+
+        Stream.of(ideaMine, ideaYours).forEach(idea ->
+                voteResource.ideaVoteUpdate(
+                        projectId,
+                        idea.getIdeaId(),
+                        IdeaVoteUpdate.builder()
+                                .fundDiff(17L)
+                                .vote(VoteOption.UPVOTE)
+                                .expressions(IdeaVoteUpdateExpressions.builder()
+                                        .expression("❤")
+                                        .action(IdeaVoteUpdateExpressions.ActionEnum.SET)
+                                        .build())
+                                .build()));
+        Stream.of(ideaYoursCommentMine, ideaYoursCommentYours).forEach(comment ->
+                voteResource.commentVoteUpdate(
+                        projectId,
+                        comment.getIdeaId(),
+                        comment.getCommentId(),
+                        CommentVoteUpdate.builder()
+                                .vote(VoteOption.UPVOTE)
+                                .build()));
+
+        IdeaWithVote ideaMineWithVote = ideaResource.ideaGet(projectId, ideaMine.getIdeaId());
+        IdeaWithVote ideaYoursWithVote = ideaResource.ideaGet(projectId, ideaYours.getIdeaId());
+        IdeaVoteGetOwnResponse ideaVoteGetOwnResponse = voteResource.ideaVoteGetOwn(
+                projectId,
+                ImmutableList.of(ideaMine.getIdeaId(), ideaYours.getIdeaId()),
+                ImmutableList.of(ideaMine.getIdeaId()));
+        CommentVoteGetOwnResponse commentVoteGetOwnResponse = voteResource.commentVoteGetOwn(
+                projectId,
+                ImmutableList.of(ideaYoursCommentMine.getCommentId(), ideaYoursCommentYours.getCommentId()),
+                ImmutableList.of(ideaYoursCommentMine.getCommentId()));
+
+        log.debug("Idea mine vote: {}", ideaMineWithVote.getVote());
+        log.debug("Idea yours vote: {}", ideaYoursWithVote.getVote());
+        log.debug("Votes get own: {} {}", ideaVoteGetOwnResponse, commentVoteGetOwnResponse);
+
+        assertEquals(
+                IdeaVote.builder()
+                        .expression(ImmutableList.of("❤"))
+                        .fundAmount(17L)
+                        .vote(VoteOption.UPVOTE)
+                        .build(),
+                ideaMineWithVote.getVote());
+        assertEquals(
+                IdeaVote.builder()
+                        .expression(ImmutableList.of("❤"))
+                        .fundAmount(17L)
+                        .vote(VoteOption.UPVOTE)
+                        .build(),
+                ideaYoursWithVote.getVote());
+        assertEquals(
+                IdeaVoteGetOwnResponse.builder()
+                        .expressionByIdeaId(ImmutableMap.of(
+                                ideaMine.getIdeaId(), ImmutableList.of("❤"),
+                                ideaYours.getIdeaId(), ImmutableList.of("❤")))
+                        .fundAmountByIdeaId(ImmutableMap.of(
+                                ideaMine.getIdeaId(), 17L,
+                                ideaYours.getIdeaId(), 17L))
+                        .votesByIdeaId(ImmutableMap.of(
+                                ideaMine.getIdeaId(), VoteOption.UPVOTE,
+                                ideaYours.getIdeaId(), VoteOption.UPVOTE))
+                        .build(),
+                ideaVoteGetOwnResponse);
+        assertEquals(
+                CommentVoteGetOwnResponse.builder()
+                        .votesByCommentId(ImmutableMap.of(
+                                ideaYoursCommentMine.getCommentId(), VoteOption.UPVOTE,
+                                ideaYoursCommentYours.getCommentId(), VoteOption.UPVOTE))
+                        .build(),
+                commentVoteGetOwnResponse);
+    }
+
     private UserMeWithBalance addUserAndDoThings(String projectId, ConfigAdmin configAdmin) {
         long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
@@ -114,7 +227,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
         assertEquals(Long.valueOf(100L), idea1vote3.getIdea().getFunded());
         assertEquals(Long.valueOf(1L), idea1vote3.getIdea().getFundersCount());
         CommentWithVote idea1comment1 = commentResource.commentCreate(projectId, idea1.getIdeaId(), CommentCreate.builder()
-                .content(textToMockDraftjs("I like this " + IdUtil.randomId()))
+                .content(textToSimpleHtml("I like this " + IdUtil.randomId()))
                 .build());
         CommentVoteUpdateResponse comment1vote1 = voteResource.commentVoteUpdate(projectId, idea1.getIdeaId(), idea1comment1.getCommentId(), CommentVoteUpdate.builder()
                 .vote(VoteOption.DOWNVOTE)

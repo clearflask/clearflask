@@ -74,9 +74,14 @@ const styles = (theme: Theme) => createStyles({
     minHeight: 48,
   },
   logoImg: {
+    objectFit: 'contain',
     maxHeight: '48px',
+    height: 'auto',
     width: 'auto',
     padding: theme.spacing(1),
+  },
+  logoTextContainer: {
+    flex: '1 0 auto',
   },
   logoText: {
     whiteSpace: 'nowrap',
@@ -245,7 +250,9 @@ class Header extends Component<Props & ConnectProps & WithStyles<typeof styles, 
           {this.props.config.logoUrl && (
             <img alt='' src={this.props.config.logoUrl} className={this.props.classes.logoImg} />
           )}
-          {name}
+          <div className={this.props.classes.logoTextContainer}>
+            {name}
+          </div>
         </div>
       ) : undefined;
 
