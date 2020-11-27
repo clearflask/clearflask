@@ -779,7 +779,9 @@ export class EditorImpl implements Editor {
       const propSchema = parentSchema.properties && parentSchema.properties[propName];
       if (!propSchema) return;
       const isRequired = !!(parentSchema.type === 'array' || parentSchema.required && parentSchema.required.includes(propName));
-      additionalProps.push(this.parseProperty(path, isRequired, propSchema));
+      const prop = this.parseProperty(path, isRequired, propSchema);
+      prop.hide = false;
+      additionalProps.push(prop);
     });
     return additionalProps;
   }

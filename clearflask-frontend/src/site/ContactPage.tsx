@@ -311,7 +311,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Container maxWidth='md'>
               <Grid container spacing={5} alignItems='stretch' alignContent='stretch'>
-                <Grid item xs={12} alignItems='stretch'>
+                <Grid item xs={12}>
                   <img
                     alt=''
                     className={this.props.classes.image}
