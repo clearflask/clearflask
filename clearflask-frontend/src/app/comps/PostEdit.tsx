@@ -1,22 +1,24 @@
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Grid, Switch, TextField } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import CreditView from '../../common/config/CreditView';
-import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import { importFailed, importSuccess } from '../../Main';
+import Loading from '../utils/Loading';
 import SelectionPicker, { Label } from './SelectionPicker';
 import TagSelect from './TagSelect';
+
+const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   row: {
     padding: theme.spacing(2),
   }
 });
-
 interface Props {
   server: Server;
   category: Client.Category;
@@ -109,36 +111,40 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 />
               </Grid>
               <Grid item xs={12} className={this.props.classes.row}>
-                <RichEditor
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Description'
-                  fullWidth
-                  iAgreeInputIsSanitized
-                  value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
-                  onChange={e => this.setState({ description: e.target.value })}
-                  multiline
-                  rows={1}
-                  rowsMax={15}
-                />
+                <Suspense fallback={<Loading />}>
+                  <RichEditor
+                    variant='outlined'
+                    size='small'
+                    disabled={this.state.isSubmitting}
+                    label='Description'
+                    fullWidth
+                    iAgreeInputIsSanitized
+                    value={(this.state.description === undefined ? this.props.idea.description : this.state.description) || ''}
+                    onChange={e => this.setState({ description: e.target.value })}
+                    multiline
+                    rows={1}
+                    rowsMax={15}
+                  />
+                </Suspense>
               </Grid>
               {isModLoggedIn && (
                 <React.Fragment>
                   <Grid item xs={12} className={this.props.classes.row}>
-                    <RichEditor
-                      variant='outlined'
-                      size='small'
-                      disabled={this.state.isSubmitting}
-                      label='Response'
-                      fullWidth
-                      iAgreeInputIsSanitized
-                      value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
-                      onChange={e => this.setState({ response: e.target.value })}
-                      multiline
-                      rows={1}
-                      rowsMax={3}
-                    />
+                    <Suspense fallback={<Loading />}>
+                      <RichEditor
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        label='Response'
+                        fullWidth
+                        iAgreeInputIsSanitized
+                        value={(this.state.response === undefined ? this.props.idea.response : this.state.response) || ''}
+                        onChange={e => this.setState({ response: e.target.value })}
+                        multiline
+                        rows={1}
+                        rowsMax={3}
+                      />
+                    </Suspense>
                   </Grid>
                   {(nextStatusOptions && nextStatusOptions.length > 0) && (
                     <Grid item xs={12} sm={4} className={this.props.classes.row}>

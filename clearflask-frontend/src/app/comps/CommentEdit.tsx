@@ -1,12 +1,15 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid } from '@material-ui/core';
 import { createStyles, Theme, WithStyles, withStyles, WithTheme, withTheme } from '@material-ui/core/styles';
-import React, { Component, useState } from 'react';
+import React, { Component, Suspense, useState } from 'react';
 import * as Client from '../../api/client';
 import { Server } from '../../api/server';
 import ModAction from '../../common/ModAction';
-import RichEditor from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import { importFailed, importSuccess } from '../../Main';
+import Loading from '../utils/Loading';
+
+const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -42,19 +45,21 @@ class CommentEdit extends Component<Props & WithMediaQuery & WithStyles<typeof s
           <DialogContent>
             <Grid container alignItems='baseline'>
               <Grid item xs={12}>
-                <RichEditor
-                  variant='outlined'
-                  size='small'
-                  disabled={this.state.isSubmitting}
-                  label='Content'
-                  fullWidth
-                  iAgreeInputIsSanitized
-                  value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
-                  onChange={e => this.setState({ content: e.target.value })}
-                  multiline
-                  rows={1}
-                  rowsMax={15}
-                />
+                <Suspense fallback={<Loading />}>
+                  <RichEditor
+                    variant='outlined'
+                    size='small'
+                    disabled={this.state.isSubmitting}
+                    label='Content'
+                    fullWidth
+                    iAgreeInputIsSanitized
+                    value={(this.state.content === undefined ? this.props.comment.content : this.state.content) || ''}
+                    onChange={e => this.setState({ content: e.target.value })}
+                    multiline
+                    rows={1}
+                    rowsMax={15}
+                  />
+                </Suspense>
               </Grid>
             </Grid>
           </DialogContent>

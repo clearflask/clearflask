@@ -19,27 +19,22 @@ import ScrollAnchor from './common/util/ScrollAnchor';
 import { vh } from './common/util/vhUtil';
 
 const notistackRef = React.createRef<ProviderContext>();
-const importSuccess = i => {
+export const importSuccess = i => {
   closeLoadingScreen();
   return i;
 };
-const importFailed = e => {
+export const importFailed = e => {
   notistackRef.current?.enqueueSnackbar("Network connectivity issues, please reload the page", {
     variant: 'error',
     preventDuplicate: true,
     persist: true,
   });
 };
-const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app", webpackPrefetch: true */)
-  .then(importSuccess).catch(importFailed));
-const Dashboard = React.lazy(() => import('./site/Dashboard' /* webpackChunkName: "dashboard" */)
-  .then(importSuccess).catch(importFailed));
-const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */)
-  .then(importSuccess).catch(importFailed));
-const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */)
-  .then(importSuccess).catch(importFailed));
-const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */)
-  .then(importSuccess).catch(importFailed));
+const App = React.lazy(() => import('./app/App'/* webpackChunkName: "app", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const Dashboard = React.lazy(() => import('./site/Dashboard' /* webpackChunkName: "dashboard" */).then(importSuccess).catch(importFailed));
+const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */).then(importSuccess).catch(importFailed));
+const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(importSuccess).catch(importFailed));
+const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(importSuccess).catch(importFailed));
 
 const theme: Theme = createMuiTheme({
   palette: {

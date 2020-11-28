@@ -5,15 +5,18 @@ import PaintbrushIcon from '@material-ui/icons/Palette';
 import KeyRefreshIcon from '@material-ui/icons/Refresh';
 import { BaseEmoji } from 'emoji-mart/dist-es/index.js';
 import ColorPicker from 'material-ui-color-picker';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
-import EmojiPicker from '../../EmojiPicker';
+import Loading from '../../../app/utils/Loading';
+import { importFailed, importSuccess } from '../../../Main';
 import Overlay from '../../Overlay';
-import RichEditor from '../../RichEditor';
 import randomUuid from '../../util/uuid';
 import * as ConfigEditor from '../configEditor';
 import TableProp from './TableProp';
 import UpgradeWrapper from './UpgradeWrapper';
+
+const EmojiPicker = React.lazy(() => import('../../EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const RichEditor = React.lazy(() => import('../../RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 interface Props {
   key: string;
@@ -152,61 +155,65 @@ export default class Property extends Component<Props> {
         const TextFieldCmpt = prop.subType === ConfigEditor.PropSubType.Rich
           ? RichEditor : TextField;
         propertySetter = (
-          <TextFieldCmpt
-            variant='outlined'
-            size='small'
-            id={prop.pathStr}
-            label={!this.props.bare && name}
-            iAgreeInputIsSanitized
-            value={prop.value || ''}
-            onChange={e => prop.set(e.target.value as never)}
-            error={!!prop.errorMsg}
-            placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
-            helperText={prop.errorMsg || (!this.props.bare && prop.description)}
-            margin='none'
-            multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
-              || prop.subType === ConfigEditor.PropSubType.Rich) as any}
-            type={fieldType}
-            InputLabelProps={{
-              shrink: shrink,
-              error: !!prop.errorMsg,
-            }}
-            InputProps={{
-              style: {
-                minWidth: Property.inputMinWidth,
-                width: this.props.width,
-              },
-              readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
-              onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
-                if (!prop.value) prop.set(randomUuid());
-              } : undefined,
-              endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
-                <InputAdornment position='end'>
-                  <IconButton
-                    aria-label='Re-generate key'
-                    onClick={() => prop.set(randomUuid())}
-                  >
-                    <KeyRefreshIcon fontSize='small' />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
-            }}
-            FormHelperTextProps={{
-              style: {
-                minWidth: Property.inputMinWidth,
-                width: this.props.width,
-              },
-            }}
-          />
+          <Suspense fallback={<Loading />}>
+            <TextFieldCmpt
+              variant='outlined'
+              size='small'
+              id={prop.pathStr}
+              label={!this.props.bare && name}
+              {...({ iAgreeInputIsSanitized: true })}
+              value={prop.value || ''}
+              onChange={e => prop.set(e.target.value as never)}
+              error={!!prop.errorMsg}
+              placeholder={prop.placeholder !== undefined ? (prop.placeholder + '') : undefined}
+              helperText={prop.errorMsg || (!this.props.bare && prop.description)}
+              margin='none'
+              multiline={(prop.subType === ConfigEditor.PropSubType.Multiline
+                || prop.subType === ConfigEditor.PropSubType.Rich) as any}
+              type={fieldType}
+              InputLabelProps={{
+                shrink: shrink,
+                error: !!prop.errorMsg,
+              }}
+              InputProps={{
+                style: {
+                  minWidth: Property.inputMinWidth,
+                  width: this.props.width,
+                },
+                readOnly: prop.subType === ConfigEditor.PropSubType.Emoji,
+                onFocus: prop.subType === ConfigEditor.PropSubType.KeyGen ? () => {
+                  if (!prop.value) prop.set(randomUuid());
+                } : undefined,
+                endAdornment: prop.subType === ConfigEditor.PropSubType.KeyGen ? (
+                  <InputAdornment position='end'>
+                    <IconButton
+                      aria-label='Re-generate key'
+                      onClick={() => prop.set(randomUuid())}
+                    >
+                      <KeyRefreshIcon fontSize='small' />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+              FormHelperTextProps={{
+                style: {
+                  minWidth: Property.inputMinWidth,
+                  width: this.props.width,
+                },
+              }}
+            />
+          </Suspense>
         );
         if (prop.subType === ConfigEditor.PropSubType.Emoji) {
           propertySetter = (
             <Overlay
               isInsideMuiTable={this.props.isInsideMuiTable}
               popup={(
-                <EmojiPicker
-                  onSelect={emoji => prop.set(((emoji as BaseEmoji).native) as never)}
-                />
+                <Suspense fallback={<Loading />}>
+                  <EmojiPicker
+                    onSelect={emoji => prop.set(((emoji as BaseEmoji).native) as never)}
+                  />
+                </Suspense>
               )}
             >
               {propertySetter}

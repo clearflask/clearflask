@@ -1,7 +1,7 @@
 import { loremIpsum } from "lorem-ipsum";
 import { CreateTemplateOptions } from "../common/config/configTemplater";
-import { textToHtml } from "../common/RichEditor";
 import { saltHashPassword } from "../common/util/auth";
+import { textToHtml } from "../common/util/richEditorUtil";
 import * as Admin from "./admin";
 import ServerMock, { SuperAdminEmail } from "./serverMock";
 

@@ -18,15 +18,16 @@ import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
 import WidgetIcon from '@material-ui/icons/Widgets';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import { Provider } from 'react-redux';
 import * as Client from '../api/client';
 import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
+import Loading from '../app/utils/Loading';
 import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
-import WorkflowPreview from '../common/config/settings/injects/WorkflowPreview';
 import ScrollAnchor from '../common/util/ScrollAnchor';
+import { importFailed, importSuccess } from '../Main';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
 import Demo from './landing/Demo';
@@ -37,6 +38,8 @@ import PrioritizationControlsExpressions from './landing/PrioritizationControlsE
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
 import PricingPage, { TrialInfoText } from './PricingPage';
+
+const WorkflowPreview = React.lazy(() => import('../common/config/settings/injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   marker: {
@@ -738,13 +741,15 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           demoFixedHeight={400}
           demoPreventInteraction
           demo={project => (
-            <WorkflowPreview
-              editor={project.editor}
-              categoryIndex={0}
-              isVertical
-              hideCorner
-              height='100%'
-            />
+            <Suspense fallback={<Loading />}>
+              <WorkflowPreview
+                editor={project.editor}
+                categoryIndex={0}
+                isVertical
+                hideCorner
+                height='100%'
+              />
+            </Suspense>
           )}
         />
       </Container>

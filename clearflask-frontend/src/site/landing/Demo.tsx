@@ -13,7 +13,6 @@ import Block, { Props as BlockProps } from './Block';
 
 const styles = (theme: Theme) => createStyles({
 });
-
 interface Props {
   initialSubPath?: string;
   template?: (templater: Templater) => void;

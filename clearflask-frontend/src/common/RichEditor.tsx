@@ -24,8 +24,6 @@ import { QuillViewStyle } from './RichViewer';
 Quill.register('formats/link', QuillFormatLinkExtended, true);
 Quill.register('blots/block', QuillBlockExtended, true);
 
-export const textToHtml = (text: string): string => `<div>${text}</div>`;
-
 const WhitespaceChars = ' \t\n\r\v';
 
 const styles = (theme: Theme) => createStyles({

@@ -3,7 +3,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import ReactQuill from 'react-quill';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -13,12 +13,14 @@ import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/serve
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
 import ModAction from '../../common/ModAction';
-import RichEditor, { textToHtml } from '../../common/RichEditor';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
+import { textToHtml } from "../../common/util/richEditorUtil";
+import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
+import Loading from '../utils/Loading';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
 import { Direction } from './Panel';
@@ -39,6 +41,8 @@ import TagSelect from './TagSelect';
 
 /** If changed, also change in Sanitizer.java */
 export const PostTitleMaxLength = 100
+
+const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   root: {
@@ -337,31 +341,33 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           />
         </Grid>
         <Grid item xs={12} className={this.props.classes.createGridItem}>
-          <RichEditor
-            variant='outlined'
-            size='small'
-            id='createDescription'
-            inputRef={this.descriptionInputRef}
-            multiline
-            disabled={this.state.newItemIsSubmitting}
-            className={this.props.classes.createFormField}
-            label='Details'
-            iAgreeInputIsSanitized
-            value={this.state.newItemDescription || ''}
-            onChange={(e, delta, source, editor) => {
-              const value = e.target.value;
-              if (this.state.newItemDescription === value
-                || (!this.state.newItemDescription && !value)) {
-                return;
-              }
-              const descriptionTextOnly = editor.getText();
-              this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
-              this.setState({
-                newItemDescription: value,
-                newItemDescriptionTextOnly: descriptionTextOnly,
-              })
-            }}
-          />
+          <Suspense fallback={<Loading />}>
+            <RichEditor
+              variant='outlined'
+              size='small'
+              id='createDescription'
+              inputRef={this.descriptionInputRef}
+              multiline
+              disabled={this.state.newItemIsSubmitting}
+              className={this.props.classes.createFormField}
+              label='Details'
+              iAgreeInputIsSanitized
+              value={this.state.newItemDescription || ''}
+              onChange={(e, delta, source, editor) => {
+                const value = e.target.value;
+                if (this.state.newItemDescription === value
+                  || (!this.state.newItemDescription && !value)) {
+                  return;
+                }
+                const descriptionTextOnly = editor.getText();
+                this.updateSearchText(this.state.newItemTitle, descriptionTextOnly);
+                this.setState({
+                  newItemDescription: value,
+                  newItemDescriptionTextOnly: descriptionTextOnly,
+                })
+              }}
+            />
+          </Suspense>
         </Grid>
         {categoryOptions.length > 1 && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>

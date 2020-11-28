@@ -4,13 +4,14 @@ import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import Loading from '../../../app/utils/Loading';
+import { importFailed, importSuccess } from '../../../Main';
 import * as ConfigEditor from '../configEditor';
 import CreditPreview from './injects/CreditPreview';
 import PresetWidget from './PresetWidget';
 import Property from './Property';
 import { RestrictedProperties } from './UpgradeWrapper';
 
-const WorkflowPreviewLazyCmpt = React.lazy(() => import('./injects/WorkflowPreview'/* webpackChunkName: "workflowPreview" */));
+const WorkflowPreview = React.lazy(() => import('./injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
 });
@@ -41,7 +42,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
     if (this.props.page.path.length > 0 && this.props.page.path[this.props.page.path.length - 1] === 'workflow') {
       workflowPreview = (
         <Suspense fallback={<Loading />}>
-          <WorkflowPreviewLazyCmpt editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />
+          <WorkflowPreview editor={this.props.editor} categoryIndex={this.props.page.path[2] as number} />
         </Suspense>
       );
     }

@@ -1,23 +1,26 @@
 import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, Menu, MenuItem, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
-import SsoSuccessDemoPage from '../app/SsoSuccessDemoPage';
+import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
-import ContactPage from './ContactPage';
+import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
-import LandingPage from './LandingPage';
-import LegalPage from './LegalPage';
-import PricingPage from './PricingPage';
-import SigninPage from './SigninPage';
-import TrialSignupPage from './TrialSignupPage';
+
+const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage" */).then(importSuccess).catch(importFailed));
+const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage" */).then(importSuccess).catch(importFailed));
+const LandingPage = React.lazy(() => import('./LandingPage'/* webpackChunkName: "LandingPage" */).then(importSuccess).catch(importFailed));
+const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed));
+const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage" */).then(importSuccess).catch(importFailed));
+const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage" */).then(importSuccess).catch(importFailed));
+const SsoSuccessDemoPage = React.lazy(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({
   appBar: {
@@ -221,44 +224,46 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
         </AppBar>
         <div className={this.props.classes.appBarSpacer} />
         <div className={`${this.props.classes.growAndFlex} ${this.props.classes.page}`}>
-          <MuiAnimatedSwitch>
-            <Route exact path='/login'>
-              <SetTitle title='Login' />
-              <SigninPage />
-            </Route>
-            <Route path='/contact'>
-              <SetTitle title='Contact' />
-              <ContactPage />
-            </Route>
-            <Route exact path='/pricing'>
-              <SetTitle title='Pricing' />
-              <PricingPage />
-            </Route>
-            <Route exact path='/signup'>
-              <SetTitle title='Sign up' />
-              <TrialSignupPage />
-            </Route>
-            <Route exact path='/sso'>
-              <SetTitle title='Single sign-on' />
-              <SsoSuccessDemoPage />
-            </Route>
-            <Route exact path='/(tos|terms|terms-of-service)'>
-              <SetTitle title='Terms of Service' />
-              <LegalPage type='terms' />
-            </Route>
-            <Route exact path='/(privacy|policy|privacy-policy)'>
-              <SetTitle title='Terms of Service' />
-              <LegalPage type='privacy' />
-            </Route>
-            <Route exact path='/'>
-              <SetTitle />
-              <LandingPage />
-            </Route>
-            <Route>
-              <SetTitle title='Page not found' />
-              <ErrorPage msg='Page not found' variant='error' />
-            </Route>
-          </MuiAnimatedSwitch>
+          <Suspense fallback={<Loading />}>
+            <MuiAnimatedSwitch>
+              <Route exact path='/login'>
+                <SetTitle title='Login' />
+                <SigninPage />
+              </Route>
+              <Route path='/contact'>
+                <SetTitle title='Contact' />
+                <ContactPage />
+              </Route>
+              <Route exact path='/pricing'>
+                <SetTitle title='Pricing' />
+                <PricingPage />
+              </Route>
+              <Route exact path='/signup'>
+                <SetTitle title='Sign up' />
+                <TrialSignupPage />
+              </Route>
+              <Route exact path='/sso'>
+                <SetTitle title='Single sign-on' />
+                <SsoSuccessDemoPage />
+              </Route>
+              <Route exact path='/(tos|terms|terms-of-service)'>
+                <SetTitle title='Terms of Service' />
+                <LegalPage type='terms' />
+              </Route>
+              <Route exact path='/(privacy|policy|privacy-policy)'>
+                <SetTitle title='Terms of Service' />
+                <LegalPage type='privacy' />
+              </Route>
+              <Route exact path='/'>
+                <SetTitle />
+                <LandingPage />
+              </Route>
+              <Route>
+                <SetTitle title='Page not found' />
+                <ErrorPage msg='Page not found' variant='error' />
+              </Route>
+            </MuiAnimatedSwitch>
+          </Suspense>
         </div>
         <div className={this.props.classes.bottomBar}>
           <Container maxWidth='md' disableGutters>
