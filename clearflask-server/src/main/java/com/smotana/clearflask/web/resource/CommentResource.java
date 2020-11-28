@@ -192,6 +192,11 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         Optional<UserModel> userOpt = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserStore.UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        if (!userOpt.isPresent()) {
+            return comments.stream()
+                    .map(comment -> comment.toCommentWithVote(null, sanitizer))
+                    .collect(ImmutableList.toImmutableList());
+        }
         Optional<BloomFilter<CharSequence>> bloomFilterOpt = userOpt.map(UserModel::getCommentVoteBloom)
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)));
         Map<String, VoteOption> voteResults = Maps.transformValues(
@@ -200,7 +205,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                                 || bloomFilterOpt.isPresent() && bloomFilterOpt.get().mightContain(comment.getCommentId()))
                         .map(CommentModel::getCommentId)
                         .collect(ImmutableSet.toImmutableSet())
-                ), v -> VoteValue.fromValue(v.getVote()).toVoteOption());
+                ), v -> v == null ? null : VoteValue.fromValue(v.getVote()).toVoteOption());
         return comments.stream()
                 .map(comment -> comment.toCommentWithVote(voteResults.get(comment.getCommentId()), sanitizer))
                 .collect(ImmutableList.toImmutableList());

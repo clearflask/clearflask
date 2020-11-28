@@ -172,9 +172,6 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
           {...popperProps}
           className={classNames(classes.popper, popperProps.className)}
           modifiers={{
-            preventOverflow: {
-              enabled: true,
-            },
             ...(arrow ? {
               arrow: {
                 enabled: true,

@@ -25,6 +25,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -155,7 +156,7 @@ public interface CommentStore {
                     (long) (getUpvotes() - getDownvotes()));
         }
 
-        public CommentWithVote toCommentWithVote(VoteOption vote, Sanitizer sanitizer) {
+        public CommentWithVote toCommentWithVote(@Nullable VoteOption vote, Sanitizer sanitizer) {
             return new CommentWithVote(
                     getIdeaId(),
                     getCommentId(),

@@ -193,7 +193,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
-                .map(ideaModel -> userOpt.map(user -> addVote(user, ideaModel))
+                .map(ideaModel -> userOpt.map(user -> toIdeaWithVote(user, ideaModel))
                         .orElseGet(() -> ideaModel.toIdeaWithVote(
                                 IdeaVote.builder().build(),
                                 sanitizer)))
@@ -240,7 +240,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         return new IdeaWithVoteSearchResponse(
                 searchResponse.getCursorOpt().orElse(null),
-                userOpt.map(user -> addVotes(user, ideaModels))
+                userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                         .orElseGet(() -> ideaModels.stream()
                                 .map(ideaModel -> ideaModel.toIdeaWithVote(
                                         new IdeaVote(null, null, null),
@@ -353,7 +353,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         } while (!searchResponse.getCursorOpt().isPresent());
     }
 
-    private IdeaWithVote addVote(UserModel user, IdeaModel idea) {
+    private IdeaWithVote toIdeaWithVote(UserModel user, IdeaModel idea) {
         boolean isAuthor = user.getUserId().equals(idea.getAuthorUserId());
         Optional<VoteOption> voteOptionOpt = Optional.empty();
         if (isAuthor
@@ -391,7 +391,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 sanitizer);
     }
 
-    private ImmutableList<IdeaWithVote> addVotes(UserModel user, ImmutableList<IdeaModel> ideas) {
+    private ImmutableList<IdeaWithVote> toIdeasWithVotes(UserModel user, ImmutableList<IdeaModel> ideas) {
         ImmutableMap<String, VoteStore.VoteModel> voteResults = Optional.ofNullable(user.getVoteBloom())
                 .map(bytes -> BloomFilters.fromByteArray(bytes, Funnels.stringFunnel(Charsets.UTF_8)))
                 .map(bloomFilter -> ideas.stream()

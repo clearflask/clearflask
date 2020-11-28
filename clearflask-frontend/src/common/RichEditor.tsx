@@ -305,6 +305,16 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
       >
         <ReactQuill
           {...otherInputProps as any}
+          modules={{
+            clipboard: {
+              /**
+               * Fixes issue with newlines multiplying
+               * NOTE: When upgrading to Quill V2, this property is deprecated!
+               * https://github.com/KillerCodeMonkey/ngx-quill/issues/357#issuecomment-578138062
+               */
+              matchVisual: false,
+            },
+          }}
           onFocus={(selection, source, editor) => {
             if (!this.state.showFormats) {
               this.setState({ showFormats: true });
