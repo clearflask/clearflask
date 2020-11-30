@@ -20,6 +20,7 @@ import com.smotana.clearflask.api.model.AccountSearchResponse;
 import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
 import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.LegalResponse;
@@ -221,7 +222,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         String accountId = accountStore.genAccountId();
         Plan plan = planStore.getPublicPlans().getPlans().stream()
-                .filter(p -> p.getPlanid().equals(signup.getPlanid()))
+                .filter(p -> p.getBasePlanId().equals(signup.getBasePlanId()))
                 .findAny()
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Plan not available"));
         if (plan.getComingSoon() == Boolean.TRUE) {
@@ -233,7 +234,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 accountId,
                 signup.getEmail(),
                 signup.getName(),
-                plan.getPlanid());
+                plan.getBasePlanId());
         SubscriptionStatus status = billing.getEntitlementStatus(accountWithSubscription.getAccount(), accountWithSubscription.getSubscription());
 
         // Create account locally
@@ -244,7 +245,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 signup.getEmail(),
                 status,
                 null,
-                plan.getPlanid(),
+                plan.getBasePlanId(),
                 Instant.now(),
                 signup.getName(),
                 passwordHashed,
@@ -325,10 +326,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     subscription,
                     alsoResume ? "user requested update payment and resume" : "user requested resume");
         }
-        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPlanid())) {
-            String newPlanid = accountUpdateAdmin.getPlanid();
+        if (!Strings.isNullOrEmpty(accountUpdateAdmin.getBasePlanId())) {
+            String newPlanid = accountUpdateAdmin.getBasePlanId();
             Optional<Plan> newPlanOpt = planStore.getAccountChangePlanOptions(accountSession.getAccountId()).stream()
-                    .filter(p -> p.getPlanid().equals(newPlanid))
+                    .filter(p -> p.getBasePlanId().equals(newPlanid))
                     .findAny();
             if (!newPlanOpt.isPresent() || newPlanOpt.get().getComingSoon() == Boolean.TRUE) {
                 log.warn("Account {} not allowed to change plans to {}",
@@ -359,6 +360,28 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return (account == null
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
                 : account)
+                .toAccountAdmin(planStore, cfSso, superAdminPredicate);
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public AccountAdmin accountUpdateSuperAdmin(AccountUpdateSuperAdmin accountUpdateAdmin) {
+        AccountSession accountSession = getExtendedPrincipal().flatMap(ExtendedPrincipal::getAccountSessionOpt).get();
+
+        if (accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice() != null) {
+            Account account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+
+            Subscription subscription = billing.changePlanToFlatYearly(accountSession.getAccountId(), accountUpdateAdmin.getChangeToFlatPlanWithYearlyPrice());
+
+            // Sync entitlement status
+            SubscriptionStatus status = billing.updateAndGetEntitlementStatus(
+                    account.getStatus(),
+                    billing.getAccount(accountSession.getAccountId()),
+                    subscription,
+                    "Change to flat plan");
+        }
+
+        return accountStore.getAccountByAccountId(accountSession.getAccountId()).get()
                 .toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }
 
@@ -433,6 +456,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
 
+        Plan plan = planStore.getPlan(account.getPlanid(), Optional.of(subscription)).get();
         ImmutableSet<Plan> availablePlans = planStore.getAccountChangePlanOptions(accountSession.getAccountId());
         Invoices invoices = billing.getInvoices(accountSession.getAccountId(), Optional.empty());
         Optional<Billing.PaymentMethodDetails> paymentMethodDetails = billing.getDefaultPaymentMethodDetails(accountSession.getAccountId());
@@ -462,11 +486,12 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         long accountPayable = kbAccount.getAccountCBA() == null ? 0L : kbAccount.getAccountCBA().longValueExact();
 
         Optional<Plan> endOfTermChangeToPlan = billing.getEndOfTermChangeToPlanId(subscription)
-                .flatMap(planStore::getPlan);
+                .flatMap(planId -> planStore.getPlan(planId, Optional.empty()));
 
         Optional<AccountBillingPaymentActionRequired> actions = billing.getActions(subscription.getAccountId());
 
         return new AccountBilling(
+                plan,
                 status,
                 accountBillingPayment.orElse(null),
                 billingPeriodEnd,

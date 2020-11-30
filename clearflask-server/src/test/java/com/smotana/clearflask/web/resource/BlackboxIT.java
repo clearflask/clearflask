@@ -77,7 +77,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .build());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .planid("standard-monthly")
+                .basePlanId("standard-monthly")
                 .build());
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();

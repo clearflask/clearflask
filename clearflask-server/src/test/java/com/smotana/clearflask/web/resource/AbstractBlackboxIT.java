@@ -19,6 +19,7 @@ import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
+import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaWithVote;
@@ -256,7 +257,14 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected AccountAndProject changePlan(AccountAndProject accountAndProject, String planId) {
         AccountAdmin accountAdmin = accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .planid(planId)
+                .basePlanId(planId)
+                .build());
+        return accountAndProject.toBuilder().account(accountAdmin).build();
+    }
+
+    protected AccountAndProject changePlanToFlat(AccountAndProject accountAndProject, long yearlyPrice) {
+        AccountAdmin accountAdmin = accountResource.accountUpdateSuperAdmin(AccountUpdateSuperAdmin.builder()
+                .changeToFlatPlanWithYearlyPrice(yearlyPrice)
                 .build());
         return accountAndProject.toBuilder().account(accountAdmin).build();
     }
@@ -423,7 +431,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         String accountId = accountStore.getAccountByEmail(accountResource.accountBindAdmin().getAccount().getEmail()).get().getAccountId();
         TestUtil.retry(() -> {
             assertEquals(planid, billing.getSubscription(accountId).getPlanName());
-            assertEquals(planid, accountResource.accountBindAdmin().getAccount().getPlan().getPlanid());
+            assertEquals(planid, accountResource.accountBindAdmin().getAccount().getBasePlanId());
         });
     }
 }

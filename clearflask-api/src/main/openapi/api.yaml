@@ -77,6 +77,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1logout'
   /admin/account/update:
     $ref: 'api-account.yaml#/~1admin~1account~1update'
+  /admin/account/updateSuper:
+    $ref: 'api-account.yaml#/~1admin~1account~1updateSuper'
   /admin/account/billing:
     $ref: 'api-account.yaml#/~1admin~1account~1billing'
   /admin/account/billing/invoices:

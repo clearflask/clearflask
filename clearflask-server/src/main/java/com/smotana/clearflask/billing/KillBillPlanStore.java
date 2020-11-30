@@ -1,5 +1,6 @@
 package com.smotana.clearflask.billing;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -27,11 +28,15 @@ import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.Catalogs;
 import org.killbill.billing.client.model.gen.Catalog;
 import org.killbill.billing.client.model.gen.Phase;
+import org.killbill.billing.client.model.gen.PhasePrice;
 import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.Usage;
 
 import javax.ws.rs.core.Response;
+import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -61,7 +66,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final ImmutableList<Plan> AVAILABLE_PLANS_STATIC_BUILDER = ImmutableList.of(
             new Plan("flat-yearly", "Flat",
                     null, ImmutableList.of(
-                    new PlanPerk("Predictable annual price", null),
+                    new PlanPerk("Flat annual price", null),
                     new PlanPerk("Tailored plan", null)),
                     null, null)
     );
@@ -125,8 +130,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         }).collect(ImmutableList.toImmutableList());
         availablePlans = Stream.concat(plans.stream(), AVAILABLE_PLANS_STATIC_BUILDER.stream())
                 .collect(ImmutableMap.toImmutableMap(
-                        Plan::getPlanid,
+                        Plan::getBasePlanId,
                         p -> p));
+        Preconditions.checkState(availablePlans.keySet().stream().noneMatch(p -> p.matches(".*-[0-9]]+")),
+                "Plans cannot end in a number, plans with price overrides end in a number");
         plansGetResponse = new PlansGetResponse(
                 availablePlans.values().asList(),
                 FEATURES_TABLE);
@@ -144,12 +151,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Subscription subscription = billing.getSubscription(accountId);
         String planToChangeFrom = billing.getEndOfTermChangeToPlanId(subscription)
                 .orElse(subscription.getPlanName());
-        switch (planToChangeFrom) {
+        switch (getBasePlanId(planToChangeFrom)) {
             case "growth-monthly":
             case "standard-monthly":
                 return ImmutableSet.of(
                         availablePlans.get("growth-monthly"),
                         availablePlans.get("standard-monthly"));
+            case "flat-yearly":
             default:
                 return ImmutableSet.of();
         }
@@ -157,14 +165,68 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     @Extern
     @Override
-    public Optional<Plan> getPlan(String planId) {
-        return Optional.ofNullable(availablePlans.get(planId));
+    public Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt) {
+        String basePlanId = getBasePlanId(planId);
+        Optional<Plan> planOpt = Optional.ofNullable(availablePlans.get(basePlanId));
+        if (planOpt.isPresent()
+                && subscriptionOpt.isPresent()) {
+            Optional<Long> recurringPrice = Stream.of(subscriptionOpt.get().getPriceOverrides(), subscriptionOpt.get().getPrices())
+                    .filter(Objects::nonNull)
+                    .flatMap(List::stream)
+                    .filter(phasePrice -> subscriptionOpt.get().getPlanName().equals(phasePrice.getPlanName()))
+                    .filter(phasePrice -> subscriptionOpt.get().getPhaseType().name().equals(phasePrice.getPhaseType()))
+                    .findFirst()
+                    .map(PhasePrice::getRecurringPrice)
+                    .map(BigDecimal::longValueExact);
+            if (recurringPrice.isPresent()) {
+                return planOpt.map(plan -> plan.toBuilder()
+                        .pricing(new PlanPricing(
+                                recurringPrice.get(),
+                                0L,
+                                0L,
+                                0L,
+                                billingPeriodToPeriodEnum(subscriptionOpt.get().getBillingPeriod())))
+                        .build());
+            }
+        }
+        return planOpt;
+    }
+
+    /**
+     * When adding price overrides, KillBill creates a new plan with a number suffix "-XXX".
+     *
+     * @return plan id without suffix
+     */
+    @Override
+    public String getBasePlanId(String planId) {
+        for (int i = planId.length() - 1; i >= 0; i--) {
+            char c = planId.charAt(i);
+            if (c == '-') {
+                return planId.substring(0, i);
+            }
+            if (!Character.isDigit(c)) {
+                return planId;
+            }
+        }
+        return planId;
+    }
+
+    @Override
+    public String prettifyPlanName(String planIdOrPrettyPlanName) {
+        if (planIdOrPrettyPlanName.contains("-")) {
+            // Most likely this is not a pretty plan name, just a plan id
+            return getPlan(planIdOrPrettyPlanName, Optional.empty())
+                    .map(Plan::getTitle)
+                    .map(name -> name + " Plan")
+                    .orElse(planIdOrPrettyPlanName);
+        }
+        return planIdOrPrettyPlanName;
     }
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException {
-        switch (planId) {
+        switch (getBasePlanId(planId)) {
             case "growth-monthly":
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
@@ -178,10 +240,23 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 if (config.getStyle().getTemplates() != null) {
                     throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Templates with your plan");
                 }
-                break;
+                return;
             case "standard-monthly":
+            case "flat-yearly":
+                return;
+        }
+    }
+
+    private PeriodEnum billingPeriodToPeriodEnum(BillingPeriod billingPeriod) {
+        switch (billingPeriod) {
+            case MONTHLY:
+                return PeriodEnum.MONTHLY;
+            case QUARTERLY:
+                return PeriodEnum.QUARTERLY;
+            case ANNUAL:
+                return PeriodEnum.YEARLY;
             default:
-                break;
+                throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected billing period");
         }
     }
 

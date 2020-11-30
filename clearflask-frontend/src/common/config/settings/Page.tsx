@@ -22,7 +22,7 @@ interface Props {
   pageClicked: (path: ConfigEditor.Path) => void;
 }
 interface ConnectProps {
-  accountPlanId?: string;
+  accountBasePlanId?: string;
 }
 class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   unsubscribe?: () => void;
@@ -48,7 +48,7 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
     }
 
     var propertyRequiresUpgrade: ((propertyPath: ConfigEditor.Path) => boolean) | undefined;
-    const restrictedProperties = this.props.accountPlanId && RestrictedProperties[this.props.accountPlanId];
+    const restrictedProperties = this.props.accountBasePlanId && RestrictedProperties[this.props.accountBasePlanId];
     if (restrictedProperties) {
       propertyRequiresUpgrade = (path) => restrictedProperties.some(restrictedPath =>
         ConfigEditor.pathEquals(restrictedPath, path));
@@ -80,6 +80,6 @@ class Page extends Component<Props & ConnectProps & WithStyles<typeof styles, tr
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
-    accountPlanId: state.account.account.account?.plan.planid,
+    accountBasePlanId: state.account.account.account?.basePlanId,
   };
 })(withStyles(styles, { withTheme: true })(Page));

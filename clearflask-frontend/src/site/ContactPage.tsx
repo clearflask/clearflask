@@ -196,10 +196,11 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                         ) : (field.type === 'datetime' ? (
                           <Promised
                             promise={Promise.all<unknown, unknown, unknown, unknown>([
-                              import('@material-ui/pickers/DateTimePicker'),
-                              import('@material-ui/pickers/MuiPickersUtilsProvider'),
-                              import('@date-io/moment'),
-                              import('moment-timezone'), // Add timezone to dates
+                              import('@material-ui/pickers/DateTimePicker'/* webpackChunkName: "DateTimePicker", webpackPrefetch: true */),
+                              import('@material-ui/pickers/MuiPickersUtilsProvider'/* webpackChunkName: "MuiPickersUtilsProvider", webpackPrefetch: true */),
+                              import('@date-io/moment'/* webpackChunkName: "moment", webpackPrefetch: true */),
+                              /** Add timezone to dates */
+                              import('moment-timezone'/* webpackChunkName: "moment-timezone", webpackPrefetch: true */),
                             ])}
                             render={(libs: any) => {
                               const DateTimePicker = libs[0].DateTimePicker;

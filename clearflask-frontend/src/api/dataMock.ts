@@ -421,7 +421,7 @@ class DataMock {
         name: 'John Doe',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
-        planid: 'growth-monthly',
+        basePlanId: 'growth-monthly',
       }
     });
   }

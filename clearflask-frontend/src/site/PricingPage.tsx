@@ -10,12 +10,10 @@ import * as Admin from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
-import notEmpty from '../common/util/arrayUtil';
 import { isProd, isTracking } from '../common/util/detectEnv';
-import PlanPeriodSelect from './PlanPeriodSelect';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
-import { PRE_SELECTED_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
+import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './TrialSignupPage';
 
 export const TrialInfoText = () => (
   <div>
@@ -112,22 +110,12 @@ interface ConnectProps {
   featuresTable?: Admin.FeaturesTable;
 }
 interface State {
-  period?: Admin.PlanPricingPeriodEnum;
-  highlightedPlanid?: string;
+  highlightedBasePlanid?: string;
   callForQuote?: boolean;
 }
 class PricingPage extends Component<Props & ConnectProps & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
-    const allPlans = this.props.plans || [];
-    const periodsSet = new Set(allPlans
-      .map(plan => plan.pricing?.period)
-      .filter(notEmpty));
-    const periods = Object.keys(Admin.PlanPricingPeriodEnum).filter(period => periodsSet.has(period as any as Admin.PlanPricingPeriodEnum));
-    const selectedPeriod = this.state.period
-      || (periods.length > 0 ? periods[periods.length - 1] as any as Admin.PlanPricingPeriodEnum : undefined);
-    const plans = allPlans
-      .filter(plan => !plan.pricing || selectedPeriod === plan.pricing.period);
     return (
       <div className={this.props.classes.page}>
         <Container maxWidth='md'>
@@ -144,13 +132,6 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               />
             </Container>
           </div>
-          {periods.length > 1 && (
-            <PlanPeriodSelect
-              plans={this.props.plans}
-              value={selectedPeriod}
-              onChange={period => this.setState({ period })}
-            />
-          )}
         </Container>
         <br />
         <br />
@@ -158,11 +139,12 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
         <Container maxWidth='md'>
           <Loader loaded={!!this.props.plans}>
             <Grid container spacing={5} alignItems='stretch' justify='center'>
-              {plans.map((plan, index) => (
-                <Grid item key={plan.planid} xs={12} sm={6} md={4}>
+              {this.props.plans && this.props.plans.map((plan, index) => (
+                <Grid item key={plan.basePlanId} xs={12} sm={6} md={4}>
                   <PricingPlan
+                    showNoPriceAsCustom
                     plan={plan}
-                    selected={this.state.highlightedPlanid === plan.planid
+                    selected={this.state.highlightedBasePlanid === plan.basePlanId
                       || this.state.callForQuote && !plan.pricing}
                     actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
                     remark={plan.pricing ? (<TrialInfoText />) : 'Tell us what you\'re looking for'}
@@ -171,14 +153,14 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                         ReactGA.event({
                           category: 'pricing',
                           action: 'click-plan',
-                          label: plan.planid,
+                          label: plan.basePlanId,
                         });
                       }
                     }}
                     actionTo={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd())
                       ? {
                         pathname: '/signup',
-                        state: { [PRE_SELECTED_PLAN_ID]: plan.planid },
+                        state: { [PRE_SELECTED_BASE_PLAN_ID]: plan.basePlanId },
                       }
                       : '/contact/sales'}
                   />
@@ -186,10 +168,10 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
               ))}
               <Grid item key='slider' xs={12} sm={6} md={4}>
                 <PricingSlider
-                  plans={plans}
+                  plans={this.props.plans || []}
                   estimatedPercUsersBecomeActive={EstimatedPercUsersBecomeActive}
-                  onSelectedPlanChange={(planid, callForQuote) => this.setState({
-                    highlightedPlanid: callForQuote ? undefined : planid,
+                  onSelectedPlanChange={(basePlanId, callForQuote) => this.setState({
+                    highlightedBasePlanid: callForQuote ? undefined : basePlanId,
                     callForQuote,
                   })}
                 />

@@ -14,12 +14,12 @@ import { vh } from '../common/util/vhUtil';
 import { importFailed, importSuccess } from '../Main';
 import { Project } from './DemoApp';
 
-const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage" */).then(importSuccess).catch(importFailed));
-const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage" */).then(importSuccess).catch(importFailed));
-const LandingPage = React.lazy(() => import('./LandingPage'/* webpackChunkName: "LandingPage" */).then(importSuccess).catch(importFailed));
+const SigninPage = React.lazy(() => import('./SigninPage'/* webpackChunkName: "SigninPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const ContactPage = React.lazy(() => import('./ContactPage'/* webpackChunkName: "ContactPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const LandingPage = React.lazy(() => import('./LandingPage'/* webpackChunkName: "LandingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const LegalPage = React.lazy(() => import('./LegalPage'/* webpackChunkName: "LegalPage" */).then(importSuccess).catch(importFailed));
-const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage" */).then(importSuccess).catch(importFailed));
-const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage" */).then(importSuccess).catch(importFailed));
+const PricingPage = React.lazy(() => import('./PricingPage'/* webpackChunkName: "PricingPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
+const TrialSignupPage = React.lazy(() => import('./TrialSignupPage'/* webpackChunkName: "TrialSignupPage", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
 const SsoSuccessDemoPage = React.lazy(() => import('../app/SsoSuccessDemoPage'/* webpackChunkName: "SsoSuccessDemoPage" */).then(importSuccess).catch(importFailed));
 
 const styles = (theme: Theme) => createStyles({

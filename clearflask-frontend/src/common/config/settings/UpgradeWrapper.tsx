@@ -9,7 +9,7 @@ import { ReduxStateAdmin } from '../../../api/serverAdmin';
 import { Path, pathEquals } from '../configEditor';
 
 /** If changed, also change in KillBillPlanStore.java */
-export const RestrictedProperties: { [planid: string]: Path[] } = {
+export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
   'growth-monthly': [
     ['users', 'onboarding', 'notificationMethods', 'sso'],
     ['users', 'onboarding', 'visibility'],
@@ -46,7 +46,7 @@ interface Props {
   propertyPath?: Path;
 }
 interface ConnectProps {
-  accountPlanId?: string;
+  accountBasePlanId?: string;
 }
 interface State {
   clicked?: boolean;
@@ -56,9 +56,9 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
   state: State = {};
   render() {
     const propertyPath = this.props.propertyPath;
-    if (this.props.accountPlanId
+    if (this.props.accountBasePlanId
       && propertyPath
-      && !RestrictedProperties[this.props.accountPlanId]?.some(restrictedPath =>
+      && !RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
         pathEquals(restrictedPath, propertyPath))) {
       return this.props.children;
     }
@@ -99,6 +99,6 @@ export const UpgradeAlert = (props: { className?: string }) => (
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
-    accountPlanId: state.account.account.account?.plan.planid,
+    accountBasePlanId: state.account.account.account?.basePlanId,
   };
 })(withStyles(styles, { withTheme: true })(UpgradeWrapper));

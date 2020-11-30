@@ -21,7 +21,7 @@ import { ADMIN_LOGIN_REDIRECT_TO } from './SigninPage';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = true;
-export const PRE_SELECTED_PLAN_ID = 'preSelectedPlanId';
+export const PRE_SELECTED_BASE_PLAN_ID = 'preSelectedPlanId';
 export const REQUIRES_WORK_EMAIL_ABOVE_PRICE = 50;
 
 const styles = (theme: Theme) => createStyles({
@@ -104,9 +104,9 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
       )} />
     }
 
-    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_PLAN_ID]
-      || (this.props.plans ? this.props.plans[0].planid : undefined);
-    const selectedPlan = !selectedPlanId ? undefined : this.props.plans?.find(plan => plan.planid === selectedPlanId);
+    const selectedPlanId = this.props.location.state?.[PRE_SELECTED_BASE_PLAN_ID]
+      || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
+    const selectedPlan = !selectedPlanId ? undefined : this.props.plans?.find(plan => plan.basePlanId === selectedPlanId);
 
     const selectedPlanRequiresWorkEmail = !!selectedPlan
       && !!selectedPlan.pricing
@@ -215,7 +215,7 @@ class SignupPage extends Component<Props & ConnectProps & RouteComponentProps & 
           name: this.state.name!,
           email: this.state.email!,
           password: saltHashPassword(this.state.pass!),
-          planid: selectedPlanId,
+          basePlanId: selectedPlanId,
         }
       });
     } catch (err) {

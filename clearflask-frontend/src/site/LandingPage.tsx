@@ -428,26 +428,24 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             demoFlashPostVotingControls: true,
           }}
         />
-        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={-200}>
+        <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={200}>
           <Demo
             variant='content'
             type='column'
-            title='Credit system for advanced prioritization'
-            description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
+            title='Keep it simple with voting'
+            description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
             initialSubPath='/embed/demo'
-            template={templater => templater.demoPrioritization('fund')}
-            controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
+            template={templater => templater.demoPrioritization('vote')}
+            controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
-            demoFixedHeight={450}
-            containerPortal
             settings={{
               demoBlurryShadow: true,
-              demoFundingControlAnimate: [
-                { index: 0, fundDiff: 20 },
-                { index: 1, fundDiff: -30 },
-                { index: 2, fundDiff: 20 },
+              demoVotingExpressionsAnimate: [
+                { type: 'vote', upvote: true },
               ],
             }}
+            demoFixedHeight={150}
+            containerPortal
           />
           <Demo
             variant='content'
@@ -471,20 +469,22 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <Demo
             variant='content'
             type='column'
-            title='Keep it simple with voting'
-            description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
+            title='Credit system for advanced prioritization'
+            description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
             initialSubPath='/embed/demo'
-            template={templater => templater.demoPrioritization('vote')}
-            controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
+            template={templater => templater.demoPrioritization('fund')}
+            controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
             mock={mocker => mocker.demoPrioritization()}
+            demoFixedHeight={450}
+            containerPortal
             settings={{
               demoBlurryShadow: true,
-              demoVotingExpressionsAnimate: [
-                { type: 'vote', upvote: true },
+              demoFundingControlAnimate: [
+                { index: 0, fundDiff: 20 },
+                { index: 1, fundDiff: -30 },
+                { index: 2, fundDiff: 20 },
               ],
             }}
-            demoFixedHeight={150}
-            containerPortal
           />
         </HorizontalPanels>
         <Block

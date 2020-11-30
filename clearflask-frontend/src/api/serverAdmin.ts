@@ -206,6 +206,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
           status: Status.FULFILLED,
           account: action.payload,
         },
+        billing: {},
       };
     case Admin.accountBindAdminActionStatus.Fulfilled:
       if (!action.payload.account) return state;
@@ -241,6 +242,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
           account: {
             ...state.account.account,
             subscriptionStatus: action.payload.subscriptionStatus,
+            basePlanId: action.payload.plan.basePlanId,
           },
         },
         billing: {

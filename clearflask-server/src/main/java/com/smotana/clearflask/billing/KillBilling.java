@@ -62,6 +62,7 @@ import org.killbill.billing.client.model.gen.OverdueState;
 import org.killbill.billing.client.model.gen.PaymentMethod;
 import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
 import org.killbill.billing.client.model.gen.PaymentTransaction;
+import org.killbill.billing.client.model.gen.PhasePrice;
 import org.killbill.billing.client.model.gen.PlanDetail;
 import org.killbill.billing.client.model.gen.PluginProperty;
 import org.killbill.billing.client.model.gen.RolledUpUnit;
@@ -295,8 +296,9 @@ public class KillBilling extends ManagedService implements Billing {
         return subscription.getEvents().stream()
                 .filter(e -> SubscriptionEventType.CHANGE.equals(e.getEventType()))
                 .map(EventSubscription::getPlan)
-                .filter(planName -> !subscription.getPlanName().equals(planName))
-                .findFirst();
+                // Find last as there may be multiple change events
+                .reduce((a, b) -> b)
+                .map(planName -> subscription.getPlanName().equals(planName) ? null : planName);
     }
 
     /**
@@ -670,7 +672,44 @@ public class KillBilling extends ManagedService implements Billing {
                     KillBillUtil.roDefault());
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
-            log.warn("Failed to change KillBill plan account id {} planId {}", accountId, planId, ex);
+            log.warn("Failed to change KillBill plan for account id {} planId {}", accountId, planId, ex);
+            throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
+        }
+    }
+
+    private static final String FLAT_YEARLY_PLAN_NAME = "flat-yearly";
+
+    @Override
+    public Subscription changePlanToFlatYearly(String accountId, long yearlyPrice) {
+        try {
+            Account accountInKb = getAccount(accountId);
+            Subscription subscriptionInKb = getSubscription(accountId);
+
+            kbSubscription.changeSubscriptionPlan(
+                    subscriptionInKb.getSubscriptionId(),
+                    new Subscription()
+                            .setSubscriptionId(subscriptionInKb.getSubscriptionId())
+                            .setBundleExternalKey(accountId)
+                            .setAccountId(accountInKb.getAccountId())
+                            .setPlanName(FLAT_YEARLY_PLAN_NAME)
+                            .setPhaseType(PhaseType.EVERGREEN)
+                            .setPriceOverrides(ImmutableList.of(
+                                    new PhasePrice(
+                                            FLAT_YEARLY_PLAN_NAME,
+                                            FLAT_YEARLY_PLAN_NAME + "-evergreen",
+                                            PhaseType.EVERGREEN.name(),
+                                            null,
+                                            BigDecimal.valueOf(yearlyPrice),
+                                            null))),
+                    null,
+                    true,
+                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                    BillingActionPolicy.IMMEDIATE,
+                    null,
+                    KillBillUtil.roDefault());
+            return getSubscription(accountId);
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to change KillBill plan to flat yearly for account id {} yearlyPrice {}", accountId, yearlyPrice, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to change plan", ex);
         }
     }
@@ -711,6 +750,7 @@ public class KillBilling extends ManagedService implements Billing {
                         String description = i.getItems().stream()
                                 .map(org.killbill.billing.client.model.gen.InvoiceItem::getPrettyPlanName)
                                 .filter(p -> !Strings.isNullOrEmpty(p))
+                                .map(planStore::prettifyPlanName)
                                 .collect(Collectors.joining(", "));
                         if (Strings.isNullOrEmpty(description)) {
                             description = "Unspecified";
@@ -758,7 +798,17 @@ public class KillBilling extends ManagedService implements Billing {
                 throw new ErrorWithMessageException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            return kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
+            String invoiceHtml = kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
+            for (org.killbill.billing.client.model.gen.InvoiceItem item : invoice.getItems()) {
+                String phaseName = item.getPhaseName();
+                String prettyPlanName = item.getPrettyPlanName();
+                if (Strings.isNullOrEmpty(phaseName) || Strings.isNullOrEmpty(prettyPlanName)) {
+                    continue;
+                }
+                prettyPlanName = planStore.prettifyPlanName(prettyPlanName);
+                invoiceHtml = invoiceHtml.replaceAll(phaseName, prettyPlanName);
+            }
+            return invoiceHtml;
         } catch (KillBillClientException ex) {
             log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
             throw new ErrorWithMessageException(Response.Status.INTERNAL_SERVER_ERROR,

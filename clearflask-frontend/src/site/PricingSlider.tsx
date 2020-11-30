@@ -6,7 +6,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import * as Admin from '../api/admin';
 
-type Marks = Array<{ val: number, planid: string }>;
+type Marks = Array<{ val: number, basePlanId: string }>;
 const quadrupleStepAfterIteration = 17;
 
 const styles = (theme: Theme) => createStyles({
@@ -59,7 +59,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   plans: Admin.Plan[];
   estimatedPercUsersBecomeActive: number;
-  onSelectedPlanChange: (planid: string, callForQuote: boolean) => void;
+  onSelectedPlanChange: (basePlanId: string, callForQuote: boolean) => void;
 }
 interface State {
   mauIndex: number;
@@ -85,14 +85,14 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
       : this.state.marks[mauIndex];
     const mau = mauMark.val;
 
-    const plan = this.props.plans.find(p => p.planid === mauMark.planid);
+    const plan = this.props.plans.find(p => p.basePlanId === mauMark.basePlanId);
     if (!plan) return null;
 
     if (this.sliderWasTouched
-      && (this.lastSelectedPlanid !== plan.planid
+      && (this.lastSelectedPlanid !== plan.basePlanId
         || this.lastCallForQuote !== callForQuote)) {
-      this.props.onSelectedPlanChange(plan.planid, callForQuote);
-      this.lastSelectedPlanid = plan.planid;
+      this.props.onSelectedPlanChange(plan.basePlanId, callForQuote);
+      this.lastSelectedPlanid = plan.basePlanId;
       this.lastCallForQuote = callForQuote;
     }
 
@@ -174,7 +174,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
 
       var currPt: number = plan.pricing.baseMau;
       while (currPt < currMaxMau) {
-        pts.push({ val: currPt, planid: plan.planid });
+        pts.push({ val: currPt, basePlanId: plan.basePlanId });
         currPt += plan.pricing.unitMau;
         if (step++ >= quadrupleStepAfterIteration) {
           currPt += plan.pricing.unitMau;
@@ -188,7 +188,7 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithStyles<t
     });
     points.sort((l, r) => l.val - r.val);
     while (fractionsToInclude > 0) {
-      points.unshift({ val: points[0].val / 2, planid: points[0].planid });
+      points.unshift({ val: points[0].val / 2, basePlanId: points[0].basePlanId });
       fractionsToInclude--;
     }
     return points;

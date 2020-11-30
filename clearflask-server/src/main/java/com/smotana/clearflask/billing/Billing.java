@@ -55,6 +55,8 @@ public interface Billing {
 
     Subscription changePlan(String accountId, String planId);
 
+    Subscription changePlanToFlatYearly(String accountId, long yearlyPrice);
+
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
     String getInvoiceHtml(String accountId, UUID invoiceId);

@@ -36,6 +36,10 @@ const Site = React.lazy(() => import('./site/Site'/* webpackChunkName: "site" */
 const Invoice = React.lazy(() => import('./site/InvoicePage'/* webpackChunkName: "invoice" */).then(importSuccess).catch(importFailed));
 const PostStatus = React.lazy(() => import('./app/PostStatus'/* webpackChunkName: "postStatus" */).then(importSuccess).catch(importFailed));
 
+// Prefetch
+import('./common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */);
+import('./common/EmojiPicker'/* webpackChunkName: "EmojiPicker", webpackPrefetch: true */);
+
 const theme: Theme = createMuiTheme({
   palette: {
     // type: 'dark',

@@ -493,6 +493,6 @@ const TemplateCard = withStyles(styles, { withTheme: true })((props: TemplateCar
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   return {
-    accountPlanId: state.account.account.account?.plan.planid,
+    accountPlanId: state.account.account.account?.basePlanId,
   };
 })(withStyles(styles, { withTheme: true })(CreatePage));

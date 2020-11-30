@@ -344,8 +344,8 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
       while (this.state.sliderCurrentIdeaId === undefined || this.state.sliderCurrentIdeaId === idea.ideaId
         && Math.abs((this.state.sliderFundAmountDiff || 0) + increment) <= Math.abs(fundDiff)
-        && this.props.balance >= (this.state.sliderFundAmountDiff || 0) + increment
-        && (idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment >= 0) {
+        && this.props.balance >= ((this.state.sliderFundAmountDiff || 0) + increment)
+        && ((idea.funded || 0) + (this.state.sliderFundAmountDiff || 0) + increment) >= 0) {
 
         if (await animate({
           setState: {

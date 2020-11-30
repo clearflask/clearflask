@@ -12,7 +12,11 @@ import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.Value;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -165,7 +169,7 @@ public interface AccountStore {
 
         public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
             return new AccountAdmin(
-                    planStore.getPlan(getPlanid()).orElseThrow(() -> new IllegalStateException("Unknown plan id " + getPlanid())),
+                    planStore.getBasePlanId(getPlanid()),
                     getStatus(),
                     getName(),
                     getEmail(),

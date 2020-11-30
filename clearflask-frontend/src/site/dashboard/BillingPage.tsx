@@ -1,5 +1,5 @@
 
-import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import ActiveIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
@@ -116,6 +116,7 @@ interface ConnectProps {
   account?: Admin.AccountAdmin;
   accountBillingStatus?: Status;
   accountBilling?: Admin.AccountBilling;
+  isSuperAdmin: boolean;
 }
 interface State {
   isSubmitting?: boolean;
@@ -131,6 +132,8 @@ interface State {
   paymentActionUrl?: string;
   paymentActionMessage?: string;
   paymentActionMessageSeverity?: Color;
+  showFlatYearlyChange?: boolean;
+  flatYearlyPrice?: number;
 }
 class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
   state: State = {};
@@ -144,6 +147,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   render() {
     if (!this.props.account) {
       return 'Need to login to see this page';
+    }
+
+    const status = this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus;
+    if (!this.props.accountBilling || status !== Status.FULFILLED) {
+      return (
+        <Loader
+          inline
+          status={status}
+        />
+      );
     }
 
     var cardNumber, cardExpiry, cardStateIcon;
@@ -174,7 +187,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
     var hasAvailablePlansToSwitch: boolean = (this.props.accountBilling?.availablePlans || [])
-      .filter(p => p.planid !== this.props.account?.plan.planid)
+      .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
     var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc;
@@ -187,7 +200,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         setPaymentTitle = 'Update payment method';
         showCancelSubscription = true;
         planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan.`;
+        planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
         if (hasAvailablePlansToSwitch) {
           planDesc += ' If you switch plans now, balance will be prorated.';
           showPlanChange = true;
@@ -201,7 +214,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           showSetPayment = true;
           setPaymentTitle = 'Update payment method';
           planTitle = 'Your plan is active';
-          planDesc = `You have full access to your ${this.props.account.plan.title} plan.`;
+          planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
           if (hasAvailablePlansToSwitch) {
             planDesc += ' If you switch plans now, your first payment will reflect your new plan.';
             showPlanChange = true;
@@ -216,11 +229,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (this.props.accountBilling?.billingPeriodEnd) {
             planDesc = (
               <React.Fragment>
-                You have full access to your ${this.props.account.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
+                You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
               </React.Fragment>
             );
           } else {
-            planDesc = `You have full access to your ${this.props.account.plan.title} plan until your trial expires when you reach ${StopTrialAfterActiveUsersReaches} MAU. Add a payment method to continue using our service beyond the trial period.`;
+            planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until your trial expires when you reach ${StopTrialAfterActiveUsersReaches} MAU. Add a payment method to continue using our service beyond the trial period.`;
           }
           if (hasAvailablePlansToSwitch) {
             showPlanChange = true;
@@ -239,7 +252,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         }
         showCancelSubscription = true;
         planTitle = 'Your plan is active';
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan; however, there is an issue with your payment. Please resolve it before you can change your plan.`;
+        planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan; however, there is an issue with your payment. Please resolve it before you can change your plan.`;
         break;
       case Admin.SubscriptionStatus.ActiveNoRenewal:
         paymentTitle = 'Automatic renewal is inactive';
@@ -258,7 +271,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         } else {
           planTitle = 'Your plan is active until the end of the billing cycle';
         }
-        planDesc = `You have full access to your ${this.props.account.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
+        planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
         break;
       case Admin.SubscriptionStatus.NoPaymentMethod:
         paymentTitle = 'Automatic renewal is inactive';
@@ -267,7 +280,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         showSetPayment = true;
         setPaymentTitle = 'Add payment method';
         planTitle = 'Your trial plan has expired';
-        planDesc = `To continue using your ${this.props.account.plan.title} plan, please add a payment method.`;
+        planDesc = `To continue using your ${this.props.accountBilling.plan.title} plan, please add a payment method.`;
         break;
       case Admin.SubscriptionStatus.Blocked:
         paymentTitle = 'Payments are blocked';
@@ -275,7 +288,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         showContactSupport = true;
         cardState = 'error';
         planTitle = 'Your plan is inactive';
-        planDesc = `You have limited access to your ${this.props.account.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
+        planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
         break;
       case Admin.SubscriptionStatus.Cancelled:
         paymentTitle = 'Automatic renewal is inactive';
@@ -288,7 +301,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           resumePlanDesc = 'Your subscription will no longer be cancelled. You will be automatically billed for our service starting now.';
         }
         planTitle = 'Your plan is cancelled';
-        planDesc = `You have limited access to your ${this.props.account.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
+        planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan since you cancelled your subscription. Please resume payment to continue using our service.`;
         break;
     }
     if (this.props.accountBilling?.endOfTermChangeToPlan) {
@@ -435,7 +448,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       ReactGA.event({
                         category: 'billing',
                         action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
-                        label: this.props.account?.plan.planid,
+                        label: this.props.accountBilling?.plan.basePlanId,
                       });
                     }
                     this.setState({ showAddPayment: true })
@@ -622,7 +635,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <PricingPlan
               selected
               className={this.props.classes.plan}
-              plan={this.props.account.plan}
+              plan={this.props.accountBilling.plan}
             />
             {(this.props.accountBilling?.billingPeriodMau !== undefined) && (
               <Box display='grid' gridTemplateAreas='"mauLbl mauAmt"' alignItems='baseline' gridGap='10px 10px'>
@@ -653,7 +666,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       ReactGA.event({
                         category: 'billing',
                         action: 'click-plan-switch-open',
-                        label: this.props.account?.plan.planid,
+                        label: this.props.accountBilling?.plan.basePlanId,
                       });
                     }
 
@@ -664,24 +677,73 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Button>
               </div>
             )}
+            {this.props.isSuperAdmin && (
+              <React.Fragment>
+                <Dialog
+                  open={!!this.state.showFlatYearlyChange}
+                  onClose={() => this.setState({ showFlatYearlyChange: undefined })}
+                  scroll='body'
+                  maxWidth='md'
+                >
+                  <DialogTitle>Switch to yearly plan</DialogTitle>
+                  <DialogContent>
+                    <TextField
+                      variant='outlined'
+                      type='number'
+                      label='Yearly flat price'
+                      value={this.state.flatYearlyPrice !== undefined ? this.state.flatYearlyPrice : ''}
+                      onChange={e => this.setState({ flatYearlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showFlatYearlyChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.flatYearlyPrice === undefined}
+                      color='primary'
+                      onClick={() => {
+
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            changeToFlatPlanWithYearlyPrice: this.state.flatYearlyPrice || 0,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({ isSubmitting: false, showFlatYearlyChange: undefined }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showFlatYearlyChange: true })}
+                  >
+                    To flat
+                </Button>
+                </div>
+              </React.Fragment>
+            )}
           </div>
         </div>
         <BillingChangePlanDialog
           open={!!this.state.showPlanChange}
           onClose={() => this.setState({ showPlanChange: undefined })}
-          onSubmit={planid => {
+          onSubmit={basePlanId => {
             if (isTracking()) {
               ReactGA.event({
                 category: 'billing',
                 action: 'click-plan-switch-submit',
-                label: planid,
+                label: basePlanId,
               });
             }
 
             this.setState({ isSubmitting: true });
             ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
               accountUpdateAdmin: {
-                planid,
+                basePlanId,
               },
             }).then(() => d.accountBillingAdmin({})))
               .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
@@ -693,13 +755,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
 
     return (
-      <Loader status={this.props.accountStatus === Status.FULFILLED ? this.props.accountBillingStatus : this.props.accountStatus}>
-        <div className={this.props.classes.page}>
-          {plan}
-          {payment}
-          {invoices}
-        </div>
-      </Loader>
+      <div className={this.props.classes.page}>
+        {plan}
+        {payment}
+        {invoices}
+      </div>
     );
   }
 
@@ -712,8 +772,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       ReactGA.event({
         category: 'billing',
         action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
-        label: this.props.account?.plan.planid,
-        value: this.props.account?.plan.pricing?.basePrice,
+        label: this.props.accountBilling?.plan.basePlanId,
+        value: this.props.accountBilling?.plan.pricing?.basePrice,
       });
     }
 
@@ -887,6 +947,7 @@ export default connect<ConnectProps, {}, {}, ReduxStateAdmin>((state, ownProps) 
     account: state.account.account.account,
     accountBillingStatus: state.account.billing.status,
     accountBilling: state.account.billing.billing,
+    isSuperAdmin: state.account.isSuperAdmin,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withWidth()(BillingPage))));

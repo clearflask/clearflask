@@ -120,7 +120,8 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           .then(result => {
             this.setState({ binding: false })
             if (result.account) d.configGetAllAndUserBindAllAdmin()
-          }));
+          }))
+        .catch(e => this.setState({ binding: false }));
     } else if (props.accountStatus === Status.FULFILLED && !props.configsStatus) {
       this.state = {
         currentPagePath: [],
@@ -558,12 +559,20 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
             onValueChange={labels => {
               const email = labels[0]?.value;
               if (email && this.props.account?.email !== email) {
+                this.setState({
+                  binding: true,
+                  quickView: undefined,
+                });
                 ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
                   accountLoginAs: {
                     email,
                   },
-                }))
-                  .then(() => !!this.state.quickView && this.setState({ quickView: undefined }));
+                })
+                  .then(result => {
+                    this.setState({ binding: false })
+                    return d.configGetAllAndUserBindAllAdmin();
+                  }))
+                  .catch(e => this.setState({ binding: false }));
               }
             }}
           />

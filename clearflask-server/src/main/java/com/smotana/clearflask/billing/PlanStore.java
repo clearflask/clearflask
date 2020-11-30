@@ -5,6 +5,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import org.killbill.billing.client.model.gen.Subscription;
 
 import java.util.Optional;
 
@@ -17,7 +18,13 @@ public interface PlanStore {
 
     ImmutableSet<Plan> getAccountChangePlanOptions(String accountId);
 
-    Optional<Plan> getPlan(String planId);
+    /** If subscription is passed, pricing reflects actual pricing for account */
+    Optional<Plan> getPlan(String planId, Optional<Subscription> subscriptionOpt);
+
+    /** Strips suffix from planId appended by KillBill during price override */
+    String getBasePlanId(String planId);
+
+    String prettifyPlanName(String planIdOrPrettyPlanName);
 
     void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException;
 }

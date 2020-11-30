@@ -3,12 +3,12 @@ components:
     Plan:
       type: object
       required:
-      - planid
+      - basePlanId
       - title
       - period
       - perks
       properties:
-        planid:
+        basePlanId:
           type: string
         title:
           type: string
@@ -113,7 +113,7 @@ components:
       - name
       - email
       - password
-      - planid
+      - basePlanId
       properties:
         name:
           type: string
@@ -121,7 +121,7 @@ components:
           type: string
         password:
           type: string
-        planid:
+        basePlanId:
           type: string
     Account:
       type: object
@@ -136,6 +136,7 @@ components:
     AccountAdmin:
       type: object
       required:
+      - basePlanId
       - subscriptionStatus
       - plan
       - name
@@ -143,8 +144,8 @@ components:
       - cfJwt
       - hasApiKey
       properties:
-        plan:
-          $ref: 'api-account.yaml#/components/schemas/Plan'
+        basePlanId:
+          type: string
         subscriptionStatus:
           $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
         name:
@@ -190,21 +191,30 @@ components:
               type: string
             token:
               type: string
-        planid:
+        basePlanId:
           type: string
         cancelEndOfTerm:
           type: boolean
         resume:
           type: boolean
+    AccountUpdateSuperAdmin:
+      type: object
+      properties:
+        changeToFlatPlanWithYearlyPrice:
+          type: integer
+          format: int64
     AccountBilling:
       type: object
       required:
+      - plan
       - subscriptionStatus
       - availablePlans
       - invoices
       - accountReceivable
       - accountPayable
       properties:
+        plan:
+          $ref: 'api-account.yaml#/components/schemas/Plan'
         subscriptionStatus:
           $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
         payment:
@@ -461,6 +471,22 @@ components:
         application/json:
           schema:
             $ref: 'api-account.yaml#/components/schemas/AccountUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/updateSuper:
+  post:
+    operationId: accountUpdateSuperAdmin
+    tags: [AccountSuperAdmin]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountUpdateSuperAdmin'
     responses:
       '200':
         content:

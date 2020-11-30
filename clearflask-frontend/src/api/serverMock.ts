@@ -12,9 +12,9 @@ export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = 'admin@clearflask.com';
 const termsProjects = 'You can create separate projects each having their own set of users and content';
-const AvailablePlans: { [planid: string]: Admin.Plan } = {
+const AvailablePlans: { [planId: string]: Admin.Plan } = {
   'growth-monthly': {
-    planid: 'growth-monthly', title: 'Growth',
+    basePlanId: 'growth-monthly', title: 'Growth',
     pricing: { basePrice: 50, baseMau: 50, unitPrice: 30, unitMau: 50, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
@@ -23,7 +23,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     ],
   },
   'standard-monthly': {
-    planid: 'standard-monthly', title: 'Standard',
+    basePlanId: 'standard-monthly', title: 'Standard',
     pricing: { basePrice: 200, baseMau: 300, unitPrice: 100, unitMau: 300, period: Admin.PlanPricingPeriodEnum.Monthly },
     perks: [
       { desc: 'Single Sign-On' },
@@ -32,7 +32,7 @@ const AvailablePlans: { [planid: string]: Admin.Plan } = {
     ],
   },
   'flat-yearly': {
-    planid: 'flat-yearly', title: 'Flat',
+    basePlanId: 'flat-yearly', title: 'Flat',
     perks: [
       { desc: 'Predictable annual price' },
       { desc: 'Tailored plan' },
@@ -78,7 +78,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   superLoggedIn: boolean = false;
   // Mock account login (server-side cookie data)
   loggedIn: boolean = false;
-  account?: Admin.AccountAdmin = undefined;
+  account?: Admin.AccountAdmin & { planId: string } = undefined;
   accountPass?: string = undefined;
   // Mock project database
   readonly db: {
@@ -172,7 +172,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
-      plan: AvailablePlans[request.accountSignupAdmin.planid],
+      basePlanId: request.accountSignupAdmin.basePlanId,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -185,7 +185,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       hasApiKey: false,
     };
     this.accountPass = request.accountSignupAdmin.password;
-    this.account = account;
+    this.account = {
+      planId: account.basePlanId,
+      ...account
+    };
     this.loggedIn = true;
     if (this.account.isSuperAdmin) {
       this.superLoggedIn = true;
@@ -208,8 +211,31 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.paymentToken) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
     if (!!request.accountUpdateAdmin.cancelEndOfTerm) this.account.subscriptionStatus = Admin.SubscriptionStatus.ActiveNoRenewal;
     if (!!request.accountUpdateAdmin.resume) this.account.subscriptionStatus = Admin.SubscriptionStatus.Active;
-    if (request.accountUpdateAdmin.planid) this.account.plan = AvailablePlans[request.accountUpdateAdmin.planid]!;
+    if (request.accountUpdateAdmin.basePlanId) {
+      this.account.planId = request.accountUpdateAdmin.basePlanId
+      this.account.basePlanId = request.accountUpdateAdmin.basePlanId
+    };
     if (request.accountUpdateAdmin.apiKey) this.account.hasApiKey = true;
+    return this.returnLater(this.account);
+  }
+  accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {
+    if (!this.account) return this.throwLater(403, 'Not logged in');
+    if (request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice !== undefined) {
+      const basePlanId = 'flat-yearly';
+      const newPlanId = `${basePlanId}-${Math.round(Math.random() * 1000)}`;
+      AvailablePlans[newPlanId] = {
+        ...AvailablePlans[basePlanId],
+        pricing: request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice > 0 ? {
+          period: Admin.PlanPricingPeriodEnum.Yearly,
+          basePrice: request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice,
+          baseMau: 0,
+          unitPrice: 0,
+          unitMau: 0,
+        } : undefined,
+      };
+      this.account.planId = newPlanId;
+      this.account.basePlanId = basePlanId;
+    };
     return this.returnLater(this.account);
   }
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
@@ -219,6 +245,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
     return this.returnLater({
+      plan: AvailablePlans[this.account.planId]!,
       subscriptionStatus: this.account.subscriptionStatus,
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {
@@ -242,7 +269,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
       accountReceivable: 75,
       accountPayable: 0,
-      endOfTermChangeToPlan: Object.values(AvailablePlans).find(p => p.planid !== this.account!.plan.planid),
+      endOfTermChangeToPlan: Object.values(AvailablePlans).find(p => p.basePlanId !== this.account!.basePlanId),
       paymentActionRequired: {
         actionType: 'stripe-next-action',
         actionData: {

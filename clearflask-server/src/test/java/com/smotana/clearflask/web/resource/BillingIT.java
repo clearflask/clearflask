@@ -61,6 +61,15 @@ public class BillingIT extends AbstractBlackboxIT {
     }
 
     @Test(timeout = 300_000L)
+    public void test_trial_upgradeFlat() throws Exception {
+        AccountAndProject accountAndProject = getTrialAccount("growth-monthly");
+        accountAndProject = changePlanToFlat(accountAndProject, 2000L);
+        accountAndProject = addPaymentMethod(accountAndProject);
+        assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
+        accountResource.accountBillingAdmin(false);
+    }
+
+    @Test(timeout = 300_000L)
     public void test_active_deleteAccount() throws Exception {
         AccountAndProject accountAndProject = getActiveAccount();
         assertSubscriptionStatus(SubscriptionStatus.ACTIVE);
