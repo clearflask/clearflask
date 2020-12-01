@@ -5,11 +5,14 @@ const styles = (theme: Theme) => createStyles({
   hr: {
     width: '10%',
     margin: '40px auto 30px auto',
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: (props: Props) => props.isInsidePaper ? theme.palette.background.paper : theme.palette.background.default,
     borderBottom: '1px solid #cccccc',
     textAlign: 'center' as 'center',
     lineHeight: '0.1em',
-    color: '#777777',
+  },
+  hrChildren: {
+    backgroundColor: (props: Props) => props.isInsidePaper ? theme.palette.background.paper : theme.palette.background.default,
+    padding: '0 10px',
   },
   vr: {
     height: '10%',
@@ -17,11 +20,19 @@ const styles = (theme: Theme) => createStyles({
     marginLeft: '40px',
     marginRight: '40px',
     position: 'relative' as 'relative',
-    color: '#777777',
   },
   vrContainer: {
     display: 'flex',
     alignItems: 'center',
+  },
+  vrChildren: {
+    backgroundColor: (props: Props) => props.isInsidePaper ? theme.palette.background.paper : theme.palette.background.default,
+    padding: '10px 0px',
+    position: 'absolute',
+    top: '50%',
+    left: '-50%',
+    transform: 'translate(-50%, -50%)',
+    whiteSpace: 'nowrap',
   },
 });
 
@@ -31,6 +42,7 @@ interface Props {
   vertical?: boolean;
   margins?: string;
   length?: string;
+  isInsidePaper?: boolean;
 }
 
 class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
@@ -50,15 +62,7 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
             ...this.props.style,
           }}>
             {this.props.children ? (
-              <span style={{
-                background: '#fff',
-                padding: '10px 0px',
-                position: 'absolute',
-                top: '50%',
-                left: '-50%',
-                transform: 'translate(-50%, -50%)',
-                whiteSpace: 'nowrap',
-              }}>
+              <span className={this.props.classes.vrChildren}>
                 {this.props.children}
               </span>
             ) : ' '}
@@ -80,10 +84,7 @@ class Hr extends React.Component<Props & WithStyles<typeof styles, true>> {
           }}
         >
           {this.props.children && (
-            <span style={{
-              background: '#fff',
-              padding: '0 10px',
-            }}>
+            <span className={this.props.classes.hrChildren}>
               {this.props.children}
             </span>
           )}

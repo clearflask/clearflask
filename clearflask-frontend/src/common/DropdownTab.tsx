@@ -19,7 +19,7 @@ export const tabHoverApplyStyles = (theme: Theme): CSSProperties => ({
     transition: 'border-bottom-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
   },
   '&:hover::before': {
-    borderBottom: '2px solid rgba(0, 0, 0, 0.87)',
+    borderBottom: `2px solid ${theme.palette.type === 'dark' ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)'}`,
   },
 });
 

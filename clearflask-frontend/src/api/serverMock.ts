@@ -799,14 +799,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...request.userCreateAdmin,
     };
     this.getProject(request.projectId).users.push(user);
-    const creditsOnSignup = this.getProject(request.projectId).config.config.users.credits?.creditOnSignup?.amount || 0;
-    if (creditsOnSignup > 0) {
-      const newBalance = user.balance + creditsOnSignup;
+    const creditOnSignup = this.getProject(request.projectId).config.config.users.credits?.creditOnSignup?.amount || 0;
+    if (creditOnSignup > 0) {
+      const newBalance = user.balance + creditOnSignup;
+      user.balance = newBalance;
       const balanceUpdateTransaction = {
         userId: user.userId,
         transactionId: randomUuid(),
         created: new Date(),
-        amount: creditsOnSignup,
+        amount: creditOnSignup,
         transactionType: Admin.TransactionType.Income,
         summary: this.getProject(request.projectId).config.config.users.credits?.creditOnSignup?.summary || 'Sign-up credits',
       };

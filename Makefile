@@ -29,6 +29,7 @@ npm-run-dev-frontend:
 tomcat-run-dev:
 	rm -fr `pwd`/clearflask-server/target/ROOT
 	unzip `pwd`/clearflask-server/target/clearflask-server-0.1.war -d `pwd`/clearflask-server/target/ROOT
+	sed -i '' -e 's/clearflask\.com/localhost\.com/g' `pwd`/clearflask-server/target/ROOT/index.html `pwd`/clearflask-server/target/ROOT/asset-manifest.json
 	docker run --rm --name clearflask-webserver \
 	-e CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL \
 	-e CATALINA_OPTS="-Dcom.sun.management.jmxremote \

@@ -26,7 +26,7 @@ class NotificationPopup extends Component<Props & WithStyles<typeof styles, true
           clickAway
           disableCloseButton
         >
-          <NotificationList server={this.props.server} />
+          <NotificationList server={this.props.server} isInsidePaper />
         </ClosablePopper>
       </React.Fragment>
     );

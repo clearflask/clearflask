@@ -23,7 +23,6 @@ interface Props {
   demoFixedWidth?: number | string;
   demoWrap?: 'browser' | 'browser-dark',
   demoWrapPadding?: number | string,
-  demoOverflowYScroll?: boolean;
   demoPreventInteraction?: boolean
   demoProject?: Promise<Project>;
   scale?: number;
@@ -87,8 +86,7 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
             style={{
               height: this.props.demoFixedHeight,
               width: this.props.demoFixedWidth,
-              overflowX: 'hidden',
-              overflowY: this.props.demoOverflowYScroll ? 'scroll' : 'hidden',
+              overflow: 'hidden',
               position: 'relative', // For containerPortal
               pointerEvents: this.props.demoPreventInteraction ? 'none' : undefined,
             }}

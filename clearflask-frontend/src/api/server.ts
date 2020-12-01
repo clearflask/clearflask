@@ -269,6 +269,7 @@ export interface StateSettings {
     path: string;
   }>;
   demoDisableExplorerExpanded?: boolean;
+  demoScrollY?: boolean;
 };
 const stateSettingsDefault = {};
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {

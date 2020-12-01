@@ -17,6 +17,7 @@ export interface CreateTemplateOptions {
   templateKnowledgeBase?: boolean;
 
   fundingAllowed?: boolean;
+  creditOnSignup?: number;
   votingAllowed?: boolean;
   expressionAllowed?: boolean;
   fundingType?: 'currency' | 'time' | 'beer';
@@ -88,7 +89,7 @@ export default class Templater {
         switch (opts.fundingType) {
           default:
           case 'currency':
-            this.creditsCurrency();
+            this.creditsCurrency(opts.creditOnSignup);
             break;
           case 'time':
             this.creditsTime();
@@ -377,24 +378,23 @@ export default class Templater {
         pageId: roadmapPageId,
         name: 'Roadmap',
         slug: 'roadmap',
-        title: undefined,
-        description: undefined,
-        panels: [],
+        panels: [
+          ...(withFunding && withStandaloneFunding ? [
+            Admin.PagePanelWithHideIfEmptyToJSON({
+              title: 'Funding', hideIfEmpty: true, display: Admin.PostDisplayToJSON({
+                ...postDisplay,
+                showFunding: true,
+              }), search: Admin.IdeaSearchToJSON({
+                sortBy: Admin.IdeaSearchSortByEnum.New,
+                filterCategoryIds: [postCategoryId],
+                filterStatusIds: postStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
+              })
+            }),
+          ] : []),
+        ],
         board: Admin.PageBoardToJSON({
           title: 'Roadmap',
           panels: [
-            ...(withFunding && withStandaloneFunding ? [
-              Admin.PagePanelWithHideIfEmptyToJSON({
-                title: 'Funding', hideIfEmpty: false, display: Admin.PostDisplayToJSON({
-                  ...postDisplay,
-                  showFunding: true,
-                }), search: Admin.IdeaSearchToJSON({
-                  sortBy: Admin.IdeaSearchSortByEnum.New,
-                  filterCategoryIds: [postCategoryId],
-                  filterStatusIds: postStatuses.filter(s => s.name.match(/Funding/)).map(s => s.statusId),
-                })
-              }),
-            ] : []),
             Admin.PagePanelWithHideIfEmptyToJSON({
               title: 'Planned', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
                 sortBy: Admin.IdeaSearchSortByEnum.New,
@@ -435,8 +435,8 @@ export default class Templater {
       pageId: postPageId,
       name: 'Feedback',
       slug: 'feedback',
-      title: undefined,
-      description: undefined,
+      title: 'Give us feedback',
+      description: 'We want to hear your ideas to improve our product.',
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
@@ -541,7 +541,8 @@ export default class Templater {
       pageId: changelogPageId,
       name: 'Changelog',
       slug: stringToSlug('changelog'),
-      description: undefined,
+      title: 'Recently announced',
+      description: 'Here you can find changes we have made to our product',
       panels: [],
       board: undefined,
       explorer: Admin.PageExplorerToJSON({
@@ -603,6 +604,7 @@ export default class Templater {
       pageId: helpPageId,
       name: 'Help',
       slug: 'help',
+      title: 'Knowledge Base',
       panels: [Admin.PagePanelWithHideIfEmptyToJSON({
         title: 'Account Setup', hideIfEmpty: false, display: Admin.PostDisplayToJSON(postDisplay), search: Admin.IdeaSearchToJSON({
           sortBy: Admin.IdeaSearchSortByEnum.Top,
@@ -771,8 +773,12 @@ export default class Templater {
       Admin.CreditFormatterEntryToJSON({ prefix: '$' }),
     ]);
   }
-  creditsCurrency() {
+  creditsCurrency(creditOnSignup?: number) {
     this._get<ConfigEditor.PageGroup>(['users', 'credits']).set(true);
+    if (creditOnSignup) {
+      this._get<ConfigEditor.ObjectProperty>(['users', 'credits', 'creditOnSignup']).setRaw(
+        Admin.CreditsCreditOnSignupToJSON({ amount: creditOnSignup }));
+    }
     this._get<ConfigEditor.ArrayProperty>(['users', 'credits', 'formats']).setRaw([
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 10000, maximumFractionDigits: 2 }),
       Admin.CreditFormatterEntryToJSON({ prefix: '$', multiplier: 0.01, greaterOrEqual: 100, minimumFractionDigits: 2 }),

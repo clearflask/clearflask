@@ -15,7 +15,6 @@ import { preserveEmbed } from '../../common/util/historyUtil';
 import minmax from '../../common/util/mathutil';
 import { MutableRef } from '../../common/util/refUtil';
 import { animateWrapper } from '../../site/landing/animateUtil';
-import Loader from '../utils/Loader';
 import FundingBar, { FundingMaxWidth } from './FundingBar';
 import LoadMoreButton from './LoadMoreButton';
 
@@ -32,14 +31,15 @@ const styles = (theme: Theme) => createStyles({
   separatorMargin: {
     marginTop: theme.spacing(3),
   },
+  sliderContainer: {
+    position: 'relative',
+  },
   slider: {
     padding: 0,
-  },
-  sliderContainer: {
     transition: theme.transitions.create('opacity'),
     opacity: 1,
   },
-  sliderContainerHide: {
+  sliderHide: {
     opacity: 0,
   },
   sliderTransitionNone: {
@@ -59,6 +59,11 @@ const styles = (theme: Theme) => createStyles({
   msg: {
     color: theme.palette.text.secondary,
   },
+  msgHover: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
 });
 
 interface Props {
@@ -70,6 +75,7 @@ interface Props {
   ideaId?: string;
   onOtherFundedIdeasLoaded?: () => void;
   maxOther?: number;
+  isInsidePaper?: boolean;
 }
 
 interface ConnectProps {
@@ -137,16 +143,10 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
     const showFirstIdea = !!this.props.idea;
 
     var msg;
-    var removeSlider: boolean = false;
     if (!showFirstIdea
       && this.props.otherFundedIdeas.status === Status.FULFILLED
       && this.props.otherFundedIdeas.ideas.length === 0) {
       msg = 'No items funded yet';
-    } else if (showFirstIdea
-      && this.props.balance === 0
-      && this.props.otherFundedIdeas.ideas.length === 0) {
-      msg = 'You have insufficient funds';
-      removeSlider = true;
     }
 
     return (
@@ -159,41 +159,40 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
               maxFundAmountSeen={this.props.maxFundAmountSeen}
               fundAmountDiff={this.state.sliderCurrentIdeaId === this.props.idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
             />
-            {!removeSlider && this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
+            {this.renderSlider(this.props.idea, this.props.credits, this.props.fundAmount || 0)}
           </div>)}
           {!!msg && (
             <Typography
               className={`${this.props.classes.separatorMargin} ${this.props.classes.msg}`}
               variant='overline'
+              component='div'
             >{msg}</Typography>
           )}
           {showFirstIdea && this.props.otherFundedIdeas.ideas.length > 0 && (
-            <Hr length='120px'>Prioritize</Hr>
+            <Hr isInsidePaper={this.props.isInsidePaper} length='120px'>Prioritize</Hr>
           )}
-          <Loader loaded={this.props.otherFundedIdeas.status === Status.FULFILLED}>
-            {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
-              <div key={idea.ideaId} className={this.props.classes.separatorMargin}>
-                <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
-                  <Truncate ellipsis='…' lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
-                  {!showFirstIdea && (
-                    <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`, this.props.location)}>
-                      View
-                    </Button>
-                  )}
-                </Typography>
-                <FundingBar
-                  idea={idea}
-                  credits={this.props.credits}
-                  maxFundAmountSeen={this.props.maxFundAmountSeen}
-                  fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
-                />
-                {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
-              </div>
-            ))}
-            {this.props.loadMore && (
-              <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
-            )}
-          </Loader>
+          {this.props.otherFundedIdeas.ideas.filter(i => !!i).map((idea, index) => !idea ? null : (
+            <div key={idea.ideaId} className={this.props.classes.separatorMargin}>
+              <Typography variant='subtitle1' style={{ display: 'flex', alignItems: 'baseline' }}>
+                <Truncate ellipsis='…' lines={1}><div style={{ opacity: 0.6 }}>{idea.title}</div></Truncate>
+                {!showFirstIdea && (
+                  <Button component={Link} to={preserveEmbed(`/post/${idea.ideaId}`, this.props.location)}>
+                    View
+                  </Button>
+                )}
+              </Typography>
+              <FundingBar
+                idea={idea}
+                credits={this.props.credits}
+                maxFundAmountSeen={this.props.maxFundAmountSeen}
+                fundAmountDiff={this.state.sliderCurrentIdeaId === idea.ideaId ? this.state.sliderFundAmountDiff : undefined}
+              />
+              {this.renderSlider(idea, this.props.credits!, idea.vote.fundAmount || 0)}
+            </div>
+          ))}
+          {this.props.loadMore && (
+            <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
+          )}
         </div>
       </InViewObserver>
     );
@@ -213,10 +212,17 @@ class FundingControl extends Component<Props & ConnectProps & WithStyles<typeof 
 
     return (
       <div
-        className={classNames(this.props.classes.sliderContainer, (min === max) && this.props.classes.sliderContainerHide)}
+        className={this.props.classes.sliderContainer}
       >
+        {min === max && (
+          <Typography
+            className={classNames(this.props.classes.msg, this.props.classes.msgHover)}
+            variant='overline'
+            component='div'
+          >You have no balance</Typography>
+        )}
         <Slider
-          className={this.props.classes.slider}
+          className={classNames(this.props.classes.slider, (min === max) && this.props.classes.sliderHide)}
           style={{ width: widthPerc + '%' }}
           disabled={this.state.sliderIsSubmitting || min === max}
           min={min}

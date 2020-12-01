@@ -23,6 +23,18 @@ const styles = (theme: Theme) => createStyles({
   spacing: {
     marginTop: theme.spacing(4),
   },
+  spacingTitleAndDescription: {
+    maxWidth: 400,
+    margin: theme.spacing(4, 16, 0),
+    [theme.breakpoints.down('xs')]: {
+      marginLeft: theme.spacing(4),
+      marginRight: theme.spacing(4),
+    },
+    [theme.breakpoints.only('sm')]: {
+      marginLeft: theme.spacing(8),
+      marginRight: theme.spacing(8),
+    },
+  },
   description: {
     marginTop: theme.spacing(1),
   },
@@ -34,8 +46,8 @@ const styles = (theme: Theme) => createStyles({
     minWidth: '256px',
   },
   boardContainer: {
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    // marginLeft: 'auto',
+    // marginRight: 'auto',
     width: 'fit-content',
   },
   board: {
@@ -218,7 +230,7 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
       var top;
       if (title || desc) {
         top = (
-          <div className={this.props.classes.spacing}>
+          <div className={this.props.classes.spacingTitleAndDescription}>
             {title}
             {desc}
           </div>

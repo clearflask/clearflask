@@ -83,7 +83,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
 
     const [configAndUserBind, post] = await Promise.all([configAndUserBindPromise, postPromise]);
 
-    if(!configAndUserBind.config) {
+    if (!configAndUserBind.config) {
       throw new Error('Permission denied');
     }
 
@@ -99,13 +99,26 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
         promise={this.dataPromise}
         render={([config, user, post]) => {
 
-          const status = config.config
+          var status = config.config
             .content
             .categories
             .find(c => c.categoryId === post.categoryId)
             ?.workflow
             .statuses
             .find(s => s.statusId === post.statusId);
+          if (!status && detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+            status = {
+              name: 'Planned',
+              nextStatusIds: [],
+              color: '#3B67AE',
+              statusId: 'a',
+              disableFunding: false,
+              disableExpressions: false,
+              disableVoting: false,
+              disableComments: false,
+              disableIdeaEdits: true
+            };
+          }
           if (!status) {
             console.log('Failed to load, post has no status', config, user, post);
             return null;

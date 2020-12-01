@@ -25,7 +25,6 @@ import AppThemeProvider from '../app/AppThemeProvider';
 import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
 import Loading from '../app/utils/Loading';
-import { CreateTemplateOptions, createTemplateOptionsDefault } from '../common/config/configTemplater';
 import ScrollAnchor from '../common/util/ScrollAnchor';
 import { importFailed, importSuccess } from '../Main';
 import Block from './landing/Block';
@@ -37,6 +36,7 @@ import PrioritizationControlsCredits from './landing/PrioritizationControlsCredi
 import PrioritizationControlsExpressions from './landing/PrioritizationControlsExpressions';
 import PrioritizationControlsVoting from './landing/PrioritizationControlsVoting';
 import RoadmapControls from './landing/RoadmapControls';
+import TemplateDemoWithControls from './landing/TemplateDemo';
 import PricingPage, { TrialInfoText } from './PricingPage';
 
 const WorkflowPreview = React.lazy(() => import('../common/config/settings/injects/WorkflowPreview' /* webpackChunkName: "WorkflowPreview" */).then(importSuccess).catch(importFailed));
@@ -77,6 +77,7 @@ const styles = (theme: Theme) => createStyles({
   },
   overlapContainer: {
     position: 'relative',
+    overflow: 'clip',
     margin: theme.spacing(4, 0),
   },
   textCircleContainer: {
@@ -190,26 +191,9 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   }
 
   renderDemo() {
-    const opts: CreateTemplateOptions = {
-      ...createTemplateOptionsDefault,
-    };
     return (
       <div className={this.props.classes.demo}>
-        <Demo
-          noSpacing
-          type='demoOnly'
-          demoWrap='browser'
-          demoFixedHeight={500}
-          demoOverflowYScroll
-          template={templater => templater.demo(opts)}
-          mock={mocker => mocker.templateMock(opts)}
-          settings={{
-            demoMenuAnimate: [
-              { path: 'feedback' },
-              { path: 'roadmap' },
-            ],
-          }}
-        />
+        <TemplateDemoWithControls />
       </div>
     );
   }
@@ -312,9 +296,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           imageLocation='above'
           displayAlign='flex-start'
           demoWrap='browser'
-          demoWrapPadding={40}
           demoFixedHeight={350}
-          demoFixedWidth={600}
           initialSubPath='/embed/demo'
           template={templater => templater.demoExplorer({
             allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
@@ -357,17 +339,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
           <BlockContent
             variant='content'
             title='Customer segmentation and Analytics'
-            description={(
-              <React.Fragment>
-                Analyze your data with search, segment and filter to summarize feedback from target customers.
-                &nbsp;
-                <PostStatusIframe
-                  postId='powerful-analytics'
-                  height={14}
-                  config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
-                />
-              </React.Fragment>
-            )}
+            description='Analyze your data with search, segment and filter to summarize feedback from target customers.'
             icon={(<AnalyticsIcon />)}
           />
           {/* <Demo
@@ -772,9 +744,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             templater.styleDark();
           }}
           mock={mocker => mocker.demoPrioritization()}
-          demoFixedHeight={130}
+          demoFixedHeight={180}
           demoFixedWidth={250}
-          demoOverflowYScroll
           containerPortal
         />
       </Container>

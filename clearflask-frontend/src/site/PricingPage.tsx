@@ -75,6 +75,9 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
 const styles = (theme: Theme) => createStyles({
   page: {
     margin: theme.spacing(6),
+    [theme.breakpoints.down('xs')]: {
+      margin: theme.spacing(1),
+    },
   },
   header: {
     display: 'flex',
@@ -147,7 +150,7 @@ class PricingPage extends Component<Props & ConnectProps & RouteComponentProps &
                     selected={this.state.highlightedBasePlanid === plan.basePlanId
                       || this.state.callForQuote && !plan.pricing}
                     actionTitle={plan.pricing && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-                    remark={plan.pricing ? (<TrialInfoText />) : 'Tell us what you\'re looking for'}
+                    remark={plan.pricing ? (<TrialInfoText />) : 'Let us help you find what you need'}
                     actionOnClick={() => {
                       if (isTracking()) {
                         ReactGA.event({

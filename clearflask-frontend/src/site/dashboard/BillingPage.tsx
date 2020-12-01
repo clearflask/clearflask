@@ -720,9 +720,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <Button
                     disabled={this.state.isSubmitting}
                     onClick={() => this.setState({ showFlatYearlyChange: true })}
-                  >
-                    To flat
-                </Button>
+                  >Flatten</Button>
                 </div>
               </React.Fragment>
             )}

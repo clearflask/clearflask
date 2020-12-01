@@ -32,6 +32,7 @@ const styles = (theme: Theme) => createStyles({
   },
   controlsOuter: {
     margin: theme.spacing(3),
+    float: 'right',
   },
   controlsInner: {
     margin: theme.spacing(4),

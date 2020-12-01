@@ -41,9 +41,14 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
     maxWidth: '1024px',
     margin: '0px auto',
-    padding: theme.spacing(2, 4, 2),
     [theme.breakpoints.down('xs')]: {
-      padding: theme.spacing(2, 1, 2),
+      padding: theme.spacing(2, 1),
+    },
+    [theme.breakpoints.between('sm', 'md')]: {
+      padding: theme.spacing(2, 4),
+    },
+    [theme.breakpoints.up('lg')]: {
+      padding: theme.spacing(2, 6),
     },
   },
   menu: {

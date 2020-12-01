@@ -1,7 +1,8 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
-import { PostStatusConfig } from './PostStatus';
 import QueryString from 'query-string';
+import React, { Component } from 'react';
+import { detectEnv, Environment } from '../common/util/detectEnv';
+import { PostStatusConfig } from './PostStatus';
 
 const styles = (theme: Theme) => createStyles({
   iframe: {
@@ -24,7 +25,7 @@ interface Props {
 class PostStatusIframe extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     const query = this.props.config ? '?' + QueryString.stringify(this.props.config) : '';
-    const src = `${window.location.protocol}//${this.props.projectId || 'feedback'}.${window.location.host}/embed-status/post/${this.props.postId}${query}`;
+    const src = `${window.location.protocol}//${this.props.projectId || detectEnv() === Environment.DEVELOPMENT_FRONTEND ? 'mock' : 'clearflask'}.${window.location.host}/embed-status/post/${this.props.postId}${query}`;
     return (
       <iframe
         className={this.props.classes.iframe}

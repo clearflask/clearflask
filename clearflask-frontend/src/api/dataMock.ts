@@ -36,6 +36,17 @@ class DataMock {
       const postCategory = config.content.categories.find(c => c.name.match(/Post/))!;
       await this.mockItem(
         config.projectId, postCategory.categoryId, user1,
+        'Payment Gateway integration',
+        'We will need to synchronize our customers and payments via our payment gateway',
+        undefined,
+        opts.fundingAllowed ? 5000 : undefined, opts.fundingAllowed ? 6000 : undefined,
+        opts.votingAllowed ? 12 : undefined,
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 10) : undefined,
+        (postCategory.workflow.statuses.find(s => s.name.match(/Funding/))
+          || postCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
+      );
+      await this.mockItem(
+        config.projectId, postCategory.categoryId, user1,
         'ERP system integration',
         'I would like to synchronize my data with our ERP system automatically.',
         undefined,
@@ -43,7 +54,18 @@ class DataMock {
         opts.votingAllowed ? 7 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 5) : undefined,
         (postCategory.workflow.statuses.find(s => s.name.match(/Funding/))
-          || postCategory.workflow.statuses.find(s => s.name.match(/Planned/)))!.statusId,
+          || postCategory.workflow.statuses.find(s => s.name.match(/In progress/)))!.statusId,
+      );
+      await this.mockItem(
+        config.projectId, postCategory.categoryId, user1,
+        'Email and notifications customization',
+        '<div>Be able to change how notifications look like including:</div><div><br></div><ul><li>Text (Subject, body)</li><li>Logo (in email and web push notification)</li><li>"From" name and address (Email only)</li></ul><div><br></div><div>For events:</div><div><br></div><ul><li>On Status or Response changed</li><li>On comment reply</li><li>On credit changed</li><li>On forgot password</li><li>Email changed</li><li>Email verification</li></ul><div><br></div>',
+        undefined,
+        opts.fundingAllowed ? 4000 : undefined, opts.fundingAllowed ? 10000 : undefined,
+        opts.votingAllowed ? 14 : undefined,
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 18) : undefined,
+        (postCategory.workflow.statuses.find(s => s.name.match(/Funding/))
+          || postCategory.workflow.statuses.find(s => s.name.match(/Completed/)))!.statusId,
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user2,
@@ -56,12 +78,33 @@ class DataMock {
         postCategory.workflow.statuses.find(s => s.name.match(/Planned/))!.statusId,
       );
       await this.mockItem(
+        config.projectId, postCategory.categoryId, user2,
+        'App Store integration',
+        '<div>Synchronize customer purchases from App stores including:</div><div><br></div><ul><li>Apple App Store</li><li>Google Play Store</li></ul><div><br></div>',
+        undefined,
+        opts.fundingAllowed ? 1400 : undefined, opts.fundingAllowed ? 1000 : undefined,
+        opts.votingAllowed ? 7 : undefined,
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 6) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/Planned/))!.statusId,
+      );
+      await this.mockItem(
         config.projectId, postCategory.categoryId, user3,
         'Dark mode',
         'The app burns my eyes at night and it would be great if you can make a dark mode option.',
-        undefined, undefined, undefined,
+        undefined,
+        opts.fundingAllowed ? 1000 : undefined, undefined,
         opts.votingAllowed ? 4 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 4) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/Under review/))!.statusId,
+      );
+      await this.mockItem(
+        config.projectId, postCategory.categoryId, user3,
+        'Link posts together (Different from Merge)',
+        'Linking allows a post to link to other posts.',
+        undefined,
+        opts.fundingAllowed ? 0 : undefined, undefined,
+        opts.votingAllowed ? 2 : undefined,
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 2) : undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/Under review/))!.statusId,
       );
       await this.mockItem(
@@ -69,17 +112,38 @@ class DataMock {
         'Buttons too small',
         'In the settings page, all the buttons are too small, I always click the wrong option.',
         'Fixed in the next update',
-        undefined, undefined,
+        opts.fundingAllowed ? 4000 : undefined, opts.fundingAllowed ? 4000 : undefined,
         opts.votingAllowed ? 2 : undefined,
         opts.expressionAllowed ? this.fakeExpressions(postCategory, 2) : undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/In progress/))!.statusId,
+      );
+      await this.mockItem(
+        config.projectId, postCategory.categoryId, user4,
+        'Approve all posts',
+        'Whenever a user posts or comments, have a moderator approve it before making it public',
+        undefined,
+        opts.fundingAllowed ? 6000 : undefined, opts.fundingAllowed ? 6000 : undefined,
+        opts.votingAllowed ? 22 : undefined,
+        opts.expressionAllowed ? this.fakeExpressions(postCategory, 15) : undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/In progress/))!.statusId,
       );
       await this.mockItem(
         config.projectId, postCategory.categoryId, user1,
         'Finance page typo',
         "You accidentally spelt the word your as you're on the finance page under my finances tab",
-        undefined, undefined, undefined,
+        undefined,
+        opts.fundingAllowed ? 12300 : undefined, opts.fundingAllowed ? 10000 : undefined,
         opts.votingAllowed ? 1 : undefined,
+        undefined,
+        postCategory.workflow.statuses.find(s => s.name.match(/Completed/))!.statusId,
+      );
+      await this.mockItem(
+        config.projectId, postCategory.categoryId, user1,
+        'Upload images to comments',
+        "I want to upload screenshots of issues in comments please.",
+        undefined,
+        opts.fundingAllowed ? 8300 : undefined, opts.fundingAllowed ? 70000 : undefined,
+        opts.votingAllowed ? 2 : undefined,
         undefined,
         postCategory.workflow.statuses.find(s => s.name.match(/Completed/))!.statusId,
       );
@@ -516,7 +580,7 @@ class DataMock {
           units: 'words',
           count: 2,
         }),
-        email: 'example@example.com',
+        email: `${name}-${Math.ceil(Math.random() * 10000)}@example.com`,
         ...{
           created: this.mockDate(),
           isMod,
@@ -694,10 +758,10 @@ class DataMock {
         projectId: this.projectId,
         ideaId: item.ideaId,
         commentCreate: {
-          content: textToHtml(this.mockMention(userMentionPool + loremIpsum({
+          content: textToHtml(this.mockMention(userMentionPool) + loremIpsum({
             units: 'sentences',
             count: Math.round(Math.random() * 3 + 1),
-          }))),
+          })),
           parentCommentId: parentComment ? parentComment.commentId : undefined,
           ...{
             author: user,
@@ -721,10 +785,10 @@ class DataMock {
             ideaId: item.ideaId,
             commentId: comment.commentId,
             commentUpdate: {
-              content: textToHtml(this.mockMention(userMentionPool + loremIpsum({
+              content: textToHtml(this.mockMention(userMentionPool) + loremIpsum({
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
-              })))
+              }))
             }
           });
         }

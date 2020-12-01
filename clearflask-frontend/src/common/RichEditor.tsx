@@ -586,6 +586,8 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             : this.getWordBoundary(editor, selection.index);
         }
 
+
+
         this.setState({
           activeFormats: newActiveFormats,
           ...((isLinkActive && !!rangeWord) ? {
@@ -594,9 +596,9 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
             editLinkEditing: undefined,
             editLinkValue: undefined,
             editLinkError: undefined,
-          } : {
-              editLinkShow: undefined,
-            })
+          } : (!this.state.editLinkEditing ? {
+            editLinkShow: undefined,
+          } : {}))
         });
       } else {
         this.setState({ activeFormats: newActiveFormats });

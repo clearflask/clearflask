@@ -133,6 +133,7 @@ class App extends Component<Props, State> {
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
+            overflowY: this.props.settings?.demoScrollY ? 'scroll' : undefined,
           }}
         >
           <PushNotificationListener server={server} />

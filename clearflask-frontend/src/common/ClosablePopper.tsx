@@ -183,6 +183,7 @@ class ClosablePopper extends Component<Props & WithStyles<typeof styles, true>> 
         >
           {props => (
             <ClickAwayListener
+              mouseEvent='onMouseDown'
               onClickAway={() => {
                 if (clickAway) {
                   onClose();

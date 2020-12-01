@@ -67,7 +67,7 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
      * - Modified viewbox to remove extra whitespace (24 -> 22)
      * - Encode using https://yoksel.github.io/url-encoder/
      */
-    content: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z'%3E%3C/path%3E%3C/svg%3E")`,
+    content: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath style='fill:${encodeURIComponent(theme.palette.text.primary)}' d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z'%3E%3C/path%3E%3C/svg%3E")`,
   },
   '& ul[data-checked=false] > li::before': {
     /**
@@ -76,7 +76,7 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
      * - Modified viewbox to remove extra whitespace (24 -> 22)
      * - Encode using https://yoksel.github.io/url-encoder/
      */
-    content: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'%3E%3C/path%3E%3C/svg%3E")`,
+    content: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath style='fill:${encodeURIComponent(theme.palette.text.primary)}' d='M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'%3E%3C/path%3E%3C/svg%3E")`,
   },
   '& li::before': {
     display: 'inline-block',

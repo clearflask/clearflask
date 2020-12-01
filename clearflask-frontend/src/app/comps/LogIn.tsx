@@ -290,7 +290,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     maxHeight: showAccountFields ? '400px' : '0px',
                   }}
                 >
-                  {!singleColumnLayout && (<Hr vertical length='25%' />)}
+                  {!singleColumnLayout && (<Hr vertical isInsidePaper length='25%' />)}
                   <div>
                     <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
                     {showDisplayNameInput && (

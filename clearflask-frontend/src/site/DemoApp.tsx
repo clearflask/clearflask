@@ -13,6 +13,8 @@ export interface Project {
   server: Server;
   templater: Templater;
   editor: ConfigEditor.Editor;
+  saveEdits: () => void;
+  mocker: DataMock;
 }
 
 export async function getProject(
@@ -33,17 +35,20 @@ export async function getProject(
   });
   const projectId = projectCreateResult.config.config.projectId
   server.subscribeToChanges(editor);
-  await d.configSetAdmin({
-    projectId,
-    versionLast: projectCreateResult.config.version,
-    configAdmin: editor.getConfig(),
-  });
-  mock && await mock(DataMock.get(projectId), editor.getConfig());
+  const saveEdits = async (): Promise<Admin.VersionedConfigAdmin> => {
+    return await d.configSetAdmin({
+      projectId,
+      configAdmin: editor.getConfig(),
+    });
+  };
+  await saveEdits();
+  const mocker = DataMock.get(projectId);
+  mock && await mock(mocker, editor.getConfig());
   await server.dispatch().configGetAndUserBind({
     slug,
     configGetAndUserBind: {},
   });
-  const project = { server, templater, editor };
+  const project = { server, templater, editor, mocker, saveEdits };
   return project;
 }
 

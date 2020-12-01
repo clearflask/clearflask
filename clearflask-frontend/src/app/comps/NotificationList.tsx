@@ -11,10 +11,10 @@ import { contentScrollApplyStyles } from '../../common/ContentScroll';
 import ErrorMsg from '../ErrorMsg';
 
 const styles = (theme: Theme) => createStyles({
-  table: {
+  table: (props: Props) => ({
     whiteSpace: 'nowrap',
-    ...(contentScrollApplyStyles(theme)),
-  },
+    ...(contentScrollApplyStyles(theme, undefined, undefined, props.isInsidePaper ? theme.palette.background.paper : undefined)),
+  }),
   noNotificationsLabel: {
     margin: theme.spacing(3),
     color: theme.palette.text.secondary,
@@ -28,6 +28,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   className?: string;
   server: Server;
+  isInsidePaper?: boolean;
 }
 
 interface ConnectProps {

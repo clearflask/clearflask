@@ -859,6 +859,7 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
                 server={this.props.server}
                 ideaId={this.props.idea.ideaId}
                 maxOther={2}
+                isInsidePaper
               />
             </div>
           </ClosablePopper>

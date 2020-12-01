@@ -343,6 +343,7 @@ export interface Editor {
   clone(): Editor;
   getConfig(): Admin.ConfigAdmin;
   setConfig(config: Admin.ConfigAdmin);
+  clearConfig();
   notify();
 
   get(path: Path, depth?: ResolveDepth): Page | PageGroup | Property;
@@ -404,6 +405,14 @@ export class EditorImpl implements Editor {
     this.config = config;
     this.cacheInvalidate([]);
     this.notify();
+  }
+
+  clearConfig(): Admin.ConfigAdmin {
+    this.config = {} as Admin.ConfigAdmin;
+    this.getPage([]).setDefault();
+    this.cacheInvalidate([]);
+    this.notify();
+    return this.config;
   }
 
   get(path: Path, depth: ResolveDepth = ResolveDepth.None, subSchema?: any): Page | PageGroup | Property {
