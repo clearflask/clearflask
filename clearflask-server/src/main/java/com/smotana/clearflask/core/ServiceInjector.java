@@ -30,6 +30,7 @@ import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
@@ -170,6 +171,7 @@ public enum ServiceInjector {
                 install(OnCreditChange.module());
                 install(OnStatusOrResponseChange.module());
                 install(OnForgotPassword.module());
+                install(OnAccountSignup.module());
                 install(OnAdminInvite.module());
                 install(OnEmailChanged.module());
                 install(OnTrialEnded.module());

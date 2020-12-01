@@ -38,6 +38,7 @@ import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
@@ -156,6 +157,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnTrialEnded.module(),
                 OnPaymentFailed.module(),
                 OnForgotPassword.module(),
+                OnAccountSignup.module(),
                 OnAdminInvite.module(),
                 OnEmailChanged.module(),
                 EmailVerify.module(),

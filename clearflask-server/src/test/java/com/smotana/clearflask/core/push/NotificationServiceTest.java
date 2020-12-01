@@ -13,6 +13,7 @@ import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.core.push.message.EmailTemplates;
 import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
@@ -99,6 +100,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnPaymentFailed.module());
         install(OnCreditChange.module());
         install(OnForgotPassword.module());
+        install(OnAccountSignup.module());
         install(OnAdminInvite.module());
         install(OnEmailChanged.module());
         install(EmailVerify.module());
