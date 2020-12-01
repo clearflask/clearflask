@@ -31,6 +31,7 @@ import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
+import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -107,6 +108,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private ClearFlaskSso cfSso;
     @Inject
     private SuperAdminPredicate superAdminPredicate;
+    @Inject
+    private NotificationService notificationService;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -260,6 +263,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
             authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
+
+        notificationService.onAccountSignup(account);
 
         return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
     }

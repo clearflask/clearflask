@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
 import java.time.Duration;
+import java.util.List;
 
 @Slf4j
 @Singleton
@@ -57,6 +58,12 @@ public class EmailServiceImpl implements EmailService {
         Duration rateLimitCapacity();
 
         Observable<Duration> rateLimitCapacityObservable();
+
+        @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP", innerType = String.class)
+        List<String> bccOnTagTypes();
+
+        @DefaultValue(value = "events@clearflask.com", innerType = String.class)
+        List<String> bccEmails();
     }
 
     @Inject
@@ -101,15 +108,21 @@ public class EmailServiceImpl implements EmailService {
 
         String fromEmailAddress = config.fromEmailLocalPart() + "@" + configApp.domain();
         String emailDisplayName = config.emailDisplayName();
-        if(!Strings.isNullOrEmpty(emailDisplayName)) {
+        if (!Strings.isNullOrEmpty(emailDisplayName)) {
             fromEmailAddress = emailDisplayName + " <" + fromEmailAddress + ">";
+        }
+
+        Destination destination = new Destination()
+                .withToAddresses(email.getToAddress());
+        if (config.bccOnTagTypes() != null
+                && config.bccOnTagTypes().contains(email.getTypeTag())) {
+            destination.withBccAddresses(config.bccEmails());
         }
 
         SendEmailResult result;
         try {
             result = ses.sendEmail(new SendEmailRequest()
-                    .withDestination(new Destination()
-                            .withToAddresses(email.getToAddress()))
+                    .withDestination(destination)
                     .withFromEmailAddress(fromEmailAddress)
                     .withEmailTags(new MessageTag().withName("id").withValue(email.getProjectOrAccountId()),
                             new MessageTag().withName("type").withValue(email.getTypeTag()))

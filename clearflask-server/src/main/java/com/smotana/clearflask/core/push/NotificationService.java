@@ -1,6 +1,7 @@
 package com.smotana.clearflask.core.push;
 
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -17,6 +18,8 @@ public interface NotificationService {
     void onCommentReply(ConfigAdmin configAdmin, IdeaModel idea, Optional<CommentModel> parentCommentOpt, CommentModel comment, UserModel sender);
 
     void onForgotPassword(ConfigAdmin configAdmin, UserModel user);
+
+    void onAccountSignup(AccountStore.Account account);
 
     void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
 

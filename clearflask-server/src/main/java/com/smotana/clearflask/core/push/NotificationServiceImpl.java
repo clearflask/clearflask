@@ -18,6 +18,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.message.EmailVerify;
+import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnAdminInvite;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
@@ -30,6 +31,7 @@ import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.Subscri
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore;
@@ -105,6 +107,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnCommentReply onCommentReply;
     @Inject
     private OnTrialEnded onTrialEnded;
+    @Inject
+    private OnAccountSignup accountSignup;
     @Inject
     private OnPaymentFailed onPaymentFailed;
     @Inject
@@ -465,6 +469,23 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(emailVerify.email(configAdmin, email, token));
             } catch (Exception ex) {
                 log.warn("Failed to send email verification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onAccountSignup(Account account) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard";
+
+            try {
+                emailService.send(accountSignup.email(account, link));
+            } catch (Exception ex) {
+                log.warn("Failed to send email signup", ex);
             }
         });
     }
