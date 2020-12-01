@@ -130,7 +130,7 @@ deploy-war: ./clearflask-server/target/clearflask-server-0.1.war
 
 deploy-static: ./clearflask-server/target/war-include/ROOT
 	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=600" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
+	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=0" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
 
 deploy-rotate-instances:
 	aws autoscaling start-instance-refresh --auto-scaling-group-name clearflask-server

@@ -53,6 +53,7 @@
     "react-dom": "16.8.6",
     "react-ga": "2.5.7",
     "react-google-recaptcha": "2.0.1",
+    "react-hotjar": "2.2.1",
     "react-intersection-observer": "8.26.2",
     "react-liquid": "2.0.1",
     "react-motion": "0.5.2",

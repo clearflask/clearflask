@@ -69,14 +69,16 @@ class Main extends Component {
     super(props);
 
     if (isTracking()) {
-      ReactGA.initialize('UA-127162051-3', {
-        gaOptions: {}
-      });
-      ReactGA.set({
-        anonymizeIp: true,
-        forceSSL: true
-      });
-      ReactGA.pageview(window.location.pathname + window.location.search);
+      try {
+        ReactGA.initialize('UA-127162051-3', {
+          gaOptions: {}
+        });
+        ReactGA.set({
+          anonymizeIp: true,
+          forceSSL: true
+        });
+        ReactGA.pageview(window.location.pathname + window.location.search);
+      } catch (e) { }
     }
   }
 

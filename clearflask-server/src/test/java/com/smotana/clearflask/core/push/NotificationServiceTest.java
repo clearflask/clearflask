@@ -43,6 +43,7 @@ import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Base64Encoder;
 import nl.martijndwars.webpush.Utils;
@@ -104,6 +105,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnAdminInvite.module());
         install(OnEmailChanged.module());
         install(EmailVerify.module());
+        install(Sanitizer.module());
 
         install(MockBrowserPushService.module());
         install(MockEmailService.module());

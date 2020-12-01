@@ -2,12 +2,14 @@ import { AppBar, Button, Container, Grid, Hidden, IconButton, Link as MuiLink, M
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import React, { Component, Suspense } from 'react';
+import { hotjar } from 'react-hotjar';
 import { Route, RouteComponentProps } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 import ErrorPage from '../app/ErrorPage';
 import Loading from '../app/utils/Loading';
 import DropdownButton from '../common/DropdownButton';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
+import { isTracking } from '../common/util/detectEnv';
 import { SCROLL_TO_STATE_KEY } from '../common/util/ScrollAnchor';
 import { SetTitle } from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
@@ -117,6 +119,14 @@ class Site extends Component<RouteComponentProps & WithStyles<typeof styles, tru
   state: State = {};
   projectPromise: undefined | Promise<Project>;
   readonly menuButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
+
+  componentDidMount() {
+    if (isTracking()) {
+      try {
+        hotjar.initialize(2132039, 6);
+      } catch (e) { }
+    }
+  }
 
   render() {
     const menuItemsLeft: Array<MenuButton | MenuDropdown> = [
