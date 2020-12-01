@@ -1,5 +1,6 @@
 package com.smotana.clearflask.store;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -18,8 +19,10 @@ import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -138,11 +141,13 @@ public interface IdeaStore {
         /**
          * WARNING: Unsanitized HTML.
          */
+        @Getter(AccessLevel.PRIVATE)
         String description;
 
         /**
          * WARNING: Unsanitized HTML.
          */
+        @Getter(AccessLevel.PRIVATE)
         String response;
 
         String responseAuthorUserId;
@@ -182,6 +187,34 @@ public interface IdeaStore {
 
         Double trendScore;
 
+        public String getDescriptionSanitized(Sanitizer sanitizer) {
+            return sanitizer.richHtml(getDescription(), "idea", getIdeaId());
+        }
+
+        public String getDescriptionAsText(Sanitizer sanitizer) {
+            return sanitizer.richHtmlToPlaintext(getDescription());
+        }
+
+        public String getDescriptionAsUnsafeHtml() {
+            return getDescription();
+        }
+
+        public String getResponseSanitized(Sanitizer sanitizer) {
+            return sanitizer.richHtml(getResponse(), "idea", getIdeaId());
+        }
+
+        public String getResponseAsText(Sanitizer sanitizer) {
+            return sanitizer.richHtmlToPlaintext(getResponse());
+        }
+
+        public boolean hasResponse() {
+            return !Strings.isNullOrEmpty(getResponse());
+        }
+
+        public String getResponseAsUnsafeHtml() {
+            return getResponse();
+        }
+
         public Idea toIdea(Sanitizer sanitizer) {
             return new Idea(
                     getIdeaId(),
@@ -190,8 +223,8 @@ public interface IdeaStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
-                    sanitizer.richHtml(getDescription(), "idea", getIdeaId()),
-                    sanitizer.richHtml(getResponse(), "idea", getIdeaId()),
+                    getDescriptionSanitized(sanitizer),
+                    getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
                     getCategoryId(),
@@ -215,8 +248,8 @@ public interface IdeaStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getTitle(),
-                    sanitizer.richHtml(getDescription(), "idea", getIdeaId()),
-                    sanitizer.richHtml(getResponse(), "idea", getIdeaId()),
+                    getDescriptionSanitized(sanitizer),
+                    getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
                     getCategoryId(),

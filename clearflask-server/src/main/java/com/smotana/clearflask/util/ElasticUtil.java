@@ -12,7 +12,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.elastic.ActionListeners;
-import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.ClearScrollRequest;
@@ -84,8 +83,6 @@ public class ElasticUtil {
     private Gson gson;
     @Inject
     private RestHighLevelClient elastic;
-    @Inject
-    protected Sanitizer sanitizer;
 
     public String getIndexName(String indexName, String projectId) {
         return indexName + "-" + projectId;
@@ -193,10 +190,6 @@ public class ElasticUtil {
         return new SearchResponseWithCursor(
                 searchResponse,
                 cursorOptNew.map(serverSecretCursor::encryptString));
-    }
-
-    public String richToPlaintext(String html) {
-        return sanitizer.richHtmlToPlaintext(html);
     }
 
     private PaginationType choosePaginationType(

@@ -117,7 +117,7 @@ public class CommentStoreIT extends AbstractIT {
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
 
         c = c.toBuilder().content(textToSimpleHtml("newContent")).build();
-        store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContent())).getIndexingFuture().get();
+        store.updateComment(projectId, ideaId, c.getCommentId(), Instant.now(), new CommentUpdate(c.getContentAsUnsafeHtml())).getIndexingFuture().get();
         assertEquals(Optional.of(c), store.getComment(projectId, ideaId, c.getCommentId()));
     }
 

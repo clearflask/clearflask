@@ -39,6 +39,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -118,6 +119,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnEmailChanged onEmailChanged;
     @Inject
     private EmailVerify emailVerify;
+    @Inject
+    private Sanitizer sanitizer;
 
     private ListeningExecutorService executor;
 
@@ -164,8 +167,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
 
             Optional<String> changedResponse;
             if (responseChanged) {
-                checkState(!Strings.isNullOrEmpty(idea.getResponse()));
-                changedResponse = Optional.of(idea.getResponse());
+                checkState(idea.hasResponse());
+                changedResponse = Optional.of(idea.getResponseAsText(sanitizer));
             } else {
                 changedResponse = Optional.empty();
             }

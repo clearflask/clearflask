@@ -55,6 +55,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.ServerSecret;
 import com.smotana.clearflask.util.WilsonScoreInterval;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -159,6 +160,8 @@ public class DynamoElasticCommentStore implements CommentStore {
     private VoteStore voteStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private Sanitizer sanitizer;
 
     private TableSchema<CommentModel> commentSchema;
     private IndexSchema<CommentModel> commentByProjectIdSchema;
@@ -271,7 +274,7 @@ public class DynamoElasticCommentStore implements CommentStore {
                                 .put("authorIsMod", orNull(comment.getAuthorIsMod()))
                                 .put("created", comment.getCreated().getEpochSecond())
                                 .put("edited", orNull(comment.getEdited() == null ? null : comment.getEdited().getEpochSecond()))
-                                .put("content", orNull(elasticUtil.richToPlaintext(comment.getContent())))
+                                .put("content", orNull(comment.getContentAsText(sanitizer)))
                                 .put("upvotes", comment.getUpvotes())
                                 .put("downvotes", comment.getDownvotes())
                                 .put("score", computeCommentScore(comment.getUpvotes(), comment.getDownvotes()))
@@ -505,7 +508,7 @@ public class DynamoElasticCommentStore implements CommentStore {
         SettableFuture<UpdateResponse> indexingFuture = SettableFuture.create();
         elastic.updateAsync(new UpdateRequest(elasticUtil.getIndexName(COMMENT_INDEX, projectId), commentId)
                         .doc(gson.toJson(ImmutableMap.of(
-                                "content", elasticUtil.richToPlaintext(comment.getContent())
+                                "content", sanitizer.richHtmlToPlaintext(comment.getContentAsText(sanitizer))
                         )), XContentType.JSON)
                         .setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL),
                 RequestOptions.DEFAULT, ActionListeners.fromFuture(indexingFuture));

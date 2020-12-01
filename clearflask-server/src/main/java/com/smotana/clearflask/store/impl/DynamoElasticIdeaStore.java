@@ -58,6 +58,7 @@ import com.smotana.clearflask.util.ExpDecayScore;
 import com.smotana.clearflask.util.ExplicitNull;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -141,6 +142,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     private VoteStore voteStore;
     @Inject
     private UserStore userStore;
+    @Inject
+    private Sanitizer sanitizer;
 
     private TableSchema<IdeaModel> ideaSchema;
     private IndexSchema<IdeaModel> ideaByProjectIdSchema;
@@ -242,8 +245,8 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                                 .put("created", idea.getCreated().getEpochSecond())
                                 .put("lastActivity", idea.getCreated().getEpochSecond())
                                 .put("title", idea.getTitle())
-                                .put("description", orNull(elasticUtil.richToPlaintext(idea.getDescription())))
-                                .put("response", orNull(elasticUtil.richToPlaintext(idea.getResponse())))
+                                .put("description", orNull(idea.getDescriptionAsText(sanitizer)))
+                                .put("response", orNull(idea.getResponseAsText(sanitizer)))
                                 .put("responseAuthorUserId", orNull(idea.getResponseAuthorUserId()))
                                 .put("responseAuthorName", orNull(idea.getResponseAuthorName()))
                                 .put("categoryId", idea.getCategoryId())
@@ -476,7 +479,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("description")
                         .put(ideaSchema.toDynamoValue("description", ideaUpdateAdmin.getDescription())));
             }
-            indexUpdates.put("description", elasticUtil.richToPlaintext(ideaUpdateAdmin.getDescription()));
+            indexUpdates.put("description", sanitizer.richHtmlToPlaintext(ideaUpdateAdmin.getDescription()));
         }
         if (ideaUpdateAdmin.getResponse() != null) {
             if (ideaUpdateAdmin.getResponse().isEmpty()) {
@@ -500,7 +503,7 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     indexUpdates.put("responseAuthorName", "");
                 }
             }
-            indexUpdates.put("response", elasticUtil.richToPlaintext(ideaUpdateAdmin.getResponse()));
+            indexUpdates.put("response", sanitizer.richHtmlToPlaintext(ideaUpdateAdmin.getResponse()));
         }
         if (ideaUpdateAdmin.getStatusId() != null) {
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("statusId")

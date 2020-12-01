@@ -85,7 +85,7 @@ public class IdeaStoreIT extends AbstractIT {
         IdeaModel ideaUpdated = idea.toBuilder().title("newTitle").description(textToSimpleHtml("newDescription")).build();
         store.updateIdea(projectId, idea.getIdeaId(), IdeaUpdate.builder()
                 .title(ideaUpdated.getTitle())
-                .description(ideaUpdated.getDescription())
+                .description(ideaUpdated.getDescriptionAsUnsafeHtml())
                 .build()).getIndexingFuture().get();
         assertEquals(Optional.of(ideaUpdated), store.getIdea(projectId, ideaUpdated.getIdeaId()));
 

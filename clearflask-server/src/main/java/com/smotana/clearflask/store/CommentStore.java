@@ -14,8 +14,10 @@ import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
 import org.elasticsearch.action.DocWriteResponse;
@@ -133,6 +135,7 @@ public interface CommentStore {
          *
          * If null, comment is deleted.
          */
+        @Getter(AccessLevel.PRIVATE)
         String content;
 
         @NonNull
@@ -140,6 +143,22 @@ public interface CommentStore {
 
         @NonNull
         int downvotes;
+
+        public boolean isDeleted() {
+            return getContent() == null;
+        }
+
+        public String getContentSanitized(Sanitizer sanitizer) {
+            return sanitizer.richHtml(getContent(), "comment", getCommentId());
+        }
+
+        public String getContentAsText(Sanitizer sanitizer) {
+            return sanitizer.richHtmlToPlaintext(getContent());
+        }
+
+        public String getContentAsUnsafeHtml() {
+            return getContent();
+        }
 
         public Comment toComment(Sanitizer sanitizer) {
             return new Comment(
@@ -152,7 +171,7 @@ public interface CommentStore {
                     getAuthorIsMod(),
                     getCreated(),
                     getEdited(),
-                    sanitizer.richHtml(getContent(), "comment", getCommentId()),
+                    getContentSanitized(sanitizer),
                     (long) (getUpvotes() - getDownvotes()));
         }
 

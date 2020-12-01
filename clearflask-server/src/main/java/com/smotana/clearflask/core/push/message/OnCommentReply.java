@@ -14,6 +14,7 @@ import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -53,6 +54,8 @@ public class OnCommentReply {
     private Application.Config configApp;
     @Inject
     private EmailTemplates emailTemplates;
+    @Inject
+    private Sanitizer sanitizer;
 
     public Email email(UserModel user, AuthorType userAuthorType, UserModel sender, IdeaModel idea, CommentModel comment, ConfigAdmin configAdmin, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
@@ -78,7 +81,7 @@ public class OnCommentReply {
         title = StringUtils.abbreviate(title, 20);
         subject = subject.replaceAll("__title__", title);
 
-        String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
+        String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContentAsText(sanitizer)), 50);
         templateHtml = templateHtml.replaceAll("__reply__",
                 "<span style=\"font-weight: bold\">" +
                         reply +
@@ -133,7 +136,7 @@ public class OnCommentReply {
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
         subject = subject.replaceAll("__title__", title);
 
-        String content = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContent()), 50);
+        String content = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContentAsText(sanitizer)), 50);
 
         return new BrowserPush(
                 user.getBrowserPushToken(),
