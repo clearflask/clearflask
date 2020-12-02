@@ -17,6 +17,7 @@ class TemplateDemoWithControls extends Component<React.ComponentProps<typeof Dem
         noSpacing
         type='demoOnly'
         demoFixedHeight={500}
+        demoScrollYOnClick
         {...demoOptions[this.state.option]}
         controls={project => (
           <TemplateDemoControls

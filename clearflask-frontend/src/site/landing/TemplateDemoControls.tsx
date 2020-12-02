@@ -13,6 +13,11 @@ const templateOptionsCommon: Partial<CreateTemplateOptions> = {
 const templateOptionsOutOfTheBox: CreateTemplateOptions = {
   ...createTemplateOptionsDefault,
   ...templateOptionsCommon,
+
+  templateFeedback: true,
+  templateRoadmap: true,
+  templateChangelog: true,
+  templateKnowledgeBase: true,
 };
 const templateOptionsCustomized: CreateTemplateOptions = {
   ...createTemplateOptionsDefault,
@@ -20,8 +25,6 @@ const templateOptionsCustomized: CreateTemplateOptions = {
 
   templateFeedback: true,
   templateRoadmap: true,
-  templateChangelog: true,
-  templateKnowledgeBase: true,
 
   fundingAllowed: true,
   creditOnSignup: 10000,
@@ -29,6 +32,7 @@ const templateOptionsCustomized: CreateTemplateOptions = {
   expressionAllowed: true,
   fundingType: 'currency',
   votingEnableDownvote: true,
+  taggingIdeaBug: true,
 };
 export const demoOptions: {
   [option: string]: React.ComponentProps<typeof Demo>;
@@ -37,10 +41,11 @@ export const demoOptions: {
     template: templater => templater.demo(templateOptionsOutOfTheBox),
     mock: (mocker, config) => mocker.templateMock(templateOptionsOutOfTheBox),
     settings: {
-      demoScrollY: true,
       demoMenuAnimate: [
-        { path: 'feedback' },
         { path: 'roadmap' },
+        { path: 'changelog' },
+        { path: 'feedback' },
+        { path: 'help' },
       ],
     },
     demoWrap: 'browser',
@@ -52,14 +57,11 @@ export const demoOptions: {
     },
     mock: (mocker, config) => mocker.templateMock(templateOptionsCustomized),
     settings: {
-      demoScrollY: true,
       demoMenuAnimate: [
-        { path: 'help' },
         { path: 'roadmap' },
-        { path: 'changelog' },
-        { path: 'feedback' },
+        { path: 'ideas' },
         { path: 'roadmap' },
-        { path: 'changelog' },
+        { path: 'bugs' },
       ],
     },
     demoWrap: 'browser-dark',

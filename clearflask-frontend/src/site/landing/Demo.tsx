@@ -25,6 +25,7 @@ interface Props {
   demoWrapPadding?: number | string,
   demoPreventInteraction?: boolean
   demoProject?: Promise<Project>;
+  demoScrollYOnClick?: boolean;
   scale?: number;
   settings?: StateSettings;
   containerPortal?: boolean;
@@ -131,6 +132,9 @@ class Demo extends Component<Props & Exclude<BlockProps, "demo" | "controls"> & 
       type: 'updateSettings',
       payload: {
         demoUserIsInteracting: true,
+        ...(this.props.demoScrollYOnClick ? {
+          demoScrollY: true,
+        } : {}),
       }
     });
   }

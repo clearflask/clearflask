@@ -177,8 +177,8 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
   renderHero() {
     return (
       <Hero
-        title='Involve your customers in your product lifecycle'
-        description='Product Feedback Solution for community-driven transparent organizations'
+        title='Listen to your users during product development'
+        description='Customer feedback platform with voting or crowd-funding to prioritize your roadmap'
         imagePath='/img/landing/hero.svg'
         mirror
         buttonTitle='Get started'
@@ -629,8 +629,10 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
             { status: '0', extra: { funded: 6700, fundGoal: 10000, fundersCount: 32, voteValue: 2 } },
             { status: '1', extra: { funded: 24300, fundGoal: 20000, fundersCount: 62 } },
             { status: '1', extra: { funded: 5200, fundGoal: 5000, fundersCount: 4 } },
+            { status: '1', extra: { funded: 1000, fundGoal: 1000, fundersCount: 1 } },
             { status: '2', extra: { expressions: { '👍': 7, '❤️': 4 } } },
             { status: '2', extra: { expressions: { '👍': 1 } } },
+            { status: '2' },
           ])}
           settings={{
             demoBlurryShadow: true,

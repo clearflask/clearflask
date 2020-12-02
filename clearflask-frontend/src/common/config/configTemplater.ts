@@ -24,6 +24,7 @@ export interface CreateTemplateOptions {
   votingEnableDownvote?: boolean;
   expressionsLimitEmojis?: boolean;
   expressionsAllowMultiple?: boolean;
+  taggingIdeaBug?: boolean;
 
   projectPrivate?: boolean;
   anonAllowed?: boolean;
@@ -71,7 +72,25 @@ export default class Templater {
     if (!!opts.infoWebsite) this._get<ConfigEditor.StringProperty>(['website']).set(opts.infoWebsite);
     if (!!opts.infoLogo) this._get<ConfigEditor.StringProperty>(['logoUrl']).set(opts.infoLogo);
     if (opts.templateFeedback) {
-      this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed, opts.templateRoadmap);
+      this.templateFeedback(opts.fundingAllowed, opts.expressionAllowed || opts.votingAllowed, opts.templateRoadmap,
+        opts.taggingIdeaBug ? {
+          groupName: 'Type',
+          tagOptions: [
+            {
+              tagName: 'Idea',
+              pageName: 'Ideas',
+              pageTitle: 'Give us feedback',
+              pageDescription: 'We want to hear your ideas to improve our product.',
+            },
+            {
+              tagName: 'Bug',
+              pageName: 'Bugs',
+              pageTitle: 'Submit a bug report',
+              pageDescription: 'We will address any issues as soon as possible.',
+            },
+          ],
+          separatePage: true,
+        } : undefined);
       const postCategoryIndex = this._get<ConfigEditor.PageGroup>(['content', 'categories']).getChildPages().length - 1;
       if (opts.votingAllowed) {
         this.supportVoting(postCategoryIndex, opts.votingEnableDownvote);
@@ -340,7 +359,16 @@ export default class Templater {
     }));
   }
 
-  templateFeedback(withFunding: boolean = false, withStandaloneFunding: boolean = true, withRoadmap: boolean = true) {
+  templateFeedback(withFunding: boolean = false, withStandaloneFunding: boolean = true, withRoadmap: boolean = true, tagging?: {
+    groupName: string;
+    tagOptions: Array<{
+      tagName: string;
+      pageName: string;
+      pageTitle?: string;
+      pageDescription?: string;
+    }>;
+    separatePage?: boolean;
+  }) {
     // Ideas
     const categories = this._get<ConfigEditor.PageGroup>(['content', 'categories']);
     const postCategoryId = randomUuid();
@@ -353,6 +381,20 @@ export default class Templater {
     }));
     const postCategoryIndex = categories.getChildPages().length - 1;
     const postStatuses = this.workflowFeatures(postCategoryIndex, withFunding, withStandaloneFunding);
+
+    const tagNameToId: { [tagName: string]: string } = {};
+    if (tagging) {
+      const tagIds: string[] = [];
+      this.tagging(postCategoryIndex,
+        tagging.tagOptions.map(tagOption => {
+          const tagId = randomUuid();
+          tagNameToId[tagOption.tagName] = tagId;
+          return Admin.TagToJSON({ tagId, name: tagOption.tagName });
+        }),
+        Admin.TagGroupToJSON({
+          tagGroupId: randomUuid(), name: tagging.groupName, userSettable: true, maxRequired: 1, tagIds: [],
+        }));
+    }
 
     const pagesProp = this._get<ConfigEditor.PageGroup>(['layout', 'pages']);
     const menuProp = this._get<ConfigEditor.ArrayProperty>(['layout', 'menu']);
@@ -378,6 +420,7 @@ export default class Templater {
         pageId: roadmapPageId,
         name: 'Roadmap',
         slug: 'roadmap',
+        title: 'Our plan for the future',
         panels: [
           ...(withFunding && withStandaloneFunding ? [
             Admin.PagePanelWithHideIfEmptyToJSON({
@@ -429,28 +472,38 @@ export default class Templater {
       }));
     }
 
-    // Post page
-    const postPageId = randomUuid();
-    pagesProp.insert().setRaw(Admin.PageToJSON({
-      pageId: postPageId,
-      name: 'Feedback',
-      slug: 'feedback',
-      title: 'Give us feedback',
-      description: 'We want to hear your ideas to improve our product.',
-      panels: [],
-      board: undefined,
-      explorer: Admin.PageExplorerToJSON({
-        allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
-        allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
-        display: Admin.PostDisplayToJSON({}),
-        search: Admin.IdeaSearchToJSON({
-          sortBy: Admin.IdeaSearchSortByEnum.Trending,
-          filterCategoryIds: [postCategoryId],
+    // Post page(s)
+    const postPageIds: string[] = [];
+    for (const tagOption of (tagging?.separatePage && tagging?.tagOptions || [undefined])) {
+      const postPageId = randomUuid();
+      postPageIds.push(postPageId);
+      const name = tagOption?.pageName || tagOption?.tagName || 'Feedback';
+      const slug = name.toLowerCase();
+      const title = tagOption?.pageTitle || 'Give us feedback';
+      const description = tagOption?.pageDescription || 'We want to hear your ideas to improve our product.';
+      const filterTagIds = tagOption ? [tagNameToId[tagOption.tagName]] : undefined;
+      pagesProp.insert().setRaw(Admin.PageToJSON({
+        pageId: postPageId,
+        name,
+        slug,
+        title,
+        description,
+        panels: [],
+        board: undefined,
+        explorer: Admin.PageExplorerToJSON({
+          allowSearch: Admin.PageExplorerAllOfAllowSearchToJSON({ enableSort: true, enableSearchText: true, enableSearchByCategory: true, enableSearchByStatus: true, enableSearchByTag: true }),
+          allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
+          display: Admin.PostDisplayToJSON({}),
+          search: Admin.IdeaSearchToJSON({
+            sortBy: Admin.IdeaSearchSortByEnum.Trending,
+            filterCategoryIds: [postCategoryId],
+            filterTagIds,
+          }),
         }),
-      }),
-    }));
+      }));
+    }
     (menuProp.insert() as ConfigEditor.ObjectProperty).setRaw(Admin.MenuToJSON({
-      menuId: randomUuid(), pageIds: [postPageId],
+      menuId: randomUuid(), pageIds: postPageIds, name: postPageIds.length > 1 ? 'Feedback' : undefined,
     }));
   }
 
