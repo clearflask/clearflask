@@ -143,7 +143,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
     this.state = {};
 
     if (props.accountStatus === undefined) {
-      ServerAdmin.get(props.forceMock).dispatchAdmin()
+      ServerAdmin.get().dispatchAdmin()
         .then(d => d.accountBindAdmin({}));
     }
 

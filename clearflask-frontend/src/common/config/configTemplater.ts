@@ -384,7 +384,6 @@ export default class Templater {
 
     const tagNameToId: { [tagName: string]: string } = {};
     if (tagging) {
-      const tagIds: string[] = [];
       this.tagging(postCategoryIndex,
         tagging.tagOptions.map(tagOption => {
           const tagId = randomUuid();

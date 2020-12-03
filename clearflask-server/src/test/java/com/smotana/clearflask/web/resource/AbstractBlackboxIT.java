@@ -69,6 +69,7 @@ import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
@@ -158,6 +159,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnPaymentFailed.module(),
                 OnForgotPassword.module(),
                 OnAccountSignup.module(),
+                IntercomUtil.module(),
                 OnAdminInvite.module(),
                 OnEmailChanged.module(),
                 EmailVerify.module(),

@@ -11,6 +11,7 @@ import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoTable;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -167,13 +168,14 @@ public interface AccountStore {
                     getEmail());
         }
 
-        public AccountAdmin toAccountAdmin(PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
+        public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
             return new AccountAdmin(
                     planStore.getBasePlanId(getPlanid()),
                     getStatus(),
                     getName(),
                     getEmail(),
                     cfSso.generateToken(this),
+                    intercomUtil.getIdentity(getEmail()).orElse(null),
                     !Strings.isNullOrEmpty(getApiKey()),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()));
         }

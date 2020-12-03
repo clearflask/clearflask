@@ -67,7 +67,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
       />
     );
 
-    const similar = (!this.props.suppressSimilar && this.props.width && isWidthUp('md', this.props.width, true)) && (
+    const similar = (!this.props.suppressSimilar && this.props.post && this.props.width && isWidthUp('md', this.props.width, true)) && (
       <div className={this.props.classes.similar}>
         <PanelPost
           direction={Direction.Vertical}
@@ -77,6 +77,7 @@ class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithSty
             title: 'Similar',
             search: {
               similarToIdeaId: this.props.postId,
+              filterCategoryIds: [this.props.post.categoryId],
               limit: 5,
             },
             display: {

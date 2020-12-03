@@ -17,6 +17,7 @@ import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { vh } from './common/util/vhUtil';
+import IntercomWrapper from './site/IntercomWrapper';
 
 const notistackRef = React.createRef<ProviderContext>();
 export const importSuccess = i => {
@@ -104,7 +105,7 @@ class Main extends Component {
             <Router>
               <ScrollAnchor scrollOnNavigate />
               {isTracking() && (
-                <Route path="/" render={({ location }) => {
+                <Route path='/' render={({ location }) => {
                   ReactGA.set({ page: location.pathname + location.search });
                   ReactGA.pageview(location.pathname + location.search);
                   return null;
@@ -131,6 +132,7 @@ class Main extends Component {
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Dashboard {...props} />
+                        <IntercomWrapper />
                       </Provider>
                     )} />
                   ), (
@@ -143,6 +145,7 @@ class Main extends Component {
                     <Route key='site' render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Site {...props} />
+                        <IntercomWrapper />
                       </Provider>
                     )} />
                   )])}

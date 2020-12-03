@@ -154,6 +154,8 @@ components:
           type: string
         cfJwt:
           type: string
+        intercomIdentity:
+          type: string
         hasApiKey:
           type: boolean
         isSuperAdmin:

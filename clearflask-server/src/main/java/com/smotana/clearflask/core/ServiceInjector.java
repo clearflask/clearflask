@@ -63,6 +63,7 @@ import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.ExternController;
 import com.smotana.clearflask.util.GsonProvider;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.LogExFilter;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -223,6 +224,7 @@ public enum ServiceInjector {
                 install(ClearFlaskCreditSync.module());
                 install(AuthCookieImpl.module());
                 install(Sanitizer.module());
+                install(IntercomUtil.module());
 
                 switch (env) {
                     case DEVELOPMENT_LOCAL:

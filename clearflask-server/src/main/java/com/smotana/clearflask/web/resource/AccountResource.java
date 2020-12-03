@@ -41,6 +41,7 @@ import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.Application;
@@ -110,6 +111,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private SuperAdminPredicate superAdminPredicate;
     @Inject
     private NotificationService notificationService;
+    @Inject
+    private IntercomUtil intercomUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -152,7 +155,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = accountOpt.get();
 
         return new AccountBindAdminResponse(
-                account.toAccountAdmin(planStore, cfSso, superAdminPredicate),
+                account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate),
                 superAdminSessionOpt.isPresent());
     }
 
@@ -184,7 +187,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             authCookie.setAuthCookie(response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
         }
 
-        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @PermitAll
@@ -266,7 +269,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         notificationService.onAccountSignup(account);
 
-        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -365,7 +368,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return (account == null
                 ? accountStore.getAccountByAccountId(accountSession.getAccountId()).orElseThrow(() -> new IllegalStateException("Unknown account with email " + accountSession.getAccountId()))
                 : account)
-                .toAccountAdmin(planStore, cfSso, superAdminPredicate);
+                .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
@@ -387,7 +390,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         return accountStore.getAccountByAccountId(accountSession.getAccountId()).get()
-                .toAccountAdmin(planStore, cfSso, superAdminPredicate);
+                .toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -526,7 +529,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
 
-        return account.toAccountAdmin(planStore, cfSso, superAdminPredicate);
+        return account.toAccountAdmin(intercomUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
