@@ -17,6 +17,7 @@ import com.smotana.clearflask.api.model.ForgotPassword;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBind;
 import com.smotana.clearflask.api.model.UserBindResponse;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserCreateAdmin;
@@ -46,6 +47,7 @@ import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.UserBindUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.PermitAll;
@@ -100,6 +102,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private AuthCookie authCookie;
     @Inject
     private Billing billing;
+    @Inject
+    private UserBindUtil userBindUtil;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -128,33 +132,16 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public UserBindResponse userBind(String projectId) {
-        Optional<UserSession> userSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt);
-        if (!userSessionOpt.isPresent()) {
-            return new UserBindResponse(null);
-        }
-        UserSession userSession = userSessionOpt.get();
+    public UserBindResponse userBind(String projectId, UserBind userBind) {
+        Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
+                response,
+                projectId,
+                getExtendedPrincipal(),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
-        // Token refresh
-        if (userSession.getTtlInEpochSec() < Instant.now().plus(config.sessionRenewIfExpiringIn()).getEpochSecond()) {
-            userSession = userStore.refreshSession(
-                    userSession,
-                    Instant.now().plus(config.sessionExpiry()).getEpochSecond());
-
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSession.getSessionId(), userSession.getTtlInEpochSec());
-        }
-
-        // Fetch account
-        Optional<UserModel> userOpt = userStore.getUser(projectId, userSession.getUserId());
-        if (!userOpt.isPresent()) {
-            log.info("User bind on valid session to non-existent user, revoking all sessions for userId {}",
-                    userSession.getUserId());
-            userStore.revokeSessions(projectId, userSession.getUserId(), Optional.empty());
-            authCookie.unsetAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId);
-            return new UserBindResponse(null);
-        }
-
-        return new UserBindResponse(userOpt
+        return new UserBindResponse(loggedInUserOpt
                 .map(UserStore.UserModel::toUserMeWithBalance)
                 .orElse(null));
     }

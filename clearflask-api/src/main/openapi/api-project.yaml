@@ -793,15 +793,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            title: ConfigGetAndUserBind
-            properties:
-              ssoToken:
-                type: string
-              authToken:
-                type: string
-              browserPushToken:
-                type: string
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
     responses:
       '200':
         content:

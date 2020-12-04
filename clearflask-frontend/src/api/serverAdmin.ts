@@ -130,7 +130,7 @@ export default class ServerAdmin {
       // Simulate config get and bind
       const configGetAndUserBindAction: Client.configGetAndUserBindActionFulfilled = {
         type: Client.configGetAndUserBindActionStatus.Fulfilled,
-        meta: { action: Client.Action.configGetAndUserBind, request: { slug: versionedConfig.config.slug, configGetAndUserBind: {} } },
+        meta: { action: Client.Action.configGetAndUserBind, request: { slug: versionedConfig.config.slug, userBind: {} } },
         payload: {
           config: versionedConfig,
           user: loggedInUser,

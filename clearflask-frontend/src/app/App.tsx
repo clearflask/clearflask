@@ -60,15 +60,6 @@ class App extends Component<Props, State> {
   }
 
   async init() {
-    // Used for links within emails
-    const authToken = new URL(window.location.href).searchParams.get(AUTH_TOKEN_PARAM_NAME);
-    // Used for SSO
-    const token = new URL(window.location.href).searchParams.get(SSO_TOKEN_PARAM_NAME);
-    if (token || authToken) {
-      // Clear token from URL for safety
-      this.props.history.replace(this.props.location.pathname);
-    }
-
     var server: Server | undefined;
     if (this.props.serverOverride) {
       server = this.props.serverOverride;
@@ -78,37 +69,83 @@ class App extends Component<Props, State> {
       server = new Server(undefined, this.props.settings);
     }
 
-    var subscriptionResult;
-    if (WebNotification.getInstance().getStatus() === Status.Granted) {
-      subscriptionResult = await WebNotification.getInstance().getPermission();
+    const params = new URL(window.location.href).searchParams;
+    // Used for links within emails
+    const authToken = params.get(AUTH_TOKEN_PARAM_NAME);
+    // Used for SSO
+    const token = params.get(SSO_TOKEN_PARAM_NAME);
+    if (token || authToken) {
+      // Clear token from URL for safety
+      this.props.history.replace(this.props.location.pathname);
     }
 
-    var configAndBindResult;
+    var configResult;
     try {
-      configAndBindResult = await server.dispatch().configGetAndUserBind({
+      configResult = await server.dispatch().configGetAndUserBind({
         slug: this.props.slug,
         configGetAndUserBind: {
           ssoToken: token || undefined,
           authToken: authToken || undefined,
-          browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
-            ? subscriptionResult.token : undefined,
         },
       });
     } catch (err) {
       if (err?.status === 404) {
-        this.setState({ notFound: true });
-        return;
+        // Continue
+      } else {
+        throw err;
       }
-      throw err;
+    }
+    const notFound = !configResult;
+    const notLoggedIn = !configResult?.user;
+
+    // If no user is logged in, check if Web Push is enabled
+    // It's possible user cleared cookies and we can log in using the Web Push result
+    // We didn't try it in the first call since getting permission may take time
+    // and this is a corner case
+    if (notFound || notLoggedIn) {
+      var subscriptionResult;
+      if (WebNotification.getInstance().getStatus() === Status.Granted) {
+        subscriptionResult = await WebNotification.getInstance().getPermission();
+      }
+
+      if (subscriptionResult?.type === 'success' && !!subscriptionResult.token) {
+        if (notFound) {
+          try {
+            configResult = await server.dispatch().configGetAndUserBind({
+              slug: this.props.slug,
+              configGetAndUserBind: {
+                browserPushToken: subscriptionResult.token,
+              },
+            });
+          } catch (err) {
+            if (err?.status === 404) {
+              // Continue
+            } else {
+              throw err;
+            }
+          }
+        } else if (notLoggedIn) {
+          configResult = await server.dispatch().userBind({
+            slug: this.props.slug,
+            userBind: {
+              browserPushToken: subscriptionResult.token,
+            },
+          });
+        }
+      }
     }
 
-    // Start render since we received our configuration
-    this.setState({ server });
+    if (!configResult) {
+      this.setState({ notFound: true });
+    } else {
+      // Start render since we received our configuration
+      this.setState({ server });
 
-    if (configAndBindResult.user !== undefined) {
-      // Broadcast to other tabs of successful bind
-      localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
-      localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
+      if (!!configResult.user) {
+        // Broadcast to other tabs of successful bind
+        localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
+        localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
+      }
     }
   }
 

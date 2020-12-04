@@ -498,41 +498,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
+  async configGet(request: Client.ConfigGetRequest): Promise<Client.ConfigResult> {
+    const project = this.getProjectBySlug(request.slug);
+    if (!project) return this.throwLater(404, 'Project not found');
+    return this.returnLater({
+      config: project.config,
+    });
+  }
   async configGetAndUserBind(request: Client.ConfigGetAndUserBindRequest): Promise<Client.ConfigAndBindResult> {
     const project = this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project not found');
-    if (request.configGetAndUserBind.ssoToken) {
-      var token;
-      try {
-        token = jsonwebtoken.verify(request.configGetAndUserBind.ssoToken, SSO_SECRET_KEY);
-      } catch (er) {
-        console.log('Failed parsing ssoToken', er);
-      }
-      if (token && token['email']) {
-        const user = project.users.find(user => user.email === token['email']);
-        if (user) {
-          project.loggedInUser = user;
-        } else {
-          await this.userCreate({
-            projectId: project.config.config.projectId,
-            userCreate: {
-              email: token['email'],
-              name: token['name'],
-              ...{
-                isSso: true,
-              },
-            },
-          });
-        }
-      }
-    }
-    const loggedInUser = project.loggedInUser;
+
+    const configGet = await this.configGet(request);
+    const userBind = await this.userBind({
+      projectId: project.config.config.projectId,
+      ...request,
+    });
+
     return this.returnLater({
-      config: project.config,
-      user: loggedInUser ? {
-        ...loggedInUser,
-        balance: project.balances[loggedInUser.userId] || 0,
-      } : undefined,
+      config: configGet.config,
+      user: userBind.user,
     });
   }
   userCreate(request: Client.UserCreateRequest): Promise<Client.UserCreateResponse> {
@@ -566,11 +551,43 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater();
   }
-  userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
-    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+  async userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
+    const project = this.getProject(request.projectId);
+    if (!project) return this.throwLater(404, 'Project not found');
+    const loggedInUser = project.loggedInUser;
+    if (request.userBind.ssoToken) {
+      var token;
+      try {
+        token = jsonwebtoken.verify(request.userBind.ssoToken, SSO_SECRET_KEY);
+      } catch (er) {
+        console.log('Failed parsing ssoToken', er);
+      }
+      if (token && token['email']) {
+        const user = project.users.find(user => user.email === token['email']);
+        if (user) {
+          project.loggedInUser = user;
+        } else {
+          await this.userCreate({
+            projectId: project.config.config.projectId,
+            userCreate: {
+              email: token['email'],
+              name: token['name'],
+              ...{
+                isSso: true,
+              },
+            },
+          });
+        }
+      }
+    }
     return this.returnLater({
-      user: loggedInUser,
+      user: loggedInUser ? {
+        ...loggedInUser,
+        balance: project.balances[loggedInUser.userId] || 0,
+      } : undefined,
     });
+  }
+  async verifySsoTokenIfExists(project, ssoToken?: string) {
   }
   forgotPassword(request: Client.ForgotPasswordRequest): Promise<void> {
     return this.returnLater();

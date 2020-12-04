@@ -14,9 +14,9 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.ConfigAndBindAllResult;
 import com.smotana.clearflask.api.model.ConfigAndBindAllResultByProjectId;
 import com.smotana.clearflask.api.model.ConfigAndBindResult;
-import com.smotana.clearflask.api.model.ConfigGetAndUserBind;
 import com.smotana.clearflask.api.model.NewProjectResult;
 import com.smotana.clearflask.api.model.Onboarding;
+import com.smotana.clearflask.api.model.UserBind;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -35,6 +35,7 @@ import com.smotana.clearflask.web.security.AuthCookie;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.UserBindUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -49,7 +50,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -82,69 +82,27 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private PlanStore planStore;
     @Inject
     private AuthCookie authCookie;
+    @Inject
+    private UserBindUtil userBindUtil;
 
     @PermitAll
     @Limit(requiredPermits = 10)
     @Override
-    public ConfigAndBindResult configGetAndUserBind(String slug, ConfigGetAndUserBind configGetAndUserBind) {
+    public ConfigAndBindResult configGetAndUserBind(String slug, UserBind userBind) {
         Optional<Project> projectOpt = projectStore.getProjectBySlug(slug, true);
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
-        String projectId = projectOpt.get().getProjectId();
-        Optional<UserStore.UserSession> userSessionOpt = getExtendedPrincipal().flatMap(ExtendedPrincipal::getUserSessionOpt);
-        Optional<UserStore.UserModel> userOpt = userSessionOpt
-                .map(UserStore.UserSession::getUserId)
-                .flatMap(userId -> userStore.getUser(projectId, userId));
-        boolean createSession = false;
 
-        // Token refresh
-        if (userOpt.isPresent() && userSessionOpt.get().getTtlInEpochSec() < Instant.now().plus(userResourceConfig.sessionRenewIfExpiringIn()).getEpochSecond()) {
-            userSessionOpt = Optional.of(userStore.refreshSession(
-                    userSessionOpt.get(),
-                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond()));
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
-        }
+        Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
+                response,
+                projectOpt.get().getProjectId(),
+                getExtendedPrincipal(),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
+                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
-        // Auto login using auth token
-        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getAuthToken())) {
-            userOpt = userStore.verifyToken(configGetAndUserBind.getAuthToken());
-            if (userOpt.isPresent()) {
-                createSession = true;
-            }
-        }
-
-        // Auto login using sso token
-        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getSsoToken())) {
-            userOpt = userStore.ssoCreateOrGet(projectId, projectOpt.get().getVersionedConfigAdmin().getConfig().getSsoSecretKey(), configGetAndUserBind.getSsoToken());
-            if (userOpt.isPresent()) {
-                createSession = true;
-            }
-        }
-
-        // Auto login using browser push token (if email nor password is set)
-        if (!userOpt.isPresent() && !Strings.isNullOrEmpty(configGetAndUserBind.getBrowserPushToken())) {
-            userOpt = userStore.getUserByIdentifier(
-                    projectId,
-                    UserStore.IdentifierType.BROWSER_PUSH,
-                    configGetAndUserBind.getBrowserPushToken());
-            if (userOpt.isPresent()) {
-                if (!Strings.isNullOrEmpty(userOpt.get().getPassword()) || !Strings.isNullOrEmpty(userOpt.get().getEmail())) {
-                    userOpt = Optional.empty();
-                } else {
-                    createSession = true;
-                }
-            }
-        }
-
-        if (createSession) {
-            UserStore.UserSession session = userStore.createSession(
-                    userOpt.get(),
-                    Instant.now().plus(userResourceConfig.sessionExpiry()).getEpochSecond());
-            authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
-        }
-
-        if (!userOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()
+        if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()
                 .getConfig()
                 .getUsers()
                 .getOnboarding()
@@ -159,7 +117,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
                 null,
-                userOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
+                loggedInUserOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})

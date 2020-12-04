@@ -79,6 +79,7 @@ import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
+import com.smotana.clearflask.web.security.UserBindUtil;
 import io.jsonwebtoken.security.Keys;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -178,6 +179,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
                 MockAuthCookie.module(),
+                UserBindUtil.module(),
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
