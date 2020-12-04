@@ -307,6 +307,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   renderCreate() {
+    const isModLoggedIn = this.props.server.isModLoggedIn();
     if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
@@ -407,6 +408,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 label='Tags'
                 category={selectedCategory}
                 tagIds={this.state.newItemChosenTagIds}
+                isModLoggedIn={isModLoggedIn}
                 onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
                 onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
                 disabled={this.state.newItemIsSubmitting}
@@ -418,7 +420,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             </div>
           </Grid>
         )}
-        {this.props.server.isModLoggedIn() && (
+        {isModLoggedIn && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>
             <UserSelection
               variant='outlined'

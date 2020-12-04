@@ -7,7 +7,8 @@ import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { isProd } from '../common/util/detectEnv';
 import { intercomLoad, intercomStart, intercomUpdate } from '../common/util/intercomUtil';
 
-const APP_ID = 'zklmfmdu';
+const PROD_APP_ID = 'zklmfmdu';
+const TEST_APP_ID = 'ga9fvvhx';
 
 interface ConnectProps {
   accountStatus?: Status;
@@ -24,11 +25,11 @@ class IntercomWrapper extends Component<ConnectProps> {
         .then(d => d.accountBindAdmin({}));
     }
 
-    intercomLoad(APP_ID);
+    intercomLoad(isProd() ? PROD_APP_ID : TEST_APP_ID);
   }
 
   render() {
-    const userData = isProd() && !!this.props.account?.intercomIdentity ? {
+    const userData = !!this.props.account?.intercomIdentity ? {
       user_hash: this.props.account.intercomIdentity,
       email: this.props.account.email,
       name: this.props.account.name,
@@ -38,14 +39,14 @@ class IntercomWrapper extends Component<ConnectProps> {
 
     if (!this.started) {
       this.started = true;
-      intercomStart(APP_ID, userData);
+      intercomStart(isProd() ? PROD_APP_ID : TEST_APP_ID, userData);
     } else {
-      intercomUpdate(APP_ID, userData);
+      intercomUpdate(isProd() ? PROD_APP_ID : TEST_APP_ID, userData);
     }
 
     return (
       <Route path='/' render={({ location }) => {
-        intercomUpdate(APP_ID, userData);
+        intercomUpdate(isProd() ? PROD_APP_ID : TEST_APP_ID, userData);
         return null;
       }} />
     );

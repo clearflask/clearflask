@@ -1,4 +1,4 @@
-import { Badge, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
@@ -74,17 +74,12 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Tooltip>
               ) : (
                   <React.Fragment>
-                    <Badge
-                      color='secondary'
-                      invisible={!!this.props.userMe.name}
-                      variant='dot'
-                    >
-                      <TextField
-                        id='displayName'
-                        value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
-                        onChange={e => this.setState({ displayName: e.target.value })}
-                      />
-                    </Badge>
+                    <TextField
+                      id='displayName'
+                      error={!this.props.userMe.name}
+                      value={(this.state.displayName === undefined ? this.props.userMe.name : this.state.displayName) || ''}
+                      onChange={e => this.setState({ displayName: e.target.value })}
+                    />
                     <Button aria-label="Save" color='primary' style={{
                       visibility:
                         !this.state.displayName
@@ -115,17 +110,11 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Tooltip>
               ) : (
                   <React.Fragment>
-                    <Badge
-                      color='secondary'
-                      invisible={!!this.props.userMe.email}
-                      variant='dot'
-                    >
-                      <TextField
-                        id='email'
-                        value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
-                        onChange={e => this.setState({ email: e.target.value })}
-                      />
-                    </Badge>
+                    <TextField
+                      id='email'
+                      value={(this.state.email === undefined ? this.props.userMe.email : this.state.email) || ''}
+                      onChange={e => this.setState({ email: e.target.value })}
+                    />
                     <Button aria-label="Save" color='primary' style={{
                       visibility:
                         !this.state.email
@@ -151,32 +140,26 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <Grid container alignItems='baseline' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>Password</Typography></Grid>
               <Grid item xs={12} sm={6}>
-                <Badge
-                  color='secondary'
-                  invisible={!!this.props.userMe.hasPassword || (!this.state.email && !this.props.userMe.email)}
-                  variant='dot'
-                >
-                  <TextField
-                    id='password'
-                    value={this.state.password || ''}
-                    onChange={e => this.setState({ password: e.target.value })}
-                    type={this.state.revealPassword ? 'text' : 'password'}
-                    disabled={!this.state.email && !this.props.userMe.email}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            aria-label='Toggle password visibility'
-                            onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
-                            disabled={!this.state.email && !this.props.userMe.email}
-                          >
-                            {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Badge>
+                <TextField
+                  id='password'
+                  value={this.state.password || ''}
+                  onChange={e => this.setState({ password: e.target.value })}
+                  type={this.state.revealPassword ? 'text' : 'password'}
+                  disabled={!this.state.email && !this.props.userMe.email}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          aria-label='Toggle password visibility'
+                          onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
+                          disabled={!this.state.email && !this.props.userMe.email}
+                        >
+                          {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
                 <Button aria-label="Save" color='primary' style={{
                   visibility:
                     !this.state.password

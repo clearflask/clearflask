@@ -174,6 +174,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                         disabled={this.state.isSubmitting}
                         category={this.props.category}
                         tagIds={this.state.tagIds === undefined ? this.props.idea.tagIds : this.state.tagIds}
+                        isModLoggedIn={isModLoggedIn}
                         onChange={tagIds => this.setState({ tagIds: tagIds })}
                         onErrorChange={hasError => this.setState({ tagIdsHasError: hasError })}
                       />

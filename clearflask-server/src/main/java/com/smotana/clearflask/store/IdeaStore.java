@@ -33,6 +33,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -262,7 +263,9 @@ public interface IdeaStore {
                     getFundersCount(),
                     getVoteValue(),
                     getExpressionsValue(),
-                    getExpressions(),
+                    getExpressions().entrySet().stream()
+                            .filter(e -> e.getValue() != null && e.getValue() != 0L)
+                            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)),
                     vote);
         }
     }

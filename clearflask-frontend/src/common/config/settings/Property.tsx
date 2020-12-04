@@ -91,6 +91,7 @@ export default class Property extends Component<Props> {
                       error: !!prop.errorMsg,
                     }}
                     TextFieldProps={{
+                      value: prop.value || '',
                       variant: 'outlined',
                       size: 'small',
                       InputProps: {

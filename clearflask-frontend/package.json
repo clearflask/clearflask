@@ -39,7 +39,7 @@
     "jsonwebtoken": "8.5.1",
     "lorem-ipsum": "2.0.1",
     "marked": "0.8.0",
-    "material-ui-color-picker": "3.2.0",
+    "material-ui-color-picker": "3.5.0",
     "moment": "2.29.1",
     "moment-timezone": "0.5.31",
     "notistack": "0.9.17",
@@ -47,10 +47,10 @@
     "push.js": "1.0.9",
     "query-string": "6.13.1",
     "rc-trigger": "2.6.2",
-    "react": "16.8.6",
+    "react": "16.14.0",
     "react-chartjs-2": "2.10.0",
     "react-cytoscapejs": "1.2.1",
-    "react-dom": "16.8.6",
+    "react-dom": "16.14.0",
     "react-ga": "2.5.7",
     "react-google-recaptcha": "2.0.1",
     "react-hotjar": "2.2.1",
@@ -95,6 +95,6 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "react-app-rewired": "^2.1.6"
+    "react-app-rewired": "2.1.6"
   }
 }

@@ -10,6 +10,4 @@ if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
     .then(() => ReactDOM.render(<Main />, document.getElementById('mainScreen')));
 } else {
   ReactDOM.render(<Main />, document.getElementById('mainScreen'));
-  // TODO switch to createRoot once it comes out:
-  // ReactDOM['unstable_createRoot'](document.getElementById('mainScreen')).render(<Main />);
 }
