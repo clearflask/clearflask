@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
@@ -62,6 +63,8 @@ public interface ProjectStore {
         boolean isExpressingAllowed(String categoryId, Optional<String> statusIdOpt);
 
         boolean isFundingAllowed(String categoryId, Optional<String> statusIdOpt);
+
+        void areTagsAllowedByUser(List<String> tagIds, String categoryId);
     }
 
     @Value

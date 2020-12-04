@@ -56,9 +56,11 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -501,6 +503,39 @@ public class DynamoProjectStore implements ProjectStore {
             }
 
             return true;
+        }
+
+        @Override
+        public void areTagsAllowedByUser(List<String> tagIds, String categoryId) throws ErrorWithMessageException {
+            if (tagIds == null || tagIds.isEmpty()) {
+                return;
+            }
+            Optional<Category> categoryOpt = getCategory(categoryId);
+            if (!categoryOpt.isPresent()) {
+                throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Cannot find this category");
+            }
+            categoryOpt.stream()
+                    .map(Category::getTagging)
+                    .flatMap(tagging -> tagging.getTagGroups() == null
+                            ? Stream.of() : tagging.getTagGroups().stream())
+                    .forEach(group -> {
+                        if (!group.getUserSettable()) {
+                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Tags for " + group.getName() + " are not allowed");
+                        }
+                        if (group.getMaxRequired() == null && group.getMinRequired() == null) {
+                            return;
+                        }
+                        long tagsInGroupCount = tagIds.stream()
+                                .filter(tagId -> group.getTagIds().contains(tagId))
+                                .count();
+                        if (group.getMaxRequired() != null && group.getMaxRequired() < tagsInGroupCount) {
+                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Maximum tags for " + group.getName() + " is " + group.getMaxRequired());
+                        }
+                        if (group.getMinRequired() != null && group.getMinRequired() > tagsInGroupCount) {
+                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Minimum tags for " + group.getName() + " is " + group.getMinRequired());
+                        }
+                    });
+
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {

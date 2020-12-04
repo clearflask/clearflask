@@ -85,8 +85,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaWithVote ideaCreate(String projectId, IdeaCreate ideaCreate) {
         sanitizer.postTitle(ideaCreate.getTitle());
         sanitizer.content(ideaCreate.getDescription());
-
         Project project = projectStore.getProject(projectId, true).get();
+        project.areTagsAllowedByUser(ideaCreate.getTagIds(), ideaCreate.getCategoryId());
+
         UserModel user = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getUserSessionOpt)
                 .map(UserSession::getUserId)

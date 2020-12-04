@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
 import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
+import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
@@ -209,6 +210,9 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .title("Add dark mode " + IdUtil.randomId())
                 .categoryId(configAdmin.getContent().getCategories().get(0).getCategoryId())
                 .tagIds(ImmutableList.of())
+                .build());
+        ideaResource.ideaUpdateAdmin(projectId, idea1.getIdeaId(), IdeaUpdateAdmin.builder()
+                .tagIds(ImmutableList.of("non-existent-tagid-but-its-ok-here"))
                 .build());
         IdeaVoteUpdateResponse idea1vote1 = voteResource.ideaVoteUpdate(projectId, idea1.getIdeaId(), IdeaVoteUpdate.builder()
                 .vote(VoteOption.DOWNVOTE)
