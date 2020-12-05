@@ -77,6 +77,7 @@ import com.smotana.clearflask.web.resource.VoteResource;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
+import com.smotana.clearflask.web.security.UserBindUtil;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -185,6 +186,7 @@ public enum ServiceInjector {
                 install(LocalRateLimiter.module());
                 install(LocalChallengeLimiter.module());
                 install(CaptchaChallenger.module());
+                install(UserBindUtil.module());
 
                 // Configuration
                 install(ConfigSystem.module());
