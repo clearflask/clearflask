@@ -49,3 +49,9 @@ export function intercomUpdate(APP_ID, userData) {
     ...userData,
   });
 }
+
+export function intercomShutdown(APP_ID) {
+  window.Intercom("shutdown", {
+    app_id: APP_ID,
+  });
+}
