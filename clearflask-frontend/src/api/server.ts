@@ -31,7 +31,7 @@ export class Server {
   readonly dispatcherClient: Client.Dispatcher;
   readonly dispatcherAdmin: Promise<Admin.Dispatcher>;
 
-  constructor(projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
+  constructor(isSuperAdmin?: boolean, projectId?: string, settings?: StateSettings, apiOverride?: Client.ApiInterface & Admin.ApiInterface) {
     var storeMiddleware = applyMiddleware(thunk, reduxPromiseMiddleware);
     if (!isProd()) {
       const composeEnhancers =
@@ -45,7 +45,7 @@ export class Server {
     }
     this.store = createStore(
       reducers,
-      Server.initialState(projectId, settings),
+      Server.initialState(isSuperAdmin, projectId, settings),
       storeMiddleware);
 
     const dispatchers = Server.getDispatchers(
@@ -134,8 +134,9 @@ export class Server {
     };
   }
 
-  static initialState(projectId?: string, settings?: StateSettings): any {
+  static initialState(isSuperAdmin?: boolean, projectId?: string, settings?: StateSettings): any {
     const state: ReduxState = {
+      isSuperAdmin: !!isSuperAdmin || stateIsSuperAdminDefault,
       projectId: projectId || stateProjectIdDefault,
       settings: settings || stateSettingsDefault,
       conf: stateConfDefault,
@@ -158,11 +159,12 @@ export class Server {
     return this.store;
   }
 
-  isModLoggedIn(): boolean {
+  isModOrAdminLoggedIn(): boolean {
     const state = this.store.getState();
-    return state.users.loggedIn.status === Status.FULFILLED
-      && !!state.users.loggedIn.user
-      && !!state.users.loggedIn.user.isMod;
+    return !!state.isSuperAdmin
+      || (state.users.loggedIn.status === Status.FULFILLED
+        && !!state.users.loggedIn.user
+        && !!state.users.loggedIn.user.isMod);
   }
 
   dispatch(): Client.Dispatcher {
@@ -215,6 +217,23 @@ export const getSearchKey = (search: object): string => {
   // Consistently return the same key by sorting by keys
   keys.sort();
   return JSON.stringify(keys.map(key => key + '=' + search[key]));
+}
+
+const stateIsSuperAdminDefault = false;
+function reducerIsSuperAdmin(isSuperAdmin: boolean = stateIsSuperAdminDefault, action: AllActions): boolean {
+  // Needs to match serverAdmin.ts:reducerAccount
+  switch (action.type) {
+    case Admin.accountSignupAdminActionStatus.Fulfilled:
+    case Admin.accountLoginAdminActionStatus.Fulfilled:
+    case Admin.accountUpdateAdminActionStatus.Fulfilled:
+    case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
+      return !!isSuperAdmin || !!action.payload.isSuperAdmin;
+    case Admin.accountBindAdminActionStatus.Fulfilled:
+      if (!action.payload.account) return isSuperAdmin;
+      return !!isSuperAdmin || !!action.payload.isSuperAdmin || !!action.payload.account.isSuperAdmin;
+    default:
+      return isSuperAdmin;
+  }
 }
 
 const stateProjectIdDefault = null;
@@ -1495,6 +1514,7 @@ function reducerNotifications(state: StateNotifications = stateNotificationsDefa
 }
 
 export interface ReduxState {
+  isSuperAdmin: boolean;
   projectId: string | null;
   settings: StateSettings;
   conf: StateConf;
@@ -1507,6 +1527,7 @@ export interface ReduxState {
   notifications: StateNotifications;
 }
 export const reducers = combineReducers({
+  isSuperAdmin: reducerIsSuperAdmin,
   projectId: reducerProjectId,
   settings: reducerSettings,
   conf: reducerConf,

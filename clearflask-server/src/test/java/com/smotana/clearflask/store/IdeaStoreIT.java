@@ -8,8 +8,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
+import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
@@ -141,85 +140,62 @@ public class IdeaStoreIT extends AbstractIT {
         store.createIdea(idea1).get();
         store.createIdea(idea2).get();
         store.createIdea(idea3).get();
+    }
 
-        // Idea Search
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder()
-                .build(), Optional.empty(), Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(), store.searchIdeas(projectId, IdeaSearch.builder().fundedByMeAndActive(true)
-                .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
-        store.fundIdea(projectId, idea1.getIdeaId(), userId1, 5L, "asd", "dsa").getIndexingFuture().get();
-        assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearch.builder().fundedByMeAndActive(true)
-                .build(), Optional.of(idea1.getAuthorUserId()), Optional.empty()).getIdeaIds());
+    @Test(timeout = 30_000L)
+    public void testCount() throws Exception {
+        String projectId = IdUtil.randomId();
+        String categoryId1 = IdUtil.randomId();
+        String categoryId2 = IdUtil.randomId();
+        String tagId1 = IdUtil.randomId();
+        String tagId2 = IdUtil.randomId();
+        String tagId3 = IdUtil.randomId();
+        String statusId1 = IdUtil.randomId();
+        String statusId2 = IdUtil.randomId();
+        String statusId3 = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        IdeaModel idea1 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId1)
+                .tagIds(ImmutableSet.of(tagId1))
+                .statusId(statusId1)
+                .build();
+        IdeaModel idea2 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId1)
+                .tagIds(ImmutableSet.of(tagId1, tagId2))
+                .statusId(statusId2)
+                .build();
+        IdeaModel idea3 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId1)
+                .tagIds(ImmutableSet.of(tagId2, tagId1, tagId3))
+                .statusId(statusId2)
+                .build();
+        IdeaModel idea4 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId1)
+                .tagIds(ImmutableSet.of())
+                .statusId(null)
+                .build();
+        IdeaModel idea5 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId2)
+                .tagIds(ImmutableSet.of(tagId1, tagId2, tagId3))
+                .statusId(statusId3)
+                .build();
+        store.createIdea(idea1).get();
+        store.createIdea(idea2).get();
+        store.createIdea(idea3).get();
+        store.createIdea(idea4).get();
+        store.createIdea(idea5).get();
 
-        // Idea Search Admin
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterCategoryIds(ImmutableList.of(idea2.getCategoryId()))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterStatusIds(ImmutableList.of(idea2.getStatusId(), idea3.getStatusId()))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterTagIds(ImmutableList.of(idea1.getTagIds().iterator().next(), idea2.getTagIds().iterator().next()))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .searchText("aaaaaaaaaaaaaa")
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(1, store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .limit(1L)
-                .build(), false, Optional.empty()).getIdeaIds().size());
-        assertEquals(2, store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .limit(2L)
-                .build(), false, Optional.empty()).getIdeaIds().size());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterCreatedStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .sortBy(IdeaSearchAdmin.SortByEnum.NEW)
-                .filterCreatedEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterCreatedStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
-                .filterCreatedEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea3.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterLastActivityStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId(), idea1.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterLastActivityEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(idea2.getIdeaId()), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .filterLastActivityStart(idea1.getCreated().plus(1, ChronoUnit.HOURS))
-                .filterLastActivityEnd(idea3.getCreated().minus(1, ChronoUnit.HOURS))
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(
-                idea3.getIdeaId(),
-                idea2.getIdeaId(),
-                idea1.getIdeaId()
-        ), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .sortBy(IdeaSearchAdmin.SortByEnum.NEW)
-                .build(), false, Optional.empty()).getIdeaIds());
-        assertEquals(ImmutableList.of(
-                idea2.getIdeaId(),
-                idea3.getIdeaId(),
-                idea1.getIdeaId()
-        ), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .sortBy(IdeaSearchAdmin.SortByEnum.TOP)
-                .build(), false, Optional.empty()).getIdeaIds());
-        // Use expressions to trigger TRENDING order
-        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "👀").getIndexingFuture().get();
-        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "🤪").getIndexingFuture().get();
-        store.expressIdeaAdd(projectId, idea1.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "❤️").getIndexingFuture().get();
-        store.expressIdeaAdd(projectId, idea3.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "😇").getIndexingFuture().get();
-        store.expressIdeaAdd(projectId, idea3.getIdeaId(), idea1.getAuthorUserId(), e -> 1d, "😎").getIndexingFuture().get();
-        assertEquals(ImmutableList.of(
-                idea1.getIdeaId(),
-                idea3.getIdeaId(),
-                idea2.getIdeaId()
-        ), store.searchIdeas(projectId, IdeaSearchAdmin.builder()
-                .sortBy(IdeaSearchAdmin.SortByEnum.TRENDING)
-                .build(), false, Optional.empty()).getIdeaIds());
+        IdeaAggregateResponse response = store.countIdeas(projectId, categoryId1);
+        assertEquals(IdeaAggregateResponse.builder()
+                .total(4L)
+                .statuses(ImmutableMap.of(
+                        statusId1, 1L,
+                        statusId2, 2L))
+                .tags(ImmutableMap.of(
+                        tagId1, 3L,
+                        tagId2, 2L,
+                        tagId3, 1L))
+                .build(), response);
     }
 
     @Test(timeout = 30_000L)

@@ -46,7 +46,7 @@ components:
           # If changed, also change in Sanitizer.java
           maxLength: 30
           # If changed, also change in Sanitizer.java
-          pattern: '^[a-z0-9](?:[a-z0-9\-]*a-z0-9])?$'
+          pattern: '^[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?$'
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'
         content:
@@ -690,6 +690,9 @@ components:
           type: boolean
         showExpression:
           x-clearflask-prop: { order: 13, name: 'Expressions', description: 'Force show/hide the expressions' }
+          type: boolean
+        showEdit:
+          x-clearflask-hide: true
           type: boolean
     PagePanel:
       x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }

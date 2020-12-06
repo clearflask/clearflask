@@ -10,7 +10,6 @@ import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import IdeaExplorer from '../app/comps/IdeaExplorer';
-import IdeaExplorerAdmin from '../app/comps/IdeaExplorerAdmin';
 import PostPage from '../app/comps/PostPage';
 import SelectionPicker, { Label } from '../app/comps/SelectionPicker';
 import UserPage from '../app/comps/UserPage';
@@ -36,6 +35,7 @@ import BillingPage, { BillingPaymentActionRedirect, BillingPaymentActionRedirect
 import CommentsPage from './dashboard/CommentsPage';
 import CreatedPage from './dashboard/CreatedPage';
 import CreatePage from './dashboard/CreatePage';
+import DashboardHome from './dashboard/DashboardHome';
 import SettingsPage from './dashboard/SettingsPage';
 import UserSelection from './dashboard/UserSelection';
 import UsersPage from './dashboard/UsersPage';
@@ -217,7 +217,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
         }
         page = (
           <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-            <IdeaExplorerAdmin
+            <DashboardHome
               server={activeProject.server}
               onClickPost={postId => this.pageClicked('post', [postId])}
               onUserClick={userId => this.pageClicked('user', [userId])}

@@ -630,11 +630,12 @@ class Post extends Component<Props & ConnectProps & RouteComponentProps & WithSt
   }
 
   renderEdit(variant: PostVariant) {
-    const isMod = this.props.server.isModLoggedIn();
+    const isMod = this.props.server.isModOrAdminLoggedIn();
     const isAuthor = this.props.idea && this.props.loggedInUser && this.props.idea.authorUserId === this.props.loggedInUser.userId;
     if (!this.props.idea
       || !this.props.category
-      || (!isMod && !isAuthor)) return null;
+      || (!isMod && !isAuthor)
+      || this.props.display?.showEdit === false) return null;
 
     const labelEdit = isAuthor
       ? 'Edit'

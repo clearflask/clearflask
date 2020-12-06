@@ -39,7 +39,6 @@ interface ConnectProps {
   userStatus?: Status;
   credits?: Client.Credits;
   loggedInUser?: Client.UserMe;
-  isModLoggedIn: boolean;
 }
 interface State {
   userAdmin?: Admin.UserAdmin;
@@ -53,7 +52,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
     var user: Client.User | Admin.UserAdmin | undefined;
     var userStatus: Status | undefined;
     var overview: React.ReactNode | undefined;
-    if (this.props.isModLoggedIn) {
+    if (this.props.server.isModOrAdminLoggedIn()) {
       if (this.userAdminFetchedForUserId !== this.props.userId) {
         ServerAdmin.get().dispatchAdmin().then(d => d.userGetAdmin({
           projectId: this.props.server.getProjectId(),
@@ -141,6 +140,5 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     user: state.users.byId[ownProps.userId]?.user,
     userStatus: state.users.byId[ownProps.userId]?.status,
     loggedInUser: state.users.loggedIn.user,
-    isModLoggedIn: !!state.users.loggedIn.user?.isMod,
   };
 })(withStyles(styles, { withTheme: true })(UserPage));

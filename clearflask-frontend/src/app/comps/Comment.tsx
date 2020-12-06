@@ -247,7 +247,7 @@ class Comment extends Component<Props & RouteComponentProps & WithStyles<typeof 
   renderAdminDelete() {
     if (!this.props.comment
       || !this.props.comment.authorUserId
-      || !this.props.server.isModLoggedIn()
+      || !this.props.server.isModOrAdminLoggedIn()
       // Only show admin delete if the regular edit is not shown as it already contains a delete
       || (this.props.loggedInUser && this.props.comment.authorUserId === this.props.loggedInUser.userId)) return null;
 

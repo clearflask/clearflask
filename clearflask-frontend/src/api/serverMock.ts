@@ -490,6 +490,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }])
       , request.ideaSearch.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
+  ideaCategoryAggregateAdmin(request: Admin.IdeaCategoryAggregateAdminRequest): Promise<Admin.IdeaAggregateResponse> {
+    const project = this.getProject(request.projectId);
+    if (!project) return this.throwLater(404, 'Project not found');
+    const results: Admin.IdeaAggregateResponse = {
+      total: 0,
+      statuses: {},
+      tags: {},
+    };
+    this.getProject(request.projectId).ideas
+      .filter(idea => idea.categoryId === request.categoryId)
+      .forEach(idea => {
+        results.total++;
+        if (idea.statusId) results.statuses[idea.statusId] = (results.statuses[idea.statusId] || 0) + 1;
+        idea.tagIds.forEach(tagId => {
+          results.tags[tagId] = (results.tags[tagId] || 0) + 1;
+        });
+      });
+    return this.returnLater(results);
+  }
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
     return this.ideaUpdateAdmin({
       ...request,

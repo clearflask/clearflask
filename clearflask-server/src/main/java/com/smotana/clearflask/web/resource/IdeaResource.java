@@ -14,6 +14,7 @@ import com.smotana.clearflask.api.model.Category;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Hits;
 import com.smotana.clearflask.api.model.Idea;
+import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaCreateAdmin;
 import com.smotana.clearflask.api.model.IdeaSearch;
@@ -132,6 +133,13 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER})
+    @Limit(requiredPermits = 1)
+    @Override
+    public IdeaAggregateResponse ideaCategoryAggregateAdmin(String projectId, String categoryId) {
+        return ideaStore.countIdeas(projectId, categoryId);
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})

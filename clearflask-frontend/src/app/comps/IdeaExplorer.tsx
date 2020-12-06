@@ -1,4 +1,4 @@
-import { FormControl, FormHelperText, Grid, InputLabel, isWidthUp, MenuItem, Select, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import { Grid, isWidthUp, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 /** Alternatives Add, AddCircleRounded, RecordVoiceOverRounded */
 import AddIcon from '@material-ui/icons/RecordVoiceOverRounded';
@@ -12,7 +12,6 @@ import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, StateSettings } from '../../api/server';
 import { tabHoverApplyStyles } from '../../common/DropdownTab';
 import InViewObserver from '../../common/InViewObserver';
-import ModAction from '../../common/ModAction';
 import SubmitButton from '../../common/SubmitButton';
 import debounce, { SimilarTypeDebounceTime } from '../../common/util/debounce';
 import { preserveEmbed } from '../../common/util/historyUtil';
@@ -21,6 +20,7 @@ import { importFailed, importSuccess } from '../../Main';
 import UserSelection from '../../site/dashboard/UserSelection';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Loading from '../utils/Loading';
+import CategorySelect from './CategorySelect';
 import ExplorerTemplate from './ExplorerTemplate';
 import LogIn from './LogIn';
 import { Direction } from './Panel';
@@ -307,7 +307,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   }
 
   renderCreate() {
-    const isModLoggedIn = this.props.server.isModLoggedIn();
+    const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
     if (!this.props.config
       || this.props.config.content.categories.length === 0) return null;
 
@@ -372,31 +372,17 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
         </Grid>
         {categoryOptions.length > 1 && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>
-            <FormControl
+            <CategorySelect
               variant='outlined'
               size='small'
+              label='Category'
               className={this.props.classes.createFormField}
-              error={!selectedCategory}
-            >
-              <InputLabel error={!selectedCategory}>Category</InputLabel>
-              <Select
-                label='Category'
-                disabled={this.state.newItemIsSubmitting}
-                value={selectedCategory ? selectedCategory.categoryId : ''}
-                onChange={e => this.setState({ newItemChosenCategoryId: e.target.value as string })}
-              >
-                {categoryOptions.map(categoryOption => (
-                  <MenuItem key={categoryOption.categoryId} value={categoryOption.categoryId}>
-                    {categoryOption.userCreatable ? categoryOption.name : (
-                      <ModAction label={categoryOption.name} />
-                    )}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!selectedCategory && (
-                <FormHelperText error>Choose a category</FormHelperText>
-              )}
-            </FormControl>
+              categoryOptions={categoryOptions}
+              value={selectedCategory?.categoryId || ''}
+              onChange={categoryId => this.setState({ newItemChosenCategoryId: categoryId })}
+              errorText={!selectedCategory ? 'Choose a category' : undefined}
+              disabled={this.state.newItemIsSubmitting}
+            />
           </Grid>
         )}
         {selectedCategory && (
@@ -408,7 +394,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 label='Tags'
                 category={selectedCategory}
                 tagIds={this.state.newItemChosenTagIds}
-                isModLoggedIn={isModLoggedIn}
+                isModOrAdminLoggedIn={isModOrAdminLoggedIn}
                 onChange={tagIds => this.setState({ newItemChosenTagIds: tagIds })}
                 onErrorChange={(hasError) => this.setState({ newItemTagSelectHasError: hasError })}
                 disabled={this.state.newItemIsSubmitting}
@@ -420,7 +406,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             </div>
           </Grid>
         )}
-        {isModLoggedIn && (
+        {isModOrAdminLoggedIn && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>
             <UserSelection
               variant='outlined'
@@ -474,11 +460,11 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   createSubmit(mandatoryTagIds: string[]) {
     this.setState({ newItemIsSubmitting: true });
     var createPromise: Promise<Client.Idea | Admin.Idea>;
-    if (this.props.server.isModLoggedIn()) {
+    if (this.props.server.isModOrAdminLoggedIn()) {
       createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
-          authorUserId: this.state.newItemAuthorLabel!.value,
+          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
           title: this.state.newItemTitle!,
           description: this.state.newItemDescription,
           categoryId: this.state.newItemChosenCategoryId!,
@@ -489,7 +475,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
       createPromise = this.props.server.dispatch().ideaCreate({
         projectId: this.props.server.getProjectId(),
         ideaCreate: {
-          authorUserId: this.props.loggedInUserId!,
+          authorUserId: this.state.newItemAuthorLabel?.value || this.props.loggedInUserId!,
           title: this.state.newItemTitle!,
           description: this.state.newItemDescription,
           categoryId: this.state.newItemChosenCategoryId!,
@@ -582,7 +568,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
     var categoryOptions = ((props.explorer.search.filterCategoryIds && props.explorer.search.filterCategoryIds.length > 0)
       ? props.config?.content.categories.filter(c => props.explorer.search.filterCategoryIds!.includes(c.categoryId))
       : props.config?.content.categories) || [];
-    if (!props.server.isModLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
+    if (!props.server.isModOrAdminLoggedIn()) categoryOptions = categoryOptions.filter(c => c.userCreatable);
     return categoryOptions;
   }
 }

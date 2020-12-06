@@ -36,6 +36,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.IdeaAggregateResponse;
 import com.smotana.clearflask.api.model.IdeaSearch;
 import com.smotana.clearflask.api.model.IdeaSearchAdmin;
 import com.smotana.clearflask.api.model.IdeaUpdate;
@@ -84,10 +85,13 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -317,6 +321,38 @@ public class DynamoElasticIdeaStore implements IdeaStore {
     @Override
     public SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
         return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, cursorOpt);
+    }
+
+    @Override
+    public IdeaAggregateResponse countIdeas(String projectId, String categoryId) {
+        org.elasticsearch.action.search.SearchResponse response;
+        try {
+            response = elastic.search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
+                    .source(new SearchSourceBuilder()
+                            .fetchSource(false)
+                            .query(QueryBuilders.termQuery("categoryId", categoryId))
+                            .aggregation(AggregationBuilders
+                                    .terms("statuses")
+                                    .field("statusId"))
+                            .aggregation(AggregationBuilders
+                                    .terms("tags")
+                                    .field("tagIds"))), RequestOptions.DEFAULT);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        long total = response.getHits().getTotalHits().value;
+        ImmutableMap.Builder<String, Long> statusesBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Long> tagsBuilder = ImmutableMap.builder();
+        response.getAggregations().<Terms>get("statuses").getBuckets()
+                .forEach(bucket -> statusesBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
+        response.getAggregations().<Terms>get("tags").getBuckets()
+                .forEach(bucket -> tagsBuilder.put(bucket.getKeyAsString(), bucket.getDocCount()));
+
+        return new IdeaAggregateResponse(
+                total,
+                statusesBuilder.build(),
+                tagsBuilder.build());
     }
 
     private SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, Optional<String> requestorUserIdOpt, boolean useAccurateCursor, Optional<String> cursorOpt) {

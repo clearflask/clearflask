@@ -73,7 +73,7 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2, 1.5),
   },
   popper: {
-    minWidth: (props: Props) => props.maxWidth,
+    minWidth: (props: Props) => props.maxWidth || 'max-content',
     width: (props: Props) => props.popupColumnCount ? `${(props.popupColumnWidth || 130) * props.popupColumnCount}px!important` : undefined,
   },
   popperListbox: {

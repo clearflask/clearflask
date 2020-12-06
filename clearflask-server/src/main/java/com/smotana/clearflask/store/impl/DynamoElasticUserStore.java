@@ -249,6 +249,9 @@ public class DynamoElasticUserStore implements UserStore {
                                                 "index_prefixes", ImmutableMap.of(
                                                         "min_chars", 1,
                                                         "max_chars", 4)))
+                                        .put("created", ImmutableMap.of(
+                                                "type", "date",
+                                                "format", "epoch_second"))
                                         .put("balance", ImmutableMap.of(
                                                 "type", "double"))
                                         .put("isMod", ImmutableMap.of(
@@ -295,6 +298,7 @@ public class DynamoElasticUserStore implements UserStore {
                                 "name", orNull(user.getName()),
                                 "email", orNull(user.getEmail()),
                                 "balance", orNull(user.getBalance()),
+                                "created", orNull(user.getCreated().getEpochSecond()),
                                 "isMod", user.getIsMod() == Boolean.TRUE
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,

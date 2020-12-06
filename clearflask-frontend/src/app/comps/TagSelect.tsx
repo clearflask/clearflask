@@ -31,7 +31,7 @@ interface Props {
   placeholder?: string;
   category: Client.Category;
   tagIds?: string[];
-  isModLoggedIn: boolean;
+  isModOrAdminLoggedIn: boolean;
   onChange: (tagIds: string[]) => void;
   onErrorChange: (hasError: boolean) => void;
   disabled?: boolean;
@@ -91,7 +91,7 @@ class TagSelect extends Component<Props & WithStyles<typeof styles, true>> {
 
     category.tagging.tagGroups
       .forEach(tagGroup => {
-        if (!this.props.isModLoggedIn && !tagGroup.userSettable) return;
+        if (!this.props.isModOrAdminLoggedIn && !tagGroup.userSettable) return;
 
         // Skip groups with tags that have mandatory tags
         if (tagGroup.tagIds.findIndex(t => mandatoryTagIds.has(t)) !== -1) return;

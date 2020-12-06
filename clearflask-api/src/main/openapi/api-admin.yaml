@@ -43,6 +43,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
   /project/{projectId}/admin/idea/search:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1search'
+  /project/{projectId}/admin/idea/category/{categoryId}/aggregate:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1category~1{categoryId}~1aggregate'
   /project/{projectId}/admin/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:

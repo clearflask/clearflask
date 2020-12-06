@@ -65,8 +65,8 @@ const styles = (theme: Theme) => createStyles({
 });
 interface Props {
   className?: string;
-  createSize?: number;
-  searchSize?: number;
+  createSize?: number | string;
+  searchSize?: number | string;
   createShown?: boolean;
   similarShown?: boolean;
   similarLabel?: React.ReactNode;

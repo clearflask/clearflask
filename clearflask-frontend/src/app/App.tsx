@@ -64,9 +64,9 @@ class App extends Component<Props, State> {
     if (this.props.serverOverride) {
       server = this.props.serverOverride;
     } else if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      server = new Server(undefined, this.props.settings, ServerMock.get());
+      server = new Server(undefined, undefined, this.props.settings, ServerMock.get());
     } else {
-      server = new Server(undefined, this.props.settings);
+      server = new Server(undefined, undefined, this.props.settings);
     }
 
     const params = new URL(window.location.href).searchParams;

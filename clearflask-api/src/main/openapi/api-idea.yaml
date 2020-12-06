@@ -384,6 +384,46 @@ components:
                     $ref: 'api-idea.yaml#/components/schemas/Idea'
                 hits:
                   $ref: 'api-idea.yaml#/components/schemas/Hits'
+/project/{projectId}/admin/idea/category/{categoryId}/aggregate:
+  post:
+    operationId: ideaCategoryAggregateAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: categoryId
+      in: path
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaAggregateResponse
+              type: object
+              required:
+              - total
+              - statuses
+              - tags
+              properties:
+                total:
+                  type: integer
+                  format: int64
+                statuses:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                    format: int64
+                tags:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                    format: int64
 /project/{projectId}/admin/idea:
   post:
     operationId: ideaCreateAdmin

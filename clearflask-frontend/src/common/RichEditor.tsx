@@ -198,10 +198,10 @@ class RichEditor extends React.Component<PropsRichEditor & Omit<React.ComponentP
           const editor = e.target['editor'];
 
           const hasText = editor.getLength() > 0 ? true : undefined;
+          this.props.onChange && this.props.onChange(e, delta, source, editor);
           if (!!this.state.hasText !== !!hasText) {
             this.setState({ hasText });
           }
-          this.props.onChange && this.props.onChange(e, delta, source, editor);
         }}
         InputLabelProps={{
           shrink,
@@ -271,7 +271,6 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   readonly editorRef: React.RefObject<ReactQuill> = React.createRef();
 
   focus(): void {
-    console.log('debug force focus');
     this.editorRef.current?.focus();
   }
 
@@ -333,18 +332,10 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
           className={classNames(!!this.props.hidePlaceholder && 'hidePlaceholder', this.props.classes.quill)}
           theme={'' /** core theme */}
           ref={this.editorRef}
-          // Fixes two issues with these conditions:
-          // - RichEditor used as controlled
-          // - Intial value of 'value' is empty string
-          // - User types in first character
-          // Causes two issues:
-          // - Cursor moves to beginning
-          // - Erroneous empty onChange event sent AFTER the event triggered by the first character
-          // Fix below is to switch to controlled after user types something
-          {...((value === undefined || value === '') ? {} : { value })}
-          onChange={(value, delta, source, editor) => this.props.onChange && this.props.onChange({
+          value={value}
+          onChange={(valueNew, delta, source, editor) => this.props.onChange && this.props.onChange({
             target: {
-              value: this.isQuillEmpty(editor) ? '' : value,
+              value: this.isQuillEmpty(editor) ? '' : valueNew,
               delta,
               source,
               editor,

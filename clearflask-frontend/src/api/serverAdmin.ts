@@ -95,7 +95,11 @@ export default class ServerAdmin {
     const projectId = versionedConfig.config.projectId;
     var project = this.projects[projectId];
     if (!project) {
-      const server = new Server(projectId, undefined, this.apiOverride);
+      const server = new Server(
+        this.getStore().getState().account.isSuperAdmin,
+        projectId,
+        undefined,
+        this.apiOverride);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;
       server.subscribeToChanges(editor, DemoUpdateDelay);
@@ -201,6 +205,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountLoginAsSuperAdminActionStatus.Fulfilled:
       return {
         ...state,
+        // Needs to match server.ts:reducerIsSuperAdmin
         isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin,
         account: {
           status: Status.FULFILLED,
@@ -212,6 +217,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
       if (!action.payload.account) return state;
       return {
         ...state,
+        // Needs to match server.ts:reducerIsSuperAdmin
         isSuperAdmin: !!state.isSuperAdmin || !!action.payload.isSuperAdmin || !!action.payload.account.isSuperAdmin,
         account: {
           status: Status.FULFILLED,
@@ -257,6 +263,7 @@ function reducerAccount(state: StateAccount = stateAccountDefault, action: Admin
     case Admin.accountDeleteAdminActionStatus.Fulfilled:
       return {
         ...stateAccountDefault,
+        // Needs to match server.ts:reducerIsSuperAdmin
         isSuperAdmin: state.isSuperAdmin,
       };
     default:
