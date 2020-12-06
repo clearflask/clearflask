@@ -83,37 +83,39 @@ class App extends Component<Props, State> {
     try {
       configResult = await server.dispatch().configGetAndUserBind({
         slug: this.props.slug,
-        configGetAndUserBind: {
+        userBind: {
           ssoToken: token || undefined,
           authToken: authToken || undefined,
         },
       });
     } catch (err) {
       if (err?.status === 404) {
-        // Continue
+        this.setState({ notFound: true });
+        return;
       } else {
         throw err;
       }
     }
-    const notFound = !configResult;
-    const notLoggedIn = !configResult?.user;
 
     // If no user is logged in, check if Web Push is enabled
     // It's possible user cleared cookies and we can log in using the Web Push result
     // We didn't try it in the first call since getting permission may take time
     // and this is a corner case
-    if (notFound || notLoggedIn) {
+    const projectId = configResult.config?.config.projectId;
+    const loggedIn = !!configResult?.user;
+    if (!loggedIn) {
       var subscriptionResult;
       if (WebNotification.getInstance().getStatus() === Status.Granted) {
         subscriptionResult = await WebNotification.getInstance().getPermission();
       }
 
       if (subscriptionResult?.type === 'success' && !!subscriptionResult.token) {
-        if (notFound) {
+        if (!projectId) {
+          // projectId missing, meaning project is private and requires login
           try {
             configResult = await server.dispatch().configGetAndUserBind({
               slug: this.props.slug,
-              configGetAndUserBind: {
+              userBind: {
                 browserPushToken: subscriptionResult.token,
               },
             });
@@ -124,9 +126,9 @@ class App extends Component<Props, State> {
               throw err;
             }
           }
-        } else if (notLoggedIn) {
+        } else {
           configResult = await server.dispatch().userBind({
-            slug: this.props.slug,
+            projectId: projectId,
             userBind: {
               browserPushToken: subscriptionResult.token,
             },
@@ -135,17 +137,13 @@ class App extends Component<Props, State> {
       }
     }
 
-    if (!configResult) {
-      this.setState({ notFound: true });
-    } else {
-      // Start render since we received our configuration
-      this.setState({ server });
+    // Start render since we received our configuration
+    this.setState({ server });
 
-      if (!!configResult.user) {
-        // Broadcast to other tabs of successful bind
-        localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
-        localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
-      }
+    if (!!configResult.user) {
+      // Broadcast to other tabs of successful bind
+      localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
+      localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
     }
   }
 

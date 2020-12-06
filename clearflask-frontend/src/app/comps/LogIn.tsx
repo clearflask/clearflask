@@ -608,6 +608,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       } else {
         this.props.server.dispatch().userBind({
           projectId: this.props.server.getProjectId(),
+          userBind: {},
         });
       }
     }

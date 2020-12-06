@@ -82,7 +82,7 @@ public class Sanitizer {
     /** If changed, also change in api-project.yaml */
     private static final long SUBDOMAIN_MAX_LENGTH = 30;
     /** If changed, also change in api-project.yaml */
-    private static final String SUBDOMAIN_REGEX = "^[A-Za-z0-9](?:[A-Za-z0-9\\-]*[A-Za-z0-9])?$";
+    private static final String SUBDOMAIN_REGEX = "^[a-z0-9](?:[a-z0-9\\-]*[a-z0-9])?$";
     private static final long SEARCH_TEXT_MAX_LENGTH = 200;
 
     private final Predicate<String> subdomainPredicate;

@@ -46,7 +46,7 @@ export async function getProject(
   mock && await mock(mocker, editor.getConfig());
   await server.dispatch().configGetAndUserBind({
     slug,
-    configGetAndUserBind: {},
+    userBind: {},
   });
   const project = { server, templater, editor, mocker, saveEdits };
   return project;

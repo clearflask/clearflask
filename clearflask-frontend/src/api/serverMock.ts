@@ -498,7 +498,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
-  async configGet(request: Client.ConfigGetRequest): Promise<Client.ConfigResult> {
+  async configGet(request: Omit<Client.ConfigGetAndUserBindRequest, 'userBind'>): Promise<Omit<Client.ConfigAndBindResult, 'user'>> {
     const project = this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project not found');
     return this.returnLater({

@@ -382,15 +382,15 @@ public class DynamoElasticIdeaStore implements IdeaStore {
                     .zeroTermsQuery(MatchQuery.ZeroTermsQuery.ALL));
         }
 
-        if (ideaSearchAdmin.getFilterCategoryIds() != null) {
+        if (ideaSearchAdmin.getFilterCategoryIds() != null && !ideaSearchAdmin.getFilterCategoryIds().isEmpty()) {
             query.filter(QueryBuilders.termsQuery("categoryId", ideaSearchAdmin.getFilterCategoryIds().toArray()));
         }
 
-        if (ideaSearchAdmin.getFilterStatusIds() != null) {
+        if (ideaSearchAdmin.getFilterStatusIds() != null && !ideaSearchAdmin.getFilterStatusIds().isEmpty()) {
             query.filter(QueryBuilders.termsQuery("statusId", ideaSearchAdmin.getFilterStatusIds().toArray()));
         }
 
-        if (ideaSearchAdmin.getFilterTagIds() != null) {
+        if (ideaSearchAdmin.getFilterTagIds() != null && !ideaSearchAdmin.getFilterTagIds().isEmpty()) {
             query.filter(QueryBuilders.termsQuery("tagIds", ideaSearchAdmin.getFilterTagIds().toArray()));
         }
 

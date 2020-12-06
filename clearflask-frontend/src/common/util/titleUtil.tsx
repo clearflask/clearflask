@@ -1,13 +1,13 @@
 import { detectEnv, isProd } from "./detectEnv"
 
-const defaultText = 'ClearFlask: Product Feedback Solution' // NOTE: If changed, change index.html title too
-const titleSuffix = ' | ClearFlask: Product Feedback Solution'
+const defaultText = 'Feedback Management Tool | ClearFlask' // NOTE: If changed, change index.html title too
+const titleSuffix = ' | ClearFlask: Feedback Management Tool'
 const titleSuffixShort = ' | ClearFlask'
 
 function setTitle(text?: string, forceShort?: boolean) {
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
-    if (text.length < 15 && !forceShort) {
+    if (text.length < 16 && !forceShort) {
       title += text + titleSuffix
     } else {
       title += text + titleSuffixShort

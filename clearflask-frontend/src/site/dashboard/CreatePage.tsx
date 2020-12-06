@@ -100,7 +100,8 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
       await this.mockData(config)
       this.props.previewProject.editor.setConfig(config);
       await this.props.previewProject.server.dispatch().userBind({
-        slug: config.slug,
+        projectId: config.projectId,
+        userBind: {},
       });
     }, DemoUpdateDelay);
     this.updatePreview();
@@ -335,9 +336,10 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                     var slug: string | undefined = undefined;
                     var name: string | undefined = undefined;
                     if (nameMatch && nameMatch[2]) {
-                      slug = nameMatch[2].toLowerCase();
-                      if (slug) {
-                        name = slug.charAt(0).toUpperCase() + slug.slice(1);
+                      name = nameMatch[2].toLowerCase();
+                      if (name) {
+                        name = name.charAt(0).toUpperCase() + name.slice(1);
+                        slug = this.nameToSlug(name);
                       }
                     }
                     const logoMatch = e.target.value.match(/^(https?:\/\/)?([^/]+).*$/);
@@ -361,10 +363,13 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
                   required
                   disabled={!!this.state.isSubmitting}
                   value={this.state.infoName || ''}
-                  onChange={e => this.setStateAndPreview({
-                    infoName: e.target.value,
-                    infoSlug: e.target.value.toLowerCase(),
-                  })}
+                  onChange={e => {
+                    const slug = this.nameToSlug(e.target.value);
+                    this.setStateAndPreview({
+                      infoName: e.target.value,
+                      ...(!!slug ? { infoSlug: slug } : {}),
+                    });
+                  }}
                 />
                 <TextField
                   className={this.props.classes.item}
@@ -455,6 +460,15 @@ class CreatePage extends Component<Props & ConnectProps & WithStyles<typeof styl
     return input.split(',')
       .map(e => e.trim())
       .filter(e => !!e)
+  }
+
+  nameToSlug(name: string): string | undefined {
+    if (!name) return undefined;
+
+    return name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .replace(/ +/g, '-');
   }
 }
 

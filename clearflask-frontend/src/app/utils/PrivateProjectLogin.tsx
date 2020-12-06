@@ -32,7 +32,7 @@ class PrivateProjectLogin extends Component<Props & ConnectProps> {
           open={showLogin}
           onLoggedInAndClose={() => this.props.server.dispatch().configGetAndUserBind({
             slug: this.props.server.getStore().getState().conf.conf?.slug!,
-            configGetAndUserBind: {},
+            userBind: {},
           })}
         />
       </React.Fragment>

@@ -532,8 +532,8 @@ export class EditorImpl implements Editor {
 
   sortPagesProps(l: Page | PageGroup | Property, r: Page | PageGroup | Property): number {
     // id subtype needs to initialize first in case a subsequent link points to itself
-    return (l['subType'] === 'id' ? -1 : l.order || l.name)
-      > (r['subType'] === 'id' ? -1 : r.order || r.name)
+    return (l['subType'] === 'id' ? -1 : (l.order !== undefined ? l.order : l.name))
+      > (r['subType'] === 'id' ? -1 : (r.order !== undefined ? r.order : r.name))
       ? 1
       : -1;
   }

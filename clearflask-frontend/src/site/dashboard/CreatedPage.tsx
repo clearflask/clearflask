@@ -160,7 +160,7 @@ class CreatedPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   </StepContent>
                 </Step>
                 {!!this.props.ideaCategoryId && (
-                  <Step completed={!!this.state.newItemSubmitted} {...expandedProp(!this.state.newItemSubmitted)}>
+                  <Step completed={!!this.state.newItemSubmitted} {...expandedProp(isLoggedIn && !this.state.newItemSubmitted)}>
                     <StepLabel>Create your first post</StepLabel>
                     <StepContent>
                       <div className={this.props.classes.form}>

@@ -160,7 +160,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   if (!state.conf.conf && !state.conf.status) {
     ownProps.server.dispatch().configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      configGetAndUserBind: {}
+      userBind: {}
     });
   }
   return {

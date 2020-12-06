@@ -178,7 +178,7 @@ class LandingPage extends Component<WithStyles<typeof styles, true>, State> {
     return (
       <Hero
         title='Listen to your users during product development'
-        description='Customer feedback platform with voting or crowd-funding to prioritize your roadmap'
+        description='Feedback Management Tool with voting or crowd-funding to prioritize your roadmap'
         imagePath='/img/landing/hero.svg'
         mirror
         buttonTitle='Get started'

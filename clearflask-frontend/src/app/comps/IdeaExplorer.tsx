@@ -474,7 +474,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
   createSubmit(mandatoryTagIds: string[]) {
     this.setState({ newItemIsSubmitting: true });
     var createPromise: Promise<Client.Idea | Admin.Idea>;
-    if (!!this.state.newItemAuthorLabel) {
+    if (this.props.server.isModLoggedIn()) {
       createPromise = this.props.server.dispatchAdmin().then(d => d.ideaCreateAdmin({
         projectId: this.props.server.getProjectId(),
         ideaCreateAdmin: {
@@ -591,7 +591,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
   if (!state.conf.conf && !state.conf.status) {
     ownProps.server.dispatch().configGetAndUserBind({
       slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-      configGetAndUserBind: {}
+      userBind: {}
     });
   }
   return {
