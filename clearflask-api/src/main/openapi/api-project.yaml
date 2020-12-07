@@ -14,12 +14,13 @@ components:
         - content
         - style
         - users
+        - integrations
       properties:
         # Update schema version during breaking changes like adding required fields
         # or editing existing fields. Don't forget to write upgrade path in ConfigSchemaUpgrader.java
         schemaVersion:
           x-clearflask-hide: true
-          x-clearflask-prop: { defaultValue: 2 }
+          x-clearflask-prop: { defaultValue: 3 }
           type: integer
           format: int64
         # TODO remove test page
@@ -55,6 +56,8 @@ components:
           $ref: 'api-project.yaml#/components/schemas/style'
         users:
           $ref: 'api-project.yaml#/components/schemas/users'
+        integrations:
+          $ref: 'api-project.yaml#/components/schemas/integrations'
     credits:
       x-clearflask-page: { order: 2, name: 'Credit System', description: 'Enable funding using virtual credits. We highly recommend starting with one of our templates below.' }
       title: CreditFormatter
@@ -618,6 +621,48 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/support'
               tagging:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
+    integrations:
+      x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
+      title: Integrations
+      type: object
+      properties:
+        googleAnalytics:
+          $ref: 'api-project.yaml#/components/schemas/googleAnalytics'
+        hotjar:
+          $ref: 'api-project.yaml#/components/schemas/hotjar'
+        intercom:
+          $ref: 'api-project.yaml#/components/schemas/intercom'
+    googleAnalytics:
+      x-clearflask-page: { order: 2, name: 'Google Analytics', description: 'Add Google Analytics tracking' }
+      title: GoogleAnalytics
+      type: object
+      required:
+      - trackingCode
+      properties:
+        trackingCode:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit Google Analytics, create a new property and paste your tracking code here.', placeholder: 'UA-000000000' }
+          type: string
+    hotjar:
+      x-clearflask-page: { order: 2, name: 'Hotjar', description: 'Add HotJar monitoring' }
+      title: Hotjar
+      type: object
+      required:
+      - trackingCode
+      properties:
+        trackingCode:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit HotJar and create a new site. Paste your tracking number here.', placeholder: '0000000' }
+          type: string
+    intercom:
+      x-clearflask-page: { order: 2, name: 'Intercom', description: 'Add Intercom messenger.' }
+      x-clearflask-additional-props: { propPaths: [['intercomIdentityVerificationSecret']] }
+      title: Intercom
+      type: object
+      required:
+      - appId
+      properties:
+        appId:
+          x-clearflask-prop: { order: 0, name: 'App ID', description: 'Visit Intercom and paste your App ID here. Please ensure you add ClearFlask as part of your trusted domains in Intercom.', placeholder: 'xxxxxxxx' }
+          type: string
     ConfigAdmin:
       description: >-
         All Config properties available for admins.
@@ -629,6 +674,10 @@ components:
             ssoSecretKey:
               x-clearflask-hide: true
               x-clearflask-prop: { subType: 'keygen', order: 2, name: 'Secret Key', description: 'Secret Key for signing JWT tokens. Do not publicly expose.' }
+              type: string
+            intercomIdentityVerificationSecret:
+              x-clearflask-hide: true
+              x-clearflask-prop: { order: 3, name: 'Identity Verification Secret (Optional)', description: 'Verification prevents third parties from impersonating your logged-in users and seeing their conversations. Paste in your identity verification secret here. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)' }
               type: string
     PageBoard:
       x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }

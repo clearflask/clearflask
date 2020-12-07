@@ -15,6 +15,7 @@ import lombok.Value;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
@@ -65,6 +66,8 @@ public interface ProjectStore {
         boolean isFundingAllowed(String categoryId, Optional<String> statusIdOpt);
 
         void areTagsAllowedByUser(List<String> tagIds, String categoryId);
+
+        Function<String, String> getIntercomEmailToIdentityFun();
     }
 
     @Value

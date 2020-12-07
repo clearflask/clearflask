@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 @Slf4j
 @Singleton
@@ -29,18 +30,23 @@ public class IntercomUtil {
     @Inject
     private Config config;
 
-    private volatile Optional<HashFunction> identityHashFunctionOpt = Optional.empty();
+    private volatile Optional<Function<String, String>> emailToIdentityOpt = Optional.empty();
 
     @Inject
     private void setup() {
-        Runnable updateHash = () -> this.identityHashFunctionOpt = Optional.ofNullable(Strings.emptyToNull(config.identityVerificationSecret()))
-                .map(secret -> Hashing.hmacSha256(secret.getBytes()));
+        Runnable updateHash = () -> this.emailToIdentityOpt = Optional.ofNullable(Strings.emptyToNull(config.identityVerificationSecret()))
+                .map(this::getEmailToIdentityFun);
         config.identityVerificationSecretObservable().subscribe(secret -> updateHash.run());
         updateHash.run();
     }
 
     public Optional<String> getIdentity(String email) {
-        return identityHashFunctionOpt.map(fun -> fun.hashString(email, Charsets.UTF_8).toString());
+        return emailToIdentityOpt.map(fun -> fun.apply(email));
+    }
+
+    public Function<String, String> getEmailToIdentityFun(String secret) {
+        HashFunction hashFunction = Hashing.hmacSha256(secret.getBytes());
+        return (String email) -> hashFunction.hashString(email, Charsets.UTF_8).toString();
     }
 
     public static Module module() {

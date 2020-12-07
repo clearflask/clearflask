@@ -17,6 +17,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
+import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -46,6 +47,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.IndexSchema;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -60,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -106,6 +109,8 @@ public class DynamoProjectStore implements ProjectStore {
     private Sanitizer sanitizer;
     @Inject
     private ConfigSchemaUpgrader configSchemaUpgrader;
+    @Inject
+    private IntercomUtil intercomUtil;
 
     private TableSchema<ProjectModel> projectSchema;
     private TableSchema<SlugModel> slugSchema;
@@ -366,6 +371,7 @@ public class DynamoProjectStore implements ProjectStore {
         private final ImmutableMap<String, ImmutableMap<String, Double>> categoryExpressionToWeight;
         private final ImmutableMap<String, Category> categories;
         private final ImmutableMap<String, IdeaStatus> statuses;
+        private final Function<String, String> intercomEmailToIdentityFun;
 
         private ProjectImpl(ProjectModel projectModel) {
             this.accountId = projectModel.getAccountId();
@@ -396,6 +402,9 @@ public class DynamoProjectStore implements ProjectStore {
                                             status.getStatusId()),
                                     status)));
             this.statuses = statusesBuilder.build();
+            this.intercomEmailToIdentityFun = Optional.ofNullable(Strings.emptyToNull(this.versionedConfigAdmin.getConfig().getIntercomIdentityVerificationSecret()))
+                    .map(intercomUtil::getEmailToIdentityFun)
+                    .orElse((email) -> null);
         }
 
         @Override
@@ -536,6 +545,11 @@ public class DynamoProjectStore implements ProjectStore {
                         }
                     });
 
+        }
+
+        @Override
+        public Function<String, String> getIntercomEmailToIdentityFun() {
+            return intercomEmailToIdentityFun;
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {

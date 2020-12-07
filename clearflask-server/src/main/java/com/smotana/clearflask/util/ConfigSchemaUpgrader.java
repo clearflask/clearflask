@@ -2,6 +2,7 @@ package com.smotana.clearflask.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,12 @@ public class ConfigSchemaUpgrader {
             }
         }
 
-        config.getAsJsonObject().addProperty("schemaVersion", 2L);
+        if (schemaVersion < 3L) {
+            config.getAsJsonObject().add("integrations", new JsonObject());
+        }
+
+        // NOTE: Don't forget to increment
+        config.getAsJsonObject().addProperty("schemaVersion", 3L);
 
         return Optional.of(gson.toJson(config));
     }

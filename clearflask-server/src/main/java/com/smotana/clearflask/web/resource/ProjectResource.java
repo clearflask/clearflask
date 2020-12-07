@@ -117,7 +117,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return new ConfigAndBindResult(
                 projectOpt.get().getVersionedConfig(),
                 null,
-                loggedInUserOpt.map(UserStore.UserModel::toUserMeWithBalance).orElse(null));
+                loggedInUserOpt.map(loggedInUser -> loggedInUser.toUserMeWithBalance(projectOpt.get().getIntercomEmailToIdentityFun()))
+                        .orElse(null));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -157,7 +158,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                                 .flatMap(cookie -> AuthenticationFilter.authenticateUserCookie(userStore, cookie))
                                 .map(UserStore.UserSession::getUserId)
                                 .flatMap(userId -> userStore.getUser(project.getProjectId(), userId))
-                                .map(UserStore.UserModel::toUserMeWithBalance)
+                                .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
                                 .orElse(null))));
 
         return new ConfigAndBindAllResult(byProjectId);

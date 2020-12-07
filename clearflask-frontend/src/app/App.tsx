@@ -3,10 +3,11 @@ import React, { Component } from 'react';
 import { Provider } from 'react-redux';
 import { match } from 'react-router';
 import { Route } from 'react-router-dom';
+import * as Client from '../api/client';
 import { Server, StateSettings } from '../api/server';
 import ServerMock from '../api/serverMock';
 import WebNotification, { Status } from '../common/notification/webNotification';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
@@ -20,6 +21,7 @@ import Header from './Header';
 import SsoSuccessPage from './SsoSuccessPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
+import CustomerExternalTrackers from './utils/CustomerExternalTrackers';
 import PrivateProjectLogin from './utils/PrivateProjectLogin';
 import PushNotificationListener from './utils/PushNotificationListener';
 import ServerErrorNotifier from './utils/ServerErrorNotifier';
@@ -40,6 +42,7 @@ interface Props {
   supressCssBaseline?: boolean;
   isInsideContainer?: boolean;
   settings?: StateSettings;
+  onAddGaCode?: (gaCode: string) => void;
   // Router matching
   match: match;
   history: History;
@@ -64,9 +67,9 @@ class App extends Component<Props, State> {
     if (this.props.serverOverride) {
       server = this.props.serverOverride;
     } else if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-      server = new Server(undefined, undefined, this.props.settings, ServerMock.get());
+      server = new Server(undefined, this.props.settings, ServerMock.get());
     } else {
-      server = new Server(undefined, undefined, this.props.settings);
+      server = new Server(undefined, this.props.settings);
     }
 
     const params = new URL(window.location.href).searchParams;
@@ -79,7 +82,8 @@ class App extends Component<Props, State> {
       this.props.history.replace(this.props.location.pathname);
     }
 
-    var configResult;
+    var configResult: Client.ConfigAndBindResult | undefined;
+    var user: Client.UserMeWithBalance | undefined;
     try {
       configResult = await server.dispatch().configGetAndUserBind({
         slug: this.props.slug,
@@ -88,6 +92,7 @@ class App extends Component<Props, State> {
           authToken: authToken || undefined,
         },
       });
+      user = configResult.user;
     } catch (err) {
       if (err?.status === 404) {
         this.setState({ notFound: true });
@@ -119,6 +124,7 @@ class App extends Component<Props, State> {
                 browserPushToken: subscriptionResult.token,
               },
             });
+            user = configResult.user;
           } catch (err) {
             if (err?.status === 404) {
               // Continue
@@ -127,12 +133,12 @@ class App extends Component<Props, State> {
             }
           }
         } else {
-          configResult = await server.dispatch().userBind({
+          user = (await server.dispatch().userBind({
             projectId: projectId,
             userBind: {
               browserPushToken: subscriptionResult.token,
             },
-          });
+          })).user;
         }
       }
     }
@@ -189,6 +195,7 @@ class App extends Component<Props, State> {
             }}
           >
             <PrivateProjectLogin server={server}>
+              {isTracking() && (<CustomerExternalTrackers />)}
               <Route key='header' path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
                 <Header
                   pageSlug={props.match.params['page'] || ''}

@@ -90,6 +90,8 @@ components:
               type: boolean
             hasPassword:
               type: boolean
+            intercomIdentity:
+              type: string
     UserMeWithBalance:
       allOf:
         - $ref: 'api-user.yaml#/components/schemas/UserMe'

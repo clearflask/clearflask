@@ -141,8 +141,9 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
+        Project project = projectStore.getProject(projectId, true).get();
         return new UserBindResponse(loggedInUserOpt
-                .map(UserStore.UserModel::toUserMeWithBalance)
+                .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
                 .orElse(null));
     }
 
@@ -255,7 +256,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     Optional.of("signup-credit"));
         }
 
-        return new UserCreateResponse(null, user.toUserMeWithBalance());
+        return new UserCreateResponse(null, user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()));
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -303,7 +304,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
             notificationService.onAdminInvite(configAdmin, user);
         }
-        return user.toUserAdmin();
+        Project project = projectStore.getProject(projectId, true).get();
+        return user.toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
     @RolesAllowed({Role.PROJECT_USER})
@@ -379,7 +381,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
-        return user.toUserMeWithBalance();
+        Project project = projectStore.getProject(projectId, true).get();
+        return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
@@ -398,7 +401,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
-        return user.toUserMeWithBalance();
+        Project project = projectStore.getProject(projectId, true).get();
+        return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());
     }
 
     @PermitAll
@@ -449,7 +453,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
         user = userStore.updateUser(projectId, userId, userUpdate).getUser();
 
-        return user.toUserMe();
+        Project project = projectStore.getProject(projectId, true).get();
+        return user.toUserMe(project.getIntercomEmailToIdentityFun());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
@@ -471,16 +476,20 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             UserModel user = userStore.getUser(projectId, userId).get();
             notificationService.onCreditChanged(configAdmin, user, transaction);
         }
-        return userStore.updateUser(projectId, userId, userUpdateAdmin).getUser().toUserAdmin();
+        Project project = projectStore.getProject(projectId, true).get();
+        return userStore.updateUser(projectId, userId, userUpdateAdmin)
+                .getUser()
+                .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER, Role.PROJECT_MODERATOR})
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {
+        Project project = projectStore.getProject(projectId, true).get();
         return userStore.getUser(projectId, userId)
                 .orElseThrow(() -> new ErrorWithMessageException(Response.Status.NOT_FOUND, "User not found"))
-                .toUserAdmin();
+                .toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
     @RolesAllowed({Role.PROJECT_OWNER})
@@ -503,12 +512,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
         }
 
+        Project project = projectStore.getProject(projectId, true).get();
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
                 searchUsersResponse.getUserIds().stream()
                         .map(usersById::get)
                         .filter(Objects::nonNull)
-                        .map(UserModel::toUserAdmin)
+                        .map(loggedInUser -> loggedInUser.toUserAdmin(project.getIntercomEmailToIdentityFun()))
                         .collect(ImmutableList.toImmutableList()),
                 new Hits(
                         searchUsersResponse.getTotalHits(),

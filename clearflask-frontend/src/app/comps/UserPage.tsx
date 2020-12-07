@@ -69,7 +69,7 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       }
       user = this.state.userAdmin;
       userStatus = this.state.userAdminStatus;
-      if (this.state.userAdmin && this.props.credits) {
+      if (this.state.userAdmin) {
         overview = (
           <UserEdit
             className={this.props.classes.overview}

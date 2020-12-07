@@ -23,7 +23,7 @@ export async function getProject(
   settings?: StateSettings,
 ): Promise<Project> {
   await new Promise(resolve => setTimeout(resolve, 1));
-  const server = new Server(undefined, undefined, settings, ServerMock.get());
+  const server = new Server(undefined, settings, ServerMock.get());
   const editor = new ConfigEditor.EditorImpl();
   const slug = `demo${randomUuid().substring(0, 5)}`;
   editor.getProperty<ConfigEditor.StringProperty>(['slug']).set(slug);

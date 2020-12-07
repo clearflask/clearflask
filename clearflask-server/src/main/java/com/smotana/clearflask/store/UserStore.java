@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Gsi;
 import static com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableType.Primary;
@@ -220,7 +221,7 @@ public interface UserStore {
 
         byte[] commentVoteBloom;
 
-        public UserMe toUserMe() {
+        public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(
                     this.getUserId(),
                     this.getName(),
@@ -233,10 +234,11 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getIosPushToken()),
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
-                    !Strings.isNullOrEmpty(this.getPassword()));
+                    !Strings.isNullOrEmpty(this.getPassword()),
+                    intercomEmailToIdentity.apply(this.getEmail()));
         }
 
-        public UserMeWithBalance toUserMeWithBalance() {
+        public UserMeWithBalance toUserMeWithBalance(Function<String, String> intercomEmailToIdentity) {
             return new UserMeWithBalance(
                     this.getUserId(),
                     this.getName(),
@@ -250,10 +252,11 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
+                    intercomEmailToIdentity.apply(this.getEmail()),
                     this.getBalance());
         }
 
-        public UserAdmin toUserAdmin() {
+        public UserAdmin toUserAdmin(Function<String, String> intercomEmailToIdentity) {
             return new UserAdmin(
                     this.getUserId(),
                     this.getName(),
@@ -267,6 +270,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
+                    intercomEmailToIdentity.apply(this.getEmail()),
                     this.getBalance());
         }
 

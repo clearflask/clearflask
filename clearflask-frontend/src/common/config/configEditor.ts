@@ -1194,7 +1194,7 @@ export class EditorImpl implements Editor {
         if (propSchema.enum) {
           const items: EnumItem[] = this.getEnumItems(propSchema);
           property = {
-            defaultValue: isRequired ? (xProp.defaultValue !== undefined ? xProp.defaultValue : propSchema.enum[0]) : undefined,
+            defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : propSchema.enum[0]) : undefined,
             ...base,
             type: PropertyType.Enum,
             value: value,
@@ -1212,7 +1212,7 @@ export class EditorImpl implements Editor {
         } else if (propSchema[OpenApiTags.PropLink]) {
           const xPropLink = propSchema[OpenApiTags.PropLink] as xCfPropLink;
           property = {
-            defaultValue: isRequired ? (xProp.defaultValue !== undefined ? xProp.defaultValue : [...xPropLink.linkPath, 0]) : undefined,
+            defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : [...xPropLink.linkPath, 0]) : undefined,
             ...xPropLink,
             ...base,
             type: PropertyType.Link,
@@ -1277,7 +1277,7 @@ export class EditorImpl implements Editor {
           if (xProp && xProp.subType === PropSubType.Id) {
             defaultValue = base.defaultValue !== undefined ? base.defaultValue : randomUuid();
           } else {
-            defaultValue = isRequired ? (xProp.defaultValue !== undefined ? xProp.defaultValue : '') : undefined;
+            defaultValue = isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : '') : undefined;
           }
           var setDefaultStringFun = setDefaultFun;
           var setStringFun = setFun;
@@ -1337,7 +1337,7 @@ export class EditorImpl implements Editor {
       case 'number':
       case 'integer':
         property = {
-          defaultValue: isRequired ? (xProp.defaultValue !== undefined ? xProp.defaultValue : 0) : undefined,
+          defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : 0) : undefined,
           ...base,
           type: propSchema.type,
           value: value,
@@ -1359,7 +1359,7 @@ export class EditorImpl implements Editor {
         break;
       case 'boolean':
         property = {
-          defaultValue: isRequired ? (xProp.defaultValue !== undefined ? xProp.defaultValue : false) : undefined,
+          defaultValue: isRequired ? (xProp?.defaultValue !== undefined ? xProp.defaultValue : false) : undefined,
           ...base,
           type: PropertyType.Boolean,
           value: value,
@@ -1372,8 +1372,8 @@ export class EditorImpl implements Editor {
               this.notify(localSubscribers);
             },
           } : {}),
-          trueLabel: xProp.trueLabel,
-          falseLabel: xProp.falseLabel,
+          trueLabel: xProp?.trueLabel,
+          falseLabel: xProp?.falseLabel,
         };
         break;
       case 'array':

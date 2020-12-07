@@ -10,6 +10,7 @@ import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.Expressing;
 import com.smotana.clearflask.api.model.Flow;
 import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.Integrations;
 import com.smotana.clearflask.api.model.Layout;
 import com.smotana.clearflask.api.model.NotificationMethods;
 import com.smotana.clearflask.api.model.Onboarding;
@@ -68,6 +69,8 @@ public class ModelUtil {
                                                 null),
                                         null),
                                 null)),
+                new Integrations(null, null, null),
+                null,
                 null
         ), IdUtil.randomAscId());
     }

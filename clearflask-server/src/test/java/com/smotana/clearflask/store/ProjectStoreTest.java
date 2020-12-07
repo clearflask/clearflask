@@ -13,6 +13,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ModelUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,8 @@ public class ProjectStoreTest extends AbstractTest {
                 DynamoProjectStore.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
-                Sanitizer.module()
+                Sanitizer.module(),
+                IntercomUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

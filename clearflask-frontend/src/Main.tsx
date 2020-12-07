@@ -17,7 +17,8 @@ import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { vh } from './common/util/vhUtil';
-import IntercomWrapper from './site/IntercomWrapper';
+import HotjarWrapperMain from './site/HotjarWrapperMain';
+import IntercomWrapperMain from './site/IntercomWrapperMain';
 
 const notistackRef = React.createRef<ProviderContext>();
 export const importSuccess = i => {
@@ -65,6 +66,8 @@ const theme: Theme = createMuiTheme({
 });
 
 class Main extends Component {
+  readonly subdomain = this.getSubdomain();
+  customerTrackerPresent: boolean = false;
 
   constructor(props) {
     super(props);
@@ -84,10 +87,9 @@ class Main extends Component {
   }
 
   render() {
-    const subdomain = this.getSubdomain();
-    if (subdomain === 'www') {
+    if (this.subdomain === 'www') {
       // Redirect www to homepage
-      window.location.replace(window.location.origin.replace(`${subdomain}.`, ''));
+      window.location.replace(window.location.origin.replace(`${this.subdomain}.`, ''));
     }
     return (
       // <React.StrictMode>
@@ -116,23 +118,24 @@ class Main extends Component {
               )} />
               <Suspense fallback={<Loading />}>
                 <Switch>
-                  {subdomain ? ([(
+                  {this.subdomain ? ([(
                     <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
                       <PostStatus
                         {...props}
-                        slug={subdomain}
+                        slug={this.subdomain}
                         postId={props.match.params['postId'] || ''}
                       />
                     )} />
                   ), (
                     <Route key='app' path="/" render={props => (
-                      <App slug={subdomain} {...props} />
+                      <App slug={this.subdomain} {...props} />
                     )} />
                   )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Dashboard {...props} />
-                        <IntercomWrapper />
+                        <IntercomWrapperMain />
+                        <HotjarWrapperMain />
                       </Provider>
                     )} />
                   ), (
@@ -145,7 +148,8 @@ class Main extends Component {
                     <Route key='site' render={props => (
                       <Provider store={ServerAdmin.get().getStore()}>
                         <Site {...props} />
-                        <IntercomWrapper />
+                        <IntercomWrapperMain />
+                        <HotjarWrapperMain />
                       </Provider>
                     )} />
                   )])}
