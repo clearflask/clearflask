@@ -384,7 +384,7 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
         assertTrue(configJsonUpgradedOpt.isPresent());
         ConfigAdmin config = gson.fromJson(configJsonUpgradedOpt.get(), ConfigAdmin.class);
 
-        assertEquals(Long.valueOf(2L), config.getSchemaVersion());
+        assertEquals(Long.valueOf(3L), config.getSchemaVersion());
 
         assertEquals(EmailSignup.ModeEnum.SIGNUPANDLOGIN, config.getUsers().getOnboarding().getNotificationMethods().getEmail().getMode());
     }

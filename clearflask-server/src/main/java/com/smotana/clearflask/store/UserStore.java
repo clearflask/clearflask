@@ -235,7 +235,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
-                    intercomEmailToIdentity.apply(this.getEmail()));
+                    getIntercomIdentity(intercomEmailToIdentity));
         }
 
         public UserMeWithBalance toUserMeWithBalance(Function<String, String> intercomEmailToIdentity) {
@@ -252,7 +252,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
-                    intercomEmailToIdentity.apply(this.getEmail()),
+                    getIntercomIdentity(intercomEmailToIdentity),
                     this.getBalance());
         }
 
@@ -270,7 +270,7 @@ public interface UserStore {
                     !Strings.isNullOrEmpty(this.getAndroidPushToken()),
                     !Strings.isNullOrEmpty(this.getBrowserPushToken()),
                     !Strings.isNullOrEmpty(this.getPassword()),
-                    intercomEmailToIdentity.apply(this.getEmail()),
+                    getIntercomIdentity(intercomEmailToIdentity),
                     this.getBalance());
         }
 
@@ -284,6 +284,19 @@ public interface UserStore {
 
         public Balance toBalance() {
             return new Balance(this.getBalance());
+        }
+
+        private String getIntercomIdentity(Function<String, String> intercomEmailToIdentity) {
+            if (Strings.isNullOrEmpty(getEmail())) {
+                return null;
+            }
+            // Don't let unverified emails be verified in Intercom, it allows impersonation
+            // and snooping on existing communication with Intercom
+            if (getEmailVerified() != Boolean.TRUE && Strings.isNullOrEmpty(getSsoGuid())) {
+                return null;
+            }
+
+            return intercomEmailToIdentity.apply(getEmail());
         }
     }
 

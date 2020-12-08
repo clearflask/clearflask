@@ -48,6 +48,7 @@ import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper.TableSchema;
 import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -74,6 +75,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -118,6 +120,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private RestHighLevelClient elastic;
 
     private TableSchema<Account> accountSchema;
+    private IndexSchema<Account> accountByApiKeySchema;
     private TableSchema<AccountEmail> accountIdByEmailSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
     private IndexSchema<AccountSession> sessionByAccountIdSchema;
@@ -125,6 +128,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Override
     protected void serviceStart() throws Exception {
         accountSchema = dynamoMapper.parseTableSchema(Account.class);
+        accountByApiKeySchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, Account.class);
         accountIdByEmailSchema = dynamoMapper.parseTableSchema(AccountEmail.class);
         sessionBySessionIdSchema = dynamoMapper.parseTableSchema(AccountSession.class);
         sessionByAccountIdSchema = dynamoMapper.parseGlobalSecondaryIndexSchema(1, AccountSession.class);
@@ -200,6 +204,31 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         .table().getItem(accountSchema
                                 .primaryKey(Map.of(
                                         "accountId", accountId)))));
+    }
+
+    @Override
+    public Optional<Account> getAccountByApiKey(String apiKey) {
+        ImmutableList<Account> accountsByApiKey = StreamSupport.stream(accountByApiKeySchema.index().query(new QuerySpec()
+                .withHashKey(accountByApiKeySchema.partitionKey(Map.of(
+                        "apiKey", apiKey)))
+                .withRangeKeyCondition(new RangeKeyCondition(accountByApiKeySchema.rangeKeyName())
+                        .beginsWith(accountByApiKeySchema.rangeValuePartial(Map.of()))))
+                .pages()
+                .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(accountByApiKeySchema::fromItem)
+                .collect(ImmutableList.toImmutableList());
+        if (accountsByApiKey.size() > 1) {
+            if (LogUtil.rateLimitAllowLog("accountStore-multiple-accounts-same-apikey")) {
+                log.error("Multiple accounts found for same apiKey, account emails {}",
+                        accountsByApiKey.stream().map(Account::getEmail).collect(Collectors.toList()));
+            }
+            throw new ErrorWithMessageException(Response.Status.FORBIDDEN, "Your API key is misconfigured");
+        } else if (accountsByApiKey.size() == 1) {
+            return Optional.of(accountsByApiKey.get(0));
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Extern

@@ -15,6 +15,7 @@ import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
 import com.smotana.clearflask.api.model.EmailSignup;
 import com.smotana.clearflask.api.model.ForgotPassword;
 import com.smotana.clearflask.api.model.Hits;
+import com.smotana.clearflask.api.model.SubscriptionListenerUser;
 import com.smotana.clearflask.api.model.User;
 import com.smotana.clearflask.api.model.UserAdmin;
 import com.smotana.clearflask.api.model.UserBind;
@@ -523,6 +524,24 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 new Hits(
                         searchUsersResponse.getTotalHits(),
                         searchUsersResponse.isTotalHitsGte() ? true : null));
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 100)
+    @Override
+    public void userSubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
+        projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void userUnsubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
+        projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
     }
 
     public static Module module() {

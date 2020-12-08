@@ -60,6 +60,7 @@ ${OPENAPI_GENERATOR} generate \
     --additional-properties=hideGenerationTimestamp=true \
     --additional-properties=addConsumesProducesJson=true \
     --additional-properties=useBeanValidation=true \
+    --additional-properties=removeEnumValuePrefix=false \
     --additional-properties=sourceFolder=src/main/java \
     -o ${OPENAPI_TARGET_DIR}/server &
 

@@ -80,6 +80,7 @@ import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
+import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -154,6 +155,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 NotificationServiceImpl.module(),
                 EmailTemplates.module(),
                 OnCreditChange.module(),
+                WebhookServiceImpl.module(),
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
                 OnTrialEnded.module(),

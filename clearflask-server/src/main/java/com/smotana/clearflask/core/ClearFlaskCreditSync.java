@@ -23,8 +23,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 
-import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID;
-import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID;
+import static com.smotana.clearflask.web.security.AuthenticationFilter.EXTERNAL_API_AUTH_HEADER_NAME_TOKEN;
 
 
 @Slf4j
@@ -35,17 +34,11 @@ public class ClearFlaskCreditSync extends ManagedService {
         @DefaultValue("true")
         boolean enabled();
 
-        /**
-         * If changed, also change in Dashboard.tsx
-         */
-        @DefaultValue("clearflask")
+        @NoDefaultValue
         String projectId();
 
         @NoDefaultValue
-        String accountId();
-
-        @NoDefaultValue
-        String tokenId();
+        String apiKey();
 
         /**
          * $1 equal to 100 credits
@@ -106,8 +99,7 @@ public class ClearFlaskCreditSync extends ManagedService {
                         + "/api/project/"
                         + config.projectId()
                         + "/admin/credit/income");
-        req.setHeader(EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID, config.accountId());
-        req.setHeader(EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID, config.tokenId());
+        req.setHeader(EXTERNAL_API_AUTH_HEADER_NAME_TOKEN, config.apiKey());
         req.setEntity(new StringEntity(bodyStr, Charsets.UTF_8));
         try (CloseableHttpResponse res = client.execute(req)) {
             if (res.getStatusLine().getStatusCode() < 200

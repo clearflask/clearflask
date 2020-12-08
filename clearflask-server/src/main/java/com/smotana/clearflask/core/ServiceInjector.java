@@ -78,6 +78,7 @@ import com.smotana.clearflask.web.security.AuthCookieImpl;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
+import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -162,6 +163,7 @@ public enum ServiceInjector {
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());
                 install(DefaultServerSecret.module(Names.named("cursor")));
+                install(WebhookServiceImpl.module());
 
                 // Notification
                 install(NotificationServiceImpl.module());

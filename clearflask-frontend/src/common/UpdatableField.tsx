@@ -55,7 +55,7 @@ class UpdatableField extends Component<Props & WithStyles<typeof styles, true>, 
               <InputAdornment position='end'>
                 <IconButton
                   aria-label='Reset'
-                  onClick={() => this.setState({ value: randomUuid() })}
+                  onClick={() => this.setState({ value: randomUuid().replace(/[^a-zA-Z0-9]+/g, '') })}
                   disabled={this.state.isSubmitting}
                 >
                   <KeyRefreshIcon fontSize='small' />

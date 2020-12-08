@@ -25,6 +25,7 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
+import com.smotana.clearflask.api.model.SubscriptionListenerIdea;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.api.model.Workflow;
 import com.smotana.clearflask.billing.Billing;
@@ -48,6 +49,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -79,6 +81,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private ProjectStore projectStore;
     @Inject
     private Billing billing;
+    @Inject
+    private WebhookService webhookService;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -129,6 +133,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreate.getAuthorUserId(), VoteValue.Upvote).getIdea();
         }
 
+        webhookService.eventPostNew(ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user.getUserId());
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
@@ -187,6 +192,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (votingAllowed) {
             ideaModel = ideaStore.voteIdea(projectId, ideaModel.getIdeaId(), ideaCreateAdmin.getAuthorUserId(), VoteValue.Upvote).getIdea();
         }
+        webhookService.eventPostNew(ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, user.getUserId());
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
@@ -311,9 +317,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         IdeaModel idea = ideaStore.updateIdea(projectId, ideaId, ideaUpdateAdmin, userOpt).getIdea();
+        boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
+        boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
         if (ideaUpdateAdmin.getSuppressNotifications() != Boolean.TRUE) {
-            boolean statusChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getStatusId());
-            boolean responseChanged = !Strings.isNullOrEmpty(ideaUpdateAdmin.getResponse());
             if (statusChanged || responseChanged) {
                 notificationService.onStatusOrResponseChanged(
                         configAdmin,
@@ -321,6 +327,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                         statusChanged,
                         responseChanged);
             }
+        }
+        if (ideaUpdateAdmin.getTagIds() != null) {
+            webhookService.eventPostTagsChanged(idea);
+        }
+        if (statusChanged) {
+            webhookService.eventPostStatusChanged(idea);
+        }
+        if (responseChanged) {
+            webhookService.eventPostResponseChanged(idea);
         }
         return idea.toIdea(sanitizer);
     }
@@ -360,6 +375,24 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             ideaStore.deleteIdeas(projectId, searchResponse.getIdeaIds());
             searchResponse.getIdeaIds().forEach(ideaId -> commentStore.deleteCommentsForIdea(projectId, ideaId));
         } while (!searchResponse.getCursorOpt().isPresent());
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 100)
+    @Override
+    public void ideaSubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
+        projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void ideaUnsubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
+        projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
     }
 
     private IdeaWithVote toIdeaWithVote(UserModel user, IdeaModel idea) {

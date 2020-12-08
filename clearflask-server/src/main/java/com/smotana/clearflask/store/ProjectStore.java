@@ -40,9 +40,15 @@ public interface ProjectStore {
 
     void updateConfig(String projectId, Optional<String> previousVersion, VersionedConfigAdmin versionedConfigAdmin);
 
+    void addWebhookListener(String projectId, WebhookListener listener);
+
+    void removeWebhookListener(String projectId, WebhookListener listener);
+
     void deleteProject(String projectId);
 
     interface Project {
+        ProjectModel getModel();
+
         String getAccountId();
 
         String getProjectId();
@@ -68,6 +74,8 @@ public interface ProjectStore {
         void areTagsAllowedByUser(List<String> tagIds, String categoryId);
 
         Function<String, String> getIntercomEmailToIdentityFun();
+
+        ImmutableSet<WebhookListener> getWebhookListenerUrls(String eventType);
     }
 
     @Value
@@ -88,8 +96,20 @@ public interface ProjectStore {
         /** Schema version mainly used for automatic upgrades */
         Long schemaVersion;
 
+        ImmutableSet<String> webhookListeners;
+
         @NonNull
         String configJson;
+    }
+
+    @Value
+    @AllArgsConstructor
+    class WebhookListener {
+        @NonNull
+        String eventType;
+
+        @NonNull
+        String url;
     }
 
     @Value

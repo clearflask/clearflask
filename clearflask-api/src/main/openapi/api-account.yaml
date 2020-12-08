@@ -142,8 +142,9 @@ components:
       - name
       - email
       - cfJwt
-      - hasApiKey
       properties:
+        accountId:
+          type: string
         basePlanId:
           type: string
         subscriptionStatus:
@@ -156,8 +157,8 @@ components:
           type: string
         intercomIdentity:
           type: string
-        hasApiKey:
-          type: boolean
+        apiKey:
+          type: string
         isSuperAdmin:
           type: boolean
     SubscriptionStatus:
@@ -409,6 +410,16 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/noop:
+  get:
+    description: Used for checking whether you are signed in
+    operationId: accountNoopAdmin
+    tags: [AccountAdmin]
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+      '403':
+        $ref: 'api-client.yaml#/components/responses/Forbidden'
 /superadmin/account/loginas:
   post:
     operationId: accountLoginAsSuperAdmin

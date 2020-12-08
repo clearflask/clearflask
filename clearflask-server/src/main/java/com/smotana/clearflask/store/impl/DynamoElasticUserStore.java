@@ -70,6 +70,7 @@ import com.smotana.clearflask.util.ElasticUtil.*;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
+import com.smotana.clearflask.web.util.WebhookService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -191,6 +192,8 @@ public class DynamoElasticUserStore implements UserStore {
     private ElasticUtil elasticUtil;
     @Inject
     private Gson gson;
+    @Inject
+    private WebhookService webhookService;
 
     private TableSchema<UserModel> userSchema;
     private IndexSchema<UserModel> userByProjectSchema;
@@ -303,6 +306,9 @@ public class DynamoElasticUserStore implements UserStore {
                         )), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture));
+
+        // This should really be in the IdeaResource, but there are too many references to create a user
+        webhookService.eventUserNew(user);
 
         return new UserAndIndexingFuture<>(user, indexingFuture);
     }

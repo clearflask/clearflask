@@ -23,6 +23,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1bind'
   /admin/account/login:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
+  /admin/account/noop:
+    $ref: 'api-account.yaml#/~1admin~1account~1noop'
   /superadmin/account/loginas:
     $ref: 'api-account.yaml#/~1superadmin~1account~1loginas'
   /superadmin/accountsearch:
@@ -41,6 +43,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1billing~1invoice~1{invoiceId}'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
+  /project/{projectId}/admin/subscription/idea:
+    $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1subscription~1idea'
   /project/{projectId}/admin/idea/search:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1search'
   /project/{projectId}/admin/idea/category/{categoryId}/aggregate:
@@ -49,6 +53,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea'
   /project/{projectId}/admin/idea/{ideaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
+  /project/{projectId}/admin/subscription/user:
+    $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1subscription~1user'
   /project/{projectId}/admin/usersearch:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1usersearch'
   /project/{projectId}/admin/user:
@@ -57,6 +63,8 @@ paths:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1login~1user~1{userId}'
   /project/{projectId}/admin/user/{userId}:
     $ref: 'api-user.yaml#/~1project~1{projectId}~1admin~1user~1{userId}'
+  /project/{projectId}/admin/subscription/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1subscription~1comment'
   /project/{projectId}/admin/commentsearch:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1commentsearch'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:

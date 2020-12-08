@@ -163,8 +163,7 @@ export class Server {
     if (ServerAdmin.get().isAdminLoggedIn()) return true;
     const state = this.store.getState();
     return state.users.loggedIn.status === Status.FULFILLED
-      && !!state.users.loggedIn.user
-      && !!state.users.loggedIn.user.isMod;
+      && !!state.users.loggedIn.user?.isMod;
   }
 
   dispatch(): Client.Dispatcher {

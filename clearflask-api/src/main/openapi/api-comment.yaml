@@ -93,6 +93,20 @@ components:
           enum:
             - Asc
             - Desc
+    SubscriptionListenerComment:
+      type: object
+      required:
+      - listenerUrl
+      - eventType
+      properties:
+        listenerUrl:
+          type: string
+        eventType:
+          $ref: 'api-comment.yaml#/components/schemas/SubscriptionEventTypeComment'
+    SubscriptionEventTypeComment:
+      type: string
+      enum:
+      - NEW
 
 /project/{projectId}/commentsearch:
   post:
@@ -254,6 +268,43 @@ components:
               $ref: 'api-comment.yaml#/components/schemas/Comment'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/subscription/comment:
+  post:
+    operationId: commentSubscribeAdmin
+    tags: [CommentAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/SubscriptionListenerComment'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: commentUnsubscribeAdmin
+    tags: [CommentAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/SubscriptionListenerComment'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/commentsearch:
   post:
     operationId: commentSearchAdmin

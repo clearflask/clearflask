@@ -20,6 +20,7 @@ import com.smotana.clearflask.api.model.CommentWithVote;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCommentSearch;
 import com.smotana.clearflask.api.model.IdeaCommentSearchResponse;
+import com.smotana.clearflask.api.model.SubscriptionListenerComment;
 import com.smotana.clearflask.api.model.VoteOption;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -38,6 +39,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
@@ -70,6 +72,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     private NotificationService notificationService;
     @Inject
     private Billing billing;
+    @Inject
+    private WebhookService webhookService;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
@@ -115,6 +119,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 commentModel,
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user.getUserId());
+        webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }
 
@@ -186,6 +191,24 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         return new CommentSearchResponse(
                 response.getCursorOpt().orElse(null),
                 toCommentWithVotes(projectId, response.getComments()));
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 100)
+    @Override
+    public void commentSubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
+        projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
+    }
+
+    @RolesAllowed({Role.PROJECT_OWNER_ACTIVE})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void commentUnsubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
+        projectStore.removeWebhookListener(projectId, new ProjectStore.WebhookListener(
+                subscriptionListener.getEventType().name(),
+                subscriptionListener.getListenerUrl()));
     }
 
     private ImmutableList<CommentWithVote> toCommentWithVotes(String projectId, ImmutableCollection<CommentModel> comments) {

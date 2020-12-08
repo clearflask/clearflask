@@ -26,5 +26,11 @@ public interface PlanStore {
 
     String prettifyPlanName(String planIdOrPrettyPlanName);
 
+    void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ErrorWithMessageException;
+
     void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException;
+
+    enum Action {
+        API_KEY
+    }
 }

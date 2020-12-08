@@ -392,6 +392,10 @@ public class DynamoElasticIdeaStore implements IdeaStore {
             // TODO how to check for activeness?? (Figure out which content and states allow funding and filter here)
         }
 
+        if (!Strings.isNullOrEmpty(ideaSearchAdmin.getFilterAuthorId())) {
+            query.must(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+        }
+
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
             if (!config.enableSimilarToIdea()) {
                 return new SearchResponse(

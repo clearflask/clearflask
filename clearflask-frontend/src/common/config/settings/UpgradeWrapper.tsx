@@ -14,7 +14,18 @@ export const RestrictedProperties: { [basePlanId: string]: Path[] } = {
     ['users', 'onboarding', 'notificationMethods', 'sso'],
     ['users', 'onboarding', 'visibility'],
     ['style', 'templates'],
+    ['integrations', 'googleAnalytics'],
+    ['integrations', 'hotjar'],
+    ['integrations', 'intercom'],
   ],
+};
+
+export enum Action {
+  API_KEY
+}
+/** If changed, also change in KillBillPlanStore.java */
+export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
+  'growth-monthly': new Set([Action.API_KEY]),
 };
 
 const styles = (theme: Theme) => createStyles({
@@ -44,6 +55,7 @@ const styles = (theme: Theme) => createStyles({
 interface Props {
   children: React.ReactNode;
   propertyPath?: Path;
+  action?: Action;
 }
 interface ConnectProps {
   accountBasePlanId?: string;
@@ -55,11 +67,7 @@ interface State {
 class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   render() {
-    const propertyPath = this.props.propertyPath;
-    if (this.props.accountBasePlanId
-      && propertyPath
-      && !RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
-        pathEquals(restrictedPath, propertyPath))) {
+    if (!this.isActionRestricted() && !this.isPropertyRestricted()) {
       return this.props.children;
     }
 
@@ -82,13 +90,26 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
       </div>
     );
   }
+
+  isActionRestricted(): boolean {
+    return this.props.action !== undefined
+      && this.props.accountBasePlanId !== undefined
+      && RestrictedActions[this.props.accountBasePlanId]?.has(this.props.action);
+  }
+
+  isPropertyRestricted(): boolean {
+    return this.props.propertyPath !== undefined
+      && this.props.accountBasePlanId !== undefined
+      && RestrictedProperties[this.props.accountBasePlanId]?.some(restrictedPath =>
+        pathEquals(restrictedPath, this.props.propertyPath!))
+  }
 }
 
 export const UpgradeAlert = (props: { className?: string }) => (
   <Alert
     className={props.className}
     variant='outlined'
-    severity='warning'
+    severity='info'
     action={(
       <Button component={Link} to='/dashboard/billing'>Plans</Button>
     )}

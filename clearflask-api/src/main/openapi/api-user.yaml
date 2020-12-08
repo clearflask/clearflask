@@ -174,6 +174,20 @@ components:
           $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
         isMod:
           type: boolean
+    SubscriptionListenerUser:
+      type: object
+      required:
+      - listenerUrl
+      - eventType
+      properties:
+        listenerUrl:
+          type: string
+        eventType:
+          $ref: 'api-user.yaml#/components/schemas/SubscriptionEventTypeUser'
+    SubscriptionEventTypeUser:
+      type: string
+      enum:
+      - NEW
 
 /project/{projectId}/forgot:
   post:
@@ -366,6 +380,43 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/subscription/user:
+  post:
+    operationId: userSubscribeAdmin
+    tags: [UserAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/SubscriptionListenerUser'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: userUnsubscribeAdmin
+    tags: [UserAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/SubscriptionListenerUser'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/usersearch:
   post:
     operationId: userSearchAdmin

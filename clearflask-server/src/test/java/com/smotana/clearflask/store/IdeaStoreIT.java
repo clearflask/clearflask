@@ -16,13 +16,16 @@ import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.DefaultServerSecret;
 import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.web.security.Sanitizer;
+import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -54,7 +57,10 @@ public class IdeaStoreIT extends AbstractIT {
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
                 ElasticUtil.module(),
-                DefaultServerSecret.module(Names.named("cursor"))
+                DefaultServerSecret.module(Names.named("cursor")),
+                WebhookServiceImpl.module(),
+                DynamoProjectStore.module(),
+                IntercomUtil.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

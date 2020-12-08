@@ -1,6 +1,5 @@
 package com.smotana.clearflask.store;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -37,6 +36,8 @@ public interface AccountStore {
     AccountAndIndexingFuture<IndexResponse> createAccount(Account account);
 
     Optional<Account> getAccountByAccountId(String accountId);
+
+    Optional<Account> getAccountByApiKey(String apiKey);
 
     Optional<Account> getAccountByEmail(String email);
 
@@ -127,6 +128,7 @@ public interface AccountStore {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"apiKey"}, rangePrefix = "accountByApiKey")
     class Account {
         @NonNull
         String accountId;
@@ -137,6 +139,7 @@ public interface AccountStore {
         @NonNull
         SubscriptionStatus status;
 
+        @ToString.Exclude
         String apiKey;
 
         @NonNull
@@ -170,13 +173,14 @@ public interface AccountStore {
 
         public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
             return new AccountAdmin(
+                    getAccountId(),
                     planStore.getBasePlanId(getPlanid()),
                     getStatus(),
                     getName(),
                     getEmail(),
                     cfSso.generateToken(this),
                     intercomUtil.getIdentity(getEmail()).orElse(null),
-                    !Strings.isNullOrEmpty(getApiKey()),
+                    getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()));
         }
     }

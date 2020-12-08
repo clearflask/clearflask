@@ -816,14 +816,14 @@ export class EditorImpl implements Editor {
     }
 
     const fetchChildren = (): PageChildren => {
+      const objSchema = this.skipPaths(pageSchema, ['allOf']);
+      const additionalProps = this.parseAdditionalProps(objSchema);
       const children: PageChildren = {
-        all: [],
+        all: [...additionalProps],
         pages: [],
         groups: [],
-        props: [],
+        props: [...additionalProps],
       };
-      const objSchema = this.skipPaths(pageSchema, ['allOf']);
-      children.props = this.parseAdditionalProps(objSchema);
       const propsSchema = objSchema.properties
         || (() => { throw Error(`Cannot find 'properties' under path ${path} ${Object.keys(objSchema)}`) })();
       const requiredProps = objSchema.required || [];

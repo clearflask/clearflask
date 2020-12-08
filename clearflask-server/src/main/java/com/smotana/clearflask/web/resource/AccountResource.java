@@ -283,6 +283,20 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             account = accountStore.updateName(accountSession.getAccountId(), accountUpdateAdmin.getName()).getAccount();
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getApiKey())) {
+            if (account == null) {
+                account = accountStore.getAccountByAccountId(accountSession.getAccountId()).get();
+            }
+            // Check if it already exists
+            accountStore.getAccountByApiKey(accountUpdateAdmin.getApiKey())
+                    .ifPresent(accountOther -> {
+                        if (!accountOther.getAccountId().equals(accountSession.getAccountId())) {
+                            log.error("Account {} tried to set same API key as account {}, notify the account of compromised key",
+                                    accountSession.getEmail(), accountOther.getEmail());
+                            // Throw invalid format rather than telling them that they guessed someone else's API key
+                            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "API key has invalid format, create another");
+                        }
+                    });
+            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), PlanStore.Action.API_KEY);
             account = accountStore.updateApiKey(accountSession.getAccountId(), accountUpdateAdmin.getApiKey());
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getPassword())) {
@@ -510,6 +524,13 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 accountPayable,
                 endOfTermChangeToPlan.orElse(null),
                 actions.orElse(null));
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 1)
+    @Override
+    public void accountNoopAdmin() {
+        // Noop
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

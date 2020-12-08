@@ -172,6 +172,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
+      accountId: randomUuid(),
       basePlanId: request.accountSignupAdmin.basePlanId,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
@@ -182,7 +183,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         name: request.accountSignupAdmin.name,
       }, SSO_SECRET_KEY),
       subscriptionStatus: Admin.SubscriptionStatus.ActiveTrial,
-      hasApiKey: false,
     };
     this.accountPass = request.accountSignupAdmin.password;
     this.account = {
@@ -215,7 +215,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       this.account.planId = request.accountUpdateAdmin.basePlanId
       this.account.basePlanId = request.accountUpdateAdmin.basePlanId
     };
-    if (request.accountUpdateAdmin.apiKey) this.account.hasApiKey = true;
+    if (request.accountUpdateAdmin.apiKey) this.account.apiKey = request.accountUpdateAdmin.apiKey;
     return this.returnLater(this.account);
   }
   accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {
@@ -1079,6 +1079,27 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       vote,
       comment,
     });
+  }
+  accountNoopAdmin(): Promise<void> {
+    return this.returnLater();
+  }
+  ideaSubscribeAdmin(request: Admin.IdeaSubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  ideaUnsubscribeAdmin(request: Admin.IdeaUnsubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  userSubscribeAdmin(request: Admin.UserSubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  userUnsubscribeAdmin(request: Admin.UserUnsubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  commentSubscribeAdmin(request: Admin.CommentSubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  commentUnsubscribeAdmin(request: Admin.CommentUnsubscribeAdminRequest): Promise<void> {
+    throw new Error("Method not implemented.");
   }
 
   // **** Private methods

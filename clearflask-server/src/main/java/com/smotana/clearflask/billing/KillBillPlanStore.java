@@ -49,6 +49,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
     private static final String TERMS_SSO = "Use your existing user accounts to log into ClearFlask";
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
+    private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
+    private static final String TERMS_API_AND_ZAPIER = "Integrate with external sources with Zapier or programmatically";
     private static final ImmutableMap<String, Function<PlanPricing, Plan>> AVAILABLE_PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
                     pp, ImmutableList.of(
@@ -79,6 +81,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("Single Sign-On", ImmutableList.of("No", "Yes"), TERMS_SSO),
+                    new FeaturesTableFeatures("API and Zapier", ImmutableList.of("No", "Yes"), TERMS_API_AND_ZAPIER),
+                    new FeaturesTableFeatures("Tracking Integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes"), TERMS_SITE_TEMPLATE)
             ), null);
 
@@ -225,25 +229,49 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
     /** If changed, also change in UpgradeWrapper.tsx */
     @Override
+    public void verifyActionMeetsPlanRestrictions(String planId, Action action) throws ErrorWithMessageException {
+        switch (getBasePlanId(planId)) {
+            case "growth-monthly":
+                switch (action) {
+                    case API_KEY:
+                        throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use API on your plan");
+                }
+                return;
+            case "standard-monthly":
+            case "flat-yearly":
+        }
+    }
+
+    /** If changed, also change in UpgradeWrapper.tsx */
+    @Override
     public void verifyConfigMeetsPlanRestrictions(String planId, ConfigAdmin config) throws ErrorWithMessageException {
         switch (getBasePlanId(planId)) {
             case "growth-monthly":
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use SSO with your plan");
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility with your plan");
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Templates with your plan");
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Templates on your plan");
+                }
+                // Restrict Integrations
+                if (config.getIntegrations().getGoogleAnalytics() != null) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                }
+                if (config.getIntegrations().getHotjar() != null) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Google Analytics on your plan");
+                }
+                if (config.getIntegrations().getIntercom() != null) {
+                    throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "Not allowed to use Intercom on your plan");
                 }
                 return;
             case "standard-monthly":
             case "flat-yearly":
-                return;
         }
     }
 

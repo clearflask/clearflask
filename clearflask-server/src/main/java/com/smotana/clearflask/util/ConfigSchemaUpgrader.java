@@ -18,7 +18,7 @@ public class ConfigSchemaUpgrader {
     private Gson gson;
 
     public Optional<String> upgrade(OptionalLong schemaVersionOpt, String configJson) {
-        long schemaVersion = schemaVersionOpt.orElse(1);
+        long schemaVersion = schemaVersionOpt.orElse(1L);
         if (schemaVersion >= 2L) {
             return Optional.empty();
         }
@@ -39,7 +39,7 @@ public class ConfigSchemaUpgrader {
             config.getAsJsonObject().add("integrations", new JsonObject());
         }
 
-        // NOTE: Don't forget to increment
+        // NOTE: Don't forget to increment and also in the test
         config.getAsJsonObject().addProperty("schemaVersion", 3L);
 
         return Optional.of(gson.toJson(config));

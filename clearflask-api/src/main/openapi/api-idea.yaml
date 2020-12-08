@@ -214,6 +214,26 @@ components:
           format: int64
         isGte:
           type: boolean
+    SubscriptionListenerIdea:
+      type: object
+      required:
+      - listenerUrl
+      - eventType
+      properties:
+        listenerUrl:
+          type: string
+        eventType:
+          $ref: 'api-idea.yaml#/components/schemas/SubscriptionEventTypeIdea'
+    SubscriptionEventTypeIdea:
+      type: string
+      enum:
+      - NEW
+      - VOTE_CHANGED
+      - FUNDING_CHANGED
+      - EXPRESSIONS_CHANGED
+      - RESPONSE_CHANGED
+      - STATUS_CHANGED
+      - TAG_CHANGED
 
 /project/{projectId}/ideasearch:
   post:
@@ -346,6 +366,43 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/subscription/idea:
+  post:
+    operationId: ideaSubscribeAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/SubscriptionListenerIdea'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: ideaUnsubscribeAdmin
+    tags: [IdeaAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-idea.yaml#/components/schemas/SubscriptionListenerIdea'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/idea/search:
   post:
     operationId: ideaSearchAdmin

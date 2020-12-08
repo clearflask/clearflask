@@ -166,7 +166,7 @@ export default class ServerAdmin {
 
   isAdminLoggedIn(): boolean {
     const state = this.store.getState();
-    return !!state.account;
+    return !!state.account.account.account?.accountId;
   }
 }
 

@@ -35,8 +35,7 @@ import java.util.Optional;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
-    public static final String EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID = "x-cf-account";
-    public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID = "x-cf-secret";
+    public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN = "x-cf-token";
 
     @Context
     private HttpServletRequest request;
@@ -145,8 +144,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     private boolean hasRoleInternal(String role, Optional<AccountSession> accountSession, Optional<UserSession> userSession, Optional<AccountSession> superAdminSessionOpt, ContainerRequestContext requestContext) {
         Optional<String> pathParamProjectIdOpt = getPathParameter(requestContext, "projectId");
-        Optional<String> headerAccountId = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_ACCOUNT_ID);
-        Optional<String> headerAccountToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN_ID);
+        Optional<String> headerToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_TOKEN);
 
         log.trace("hasRole role {} accountId {} userSession {} projectIdParam {}",
                 role, accountSession.map(AccountSession::getAccountId), userSession.map(UserSession::getUserId), pathParamProjectIdOpt);
@@ -165,15 +163,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             case Role.SUPER_ADMIN:
                 return superAdminSessionOpt.isPresent();
             case Role.ADMINISTRATOR_ACTIVE:
-                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                if (headerToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
                     if (!accountOpt.isPresent()) {
-                        log.trace("Role {} missing account", role);
-                        return false;
-                    }
-
-                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
-                        log.trace("Role {} api key mismatch", role);
+                        log.trace("Role {} no account given token", role);
                         return false;
                     }
                 } else {
@@ -193,14 +186,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 }
                 return true;
             case Role.ADMINISTRATOR:
-                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                if (headerToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
                     if (!accountOpt.isPresent()) {
-                        log.trace("Role {} missing account", role);
-                        return false;
-                    }
-                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
-                        log.trace("Role {} api key mismatch", role);
+                        log.trace("Role {} no account given token", role);
                         return false;
                     }
                 } else {
@@ -216,14 +205,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     log.trace("Role {} missing project id", role);
                     return false;
                 }
-                if (headerAccountId.isPresent() && headerAccountToken.isPresent()) {
-                    accountOpt = accountStore.getAccountByAccountId(headerAccountId.get());
+                if (headerToken.isPresent()) {
+                    accountOpt = accountStore.getAccountByApiKey(headerToken.get());
                     if (!accountOpt.isPresent()) {
-                        log.trace("Role {} missing account", role);
-                        return false;
-                    }
-                    if (!headerAccountToken.get().equals(accountOpt.get().getApiKey())) {
-                        log.trace("Role {} api key mismatch", role);
+                        log.trace("Role {} no account given token", role);
                         return false;
                     }
                 } else {

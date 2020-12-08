@@ -1,6 +1,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -43,6 +44,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -56,6 +58,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @Slf4j
 @Singleton
@@ -74,6 +77,8 @@ public class VoteResource extends AbstractResource implements VoteApi {
     private CommentStore commentStore;
     @Inject
     private Billing billing;
+    @Inject
+    private WebhookService webhookService;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 5)
@@ -105,8 +110,6 @@ public class VoteResource extends AbstractResource implements VoteApi {
         VoteValue vote = VoteValue.fromVoteOption(commentVoteUpdate.getVote());
         CommentModel comment = commentStore.voteComment(projectId, ideaId, commentId, userId, vote)
                 .getCommentModel();
-
-        billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);
 
         return new CommentVoteUpdateResponse(comment.toCommentWithVote(vote.toVoteOption(), sanitizer));
     }
@@ -241,6 +244,11 @@ public class VoteResource extends AbstractResource implements VoteApi {
         }
 
         billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), userId);
+        IdeaModel ideaModel = idea;
+        Supplier<UserModel> userSupplier = Suppliers.memoize(() -> userStore.getUser(projectId, userId).get());
+        voteOptionOpt.ifPresent(voteOption -> webhookService.eventPostVoteChanged(ideaModel, userSupplier, voteOption));
+        expressionOpt.ifPresent(expressions -> webhookService.eventPostExpressionsChanged(ideaModel, userSupplier, expressions));
+        fundAmountOpt.ifPresent(fund -> webhookService.eventPostFundingChanged(ideaModel, userSupplier, voteUpdate.getFundDiff()));
 
         return new IdeaVoteUpdateResponse(
                 new IdeaVote(

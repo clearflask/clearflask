@@ -107,7 +107,7 @@ public class UserBindUtil {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(AuthCookie.class).to(AuthCookieImpl.class).asEagerSingleton();
+                bind(UserBindUtil.class).asEagerSingleton();
             }
         };
     }

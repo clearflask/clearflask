@@ -619,7 +619,7 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/workflow'
               support:
                 $ref: 'api-project.yaml#/components/schemas/support'
-              tagging:
+              tagging: 
                 $ref: 'api-project.yaml#/components/schemas/tagging'
     integrations:
       x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }

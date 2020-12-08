@@ -11,9 +11,13 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
@@ -24,6 +28,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -49,6 +55,7 @@ import com.smotana.clearflask.util.ConfigSchemaUpgrader;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.StringSerdeUtil;
 import com.smotana.clearflask.web.ErrorWithMessageException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.EqualsAndHashCode;
@@ -58,11 +65,13 @@ import lombok.extern.slf4j.Slf4j;
 import javax.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -198,6 +207,7 @@ public class DynamoProjectStore implements ProjectStore {
                 projectId,
                 versionedConfigAdmin.getVersion(),
                 versionedConfigAdmin.getConfig().getSchemaVersion(),
+                null,
                 gson.toJson(versionedConfigAdmin.getConfig()));
         try {
             dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
@@ -251,17 +261,38 @@ public class DynamoProjectStore implements ProjectStore {
             }
         }
         try {
-            PutItemSpec putItemSpec = new PutItemSpec()
-                    .withItem(projectSchema.toItem(new ProjectModel(
-                            project.getAccountId(),
-                            projectId,
-                            versionedConfigAdmin.getVersion(),
-                            versionedConfigAdmin.getConfig().getSchemaVersion(),
-                            gson.toJson(versionedConfigAdmin.getConfig()))));
-            previousVersionOpt.ifPresent(previousVersion -> putItemSpec
-                    .withConditionExpression("version = :previousVersion")
-                    .withValueMap(Map.of(":previousVersion", previousVersion)));
-            projectSchema.table().putItem(putItemSpec);
+            HashMap<String, String> nameMap = Maps.newHashMap();
+            HashMap<String, Object> valMap = Maps.newHashMap();
+            List<String> setUpdates = Lists.newArrayList();
+            Optional<String> conditionExpressionOpt = Optional.empty();
+
+            nameMap.put("#configJson", "configJson");
+            valMap.put(":configJson", gson.toJson(versionedConfigAdmin.getConfig()));
+            setUpdates.add("#configJson = :configJson");
+
+            nameMap.put("#version", "version");
+            valMap.put(":version", versionedConfigAdmin.getVersion());
+            setUpdates.add("#version = :version");
+
+            nameMap.put("#schemaVersion", "schemaVersion");
+            valMap.put(":schemaVersion", versionedConfigAdmin.getConfig().getSchemaVersion());
+            setUpdates.add("#schemaVersion = :schemaVersion");
+
+            if (previousVersionOpt.isPresent()) {
+                valMap.put(":previousVersion", previousVersionOpt.get());
+                conditionExpressionOpt = Optional.of("#version = :previousVersion");
+            }
+
+            String updateExpression = "SET " + String.join(", ", setUpdates);
+            log.trace("updateConfig with expression: {} {} {}", updateExpression, nameMap, valMap);
+
+            projectSchema.table().updateItem(new UpdateItemSpec()
+                    .withPrimaryKey(projectSchema.primaryKey(Map.of(
+                            "projectId", projectId)))
+                    .withNameMap(nameMap)
+                    .withValueMap(valMap)
+                    .withUpdateExpression(updateExpression)
+                    .withConditionExpression(conditionExpressionOpt.orElse(null)));
         } catch (ConditionalCheckFailedException ex) {
             if (updateSlug) {
                 // Undo creating slug just now
@@ -301,6 +332,29 @@ public class DynamoProjectStore implements ProjectStore {
         projectCache.invalidate(projectId);
     }
 
+    @Override
+    public void addWebhookListener(String projectId, WebhookListener listener) {
+        updateWebhookListener(projectId, listener, true);
+    }
+
+    @Override
+    public void removeWebhookListener(String projectId, WebhookListener listener) {
+        updateWebhookListener(projectId, listener, false);
+    }
+
+    private void updateWebhookListener(String projectId, WebhookListener listener, boolean set) {
+        projectSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                .withConditionExpression("attribute_exists(#partitionKey)")
+                .withUpdateExpression((set ? "ADD" : "DELETE") + " #webhookListeners :webhookListener")
+                .withNameMap(new NameMap()
+                        .with("#webhookListeners", "webhookListeners")
+                        .with("#partitionKey", projectSchema.partitionKeyName()))
+                .withValueMap(new ValueMap().withStringSet(":webhookListener", packWebhookListener(listener)))
+                .withReturnValues(ReturnValue.ALL_NEW));
+        projectCache.invalidate(projectId);
+    }
+
     @Extern
     @Override
     public void deleteProject(String projectId) {
@@ -334,6 +388,17 @@ public class DynamoProjectStore implements ProjectStore {
                 });
     }
 
+    private String packWebhookListener(WebhookListener listener) {
+        return StringSerdeUtil.mergeStrings(listener.getEventType(), listener.getUrl());
+    }
+
+    private WebhookListener unpackWebhookListener(String listenerStr) {
+        String[] listenerParts = StringSerdeUtil.unMergeString(listenerStr);
+        return new WebhookListener(
+                listenerParts[0],
+                listenerParts[1] != null ? listenerParts[1] : "");
+    }
+
     private Project getProjectWithUpgrade(ProjectModel projectModel) {
         Optional<String> configUpgradedOpt = configSchemaUpgrader.upgrade(
                 projectModel.getSchemaVersion() == null ? OptionalLong.empty() : OptionalLong.of(projectModel.getSchemaVersion()),
@@ -363,6 +428,7 @@ public class DynamoProjectStore implements ProjectStore {
     @ToString(of = {"accountId", "projectId", "version"})
     private class ProjectImpl implements Project {
         private static final double EXPRESSION_WEIGHT_DEFAULT = 1d;
+        private final ProjectModel model;
         private final String accountId;
         private final String projectId;
         private final String version;
@@ -372,8 +438,10 @@ public class DynamoProjectStore implements ProjectStore {
         private final ImmutableMap<String, Category> categories;
         private final ImmutableMap<String, IdeaStatus> statuses;
         private final Function<String, String> intercomEmailToIdentityFun;
+        private final ImmutableMap<String, ImmutableSet<WebhookListener>> webhookEventToListeners;
 
         private ProjectImpl(ProjectModel projectModel) {
+            this.model = projectModel;
             this.accountId = projectModel.getAccountId();
             this.projectId = projectModel.getProjectId();
             this.version = projectModel.getVersion();
@@ -405,6 +473,18 @@ public class DynamoProjectStore implements ProjectStore {
             this.intercomEmailToIdentityFun = Optional.ofNullable(Strings.emptyToNull(this.versionedConfigAdmin.getConfig().getIntercomIdentityVerificationSecret()))
                     .map(intercomUtil::getEmailToIdentityFun)
                     .orElse((email) -> null);
+            this.webhookEventToListeners = projectModel.getWebhookListeners() == null
+                    ? ImmutableMap.of()
+                    : ImmutableMap.copyOf(projectModel.getWebhookListeners().stream()
+                    .map(DynamoProjectStore.this::unpackWebhookListener)
+                    .collect(Collectors.groupingBy(
+                            WebhookListener::getEventType,
+                            Collectors.mapping(l -> l, ImmutableSet.toImmutableSet()))));
+        }
+
+        @Override
+        public ProjectModel getModel() {
+            return model;
         }
 
         @Override
@@ -550,6 +630,11 @@ public class DynamoProjectStore implements ProjectStore {
         @Override
         public Function<String, String> getIntercomEmailToIdentityFun() {
             return intercomEmailToIdentityFun;
+        }
+
+        @Override
+        public ImmutableSet<WebhookListener> getWebhookListenerUrls(String event) {
+            return webhookEventToListeners.getOrDefault(event, ImmutableSet.of());
         }
 
         private String getStatusLookupKey(String categoryId, String statusId) {
