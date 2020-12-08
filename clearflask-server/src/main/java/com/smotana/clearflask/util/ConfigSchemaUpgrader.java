@@ -19,10 +19,6 @@ public class ConfigSchemaUpgrader {
 
     public Optional<String> upgrade(OptionalLong schemaVersionOpt, String configJson) {
         long schemaVersion = schemaVersionOpt.orElse(1L);
-        if (schemaVersion >= 2L) {
-            return Optional.empty();
-        }
-
         JsonElement config = gson.fromJson(configJson, JsonElement.class);
 
         if (schemaVersion < 2L) {
@@ -33,14 +29,21 @@ public class ConfigSchemaUpgrader {
             if (emailEl != null) {
                 emailEl.getAsJsonObject().addProperty("mode", "SignupAndLogin");
             }
+            config.getAsJsonObject().addProperty("schemaVersion", 2L);
         }
 
         if (schemaVersion < 3L) {
-            config.getAsJsonObject().add("integrations", new JsonObject());
+            JsonElement integrationsEl = config.getAsJsonObject().get("integrations");
+            if (integrationsEl == null) {
+                config.getAsJsonObject().add("integrations", new JsonObject());
+            }
+            config.getAsJsonObject().addProperty("schemaVersion", 3L);
         }
 
-        // NOTE: Don't forget to increment and also in the test
-        config.getAsJsonObject().addProperty("schemaVersion", 3L);
+        // Important notes:
+        // - Don't forget to increment schema version in the test ConfigSchemaUpgraderTest.java
+        // - Don't forget to set the schemaVersion property
+        // - Make sure the upgrade is idempotent
 
         return Optional.of(gson.toJson(config));
     }

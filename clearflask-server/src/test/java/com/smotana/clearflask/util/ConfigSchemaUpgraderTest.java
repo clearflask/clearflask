@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.Integrations;
 import com.smotana.clearflask.testutil.AbstractTest;
 import org.junit.Test;
 
@@ -387,6 +388,7 @@ public class ConfigSchemaUpgraderTest extends AbstractTest {
         assertEquals(Long.valueOf(3L), config.getSchemaVersion());
 
         assertEquals(EmailSignup.ModeEnum.SIGNUPANDLOGIN, config.getUsers().getOnboarding().getNotificationMethods().getEmail().getMode());
+        assertEquals(Integrations.builder().build(), config.getIntegrations());
     }
 
 }
