@@ -147,7 +147,7 @@ class App extends Component<Props, State> {
     // Start render since we received our configuration
     this.setState({ server });
 
-    if (!!configResult.user) {
+    if (!!user) {
       // Broadcast to other tabs of successful bind
       localStorage.setItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY, '1');
       localStorage.removeItem(BIND_SUCCESS_LOCALSTORAGE_EVENT_KEY);
