@@ -12,7 +12,7 @@ export default connect<IntercomWrapperConnectProps, {}, {}, ReduxState>((state) 
 
   // Just don't show intercom to super admins (that's me!)
   if (ServerAdmin.get().isSuperAdminLoggedIn()) {
-    return { dontUseThisComponentDirectly: true };
+    return { dontUseThisComponentDirectly: true, disabled: true };
   }
 
   const userMe = state.users.loggedIn.user;

@@ -9,6 +9,7 @@ import ServerMock from '../api/serverMock';
 import WebNotification, { Status } from '../common/notification/webNotification';
 import { detectEnv, Environment, isTracking } from '../common/util/detectEnv';
 import randomUuid from '../common/util/uuid';
+import IntercomWrapperCustomer from '../site/IntercomWrapperCustomer';
 import AccountPage from './AccountPage';
 import AppThemeProvider from './AppThemeProvider';
 import BankPage from './BankPage';
@@ -196,6 +197,7 @@ class App extends Component<Props, State> {
           >
             <PrivateProjectLogin server={server}>
               {isTracking() && (<CustomerExternalTrackers />)}
+              <IntercomWrapperCustomer />
               <Route key='header' path='/:page?' render={props => (props.match.params['page'] === 'embed' || props.match.params['page'] === 'sso') ? null : (
                 <Header
                   pageSlug={props.match.params['page'] || ''}

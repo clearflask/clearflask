@@ -13,11 +13,11 @@ export default connect<IntercomWrapperConnectProps, {}, {}, ReduxStateAdmin>((st
   }
 
   // Just don't show intercom to super admins (that's me!)
-  const account = state.account.account.account;
-  if (account?.isSuperAdmin) {
-    return { dontUseThisComponentDirectly: true };
+  if (state.account.isSuperAdmin) {
+    return { dontUseThisComponentDirectly: true, disabled: true };
   }
 
+  const account = state.account.account.account;
   const userData = !!account?.intercomIdentity ? {
     user_hash: account.intercomIdentity,
     email: account.email,

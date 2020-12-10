@@ -5,7 +5,6 @@ import { Route } from 'react-router';
 import * as Client from '../../api/client';
 import { ReduxState } from '../../api/server';
 import HotjarWrapperCustomer from '../../site/HotjarWrapperCustomer';
-import IntercomWrapperCustomer from '../../site/IntercomWrapperCustomer';
 
 const CustomerTrackerName = 'customerTracker';
 
@@ -34,7 +33,6 @@ class CustomerExternalTrackers extends Component<ConnectProps> {
     }
     return (
       <React.Fragment>
-        <IntercomWrapperCustomer />
         <HotjarWrapperCustomer />
         {this.props.googleAnalytics && (
           <Route path='/' render={({ location }) => {

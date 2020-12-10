@@ -161,7 +161,7 @@ export default class ServerAdmin {
 
   isSuperAdminLoggedIn(): boolean {
     const state = this.store.getState();
-    return !!state.account.isSuperAdmin;
+    return !!state.account.isSuperAdmin || !!state.account.account.account?.isSuperAdmin;
   }
 
   isAdminLoggedIn(): boolean {

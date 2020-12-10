@@ -7,6 +7,7 @@ var loggedInUserHash: string | undefined;
 
 export interface IntercomWrapperConnectProps {
   dontUseThisComponentDirectly: true; // Use IntercomWrapperMain or IntercomWrapperCustomer
+  disabled?: boolean;
   appId?: string;
   userData?: {
     user_hash: string;
@@ -18,7 +19,7 @@ export default class IntercomWrapper extends Component<IntercomWrapperConnectPro
   constructor(props) {
     super(props);
 
-    if (props.appId) {
+    if (!loadedAppId && props.appId) {
       intercomLoad(props.appId);
       loadedAppId = props.appId;
     }
@@ -29,14 +30,17 @@ export default class IntercomWrapper extends Component<IntercomWrapperConnectPro
       // mismatch of app id, some other instance must be managing intercom
       return null;
     }
-    if (!this.props.appId) {
+    if (this.props.disabled) {
       if (startedAppId) {
         intercomShutdown(startedAppId);
         startedAppId = undefined;
       }
       return null;
     }
-    if (!loadedAppId) {
+    if (!this.props.appId) {
+      return null;
+    }
+    if (!loadedAppId && this.props.appId) {
       intercomLoad(this.props.appId);
       loadedAppId = this.props.appId;
     }

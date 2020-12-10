@@ -51,6 +51,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
     private static final String TERMS_API_AND_ZAPIER = "Integrate with external sources with Zapier or programmatically";
+    private static final String TERMS_INTERCOM = "Add Intercom widget on every page";
     private static final ImmutableMap<String, Function<PlanPricing, Plan>> AVAILABLE_PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
                     pp, ImmutableList.of(
@@ -83,6 +84,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Single Sign-On", ImmutableList.of("No", "Yes"), TERMS_SSO),
                     new FeaturesTableFeatures("API and Zapier", ImmutableList.of("No", "Yes"), TERMS_API_AND_ZAPIER),
                     new FeaturesTableFeatures("Tracking Integrations", ImmutableList.of("No", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes"), TERMS_INTERCOM),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes"), TERMS_SITE_TEMPLATE)
             ), null);
 
