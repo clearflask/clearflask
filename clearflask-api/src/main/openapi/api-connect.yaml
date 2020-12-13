@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: ClearFlask Connect API
+  description: ClearFlask API documentation.
+  version: 1.0.0
+
+servers:
+- url: https://clearflask.com/api/v1
+
+externalDocs:
+  url: https://clearflask.com/docs
+
+paths:
+  /connect/domain/allowed:
+    $ref: 'api-sni.yaml#/~1connect~1domain~1allowed'
+  /connect/account/keypair:
+    $ref: 'api-sni.yaml#/~1connect~1account~1keypair'
+  /connect/cert/keypair:
+    $ref: 'api-sni.yaml#/~1connect~1cert~1keypair'
+  /connect/cert/challenge:
+    $ref: 'api-sni.yaml#/~1connect~1cert~1challenge'
+  /connect/cert:
+    $ref: 'api-sni.yaml#/~1connect~1cert'

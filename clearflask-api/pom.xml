@@ -76,7 +76,6 @@
                 </executions>
                 <configuration>
                     <nodeVersion>${node.version}</nodeVersion>
-                    <yarnVersion>${yarn.version}</yarnVersion>
                     <environmentVariables>
                         <ADBLOCK>1</ADBLOCK>
                     </environmentVariables>
@@ -110,6 +109,7 @@
                         <descriptor>${project.basedir}/src/main/assembly/schema.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/frontend-admin.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/frontend-client.xml</descriptor>
+                        <descriptor>${project.basedir}/src/main/assembly/connect.xml</descriptor>
                         <descriptor>${project.basedir}/src/main/assembly/docs.xml</descriptor>
                     </descriptors>
                 </configuration>

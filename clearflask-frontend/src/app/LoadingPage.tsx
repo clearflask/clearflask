@@ -1,7 +1,7 @@
 import { Box } from '@material-ui/core';
 import React, { Component } from 'react';
-import Loading from './utils/Loading';
 import { vh } from '../common/util/vhUtil';
+import Loading from './utils/Loading';
 
 export default class LoadingPage extends Component {
   render() {

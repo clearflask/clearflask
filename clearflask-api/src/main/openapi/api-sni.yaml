@@ -1,0 +1,253 @@
+components:
+  schemas:
+    Challenge:
+      type: object
+      required:
+      - result
+      properties:
+        result:
+          type: string
+    Keypair:
+      type: object
+      required:
+      - privateKeyPem
+      - privateKeyJwkJson
+      properties:
+        privateKeyPem:
+          type: string
+        privateKeyJwkJson:
+          type: string
+    Cert:
+      type: object
+      required:
+      - cert
+      - chain
+      - subject
+      - altnames
+      - issuedAt
+      - expiresAt
+      properties:
+        cert:
+          type: string
+        chain:
+          type: string
+        subject:
+          type: string
+        altnames:
+          type: array
+          items:
+            type: string
+        issuedAt:
+          type: integer
+          format: int64
+        expiresAt:
+          type: integer
+          format: int64
+
+/connect/domain/allowed:
+  get:
+    operationId: domainAllowedConnect
+    tags: [SniConnect]
+    parameters:
+    - name: domain
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+      '401':
+        $ref: 'api-client.yaml#/components/responses/Unauthorized'
+/connect/account/keypair:
+  get:
+    operationId: accountKeypairGetConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Keypair'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: accountKeypairPutConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-sni.yaml#/components/schemas/Keypair'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: accountKeypairDeleteConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/connect/cert/keypair:
+  get:
+    operationId: certKeypairGetConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Keypair'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: certKeypairPutConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-sni.yaml#/components/schemas/Keypair'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: certKeypairDeleteConnect
+    tags: [SniConnect]
+    parameters:
+    - name: id
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/connect/cert/challenge:
+  get:
+    operationId: certChallengeGetConnect
+    tags: [SniConnect]
+    parameters:
+    - name: key
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Challenge'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: certChallengePutConnect
+    tags: [SniConnect]
+    parameters:
+    - name: key
+      in: query
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-sni.yaml#/components/schemas/Challenge'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: certChallengeDeleteConnect
+    tags: [SniConnect]
+    parameters:
+    - name: key
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/connect/cert:
+  get:
+    operationId: certGetConnect
+    tags: [SniConnect]
+    parameters:
+    - name: domain
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-sni.yaml#/components/schemas/Cert'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: certPutConnect
+    tags: [SniConnect]
+    parameters:
+    - name: domain
+      in: query
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-sni.yaml#/components/schemas/Cert'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+  delete:
+    operationId: certDeleteConnect
+    tags: [SniConnect]
+    parameters:
+    - name: domain
+      in: query
+      required: true
+      schema:
+        type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

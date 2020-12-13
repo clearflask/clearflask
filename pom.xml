@@ -31,9 +31,8 @@
         <hk2.version>2.5.0-b62</hk2.version>
         <jjwt.version>0.10.5</jjwt.version>
         <sqlite4java>1.0.392</sqlite4java>
-        <node.version>v10.12.0</node.version>
-        <yarn.version>v1.10.1</yarn.version>
-        <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
+        <node.version>v14.15.1</node.version>
+        <frontend-maven-plugin.version>1.10.4</frontend-maven-plugin.version>
         <projectlombok.version>1.18.4</projectlombok.version>
         <skipTests/>
         <skipITs/>
@@ -43,6 +42,7 @@
         <module>clearflask-legal</module>
         <module>clearflask-api</module>
         <module>clearflask-frontend</module>
+        <module>clearflask-connect</module>
         <module>clearflask-logging</module>
         <module>clearflask-server</module>
     </modules>
@@ -553,6 +553,11 @@
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
                 <version>20200713.1</version>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>3.3.1</version>
             </dependency>
 
             <!-- test-only deps -->

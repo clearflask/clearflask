@@ -6,6 +6,10 @@ public class Role {
      */
     public static final String SUPER_ADMIN = "SUPER_ADMIN";
     /**
+     * Applies to NodeJS server on localhost
+     */
+    public static final String CONNECT = "CONNECT";
+    /**
      * Applies to any ClearFlask customer; NOT ClearFlask administrator AND
      * account is in good active standing.
      */

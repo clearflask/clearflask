@@ -1,8 +1,12 @@
+/* tslint:disable */
+// eslint-disable-next-line no-unused-vars
 import { Api, ApiInterface } from './apis';
+// eslint-disable-next-line no-unused-vars
 import * as Model from './models';
 {{#apiInfo}}
 {{#apis}}
 {{#operations}}
+// eslint-disable-next-line no-unused-vars
 import * as {{ classname }} from './apis/{{ classFilename }}';
 {{/operations}}
 {{/apis}}

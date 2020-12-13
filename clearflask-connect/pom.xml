@@ -9,7 +9,7 @@
         <version>0.1</version>
     </parent>
 
-    <artifactId>clearflask-frontend</artifactId>
+    <artifactId>clearflask-connect</artifactId>
     <version>0.1</version>
     <packaging>jar</packaging>
 
@@ -28,13 +28,6 @@
                         <configuration>
                             <filesets>
                                 <fileset>
-                                    <directory>${project.basedir}/build</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
                                     <directory>${project.basedir}/node</directory>
                                     <includes>
                                         <include>**</include>
@@ -49,21 +42,7 @@
                                     <followSymlinks>false</followSymlinks>
                                 </fileset>
                                 <fileset>
-                                    <directory>${project.basedir}/src/api/admin/</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
-                                    <directory>${project.basedir}/src/api/schema/</directory>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                    <followSymlinks>false</followSymlinks>
-                                </fileset>
-                                <fileset>
-                                    <directory>${project.basedir}/src/api/client/</directory>
+                                    <directory>${project.basedir}/src/api/connect/</directory>
                                     <includes>
                                         <include>**</include>
                                     </includes>
@@ -89,31 +68,11 @@
                                 <artifactItem>
                                     <groupId>com.smotana.clearflask</groupId>
                                     <artifactId>clearflask-api</artifactId>
-                                    <classifier>frontend-admin</classifier>
+                                    <classifier>connect</classifier>
                                     <version>${project.version}</version>
                                     <type>tar.gz</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/api/admin/</outputDirectory>
-                                    <includes>**</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.smotana.clearflask</groupId>
-                                    <artifactId>clearflask-api</artifactId>
-                                    <classifier>frontend-client</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/api/client/</outputDirectory>
-                                    <includes>**</includes>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.smotana.clearflask</groupId>
-                                    <artifactId>clearflask-api</artifactId>
-                                    <classifier>schema</classifier>
-                                    <version>${project.version}</version>
-                                    <type>tar.gz</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/api/schema/</outputDirectory>
+                                    <outputDirectory>${project.basedir}/src/api/connect/</outputDirectory>
                                     <includes>**</includes>
                                 </artifactItem>
                             </artifactItems>
@@ -144,14 +103,14 @@
                         <phase>initialize</phase>
                     </execution>
                     <execution>
-                        <id>npm run build</id>
+                        <id>npm test</id>
                         <goals>
                             <goal>npm</goal>
                         </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
-                            <arguments>run build</arguments>
+                            <arguments>test</arguments>
                         </configuration>
+                        <phase>test</phase>
                     </execution>
                 </executions>
                 <configuration>
@@ -162,24 +121,19 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/connect-server.xml</descriptor>
+                    </descriptors>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
-                        <phase>compile</phase>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>single</goal>
                         </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/classes/ROOT</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/build</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

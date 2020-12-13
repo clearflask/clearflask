@@ -75,6 +75,7 @@ import com.smotana.clearflask.web.resource.SupportResource;
 import com.smotana.clearflask.web.resource.UserResource;
 import com.smotana.clearflask.web.resource.VoteResource;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
+import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
@@ -183,6 +184,7 @@ public enum ServiceInjector {
                 install(EmailVerify.module());
 
                 // Security
+                install(AuthenticationFilter.module());
                 install(SuperAdminPredicate.module());
                 install(TieredWebLimiter.module());
                 install(LocalRateLimiter.module());

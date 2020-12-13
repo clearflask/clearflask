@@ -1,8 +1,10 @@
 package com.smotana.clearflask.web.security;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.net.InternetDomainName;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -18,6 +20,9 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.HtmlSanitizer;
 import org.owasp.html.HtmlStreamRenderer;
 import org.owasp.html.PolicyFactory;
+import org.xbill.DNS.CNAMERecord;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Type;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -60,8 +65,14 @@ public class Sanitizer {
             .toFactory();
 
     public interface Config {
-        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api", innerType = String.class)
+        @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api,domain,cname,sni", innerType = String.class)
         Set<String> reservedSubdomains();
+
+        @DefaultValue(value = "clearflask.com", innerType = String.class)
+        Set<String> reservedDomains();
+
+        @DefaultValue("sni.clearflask.com")
+        String sniDomain();
 
         @DefaultValue("true")
         boolean htmlSanitizerEnabled();
@@ -133,19 +144,44 @@ public class Sanitizer {
         }
     }
 
-    public void subdomain(String slug) {
-        if (slug.length() < SUBDOMAIN_MIN_LENGTH) {
+    public void domain(String domain) {
+        if (Strings.isNullOrEmpty(domain)) {
+            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain is empty");
+        }
+
+        if (!InternetDomainName.from(domain).isUnderPublicSuffix()) {
+            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have a public suffix. If this is an error, please contact support team.");
+        }
+
+        try {
+            boolean isCanonical = Arrays.stream((CNAMERecord[]) new Lookup(domain, Type.CNAME).getAnswers())
+                    .allMatch(r -> r.getType() == Type.CNAME
+                            && config.sniDomain().equals(r.getTarget().toString(true)));
+            if (!isCanonical) {
+                throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
+            }
+        } catch (Exception ex) {
+            throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
+        }
+
+        if (config.reservedDomains().contains(domain)) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + domain + "' domain is reserved");
+        }
+    }
+
+    public void subdomain(String subdomain) {
+        if (subdomain.length() < SUBDOMAIN_MIN_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too short, must be at least " + SUBDOMAIN_MIN_LENGTH + " character(s)");
         }
-        if (slug.length() > SUBDOMAIN_MAX_LENGTH) {
+        if (subdomain.length() > SUBDOMAIN_MAX_LENGTH) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain is too long, must be at most " + SUBDOMAIN_MAX_LENGTH + " characters");
         }
-        if (!subdomainPredicate.test(slug)) {
+        if (!subdomainPredicate.test(subdomain)) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Subdomain can only contain lowercase letters, numbers and dashes in the middle");
         }
 
-        if (config.reservedSubdomains().contains(slug)) {
-            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + slug + "' subdomain is reserved");
+        if (config.reservedSubdomains().contains(subdomain)) {
+            throw new ErrorWithMessageException(Response.Status.BAD_REQUEST, "'" + subdomain + "' subdomain is reserved");
         }
     }
 

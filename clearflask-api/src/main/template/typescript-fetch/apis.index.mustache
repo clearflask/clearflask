@@ -1,8 +1,10 @@
-
+/* tslint:disable */
+// eslint-disable-next-line no-unused-vars
 import { Configuration } from '../runtime';
 {{#apiInfo}}
 {{#apis}}
 {{#operations}}
+// eslint-disable-next-line no-unused-vars
 import * as {{ classname }} from './{{ classFilename }}';
 {{/operations}}
 {{/apis}}
@@ -18,7 +20,7 @@ export * from './{{ classFilename }}';
 
 export interface ApiInterface extends {{#apiInfo}}{{#apis}}{{#operations}}{{classname}}.{{classname}}Interface{{^-last}}, {{/-last}}{{/operations}}{{/apis}}{{/apiInfo}} {};
 export class Api {
-    apis
+    apis: any
 
     constructor(configuration?:Configuration, apiOverride?:ApiInterface) {
         this.apis = {};{{#apiInfo}}{{#apis}}{{#operations}}

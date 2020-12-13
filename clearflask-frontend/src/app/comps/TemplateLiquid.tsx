@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
+import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Status } from '../../api/server';
-import { ReactLiquid } from 'react-liquid';
 
 interface Props {
   template: string;
@@ -15,7 +15,7 @@ interface ConnectProps {
   loggedInUser?: Client.UserMe;
   state: ReduxState;
 }
-class TemplateLiquid extends Component<Props & ConnectProps > {
+class TemplateLiquid extends Component<Props & ConnectProps> {
   render() {
     return (
       <ReactLiquid

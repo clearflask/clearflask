@@ -1,6 +1,10 @@
 package com.smotana.clearflask.web.security;
 
 import com.google.common.base.Strings;
+import com.google.inject.AbstractModule;
+import com.google.inject.Module;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
@@ -36,11 +40,19 @@ import java.util.Optional;
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN = "x-cf-token";
+    public static final String EXTERNAL_API_AUTH_HEADER_NAME_CONNECT_TOKEN = "x-cf-connect-token";
+
+    public interface Config {
+        @NoDefaultValue
+        String connectToken();
+    }
 
     @Context
     private HttpServletRequest request;
     @Context
     protected HttpServletResponse response;
+    @Inject
+    private Config config;
     @Inject
     private Environment env;
     @Inject
@@ -162,6 +174,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         switch (role) {
             case Role.SUPER_ADMIN:
                 return superAdminSessionOpt.isPresent();
+            case Role.CONNECT:
+                Optional<String> headerConnectToken = getHeaderParameter(requestContext, EXTERNAL_API_AUTH_HEADER_NAME_CONNECT_TOKEN);
+                return headerConnectToken.isPresent()
+                        && config.connectToken().equals(headerConnectToken.get());
             case Role.ADMINISTRATOR_ACTIVE:
                 if (headerToken.isPresent()) {
                     accountOpt = accountStore.getAccountByApiKey(headerToken.get());
@@ -312,5 +328,15 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     private Optional<String> getHeaderParameter(ContainerRequestContext requestContext, String name) {
         return Optional.ofNullable(Strings.emptyToNull(requestContext.getHeaderString(name)));
+    }
+
+    public static Module module() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(AuthenticationFilter.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
+            }
+        };
     }
 }

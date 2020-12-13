@@ -14,19 +14,30 @@ NPX="${NODE} node/node_modules/npm/bin/npx-cli.js"
 
 OPENAPI_GENERATOR="${NPX} -p @openapitools/openapi-generator-cli@cli-4.1.3 openapi-generator"
 
-# Client API
+# Frontend Client API
 ${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-client.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-client &
 
-# Admin API
+# Frontend Admin API
 ${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
     -i ${OPENAPI_SOURCE_DIR}/api-admin.yaml \
     -g typescript-fetch \
     -o ${OPENAPI_TARGET_DIR}/frontend-admin &
+
+# Frontend Config Schema
+${NODE} ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
+
+# Connect API
+${OPENAPI_GENERATOR} generate \
+    -t ${TEMPLATE_SOURCE_DIR}/typescript-fetch \
+    -p typescriptThreePlus=true \
+    -i ${OPENAPI_SOURCE_DIR}/api-connect.yaml \
+    -g typescript-fetch \
+    -o ${OPENAPI_TARGET_DIR}/connect &
 
 # HTML Docs
 ${OPENAPI_GENERATOR} generate \
@@ -34,9 +45,7 @@ ${OPENAPI_GENERATOR} generate \
     -g html \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
-# Config Schema
-${NODE} ${SCRIPTS_DIR}/createConfig.js ${OPENAPI_SOURCE_DIR}/api.yaml ${OPENAPI_TARGET_DIR}/frontend-schema &
-
+# Server API
 # Additional properties docs: https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/jaxrs-cxf-extended.md
 ${OPENAPI_GENERATOR} generate \
     -t ${TEMPLATE_SOURCE_DIR}/java-jaxrs \

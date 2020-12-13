@@ -5,7 +5,7 @@ import { ProviderContext } from 'notistack';
 import React, { Component, Suspense } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
 import { ComponentPropsOverrides } from './app/AppThemeProvider';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
@@ -17,6 +17,7 @@ import { closeLoadingScreen } from './common/loadingScreen';
 import { detectEnv, Environment, isTracking } from './common/util/detectEnv';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { vh } from './common/util/vhUtil';
+import windowIso from './common/windowIso';
 import HotjarWrapperMain from './site/HotjarWrapperMain';
 import IntercomWrapperMain from './site/IntercomWrapperMain';
 
@@ -72,7 +73,7 @@ class Main extends Component {
   constructor(props) {
     super(props);
 
-    if (isTracking()) {
+    if (isTracking() && !windowIso.isSsr) {
       try {
         ReactGA.initialize('UA-127162051-3', {
           gaOptions: {}
@@ -81,15 +82,15 @@ class Main extends Component {
           anonymizeIp: true,
           forceSSL: true
         });
-        ReactGA.pageview(window.location.pathname + window.location.search);
+        ReactGA.pageview(windowIso.location.pathname + windowIso.location.search);
       } catch (e) { }
     }
   }
 
   render() {
-    if (this.subdomain === 'www') {
+    if (!windowIso.isSsr && this.subdomain === 'www') {
       // Redirect www to homepage
-      window.location.replace(window.location.origin.replace(`${this.subdomain}.`, ''));
+      windowIso.location.replace(windowIso.location.origin.replace(`${this.subdomain}.`, ''));
     }
     return (
       // <React.StrictMode>
@@ -104,7 +105,7 @@ class Main extends Component {
             flexDirection: 'column',
             background: theme.palette.background.default,
           }}>
-            <Router>
+            <BrowserRouter>
               <ScrollAnchor scrollOnNavigate />
               {isTracking() && (
                 <Route path='/' render={({ location }) => {
@@ -155,7 +156,7 @@ class Main extends Component {
                   )])}
                 </Switch>
               </Suspense>
-            </Router>
+            </BrowserRouter>
           </div>
         </MuiSnackbarProvider>
       </MuiThemeProvider>

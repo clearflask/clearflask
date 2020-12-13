@@ -1,9 +1,6 @@
 import { Box, Button } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
-import React, { Component, GetDerivedStateFromError } from 'react';
-import { RouteComponentProps, withRouter } from 'react-router';
-import BasePage from '../../app/BasePage';
-import ErrorPage from '../../app/ErrorPage';
+import React, { Component } from 'react';
 import { vh } from './vhUtil';
 
 export interface Props {

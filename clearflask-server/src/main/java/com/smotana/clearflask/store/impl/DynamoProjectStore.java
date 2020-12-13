@@ -198,10 +198,8 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Override
     public Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin) {
-        SlugModel slugModel = new SlugModel(
-                versionedConfigAdmin.getConfig().getSlug(),
-                projectId,
-                null);
+        String subdomain = versionedConfigAdmin.getConfig().getSlug();
+        Optional<String> domainOpt = Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
         ProjectModel projectModel = new ProjectModel(
                 accountId,
                 projectId,
@@ -210,18 +208,31 @@ public class DynamoProjectStore implements ProjectStore {
                 null,
                 gson.toJson(versionedConfigAdmin.getConfig()));
         try {
-            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
+            ImmutableList.Builder<TransactWriteItem> transactionsBuilder = ImmutableList.<TransactWriteItem>builder()
                     .add(new TransactWriteItem().withPut(new Put()
                             .withTableName(slugSchema.tableName())
-                            .withItem(slugSchema.toAttrMap(slugModel))
+                            .withItem(slugSchema.toAttrMap(new SlugModel(
+                                    subdomain,
+                                    projectId,
+                                    null)))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
                             .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", slugSchema.partitionKeyName()))))
                     .add(new TransactWriteItem().withPut(new Put()
                             .withTableName(projectSchema.tableName())
                             .withItem(projectSchema.toAttrMap(projectModel))
                             .withConditionExpression("attribute_not_exists(#partitionKey)")
-                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName()))))
-                    .build()));
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", projectSchema.partitionKeyName()))));
+            domainOpt.ifPresent(domain -> transactionsBuilder
+                    .add(new TransactWriteItem().withPut(new Put()
+                            .withTableName(slugSchema.tableName())
+                            .withItem(slugSchema.toAttrMap(new SlugModel(
+                                    domain,
+                                    projectId,
+                                    null)))
+                            .withConditionExpression("attribute_not_exists(#partitionKey)")
+                            .withExpressionAttributeNames(ImmutableMap.of("#partitionKey", slugSchema.partitionKeyName())))));
+            dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(
+                    transactionsBuilder.build()));
         } catch (TransactionCanceledException ex) {
             if (ex.getCancellationReasons().stream().map(CancellationReason::getCode).anyMatch("ConditionalCheckFailed"::equals)) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project name already taken, please choose another.", ex);
@@ -230,24 +241,45 @@ public class DynamoProjectStore implements ProjectStore {
         }
         ProjectImpl project = new ProjectImpl(projectModel);
         projectCache.put(projectId, Optional.of(project));
-        slugCache.put(slugModel.getSlug(), projectId);
+        slugCache.put(subdomain, projectId);
+        domainOpt.ifPresent(domain -> slugCache.put(domain, projectId));
         return project;
     }
 
     @Override
     public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin) {
         Project project = getProject(projectId, false).get();
-        String slugPrevious = project.getVersionedConfigAdmin().getConfig().getSlug();
-        String slug = versionedConfigAdmin.getConfig().getSlug();
-        boolean updateSlug = !slug.equals(slugPrevious);
-        if (updateSlug) {
-            sanitizer.subdomain(slug);
+
+        ImmutableMap.Builder<String, String> slugsToChangeBuilder = ImmutableMap.builder();
+
+        String domainPrevious = Strings.nullToEmpty(project.getVersionedConfigAdmin().getConfig().getDomain());
+        String domain = Strings.nullToEmpty(versionedConfigAdmin.getConfig().getDomain());
+        if (!domain.equals(domainPrevious)) {
+            if (domain != "") {
+                sanitizer.domain(domain);
+            }
+            slugsToChangeBuilder.put(domain, domainPrevious);
+        }
+
+        String subdomainPrevious = project.getVersionedConfigAdmin().getConfig().getSlug();
+        String subdomain = versionedConfigAdmin.getConfig().getSlug();
+        if (!subdomain.equals(subdomainPrevious)) {
+            sanitizer.subdomain(subdomain);
+            slugsToChangeBuilder.put(subdomain, subdomainPrevious);
+        }
+
+        ImmutableMap<String, String> slugsToChange = slugsToChangeBuilder.build();
+
+        slugsToChange.forEach((slugFrom, slugTo) -> {
             if (LogUtil.rateLimitAllowLog("projectStore-slugChange")) {
-                log.info("Project {} changing slug from {} to {}", projectId, slugPrevious, slug);
+                log.info("Project {} changing slug from '{}' to '{}'", projectId, slugFrom, slugTo);
+            }
+            if (Strings.isNullOrEmpty(slugTo)) {
+                return;
             }
             try {
                 slugSchema.table().putItem(new PutItemSpec()
-                        .withItem(slugSchema.toItem(new SlugModel(slug, projectId, null)))
+                        .withItem(slugSchema.toItem(new SlugModel(slugTo, projectId, null)))
                         // Allow changing your mind and rollback slug if slug still exists part of migration
                         .withConditionExpression("attribute_not_exists(#partitionKey) OR (attribute_exists(#partitionKey) AND #projectId = :projectId)")
                         .withNameMap(Map.of(
@@ -255,11 +287,11 @@ public class DynamoProjectStore implements ProjectStore {
                                 "#projectId", "projectId"))
                         .withValueMap(Map.of(
                                 ":projectId", projectId)));
-                slugCache.invalidate(slug);
+                slugCache.invalidate(slugTo);
             } catch (ConditionalCheckFailedException ex) {
                 throw new ErrorWithMessageException(Response.Status.CONFLICT, "Slug is already taken, please choose another.", ex);
             }
-        }
+        });
         try {
             HashMap<String, String> nameMap = Maps.newHashMap();
             HashMap<String, Object> valMap = Maps.newHashMap();
@@ -294,7 +326,10 @@ public class DynamoProjectStore implements ProjectStore {
                     .withUpdateExpression(updateExpression)
                     .withConditionExpression(conditionExpressionOpt.orElse(null)));
         } catch (ConditionalCheckFailedException ex) {
-            if (updateSlug) {
+            slugsToChange.forEach((slugFrom, slugTo) -> {
+                if (Strings.isNullOrEmpty(slugTo)) {
+                    return;
+                }
                 // Undo creating slug just now
                 slugSchema.table()
                         .deleteItem(new DeleteItemSpec()
@@ -305,12 +340,15 @@ public class DynamoProjectStore implements ProjectStore {
                                 .withValueMap(Map.of(
                                         ":projectId", projectId))
                                 .withPrimaryKey(slugSchema.primaryKey(ImmutableMap.of(
-                                        "slug", slug))));
-                slugCache.invalidate(slug);
-            }
+                                        "slug", slugTo))));
+                slugCache.invalidate(slugTo);
+            });
             throw new ErrorWithMessageException(Response.Status.CONFLICT, "Project was modified by someone else while you were editing. Cannot merge changes.", ex);
         }
-        if (updateSlug) {
+        slugsToChange.forEach((slugFrom, slugTo) -> {
+            if (Strings.isNullOrEmpty(slugFrom)) {
+                return;
+            }
             try {
                 slugSchema.table()
                         .putItem(new PutItemSpec()
@@ -321,14 +359,14 @@ public class DynamoProjectStore implements ProjectStore {
                                 .withValueMap(Map.of(
                                         ":projectId", projectId))
                                 .withItem(slugSchema.toItem(new SlugModel(
-                                        slugPrevious,
+                                        slugFrom,
                                         projectId,
                                         Instant.now().plus(config.slugExpireAfterMigration()).getEpochSecond()))));
-                slugCache.invalidate(slugPrevious);
+                slugCache.invalidate(slugFrom);
             } catch (ConditionalCheckFailedException ex) {
-                log.warn("Updating slug, but previous slug already doesn't exist? {}", slugPrevious, ex);
+                log.warn("Updating slug, but previous slug '{}' already doesn't exist?, switching to '{}'", slugFrom, slugTo, ex);
             }
-        }
+        });
         projectCache.invalidate(projectId);
     }
 
@@ -375,7 +413,6 @@ public class DynamoProjectStore implements ProjectStore {
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(slugByProjectSchema::fromItem)
                 .filter(slug -> projectId.equals(slug.getProjectId()))
-                .map(SlugModel::getSlug)
                 .collect(ImmutableSet.toImmutableSet()), DYNAMO_WRITE_BATCH_MAX_SIZE)
                 .forEach(slugsBatch -> {
                     slugCache.invalidateAll(slugsBatch);

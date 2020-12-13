@@ -66,6 +66,13 @@ dynamo-run:
 	-p 7000:8000 \
 	amazon/dynamodb-local
 
+letsencrypt-run:
+	docker run --rm --name clearflask-letsencrypt-pebble \
+	-p 14000:14000 \
+	-p 15000:15000 \
+	-e "PEBBLE_VA_NOSLEEP=1" \
+	letsencrypt/pebble
+
 ses-run:
 	docker run --rm --name clearflask-ses \
 	-p 9001:9001 \
@@ -125,8 +132,11 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	-v $(shell pwd -P)/.nginx:/etc/nginx/conf.d \
 	nginx
 
-deploy-war: ./clearflask-server/target/clearflask-server-0.1.war
+deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
+
+deploy-connect: ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz
+	aws s3 cp ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz s3://clearflask-secret/clearflask-connect-0.1-connect.tar.gz
 
 deploy-static: ./clearflask-server/target/war-include/ROOT
 	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json

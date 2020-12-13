@@ -1,12 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "es7"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "es7"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -23,11 +18,6 @@
     "noImplicitAny": false,
     "noUnusedLocals": false
   },
-  "include": [
-    "src", "public/sw.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/node_modules/*"
-  ]
+  "include": ["src", "public/sw.ts"],
+  "exclude": ["node_modules", "**/node_modules/*"]
 }
