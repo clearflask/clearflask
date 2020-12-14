@@ -20,12 +20,16 @@
     "http-proxy": "1.18.1",
     "ignore-styles": "5.0.1",
     "node-fetch": "2.6.1",
+    "patch-package": "^6.2.2",
     "querystring": "0.2.0",
     "superagent": "6.1.0"
   },
   "scripts": {
-    "start": "./node/node src/bootstrap.js -- --staging",
-    "test": "./node/node src/test.js -- --staging"
+    "postinstall": "patch-package",
+    "createpatches": "patch-package @root/greenlock-express@4.0.4",
+    "start": "node --unhandled-rejections=strict src/bootstrap.js",
+    "dev": "./node/node --unhandled-rejections=strict src/bootstrap.js -- --staging",
+    "test": "./node/node --unhandled-rejections=strict src/test.js -- --staging"
   },
   "bundleDependencies": [
     "express"

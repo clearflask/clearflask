@@ -8,8 +8,8 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${openapi.targetDirectory}/docs</directory>
-            <outputDirectory>/client</outputDirectory>
+            <directory>${openapi.targetDirectory}${file.separator}docs</directory>
+            <outputDirectory>${file.separator}client</outputDirectory>
             <excludes>
                 <exclude>.openapi*</exclude>
             </excludes>

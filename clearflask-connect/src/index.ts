@@ -52,21 +52,21 @@ greenlockExpress
     subscriberEmail: connectConfig.email,
 
     cluster: true,
-    workers: 1,
+    workers: 2,
 
-    manager: {
-      module: `${process.cwd()}/src/greenlock/greenlock-manager-clearflask.js`
-    },
-    store: {
-      module: `${process.cwd()}/src/greenlock/greenlock-store-clearflask.js`
-    },
-    challenges: {
-      "http-01": {
-        module: `${process.cwd()}/src/greenlock/greenlock-challenge-http-clearflask.js`,
-      },
-    },
+    // manager: {
+    //   module: `${process.cwd()}/src/greenlock/greenlock-manager-clearflask.js`
+    // },
+    // store: {
+    //   module: `${process.cwd()}/src/greenlock/greenlock-store-clearflask.js`
+    // },
+    // challenges: {
+    //   "http-01": {
+    //     module: `${process.cwd()}/src/greenlock/greenlock-challenge-http-clearflask.js`,
+    //   },
+    // },
 
-    notify: function (event, details) {
+    notify: (event, details) => {
       console.log('EVENT:', event, details);
     },
   })
@@ -75,47 +75,57 @@ greenlockExpress
     console.log('Master Started');
   });
 
-// Proxy
-const serverHttpp = httpp.createProxyServer({ xfwd: true });
-serverHttpp.on("error", function (err, req, res) {
-  console.error(err);
-  res.statusCode = 500;
-  res.end();
-  return;
-});
-
 function worker(glx) {
+  // Proxy
+  // const serverHttpp = httpp.createProxyServer({ xfwd: true });
+  // serverHttpp.on("error", function (err, req, res) {
+  //   console.error(err);
+  //   res.statusCode = 500;
+  //   res.end();
+  //   return;
+  // });
+
   // Http
-  // const serverHttp = glx.httpServer();
-  const serverHttp = glx.httpServer(function (req, res) {
-    res.statusCode = 301;
-    res.setHeader("Location", `https://${connectConfig.externalDomain}`);
-    res.end("Redirecting...");
-  });
+  const serverHttp = glx.httpServer();
+  // const serverHttp = glx.httpServer(function (req, res) {
+  //   res.statusCode = 301;
+  //   res.setHeader("Location", `https://${connectConfig.externalDomain}`);
+  //   res.end("Redirecting...");
+  // });
 
   // Https
   const serverHttps = glx.httpsServer();
-  // const serverHttps = glx.httpsServer((req, res) => {
+  // const serverHttps = glx.httpsServer(null, (req, res) => {
   //   res.statusCode = 200;
-  //   res.end('Hello, Encrypted World!');
+  //   res.end("Hello, Encrypted World!");
+  //   // TODO
+  //   // serverHttpp.web(req, res, {
+  //   //   target: "http://localhost:8080"
+  //   // });
   // });
-  serverHttps.on("upgrade", function (req, socket, head) {
-    serverHttpp.ws(req, socket, head, {
-      ws: true,
-      target: "ws://localhost:8080"
-    });
-  });
+  // serverHttps.on("upgrade", function (req, socket, head) {
+  //   serverHttpp.ws(req, socket, head, {
+  //     ws: true,
+  //     target: "ws://localhost:8080"
+  //   });
+  // });
 
   // Http(s)
-  const serverHttpx = httpx.createServer(serverHttp, serverHttps);
-  serverHttpx.listen(connectConfig.listenPort, () => console.log(`Listening on port ${connectConfig.listenPort}!`));
+  // const serverHttpx = httpx.createServer(serverHttp, serverHttps);
+  // serverHttpx.listen(connectConfig.listenPort, () => {
+  //   console.info("Http(s) on", connectConfig.listenPort);
+  // });
 
   // App
-  glx.serveApp(function (req, res) {
-    serverHttpp.web(req, res, {
-      target: "http://localhost:8080"
-    });
-  });
-  // serverHttp.listen(80);
-  // serverHttps.listen(443);
+  // glx.serveApp(function (req, res) {
+  //   serverHttpp.web(req, res, {
+  //     target: "http://localhost:8080"
+  //   });
+  // });
+  serverHttp.listen(9080, "0.0.0.0", function() {
+    console.info("Http on", serverHttp.address().port);
+});
+  serverHttps.listen(9443, "0.0.0.0", function() {
+    console.info("Https on", serverHttps.address().port);
+});
 }

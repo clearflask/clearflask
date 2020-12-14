@@ -8,8 +8,8 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${openapi.targetDirectory}/connect/src</directory>
-            <outputDirectory>/</outputDirectory>
+            <directory>${openapi.targetDirectory}${file.separator}connect${file.separator}src</directory>
+            <outputDirectory>${file.separator}</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

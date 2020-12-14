@@ -32,8 +32,7 @@ sudo tee /etc/systemd/system/connect.service <<"EOF"
 [Unit]
 Description=ClearFlask Connect
 [Service]
-ExecStart=/srv/clearflask-connect/start.js
-ExecStart=/usr/bin/screen -dmL /var/log/clearflask-connect.log -S clearflask-connect /home/ec2-user/.nvm/nvm-exec node /srv/clearflask-connect/start.js
+ExecStart=/usr/bin/screen -dmL /var/log/clearflask-connect.log -S clearflask-connect /home/ec2-user/.nvm/nvm-exec npm start /srv/clearflask-connect/start.js
 Restart=always
 KillMode=control-group
 User=ec2-user
