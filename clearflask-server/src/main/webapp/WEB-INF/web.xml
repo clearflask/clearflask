@@ -120,6 +120,11 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <!-- Docs hosted at base api -->
+        <url-pattern>/api</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>ClearflaskApplication</servlet-name>
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>

@@ -10,6 +10,15 @@ servers:
 externalDocs:
   url: https://clearflask.com/docs
 
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-cf-token
+security:
+  - ApiKeyAuth: []
+
 paths:
   # api-client.yaml
   /project/{projectId}/ideasearch:

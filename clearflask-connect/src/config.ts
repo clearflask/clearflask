@@ -14,11 +14,11 @@ catch (e) {
 }
 
 const connectConfig: ConnectConfig = {
-  listenPort: 8443,
+  listenPort: 44380,
   downstreamUrl: 'http://localhost:8080',
   externalDomain: 'clearflask.com',
   email: 'hostmaster@clearflask.com',
-  ...configLoaded,
+  ...(configLoaded || {}),
 };
 
 export default connectConfig;

@@ -52,6 +52,7 @@ yarn-error.log*
 .nginx
 
 ### Generated API
+clearflask-frontend/public/api
 clearflask-frontend/src/api/client
 clearflask-frontend/src/api/admin
 clearflask-frontend/src/api/schema
@@ -66,3 +67,4 @@ builds/
 
 ### Connect
 greenlock.d/
+.greenlockrc

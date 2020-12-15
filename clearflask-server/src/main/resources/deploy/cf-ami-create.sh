@@ -1,6 +1,10 @@
 #!/bin/bash
 set -ex
 
+# Run as ec2-user
+[ "$(whoami)" == 'ec2-user' ]
+mkdir -p /opt/clearflask
+
 sudo yum install -y mc telnet
 
 sudo amazon-linux-extras install -y tomcat8.5
@@ -19,15 +23,14 @@ CATALINA_OPTS="$CATALINA_OPTS
 EOF
 echo 'CLEARFLASK_ENVIRONMENT=PRODUCTION_AWS' | sudo tee -a /usr/share/tomcat/conf/tomcat.conf
 
-sudo -u ec2-user -i <<'EOF'
-sudo -u ec2-user curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
 . ~/.nvm/nvm.sh
 nvm install 14.15.1
 nvm use --lts
 nvm alias default
-EOF
-mkdir /srv/clearflask-connect
-chown ec2-user:ec2-user /srv/clearflask-connect
+sudo mkdir /srv/clearflask-connect
+sudo chown ec2-user:ec2-user /srv/clearflask-connect
+ln -s /srv/clearflask-connect ~/connect
 sudo tee /etc/systemd/system/connect.service <<"EOF"
 [Unit]
 Description=ClearFlask Connect
@@ -54,4 +57,4 @@ sudo tee /etc/logrotate.d/connect <<"EOF"
     create 0644 ec2-user ec2-user
 }
 EOF
-systemctl daemon-reload
+sudo systemctl daemon-reload

@@ -41,7 +41,10 @@ ${OPENAPI_GENERATOR} generate \
 
 # HTML Docs
 ${OPENAPI_GENERATOR} generate \
+    -t ${TEMPLATE_SOURCE_DIR}/html-docs \
     -i ${OPENAPI_SOURCE_DIR}/api.yaml \
+    -p infoUrl="https://clearflask.com" \
+    -p infoEmail="support@clearflask.com" \
     -g html \
     -o ${OPENAPI_TARGET_DIR}/docs &
 
@@ -73,4 +76,4 @@ ${OPENAPI_GENERATOR} generate \
     --additional-properties=sourceFolder=src/main/java \
     -o ${OPENAPI_TARGET_DIR}/server &
 
-wait -n
+wait

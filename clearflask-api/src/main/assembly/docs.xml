@@ -9,7 +9,7 @@
     <fileSets>
         <fileSet>
             <directory>${openapi.targetDirectory}${file.separator}docs</directory>
-            <outputDirectory>${file.separator}client</outputDirectory>
+            <outputDirectory>${file.separator}</outputDirectory>
             <excludes>
                 <exclude>.openapi*</exclude>
             </excludes>

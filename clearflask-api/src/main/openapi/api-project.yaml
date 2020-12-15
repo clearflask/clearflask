@@ -49,7 +49,7 @@ components:
           # If changed, also change in Sanitizer.java
           pattern: '^[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?$'
         domain:
-          x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Optionally use your own domain to host this project (ie: "https://<your_website>"). You have to add a DNS entry for your domain to CNAME sni.clearflask.com' }
+          x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Experimental: all functionality may not work as expected. Optionally use your own domain to host this project (ie: "https://<your_website>"). You have to add a DNS entry for your domain to CNAME sni.clearflask.com' }
           type: string
         layout:
           $ref: 'api-project.yaml#/components/schemas/layout'

@@ -10,18 +10,12 @@ Manager.create = function (opts) {
 
     manager.get = async function (opts) {
         console.log('manager.get', opts);
-        if (!opts.servername) return null;
-        return null;
-        if (opts.servername === 'localhost.com') {
-            // return {
-            //     subject: opts.servername,
-            //     altnames: [opts.servername],
-            //     renewAt: undefined,
-            //     deletedAt: 1,
-            // };
-        } else {
-            return null;
-        }
+        return {
+            subject: opts.servername,
+            altnames: [opts.servername],
+            renewAt: undefined,
+            deletedAt: 1,
+        };
         try {
             return JSON.parse(await ServerConnect.get()
                 .dispatch()
