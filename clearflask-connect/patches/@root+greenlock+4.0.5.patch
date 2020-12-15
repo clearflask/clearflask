@@ -1,0 +1,13 @@
+diff --git a/node_modules/@root/greenlock/greenlock.js b/node_modules/@root/greenlock/greenlock.js
+index b346f38..d0c076c 100644
+--- a/node_modules/@root/greenlock/greenlock.js
++++ b/node_modules/@root/greenlock/greenlock.js
+@@ -147,7 +147,7 @@ G.create = function(gconf) {
+         return p;
+     };
+ 
+-    greenlock.notify = greenlock._notify = function(ev, params) {
++    greenlock.notify = greenlock._notify = async function(ev, params) {
+         var mng = greenlock.manager;
+ 
+         if ('_' === String(ev)[0]) {
