@@ -56,6 +56,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapper;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
+import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
@@ -108,6 +109,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected UserResource userResource;
     @Inject
+    protected ConnectResource connectResource;
+    @Inject
     protected IdeaResource ideaResource;
     @Inject
     protected CommentResource commentResource;
@@ -145,6 +148,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 AccountResource.module(),
                 ProjectResource.module(),
                 UserResource.module(),
+                ConnectResource.module(),
                 ClearFlaskCreditSync.module(),
                 KillBillResource.module(),
                 KillBillSync.module(),
@@ -180,6 +184,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoElasticUserStore.module(),
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
+                DynamoCertStore.module(),
                 MockAuthCookie.module(),
                 UserBindUtil.module(),
                 ElasticUtil.module(),

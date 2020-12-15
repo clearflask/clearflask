@@ -25,9 +25,9 @@
   },
   "scripts": {
     "postinstall": "patch-package",
-    "start": "node --unhandled-rejections=strict src/bootstrap.js",
-    "dev": "./node/node --unhandled-rejections=strict src/bootstrap.js -- --staging",
-    "test": "./node/node --unhandled-rejections=strict src/test.js -- --staging"
+    "start": "node --unhandled-rejections=strict --trace-warnings src/bootstrap.js",
+    "dev": "./node/node --unhandled-rejections=strict --trace-warnings src/bootstrap.js -- --staging",
+    "test": "./node/node --unhandled-rejections=strict --trace-warnings src/test.js -- --staging"
   },
   "bundleDependencies": [
     "express"

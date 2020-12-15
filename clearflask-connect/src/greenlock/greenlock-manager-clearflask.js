@@ -10,18 +10,15 @@ Manager.create = function (opts) {
 
     manager.get = async function (opts) {
         console.log('manager.get', opts);
-        return {
-            subject: opts.servername,
-            altnames: [opts.servername],
-            renewAt: undefined,
-            deletedAt: 1,
-        };
         try {
-            return JSON.parse(await ServerConnect.get()
+            const result = JSON.parse(await ServerConnect.get()
                 .dispatch()
                 .certGetConnect({ domain: opts.servername })?.json);
+            console.log('Manager get found for servername', opts.servername);
+            return result;
         } catch (response) {
             if (response === 404) {
+                console.log('Manager get not found for servername', opts.servername);
                 return null;
             }
             throw response;

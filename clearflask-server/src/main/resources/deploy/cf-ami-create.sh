@@ -3,7 +3,7 @@ set -ex
 
 # Run as ec2-user
 [ "$(whoami)" == 'ec2-user' ]
-mkdir -p /opt/clearflask
+sudo mkdir -p /opt/clearflask
 
 sudo yum install -y mc telnet
 
@@ -23,29 +23,47 @@ CATALINA_OPTS="$CATALINA_OPTS
 EOF
 echo 'CLEARFLASK_ENVIRONMENT=PRODUCTION_AWS' | sudo tee -a /usr/share/tomcat/conf/tomcat.conf
 
+sudo mkdir -p /srv/clearflask-connect
+sudo adduser connect
+sudo chown connect:connect /srv/clearflask-connect
+ln -s /srv/clearflask-connect ~/connect
+sudo su - connect <<'EOF'
+set -ex
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
 . ~/.nvm/nvm.sh
 nvm install 14.15.1
 nvm use --lts
 nvm alias default
-sudo mkdir /srv/clearflask-connect
-sudo chown ec2-user:ec2-user /srv/clearflask-connect
-ln -s /srv/clearflask-connect ~/connect
+EOF
 sudo tee /etc/systemd/system/connect.service <<"EOF"
 [Unit]
 Description=ClearFlask Connect
+After=syslog.target
+After=network.target
 [Service]
-ExecStart=/usr/bin/screen -dmL /var/log/clearflask-connect.log -S clearflask-connect /home/ec2-user/.nvm/nvm-exec npm start /srv/clearflask-connect/start.js
+Environment=NODE_ENV=production
+Environment=NODE_VERSION=14.15.1
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/home/connect/.nvm/nvm-exec npm start --prefix /srv/clearflask-connect
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=Connect
+Type=simple
 Restart=always
 KillMode=control-group
-User=ec2-user
-Group=nobody
-Environment=PATH=/usr/bin:/usr/local/bin
-Environment=NODE_ENV=production
+User=connect
+Group=connect
 WorkingDirectory=/srv/clearflask-connect
 [Install]
 WantedBy=multi-user.target
 EOF
+sudo systemctl daemon-reload
+sudo systemctl disable connect
+sudo tee /etc/rsyslog.d/00-connect.conf <<"EOF"
+if $programname == 'Connect' then /var/log/clearflask-connect.log
+& ~
+EOF
+sudo service rsyslog restart
 sudo tee /etc/logrotate.d/connect <<"EOF"
 /var/log/clearflask-connect.log {
     copytruncate
@@ -57,4 +75,3 @@ sudo tee /etc/logrotate.d/connect <<"EOF"
     create 0644 ec2-user ec2-user
 }
 EOF
-sudo systemctl daemon-reload

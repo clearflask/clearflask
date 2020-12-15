@@ -5,10 +5,17 @@ import com.google.inject.Inject;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.testutil.AbstractTest;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.xbill.DNS.CNAMERecord;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Type;
+
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
+@Slf4j
 public class SanitizerTest extends AbstractTest {
 
     @Inject
@@ -91,6 +98,14 @@ public class SanitizerTest extends AbstractTest {
         assertSanitize("Should be no change",
                 "<div>a</div>",
                 "<p>a</p>");
+    }
+
+    @Test(timeout = 10_000L)
+    public void testtest() throws Exception {
+        boolean isCanonical = Arrays.stream(new Lookup("feedback.clearflask.com", Type.CNAME).run())
+                .allMatch(r -> r.getType() == Type.CNAME
+                        && "sni.clearflask.com".equals(((CNAMERecord) r).getTarget().toString(true)));
+        log.info("DEBUG {}", isCanonical);
     }
 
     void assertSanitize(String message, String expHtml, String inpHtml) {

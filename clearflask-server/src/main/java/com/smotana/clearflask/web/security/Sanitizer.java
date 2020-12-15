@@ -29,6 +29,7 @@ import javax.mail.internet.InternetAddress;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -154,9 +155,12 @@ public class Sanitizer {
         }
 
         try {
-            boolean isCanonical = Arrays.stream((CNAMERecord[]) new Lookup(domain, Type.CNAME).getAnswers())
+            boolean isCanonical = Optional.ofNullable(new Lookup("sni.clearflask.com", Type.CNAME).run())
+                    .stream()
+                    .flatMap(Arrays::stream)
                     .allMatch(r -> r.getType() == Type.CNAME
-                            && config.sniDomain().equals(r.getTarget().toString(true)));
+                            && r instanceof CNAMERecord
+                            && "sni.clearflask.com".equals(((CNAMERecord) r).getTarget().toString(true)));
             if (!isCanonical) {
                 throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
             }

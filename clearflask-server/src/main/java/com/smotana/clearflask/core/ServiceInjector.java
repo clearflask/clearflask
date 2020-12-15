@@ -49,6 +49,7 @@ import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.mapper.DynamoMapperImpl;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
+import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
@@ -160,6 +161,7 @@ public enum ServiceInjector {
                 install(DynamoNotificationStore.module());
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
+                install(DynamoCertStore.module());
                 install(ResourceLegalStore.module());
                 install(DynamoMapperImpl.module());
                 install(ElasticUtil.module());
