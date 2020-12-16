@@ -12,6 +12,19 @@ module.exports.create = function (config) {
 			return Promise.resolve(null);
 		},
 
+		// data: { challenge: {
+		// 	 type: 'http-01'
+		//   , identifier: { type: 'dns', value: 'example.com' }
+		//   , wildcard: false
+		//   , expires: '2012-01-01T12:00:00.000Z'
+		//   , token: 'abc123'
+		//   , thumbprint: '<<account key thumbprint>>'
+		//   , keyAuthorization: 'abc123.xxxx'
+		//   , dnsHost: '_acme-challenge.example.com'
+		//   , dnsAuthorization: 'yyyy'
+		//   , altname: 'example.com'
+		//   }
+		// }		
 		set: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
@@ -31,14 +44,18 @@ module.exports.create = function (config) {
 			return null;
 		},
 
+		// data: { challenge: {
+		// 	type: 'http-01'
+		//   , identifier: { type: 'dns', value: 'example.com' }
+		//   , wildcard: false
+		//   , token: 'abc123'
+		//   , altname: 'example.com'
+		//   }
+		// }
 		get: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
 			console.log('challenge.get', key);
-
-			if (memdb[key]) {
-				return { keyAuthorization: memdb[key] };
-			}
 
 			try {
 				const challenge = await ServerConnect.get()
@@ -56,10 +73,24 @@ module.exports.create = function (config) {
 					console.log('Challenge not found for key', key);
 					return null;
 				}
+				console.log('Challenge failed for key', key, response);
 				throw response;
 			}
 		},
 
+		// data: { challenge: {
+		// 	 type: 'http-01'
+		//   , identifier: { type: 'dns', value: 'example.com' }
+		//   , wildcard: false
+		//   , expires: '2012-01-01T12:00:00.000Z'
+		//   , token: 'abc123'
+		//   , thumbprint: '<<account key thumbprint>>'
+		//   , keyAuthorization: 'abc123.xxxx'
+		//   , dnsHost: '_acme-challenge.example.com'
+		//   , dnsAuthorization: 'yyyy'
+		//   , altname: 'example.com'
+		//   }
+		// }		
 		remove: async (data) => {
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;

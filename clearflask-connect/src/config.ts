@@ -7,11 +7,14 @@ export interface ConnectConfig {
   connectToken: string;
 }
 
+const configFile = '/opt/clearflask/connect.config.js';
+
 var configLoaded;
 try {
-  configLoaded = require('/opt/clearflask/connect.config.ts')
+  configLoaded = require(configFile).default;
 }
 catch (e) {
+  console.error('Failed to load config file', configFile, e);
 }
 
 const connectConfig: ConnectConfig = {

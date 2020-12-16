@@ -103,7 +103,7 @@ module.exports.create = function (opts) {
         console.log('certificates.checkKeypair:', id);
 
         try {
-            const keyPair = await ServerConnect.get()
+            const keypair = await ServerConnect.get()
                 .dispatch()
                 .certKeypairGetConnect(
                     { id },
@@ -173,7 +173,7 @@ module.exports.create = function (opts) {
                 expiresAt: cert.expiresAt,
             };
         } catch (response) {
-            if (response?.status === 404) {
+            if (response.status === 404 || response.status === 401) {
                 return null;
             }
             throw response;

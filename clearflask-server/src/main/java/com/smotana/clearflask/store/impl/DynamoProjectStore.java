@@ -252,20 +252,18 @@ public class DynamoProjectStore implements ProjectStore {
 
         ImmutableMap.Builder<String, String> slugsToChangeBuilder = ImmutableMap.builder();
 
-        String domainPrevious = Strings.nullToEmpty(project.getVersionedConfigAdmin().getConfig().getDomain());
-        String domain = Strings.nullToEmpty(versionedConfigAdmin.getConfig().getDomain());
-        if (!domain.equals(domainPrevious)) {
-            if (domain != "") {
-                sanitizer.domain(domain);
-            }
-            slugsToChangeBuilder.put(domain, domainPrevious);
+        Optional<String> domainPreviousOpt = Optional.ofNullable(Strings.emptyToNull(project.getVersionedConfigAdmin().getConfig().getDomain()));
+        Optional<String> domainOpt = Optional.ofNullable(Strings.emptyToNull(versionedConfigAdmin.getConfig().getDomain()));
+        if (!domainOpt.equals(domainPreviousOpt)) {
+            domainOpt.ifPresent(s -> sanitizer.domain(s));
+            slugsToChangeBuilder.put(domainPreviousOpt.orElse(""), domainOpt.orElse(""));
         }
 
         String subdomainPrevious = project.getVersionedConfigAdmin().getConfig().getSlug();
         String subdomain = versionedConfigAdmin.getConfig().getSlug();
         if (!subdomain.equals(subdomainPrevious)) {
             sanitizer.subdomain(subdomain);
-            slugsToChangeBuilder.put(subdomain, subdomainPrevious);
+            slugsToChangeBuilder.put(subdomainPrevious, subdomain);
         }
 
         ImmutableMap<String, String> slugsToChange = slugsToChangeBuilder.build();
