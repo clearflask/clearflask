@@ -1154,7 +1154,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   }
 
   getProjectBySlug(slug: string) {
-    return Object.values(this.db).find(p => p.config.config.slug === slug);
+    const last = slug.split('.')[0];
+    return Object.values(this.db).find(p =>
+      p.config.config.slug === last
+      || p.config.config.domain === slug);
   }
 
   deleteProject(projectId: string) {

@@ -13,12 +13,13 @@ function detectEnv(): Environment {
   if (envCache === undefined) {
     if (windowIso.isSsr) {
       envCache = Environment.SSR;
-    } else if (windowIso.location.host.match('clearflask.com')) {
-      envCache = Environment.PRODUCTION;
     } else if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       envCache = Environment.DEVELOPMENT_FRONTEND;
-    } else {
+    } else if (windowIso.location.hostname.endsWith('localhost.com'
+      || windowIso.location.hostname.endsWith('localhost'))) {
       envCache = Environment.DEVELOPMENT_LOCAL;
+    } else {
+      envCache = Environment.PRODUCTION;
     }
   }
   return envCache;

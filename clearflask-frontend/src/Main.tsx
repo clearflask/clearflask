@@ -5,7 +5,7 @@ import { ProviderContext } from 'notistack';
 import React, { Component, Suspense } from 'react';
 import ReactGA from 'react-ga';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 import ServerAdmin from './api/serverAdmin';
 import { ComponentPropsOverrides } from './app/AppThemeProvider';
 import CaptchaChallenger from './app/utils/CaptchaChallenger';
@@ -67,7 +67,6 @@ const theme: Theme = createMuiTheme({
 });
 
 class Main extends Component {
-  readonly subdomain = this.getSubdomain();
   customerTrackerPresent: boolean = false;
 
   constructor(props) {
@@ -88,10 +87,11 @@ class Main extends Component {
   }
 
   render() {
-    if (!windowIso.isSsr && this.subdomain === 'www') {
+    if (!windowIso.isSsr && windowIso.location.hostname === 'www.clearflask.com') {
       // Redirect www to homepage
-      windowIso.location.replace(windowIso.location.origin.replace(`${this.subdomain}.`, ''));
+      return (<Redirect to={windowIso.location.origin.replace(`www.`, '')} />);
     }
+    const isProject = this.isProject();
     return (
       // <React.StrictMode>
       <MuiThemeProvider theme={theme}>
@@ -119,17 +119,16 @@ class Main extends Component {
               )} />
               <Suspense fallback={<Loading />}>
                 <Switch>
-                  {this.subdomain ? ([(
+                  {isProject ? ([(
                     <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
                       <PostStatus
                         {...props}
-                        slug={this.subdomain}
                         postId={props.match.params['postId'] || ''}
                       />
                     )} />
                   ), (
                     <Route key='app' path="/" render={props => (
-                      <App slug={this.subdomain} {...props} />
+                      <App slug={window.location.hostname} {...props} />
                     )} />
                   )]) : ([(
                     <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
@@ -164,25 +163,16 @@ class Main extends Component {
     );
   }
 
-  getSubdomain(): string | undefined {
-    const hostSplit = window.location.host.split('.');
-    var subdomain: string | undefined = undefined;
+  isProject(): boolean {
     switch (detectEnv()) {
       case Environment.PRODUCTION:
-        if (hostSplit.length === 3) {
-          subdomain = hostSplit[0];
-        }
-        break;
+        return window.location.hostname !== 'clearflask.com';
+      default:
       case Environment.DEVELOPMENT_FRONTEND:
       case Environment.DEVELOPMENT_LOCAL:
-        if (hostSplit.length === 2 && hostSplit[1] === 'localhost') {
-          subdomain = hostSplit[0];
-        } else if (hostSplit.length === 3) {
-          subdomain = hostSplit[0];
-        }
-        break;
+        return window.location.hostname !== 'localhost'
+          && window.location.hostname !== 'localhost.com';
     }
-    return subdomain;
   }
 }
 

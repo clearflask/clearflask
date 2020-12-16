@@ -72,7 +72,7 @@ public class Sanitizer {
         @DefaultValue(value = "", innerType = String.class)
         Set<String> skipCheckForDomains();
 
-        @DefaultValue(value = "clearflask.com", innerType = String.class)
+        @DefaultValue(value = "clearflask.com,localhost.com", innerType = String.class)
         Set<String> reservedDomains();
 
         @DefaultValue("sni.clearflask.com")
@@ -153,7 +153,7 @@ public class Sanitizer {
             throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain is empty");
         }
 
-        if(Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {
+        if (Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {
             log.info("Skipping custom domain validation for {}", domain);
             return;
         }

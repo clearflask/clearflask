@@ -89,20 +89,27 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndBindResult configGetAndUserBind(String slug, UserBind userBind) {
-        Optional<Project> projectOpt = projectStore.getProjectBySlug(slug, true);
+        Optional<Project> projectOpt = Optional.empty();
+        if (slug.endsWith(".clearflask.com")) {
+            projectOpt = projectStore.getProjectBySlug(slug.substring(0, slug.indexOf('.')), true);
+        }
+        if (!projectOpt.isPresent()) {
+            projectOpt = projectStore.getProjectBySlug(slug, true);
+        }
         if (!projectOpt.isPresent()) {
             throw new ErrorWithMessageException(Response.Status.NOT_FOUND, "Project not found");
         }
+        Project project = projectOpt.get();
 
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
                 response,
-                projectOpt.get().getProjectId(),
+                project.getProjectId(),
                 getExtendedPrincipal(),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
-        if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(projectOpt.get().getVersionedConfigAdmin()
+        if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()
                 .getConfig()
                 .getUsers()
                 .getOnboarding()
@@ -110,14 +117,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             // For private boards, force user to login first, also hide the full config until login
             return new ConfigAndBindResult(
                     null,
-                    projectOpt.get().getVersionedConfig().getConfig().getUsers().getOnboarding(),
+                    project.getVersionedConfig().getConfig().getUsers().getOnboarding(),
                     null);
         }
 
         return new ConfigAndBindResult(
-                projectOpt.get().getVersionedConfig(),
+                project.getVersionedConfig(),
                 null,
-                loggedInUserOpt.map(loggedInUser -> loggedInUser.toUserMeWithBalance(projectOpt.get().getIntercomEmailToIdentityFun()))
+                loggedInUserOpt.map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
                         .orElse(null));
     }
 
