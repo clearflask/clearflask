@@ -26,6 +26,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Optional;
 
 @Slf4j
 @Singleton
@@ -94,9 +95,15 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
     @RolesAllowed({Role.CONNECT})
     @Override
     public Cert certGetConnect(String domain) {
-        return certStore.getCert(domain)
-                .map(CertModel::toCert)
-                .orElseThrow(NotFoundException::new);
+        Optional<Cert> certOpt = certStore.getCert(domain)
+                .map(CertModel::toCert);
+        if (certOpt.isPresent()) {
+            return certOpt.get();
+        } else if (projectStore.getProjectBySlug(domain, true).isPresent()) {
+            throw new ClientErrorException(Response.Status.NOT_FOUND);
+        } else {
+            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
+        }
     }
 
     @RolesAllowed({Role.CONNECT})
@@ -134,14 +141,6 @@ public class ConnectResource extends AbstractResource implements SniConnectApi {
                 Instant.ofEpochMilli(cert.getIssuedAt()),
                 Instant.ofEpochMilli(cert.getExpiresAt()),
                 cert.getExpiresAt()));
-    }
-
-    @RolesAllowed({Role.CONNECT})
-    @Override
-    public void domainAllowedConnect(String domain) {
-        if (!projectStore.getProjectBySlug(domain, true).isPresent()) {
-            throw new ClientErrorException(Response.Status.UNAUTHORIZED);
-        }
     }
 
     public static Module module() {

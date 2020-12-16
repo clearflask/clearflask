@@ -1,5 +1,6 @@
 'use strict';
 
+const { default: connectConfig } = require('../config');
 const { default: ServerConnect } = require("../serverConnect");
 
 // TODO https://git.rootprojects.org/root/greenlock-store-memory.js
@@ -13,31 +14,37 @@ module.exports.create = function (opts) {
 
 
     store.accounts.setKeypair = async (opts) => {
-        console.log('accounts.setKeypair:', opts.account, opts.email);
-        var id = opts.email || opts.account.id || 'default';
+        var id = opts?.email || opts?.account?.id || 'default';
+        console.log('accounts.setKeypair:', id);
         var keypair = opts.keypair;
 
         await ServerConnect.get()
             .dispatch()
-            .accountKeypairPutConnect({
-                id,
-                keypair: {
-                    privateKeyPem: keypair.privateKeyPem,
-                    privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
+            .accountKeypairPutConnect(
+                {
+                    id,
+                    keypair: {
+                        privateKeyPem: keypair.privateKeyPem,
+                        privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
+                    },
                 },
-            });
+				undefined,
+				{'x-cf-connect-token': connectConfig.connectToken});
 
         return null;
     };
 
     store.accounts.checkKeypair = async (opts) => {
-        console.log('accounts.checkKeypair:', opts.account, opts.email);
-        var id = opts.email || opts.account.id || 'default';
+        var id = opts?.email || opts?.account?.id || 'default';
+        console.log('accounts.checkKeypair:', id);
 
         try {
-            const keyPair = await ServerConnect.get()
+            const keypair = await ServerConnect.get()
                 .dispatch()
-                .accountKeypairGetConnect({ id });
+                .accountKeypairGetConnect(
+                    { id },
+                    undefined,
+                    {'x-cf-connect-token': connectConfig.connectToken});
             return {
                 privateKeyPem: keypair.privateKeyPem,
                 privateKeyJwk: JSON.parse(keypair.privateKeyJwkJson),
@@ -70,32 +77,38 @@ module.exports.create = function (opts) {
     // Certificate Keypairs must not be used for Accounts and vice-versamust not be the same as any account keypair
     //
     store.certificates.setKeypair = async (opts) => {
-        console.log('certificates.setKeypair:', opts.certificate, opts.subject);
-        var id = opts.subject || opts.certificate.kid || opts.certificate.id;
+        var id = opts.subject || opts.certificate?.id || opts.certificate?.kid;
+        console.log('certificates.setKeypair:', id);
         var keypair = opts.keypair;
 
         await ServerConnect.get()
             .dispatch()
-            .certKeypairPutConnect({
-                id,
-                keypair: {
-                    privateKeyPem: keypair.privateKeyPem,
-                    privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
+            .certKeypairPutConnect(
+                    {
+                    id,
+                    keypair: {
+                        privateKeyPem: keypair.privateKeyPem,
+                        privateKeyJwkJson: JSON.stringify(keypair.privateKeyJwk),
+                    },
                 },
-            });
+				undefined,
+				{'x-cf-connect-token': connectConfig.connectToken});
 
         return null;
     };
 
     // You won't be able to use a certificate without it's private key, gotta save it
     store.certificates.checkKeypair = async (opts) => {
-        console.log('certificates.checkKeypair:', opts.certificate, opts.subject);
-        var id = opts.subject || opts.certificate.kid || opts.certificate.id;
+        var id = opts.subject || opts.certificate?.id || opts.certificate?.kid;
+        console.log('certificates.checkKeypair:', id);
 
         try {
             const keyPair = await ServerConnect.get()
                 .dispatch()
-                .certKeypairGetConnect({ id });
+                .certKeypairGetConnect(
+                    { id },
+                    undefined,
+                    {'x-cf-connect-token': connectConfig.connectToken});
             return {
                 privateKeyPem: keypair.privateKeyPem,
                 privateKeyJwk: JSON.parse(keypair.privateKeyJwkJson),
@@ -113,23 +126,26 @@ module.exports.create = function (opts) {
     // (perhaps to delete expired keys), but the same information can also be redireved from
     // the key using the "cert-info" package.
     store.certificates.set = async (opts) => {
-        console.log('certificates.set:', opts.certificate, opts.subject);
-        var id = opts.certificate.id || opts.subject;
+        var id = opts.subject || opts.certificate?.id;
+        console.log('certificates.set:', id);
         var pems = opts.pems;
 
         await ServerConnect.get()
             .dispatch()
-            .certPutConnect({
-                id,
-                cert: {
-                    cert: pems.cert,
-                    chain: pems.chain,
-                    subject: pems.subject,
-                    altnames: pems.altnames,
-                    issuedAt: pems.issuedAt,
-                    expiresAt: pems.expiresAt,
+            .certPutConnect(
+                {
+                    domain: id,
+                    cert: {
+                        cert: pems.cert,
+                        chain: pems.chain,
+                        subject: pems.subject,
+                        altnames: pems.altnames,
+                        issuedAt: pems.issuedAt,
+                        expiresAt: pems.expiresAt,
+                    },
                 },
-            });
+				undefined,
+				{'x-cf-connect-token': connectConfig.connectToken});
 
         return null;
     };
@@ -138,13 +154,16 @@ module.exports.create = function (opts) {
     // but it's easiest to implement last since it's not useful until there
     // are certs that can actually be loaded from storage.
     store.certificates.check = async (opts) => {
-        console.log('certificates.check:', opts.certificate, opts.subject);
-        var id = opts.certificate.id || opts.subject;
+        var id = opts.subject || opts.certificate?.id;
+        console.log('certificates.check:', id);
 
         try {
             const cert = await ServerConnect.get()
                 .dispatch()
-                .certGetConnect({ id });
+                .certGetConnect(
+                    { domain: id },
+                    undefined,
+                    {'x-cf-connect-token': connectConfig.connectToken});
             return {
                 cert: cert.cert,
                 chain: cert.chain,

@@ -39,6 +39,7 @@ tomcat-run-dev:
 		-Dcom.sun.management.jmxremote.rmi.port=9951 \
 		-Djava.rmi.server.hostname=0.0.0.0" \
 	-p 80:8080 \
+	-p 8080:8080 \
 	-p 9950:9950 \
 	-p 9951:9951 \
 	-v `pwd -P`/clearflask-server/target/ROOT:/usr/local/tomcat/webapps/ROOT \

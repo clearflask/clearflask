@@ -1,5 +1,6 @@
 'use strict';
 
+const { default: connectConfig } = require('../config');
 const { default: ServerConnect } = require("../serverConnect");
 
 module.exports.create = function (config) {
@@ -7,14 +8,14 @@ module.exports.create = function (config) {
 
 	return {
 		init: function (opts) {
-			console.log('challenge init', data);
+			console.log('challenge.init', opts);
 			return Promise.resolve(null);
 		},
 
 		set: async (data) => {
-			console.log('Add Key Auth URL', data);
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
+			console.log('challenge.set', key);
 
 			await ServerConnect.get()
 				.dispatch()
@@ -23,15 +24,17 @@ module.exports.create = function (config) {
 					challenge: {
 						result: ch.keyAuthorization,
 					},
-				});
+				},
+				undefined,
+				{'x-cf-connect-token': connectConfig.connectToken});
 
 			return null;
 		},
 
 		get: async (data) => {
-			console.log('List Key Auth URL', data);
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
+			console.log('challenge.get', key);
 
 			if (memdb[key]) {
 				return { keyAuthorization: memdb[key] };
@@ -40,7 +43,10 @@ module.exports.create = function (config) {
 			try {
 				const challenge = await ServerConnect.get()
 					.dispatch()
-					.certChallengeGetConnect({ key });
+					.certChallengeGetConnect(
+						{ key },
+						undefined,
+						{'x-cf-connect-token': connectConfig.connectToken});
 				console.log('Challenge found for key', key);
 				return {
 					keyAuthorization: challenge.result,
@@ -55,13 +61,16 @@ module.exports.create = function (config) {
 		},
 
 		remove: async (data) => {
-			console.log('Remove Key Auth URL', data);
 			var ch = data.challenge;
 			var key = ch.identifier.value + '#' + ch.token;
+			console.log('challenge.remove', key);
 
 			await ServerConnect.get()
 				.dispatch()
-				.certChallengeDeleteConnect({ key });
+				.certChallengeDeleteConnect(
+					{ key },
+					undefined,
+					{'x-cf-connect-token': connectConfig.connectToken});
 			return null;
 		}
 	};

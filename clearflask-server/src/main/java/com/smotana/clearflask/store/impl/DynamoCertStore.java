@@ -26,11 +26,6 @@ import java.util.Optional;
 @Singleton
 public class DynamoCertStore implements CertStore {
 
-    public interface Config {
-    }
-
-    @Inject
-    private Config config;
     @Inject
     private AmazonDynamoDB dynamo;
     @Inject
@@ -129,7 +124,6 @@ public class DynamoCertStore implements CertStore {
             @Override
             protected void configure() {
                 bind(CertStore.class).to(DynamoCertStore.class).asEagerSingleton();
-                install(ConfigSystem.configModule(Config.class));
             }
         };
     }

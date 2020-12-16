@@ -69,6 +69,9 @@ public class Sanitizer {
         @DefaultValue(value = "www,admin,smotana,clearflask,veruv,mail,email,remote,blog,server,ns1,ns2,smtp,secure,vpn,m,shop,portal,support,dev,news,kaui,killbill,kibana,feedback,docs,documentation,release,api,domain,cname,sni", innerType = String.class)
         Set<String> reservedSubdomains();
 
+        @DefaultValue(value = "", innerType = String.class)
+        Set<String> skipCheckForDomains();
+
         @DefaultValue(value = "clearflask.com", innerType = String.class)
         Set<String> reservedDomains();
 
@@ -150,17 +153,22 @@ public class Sanitizer {
             throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain is empty");
         }
 
+        if(Optional.ofNullable(config.skipCheckForDomains()).orElse(ImmutableSet.of()).contains(domain)) {
+            log.info("Skipping custom domain validation for {}", domain);
+            return;
+        }
+
         if (!InternetDomainName.from(domain).isUnderPublicSuffix()) {
             throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have a public suffix. If this is an error, please contact support team.");
         }
 
         try {
-            boolean isCanonical = Optional.ofNullable(new Lookup("sni.clearflask.com", Type.CNAME).run())
+            boolean isCanonical = Optional.ofNullable(new Lookup(domain, Type.CNAME).run())
                     .stream()
                     .flatMap(Arrays::stream)
                     .allMatch(r -> r.getType() == Type.CNAME
                             && r instanceof CNAMERecord
-                            && "sni.clearflask.com".equals(((CNAMERecord) r).getTarget().toString(true)));
+                            && config.sniDomain().equals(((CNAMERecord) r).getTarget().toString(true)));
             if (!isCanonical) {
                 throw new ErrorWithMessageException(BAD_REQUEST, "Custom domain doesn't appear to have the correct DNS entry. Please set a CNAME record in your DNS to " + config.sniDomain());
             }

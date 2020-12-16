@@ -28,6 +28,20 @@
                         <configuration>
                             <filesets>
                                 <fileset>
+                                    <directory>${project.basedir}/greenlock.d</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>.greenlockrc</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                                <fileset>
                                     <directory>${project.basedir}/node</directory>
                                     <includes>
                                         <include>**</include>

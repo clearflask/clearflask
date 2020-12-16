@@ -4,6 +4,7 @@ export interface ConnectConfig {
   downstreamUrl: string;
   externalDomain: string;
   email: string;
+  connectToken: string;
 }
 
 var configLoaded;
@@ -18,6 +19,7 @@ const connectConfig: ConnectConfig = {
   downstreamUrl: 'http://localhost:8080',
   externalDomain: 'clearflask.com',
   email: 'hostmaster@clearflask.com',
+  connectToken: '7cb1e1c26f5d4705a213529257d081c6',
   ...(configLoaded || {}),
 };
 

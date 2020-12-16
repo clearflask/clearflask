@@ -11,8 +11,6 @@ externalDocs:
   url: https://clearflask.com/docs
 
 paths:
-  /connect/domain/allowed:
-    $ref: 'api-sni.yaml#/~1connect~1domain~1allowed'
   /connect/account/keypair:
     $ref: 'api-sni.yaml#/~1connect~1account~1keypair'
   /connect/cert/keypair:
