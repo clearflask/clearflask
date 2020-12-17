@@ -27,7 +27,7 @@ components:
         # test:
         #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
         projectId:
-          x-clearflask-prop: { order: 0, name: 'Project ID', description: 'Used by API', subType: 'id' }
+          x-clearflask-prop: { order: 0, name: 'Project ID', description: 'Used in API calls', subType: 'id' }
           type: string
         website:
           x-clearflask-prop: { order: 2, name: 'Website', description: 'Your product website.', placeholder: 'https://' }
@@ -403,8 +403,8 @@ components:
         - pages
         - menu
       properties:
-        pageTitleDefault:
-          x-clearflask-prop: { order: 0, name: 'Default Page Title', description: 'Change the title that appears on your browser window or tab. You can customize titles for individual pages as well.' }
+        pageTitleSuffix:
+          x-clearflask-prop: { order: 0, name: 'Page Title Suffix', description: 'Change the default title suffix that appears on your browser window or tab.' }
           type: string
         menu:
           x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize the top menu with tabs. Each tab can be a link to single page or a dropdown with multiple pages.' }
@@ -417,7 +417,7 @@ components:
               - pageIds
             properties:
               menuId:
-                x-clearflask-prop: { order: 0, name: 'Menu ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Menu ID', description: 'Used in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               pageIds:
@@ -444,7 +444,7 @@ components:
               - panels
             properties:
               pageId:
-                x-clearflask-prop: { order: 0, name: 'Page ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Page ID', description: 'Used in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               name:
@@ -499,7 +499,7 @@ components:
               - disableComments
             properties:
               statusId:
-                x-clearflask-prop: { order: 0, name: 'Status ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Status ID', description: 'Used in API calls', subType: 'id' }
                 type: string
               name:
                 x-clearflask-prop: { order: 1, defaultValue: 'Status <>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
@@ -547,7 +547,7 @@ components:
               - name
             properties:
               tagId:
-                x-clearflask-prop: { order: 3, name: 'Tag ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 3, name: 'Tag ID', description: 'Used in API calls', subType: 'id' }
                 type: string
               name:
                 x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Tag Name', description: "Keep it short since it's used in tight spaces" }
@@ -569,7 +569,7 @@ components:
               - tagIds
             properties:
               tagGroupId:
-                x-clearflask-prop: { order: 0, name: 'Tag Group ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Tag Group ID', description: 'Used in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               name:
@@ -616,7 +616,7 @@ components:
               - visibility
             properties:
               categoryId:
-                x-clearflask-prop: { order: 0, name: 'Category ID', description: 'Used by API', subType: 'id' }
+                x-clearflask-prop: { order: 0, name: 'Category ID', description: 'Used in API calls', subType: 'id' }
                 x-clearflask-hide: true
                 type: string
               name:

@@ -97,7 +97,7 @@ export default class ServerAdmin {
     if (!project) {
       const server = new Server(
         projectId,
-        undefined,
+        { suppressSetTitle: true },
         this.apiOverride);
       const editor = new ConfigEditor.EditorImpl(versionedConfig.config);
       var hasUnsavedChanges = false;

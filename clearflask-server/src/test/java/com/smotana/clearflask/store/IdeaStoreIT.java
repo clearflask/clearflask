@@ -24,6 +24,7 @@ import com.smotana.clearflask.util.ElasticUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class IdeaStoreIT extends AbstractIT {
         super.configure();
 
         install(Modules.override(
+                Application.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticIdeaStore.module(),

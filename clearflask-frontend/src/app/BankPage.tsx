@@ -5,7 +5,6 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import CreditView from '../common/config/CreditView';
-import setTitle from '../common/util/titleUtil';
 import FundingControl from './comps/FundingControl';
 import TransactionList from './comps/TransactionList';
 import ErrorPage from './ErrorPage';
@@ -34,15 +33,10 @@ interface ConnectProps {
   isLoggedIn: boolean;
   balance?: number;
   credits?: Client.Credits;
-  suppressSetTitle?: boolean,
 }
 class BankPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
-    if (!this.props.suppressSetTitle) {
-      setTitle('Bank', true);
-    }
-
     if (!this.props.isLoggedIn) {
       return (<ErrorPage msg='You need to log in to see your balance' variant='info' />);
     }
@@ -74,7 +68,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     isLoggedIn: !!userId,
     balance: state.credits.myBalance.balance,
     credits: state.conf.conf ? state.conf.conf.users.credits : undefined,
-    suppressSetTitle: state.settings.suppressSetTitle,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BankPage));

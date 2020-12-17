@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
-import setTitle from '../common/util/titleUtil';
 import ErrorPage from './ErrorPage';
 
 const styles = (theme: Theme) => createStyles({
@@ -12,14 +11,9 @@ interface Props {
 }
 interface ConnectProps {
   userMe?: Client.UserMe;
-  suppressSetTitle?: boolean,
 }
 class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    if (!this.props.suppressSetTitle) {
-      setTitle('Single sign-on', true);
-    }
-
     if (!this.props.userMe) {
       return (<ErrorPage msg='Failed to log in' variant='error' />);
     } else {
@@ -32,7 +26,6 @@ class SsoSuccessPage extends Component<Props & ConnectProps & WithStyles<typeof 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const connectProps: ConnectProps = {
     userMe: state.users.loggedIn.user,
-    suppressSetTitle: state.settings.suppressSetTitle,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(SsoSuccessPage));

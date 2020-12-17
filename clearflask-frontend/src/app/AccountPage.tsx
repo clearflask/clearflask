@@ -10,7 +10,6 @@ import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
 import UserContributions from '../common/UserContributions';
-import setTitle from '../common/util/titleUtil';
 import ErrorPage from './ErrorPage';
 import DividerCorner from './utils/DividerCorner';
 
@@ -32,7 +31,6 @@ interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   userMe?: Client.UserMe;
-  suppressSetTitle?: boolean,
 }
 interface State {
   deleteDialogOpen?: boolean;
@@ -46,10 +44,6 @@ class AccountPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   state: State = {};
 
   render() {
-    if (!this.props.suppressSetTitle) {
-      setTitle('Account', true);
-    }
-
     if (!this.props.userMe) {
       return (<ErrorPage msg='You need to log in to see your account details' variant='info' />);
     }
@@ -469,7 +463,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     userMe: state.users.loggedIn.user,
-    suppressSetTitle: state.settings.suppressSetTitle,
   };
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withSnackbar(AccountPage)));

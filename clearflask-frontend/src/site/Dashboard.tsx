@@ -379,6 +379,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <DemoApp
             key={this.createProject.server.getStore().getState().conf.ver || 'preview-create-project'}
             server={this.createProject.server}
+            settings={{ suppressSetTitle: true }}
           />
         );
         break;
@@ -406,7 +407,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           const forcePath = '/' + (activeProject.editor.getProperty(['layout', 'pages', pageIndex, 'slug']) as ConfigEditor.StringProperty).value;
           this.forcePathListener(forcePath);
         }
-        setTitle(activeProject.server.getStore().getState().conf.conf?.name);
+        setTitle(currentPage.getDynamicName());
         page = (
           <Page
             key={currentPage.key}
@@ -438,6 +439,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
           <DemoApp
             key={activeProject.configVersion}
             server={activeProject.server}
+            settings={{ suppressSetTitle: true }}
             forcePathSubscribe={listener => this.forcePathListener = listener}
           />
         );
@@ -625,11 +627,6 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
                       activeProject.server.dispatchAdmin().then(d => d.userLoginAdmin({
                         projectId,
                         userId: userLabel.value,
-                      })).then(userMe => this.setState({
-                        quickView: {
-                          id: userMe.userId,
-                          type: 'user',
-                        },
                       }));
                     } else {
                       if (this.state.quickView?.type === 'user'

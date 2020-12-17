@@ -1,9 +1,9 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
-import Footer from './Footer';
 import { connect } from 'react-redux';
 import { ReduxState } from '../api/server';
-import setTitle from '../common/util/titleUtil';
+import { setAppTitle } from '../common/util/titleUtil';
+import Footer from './Footer';
 
 const styles = (theme: Theme) => createStyles({
   // Required for AnimatedSwitch to overlap two pages during animation
@@ -25,17 +25,22 @@ interface Props {
   children?: React.ReactNode;
   showFooter?: boolean;
   customPageSlug?: string;
+  pageTitle?: string;
+  suppressPageTitle?: boolean,
 }
 interface ConnectProps {
-  pageTitle: string;
-  pageTitleSuppressSuffix: boolean;
+  titleText?: string;
+  projectName?: string,
+  suppressSetTitle: boolean,
 }
 class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   readonly styles = {
   };
 
   render() {
-    setTitle(this.props.pageTitle, true, this.props.pageTitleSuppressSuffix);
+    if (!this.props.suppressSetTitle && !!this.props.projectName) {
+      setAppTitle(this.props.projectName, this.props.titleText);
+    }
     return (
       <React.Fragment>
         <div className={this.props.classes.animationContainer}>
@@ -55,15 +60,13 @@ class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles
 
 export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
   const connectProps: ConnectProps = {
-    pageTitle: state.conf.conf?.layout.pageTitleDefault || state.conf.conf?.name || 'Feedback',
-    pageTitleSuppressSuffix: !!state.conf.conf?.layout.pageTitleDefault,
+    projectName: state.conf.conf?.layout.pageTitleSuffix || state.conf.conf?.name,
+    suppressSetTitle: !!ownProps.suppressPageTitle || !!state.settings.suppressSetTitle,
+    titleText: ownProps.pageTitle,
   };
-  if (ownProps.customPageSlug) {
-    const customPageTitle = state.conf.conf?.layout.pages.find(p => p.slug === ownProps.customPageSlug)?.pageTitle;
-    if(customPageTitle) {
-      connectProps.pageTitle = customPageTitle;
-      connectProps.pageTitleSuppressSuffix = true;
-    }
+  if (!connectProps.titleText && !!ownProps.customPageSlug) {
+    const page = state.conf.conf?.layout.pages.find(p => p.slug === ownProps.customPageSlug);
+    connectProps.titleText = page?.pageTitle || page?.name;
   }
   return connectProps;
 }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BasePage));

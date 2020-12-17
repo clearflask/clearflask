@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../api/server';
 import RichViewer from '../common/RichViewer';
-import setTitle from '../common/util/titleUtil';
 import { vh } from '../common/util/vhUtil';
 import IdeaExplorer from './comps/IdeaExplorer';
 import { Direction } from './comps/Panel';
@@ -80,15 +79,11 @@ interface ConnectProps {
   config?: Client.Config;
   pageNotFound: boolean;
   page?: Client.Page;
-  suppressSetTitle?: boolean,
 }
 class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
 
   render() {
     if (this.props.pageNotFound) {
-      if (!this.props.suppressSetTitle) {
-        setTitle("Page not found", true);
-      }
       return (<ErrorPage msg='Oops, page not found' />);
     }
 
@@ -103,10 +98,6 @@ class CustomPage extends Component<Props & ConnectProps & WithStyles<typeof styl
         />
       );
     } else if (this.props.page) {
-      if (!this.props.suppressSetTitle) {
-        setTitle(this.props.page.name, true);
-      }
-
       var panelsCmpt;
       var boardCmpt;
       var explorerCmpt;
@@ -261,7 +252,6 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     config: state.conf.conf,
     pageNotFound: false,
     page: undefined,
-    suppressSetTitle: state.settings.suppressSetTitle,
   };
 
   if (state.conf.status === Status.FULFILLED && state.conf.conf) {

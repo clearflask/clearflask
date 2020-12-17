@@ -18,7 +18,7 @@ class InvoicePage extends Component<Props & WithStyles<typeof styles, true>, Sta
   constructor(props) {
     super(props);
 
-    setTitle(`Invoice`);
+    setTitle('Invoice');
 
     ServerAdmin.get().dispatchAdmin().then(d => d.invoiceHtmlGetAdmin({
       invoiceId: props.invoiceId,

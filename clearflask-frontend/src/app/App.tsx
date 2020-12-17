@@ -218,27 +218,27 @@ class App extends Component<Props, State> {
                   )} />
                 )} >
                 <Route key='user' path='/:embed(embed)?/user/:userId?' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
+                  <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
                     <UserPage server={server} userId={props.match.params.userId} />
                   </BasePage>
                 )} />
                 <Route key='transaction' path='/:embed(embed)?/transaction' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
+                  <BasePage pageTitle='Bank' showFooter={!props.match.params['embed']}>
                     <BankPage server={server} />
                   </BasePage>
                 )} />
                 <Route key='account' path='/:embed(embed)?/account' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
+                  <BasePage pageTitle='Account' showFooter={!props.match.params['embed']}>
                     <AccountPage server={server} />
                   </BasePage>
                 )} />
                 <Route key='sso' path='/sso' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
+                  <BasePage pageTitle='Single Sign-On' showFooter={!props.match.params['embed']}>
                     <SsoSuccessPage />
                   </BasePage>
                 )} />
                 <Route key='post' path='/:embed(embed)?/post/:postId' render={props => (
-                  <BasePage showFooter={!props.match.params['embed']}>
+                  <BasePage suppressPageTitle showFooter={!props.match.params['embed']}>
                     <PostPage
                       key={'postpage=' + props.match.params['postId']}
                       postId={props.match.params['postId'] || ''}

@@ -10,21 +10,36 @@ interface Props {
   size?: 'small' | 'medium',
   label?: string;
   placeholder?: string;
-  categoryOptions: Client.Category[];
-  value: string;
-  onChange: (categoryId: string) => void;
+  initialStatusId?: string;
+  statuses: Client.IdeaStatus[];
+  value?: string;
+  onChange: (statusId?: string) => void;
   disabled?: boolean;
   errorText?: string;
   variant?: 'standard' | 'outlined' | 'filled';
   SelectionPickerProps?: Partial<React.ComponentProps<typeof SelectionPicker>>;
 }
-class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> {
+class StatusSelect extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
-    const selectedValue: Label[] = [];
-    const options: Label[] = this.props.categoryOptions.map(category => {
-      const label = this.getLabel(category);
-      if (this.props.value === category.categoryId) selectedValue.push(label);
-      return label;
+    const nextStatusValues: Label[] = [];
+    const nextStatusOptions: Label[] = [];
+    const status: Client.IdeaStatus | undefined = this.props.initialStatusId ? this.props.statuses.find(s => s.statusId === this.props.initialStatusId) : undefined;
+    var nextStatuses: Client.IdeaStatus[] | undefined;
+    if (!!status) {
+      var nextStatusIds = new Set(status.nextStatusIds);
+      this.props.initialStatusId && nextStatusIds.add(this.props.initialStatusId);
+      if (nextStatusIds && nextStatusIds.size > 0) {
+        nextStatuses = status ? this.props.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
+      }
+    } else {
+      nextStatuses = this.props.statuses;
+    }
+    nextStatuses && nextStatuses.forEach(s => {
+      const label: Label = this.getLabel(s);
+      nextStatusOptions.push(label);
+      if (this.props.value === s.statusId) {
+        nextStatusValues.push(label);
+      }
     });
 
     return (
@@ -34,32 +49,34 @@ class CategorySelect extends Component<Props & WithStyles<typeof styles, true>> 
           variant: this.props.variant,
           size: this.props.size,
         }}
-        label={this.props.label}
         placeholder={this.props.placeholder}
         disabled={this.props.disabled}
-        value={selectedValue}
-        options={options}
         errorMsg={this.props.errorText}
         noOptionsMessage='No options'
         forceDropdownIcon={false}
+        width='100%'
+        label={this.props.label || 'Status'}
         showTags
         bareTags
-        disableInput
         disableClearable
-        onValueChange={labels => labels[0] && this.props.onChange(labels[0]?.value)}
+        disableInput
+        value={nextStatusValues}
+        options={nextStatusOptions}
+        onValueChange={labels => labels[0] && this.props.onChange((labels[0]?.value === this.props.initialStatusId
+          ? undefined : labels[0]?.value))}
         {...this.props.SelectionPickerProps}
       />
     );
   }
 
-  getLabel(category: Client.Category): Label {
+  getLabel(status: Client.IdeaStatus): Label {
     return {
-      label: category.name,
-      filterString: category.name,
-      value: category.categoryId,
-      color: category.color,
+      label: status.name,
+      filterString: status.name,
+      value: status.statusId,
+      color: status.color,
     };
   }
 }
 
-export default withStyles(styles, { withTheme: true })(CategorySelect);
+export default withStyles(styles, { withTheme: true })(StatusSelect);

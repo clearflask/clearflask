@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
-import setTitle from '../../common/util/titleUtil';
+import { setAppTitle } from '../../common/util/titleUtil';
 import ErrorPage from '../ErrorPage';
 import { Direction } from './Panel';
 import PanelPost from './PanelPost';
@@ -36,22 +36,23 @@ interface Props {
 interface ConnectProps {
   postStatus: Status;
   post?: Client.Idea;
+  projectName?: string,
   suppressSetTitle?: boolean,
 }
 class PostPage extends Component<Props & ConnectProps & WithWidthProps & WithStyles<typeof styles, true>> {
   render() {
-    if (this.props.post && !this.props.suppressSetTitle) {
-      setTitle(truncateWithElipsis(25, this.props.post.title), true);
+    if (this.props.post && this.props.projectName && !this.props.suppressSetTitle) {
+      setAppTitle(this.props.projectName, truncateWithElipsis(25, this.props.post.title));
     }
 
     if (this.props.postStatus === Status.REJECTED) {
-      if (!this.props.suppressSetTitle) {
-        setTitle("Failed to load");
+      if (this.props.projectName && !this.props.suppressSetTitle) {
+        setAppTitle(this.props.projectName, 'Failed to load');
       }
       return (<ErrorPage msg='Oops, not found' />);
     } else if (this.props.postStatus === Status.FULFILLED && this.props.post === undefined) {
-      if (!this.props.suppressSetTitle) {
-        setTitle("Not found");
+      if (this.props.projectName && !this.props.suppressSetTitle) {
+        setAppTitle(this.props.projectName, 'Not found');
       }
       return (<ErrorPage msg='Oops, not found' />);
     }
@@ -113,6 +114,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   var newProps: ConnectProps = {
     postStatus: Status.PENDING,
     post: undefined,
+    projectName: state.conf.conf?.layout.pageTitleSuffix || state.conf.conf?.name,
     suppressSetTitle: state.settings.suppressSetTitle,
   };
 

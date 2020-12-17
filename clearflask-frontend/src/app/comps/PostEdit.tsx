@@ -9,7 +9,7 @@ import notEmpty from '../../common/util/arrayUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { importFailed, importSuccess } from '../../Main';
 import Loading from '../utils/Loading';
-import SelectionPicker, { Label } from './SelectionPicker';
+import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
 
 const RichEditor = React.lazy(() => import('../../common/RichEditor'/* webpackChunkName: "RichEditor", webpackPrefetch: true */).then(importSuccess).catch(importFailed));
@@ -60,32 +60,6 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
       this.state.statusId !== undefined ? 'status' : undefined,
       this.state.response !== undefined ? 'response' : undefined,
     ].filter(notEmpty).join(' and ') || undefined;
-    const nextStatusValues: Label[] = [];
-    const nextStatusOptions: Label[] = [];
-    if (isModOrAdminLoggedIn) {
-      const status: Client.IdeaStatus | undefined = this.props.idea.statusId ? this.props.category.workflow.statuses.find(s => s.statusId === this.props.idea.statusId) : undefined;
-      var nextStatuses: Client.IdeaStatus[] | undefined;
-      if (!!status) {
-        var nextStatusIds = new Set(status.nextStatusIds);
-        if (nextStatusIds && nextStatusIds.size > 0) {
-          nextStatuses = status ? this.props.category.workflow.statuses.filter(s => nextStatusIds!.has(s.statusId)) : undefined;
-        }
-      } else {
-        nextStatuses = this.props.category.workflow.statuses;
-      }
-      nextStatuses && nextStatuses.forEach(s => {
-        const label: Label = {
-          label: s.name,
-          filterString: s.name,
-          value: s.statusId,
-          color: s.color,
-        };
-        nextStatusOptions.push(label);
-        if (this.state.statusId === s.statusId) {
-          nextStatusValues.push(label);
-        }
-      });
-    }
 
     return (
       <React.Fragment>
@@ -146,22 +120,15 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                       />
                     </Suspense>
                   </Grid>
-                  {(nextStatusOptions && nextStatusOptions.length > 0) && (
+                  {(isModOrAdminLoggedIn && this.props.category.workflow.statuses.length > 0) && (
                     <Grid item xs={12} sm={4} className={this.props.classes.row}>
-                      <SelectionPicker
-                        TextFieldProps={{
-                          variant: 'outlined',
-                          size: 'small',
-                        }}
-                        disabled={this.state.isSubmitting}
-                        width='100%'
-                        label='New Status'
-                        showTags
-                        bareTags
-                        disableInput
-                        value={nextStatusValues}
-                        options={nextStatusOptions}
-                        onValueChange={(labels) => this.setState({ statusId: labels.length > 0 ? labels[0].value || undefined : undefined })}
+                      <StatusSelect
+                        statuses={this.props.category.workflow.statuses}
+                        variant='outlined'
+                        size='small'
+                        initialStatusId={this.props.idea.statusId}
+                        value={this.state.statusId || this.props.idea.statusId}
+                        onChange={(statusId) => this.setState({ statusId })}
                       />
                     </Grid>
                   )}

@@ -27,6 +27,7 @@ import { Direction } from './Panel';
 import PanelPost from './PanelPost';
 import PanelSearch from './PanelSearch';
 import { Label } from './SelectionPicker';
+import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
 // import {
 //   withQueryParams,
@@ -113,6 +114,7 @@ interface State {
   newItemAuthorLabel?: Label;
   newItemChosenCategoryId?: string;
   newItemChosenTagIds?: string[];
+  newItemChosenStatusId?: string;
   newItemTagSelectHasError?: boolean;
   newItemSearchText?: string;
   newItemIsSubmitting?: boolean;
@@ -385,7 +387,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
             />
           </Grid>
         )}
-        {selectedCategory && (
+        {!!selectedCategory?.tagging.tagGroups.length && (
           <Grid item xs={12} className={this.props.classes.createGridItem}>
             <div className={this.props.classes.createFormField}>
               <TagSelect
@@ -402,6 +404,20 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
                 SelectionPickerProps={{
                   limitTags: 1,
                 }}
+              />
+            </div>
+          </Grid>
+        )}
+        {isModOrAdminLoggedIn && !!selectedCategory?.workflow.statuses.length && (
+          <Grid item xs={12} className={this.props.classes.createGridItem}>
+            <div className={this.props.classes.createFormField}>
+              <StatusSelect
+                statuses={selectedCategory?.workflow.statuses || []}
+                variant='outlined'
+                size='small'
+                disabled={this.state.newItemIsSubmitting}
+                value={this.state.newItemChosenStatusId || selectedCategory.workflow.entryStatus}
+                onChange={(statusId) => this.setState({ newItemChosenStatusId: statusId })}
               />
             </div>
           </Grid>
@@ -468,6 +484,7 @@ class IdeaExplorer extends Component<Props & ConnectProps & WithStyles<typeof st
           title: this.state.newItemTitle!,
           description: this.state.newItemDescription,
           categoryId: this.state.newItemChosenCategoryId!,
+          statusId: this.state.newItemChosenStatusId,
           tagIds: [...mandatoryTagIds, ...(this.state.newItemChosenTagIds || [])],
         },
       }))

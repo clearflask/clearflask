@@ -65,7 +65,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Context
     private HttpHeaders headers;
     @Inject
-    private UserResource.Config userResourceConfig;
+    private Application.Config configApp;
+    @Inject
+    private UserResource.Config configUserResource;
     @Inject
     private ProjectStore projectStore;
     @Inject
@@ -90,7 +92,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public ConfigAndBindResult configGetAndUserBind(String slug, UserBind userBind) {
         Optional<Project> projectOpt = Optional.empty();
-        if (slug.endsWith(".clearflask.com")) {
+        if (slug.endsWith("." + configApp.domain())) {
             projectOpt = projectStore.getProjectBySlug(slug.substring(0, slug.indexOf('.')), true);
         }
         if (!projectOpt.isPresent()) {

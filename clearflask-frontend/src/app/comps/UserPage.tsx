@@ -9,6 +9,8 @@ import { ReduxState, Server, Status } from '../../api/server';
 import ServerAdmin from '../../api/serverAdmin';
 import ModStar from '../../common/ModStar';
 import UserContributions from '../../common/UserContributions';
+import { truncateWithElipsis } from '../../common/util/stringUtil';
+import { setAppTitle } from '../../common/util/titleUtil';
 import DividerCorner from '../utils/DividerCorner';
 import Loader from '../utils/Loader';
 import UserEdit from './UserEdit';
@@ -39,6 +41,8 @@ interface ConnectProps {
   userStatus?: Status;
   credits?: Client.Credits;
   loggedInUser?: Client.UserMe;
+  projectName?: string,
+  suppressSetTitle?: boolean,
 }
 interface State {
   userAdmin?: Admin.UserAdmin;
@@ -114,6 +118,10 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
       }
     }
 
+    if (this.props.projectName && !this.props.suppressSetTitle) {
+      setAppTitle(this.props.projectName, user?.name ? truncateWithElipsis(25, user?.name) : 'User');
+    }
+
     return (
       <div className={this.props.classes.page}>
         <Loader
@@ -140,5 +148,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     user: state.users.byId[ownProps.userId]?.user,
     userStatus: state.users.byId[ownProps.userId]?.status,
     loggedInUser: state.users.loggedIn.user,
+    projectName: state.conf.conf?.layout.pageTitleSuffix || state.conf.conf?.name,
+    suppressSetTitle: state.settings.suppressSetTitle,
   };
 })(withStyles(styles, { withTheme: true })(UserPage));

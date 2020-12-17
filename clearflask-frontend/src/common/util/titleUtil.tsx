@@ -1,21 +1,29 @@
 import { detectEnv, isProd } from "./detectEnv"
 
-const defaultText = 'Feedback Management Tool | ClearFlask' // NOTE: If changed, change index.html title too
+const defaultText = 'Feedback Management Tool | ClearFlask'
 const titleSuffix = ' | ClearFlask: Feedback Management Tool'
 const titleSuffixShort = ' | ClearFlask'
 
-function setTitle(text?: string, forceShort?: boolean, suppressSufix?: boolean) {
+function setTitle(text?: string, forceShort?: boolean) {
   var title = isProd() ? '' : detectEnv() + '> '
   if (text) {
-    if (suppressSufix) {
-      title += text
-    } else if (text.length < 16 && !forceShort) {
+    if (text.length < 16 && !forceShort) {
       title += text + titleSuffix
     } else {
       title += text + titleSuffixShort
     }
   } else {
     title += defaultText
+  }
+  document.title = title;
+}
+
+export function setAppTitle(projectName: string, text?: string) {
+  var title = isProd() ? '' : detectEnv() + '> '
+  if (text) {
+    title += text + ' | ' + projectName
+  } else {
+    title += projectName;
   }
   document.title = title;
 }

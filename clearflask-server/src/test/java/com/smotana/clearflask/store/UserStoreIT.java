@@ -22,6 +22,7 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
+import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import io.jsonwebtoken.security.Keys;
@@ -49,6 +50,7 @@ public class UserStoreIT extends AbstractIT {
 
 
         install(Modules.override(
+                Application.module(),
                 InMemoryDynamoDbProvider.module(),
                 DynamoMapperImpl.module(),
                 DynamoElasticUserStore.module(),
