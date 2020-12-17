@@ -38,7 +38,6 @@ const styles = (theme: Theme) => createStyles({
   },
 });
 interface Props {
-  slug: string;
   postId: string;
 }
 interface State {
@@ -69,7 +68,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     }
 
     const configAndUserBindPromise = WebNotification.getInstance().getPermission().then(subscriptionResult => server!.dispatch().configGetAndUserBind({
-      slug: props.slug,
+      slug: window.location.hostname,
       userBind: {
         browserPushToken: (subscriptionResult !== undefined && subscriptionResult.type === 'success')
           ? subscriptionResult.token : undefined,

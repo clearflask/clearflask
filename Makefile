@@ -133,18 +133,30 @@ nginx-run: .nginx/key.pem .nginx/cert.pem .nginx/nginx.conf
 	-v $(shell pwd -P)/.nginx:/etc/nginx/conf.d \
 	nginx
 
+deploy:
+	make deploy-files
+	make deploy-server
+	make deploy-connect
+	make deploy-rotate-instances
+	make deploy-manifest
+	make deploy-cloudfront-invalidate
+
 deploy-server: ./clearflask-server/target/clearflask-server-0.1.war
 	aws s3 cp ./clearflask-server/target/clearflask-server-0.1.war s3://clearflask-secret/clearflask-server-0.1.war
 
 deploy-connect: ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz
 	aws s3 cp ./clearflask-connect/target/clearflask-connect-0.1-connect.tar.gz s3://clearflask-secret/clearflask-connect-0.1-connect.tar.gz
 
-deploy-static: ./clearflask-server/target/war-include/ROOT
-	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
+deploy-static: ./clearflask-server/target/war-include/ROOT deploy-manifest deploy-files
+
+deploy-manifest: ./clearflask-server/target/war-include/ROOT
 	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=0" --exclude "*" --include index.html --include service-worker.js --include sw.js --include asset-manifest.json
 
+deploy-files: ./clearflask-server/target/war-include/ROOT
+	aws s3 sync ./clearflask-server/target/war-include/ROOT/ s3://clearflask-static --cache-control "max-age=604800" --exclude index.html --exclude service-worker.js --exclude sw.js --exclude asset-manifest.json
+
 deploy-rotate-instances:
-	aws autoscaling start-instance-refresh --auto-scaling-group-name clearflask-server
+	./instance-refresh-and-wait.sh clearflask-server
 
 deploy-cloudfront-invalidate:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths /index.html /service-worker.js /sw.js /asset-manifest.json
