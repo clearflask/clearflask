@@ -1,10 +1,10 @@
 import { Divider } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import classNames from 'classnames';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState } from '../api/server';
-import AcceptTerms from '../common/AcceptTerms';
 import TemplateLiquid from './comps/TemplateLiquid';
 import PoweredBy from './PoweredBy';
 
@@ -21,14 +21,17 @@ const styles = (theme: Theme) => createStyles({
   grow: {
     flexGrow: 1,
   },
-  footerItems: {
-    width: '85%',
-    display: 'flex',
-    alignItems: 'center',
-    marginTop: theme.spacing(1),
+  footerWrapper: {
     marginLeft: 'auto',
     marginRight: 'auto',
+    width: '85%',
+    maxWidth: 250,
+  },
+  poweredBy: {
+    marginTop: theme.spacing(1),
     marginBottom: theme.spacing(4),
+    display: 'flex',
+    justifyContent: 'center',
   },
   divider: {
     margin: theme.spacing(2, 0, 0, 0),
@@ -53,7 +56,9 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     } else {
       footer = (
         <div className={this.props.classes.footerSpacing}>
-          <Divider className={this.props.classes.divider} />
+          <div className={this.props.classes.footerWrapper}>
+            <Divider className={this.props.classes.divider} />
+          </div>
         </div>
       );
     }
@@ -62,13 +67,8 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       <React.Fragment>
         {footer}
         <div className={this.props.classes.footerSpacing}>
-          <div className={this.props.classes.footerItems}>
+          <div className={classNames(this.props.classes.footerWrapper, this.props.classes.poweredBy)}>
             <PoweredBy />
-            <div className={this.props.classes.grow} />
-            <AcceptTerms
-              overrideText='See our '
-              overrideTerms={this.props.config?.users.onboarding.terms?.documents}
-            />
           </div>
         </div>
       </React.Fragment>
