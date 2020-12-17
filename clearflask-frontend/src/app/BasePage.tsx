@@ -1,6 +1,9 @@
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import Footer from './Footer';
+import { connect } from 'react-redux';
+import { ReduxState } from '../api/server';
+import setTitle from '../common/util/titleUtil';
 
 const styles = (theme: Theme) => createStyles({
   // Required for AnimatedSwitch to overlap two pages during animation
@@ -19,15 +22,20 @@ const styles = (theme: Theme) => createStyles({
 });
 
 interface Props {
+  children?: React.ReactNode;
   showFooter?: boolean;
   customPageSlug?: string;
 }
-
-class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
+interface ConnectProps {
+  pageTitle: string;
+  pageTitleSuppressSuffix: boolean;
+}
+class BasePage extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   readonly styles = {
   };
 
   render() {
+    setTitle(this.props.pageTitle, true, this.props.pageTitleSuppressSuffix);
     return (
       <React.Fragment>
         <div className={this.props.classes.animationContainer}>
@@ -45,4 +53,17 @@ class BasePage extends Component<Props & WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(BasePage);
+export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) => {
+  const connectProps: ConnectProps = {
+    pageTitle: state.conf.conf?.layout.pageTitleDefault || state.conf.conf?.name || 'Feedback',
+    pageTitleSuppressSuffix: !!state.conf.conf?.layout.pageTitleDefault,
+  };
+  if (ownProps.customPageSlug) {
+    const customPageTitle = state.conf.conf?.layout.pages.find(p => p.slug === ownProps.customPageSlug)?.pageTitle;
+    if(customPageTitle) {
+      connectProps.pageTitle = customPageTitle;
+      connectProps.pageTitleSuppressSuffix = true;
+    }
+  }
+  return connectProps;
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(BasePage));

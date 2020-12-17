@@ -4,13 +4,13 @@ import { connect } from 'react-redux';
 import * as Admin from '../api/admin';
 import { Status } from '../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
-import BasePage from '../app/BasePage';
 import Loader from '../app/utils/Loader';
 import MarkdownElement from '../app/utils/MarkdownElement';
 
 const styles = (theme: Theme) => createStyles({
   page: {
-    margin: theme.spacing(2),
+    maxWidth: '1024px',
+    margin: '0px auto',
   },
 });
 
@@ -34,11 +34,11 @@ class LegalPage extends Component<Props & ConnectProps & WithStyles<typeof style
         break;
     }
     return (
-      <BasePage>
+      <div className={this.props.classes.page}>
         <Loader status={this.props.legalStatus}>
           <MarkdownElement text={doc} />
         </Loader>
-      </BasePage>
+      </div>
     );
   }
 }

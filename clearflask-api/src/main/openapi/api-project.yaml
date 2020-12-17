@@ -403,8 +403,11 @@ components:
         - pages
         - menu
       properties:
+        pageTitleDefault:
+          x-clearflask-prop: { order: 0, name: 'Default Page Title', description: 'Change the title that appears on your browser window or tab. You can customize titles for individual pages as well.' }
+          type: string
         menu:
-          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize the top menu wiht tabs. Each tab can be a link to single page or a dropdown with multiple pages.' }
+          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize the top menu with tabs. Each tab can be a link to single page or a dropdown with multiple pages.' }
           type: array
           items:
             title: Menu
@@ -447,11 +450,14 @@ components:
               name:
                 x-clearflask-prop: { defaultValue: 'Page <>', order: 1, name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete:{path: ['.', 'slug'], skipFirst: 2} }
                 type: string
+              pageTitle:
+                x-clearflask-prop: { order: 3, name: 'Page Title', description: 'Page title that appears on your browser window or tab when this page is open.' }
+                type: string
               slug:
                 x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.' }
                 type: string
               title:
-                x-clearflask-prop: { order: 3, name: 'Title', description: 'Main title visible on the tab and as first text on this page', placeholder: 'Feature Requests' }
+                x-clearflask-prop: { order: 3, name: 'Heading', description: 'Main heading visible as the first text on this page', placeholder: 'Feature Requests' }
                 type: string
               description:
                 x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
