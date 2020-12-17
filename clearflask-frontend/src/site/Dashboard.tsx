@@ -43,8 +43,6 @@ import WelcomePage from './dashboard/WelcomePage';
 import DemoApp, { getProject, Project } from './DemoApp';
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
-/** If changed, also change in ClearFlaskCreditSync.java */
-const ClearFlaskProjectId = 'clearflask';
 
 loadStripe.setLoadParameters({ advancedFraudSignals: false })
 const stripePromise = loadStripe(isProd()
@@ -738,7 +736,7 @@ class Dashboard extends Component<Props & ConnectProps & RouteComponentProps & W
   }
 
   openFeedbackUrl(page?: string) {
-    return `${window.location.protocol}//${ClearFlaskProjectId}.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
+    return `${window.location.protocol}//feedback.${window.location.host}/${page || ''}?${SSO_TOKEN_PARAM_NAME}=${this.props.account?.cfJwt}`;
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
