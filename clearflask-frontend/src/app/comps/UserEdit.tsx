@@ -74,7 +74,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
       <React.Fragment>
         <DialogContent>
           <Grid container alignItems='baseline'>
-            <Grid item xs={12} className={this.props.classes.row}>
+            <Grid item xs={8} className={this.props.classes.row}>
               <TextField
                 variant='outlined'
                 size='small'
@@ -83,6 +83,19 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                 fullWidth
                 value={(this.state.name === undefined ? this.props.user.name : this.state.name) || ''}
                 onChange={e => this.setState({ name: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={4} className={this.props.classes.row}>
+              <TextField
+                variant='outlined'
+                size='small'
+                disabled={this.state.isSubmitting}
+                label='User ID'
+                fullWidth
+                value={this.props.user.userId}
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
             <Grid item xs={12}>
